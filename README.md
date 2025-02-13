@@ -1,2 +1,10 @@
-# maped3d
-online resource to turn d&amp;d maps to a primitive 3d map
+# 2dMap_to_3DMap
+load a D&amp;D picture map, outline it, and see it in a primitive 3D
+
+this is a work in progress, the 2D simple map outlining works, the 3D is not in yet.  Feel free to look and explore.
+
+javascript bookmarklet to make the extraction of the monsterdata easier
+
+``
+javascript:(function(){const contentDiv=document.getElementById('wrp-pagecontent');if(!contentDiv){alert('Content div not found!');return;}const content=contentDiv.outerHTML;const name=contentDiv.querySelector('.stats__h-name')?.textContent||'Unknown';const type=contentDiv.querySelector('i')?.textContent||'';const ac=contentDiv.querySelector('strong[title="Armor Class"]')?.nextSibling?.textContent||'';const hp=contentDiv.querySelector('strong[title="Hit Points"]')?.nextSibling?.textContent||'';const imgSrc=contentDiv.querySelector('.stats__token')?.src||'';const modal=document.createElement('div');modal.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border:2px solid #ccc;border-radius:5px;z-index:10000;max-width:400px;box-shadow:0%200%2010px%20rgba(0,0,0,0.5);';modal.innerHTML=`<div%20style="display:flex;align-items:start;gap:10px;margin-bottom:10px;">${imgSrc?`<img%20src="${imgSrc}"style="width:100px;height:100px;object-fit:contain;">`:''}<div><h3%20style="margin:0;color:#822000;font-size:20px;">${name}</h3><p%20style="margin:5px%200;font-style:italic;">${type}</p><p%20style="margin:5px%200;">AC:${ac.trim()}</p><p%20style="margin:5px%200;">HP:${hp.trim()}</p></div></div><div%20style="text-align:center;"><p%20style="color:green;margin:5px%200;">%E2%9C%93%20Monster%20data%20copied%20to%20clipboard!</p><button%20onclick="this.parentElement.parentElement.remove()"style="padding:5px%2010px;margin-top:10px;cursor:pointer;">Close</button></div>`;document.body.appendChild(modal);if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(content).catch(err=>{const%20textarea=document.createElement('textarea');textarea.value=content;document.body.appendChild(textarea);textarea.select();try{document.execCommand('copy');}catch(e){alert('Unable%20to%20copy:%20'+e.message);}finally{document.body.removeChild(textarea);}});}else{const%20textarea=document.createElement('textarea');textarea.value=content;document.body.appendChild(textarea);textarea.select();try{document.execCommand('copy');}catch(e){alert('Unable%20to%20copy:%20'+e.message);}finally{document.body.removeChild(textarea);}}})();
+``
