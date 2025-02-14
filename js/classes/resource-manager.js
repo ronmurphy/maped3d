@@ -12,7 +12,7 @@ window.ResourceManager = class {
             textures: {
                 walls: new Map(),
                 doors: new Map(),
-                floors: new Map(),
+                environmental: new Map(),
                 props: new Map()
             },
             sounds: {
@@ -432,6 +432,37 @@ window.ResourceManager = class {
         }
     }
 
+    async addSplashArt(file, description = '') {
+        if (!file) {
+            console.warn('No file provided for splash art');
+            return null;
+        }
+    
+        try {
+            // Create image data and thumbnail
+            const imageData = await this.createImageData(file);
+            const thumbnail = await this.createThumbnail(file);
+    
+            const splashArtData = {
+                id: `splashArt_${Date.now()}`,
+                name: file.name,
+                description: description,
+                data: imageData,
+                thumbnail: thumbnail,
+                dateAdded: new Date().toISOString()
+            };
+    
+            // Store in splash art collection
+            this.resources.splashArt.set(splashArtData.id, splashArtData);
+            console.log('Added splash art:', splashArtData);
+    
+            return splashArtData.id;
+        } catch (error) {
+            console.error('Error adding splash art:', error);
+            return null;
+        }
+    }
+
 
     async createImageData(file) {
         return new Promise((resolve, reject) => {
@@ -582,18 +613,33 @@ window.ResourceManager = class {
         console.log('Updating gallery:', { category, view });
         const container = drawer.querySelector(`#${category}Gallery`);
         if (!container) {
+            console.warn(`Creating missing gallery container for ${category}`);
+            const tabPanel = drawer.querySelector(`sl-tab-panel[name="${category}"]`);
+            if (tabPanel) {
+                const newContainer = document.createElement('div');
+                newContainer.id = `${category}Gallery`;
+                newContainer.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+                tabPanel.appendChild(newContainer);
+                return this.updateGallery(drawer, category, view);
+            }
             console.warn(`Gallery container not found for ${category}`);
             return;
         }
-
+    
         // Update container class based on view
         container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
-
+    
         // Clear existing content
         container.innerHTML = '';
-
-        // Get resources for the selected category
-        const resources = this.resources.textures[category];
+    
+        // Get resources based on category type
+        let resources;
+        if (category === 'splashArt') {
+            resources = this.resources.splashArt;
+        } else {
+            resources = this.resources.textures[category];
+        }
+    
         if (!resources || resources.size === 0) {
             container.innerHTML = `
                 <sl-card class="empty-gallery">
@@ -605,13 +651,13 @@ window.ResourceManager = class {
             `;
             return;
         }
-
+    
         // Create cards for each resource
         resources.forEach((resource, id) => {
             // console.log('Creating card for resource:', resource);
             const card = document.createElement('sl-card');
             card.className = 'resource-item';
-
+    
             // Create content based on view type
             card.innerHTML = `
                 ${view === 'grid' ? `
@@ -623,6 +669,8 @@ window.ResourceManager = class {
                     <div class="resource-info">
                         <div class="resource-name">${resource.name}</div>
                         <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
+                        ${category === 'splashArt' && resource.description ? 
+                            `<div class="resource-description">${resource.description}</div>` : ''}
                     </div>
                 ` : `
                     <div style="display: flex; align-items: center; gap: 1rem;">
@@ -635,6 +683,8 @@ window.ResourceManager = class {
                         <div class="resource-info">
                             <div class="resource-name">${resource.name}</div>
                             <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
+                            ${category === 'splashArt' && resource.description ? 
+                                `<div class="resource-description">${resource.description}</div>` : ''}
                         </div>
                     </div>
                 `}
@@ -649,17 +699,21 @@ window.ResourceManager = class {
                     </sl-button-group>
                 </div>
             `;
-
+    
             // Add event listeners
             card.querySelector('.preview-btn').addEventListener('click', () => {
                 this.showResourcePreview(resource);
             });
-
+    
             card.querySelector('.delete-btn').addEventListener('click', () => {
-                this.deleteResource(category, id);
+                if (category === 'splashArt') {
+                    this.resources.splashArt.delete(id);
+                } else {
+                    this.deleteResource(category, id);
+                }
                 this.updateGallery(drawer, category, view);
             });
-
+    
             container.appendChild(card);
         });
     }
@@ -1017,6 +1071,14 @@ window.ResourceManager = class {
         drawer.innerHTML = `
     ${styles.outerHTML}
     <div class="resource-manager-content">
+            <div class="pack-name-container" style="margin-bottom: 1rem; padding: 0 1rem;">
+            <sl-input 
+                label="Resource Pack Name" 
+                value="${this.activeResourcePack?.name || 'New Resource Pack'}"
+                id="packNameInput"
+            ></sl-input>
+        </div>
+
         <sl-tab-group>
             <sl-tab slot="nav" panel="textures">
                 <span class="material-icons">image</span>
@@ -1037,8 +1099,8 @@ window.ResourceManager = class {
 <sl-button-group class="texture-categories">
     <sl-button size="small" data-category="walls">Walls</sl-button>
     <sl-button size="small" data-category="doors">Doors</sl-button>
-    <sl-button size="small" data-category="floors" disabled tooltip="Floor textures coming soon">
-        Floors <sl-badge variant="neutral" pill>WIP</sl-badge>
+    <sl-button size="small" data-category="environmental">
+        Environmental
     </sl-button>
     <sl-button size="small" data-category="props">Props</sl-button>
 </sl-button-group>
@@ -1096,28 +1158,28 @@ window.ResourceManager = class {
             </sl-tab-panel>
 
             <!-- Splash Art Panel -->
-            <sl-tab-panel name="splashArt">
-                <div class="panel-header">
-                    <div class="flex-spacer"></div>
-                    <sl-button size="small" class="splashart-upload-btn" variant="primary">
-                        <span class="material-icons">add_circle</span>
-                    </sl-button>
-                    <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
-                </div>
+    <sl-tab-panel name="splashArt">
+        <div class="panel-header">
+            <div class="flex-spacer"></div>
+            <sl-button size="small" class="splashart-upload-btn" variant="primary">
+                <span class="material-icons">add_circle</span>
+            </sl-button>
+            <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
+        </div>
 
-                <div class="view-controls">
-                    <sl-button-group>
-                        <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                            <span class="material-icons">grid_view</span>
-                        </sl-button>
-                        <sl-button size="small" class="view-toggle" data-view="list">
-                            <span class="material-icons">view_list</span>
-                        </sl-button>
-                    </sl-button-group>
-                </div>
+        <div class="view-controls">
+            <sl-button-group>
+                <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                    <span class="material-icons">grid_view</span>
+                </sl-button>
+                <sl-button size="small" class="view-toggle" data-view="list">
+                    <span class="material-icons">view_list</span>
+                </sl-button>
+            </sl-button-group>
+        </div>
 
-                <div class="gallery-container" id="splashArtGallery"></div>
-            </sl-tab-panel>
+        <div id="splashArtGallery" class="gallery-container gallery-grid"></div>
+    </sl-tab-panel>
         </sl-tab-group>
     </div>
 
@@ -1135,6 +1197,16 @@ window.ResourceManager = class {
         </sl-button-group>
     </div>
 `;
+
+const packNameInput = drawer.querySelector('#packNameInput');
+if (packNameInput) {
+    packNameInput.addEventListener('sl-change', (e) => {
+        if (!this.activeResourcePack) {
+            this.activeResourcePack = {};
+        }
+        this.activeResourcePack.name = e.target.value;
+    });
+}
 
         // Add pack selector to drawer header
         const packSelector = document.createElement('sl-select');
@@ -1258,28 +1330,27 @@ window.ResourceManager = class {
         });
 
         // Handle file uploads for each type
-        // Handle file uploads for each type
         const setupUploadHandler = (btnClass, inputClass, type) => {
             const uploadBtn = drawer.querySelector(`.${btnClass}`);
             const fileInput = drawer.querySelector(`.${inputClass}`);
-
+    
             if (!uploadBtn || !fileInput) {
                 console.warn(`Upload elements not found for ${type}`);
                 return;
             }
-
+    
             uploadBtn.addEventListener('click', () => {
                 fileInput.click();
             });
-
+    
             fileInput.addEventListener('change', async (e) => {
                 const files = Array.from(e.target.files || []);
                 const tabPanel = uploadBtn.closest('sl-tab-panel');
-
+    
                 if (!files.length) return;
-
+    
                 console.log(`Processing ${files.length} ${type} files`);
-
+    
                 for (const file of files) {
                     try {
                         if (type === 'splashArt') {
@@ -1296,14 +1367,18 @@ window.ResourceManager = class {
                         console.error(`Error processing ${type} file:`, error);
                     }
                 }
-
-                // Refresh the appropriate gallery
+    
+                // Update gallery with correct category
                 if (tabPanel) {
                     const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
-                    const category = tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
-                    this.updateGallery(drawer, category, view);
+                    const category = type === 'splashArt' ? 'splashArt' : 
+                                   tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
+                    
+                    if (category) {
+                        this.updateGallery(drawer, category, view);
+                    }
                 }
-
+    
                 // Reset file input
                 fileInput.value = '';
             });
