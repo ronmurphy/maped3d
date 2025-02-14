@@ -1,7 +1,9 @@
-# 2dMap_to_3DMap
+# maped3D
 load a D&amp;D picture map, outline it, and see it in a primitive 3D
 
 this is a work in progress, the 2D simple map outlining works, the 3D is not in yet.  Feel free to look and explore.
+
+this is a kind of a fork of some earlier code that was wrote in a horrible lazy method, and i am splitting the code in to seperate, manageable class files.  never cut corners.
 
 javascript bookmarklet to make the extraction of the monsterdata easier
 
