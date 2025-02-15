@@ -1,6 +1,32 @@
       class Scene3DController {
         constructor() {
+          this.moveState = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            speed: 0.025,
+            sprint: false,
+            mouseRightDown: false
+        };
           this.clear();
+        // Make animate a class method
+        this.animate = () => {
+            const currentSpeed = this.moveState.speed;
+        
+            // Handle movement
+            if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+            if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+            if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+            if (this.moveState.right) this.controls.moveRight(currentSpeed);
+        
+            // Keep player at constant height
+            this.camera.position.y = 1.7;
+        
+            // Render the scene
+            this.renderer.render(this.scene, this.camera);
+        };
+
         }
 
         clear() {
@@ -15,6 +41,8 @@
             keyup: null
           };
           this.keys = {};
+
+
         }
 
         initialize(container, width, height) {
@@ -1206,8 +1234,8 @@ return mesh;
       const renderState = {
         clippingEnabled: false // true
       };
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x222222);
+      // const scene = new THREE.Scene();
+      // scene.background = new THREE.Color(0x222222);
 
       this.tokens = [];
 
@@ -1243,19 +1271,19 @@ if (marker.type === "encounter" && marker.data?.monster) {
 
 console.log("Finished processing markers, total tokens:", this.tokens.length);
 
-const camera = new THREE.PerspectiveCamera(
-        75,
-        (window.innerWidth * 0.75) / window.innerHeight,
-        0.1,
-        1000
-      );
-      camera.position.set(0, 2, 5);
+// const camera = new THREE.PerspectiveCamera(
+//         75,
+//         (window.innerWidth * 0.75) / window.innerHeight,
+//         0.1,
+//         1000
+//       );
+//       camera.position.set(0, 2, 5);
 
     //  const sidebarContentWidth = document.querySelector(".sidebar-content");
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth * 0.95, window.innerHeight);
-      renderer.shadowMap.enabled = true;
+      // const renderer = new THREE.WebGLRenderer({ antialias: true });
+      // renderer.setSize(window.innerWidth * 0.95, window.innerHeight);
+      // renderer.shadowMap.enabled = true;
 
       const wallTextureRoom = this.rooms.find(
         (room) => room.name === "WallTexture"
@@ -1300,7 +1328,7 @@ if (marker.type === 'door' && marker.data.texture) {
         this.boxDepth
     );
     if (doorMesh) {
-        scene.add(doorMesh);
+        this.scene.add(doorMesh);
         console.log('Door mesh added to scene');
     }
 }
@@ -1347,12 +1375,12 @@ if (room.name === "WallTexture" || room.name === "RoomTexture") {
 
 let roomMesh;
 if (room.isRaisedBlock && room.blockHeight) {
-    roomMesh = createRaisedBlockGeometry(room);
-    if (roomMesh) {
+  roomMesh = this.createRaisedBlockGeometry(room);
+      if (roomMesh) {
         roomMesh.userData.isWall = true;
     }
 } else {
-    roomMesh = createRoomGeometry(room);
+    roomMesh = this.createRoomGeometry(room);
     if (roomMesh) {
         roomMesh.userData.isWall = room.type === "wall";
     }
@@ -1367,7 +1395,7 @@ if (roomMesh) {
         //     opacity: roomMesh.material.opacity
         // });
     }
-    scene.add(roomMesh);
+    this.scene.add(roomMesh);
 }
 updateStatus(20 + 60 * (index / this.rooms.length));
 });
@@ -1378,18 +1406,18 @@ updateStatus(20 + 60 * (index / this.rooms.length));
       const floor = new THREE.Mesh(floorGeometry, materials[0]);
       floor.rotation.x = -Math.PI / 2;
       floor.position.y = 0.01; // Slightly above ground to prevent z-fighting
-      scene.add(floor);
+      this.scene.add(floor);
 
       // Add lighting
       const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-      scene.add(ambientLight);
+      this.scene.add(ambientLight);
 
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
       directionalLight.position.set(5, 10, 5);
       directionalLight.castShadow = true;
-      scene.add(directionalLight);
+      this.scene.add(directionalLight);
 
-      // Position camera at player start if available
+      // Position this.camera at player start if available
       if (this.playerStart) {
         camera.position.set(
           this.playerStart.x / 50 - this.boxWidth / 2,
@@ -1450,7 +1478,7 @@ console.log("Processing tokens for 3D view:", this.tokens);
 
 Promise.all(this.tokens.map(token => createTokenMesh(token)))
     .then(sprites => {
-        sprites.forEach(sprite => scene.add(sprite));
+        sprites.forEach(sprite => this.scene.add(sprite));
         console.log("All token sprites added to scene");
     })
     .catch(error => {
@@ -1459,10 +1487,15 @@ Promise.all(this.tokens.map(token => createTokenMesh(token)))
 }
       
       
-      const controls = new THREE.PointerLockControls(
-        camera,
-        renderer.domElement
-      );
+      // const controls = new THREE.PointerLockControls(
+      //   this.camera,
+      //   this.renderer.domElement
+      // );
+
+      this.controls = new THREE.PointerLockControls(
+        this.camera,
+        this.renderer.domElement
+    );
 
       const moveState = {
         forward: false,
@@ -1487,49 +1520,50 @@ this.setupMouseControls();
         const currentSpeed = moveState.speed;
 
         // Handle movement
-        if (moveState.forward) controls.moveForward(currentSpeed);
-        if (moveState.backward) controls.moveForward(-currentSpeed);
-        if (moveState.left) controls.moveRight(-currentSpeed);
-        if (moveState.right) controls.moveRight(currentSpeed);
+        if (moveState.forward) this.controls.moveForward(currentSpeed);
+        if (moveState.backward) this.controls.moveForward(-currentSpeed);
+        if (moveState.left) this.controls.moveRight(-currentSpeed);
+        if (moveState.right) this.controls.moveRight(currentSpeed);
 
         // Keep player at constant height (no jumping/falling)
-        camera.position.y = 1.7;
+        this.camera.position.y = 1.7;
 
         // Render the scene
-        renderer.render(scene, camera);
+        this.renderer.render(this.scene, this.camera);
       };
 
       // Return all necessary objects and cleanup function
-      return {
-        scene,
-        camera,
-        renderer,
-        animate,
-        controls,
-        cleanup: () => {
-          // Remove event listeners
-          document.removeEventListener("keydown", handleKeyDown);
-          document.removeEventListener("keyup", handleKeyUp);
-
-          // Dispose of renderer
-          renderer.dispose();
-
-          // Dispose of geometries and materials
-          scene.traverse((object) => {
+      const cleanup = () => {
+        document.removeEventListener("keydown", this.handleKeyDown);
+        document.removeEventListener("keyup", this.handleKeyUp);
+    
+        // Dispose of renderer
+        this.renderer.dispose();
+    
+        // Dispose of geometries and materials
+        this.scene.traverse((object) => {
             if (object.geometry) {
-              object.geometry.dispose();
+                object.geometry.dispose();
             }
             if (object.material) {
-              if (Array.isArray(object.material)) {
-                object.material.forEach((material) => material.dispose());
-              } else {
-                object.material.dispose();
-              }
+                if (Array.isArray(object.material)) {
+                    object.material.forEach((material) => material.dispose());
+                } else {
+                    object.material.dispose();
+                }
             }
-          });
-        }
-      };
-    }
+        });
+    };
+    
+    return {
+        scene: this.scene,
+        camera: this.camera,
+        renderer: this.renderer,
+        animate: this.animate,
+        controls: this.controls,
+        cleanup: cleanup  // Assign the cleanup function
+    };
+}
 
 
 
@@ -1544,12 +1578,16 @@ this.setupMouseControls();
         progress.innerHTML = `Processing... ${Math.round(percent)}%`;
     };
 
+
+
     try {
         drawer.show();
 
         // Initialize core Three.js components
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x222222);
+
+            const { cleanup } = this.init3DScene(updateStatus);
 
         // Calculate dimensions
         const sidebar = document.querySelector(".sidebar");
@@ -1570,11 +1608,15 @@ this.setupMouseControls();
         );
         this.camera.position.set(0, 2, 5);
 
+        // Create controls
+this.controls = new THREE.PointerLockControls(this.camera, this.renderer.domElement);
+
         // Add renderer to container
         container.appendChild(this.renderer.domElement);
 
         // Initialize scene with components
-        const { animate, controls, cleanup } = this.init3DScene(updateStatus);
+        // const { animate, controls, cleanup } = this.init3DScene(updateStatus);
+        const { animate, controls} = this.init3DScene(updateStatus);
 
         // Instructions overlay
         const instructions = document.createElement("div");
@@ -1601,11 +1643,11 @@ this.setupMouseControls();
         container.appendChild(instructions);
 
         // Controls event listeners
-        controls.addEventListener("lock", () => {
+        this.controls.addEventListener("lock", () => {
             instructions.style.display = "none";
         });
 
-        controls.addEventListener("unlock", () => {
+        this.controls.addEventListener("unlock", () => {
             instructions.style.display = "block";
         });
 
@@ -1614,7 +1656,7 @@ this.setupMouseControls();
         const animationLoop = () => {
             if (drawer.open) {
                 animationFrameId = requestAnimationFrame(animationLoop);
-                animate();
+                this.animate();
             }
         };
         animationLoop();
@@ -1677,7 +1719,7 @@ this.setupMouseControls();
       }
     }
 
-    scene.add(result);
+    this.scene.add(result);
     return result;
   }
 
