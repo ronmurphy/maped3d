@@ -1211,6 +1211,7 @@ return mesh;
 
       this.tokens = [];
 
+      // brad sync and edit test from downstairs
 
 // Add encounter markers to tokens array
 console.log("Starting to process markers for tokens:", this.markers.length);
