@@ -81,6 +81,47 @@
           this.clear();
         }
 
+        initializeWithData(data) {
+          if (!data) return;
+      
+          // Store references to essential data
+          this.rooms = data.rooms || [];  // Keep rooms terminology
+          this.textures = data.textures || {};
+          this.tokens = data.tokens || [];
+          this.cellSize = data.cellSize || 50;
+          this.playerStart = data.playerStart || null;
+          this.baseImage = data.baseImage || null;
+          this.markers = data.markers || [];
+      
+          // Get texture rooms if they exist
+          this.wallTextureRoom = this.rooms.find(room => room.name === "WallTexture");
+          this.roomTextureRoom = this.rooms.find(room => room.name === "RoomTexture");
+      
+          // Store dimensions for calculations
+          this.boxWidth = this.baseImage ? this.baseImage.width / 50 : 20;
+          this.boxDepth = this.baseImage ? this.baseImage.height / 50 : 20;
+          this.boxHeight = 4.5;
+      
+          // Setup render state
+          this.renderState = {
+              clippingEnabled: false
+          };
+      
+          // Initialize movement state
+          this.moveState = {
+              forward: false,
+              backward: false,
+              left: false,
+              right: false,
+              speed: 0.025,
+              sprint: false,
+              mouseRightDown: false,
+              shiftHeld: false
+          };
+      
+          return true;
+      }
+
         createTextureFromArea(room) {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
@@ -595,9 +636,9 @@ break;
 
       default: {
         // rectangle
-        const x1 = room.bounds.x / 50 - boxWidth / 2;
+        const x1 = room.bounds.x / 50 - this.boxWidth / 2;
         const x2 = x1 + room.bounds.width / 50;
-        const z1 = room.bounds.y / 50 - boxDepth / 2;
+        const z1 = room.bounds.y / 50 - this.boxDepth / 2;
         const z2 = z1 + room.bounds.height / 50;
 
         if (isWall) {
@@ -1021,9 +1062,9 @@ const indices = [];
 const materialGroups = [];
 let faceCount = 0;
 
-const x1 = room.bounds.x / 50 - boxWidth / 2;
+const x1 = room.bounds.x / 50 - this.boxWidth / 2;
 const x2 = x1 + room.bounds.width / 50;
-const z1 = room.bounds.y / 50 - boxDepth / 2;
+const z1 = room.bounds.y / 50 - this. boxDepth / 2;
 const z2 = z1 + room.bounds.height / 50;
 const height = room.blockHeight;
 
@@ -1784,17 +1825,37 @@ if (marker.type === 'door' && marker.data.texture) {
 
       // Create materials
 
-      if (room.isRaisedBlock && room.blockHeight) {
-        roomMesh = this.createRaisedBlockGeometry(room);
-        if (roomMesh) {
-            roomMesh.userData.isWall = true;
+
+      this.rooms.forEach((room) => {
+        let roomMesh;
+        if (room.isRaisedBlock && room.blockHeight) {
+            roomMesh = this.createRaisedBlockGeometry(room);
+            if (roomMesh) {
+                roomMesh.userData.isWall = true;
+            }
+        } else {
+            roomMesh = this.createRoomGeometry(room);
+            if (roomMesh) {
+                roomMesh.userData.isWall = room.type === "wall";
+            }
         }
-    } else {
-        roomMesh = this.createRoomGeometry(room);
+    
         if (roomMesh) {
-            roomMesh.userData.isWall = room.type === "wall";
+            this.scene.add(roomMesh);
         }
-    }
+    });
+
+    //   if (room.isRaisedBlock && room.blockHeight) {
+    //     roomMesh = this.createRaisedBlockGeometry(room);
+    //     if (roomMesh) {
+    //         roomMesh.userData.isWall = true;
+    //     }
+    // } else {
+    //     roomMesh = this.createRoomGeometry(room);
+    //     if (roomMesh) {
+    //         roomMesh.userData.isWall = room.type === "wall";
+    //     }
+    // }
 
       const materials = [
         new THREE.MeshStandardMaterial({

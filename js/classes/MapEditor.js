@@ -1223,9 +1223,33 @@ console.log("Grid settings restored:", {
           }
 
           // Create 3D view button
+          // const create3dBtn = document.getElementById("create3d");
+          // if (create3dBtn) {
+          //   create3dBtn.addEventListener("click", () => this.show3DView());
+          // }
+
           const create3dBtn = document.getElementById("create3d");
           if (create3dBtn) {
-            create3dBtn.addEventListener("click", () => this.show3DView());
+              create3dBtn.addEventListener("click", () => {
+                  // Get the data needed for 3D view
+                  const sceneData = {
+                      rooms: this.rooms,
+                      textures: {
+                          wall: this.wallTextureRoom,
+                          room: this.roomTextureRoom
+                      },
+                      tokens: this.tokens,
+                      cellSize: this.cellSize,
+                      playerStart: this.playerStart,
+                      baseImage: this.baseImage,
+                      markers: this.markers
+                  };
+                  
+                  // Initialize Scene3D with the data
+                  this.scene3D.initializeWithData(sceneData);
+                  // Show the 3D view
+                  this.scene3D.show3DView();
+              });
           }
 
           const toolButtons = document.querySelectorAll(".tool-button");

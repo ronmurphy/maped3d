@@ -741,36 +741,43 @@ createLayerItem(room) {
                 `).join('')}
             </sl-select>
 
-            <!-- Texture Selection -->
             ${hasTextures ? `
-                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                    <label>Texture:</label>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 8px;">
-                        ${Array.from(wallTextures.entries()).map(([id, texture]) => `
-                            <div class="texture-option" data-texture-id="${id}"
-                                style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'}; 
-                                padding: 4px; border-radius: 4px;">
-                                <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-                                <div style="font-size: 0.8em; text-align: center;">${texture.name}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-    </div>
-
-<!-- Raised Block Options -->
-<div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-    <sl-range 
-        id="blockHeight" 
-        label="Block Height" 
-        min="0" 
-        max="8" 
-        step="1" 
-        tooltip="top" 
-        value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
-        help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
-    ></sl-range>
-</div>
-` : ''}
+              <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+                  <div style="margin-bottom: 16px;">
+                      <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
+                      
+                      <sl-range 
+                          id="blockHeight" 
+                          label="Height" 
+                          min="0" max="8" 
+                          step="1" 
+                          tooltip="top" 
+                          value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
+                          help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
+                          style="margin-bottom: 16px;"
+                      ></sl-range>
+          
+                      <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
+                      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+                          ${Array.from(wallTextures.entries()).map(([id, texture]) => `
+                              <div class="texture-option" data-texture-id="${id}" 
+                                  style="cursor: pointer; border: 2px solid ${
+                                      assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'
+                                  }; padding: 4px; border-radius: 4px; position: relative;">
+                                  <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+                                  <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
+                                  ${assignedTextureId === id ? `
+                                      <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                          background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                          check_circle
+                                      </span>
+                                  ` : ''}
+                              </div>
+                          `).join('')}
+                      </div>
+                  </div>
+              </div>
+          ` : ''}
 
             <!-- Legacy Wall Texture Option -->
             ${room.shape === 'rectangle' ? `
@@ -866,9 +873,15 @@ if (blockHeightSlider) {
     room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
 
     // Save raised block settings
-    const blockHeight = parseInt(blockHeightSlider.value) / 2;
-    room.isRaisedBlock = blockHeight > 0;
-    room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+    // const blockHeight = parseInt(blockHeightSlider.value) / 2;
+    // room.isRaisedBlock = blockHeight > 0;
+    // room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+
+    if (blockHeightSlider) {
+      const blockHeight = parseInt(blockHeightSlider.value) / 2;
+      room.isRaisedBlock = blockHeight > 0;
+      room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+  }
 
     if (dialog.selectedTextureId && this.editor.resourceManager) {
         this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
