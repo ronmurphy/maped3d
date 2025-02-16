@@ -1251,12 +1251,17 @@ class Scene3DController {
     }
 
     // Get correct token image source
-    const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
+    const tokenSource = marker.data.monster.token.data // || marker.data.monster.token.url;
     console.log("Token image source type:", {
       isBase64: tokenSource.startsWith('data:'),
       length: tokenSource.length,
       preview: tokenSource.substring(0, 100) + '...'
     });
+
+    if (!tokenSource) {
+      console.log("No valid token data found");
+      return null;
+  }
 
     const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size || "medium");
     const tokenData = {
