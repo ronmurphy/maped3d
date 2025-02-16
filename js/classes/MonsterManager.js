@@ -344,23 +344,50 @@ if (currentMonsterData.token && (currentMonsterData.token.data || currentMonster
           });
         }
 
-        async tryFetchImage(url) {
-    try {
-        const response = await fetch(url, {
-            mode: 'no-cors',
-            cache: 'no-cache',
-            referrerPolicy: 'no-referrer'
-        });
-        const blob = await response.blob();
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(blob);
-        });
-    } catch (error) {
-        console.error("Error fetching image:", error);
-        return null;
-    }
+//         async tryFetchImage(url) {
+//     try {
+//         const response = await fetch(url, {
+//             mode: 'no-cors',
+//             cache: 'no-cache',
+//             referrerPolicy: 'no-referrer'
+//         });
+//         const blob = await response.blob();
+//         return new Promise((resolve) => {
+//             const reader = new FileReader();
+//             reader.onloadend = () => resolve(reader.result);
+//             reader.readAsDataURL(blob);
+//         });
+//     } catch (error) {
+//         console.error("Error fetching image:", error);
+//         return null;
+//     }
+// }
+
+async tryFetchImage(url) {
+  try {
+      // Create an image element and wait for it to load
+      const img = new Image();
+      img.crossOrigin = "anonymous";  // Try to get CORS access
+      
+      // Create a promise that resolves when the image loads
+      const imageLoadPromise = new Promise((resolve, reject) => {
+          img.onload = () => resolve(img);
+          img.onerror = (error) => {
+              console.error("Image load error:", error);
+              reject(error);
+          };
+      });
+
+      // Start loading the image
+      img.src = url;
+      
+      // Wait for image to load then convert to base64
+      const loadedImg = await imageLoadPromise;
+      return this.storeMonsterImage(loadedImg);
+  } catch (error) {
+      console.error("Error fetching image:", error);
+      return null;
+  }
 }
 
         // In MonsterManager class
