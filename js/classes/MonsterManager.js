@@ -374,26 +374,6 @@ async tryStoreToken(tokenUrl, monsterId) {
                     immunitiesContainer.style.display = "none";
                   }
 
-                  // const imgElement = preview.querySelector(".monster-image img");
-                  // if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
-                  //   const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
-                  //   try {
-                  //     const base64Data = await this.tryFetchImage(imageUrl);
-                  //     // const base64Data = await this.imageToBase64(imageUrl);
-                  //     if (base64Data) {
-                  //       currentMonsterData.token.data = base64Data;
-                  //       console.log("Successfully captured token as base64");
-                  //       console.log("Token data:", currentMonsterData.token.data);
-                  //     }
-                  //   } catch (error) {
-                  //     console.error("Error fetching token:", error);
-                  //   }
-
-                  //   imgElement.src = imageUrl;
-                  //   imgElement.style.display = "block";
-                  // } else {
-                  //   imgElement.style.display = "none";
-                  // }
 
                   const imgElement = preview.querySelector(".monster-image img");
                   if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
@@ -450,44 +430,6 @@ async tryStoreToken(tokenUrl, monsterId) {
     }
 });
 
-//     saveBtn.addEventListener("click", async () => {
-//       if (currentMonsterData) {
-//           if (currentMonsterData.token) {
-//               // Create a new image with crossOrigin set
-//               const img = new Image();
-//               img.crossOrigin = "anonymous";
-              
-//               // Create a promise to wait for image load
-//               await new Promise((resolve, reject) => {
-//                   img.onload = () => {
-//                       try {
-//                           const canvas = document.createElement('canvas');
-//                           canvas.width = img.naturalWidth;
-//                           canvas.height = img.naturalHeight;
-//                           const ctx = canvas.getContext('2d');
-//                           ctx.drawImage(img, 0, 0);
-//                           currentMonsterData.token.data = canvas.toDataURL('image/webp', 1.0);
-//                           resolve();
-//                       } catch (error) {
-//                           console.error("Error converting image:", error);
-//                           reject(error);
-//                       }
-//                   };
-//                   img.onerror = (error) => {
-//                       console.error("Error loading image:", error);
-//                       reject(error);
-//                   };
-//                   img.src = currentMonsterData.token.url;
-//               });
-//           }
-          
-//           marker.data.monster = currentMonsterData;
-//           await this.saveMonsterToDatabase(currentMonsterData);
-//           this.mapEditor.updateMarkerAppearance(marker);
-//           dialog.hide();
-//           resolve(true);
-//       }
-// });
 
             cancelBtn.addEventListener("click", () => {
               dialog.hide();
@@ -500,24 +442,6 @@ async tryStoreToken(tokenUrl, monsterId) {
           });
         }
 
-//         async tryFetchImage(url) {
-//     try {
-//         const response = await fetch(url, {
-//             mode: 'no-cors',
-//             cache: 'no-cache',
-//             referrerPolicy: 'no-referrer'
-//         });
-//         const blob = await response.blob();
-//         return new Promise((resolve) => {
-//             const reader = new FileReader();
-//             reader.onloadend = () => resolve(reader.result);
-//             reader.readAsDataURL(blob);
-//         });
-//     } catch (error) {
-//         console.error("Error fetching image:", error);
-//         return null;
-//     }
-// }
 
 async tryFetchImage(url) {
   try {
