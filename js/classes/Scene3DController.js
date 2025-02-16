@@ -11,21 +11,21 @@ class Scene3DController {
     };
     this.clear();
     // Make animate a class method
-    this.animate = () => {
-      const currentSpeed = this.moveState.speed;
+    // this.animate = () => {
+    //   const currentSpeed = this.moveState.speed;
 
-      // Handle movement
-      if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-      if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-      if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-      if (this.moveState.right) this.controls.moveRight(currentSpeed);
+    //   // Handle movement
+    //   if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+    //   if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+    //   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+    //   if (this.moveState.right) this.controls.moveRight(currentSpeed);
 
-      // Keep player at constant height
-      this.camera.position.y = 1.7;
+    //   // Keep player at constant height
+    //   this.camera.position.y = 1.7;
 
-      // Render the scene
-      this.renderer.render(this.scene, this.camera);
-    };
+    //   // Render the scene
+    //   this.renderer.render(this.scene, this.camera);
+    // };
 
   }
 
@@ -1599,55 +1599,165 @@ class Scene3DController {
     updateStatus(100);
 
     // Animation loop
-    const animate = () => {
-      const currentSpeed = moveState.speed;
+    // const animate = () => {
+    //   const currentSpeed = moveState.speed;
 
-      // Handle movement
-      if (moveState.forward) this.controls.moveForward(currentSpeed);
-      if (moveState.backward) this.controls.moveForward(-currentSpeed);
-      if (moveState.left) this.controls.moveRight(-currentSpeed);
-      if (moveState.right) this.controls.moveRight(currentSpeed);
+    //   // Handle movement
+    //   if (moveState.forward) this.controls.moveForward(currentSpeed);
+    //   if (moveState.backward) this.controls.moveForward(-currentSpeed);
+    //   if (moveState.left) this.controls.moveRight(-currentSpeed);
+    //   if (moveState.right) this.controls.moveRight(currentSpeed);
 
-      // Keep player at constant height (no jumping/falling)
-      this.camera.position.y = 1.7;
+    //   // Keep player at constant height (no jumping/falling)
+    //   this.camera.position.y = 1.7;
 
-      // Render the scene
-      this.renderer.render(this.scene, this.camera);
-    };
+    //   // Render the scene
+    //   this.renderer.render(this.scene, this.camera);
+    // };
 
     // Return all necessary objects and cleanup function
-    const cleanup = () => {
-      document.removeEventListener("keydown", this.handleKeyDown);
-      document.removeEventListener("keyup", this.handleKeyUp);
+  //   const cleanup = () => {
+  //     document.removeEventListener("keydown", this.handleKeyDown);
+  //     document.removeEventListener("keyup", this.handleKeyUp);
 
-      // Dispose of renderer
-      this.renderer.dispose();
+  //     // Dispose of renderer
+  //     this.renderer.dispose();
 
-      // Dispose of geometries and materials
-      this.scene.traverse((object) => {
+  //     // Dispose of geometries and materials
+  //     this.scene.traverse((object) => {
+  //       if (object.geometry) {
+  //         object.geometry.dispose();
+  //       }
+  //       if (object.material) {
+  //         if (Array.isArray(object.material)) {
+  //           object.material.forEach((material) => material.dispose());
+  //         } else {
+  //           object.material.dispose();
+  //         }
+  //       }
+  //     });
+  //   };
+
+  //   return {
+  //     scene: this.scene,
+  //     camera: this.camera,
+  //     renderer: this.renderer,
+  //     animate: this.animate,
+  //     controls: this.controls,
+  //     cleanup: cleanup  // Assign the cleanup function
+  //   };
+  // }
+
+  this.cleanup = () => {
+    document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("keyup", this.handleKeyUp);
+
+    // Dispose of renderer
+    this.renderer.dispose();
+
+    // Dispose of geometries and materials
+    this.scene.traverse((object) => {
         if (object.geometry) {
-          object.geometry.dispose();
+            object.geometry.dispose();
         }
         if (object.material) {
-          if (Array.isArray(object.material)) {
-            object.material.forEach((material) => material.dispose());
-          } else {
-            object.material.dispose();
-          }
+            if (Array.isArray(object.material)) {
+                object.material.forEach((material) => material.dispose());
+            } else {
+                object.material.dispose();
+            }
         }
-      });
-    };
+    });
+};
 
-    return {
-      scene: this.scene,
-      camera: this.camera,
-      renderer: this.renderer,
-      animate: this.animate,
-      controls: this.controls,
-      cleanup: cleanup  // Assign the cleanup function
-    };
-  }
+// Return with all class method references
+return {
+    scene: this.scene,
+    camera: this.camera,
+    renderer: this.renderer,
+    animate: this.animate.bind(this),  // Ensure 'this' binding
+    controls: this.controls,
+    cleanup: this.cleanup.bind(this)   // Ensure 'this' binding
+};
+}
 
+  animate = () => {
+    const currentSpeed = this.moveState.speed;
+    let canMove = true;
+
+    // Check for collision before moving
+    if (this.moveState.forward || this.moveState.backward) {
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        if (this.moveState.backward) direction.negate();
+        
+        const raycaster = new THREE.Raycaster(
+            this.camera.position,
+            direction,
+            0,
+            currentSpeed + 0.5
+        );
+
+        const intersects = raycaster.intersectObjects(
+            this.scene.children.filter(obj => obj.userData.isWall)
+        );
+
+        if (intersects.length > 0) {
+            canMove = false;
+        }
+    }
+
+    // Only move if no collision
+    if (canMove) {
+        if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+        if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+    }
+
+    if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+    if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+    this.camera.position.y = 1.7;
+    this.renderer.render(this.scene, this.camera);
+};
+
+// animate = () => {
+//   const currentSpeed = this.moveState.speed;
+//   let canMove = true;
+
+//   // Check for collision before moving
+//   if (this.moveState.forward || this.moveState.backward) {
+//       const direction = new THREE.Vector3();
+//       this.camera.getWorldDirection(direction);
+//       if (this.moveState.backward) direction.negate();
+      
+//       const raycaster = new THREE.Raycaster(
+//           this.camera.position,
+//           direction,
+//           0,
+//           currentSpeed + 0.5
+//       );
+
+//       const intersects = raycaster.intersectObjects(
+//           this.scene.children.filter(obj => obj.userData.isWall)
+//       );
+
+//       if (intersects.length > 0) {
+//           canMove = false;
+//       }
+//   }
+
+//   // Only move if no collision
+//   if (canMove) {
+//       if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+//       if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+//   }
+
+//   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+//   if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+//   this.camera.position.y = 1.7;
+//   this.renderer.render(this.scene, this.camera);
+// };
 
 
   async show3DView() {

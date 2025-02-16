@@ -165,6 +165,7 @@ async tryStoreToken(tokenUrl, monsterId) {
 //   });
 }
 
+
         // Complete showMonsterSelector method for MonsterManager class
         async showMonsterSelector(marker) {
           const dialog = document.createElement("sl-dialog");
@@ -376,32 +377,77 @@ async tryStoreToken(tokenUrl, monsterId) {
 
 
                   const imgElement = preview.querySelector(".monster-image img");
-                  if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
-                    const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+                  // if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
+                  //   const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
 
-                    // Set up image load handler before setting src
-                    imgElement.onload = () => {
-                      const canvas = document.createElement('canvas');
-                      canvas.width = imgElement.naturalWidth;
-                      canvas.height = imgElement.naturalHeight;
-                      const ctx = canvas.getContext('2d');
-                      ctx.drawImage(imgElement, 0, 0);
-                      const base64Data = canvas.toDataURL('image/webp');
-                      console.log("Base64 data", base64Data); // Debug log
-                      currentMonsterData.token.data = base64Data;
-                      console.log("Token data", currentMonsterData.token.data); // Debug log
-                      console.log("Successfully captured token as base64");
-                    };
+                  //   // Set up image load handler before setting src
+                  //   imgElement.onload = () => {
+                  //     const canvas = document.createElement('canvas');
+                  //     canvas.width = imgElement.naturalWidth;
+                  //     canvas.height = imgElement.naturalHeight;
+                  //     const ctx = canvas.getContext('2d');
+                  //     ctx.drawImage(imgElement, 0, 0);
+                  //     const base64Data = canvas.toDataURL('image/webp');
+                  //     console.log("Base64 data", base64Data); // Debug log
+                  //     currentMonsterData.token.data = base64Data;
+                  //     console.log("Token data", currentMonsterData.token.data); // Debug log
+                  //     console.log("Successfully captured token as base64");
 
-                    // Now set the src to trigger loading
-                    imgElement.src = imageUrl;
-                    imgElement.style.display = "block";
-                  } else {
-                    imgElement.style.display = "none";
-                  }
 
-                  preview.style.display = "block";
-                  saveBtn.disabled = false;
+
+                  //   };
+
+
+
+    // if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
+    //   const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+  
+    //   const exampleImg = await this.processImage(imgElement);
+    //   if (exampleImg) {
+    //       console.log("Example base64 image:", exampleImg);
+    //   }
+
+    //   currentMonsterData.token.data = exampleImg;
+    //   console.log("Token data", currentMonsterData.token.data); // Debug log
+    //   console.log("Successfully captured token as base64");
+      
+
+    if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
+      const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+      
+      // Use a CORS proxy
+      const proxyUrl = `https://cors-anywhere.herokuapp.com/${imageUrl}`;
+      
+      // First let the preview image load normally
+      imgElement.src = imageUrl;  // Original URL for display
+      imgElement.style.display = "block";
+  
+      // Try to load through proxy for data capture
+      const proxyImg = new Image();
+      proxyImg.crossOrigin = "anonymous";
+      proxyImg.onload = () => {
+          try {
+              const canvas = document.createElement('canvas');
+              canvas.width = proxyImg.naturalWidth;
+              canvas.height = proxyImg.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(proxyImg, 0, 0);
+              const base64Data = canvas.toDataURL('image/webp');
+              currentMonsterData.token.data = base64Data;
+              console.log("Successfully captured image through proxy");
+          } catch (error) {
+              console.error("Error converting proxy image:", error);
+          }
+      };
+      proxyImg.src = proxyUrl;
+  } else {
+      imgElement.style.display = "none";
+  }
+  
+  preview.style.display = "block";
+  saveBtn.disabled = false;
+  
+  
                 }
               } catch (error) {
                 console.error("Error in monster data processing:", error); // More detailed error log
@@ -419,7 +465,12 @@ async tryStoreToken(tokenUrl, monsterId) {
 
 
             saveBtn.addEventListener("click", async () => {
+
+
+
+
     if (currentMonsterData) {
+      console.log("currentMonsterData:", currentMonsterData); // Debug log
         // At this point, currentMonsterData.token.data should already have the base64 data
         // from when the preview image loaded        
         marker.data.monster = currentMonsterData;
@@ -441,6 +492,62 @@ async tryStoreToken(tokenUrl, monsterId) {
             });
           });
         }
+
+
+      //   async processImage(imgElement) {
+      //     const convertToBase64 = (imgElement) => {
+      //         const canvas = document.createElement("canvas");
+      //         const ctx = canvas.getContext("2d");
+      
+      //         canvas.width = imgElement.naturalWidth;
+      //         canvas.height = imgElement.naturalHeight;
+      //         ctx.drawImage(imgElement, 0, 0);
+      
+      //         return canvas.toDataURL("image/webp");
+      //     };
+      
+      //     const base64Data = convertToBase64(imgElement);
+      //     console.log("Base64 data", base64Data); // Debug log
+      //     currentMonsterData.token.data = base64Data;
+      //     console.log("Token data", currentMonsterData.token.data); // Debug log
+      //     console.log("Successfully captured token as base64");
+      // }
+
+
+      async convertToBase64(imgElement) {
+        return new Promise((resolve, reject) => {
+            if (!imgElement.complete) {
+                imgElement.onload = () => resolve(this.drawToCanvas(imgElement));
+                imgElement.onerror = (error) => reject(error);
+            } else {
+                resolve(this.drawToCanvas(imgElement));
+            }
+        });
+    }
+    
+    drawToCanvas(imgElement) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+    
+        canvas.width = imgElement.naturalWidth;
+        canvas.height = imgElement.naturalHeight;
+        ctx.drawImage(imgElement, 0, 0);
+    
+        return canvas.toDataURL("image/webp");
+    }
+    
+    async processImage(imgElement) {
+        try {
+            const base64Data = await this.convertToBase64(imgElement);
+            console.log("Base64 data", base64Data); // Debug log
+    
+            return base64Data;
+        } catch (error) {
+            console.error("Error processing image:", error);
+            return null;
+        }
+    }
+    
 
 
 async tryFetchImage(url) {
