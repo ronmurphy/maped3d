@@ -407,7 +407,9 @@ async tryStoreToken(tokenUrl, monsterId) {
                       const ctx = canvas.getContext('2d');
                       ctx.drawImage(imgElement, 0, 0);
                       const base64Data = canvas.toDataURL('image/webp');
+                      console.log("Base64 data", base64Data); // Debug log
                       currentMonsterData.token.data = base64Data;
+                      console.log("Token data", currentMonsterData.token.data); // Debug log
                       console.log("Successfully captured token as base64");
                     };
 
