@@ -282,16 +282,16 @@
                     immunitiesContainer.style.display = "none";
                   }
 
-
-
-                const imgElement = preview.querySelector(".monster-image img");
+                const imgElement = preview.querySelector(".monster-image img");          
 if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
     const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
     try {
-        const base64Data = await this.tryFetchImage(imageUrl);
+        // const base64Data = await this.tryFetchImage(imageUrl);
+        const base64Data = await this.imageToBase64(imageUrl);
         if (base64Data) {
             currentMonsterData.token.data = base64Data;
             console.log("Successfully captured token as base64");
+            console.log("Token data:", currentMonsterData.token.data);
         }
     } catch (error) {
         console.error("Error fetching token:", error);
@@ -389,6 +389,7 @@ async tryFetchImage(url) {
       return null;
   }
 }
+
 
         // In MonsterManager class
         async extractMonsterData(url) {
@@ -669,13 +670,16 @@ async tryFetchImage(url) {
 
               // If we found a token URL, try to store it
               if (tokenUrl) {
-                // console.log("Attempting to store token...");
+                console.log("Attempting to store token...");
                 return this.tryStoreToken(tokenUrl)
                   .then((tokenData) => {
-                    // console.log(
-                    //   "Token stored successfully:",
-                    //   tokenData ? "data present" : "no data"
-                    // );
+                    console.log(
+                      "Token stored successfully:",
+                      tokenData ? "data present" : "no data"
+                    );
+                    // console.log("TokenData:", tokenData);
+                    // const tData = this.storeMonsterImage(tokenUrl);
+                    // console.log("TData:", tData); 
                     return {
                       basic: {
                         name,
@@ -727,7 +731,7 @@ async tryFetchImage(url) {
                   });
               }
             }
-            // console.log("Token handling complete");
+            console.log("Token handling complete");
             // console.log("Returning monster data...");
             // Return data without token if no token URL was found
             return {
