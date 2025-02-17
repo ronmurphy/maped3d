@@ -46,6 +46,9 @@ class PhysicsController {
 
         return false;
     }
+    
+
+
     // walk on halfblocks code
     checkForwardCollision(direction, speed) {
         const groundPosition = new THREE.Vector3(
@@ -74,6 +77,8 @@ class PhysicsController {
                 return heightDiff > this.stepHeight;
             })
         );
+
+
 
         if (this.debug && intersects.length > 0) {
             console.log("Forward collision check:", {
@@ -172,6 +177,8 @@ class PhysicsController {
 
         return false;
     }
+
+    
     update() {
         // Handle falling even when not moving
         if (this.isFalling) {
