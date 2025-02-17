@@ -122,6 +122,9 @@ class Scene3DController {
     this.markers = data.markers || [];
     this.textureManager = data.textureManager;
 
+    // Initialize physics
+    this.physics = new PhysicsController(this);
+
     // Get texture rooms if they exist
     this.wallTextureRoom = this.rooms.find(room => room.name === "WallTexture");
     this.roomTextureRoom = this.rooms.find(room => room.name === "RoomTexture");
@@ -1412,29 +1415,65 @@ class Scene3DController {
       }
     });
 
-    this.rooms.forEach((room) => {
+    // this.rooms.forEach((room) => {
 
-      if (room.name === "WallTexture" || room.name === "RoomTexture") {
-        return; // Skip these special texture rooms
-    }
+    //   if (room.name === "WallTexture" || room.name === "RoomTexture") {
+    //     return; // Skip these special texture rooms
+    // }
     
+    //   let roomMesh;
+    //   if (room.isRaisedBlock && room.blockHeight) {
+    //     roomMesh = this.createRaisedBlockGeometry(room);
+    //     if (roomMesh) {
+    //       roomMesh.userData = {
+    //           isWall: true,
+    //           blockHeight: room.blockHeight,
+    //           isRaisedBlock: true
+    //       };
+    //     }
+    //   } else {
+    //     roomMesh = this.createRoomGeometry(room);
+    //     if (roomMesh) {
+    //       roomMesh.userData.isWall = room.type === "wall";
+    //     }
+    //   }
+
+    //   if (roomMesh) {
+    //     this.scene.add(roomMesh);
+    //   }
+    // });
+
+    this.rooms.forEach((room) => {
+      if (room.name === "WallTexture" || room.name === "RoomTexture") {
+          return;
+      }
+     
       let roomMesh;
       if (room.isRaisedBlock && room.blockHeight) {
-        roomMesh = this.createRaisedBlockGeometry(room);
-        if (roomMesh) {
-          roomMesh.userData.isWall = true;
-        }
+          roomMesh = this.createRaisedBlockGeometry(room);
+          if (roomMesh) {
+              roomMesh.userData = {
+                  isWall: true,
+                  blockHeight: room.blockHeight,
+                  isRaisedBlock: true
+              };
+              console.log("Created raised block:", roomMesh.userData);
+          }
       } else {
-        roomMesh = this.createRoomGeometry(room);
-        if (roomMesh) {
-          roomMesh.userData.isWall = room.type === "wall";
-        }
+          roomMesh = this.createRoomGeometry(room);
+          if (roomMesh) {
+              roomMesh.userData = {
+                  isWall: room.type === "wall",
+                  type: room.type
+              };
+              console.log("Created room:", roomMesh.userData);
+          }
       }
-
+      
       if (roomMesh) {
-        this.scene.add(roomMesh);
+          this.scene.add(roomMesh);
       }
-    });
+  });
 
 
     const materials = [
@@ -1502,7 +1541,7 @@ class Scene3DController {
 
     // Position this.camera at player start if available
     if (this.playerStart) {
-      camera.position.set(
+        this.camera.position.set(
         this.playerStart.x / 50 - this.boxWidth / 2,
         1.7, // Eye level
         this.playerStart.y / 50 - this.boxDepth / 2
@@ -1681,45 +1720,6 @@ return {
 };
 }
 
-  animate = () => {
-    const currentSpeed = this.moveState.speed;
-    let canMove = true;
-
-    // Check for collision before moving
-    if (this.moveState.forward || this.moveState.backward) {
-        const direction = new THREE.Vector3();
-        this.camera.getWorldDirection(direction);
-        if (this.moveState.backward) direction.negate();
-        
-        const raycaster = new THREE.Raycaster(
-            this.camera.position,
-            direction,
-            0,
-            currentSpeed + 0.5
-        );
-
-        const intersects = raycaster.intersectObjects(
-            this.scene.children.filter(obj => obj.userData.isWall)
-        );
-
-        if (intersects.length > 0) {
-            canMove = false;
-        }
-    }
-
-    // Only move if no collision
-    if (canMove) {
-        if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-        if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-    }
-
-    if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-    if (this.moveState.right) this.controls.moveRight(currentSpeed);
-
-    this.camera.position.y = 1.7;
-    this.renderer.render(this.scene, this.camera);
-};
-
 // animate = () => {
 //   const currentSpeed = this.moveState.speed;
 //   let canMove = true;
@@ -1759,6 +1759,29 @@ return {
 //   this.renderer.render(this.scene, this.camera);
 // };
 
+animate = () => {
+  const currentSpeed = this.moveState.speed;
+  let canMove = true;
+
+  if (this.moveState.forward || this.moveState.backward) {
+      const direction = new THREE.Vector3();
+      this.camera.getWorldDirection(direction);
+      if (this.moveState.backward) direction.negate();
+      
+      canMove = this.physics.checkCollision(direction, currentSpeed);
+  }
+
+  if (canMove) {
+      if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+      if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+  }
+
+  if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+  if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+  this.camera.position.y = this.physics.update();
+  this.renderer.render(this.scene, this.camera);
+};
 
   async show3DView() {
     const { drawer, container, progress } = this.setupDrawer();
@@ -1770,8 +1793,6 @@ return {
       progress.value = percent;
       progress.innerHTML = `Processing... ${Math.round(percent)}%`;
     };
-
-
 
     try {
       drawer.show();
