@@ -6,7 +6,7 @@ class PhysicsController {
         this.currentGroundHeight = 0;
         this.stepHeight = 0.5;
         this.halfBlockSize = 0.5;
-        this.debug = true;
+        this.debug = false; // Set to true to enable debug logs
         this.fallSpeed = 0.03; // Speed of falling
         this.isFalling = false;
     }
@@ -48,47 +48,92 @@ class PhysicsController {
     }
     
     // walk on halfblocks code
+    // checkForwardCollision(direction, speed) {
+    //     const groundPosition = new THREE.Vector3(
+    //         this.scene3D.camera.position.x,
+    //         this.currentGroundHeight + 0.1,
+    //         this.scene3D.camera.position.z
+    //     );
+
+    //     const raycaster = new THREE.Raycaster(
+    //         groundPosition,
+    //         direction,
+    //         0,
+    //         speed + 0.5
+    //     );
+
+    //     // Check at current height and slightly above for stair stepping
+    //     const intersects = raycaster.intersectObjects(
+    //         this.scene3D.scene.children.filter(obj => {
+    //             if (!obj.userData?.isWall) return false;
+
+    //             // Full walls always block
+    //             if (obj.userData.blockHeight === 0) return true;
+
+    //             // For half blocks, only allow stepping up to next sequential height
+    //             const heightDiff = obj.userData.blockHeight - this.currentGroundHeight;
+    //             return heightDiff > this.stepHeight;
+    //         })
+    //     );
+
+    //     if (this.debug && intersects.length > 0) {
+    //         console.log("Forward collision check:", {
+    //             hit: true,
+    //             object: intersects[0].object.userData,
+    //             blockHeight: intersects[0].object.userData?.blockHeight,
+    //             currentHeight: this.currentGroundHeight,
+    //             position: intersects[0].point
+    //         });
+    //     }
+
+    //     return {
+    //         canMove: intersects.length === 0,
+    //         hitObject: intersects[0]?.object || null
+    //     };
+    // }
+
     checkForwardCollision(direction, speed) {
         const groundPosition = new THREE.Vector3(
             this.scene3D.camera.position.x,
             this.currentGroundHeight + 0.1,
             this.scene3D.camera.position.z
         );
-
+    
         const raycaster = new THREE.Raycaster(
             groundPosition,
             direction,
             0,
             speed + 0.5
         );
-
-        // Check at current height and slightly above for stair stepping
+    
         const intersects = raycaster.intersectObjects(
-            this.scene3D.scene.children.filter(obj => {
-                if (!obj.userData?.isWall) return false;
-
-                // Full walls always block
-                if (obj.userData.blockHeight === 0) return true;
-
-                // For half blocks, only allow stepping up to next sequential height
-                const heightDiff = obj.userData.blockHeight - this.currentGroundHeight;
-                return heightDiff > this.stepHeight;
-            })
+            this.scene3D.scene.children.filter(obj => obj.userData?.isWall)
         );
-
-        if (this.debug && intersects.length > 0) {
-            console.log("Forward collision check:", {
-                hit: true,
-                object: intersects[0].object.userData,
-                blockHeight: intersects[0].object.userData?.blockHeight,
-                currentHeight: this.currentGroundHeight,
-                position: intersects[0].point
-            });
+    
+        if (intersects.length > 0) {
+            const hitObject = intersects[0].object;
+            
+            // If it's a half block
+            if (hitObject.userData.isRaisedBlock && hitObject.userData.blockHeight > 0) {
+                const heightDiff = hitObject.userData.blockHeight - this.currentGroundHeight;
+                // Allow stepping if height difference is manageable
+                return {
+                    canMove: heightDiff <= this.stepHeight,
+                    hitObject: hitObject
+                };
+            }
+            
+            // Regular wall - no passing
+            return {
+                canMove: false,
+                hitObject: hitObject
+            };
         }
-
+    
+        // No collision
         return {
-            canMove: intersects.length === 0,
-            hitObject: intersects[0]?.object || null
+            canMove: true,
+            hitObject: null
         };
     }
 

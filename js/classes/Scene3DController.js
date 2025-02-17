@@ -448,8 +448,7 @@ class Scene3DController {
         const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
         const centerX = (room.bounds.x + room.bounds.width / 2) / 50 - this.boxWidth / 2;
         const centerZ = (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2;
-
-
+        
         if (isWall) {
           // For walls, create solid cylinder including top and bottom
           for (let i = 0; i <= segments; i++) {
@@ -993,18 +992,29 @@ class Scene3DController {
 
     switch (room.shape) {
 
+      // case "circle": {
+      //   topTexture.rotation = Math.PI / 2;
+
+      //   topTexture.needsUpdate = true;
+      //   const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
+      //   geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
+      //   geometry.rotateZ(0);  // Keep it horizontal
+      //   // geometry.z = 1;
+      //   break;
+      // }
+
       case "circle": {
         topTexture.rotation = Math.PI / 2;
-
         topTexture.needsUpdate = true;
+        
         const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
         geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
         geometry.rotateZ(0);  // Keep it horizontal
-        // geometry.z = 1;
+        
+        // Move up by half the block height
+        geometry.translate(0, room.blockHeight / 2, 0);
         break;
-      }
-
-
+    }
 
       case "polygon": {
         if (!room.points || room.points.length < 3) return null;
@@ -1335,20 +1345,6 @@ class Scene3DController {
 
     console.log("Finished processing markers, total tokens:", this.tokens.length);
 
-    // const camera = new THREE.PerspectiveCamera(
-    //         75,
-    //         (window.innerWidth * 0.75) / window.innerHeight,
-    //         0.1,
-    //         1000
-    //       );
-    //       camera.position.set(0, 2, 5);
-
-    //  const sidebarContentWidth = document.querySelector(".sidebar-content");
-
-    // const renderer = new THREE.WebGLRenderer({ antialias: true });
-    // renderer.setSize(window.innerWidth * 0.95, window.innerHeight);
-    // renderer.shadowMap.enabled = true;
-
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
     );
@@ -1398,34 +1394,6 @@ class Scene3DController {
       }
     });
 
-    // this.rooms.forEach((room) => {
-
-    //   if (room.name === "WallTexture" || room.name === "RoomTexture") {
-    //     return; // Skip these special texture rooms
-    // }
-    
-    //   let roomMesh;
-    //   if (room.isRaisedBlock && room.blockHeight) {
-    //     roomMesh = this.createRaisedBlockGeometry(room);
-    //     if (roomMesh) {
-    //       roomMesh.userData = {
-    //           isWall: true,
-    //           blockHeight: room.blockHeight,
-    //           isRaisedBlock: true
-    //       };
-    //     }
-    //   } else {
-    //     roomMesh = this.createRoomGeometry(room);
-    //     if (roomMesh) {
-    //       roomMesh.userData.isWall = room.type === "wall";
-    //     }
-    //   }
-
-    //   if (roomMesh) {
-    //     this.scene.add(roomMesh);
-    //   }
-    // });
-
     this.rooms.forEach((room) => {
       if (room.name === "WallTexture" || room.name === "RoomTexture") {
           return;
@@ -1440,7 +1408,7 @@ class Scene3DController {
                   blockHeight: room.blockHeight,
                   isRaisedBlock: true
               };
-              console.log("Created raised block:", roomMesh.userData);
+              // console.log("Created raised block:", roomMesh.userData);
           }
       } else {
           roomMesh = this.createRoomGeometry(room);
@@ -1449,7 +1417,7 @@ class Scene3DController {
                   isWall: room.type === "wall",
                   type: room.type
               };
-              console.log("Created room:", roomMesh.userData);
+              // console.log("Created room:", roomMesh.userData);
           }
       }
       
@@ -1620,55 +1588,7 @@ class Scene3DController {
 
     updateStatus(100);
 
-    // Animation loop
-    // const animate = () => {
-    //   const currentSpeed = moveState.speed;
 
-    //   // Handle movement
-    //   if (moveState.forward) this.controls.moveForward(currentSpeed);
-    //   if (moveState.backward) this.controls.moveForward(-currentSpeed);
-    //   if (moveState.left) this.controls.moveRight(-currentSpeed);
-    //   if (moveState.right) this.controls.moveRight(currentSpeed);
-
-    //   // Keep player at constant height (no jumping/falling)
-    //   this.camera.position.y = 1.7;
-
-    //   // Render the scene
-    //   this.renderer.render(this.scene, this.camera);
-    // };
-
-    // Return all necessary objects and cleanup function
-  //   const cleanup = () => {
-  //     document.removeEventListener("keydown", this.handleKeyDown);
-  //     document.removeEventListener("keyup", this.handleKeyUp);
-
-  //     // Dispose of renderer
-  //     this.renderer.dispose();
-
-  //     // Dispose of geometries and materials
-  //     this.scene.traverse((object) => {
-  //       if (object.geometry) {
-  //         object.geometry.dispose();
-  //       }
-  //       if (object.material) {
-  //         if (Array.isArray(object.material)) {
-  //           object.material.forEach((material) => material.dispose());
-  //         } else {
-  //           object.material.dispose();
-  //         }
-  //       }
-  //     });
-  //   };
-
-  //   return {
-  //     scene: this.scene,
-  //     camera: this.camera,
-  //     renderer: this.renderer,
-  //     animate: this.animate,
-  //     controls: this.controls,
-  //     cleanup: cleanup  // Assign the cleanup function
-  //   };
-  // }
 
   this.cleanup = () => {
     document.removeEventListener("keydown", this.handleKeyDown);
@@ -1702,45 +1622,6 @@ return {
     cleanup: this.cleanup.bind(this)   // Ensure 'this' binding
 };
 }
-
-// animate = () => {
-//   const currentSpeed = this.moveState.speed;
-//   let canMove = true;
-
-//   // Check for collision before moving
-//   if (this.moveState.forward || this.moveState.backward) {
-//       const direction = new THREE.Vector3();
-//       this.camera.getWorldDirection(direction);
-//       if (this.moveState.backward) direction.negate();
-      
-//       const raycaster = new THREE.Raycaster(
-//           this.camera.position,
-//           direction,
-//           0,
-//           currentSpeed + 0.5
-//       );
-
-//       const intersects = raycaster.intersectObjects(
-//           this.scene.children.filter(obj => obj.userData.isWall)
-//       );
-
-//       if (intersects.length > 0) {
-//           canMove = false;
-//       }
-//   }
-
-//   // Only move if no collision
-//   if (canMove) {
-//       if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-//       if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-//   }
-
-//   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-//   if (this.moveState.right) this.controls.moveRight(currentSpeed);
-
-//   this.camera.position.y = 1.7;
-//   this.renderer.render(this.scene, this.camera);
-// };
 
 animate = () => {
   const currentSpeed = this.moveState.speed;
