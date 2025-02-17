@@ -376,73 +376,63 @@ async tryStoreToken(tokenUrl, monsterId) {
                   }
 
 
-                  const imgElement = preview.querySelector(".monster-image img");
-                  // if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
-                  //   const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
-
-                  //   // Set up image load handler before setting src
-                  //   imgElement.onload = () => {
-                  //     const canvas = document.createElement('canvas');
-                  //     canvas.width = imgElement.naturalWidth;
-                  //     canvas.height = imgElement.naturalHeight;
-                  //     const ctx = canvas.getContext('2d');
-                  //     ctx.drawImage(imgElement, 0, 0);
-                  //     const base64Data = canvas.toDataURL('image/webp');
-                  //     console.log("Base64 data", base64Data); // Debug log
-                  //     currentMonsterData.token.data = base64Data;
-                  //     console.log("Token data", currentMonsterData.token.data); // Debug log
-                  //     console.log("Successfully captured token as base64");
-
-
-
-                  //   };
-
-
-
-    // if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
-    //   const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+  //                 const imgElement = preview.querySelector(".monster-image img");
   
-    //   const exampleImg = await this.processImage(imgElement);
-    //   if (exampleImg) {
-    //       console.log("Example base64 image:", exampleImg);
-    //   }
-
-    //   currentMonsterData.token.data = exampleImg;
-    //   console.log("Token data", currentMonsterData.token.data); // Debug log
-    //   console.log("Successfully captured token as base64");
+  //   if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
+  //     const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
       
-
-    if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
-      const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+  //     // Use a CORS proxy
+  //     const proxyUrl = `https://cors-anywhere.herokuapp.com/${imageUrl}`;
       
-      // Use a CORS proxy
-      const proxyUrl = `https://cors-anywhere.herokuapp.com/${imageUrl}`;
-      
-      // First let the preview image load normally
-      imgElement.src = imageUrl;  // Original URL for display
-      imgElement.style.display = "block";
+  //     // First let the preview image load normally
+  //     imgElement.src = imageUrl;  // Original URL for display
+  //     imgElement.style.display = "block";
   
-      // Try to load through proxy for data capture
-      const proxyImg = new Image();
-      proxyImg.crossOrigin = "anonymous";
-      proxyImg.onload = () => {
-          try {
-              const canvas = document.createElement('canvas');
-              canvas.width = proxyImg.naturalWidth;
-              canvas.height = proxyImg.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(proxyImg, 0, 0);
-              const base64Data = canvas.toDataURL('image/webp');
-              currentMonsterData.token.data = base64Data;
-              console.log("Successfully captured image through proxy");
-          } catch (error) {
-              console.error("Error converting proxy image:", error);
-          }
-      };
-      proxyImg.src = proxyUrl;
-  } else {
-      imgElement.style.display = "none";
-  }
+  //     // Try to load through proxy for data capture
+  //     const proxyImg = new Image();
+  //     proxyImg.crossOrigin = "anonymous";
+  //     proxyImg.onload = () => {
+  //         try {
+  //             const canvas = document.createElement('canvas');
+  //             canvas.width = proxyImg.naturalWidth;
+  //             canvas.height = proxyImg.naturalHeight;
+  //             const ctx = canvas.getContext('2d');
+  //             ctx.drawImage(proxyImg, 0, 0);
+  //             const base64Data = canvas.toDataURL('image/webp');
+  //             currentMonsterData.token.data = base64Data;
+  //             console.log("Successfully captured image through proxy");
+  //         } catch (error) {
+  //             console.error("Error converting proxy image:", error);
+  //         }
+  //     };
+  //     proxyImg.src = proxyUrl;
+  // } else {
+  //     imgElement.style.display = "none";
+  // }
+
+  // Within the showMonsterSelector method, replace the image handling section:
+  const imgElement = preview.querySelector(".monster-image img");
+  if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
+    const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+    
+    // Generate a default token instead of trying to capture the cross-origin image
+    const defaultToken = this.generateDefaultMonsterToken(
+        currentMonsterData.basic.name,
+        currentMonsterData.basic.size
+    );
+    
+    // Store the base64 token data
+    currentMonsterData.token.data = defaultToken;
+    
+    // Display in preview
+    imgElement.src = defaultToken;
+    imgElement.style.display = "block";
+    
+    console.log("Generated default token for:", currentMonsterData.basic.name);
+} else {
+    imgElement.style.display = "none";
+}
+
   
   preview.style.display = "block";
   saveBtn.disabled = false;
@@ -524,6 +514,101 @@ async tryStoreToken(tokenUrl, monsterId) {
             }
         });
     }
+
+    async captureImageAsBase64(imageUrl) {
+      return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          img.onload = () => {
+              try {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.naturalWidth;
+                  canvas.height = img.naturalHeight;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0);
+                  const base64Data = canvas.toDataURL('image/webp');
+                  console.log("Successfully converted image to base64");
+                  resolve(base64Data);
+              } catch (error) {
+                  console.error("Error converting image to base64:", error);
+                  resolve(imageUrl); // Fallback to URL if conversion fails
+              }
+          };
+
+          img.onerror = () => {
+              console.log("Direct load failed, trying CORS proxy...");
+              // Try CORS proxy
+              const proxyUrl = `https://cors-anywhere.herokuapp.com/${imageUrl}`;
+              const proxyImg = new Image();
+              proxyImg.crossOrigin = "anonymous";
+              
+              proxyImg.onload = () => {
+                  try {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = proxyImg.naturalWidth;
+                      canvas.height = proxyImg.naturalHeight;
+                      const ctx = canvas.getContext('2d');
+                      ctx.drawImage(proxyImg, 0, 0);
+                      const base64Data = canvas.toDataURL('image/webp');
+                      console.log("Successfully converted proxy image to base64");
+                      resolve(base64Data);
+                  } catch (error) {
+                      console.error("Error converting proxy image:", error);
+                      resolve(imageUrl);
+                  }
+              };
+              
+              proxyImg.onerror = (error) => {
+                  console.error("Both direct and proxy attempts failed:", error);
+                  resolve(imageUrl);
+              };
+              
+              proxyImg.src = proxyUrl;
+          };
+
+          img.src = imageUrl;
+      });
+  }
+
+  generateDefaultMonsterToken(monsterName, size = "medium") {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set size based on monster size category
+    const sizeMap = {
+        tiny: 32,
+        small: 32,
+        medium: 32,
+        large: 64,
+        huge: 96,
+        gargantuan: 128
+    };
+    
+    const tokenSize = sizeMap[size.toLowerCase()] || 32;
+    canvas.width = tokenSize;
+    canvas.height = tokenSize;
+    
+    // Draw background circle
+    ctx.fillStyle = '#f44336';  // Red background
+    ctx.beginPath();
+    ctx.arc(tokenSize/2, tokenSize/2, tokenSize/2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Add monster initial in white
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${tokenSize/2}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(monsterName.charAt(0).toUpperCase(), tokenSize/2, tokenSize/2);
+    
+    return canvas.toDataURL('image/webp');
+}
     
     drawToCanvas(imgElement) {
         const canvas = document.createElement("canvas");
@@ -831,153 +916,321 @@ async tryFetchImage(url) {
 
             // console.log("Starting token handling");
             // Token handling with proper error handling
-            let tokenUrl = null;
-            const tokenDiv = doc.querySelector("#float-token");
-            if (tokenDiv) {
-              const imgElement = tokenDiv.querySelector("img.stats__token");
-              if (imgElement && imgElement.src) {
-                const path = imgElement.src.replace(
-                  /.*\/bestiary\/tokens\//,
-                  ""
-                );
-                tokenUrl = this.getTokenUrl(path);
-                // console.log("TokenDiv-Token URL:", tokenUrl); // Debug log
-              } else {
-                const linkElement =
-                  tokenDiv.querySelector("a.stats__wrp-token");
-                if (linkElement && linkElement.href) {
-                  const path = linkElement.href.replace(
-                    /.*\/bestiary\/tokens\//,
-                    ""
-                  );
-                  tokenUrl = this.getTokenUrl(path);
-                  console.log("Fallback-Token URL:", tokenUrl); // Debug log
-                }
-              }
+        //     let tokenUrl = null;
+        //     const tokenDiv = doc.querySelector("#float-token");
+        //     if (tokenDiv) {
+        //       const imgElement = tokenDiv.querySelector("img.stats__token");
+        //       if (imgElement && imgElement.src) {
+        //         const path = imgElement.src.replace(
+        //           /.*\/bestiary\/tokens\//,
+        //           ""
+        //         );
+        //         tokenUrl = this.getTokenUrl(path);
+        //         // console.log("TokenDiv-Token URL:", tokenUrl); // Debug log
+        //       } else {
+        //         const linkElement =
+        //           tokenDiv.querySelector("a.stats__wrp-token");
+        //         if (linkElement && linkElement.href) {
+        //           const path = linkElement.href.replace(
+        //             /.*\/bestiary\/tokens\//,
+        //             ""
+        //           );
+        //           tokenUrl = this.getTokenUrl(path);
+        //           console.log("Fallback-Token URL:", tokenUrl); // Debug log
+        //         }
+        //       }
 
-              // If we found a token URL, try to store it
-              if (tokenUrl) {
+        //       // If we found a token URL, try to store it
+        //       if (tokenUrl) {
 
-                const monsterId = name
-                console.log("Monster ID:", monsterId); // Debug log
+        //         const monsterId = name
+        //         console.log("Monster ID:", monsterId); // Debug log
+        //         console.log("Attempting to store token...");
+        //         return this.tryStoreToken(tokenUrl, monsterId)
+        //           .then((tokenData) => {
+        //             console.log("Token data result:", {
+        //                 isBase64: tokenData?.startsWith('data:'),
+        //                 length: tokenData?.length
+        //             });
+        //             return {
+        //               basic: {
+        //                 name,
+        //                 size,
+        //                 type,
+        //                 alignment,
+        //                 cr: extras.cr,
+        //                 xp: extras.xp,
+        //                 proficiencyBonus: extras.proficiencyBonus
+        //               },
+        //               stats,
+        //               abilities,
+        //               traits: {
+        //                 immunities: extras.immunities,
+        //                 senses: extras.senses,
+        //                 languages: extras.languages
+        //               },
+        //               token: {
+        //                 data: tokenData,
+        //                 url: tokenUrl
+        //               }
+        //             };
+        //           })
+        //           .catch((error) => {
+        //             console.error("Error storing token:", error);
+        //             // Return data with null token data in case of error
+        //             return {
+        //               basic: {
+        //                 name,
+        //                 size,
+        //                 type,
+        //                 alignment,
+        //                 cr: extras.cr,
+        //                 xp: extras.xp,
+        //                 proficiencyBonus: extras.proficiencyBonus
+        //               },
+        //               stats,
+        //               abilities,
+        //               traits: {
+        //                 immunities: extras.immunities,
+        //                 senses: extras.senses,
+        //                 languages: extras.languages
+        //               },
+        //               token: {
+        //                 url: tokenUrl,
+        //                 data: null
+        //               }
+        //             };
+        //           });
+        //       }
+        //     }
+        //     console.log("Token handling complete");
+        //     // console.log("Returning monster data...");
+        //     // Return data without token if no token URL was found
+        //     return {
+        //       basic: {
+        //         name,
+        //         size,
+        //         type,
+        //         alignment,
+        //         cr: extras.cr,
+        //         xp: extras.xp,
+        //         proficiencyBonus: extras.proficiencyBonus
+        //       },
+        //       stats,
+        //       abilities,
+        //       traits: {
+        //         immunities: extras.immunities,
+        //         senses: extras.senses,
+        //         languages: extras.languages
+        //       },
+        //       token: {
+        //         url: tokenUrl,
+        //         data: null
+        //       }
+        //     };
+        //   } catch (error) {
+        //     console.error("Error parsing monster HTML:", error);
+        //     // Return a minimal valid monster object
+        //     return {
+        //       basic: {
+        //         name: "Unknown Monster",
+        //         size: "Medium",
+        //         type: "Unknown",
+        //         alignment: "Unaligned",
+        //         cr: "0",
+        //         xp: 0,
+        //         proficiencyBonus: 2
+        //       },
+        //       stats: {
+        //         ac: 10,
+        //         hp: { average: 1, roll: "1d4", max: 1 },
+        //         speed: "30 ft."
+        //       },
+        //       abilities: {
+        //         str: { score: 10, modifier: 0 },
+        //         dex: { score: 10, modifier: 0 },
+        //         con: { score: 10, modifier: 0 },
+        //         int: { score: 10, modifier: 0 },
+        //         wis: { score: 10, modifier: 0 },
+        //         cha: { score: 10, modifier: 0 }
+        //       },
+        //       traits: {
+        //         immunities: [],
+        //         senses: [],
+        //         languages: "None"
+        //       }
+        //     };
+        //   }
+        // //   console.log("Monster HTML parsing complete");
+        // }
+
+        
+    let tokenUrl = null;
+    const tokenDiv = doc.querySelector("#float-token");
+    if (tokenDiv) {
+        const imgElement = tokenDiv.querySelector("img.stats__token");
+        if (imgElement && imgElement.src) {
+            const path = imgElement.src.replace(/.*\/bestiary\/tokens\//, "");
+            tokenUrl = this.getTokenUrl(path);
+            
+            // Create float element for capture
+            const floatElement = document.createElement('div');
+            floatElement.style.position = 'absolute';
+            floatElement.style.opacity = '0';
+            floatElement.innerHTML = tokenDiv.outerHTML;
+            document.body.appendChild(floatElement);
+
+            // If we found a token URL, try to store it
+            if (tokenUrl) {
+                const monsterId = name;
+                console.log("Monster ID:", monsterId);
                 console.log("Attempting to store token...");
+                
                 return this.tryStoreToken(tokenUrl, monsterId)
-                  .then((tokenData) => {
-                    console.log("Token data result:", {
-                        isBase64: tokenData?.startsWith('data:'),
-                        length: tokenData?.length
+                    .then((tokenData) => {
+                        try {
+                            const floatImg = floatElement.querySelector('img.stats__token');
+                            if (floatImg) {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = floatImg.naturalWidth;
+                                canvas.height = floatImg.naturalHeight;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(floatImg, 0, 0);
+                                tokenData = canvas.toDataURL('image/webp');
+                                console.log("Successfully captured token from float element");
+                            }
+                        } catch (error) {
+                            console.error("Error capturing token:", error);
+                        } finally {
+                            floatElement.remove();
+                        }
+
+                        console.log("Token data result:", {
+                            isBase64: tokenData?.startsWith('data:'),
+                            length: tokenData?.length
+                        });
+
+                        return {
+                            basic: {
+                                name,
+                                size,
+                                type,
+                                alignment,
+                                cr: extras.cr,
+                                xp: extras.xp,
+                                proficiencyBonus: extras.proficiencyBonus
+                            },
+                            stats,
+                            abilities,
+                            traits: {
+                                immunities: extras.immunities,
+                                senses: extras.senses,
+                                languages: extras.languages
+                            },
+                            token: {
+                                data: tokenData,
+                                url: tokenUrl
+                            }
+                        };
+                    })
+                    .catch((error) => {
+                        floatElement.remove();
+                        console.error("Error storing token:", error);
+                        // Return data with null token data in case of error
+                        return {
+                            basic: {
+                                name,
+                                size,
+                                type,
+                                alignment,
+                                cr: extras.cr,
+                                xp: extras.xp,
+                                proficiencyBonus: extras.proficiencyBonus
+                            },
+                            stats,
+                            abilities,
+                            traits: {
+                                immunities: extras.immunities,
+                                senses: extras.senses,
+                                languages: extras.languages
+                            },
+                            token: {
+                                url: tokenUrl,
+                                data: null
+                            }
+                        };
                     });
-                    return {
-                      basic: {
-                        name,
-                        size,
-                        type,
-                        alignment,
-                        cr: extras.cr,
-                        xp: extras.xp,
-                        proficiencyBonus: extras.proficiencyBonus
-                      },
-                      stats,
-                      abilities,
-                      traits: {
-                        immunities: extras.immunities,
-                        senses: extras.senses,
-                        languages: extras.languages
-                      },
-                      token: {
-                        data: tokenData,
-                        url: tokenUrl
-                      }
-                    };
-                  })
-                  .catch((error) => {
-                    console.error("Error storing token:", error);
-                    // Return data with null token data in case of error
-                    return {
-                      basic: {
-                        name,
-                        size,
-                        type,
-                        alignment,
-                        cr: extras.cr,
-                        xp: extras.xp,
-                        proficiencyBonus: extras.proficiencyBonus
-                      },
-                      stats,
-                      abilities,
-                      traits: {
-                        immunities: extras.immunities,
-                        senses: extras.senses,
-                        languages: extras.languages
-                      },
-                      token: {
-                        url: tokenUrl,
-                        data: null
-                      }
-                    };
-                  });
-              }
             }
-            console.log("Token handling complete");
-            // console.log("Returning monster data...");
-            // Return data without token if no token URL was found
-            return {
-              basic: {
-                name,
-                size,
-                type,
-                alignment,
-                cr: extras.cr,
-                xp: extras.xp,
-                proficiencyBonus: extras.proficiencyBonus
-              },
-              stats,
-              abilities,
-              traits: {
-                immunities: extras.immunities,
-                senses: extras.senses,
-                languages: extras.languages
-              },
-              token: {
-                url: tokenUrl,
-                data: null
-              }
-            };
-          } catch (error) {
-            console.error("Error parsing monster HTML:", error);
-            // Return a minimal valid monster object
-            return {
-              basic: {
-                name: "Unknown Monster",
-                size: "Medium",
-                type: "Unknown",
-                alignment: "Unaligned",
-                cr: "0",
-                xp: 0,
-                proficiencyBonus: 2
-              },
-              stats: {
-                ac: 10,
-                hp: { average: 1, roll: "1d4", max: 1 },
-                speed: "30 ft."
-              },
-              abilities: {
-                str: { score: 10, modifier: 0 },
-                dex: { score: 10, modifier: 0 },
-                con: { score: 10, modifier: 0 },
-                int: { score: 10, modifier: 0 },
-                wis: { score: 10, modifier: 0 },
-                cha: { score: 10, modifier: 0 }
-              },
-              traits: {
-                immunities: [],
-                senses: [],
-                languages: "None"
-              }
-            };
-          }
-        //   console.log("Monster HTML parsing complete");
         }
+
+        const linkElement = tokenDiv.querySelector("a.stats__wrp-token");
+        if (linkElement && linkElement.href) {
+            const path = linkElement.href.replace(/.*\/bestiary\/tokens\//, "");
+            tokenUrl = this.getTokenUrl(path);
+            console.log("Fallback-Token URL:", tokenUrl);
+        }
+    }
+
+    console.log("Token handling complete");
+    // Return data without token if no token URL was found
+    return {
+        basic: {
+            name,
+            size,
+            type,
+            alignment,
+            cr: extras.cr,
+            xp: extras.xp,
+            proficiencyBonus: extras.proficiencyBonus
+        },
+        stats,
+        abilities,
+        traits: {
+            immunities: extras.immunities,
+            senses: extras.senses,
+            languages: extras.languages
+        },
+        token: {
+            url: tokenUrl,
+            data: null
+        }
+    };
+
+} catch (error) {
+    console.error("Error parsing monster HTML:", error);
+    // Return a minimal valid monster object
+    return {
+        basic: {
+            name: "Unknown Monster",
+            size: "Medium",
+            type: "Unknown",
+            alignment: "Unaligned",
+            cr: "0",
+            xp: 0,
+            proficiencyBonus: 2
+        },
+        stats: {
+            ac: 10,
+            hp: { average: 1, roll: "1d4", max: 1 },
+            speed: "30 ft."
+        },
+        abilities: {
+            str: { score: 10, modifier: 0 },
+            dex: { score: 10, modifier: 0 },
+            con: { score: 10, modifier: 0 },
+            int: { score: 10, modifier: 0 },
+            wis: { score: 10, modifier: 0 },
+            cha: { score: 10, modifier: 0 }
+        },
+        traits: {
+            immunities: [],
+            senses: [],
+            languages: "None"
+        }
+    };
+}
+        }
+        
 
         getStoredToken(monsterId) {
           try {
