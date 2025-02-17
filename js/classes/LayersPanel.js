@@ -749,7 +749,7 @@ createLayerItem(room) {
                       <sl-range 
                           id="blockHeight" 
                           label="Height" 
-                          min="0" max="22" 
+                          min="0" max="101" 
                           step="1" 
                           tooltip="top" 
                           value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
