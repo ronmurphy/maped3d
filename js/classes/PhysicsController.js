@@ -50,36 +50,88 @@ class PhysicsController {
 
 
     // walk on halfblocks code
+    // checkForwardCollision(direction, speed) {
+    //     const groundPosition = new THREE.Vector3(
+    //         this.scene3D.camera.position.x,
+    //         this.currentGroundHeight + 0.1,
+    //         this.scene3D.camera.position.z
+    //     );
+
+    //     const raycaster = new THREE.Raycaster(
+    //         groundPosition,
+    //         direction,
+    //         0,
+    //         speed + 0.5
+    //     );
+
+    //     // Check at current height and slightly above for stair stepping
+    //     const intersects = raycaster.intersectObjects(
+    //         this.scene3D.scene.children.filter(obj => {
+    //             if (!obj.userData?.isWall) return false;
+
+    //             // Full walls always block
+    //             if (obj.userData.blockHeight === 0) return true;
+
+    //             // For half blocks, only allow stepping up to next sequential height
+    //             const heightDiff = obj.userData.blockHeight - this.currentGroundHeight;
+    //             return heightDiff > this.stepHeight;
+    //         })
+    //     );
+
+
+
+    //     if (this.debug && intersects.length > 0) {
+    //         console.log("Forward collision check:", {
+    //             hit: true,
+    //             object: intersects[0].object.userData,
+    //             blockHeight: intersects[0].object.userData?.blockHeight,
+    //             currentHeight: this.currentGroundHeight,
+    //             position: intersects[0].point
+    //         });
+    //     }
+
+    //     return {
+    //         canMove: intersects.length === 0,
+    //         hitObject: intersects[0]?.object || null
+    //     };
+    // }
+
     checkForwardCollision(direction, speed) {
-        const groundPosition = new THREE.Vector3(
-            this.scene3D.camera.position.x,
-            this.currentGroundHeight + 0.1,
-            this.scene3D.camera.position.z
-        );
-
-        const raycaster = new THREE.Raycaster(
-            groundPosition,
-            direction,
-            0,
-            speed + 0.5
-        );
-
-        // Check at current height and slightly above for stair stepping
-        const intersects = raycaster.intersectObjects(
-            this.scene3D.scene.children.filter(obj => {
-                if (!obj.userData?.isWall) return false;
-
-                // Full walls always block
-                if (obj.userData.blockHeight === 0) return true;
-
-                // For half blocks, only allow stepping up to next sequential height
-                const heightDiff = obj.userData.blockHeight - this.currentGroundHeight;
-                return heightDiff > this.stepHeight;
-            })
-        );
-
-
-
+        const positions = [
+            // Current ground level check
+            new THREE.Vector3(
+                this.scene3D.camera.position.x,
+                this.currentGroundHeight + 0.1,
+                this.scene3D.camera.position.z
+            ),
+            // Base ground level check for full walls
+            new THREE.Vector3(
+                this.scene3D.camera.position.x,
+                0.1,
+                this.scene3D.camera.position.z
+            )
+        ];
+    
+        const objects = this.scene3D.scene.children.filter(obj => {
+            if (!obj.userData?.isWall) return false;
+    
+            if (obj.userData.blockHeight === 0) return true; // Always check full walls
+    
+            const heightDiff = obj.userData.blockHeight - this.currentGroundHeight;
+            return heightDiff > this.stepHeight;
+        });
+    
+        let intersects = [];
+        positions.forEach(position => {
+            const raycaster = new THREE.Raycaster(
+                position,
+                direction.clone().normalize(),
+                0,
+                speed + this.halfBlockSize
+            );
+            intersects = intersects.concat(raycaster.intersectObjects(objects, true));
+        });
+    
         if (this.debug && intersects.length > 0) {
             console.log("Forward collision check:", {
                 hit: true,
@@ -89,7 +141,7 @@ class PhysicsController {
                 position: intersects[0].point
             });
         }
-
+    
         return {
             canMove: intersects.length === 0,
             hitObject: intersects[0]?.object || null

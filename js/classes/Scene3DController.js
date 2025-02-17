@@ -10,23 +10,6 @@ class Scene3DController {
       mouseRightDown: false
     };
     this.clear();
-    // Make animate a class method
-    // this.animate = () => {
-    //   const currentSpeed = this.moveState.speed;
-
-    //   // Handle movement
-    //   if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-    //   if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-    //   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-    //   if (this.moveState.right) this.controls.moveRight(currentSpeed);
-
-    //   // Keep player at constant height
-    //   this.camera.position.y = 1.7;
-
-    //   // Render the scene
-    //   this.renderer.render(this.scene, this.camera);
-    // };
-
   }
 
   clear() {
@@ -41,8 +24,6 @@ class Scene3DController {
       keyup: null
     };
     this.keys = {};
-
-
   }
 
   initialize(container, width, height) {
@@ -467,6 +448,7 @@ class Scene3DController {
         const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
         const centerX = (room.bounds.x + room.bounds.width / 2) / 50 - this.boxWidth / 2;
         const centerZ = (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2;
+
 
         if (isWall) {
           // For walls, create solid cylinder including top and bottom
@@ -1018,6 +1000,7 @@ class Scene3DController {
         const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
         geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
         geometry.rotateZ(0);  // Keep it horizontal
+        // geometry.z = 1;
         break;
       }
 
@@ -1209,12 +1192,6 @@ class Scene3DController {
 
     // Position mesh correctly based on room bounds
     if (room.shape === "polygon") {
-      // mesh.position.set(
-      //     (room.bounds.x + room.bounds.width/2) / 50 - boxWidth / 2,
-      //     0,
-      //     (room.bounds.y + room.bounds.height/2) / 50 - boxDepth / 2
-      // );
-
       mesh.position.set(
         room.bounds.x / 50 - this.boxWidth / 2,  // Use absolute position
         0,
@@ -1226,6 +1203,12 @@ class Scene3DController {
         0,
         (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2
       );
+
+      // mesh.position.set(
+      //   room.bounds.x / 50 - this.boxWidth / 2,  // Use absolute position
+      //   0,
+      //   room.bounds.y / 50 - this.boxDepth / 2
+      // );
     } else {
       mesh.position.set(0, 0, 0);
     }
