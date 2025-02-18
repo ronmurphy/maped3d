@@ -1226,6 +1226,60 @@ class Scene3DController {
     return mesh;
   }
 
+  // getMonsterTokenData(marker) {
+  //   console.log("Processing marker:", {
+  //     type: marker.type,
+  //     data: marker.data,
+  //     hasMonster: !!marker.data?.monster,
+  //     hasToken: !!marker.data?.monster?.token,
+  //     tokenData: marker.data?.monster?.token?.data,
+  //     tokenUrl: marker.data?.monster?.token?.url
+  //   });
+
+  //   if (!marker || !marker.data || !marker.data.monster) {
+  //     console.log("Invalid marker data");
+  //     return null;
+  //   }
+
+  //   if (!marker.data.monster.token || (!marker.data.monster.token.data && !marker.data.monster.token.url)) {
+  //     console.log("No valid token data found");
+  //     return null;
+  //   }
+
+  //   // Get correct token image source
+  //   const tokenSource = marker.data.monster.token.data // || marker.data.monster.token.url;
+  //   console.log("Token image source type:", {
+  //     isBase64: tokenSource.startsWith('data:'),
+  //     length: tokenSource.length,
+  //     preview: tokenSource.substring(0, 100) + '...'
+  //   });
+
+  //   if (!tokenSource) {
+  //     console.log("No valid token data found");
+  //     return null;
+  // }
+
+  //   const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size || "medium");
+  //   const tokenData = {
+  //     x: marker.x,
+  //     y: marker.y,
+  //     size: monsterSize,
+  //     image: tokenSource,
+  //     type: "monster",
+  //     name: marker.data.monster.basic?.name || "Unknown Monster",
+  //     height: 2 * monsterSize
+  //   };
+
+  //   console.log("Created token data:", {
+  //     position: `${tokenData.x}, ${tokenData.y}`,
+  //     size: tokenData.size,
+  //     height: tokenData.height,
+  //     hasImage: !!tokenData.image
+  //   });
+
+  //   return tokenData;
+  // }
+
   getMonsterTokenData(marker) {
     console.log("Processing marker:", {
       type: marker.type,
@@ -1235,31 +1289,64 @@ class Scene3DController {
       tokenData: marker.data?.monster?.token?.data,
       tokenUrl: marker.data?.monster?.token?.url
     });
-
+  
     if (!marker || !marker.data || !marker.data.monster) {
       console.log("Invalid marker data");
       return null;
     }
-
-    if (!marker.data.monster.token || (!marker.data.monster.token.data && !marker.data.monster.token.url)) {
-      console.log("No valid token data found");
-      return null;
+  
+    // Get token info - ensure we always have a valid token source
+    let tokenSource = null;
+    
+    if (marker.data.monster.token) {
+      tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
     }
-
-    // Get correct token image source
-    const tokenSource = marker.data.monster.token.data // || marker.data.monster.token.url;
+    
+    // If no token source available, generate a default placeholder image
+    if (!tokenSource) {
+      console.log("No token source found, generating placeholder image");
+      
+      // Create a placeholder canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill with a color based on monster name
+      const monsterName = marker.data.monster.basic?.name || "Unknown Monster";
+      const hashCode = monsterName.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      
+      // Generate a color from the hash
+      const hue = Math.abs(hashCode) % 360;
+      ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+      ctx.fillRect(0, 0, 64, 64);
+      
+      // Add border
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(2, 2, 60, 60);
+      
+      // Add text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(monsterName.charAt(0).toUpperCase(), 32, 32);
+      
+      // Convert to data URL
+      tokenSource = canvas.toDataURL('image/webp');
+    }
+  
     console.log("Token image source type:", {
       isBase64: tokenSource.startsWith('data:'),
       length: tokenSource.length,
       preview: tokenSource.substring(0, 100) + '...'
     });
-
-    if (!tokenSource) {
-      console.log("No valid token data found");
-      return null;
-  }
-
-    const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size || "medium");
+  
+    const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic?.size || "medium");
     const tokenData = {
       x: marker.x,
       y: marker.y,
@@ -1269,16 +1356,17 @@ class Scene3DController {
       name: marker.data.monster.basic?.name || "Unknown Monster",
       height: 2 * monsterSize
     };
-
+  
     console.log("Created token data:", {
       position: `${tokenData.x}, ${tokenData.y}`,
       size: tokenData.size,
       height: tokenData.height,
       hasImage: !!tokenData.image
     });
-
+  
     return tokenData;
   }
+
 
   getMonsterSizeInSquares(size) {
     // Add debug logging
