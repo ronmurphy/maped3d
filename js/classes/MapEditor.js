@@ -3288,29 +3288,6 @@ class MapEditor {
     dialog.innerHTML = content;
     document.body.appendChild(dialog);
 
-  //   if (marker.data.monster.token) {
-  //     const img = new Image();
-  //     img.crossOrigin = "anonymous";
-  //     img.onload = () => {
-  //         const canvas = document.createElement('canvas');
-  //         canvas.width = img.width;
-  //         canvas.height = img.height;
-  //         const ctx = canvas.getContext('2d');
-  //         ctx.drawImage(img, 0, 0);
-          
-  //         try {
-  //             const base64Data = canvas.toDataURL('image/webp');
-  //             marker.data.monster.token.data = base64Data;
-  //             console.log('Token image captured successfully');
-  //         } catch (error) {
-  //             console.error('Error capturing token image:', error);
-  //         }
-  //     };
-  //     img.onerror = (error) => {
-  //         console.error('Error loading token image:', error);
-  //     };
-  //     img.src = marker.data.monster.token.url;
-  // }
 
     // Add texture selection handler
     const textureOptions = dialog.querySelectorAll('.texture-option');

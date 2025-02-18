@@ -1172,13 +1172,7 @@ window.ResourceManager = class {
         drawer.innerHTML = `
     ${styles.outerHTML}
     <div class="resource-manager-content">
-            <div class="pack-name-container" style="margin-bottom: 1rem; padding: 0 1rem;">
-            <sl-input 
-                label="Resource Pack Name" 
-                value="${this.activeResourcePack?.name || 'New Resource Pack'}"
-                id="packNameInput"
-            ></sl-input>
-        </div>
+
 
         <sl-tab-group>
             <sl-tab slot="nav" panel="textures">
@@ -1290,11 +1284,11 @@ window.ResourceManager = class {
             <!-- Bestiary Panel -->
 <sl-tab-panel name="bestiary">
     <div class="panel-header">
-        <h3>Monster Bestiary</h3>
+
         <div class="flex-spacer"></div>
         <sl-button size="medium" class="add-monster-btn" variant="primary">
             <span class="material-icons" slot="prefix">add_circle</span>
-            Add Monster
+
         </sl-button>
     </div>
 
@@ -1456,7 +1450,7 @@ if (packNameInput) {
                             if (success) {
                                 const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
                                 this.updateGallery(drawer, currentCategory);
-                                alert('Resource pack loaded successfully');
+                                // alert('Resource pack loaded successfully');
                             } else {
                                 alert('Failed to load resource pack');
                             }
@@ -1786,7 +1780,6 @@ if (packNameInput) {
     }
     
     async showMonsterImporter() {
-        // We'll reuse MonsterManager's showMonsterSelector but adapt it for ResourceManager
         const dialog = document.createElement("sl-dialog");
         dialog.label = "Import Monster";
         dialog.innerHTML = `
@@ -1797,7 +1790,12 @@ if (packNameInput) {
                         <li>On 5e.tools, right-click on the monster's stat block</li>
                         <li>Select "Inspect Element" or press F12</li>
                         <li>Find the <code>&lt;div id="wrp-pagecontent"&gt;</code> element</li>
-                        <li>Right-click the element and select "Copy > Outer HTML"</li>
+                        <li>Right-click the element and select:
+                            <ul style="margin-left: 20px;">
+                                <li>In Chrome/Edge: "Copy > Copy element"</li>
+                                <li>In Firefox: "Copy > Outer HTML"</li>
+                            </ul>
+                        </li>
                         <li>Paste below</li>
                     </ol>
                 </div>
@@ -1866,6 +1864,26 @@ if (packNameInput) {
                             <div class="monster-cha"></div>
                         </div>
                     </div>
+    
+                    <!-- Additional Traits -->
+                    <div class="additional-traits" style="margin-bottom: 16px;">
+                        <div style="margin-bottom: 8px;">
+                            <strong>Challenge Rating:</strong> <span class="monster-cr"></span>
+                            (<span class="monster-xp"></span> XP)
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Proficiency Bonus:</strong> <span class="monster-prof"></span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Senses:</strong> <span class="monster-senses"></span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Languages:</strong> <span class="monster-languages"></span>
+                        </div>
+                        <div class="monster-immunities-container" style="margin-bottom: 8px; display: none;">
+                            <strong>Immunities:</strong> <span class="monster-immunities"></span>
+                        </div>
+                    </div>
                 </div>
     
                 <div id="loadingIndicator" style="display: none; text-align: center;">
@@ -1903,8 +1921,9 @@ if (packNameInput) {
                     preview.style.display = "none";
                     saveBtn.disabled = true;
     
+                    // Add await here since parseMonsterHtml returns a Promise now
                     currentMonsterData = await this.monsterManager.parseMonsterHtml(html);
-                    console.log("Parsed monster data:", currentMonsterData);
+                    console.log("Parsed monster data:", currentMonsterData); // Debug log
     
                     if (currentMonsterData) {
                         // Update basic info
@@ -1927,32 +1946,81 @@ if (packNameInput) {
                             }
                         });
     
-                        // Handle token display
-                        const imgElement = preview.querySelector(".monster-image img");
-                        if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
-                            imgElement.crossOrigin = "Anonymous";
-                            
-                            // Add load handler to capture token data if not already present
-                            imgElement.onload = () => {
-                                try {
-                                    // If we don't have base64 data but image loaded successfully, capture it
-                                    if (!currentMonsterData.token.data && imgElement.complete) {
-                                        const canvas = document.createElement('canvas');
-                                        canvas.width = imgElement.naturalWidth;
-                                        canvas.height = imgElement.naturalHeight;
-                                        const ctx = canvas.getContext('2d');
-                                        ctx.drawImage(imgElement, 0, 0);
-                                        currentMonsterData.token.data = canvas.toDataURL('image/webp');
-                                        console.log("Captured token data from preview image");
-                                    }
-                                } catch (error) {
-                                    console.error("Error capturing token:", error);
-                                }
-                            };
-                            
+                        // Update additional traits
+                        preview.querySelector(".monster-cr").textContent = currentMonsterData.basic.cr;
+                        preview.querySelector(".monster-xp").textContent = currentMonsterData.basic.xp;
+                        preview.querySelector(".monster-prof").textContent = `+${currentMonsterData.basic.proficiencyBonus}`;
+                        preview.querySelector(".monster-senses").textContent = 
+                            currentMonsterData.traits.senses.join(", ") || "None";
+                        preview.querySelector(".monster-languages").textContent = currentMonsterData.traits.languages;
+    
+                        // Handle immunities
+                        const immunitiesContainer = preview.querySelector(".monster-immunities-container");
+                        const immunitiesSpan = preview.querySelector(".monster-immunities");
+                        if (currentMonsterData.traits.immunities.length > 0) {
+                            immunitiesSpan.textContent = currentMonsterData.traits.immunities.join(", ");
+                            immunitiesContainer.style.display = "block";
+                        } else {
+                            immunitiesContainer.style.display = "none";
+                        }
+    
+                        const imageContainer = preview.querySelector(".monster-image");
+                        const imgElement = imageContainer.querySelector("img");
+                        const existingButton = imageContainer.querySelector(".capture-btn");
+                        if (existingButton) {
+                            existingButton.remove();
+                        }
+    
+                        if (currentMonsterData?.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
                             const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
                             imgElement.src = imageUrl;
                             imgElement.style.display = "block";
+    
+                            // If we only have URL but not data, add button to capture image data
+                            if (!currentMonsterData.token.data) {
+                                const captureBtn = document.createElement('sl-button');
+                                captureBtn.className = "capture-btn";
+                                captureBtn.variant = "primary";
+                                captureBtn.innerHTML = "Choose Token Image";
+                                captureBtn.style.marginTop = "8px";
+    
+                                // Create hidden file input
+                                const fileInput = document.createElement('input');
+                                fileInput.type = 'file';
+                                fileInput.accept = 'image/webp,image/png';
+                                fileInput.style.display = 'none';
+                                imageContainer.appendChild(fileInput);
+    
+                                // Show instructions when clicked
+                                captureBtn.addEventListener('click', () => {
+                                    const instructions = document.createElement('div');
+                                    instructions.innerHTML = '1. Right-click the token image above<br>2. Select "Save image as..."<br>3. Save it as WebP or PNG<br>4. Then click "Choose Token Image" again to select the saved file';
+                                    instructions.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px; border-radius: 5px; z-index: 9999;';
+                                    document.body.appendChild(instructions);
+    
+                                    setTimeout(() => {
+                                        instructions.remove();
+                                        fileInput.click();
+                                    }, 3000);
+                                });
+    
+                                // Handle file selection
+                                fileInput.addEventListener('change', (e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => {
+                                            currentMonsterData.token.data = event.target.result;
+                                            captureBtn.innerHTML = "✓ Captured";
+                                            captureBtn.disabled = true;
+                                            imgElement.src = event.target.result;
+                                        };
+                                        reader.readAsDataURL(file);
+                                    }
+                                });
+    
+                                imageContainer.appendChild(captureBtn);
+                            }
                         } else {
                             imgElement.style.display = "none";
                         }
@@ -2007,8 +2075,12 @@ if (packNameInput) {
                     // Save to MonsterManager database too
                     await this.monsterManager.saveMonsterToDatabase(currentMonsterData);
                     
-                    // Update the gallery
-                    this.updateGallery(document.querySelector('.resource-manager-drawer'), 'bestiary', 'grid');
+                    // Refresh the gallery
+                    const drawer = document.querySelector('.resource-manager-drawer');
+                    if (drawer) {
+                        const viewMode = drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+                        this.updateBestiaryGallery(drawer, viewMode);
+                    }
                     
                     dialog.hide();
                     resolve(true);
@@ -2025,7 +2097,8 @@ if (packNameInput) {
             });
         });
     }
-    
+
+
     saveBestiaryToFile(filename = 'bestiary.json') {
         try {
             const bestiaryData = {
@@ -2094,81 +2167,105 @@ if (packNameInput) {
             return false;
         }
     }
-    
-    updateBestiaryGallery(drawer, view = 'grid') {
-        const container = drawer.querySelector('#bestiaryGallery');
-        if (!container) {
-            console.warn('Bestiary gallery container not found');
-            return;
-        }
-        
-        container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
-        container.innerHTML = '';
-        
-        if (this.resources.bestiary.size === 0) {
-            container.innerHTML = `
-                <sl-card class="empty-gallery">
-                    <div style="text-align: center; padding: 2rem;">
-                        <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">pets</span>
-                        <p>No monsters in bestiary yet</p>
-                    </div>
-                </sl-card>
-            `;
-            return;
-        }
 
-            // Create filter controls if they don't exist
-    let filterBar = drawer.querySelector('.monster-filter-bar');
-    if (!filterBar) {
-        filterBar = document.createElement('div');
-        filterBar.className = 'monster-filter-bar';
-        
-        // Get unique CR values and monster types for filters
-        const crValues = new Set();
-        const typeValues = new Set();
-        const sizeValues = new Set(['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']);
-        
-        this.resources.bestiary.forEach(monster => {
-            if (monster.cr) crValues.add(monster.cr);
-            if (monster.type) typeValues.add(monster.type);
-        });
-        
-        // Create filter controls
-        filterBar.innerHTML = `
-            <sl-input placeholder="Search..." clearable id="monster-search"></sl-input>
+updateBestiaryGallery(drawer, view = 'grid') {
+    const container = drawer.querySelector('#bestiaryGallery');
+    if (!container) {
+        console.warn('Bestiary gallery container not found');
+        return;
+    }
+    
+    // Specifically find the bestiary panel header
+    const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+    if (!bestiaryPanel) {
+        console.warn('Bestiary panel not found');
+        return;
+    }
+    
+    const panelHeader = bestiaryPanel.querySelector('.panel-header');
+    if (panelHeader) {
+        // If we've already added the filter controls, don't add them again
+        if (!bestiaryPanel.querySelector('.monster-filter-bar')) {
+            // Clear existing controls first
+            const addMonsterBtn = panelHeader.querySelector('.add-monster-btn');
+            panelHeader.innerHTML = '';
             
-            <sl-select placeholder="CR" clearable id="cr-filter">
-                ${Array.from(crValues).sort((a, b) => {
-                    // Convert CR strings to numbers for proper sorting
-                    const numA = a === '0' ? 0 : eval(String(a).replace('/','/')); 
-                    const numB = b === '0' ? 0 : eval(String(b).replace('/','/')); 
-                    return numA - numB;
-                }).map(cr => `<sl-option value="${cr}">CR ${cr}</sl-option>`).join('')}
-            </sl-select>
+            // Create new layout with filter controls
+            const filterBar = document.createElement('div');
+            filterBar.className = 'monster-filter-bar';
             
-            <sl-select placeholder="Type" clearable id="type-filter">
-                ${Array.from(typeValues).sort().map(type => 
-                    `<sl-option value="${type}">${type}</sl-option>`
-                ).join('')}
-            </sl-select>
+            // Get unique CR values and monster types for filters
+            const crValues = new Set();
+            const typeValues = new Set();
+            const sizeValues = new Set(['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']);
             
-            <sl-select placeholder="Size" clearable id="size-filter">
-                ${Array.from(sizeValues).map(size => 
-                    `<sl-option value="${size}">${size}</sl-option>`
-                ).join('')}
-            </sl-select>
+            this.resources.bestiary.forEach(monster => {
+                if (monster.cr) crValues.add(monster.cr);
+                if (monster.type) typeValues.add(monster.type);
+            });
             
-            <sl-button variant="text" id="clear-filters">
-                <span class="material-icons">filter_alt_off</span>
-                Clear Filters
-            </sl-button>
-        `;
-        
-        // Insert before the gallery
-        container.parentNode.insertBefore(filterBar, container);
-        
-        // Add event listeners for filtering
-        this.setupBestiaryFilters(drawer, filterBar);
+            // Create compact layout with flex
+            panelHeader.style.display = 'flex';
+            panelHeader.style.flexWrap = 'wrap';
+            panelHeader.style.alignItems = 'flex-end';
+            panelHeader.style.gap = '8px';
+            
+            // Title and search input
+            panelHeader.innerHTML = `
+
+                <sl-input placeholder="Search..." clearable id="monster-search" size="small" style="flex: 1; min-width: 120px;"></sl-input>
+                
+                <sl-select placeholder="CR" clearable id="cr-filter" size="small" style="width: 80px;">
+                    ${Array.from(crValues).sort((a, b) => {
+                        // Convert CR strings to numbers for proper sorting
+                        const numA = a === '0' ? 0 : eval(String(a).replace('/','/')); 
+                        const numB = b === '0' ? 0 : eval(String(b).replace('/','/')); 
+                        return numA - numB;
+                    }).map(cr => `<sl-option value="${cr}">CR ${cr}</sl-option>`).join('')}
+                </sl-select>
+                
+                <sl-select placeholder="Type" clearable id="type-filter" size="small" style="width: 100px;">
+                    ${Array.from(typeValues).sort().map(type => 
+                        `<sl-option value="${type}">${type}</sl-option>`
+                    ).join('')}
+                </sl-select>
+                
+                <sl-select placeholder="Size" clearable id="size-filter" size="small" style="width: 90px;">
+                    ${Array.from(sizeValues).map(size => 
+                        `<sl-option value="${size}">${size}</sl-option>`
+                    ).join('')}
+                </sl-select>
+                
+                <sl-button variant="text" id="clear-filters" size="small">
+                    <span class="material-icons" style="font-size: 16px;">filter_alt_off</span>
+                </sl-button>
+            `;
+            
+            // Add the monster button at the end
+            if (addMonsterBtn) {
+                panelHeader.appendChild(addMonsterBtn);
+            } else {
+                const newAddBtn = document.createElement('sl-button');
+                newAddBtn.setAttribute('size', 'small');
+                newAddBtn.classList.add('add-monster-btn');
+                newAddBtn.setAttribute('variant', 'primary');
+                newAddBtn.innerHTML = `
+                    <span class="material-icons" slot="prefix">add_circle</span>
+                    Add Monster
+                `;
+                panelHeader.appendChild(newAddBtn);
+                
+                // Add event listener
+                newAddBtn.addEventListener('click', async () => {
+                    await this.showMonsterImporter();
+                    // Refresh gallery after adding monster
+                    this.updateBestiaryGallery(drawer, view);
+                });
+            }
+            
+            // Add event listeners for filtering
+            this.setupBestiaryFilters(drawer, panelHeader);
+        }
     }
     
     // Update container class based on view
@@ -2201,93 +2298,96 @@ if (packNameInput) {
         `;
         return;
     }
+    
+    // Create cards for each filtered monster
+    filteredMonsters.forEach(monster => {
+        const card = document.createElement('sl-card');
+        card.className = 'resource-item';
         
-        // Create cards for each monster
-// Create cards for each filtered monster
-filteredMonsters.forEach(monster => {
-    const card = document.createElement('sl-card');
-    card.className = 'resource-item';
-    
-    const displayCR = monster.cr || '?';
-    const displayType = monster.type || 'Unknown';
-    
-    card.innerHTML = `
-        ${view === 'grid' ? `
-            <div style="position: relative;">
-                <img 
-                    src="${monster.thumbnail}" 
-                    alt="${monster.name}"
-                    class="resource-thumbnail"
-                />
-                <div class="monster-badge" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 10px; font-size: 0.75em;">
-                    CR ${displayCR}
+        const displayCR = monster.cr || '?';
+        const displayType = monster.type || 'Unknown';
+        
+        card.innerHTML = `
+            ${view === 'grid' ? `
+                <div style="position: relative;">
+                    <img 
+                        src="${monster.thumbnail}" 
+                        alt="${monster.name}"
+                        class="resource-thumbnail"
+                    />
+                    <div class="monster-badge" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 10px; font-size: 0.75em;">
+                        CR ${displayCR}
+                    </div>
                 </div>
-            </div>
-            <div class="resource-info">
-                <div class="resource-name">${monster.name}</div>
-                <div class="resource-meta">${monster.size} ${displayType}</div>
-            </div>
-        ` : `
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <img 
-                    src="${monster.thumbnail}" 
-                    alt="${monster.name}"
-                    class="resource-thumbnail"
-                    style="width: 50px; height: 50px;"
-                />
                 <div class="resource-info">
                     <div class="resource-name">${monster.name}</div>
-                    <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
+                    <div class="resource-meta">${monster.size} ${displayType}</div>
                 </div>
+            ` : `
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <img 
+                        src="${monster.thumbnail}" 
+                        alt="${monster.name}"
+                        class="resource-thumbnail"
+                        style="width: 50px; height: 50px;"
+                    />
+                    <div class="resource-info">
+                        <div class="resource-name">${monster.name}</div>
+                        <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
+                    </div>
+                </div>
+            `}
+            <div slot="footer" class="resource-actions">
+                <sl-button-group>
+                    <sl-button size="small" class="view-btn">
+                        <span class="material-icons">visibility</span>
+                    </sl-button>
+                    <sl-button size="small" class="edit-btn">
+                        <span class="material-icons">edit</span>
+                    </sl-button>
+                    <sl-button size="small" class="delete-btn" variant="danger">
+                        <span class="material-icons">delete</span>
+                    </sl-button>
+                </sl-button-group>
             </div>
-        `}
-        <div slot="footer" class="resource-actions">
-            <sl-button-group>
-                <sl-button size="small" class="view-btn">
-                    <span class="material-icons">visibility</span>
-                </sl-button>
-                <sl-button size="small" class="edit-btn">
-                    <span class="material-icons">edit</span>
-                </sl-button>
-                <sl-button size="small" class="delete-btn" variant="danger">
-                    <span class="material-icons">delete</span>
-                </sl-button>
-            </sl-button-group>
-        </div>
-    `;
-    
-    // Add event listeners
-    card.querySelector('.view-btn').addEventListener('click', () => {
-        this.showMonsterDetails(monster.data);
+        `;
+        
+        // Add event listeners
+        card.querySelector('.view-btn').addEventListener('click', () => {
+            this.showMonsterDetails(monster.data);
+        });
+        
+        card.querySelector('.edit-btn').addEventListener('click', () => {
+            // TODO: Add monster editing capability later
+            alert('Monster editing will be implemented in a future update');
+        });
+        
+        card.querySelector('.delete-btn').addEventListener('click', () => {
+            if (confirm(`Remove ${monster.name} from bestiary?`)) {
+                this.resources.bestiary.delete(monster.id);
+                this.updateBestiaryGallery(drawer, view);
+            }
+        });
+        
+        container.appendChild(card);
     });
-    
-    card.querySelector('.edit-btn').addEventListener('click', () => {
-        // TODO: Add monster editing capability later
-        alert('Monster editing will be implemented in a future update');
-    });
-    
-    card.querySelector('.delete-btn').addEventListener('click', () => {
-        if (confirm(`Remove ${monster.name} from bestiary?`)) {
-            this.resources.bestiary.delete(monster.id);
-            this.updateBestiaryGallery(drawer, view);
-        }
-    });
-    
-    container.appendChild(card);
-});
+}
 
-    }
 
-    setupBestiaryFilters(drawer, filterBar) {
-        const searchInput = filterBar.querySelector('#monster-search');
-        const crFilter = filterBar.querySelector('#cr-filter');
-        const typeFilter = filterBar.querySelector('#type-filter');
-        const sizeFilter = filterBar.querySelector('#size-filter');
-        const clearFiltersBtn = filterBar.querySelector('#clear-filters');
+    setupBestiaryFilters(drawer, panelHeader) {
+        // Ensure we're targeting elements within the bestiary panel
+        const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+        if (!bestiaryPanel) return;
+        
+        const searchInput = bestiaryPanel.querySelector('#monster-search');
+        const crFilter = bestiaryPanel.querySelector('#cr-filter');
+        const typeFilter = bestiaryPanel.querySelector('#type-filter');
+        const sizeFilter = bestiaryPanel.querySelector('#size-filter');
+        const clearFiltersBtn = bestiaryPanel.querySelector('#clear-filters');
         
         const applyFilters = () => {
             // Re-render gallery with current filters
-            const view = drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+            const view = bestiaryPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
             this.updateBestiaryGallery(drawer, view);
         };
         
@@ -2307,12 +2407,19 @@ filteredMonsters.forEach(monster => {
         });
     }
     
+  
     getFilteredBestiary(drawer) {
-        // Get filter values
-        const searchTerm = drawer.querySelector('#monster-search')?.value?.toLowerCase() || '';
-        const crFilter = drawer.querySelector('#cr-filter')?.value || '';
-        const typeFilter = drawer.querySelector('#type-filter')?.value || '';
-        const sizeFilter = drawer.querySelector('#size-filter')?.value || '';
+        // Get bestiary panel specifically
+        const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+        if (!bestiaryPanel) {
+            return Array.from(this.resources.bestiary.values()); // Return all if panel not found
+        }
+        
+        // Get filter values from the bestiary panel
+        const searchTerm = bestiaryPanel.querySelector('#monster-search')?.value?.toLowerCase() || '';
+        const crFilter = bestiaryPanel.querySelector('#cr-filter')?.value || '';
+        const typeFilter = bestiaryPanel.querySelector('#type-filter')?.value || '';
+        const sizeFilter = bestiaryPanel.querySelector('#size-filter')?.value || '';
         
         // Convert Map to Array for filtering
         return Array.from(this.resources.bestiary.values()).filter(monster => {
@@ -2331,7 +2438,8 @@ filteredMonsters.forEach(monster => {
             return nameMatch && crMatch && typeMatch && sizeMatch;
         });
     }
-    
+
+
     showMonsterDetails(monsterData) {
         const dialog = document.createElement('sl-dialog');
         dialog.label = monsterData.basic.name;
@@ -2429,32 +2537,8 @@ filteredMonsters.forEach(monster => {
                 </sl-button>
             </div>
         `;
-
-
-    
- 
         
         document.body.appendChild(dialog);
-
-                dialog.querySelector('[slot="footer"]').innerHTML = `
-        <sl-button class="close-btn" variant="neutral">Close</sl-button>
-        <sl-button class="add-encounter-btn" variant="primary">
-            <span class="material-icons">add_location</span>
-            Add to Map
-        </sl-button>
-    `;
-
-          // Add event handler for "Add to Map" button
-    dialog.querySelector('.add-encounter-btn').addEventListener('click', () => {
-        dialog.hide();
-        // Find the map editor instance
-        const mapEditor = window.mapEditor || document.querySelector('.map-editor')?.mapEditor;
-        if (mapEditor) {
-            this.addMonsterToMap(monsterData, mapEditor);
-        } else {
-            alert('Map editor not found or not initialized');
-        }
-    }); 
         
         // Add event handlers
         dialog.querySelector('.close-btn').addEventListener('click', () => {
@@ -2462,8 +2546,14 @@ filteredMonsters.forEach(monster => {
         });
         
         dialog.querySelector('.add-encounter-btn').addEventListener('click', () => {
-            alert('Functionality to add monster directly to map will be implemented soon');
             dialog.hide();
+            // Find the map editor instance
+            const mapEditor = window.mapEditor || document.querySelector('.map-editor')?.mapEditor;
+            if (mapEditor) {
+                this.addMonsterToMap(monsterData, mapEditor);
+            } else {
+                alert('Map editor not found or not initialized');
+            }
         });
         
         dialog.addEventListener('sl-after-hide', () => {
@@ -2541,6 +2631,12 @@ filteredMonsters.forEach(monster => {
                     dialog.hide();
                     
                     if (placementOption === 'click') {
+                        // Find and close the resource manager drawer
+                        const resourceDrawer = document.querySelector('.resource-manager-drawer');
+                        if (resourceDrawer && resourceDrawer.open) {
+                            resourceDrawer.hide();
+                        }
+                        
                         // Set map editor to encounter placement mode with this monster
                         this.setMapEditorToPlacementMode(mapEditor, result);
                     } else {
@@ -2562,7 +2658,8 @@ filteredMonsters.forEach(monster => {
             return false;
         }
     }
-    
+
+
     setMapEditorToPlacementMode(mapEditor, placementData) {
         const { monster, quantity } = placementData;
         
@@ -2607,10 +2704,14 @@ filteredMonsters.forEach(monster => {
         const originalAddMarker = mapEditor.addMarker;
         mapEditor.addMarker = function(type, x, y, data = {}) {
             if (type === "encounter" && this.pendingEncounterMonster) {
+                // Setup the data with our monster
                 data.monster = this.pendingEncounterMonster;
                 
                 // Create the marker with our monster data
                 const marker = originalAddMarker.call(this, type, x, y, data);
+                
+                // Apply proper sizing based on monster size
+                this.updateMarkerAppearance(marker);
                 
                 // Reset after placement
                 this.pendingEncounterMonster = null;
@@ -2628,6 +2729,7 @@ filteredMonsters.forEach(monster => {
             return originalAddMarker.call(this, type, x, y, data);
         };
     }
+
 
 
 
