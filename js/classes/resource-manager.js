@@ -1719,14 +1719,25 @@ if (packNameInput) {
         });
     }
 
+
     loadBestiaryFromDatabase() {
         try {
             // Load from MonsterManager's database
             const database = this.monsterManager.loadDatabase();
             
             if (database && database.monsters) {
+                let monstersLoaded = 0;
+                let monstersSkipped = 0;
+                
                 // Convert to our resources format
                 Object.entries(database.monsters).forEach(([key, monster]) => {
+                    // Skip invalid entries
+                    if (!monster || !monster.basic || !monster.basic.name) {
+                        console.warn(`Skipping invalid monster entry: ${key}`);
+                        monstersSkipped++;
+                        return;
+                    }
+                    
                     this.resources.bestiary.set(key, {
                         id: key,
                         name: monster.basic.name,
@@ -1737,13 +1748,37 @@ if (packNameInput) {
                         size: monster.basic.size,
                         dateAdded: new Date().toISOString()
                     });
+                    monstersLoaded++;
                 });
                 
-                console.log(`Loaded ${this.resources.bestiary.size} monsters from database`);
+                console.log(`Loaded ${monstersLoaded} monsters from database (skipped ${monstersSkipped} invalid entries)`);
             }
         } catch (error) {
             console.error("Error loading bestiary from database:", error);
         }
+    }
+
+    saveDatabase() {
+        try {
+            localStorage.setItem("monsterDatabase", JSON.stringify(this.monsterDatabase));
+            return true;
+        } catch (e) {
+            console.error("Error saving monster database:", e);
+            return false;
+        }
+    }
+
+    deleteMonster(monsterId) {
+        const key = typeof monsterId === 'string' ? 
+            monsterId : 
+            monsterId.basic?.name?.toLowerCase().replace(/\s+/g, "_");
+        
+        if (this.monsterDatabase.monsters[key]) {
+            delete this.monsterDatabase.monsters[key];
+            this.saveDatabase();
+            return true;
+        }
+        return false;
     }
     
     generateMonsterThumbnail(monster) {
@@ -2306,6 +2341,7 @@ updateBestiaryGallery(drawer, view = 'grid') {
         
         const displayCR = monster.cr || '?';
         const displayType = monster.type || 'Unknown';
+        const isTokenUrl = monster.data?.token?.url && !monster.data.token.data?.startsWith('data:');
         
         card.innerHTML = `
             ${view === 'grid' ? `
@@ -2318,21 +2354,33 @@ updateBestiaryGallery(drawer, view = 'grid') {
                     <div class="monster-badge" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 10px; font-size: 0.75em;">
                         CR ${displayCR}
                     </div>
+                    ${isTokenUrl ? `
+                        <div class="token-warning" style="position: absolute; top: 5px; left: 5px; background: rgba(244, 67, 54, 0.8); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Token needs update. Delete and re-add this monster.">
+                            <span class="material-icons" style="font-size: 14px;">warning</span>
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="resource-info">
-                    <div class="resource-name">${monster.name}</div>
+                    <div class="resource-name">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
                     <div class="resource-meta">${monster.size} ${displayType}</div>
                 </div>
             ` : `
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <img 
-                        src="${monster.thumbnail}" 
-                        alt="${monster.name}"
-                        class="resource-thumbnail"
-                        style="width: 50px; height: 50px;"
-                    />
+                    <div style="position: relative; flex-shrink: 0;">
+                        <img 
+                            src="${monster.thumbnail}" 
+                            alt="${monster.name}"
+                            class="resource-thumbnail"
+                            style="width: 50px; height: 50px;"
+                        />
+                        ${isTokenUrl ? `
+                            <div class="token-warning" style="position: absolute; top: -5px; left: -5px; background: rgba(244, 67, 54, 0.8); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Token needs update. Delete and re-add this monster.">
+                                <span class="material-icons" style="font-size: 10px;">warning</span>
+                            </div>
+                        ` : ''}
+                    </div>
                     <div class="resource-info">
-                        <div class="resource-name">${monster.name}</div>
+                        <div class="resource-name">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
                         <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
                     </div>
                 </div>
@@ -2351,6 +2399,38 @@ updateBestiaryGallery(drawer, view = 'grid') {
                 </sl-button-group>
             </div>
         `;
+
+        if (isTokenUrl) {
+            const warning = card.querySelector('.token-warning');
+            if (warning) {
+                warning.addEventListener('mouseenter', () => {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'token-warning-tooltip';
+                    tooltip.style.cssText = `
+                        position: fixed;
+                        background: rgba(0,0,0,0.8);
+                        color: white;
+                        padding: 8px 12px;
+                        border-radius: 4px;
+                        z-index: 10000;
+                        max-width: 250px;
+                        font-size: 0.9em;
+                        pointer-events: none;
+                    `;
+                    tooltip.textContent = 'This monster uses a URL token which may not display correctly in 3D view. Delete and re-add this monster to fix.';
+                    document.body.appendChild(tooltip);
+                    
+                    // Position the tooltip
+                    const rect = warning.getBoundingClientRect();
+                    tooltip.style.left = `${rect.right + 10}px`;
+                    tooltip.style.top = `${rect.top}px`;
+                    
+                    warning.addEventListener('mouseleave', () => {
+                        tooltip.remove();
+                    }, { once: true });
+                });
+            }
+        }
         
         // Add event listeners
         card.querySelector('.view-btn').addEventListener('click', () => {
@@ -2362,12 +2442,61 @@ updateBestiaryGallery(drawer, view = 'grid') {
             alert('Monster editing will be implemented in a future update');
         });
         
-        card.querySelector('.delete-btn').addEventListener('click', () => {
+        // card.querySelector('.delete-btn').addEventListener('click', () => {
+        //     if (confirm(`Remove ${monster.name} from bestiary?`)) {
+        //         this.resources.bestiary.delete(monster.id);
+        //         this.updateBestiaryGallery(drawer, view);
+        //     }
+        // });
+        card.querySelector('.delete-btn').addEventListener('click', async () => {
             if (confirm(`Remove ${monster.name} from bestiary?`)) {
+                // First, remove from the resource manager's bestiary collection
                 this.resources.bestiary.delete(monster.id);
+                
+                // Then ensure it's deleted from persistent storage via MonsterManager
+                if (this.monsterManager) {
+                    // Use the new deleteMonster method if available
+                    if (typeof this.monsterManager.deleteMonster === 'function') {
+                        this.monsterManager.deleteMonster(monster.id);
+                    } else {
+                        // Fallback for older versions
+                        const database = this.monsterManager.loadDatabase();
+                        if (database && database.monsters) {
+                            delete database.monsters[monster.id];
+                            localStorage.setItem("monsterDatabase", JSON.stringify(database));
+                        }
+                    }
+                    console.log(`Deleted monster '${monster.name}' (${monster.id}) from persistent storage`);
+                }
+                
+                // Refresh the gallery to show changes
                 this.updateBestiaryGallery(drawer, view);
             }
         });
+        // card.querySelector('.delete-btn').addEventListener('click', async () => {
+        //     if (confirm(`Remove ${monster.name} from bestiary?`)) {
+        //         // Remove from bestiary Map
+        //         this.resources.bestiary.delete(monster.id);
+                
+        //         // IMPORTANT: Also remove from MonsterManager database
+        //         if (this.monsterManager) {
+        //             const key = monster.name.toLowerCase().replace(/\s+/g, "_");
+        //             const database = this.monsterManager.loadDatabase();
+                    
+        //             if (database && database.monsters) {
+        //                 // Delete from database object
+        //                 delete database.monsters[key];
+                        
+        //                 // Save updated database to localStorage
+        //                 localStorage.setItem("monsterDatabase", JSON.stringify(database));
+        //                 console.log(`Deleted monster '${monster.name}' from persistent storage`);
+        //             }
+        //         }
+                
+        //         // Refresh the gallery
+        //         this.updateBestiaryGallery(drawer, view);
+        //     }
+        // });
         
         container.appendChild(card);
     });

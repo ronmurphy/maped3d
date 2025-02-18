@@ -1662,6 +1662,46 @@ animate = () => {
       progress.innerHTML = `Processing... ${Math.round(percent)}%`;
     };
 
+
+    const hasUrlTokens = this.markers.some(marker => 
+      marker.type === "encounter" && 
+      marker.data?.monster?.token?.url && 
+      !marker.data.monster.token.data?.startsWith('data:')
+  );
+  
+  if (hasUrlTokens) {
+      // Show warning toast before proceeding
+      const toast = document.createElement('div');
+      toast.className = 'token-warning-toast';
+      toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(244, 67, 54, 0.9);
+          color: white;
+          padding: 16px;
+          border-radius: 4px;
+          z-index: 10000;
+          max-width: 400px;
+          text-align: center;
+      `;
+      
+      toast.innerHTML = `
+          <span class="material-icons" style="font-size: 24px; display: block; margin: 0 auto 8px auto;">warning</span>
+          <div>
+              <div style="font-weight: bold; margin-bottom: 8px;">3D Token Warning</div>
+              <div>Some monsters use URL-based tokens which won't display correctly in 3D view.</div>
+              <div style="margin-top: 8px;">Please update monsters in the Resource Manager first.</div>
+          </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto-remove after showing for a bit
+      setTimeout(() => toast.remove(), 5000);
+  }
+
     try {
       drawer.show();
 
