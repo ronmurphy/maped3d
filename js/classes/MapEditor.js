@@ -52,19 +52,23 @@ class MapEditor {
 
   checkResourceManager(callback) {
     const resourceManagerBtn = document.getElementById('resourceManagerBtn');
-
+  
     // Create a temporary script element to test loading
     const script = document.createElement('script');
     script.src = 'js/classes/resource-manager.js';
     script.onload = () => {
       // Resource manager loaded successfully
       this.resourceManager = new ResourceManager();
+      
+      // Initialize MonsterManager in ResourceManager
+      this.resourceManager.initializeMonsterManager(this);
+      
       if (resourceManagerBtn) {
         resourceManagerBtn.style.display = 'flex';
         resourceManagerBtn.innerHTML = `
                 <span class="material-icons">palette</span>
             `;
-
+  
         // Add click handler
         resourceManagerBtn.addEventListener('click', () => {
           const drawer = this.resourceManager.createResourceManagerUI();

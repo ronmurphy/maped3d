@@ -23,7 +23,8 @@ window.ResourceManager = class {
             effects: {
                 particles: new Map(),
                 lighting: new Map()
-            }
+            },
+            bestiary: new Map()
         };
 
         this.loadedPacks = new Map();
@@ -35,6 +36,14 @@ window.ResourceManager = class {
         // Initialize textureAssignments map in constructor
         this.textureAssignments = new Map();
         this.defaultWallTextureId = null;
+
+            // Initialize MonsterManager
+    this.monsterManager = null;
+    }
+
+    initializeMonsterManager(mapEditor) {
+        this.monsterManager = new MonsterManager(mapEditor);
+        this.loadBestiaryFromDatabase();
     }
 
     // Resource pack methods
@@ -1065,6 +1074,98 @@ window.ResourceManager = class {
     .panel-header .material-icons {
         font-size: 18px;
     }
+
+    .bestiary-buttons {
+    margin-left: auto;
+}
+
+#bestiaryGallery .resource-item {
+    transition: all 0.2s ease;
+    border: 1px solid var(--sl-color-neutral-200);
+}
+
+#bestiaryGallery .resource-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--sl-color-primary-300);
+}
+
+#bestiaryGallery .resource-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+#bestiaryGallery .resource-meta {
+    font-size: 0.8em;
+    color: var(--sl-color-neutral-600);
+}
+
+#bestiaryGallery .monster-badge {
+    font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
+.gallery-grid .resource-thumbnail {
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.gallery-list .resource-thumbnail {
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.monster-filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.monster-filter-bar sl-select {
+    min-width: 150px;
+}
+
+/* Monster detail dialog styles */
+.monster-detail-dialog::part(panel) {
+    max-width: 800px;
+}
+
+.monster-stat-block {
+    font-family: "Noto Serif", serif;
+    line-height: 1.5;
+}
+
+.monster-stat-block h3 {
+    border-bottom: 1px solid #D3C4A2;
+    padding-bottom: 4px;
+    font-size: 1.3em;
+}
+
+.monster-abilities {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    text-align: center;
+    background: #F5F0E5;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 16px 0;
+}
+
+.monster-ability-name {
+    font-weight: bold;
+}
+
         `;
 
 
@@ -1091,6 +1192,10 @@ window.ResourceManager = class {
             <sl-tab slot="nav" panel="splashArt">
                 <span class="material-icons">photo_library</span>
                 Splash Art
+            </sl-tab>
+            <sl-tab slot="nav" panel="bestiary">
+                <span class="material-icons">pets</span>
+                Bestiary
             </sl-tab>
 
 <!-- Texture Panel -->
@@ -1180,22 +1285,56 @@ window.ResourceManager = class {
 
         <div id="splashArtGallery" class="gallery-container gallery-grid"></div>
     </sl-tab-panel>
-        </sl-tab-group>
+
+
+            <!-- Bestiary Panel -->
+<sl-tab-panel name="bestiary">
+    <div class="panel-header">
+        <h3>Monster Bestiary</h3>
+        <div class="flex-spacer"></div>
+        <sl-button size="medium" class="add-monster-btn" variant="primary">
+            <span class="material-icons" slot="prefix">add_circle</span>
+            Add Monster
+        </sl-button>
     </div>
 
-    <!-- Footer Actions -->
-    <div slot="footer">
+    <div class="view-controls">
         <sl-button-group>
-            <sl-button variant="primary" id="saveResourcePack">
-                <span class="material-icons" slot="prefix">save</span>
-                Save Pack
+            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                <span class="material-icons">grid_view</span>
             </sl-button>
-            <sl-button variant="default" id="loadResourcePack">
-                <span class="material-icons" slot="prefix">folder_open</span>
-                Load Pack
+            <sl-button size="small" class="view-toggle" data-view="list">
+                <span class="material-icons">view_list</span>
             </sl-button>
         </sl-button-group>
     </div>
+
+    <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
+</sl-tab-panel>
+    </sl-tab-group>
+
+    <!-- Footer Actions -->
+<div slot="footer" style="display: flex; justify-content: flex-end; width: 100%;">
+    <!-- Bestiary-specific buttons (initially hidden) -->
+    <sl-button variant="default" id="importBestiaryBtn" style="display: none; margin-right: 8px;">
+        <span class="material-icons" slot="prefix">upload</span>
+        Import
+    </sl-button>
+    <sl-button variant="default" id="exportBestiaryBtn" style="display: none; margin-right: 8px;">
+        <span class="material-icons" slot="prefix">download</span>
+        Export
+    </sl-button>
+    
+    <!-- Standard buttons (always visible) -->
+    <sl-button variant="primary" id="saveResourcePack">
+        <span class="material-icons" slot="prefix">save</span>
+        Save
+    </sl-button>
+    <sl-button variant="default" id="loadResourcePack" style="margin-left: 8px;">
+        <span class="material-icons" slot="prefix">folder_open</span>
+        Load
+    </sl-button>
+</div>
 `;
 
 const packNameInput = drawer.querySelector('#packNameInput');
@@ -1250,29 +1389,115 @@ if (packNameInput) {
         const saveBtn = drawer.querySelector('#saveResourcePack');
         const loadBtn = drawer.querySelector('#loadResourcePack');
 
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                this.saveResourcePack();
-            });
-        }
 
+
+   
+        if (saveBtn) {
+            // Keep existing save handler, but modify to include bestiary
+            const originalSaveHandler = saveBtn.onclick;
+            saveBtn.onclick = async () => {
+                if (originalSaveHandler) originalSaveHandler();
+                
+                // Also save bestiary if we have monsters
+                if (this.resources.bestiary.size > 0) {
+                    this.saveBestiaryToFile();
+                }
+            };
+        }
+    
         if (loadBtn) {
-            loadBtn.addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
-                input.onchange = async (e) => {
+            // Modify to handle bestiary uploads
+            const originalLoadHandler = loadBtn.onclick;
+            loadBtn.onclick = () => {
+                // Create dialog with options
+                const dialog = document.createElement('sl-dialog');
+                dialog.label = 'Load File';
+                dialog.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <sl-button class="load-resource-btn" size="large" style="justify-content: flex-start;">
+                            <span class="material-icons" slot="prefix">folder_open</span>
+                            Load Resource Pack
+                            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                                Load textures, sounds, and other resources
+                            </div>
+                        </sl-button>
+                        <sl-button class="load-bestiary-btn" size="large" style="justify-content: flex-start;">
+                            <span class="material-icons" slot="prefix">pets</span>
+                            Load Bestiary File
+                            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                                Import monster data from a bestiary.json file
+                            </div>
+                        </sl-button>
+                    </div>
+                `;
+                
+                document.body.appendChild(dialog);
+                
+                // Create hidden file inputs
+                const resourceInput = document.createElement('input');
+                resourceInput.type = 'file';
+                resourceInput.accept = '.json';
+                resourceInput.style.display = 'none';
+                
+                const bestiaryInput = document.createElement('input');
+                bestiaryInput.type = 'file';
+                bestiaryInput.accept = '.json';
+                bestiaryInput.style.display = 'none';
+                
+                document.body.appendChild(resourceInput);
+                document.body.appendChild(bestiaryInput);
+                
+                // Resource pack loading
+                resourceInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (file) {
-                        const success = await this.loadResourcePack(file);
+                        // Use the original load behavior
+                        this.loadResourcePack(file).then(success => {
+                            if (success) {
+                                const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+                                this.updateGallery(drawer, currentCategory);
+                                alert('Resource pack loaded successfully');
+                            } else {
+                                alert('Failed to load resource pack');
+                            }
+                        });
+                    }
+                });
+                
+                // Bestiary loading
+                bestiaryInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const success = await this.loadBestiaryFromFile(file);
                         if (success) {
-                            const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
-                            this.updateGallery(drawer, currentCategory);
+                            this.updateBestiaryGallery(drawer, 'grid');
+                            alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+                        } else {
+                            alert('Failed to load bestiary file');
                         }
                     }
-                };
-                input.click();
-            });
+                });
+                
+                // Add button click handlers
+                dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
+                    dialog.hide();
+                    resourceInput.click();
+                });
+                
+                dialog.querySelector('.load-bestiary-btn').addEventListener('click', () => {
+                    dialog.hide();
+                    bestiaryInput.click();
+                });
+                
+                // Clean up on close
+                dialog.addEventListener('sl-after-hide', () => {
+                    dialog.remove();
+                    resourceInput.remove();
+                    bestiaryInput.remove();
+                });
+                
+                dialog.show();
+            };
         }
 
         // Update the view toggle handler
@@ -1295,8 +1520,18 @@ if (packNameInput) {
 
                 // Refresh gallery content
                 const category = panel.querySelector('[data-category]')?.dataset.category;
-                if (category) {
-                    this.updateGallery(drawer, category, view);
+                // if (category) {
+                //     this.updateGallery(drawer, category, view);
+                // }
+
+                if (panel.getAttribute('name') === 'bestiary') {
+                    this.updateBestiaryGallery(drawer, view);
+                } else {
+                    // Handle other gallery types (existing code)
+                    const category = panel.querySelector('[data-category]')?.dataset.category;
+                    if (category) {
+                        this.updateGallery(drawer, category, view);
+                    }
                 }
             });
         });
@@ -1328,6 +1563,29 @@ if (packNameInput) {
                 }
             });
         });
+
+            // Handle tab changes to load bestiary when tab is activated
+            const tabGroup = drawer.querySelector('sl-tab-group');
+            if (tabGroup) {
+                tabGroup.addEventListener('sl-tab-show', (e) => {
+                    const tabName = e.detail.name;
+                    
+                    // Toggle bestiary-specific buttons
+                    const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+                    const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+                    
+                    if (exportBestiaryBtn && importBestiaryBtn) {
+                        const isBestiaryTab = tabName === 'bestiary';
+                        exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+                        importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+                    }
+                    
+                    // Update gallery if needed
+                    if (tabName === 'bestiary') {
+                        this.updateBestiaryGallery(drawer, 'grid');
+                    }
+                });
+            }
 
         // Handle file uploads for each type
         const setupUploadHandler = (btnClass, inputClass, type) => {
@@ -1389,7 +1647,42 @@ if (packNameInput) {
         setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
 
 
+        const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+        if (exportBestiaryBtn) {
+            exportBestiaryBtn.addEventListener('click', () => {
+                this.saveBestiaryToFile();
+            });
+        }
+        
+        const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+        if (importBestiaryBtn) {
+            importBestiaryBtn.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const success = await this.loadBestiaryFromFile(file);
+                        if (success) {
+                            this.updateBestiaryGallery(drawer, 'grid');
+                            alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+                        } else {
+                            alert('Failed to load bestiary file');
+                        }
+                    }
+                };
+                input.click();
+            });
+        }
 
+            // Setup Bestiary tab handlers
+    const addMonsterBtn = drawer.querySelector('.add-monster-btn');
+    if (addMonsterBtn) {
+        addMonsterBtn.addEventListener('click', async () => {
+            await this.showMonsterImporter();
+        });
+    }
 
         // Add close handler
         drawer.addEventListener('sl-after-hide', () => {
@@ -1430,6 +1723,910 @@ if (packNameInput) {
                 dialog.remove();
             });
         });
+    }
+
+    loadBestiaryFromDatabase() {
+        try {
+            // Load from MonsterManager's database
+            const database = this.monsterManager.loadDatabase();
+            
+            if (database && database.monsters) {
+                // Convert to our resources format
+                Object.entries(database.monsters).forEach(([key, monster]) => {
+                    this.resources.bestiary.set(key, {
+                        id: key,
+                        name: monster.basic.name,
+                        data: monster, // Store the full monster data
+                        thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
+                        cr: monster.basic.cr,
+                        type: monster.basic.type,
+                        size: monster.basic.size,
+                        dateAdded: new Date().toISOString()
+                    });
+                });
+                
+                console.log(`Loaded ${this.resources.bestiary.size} monsters from database`);
+            }
+        } catch (error) {
+            console.error("Error loading bestiary from database:", error);
+        }
+    }
+    
+    generateMonsterThumbnail(monster) {
+        // Create a canvas for the thumbnail
+        const canvas = document.createElement('canvas');
+        const size = 64;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Generate color based on monster name
+        const hashCode = monster.basic.name.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+        }, 0);
+        
+        const hue = Math.abs(hashCode) % 360;
+        ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+        ctx.fillRect(0, 0, size, size);
+        
+        // Add border
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(2, 2, size-4, size-4);
+        
+        // Add initial
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(monster.basic.name.charAt(0).toUpperCase(), size/2, size/2);
+        
+        return canvas.toDataURL('image/webp');
+    }
+    
+    async showMonsterImporter() {
+        // We'll reuse MonsterManager's showMonsterSelector but adapt it for ResourceManager
+        const dialog = document.createElement("sl-dialog");
+        dialog.label = "Import Monster";
+        dialog.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="instructions" style="background: #f5f5f5; padding: 12px; border-radius: 4px;">
+                    <p style="margin-top: 0;">To import monster data from 5e.tools:</p>
+                    <ol style="margin-left: 20px; margin-bottom: 0;">
+                        <li>On 5e.tools, right-click on the monster's stat block</li>
+                        <li>Select "Inspect Element" or press F12</li>
+                        <li>Find the <code>&lt;div id="wrp-pagecontent"&gt;</code> element</li>
+                        <li>Right-click the element and select "Copy > Outer HTML"</li>
+                        <li>Paste below</li>
+                    </ol>
+                </div>
+                
+                <textarea id="monsterHtml" 
+                    rows="10" 
+                    style="width: 100%; font-family: monospace; padding: 8px;"
+                    placeholder="Paste monster stat block HTML here..."></textarea>
+    
+                <div id="monsterPreview" style="display: none; max-height: 60vh; overflow-y: auto;">
+                    <!-- Basic Info Section -->
+                    <div class="monster-header" style="margin-bottom: 16px;">
+                        <h3 class="monster-name" style="margin: 0; font-size: 1.5em;"></h3>
+                        <div style="color: #666; font-style: italic;">
+                            <span class="monster-size"></span>
+                            <span class="monster-type"></span>,
+                            <span class="monster-alignment"></span>
+                        </div>
+                    </div>
+    
+                    <!-- Monster Image -->
+                    <div class="monster-image" style="margin-bottom: 16px; text-align: center;">
+                        <img style="max-width: 200px; display: none;" />
+                    </div>
+    
+                    <!-- Core Stats -->
+                    <div class="core-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+                        <div>
+                            <div style="font-weight: bold;">Armor Class</div>
+                            <div class="monster-ac"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">Hit Points</div>
+                            <div class="monster-hp"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">Speed</div>
+                            <div class="monster-speed"></div>
+                        </div>
+                    </div>
+    
+                    <!-- Ability Scores -->
+                    <div class="ability-scores" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px;">
+                        <div>
+                            <div style="font-weight: bold;">STR</div>
+                            <div class="monster-str"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">DEX</div>
+                            <div class="monster-dex"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">CON</div>
+                            <div class="monster-con"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">INT</div>
+                            <div class="monster-int"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">WIS</div>
+                            <div class="monster-wis"></div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">CHA</div>
+                            <div class="monster-cha"></div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div id="loadingIndicator" style="display: none; text-align: center;">
+                    <sl-spinner></sl-spinner>
+                    <div>Processing monster data...</div>
+                </div>
+    
+                <div id="errorMessage" style="display: none; color: #f44336;"></div>
+            </div>
+            <div slot="footer">
+                <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+                <sl-button variant="primary" class="save-btn" disabled>Add to Bestiary</sl-button>
+            </div>
+        `;
+    
+        document.body.appendChild(dialog);
+        dialog.show();
+    
+        const htmlInput = dialog.querySelector("#monsterHtml");
+        const saveBtn = dialog.querySelector(".save-btn");
+        const cancelBtn = dialog.querySelector(".cancel-btn");
+        const loadingIndicator = dialog.querySelector("#loadingIndicator");
+        const errorMessage = dialog.querySelector("#errorMessage");
+        const preview = dialog.querySelector("#monsterPreview");
+    
+        let currentMonsterData = null;
+    
+        // Handle HTML paste
+        htmlInput.addEventListener("input", async () => {
+            const html = htmlInput.value.trim();
+            if (html) {
+                try {
+                    loadingIndicator.style.display = "block";
+                    errorMessage.style.display = "none";
+                    preview.style.display = "none";
+                    saveBtn.disabled = true;
+    
+                    currentMonsterData = await this.monsterManager.parseMonsterHtml(html);
+                    console.log("Parsed monster data:", currentMonsterData);
+    
+                    if (currentMonsterData) {
+                        // Update basic info
+                        preview.querySelector(".monster-name").textContent = currentMonsterData.basic.name;
+                        preview.querySelector(".monster-size").textContent = currentMonsterData.basic.size;
+                        preview.querySelector(".monster-type").textContent = currentMonsterData.basic.type;
+                        preview.querySelector(".monster-alignment").textContent = currentMonsterData.basic.alignment;
+    
+                        // Update core stats
+                        preview.querySelector(".monster-ac").textContent = currentMonsterData.stats.ac;
+                        preview.querySelector(".monster-hp").textContent = 
+                            `${currentMonsterData.stats.hp.average} (${currentMonsterData.stats.hp.roll})`;
+                        preview.querySelector(".monster-speed").textContent = currentMonsterData.stats.speed;
+    
+                        // Update ability scores
+                        Object.entries(currentMonsterData.abilities).forEach(([ability, data]) => {
+                            const element = preview.querySelector(`.monster-${ability}`);
+                            if (element) {
+                                element.textContent = `${data.score} (${data.modifier >= 0 ? "+" : ""}${data.modifier})`;
+                            }
+                        });
+    
+                        // Handle token display
+                        const imgElement = preview.querySelector(".monster-image img");
+                        if (currentMonsterData.token && (currentMonsterData.token.data || currentMonsterData.token.url)) {
+                            imgElement.crossOrigin = "Anonymous";
+                            
+                            // Add load handler to capture token data if not already present
+                            imgElement.onload = () => {
+                                try {
+                                    // If we don't have base64 data but image loaded successfully, capture it
+                                    if (!currentMonsterData.token.data && imgElement.complete) {
+                                        const canvas = document.createElement('canvas');
+                                        canvas.width = imgElement.naturalWidth;
+                                        canvas.height = imgElement.naturalHeight;
+                                        const ctx = canvas.getContext('2d');
+                                        ctx.drawImage(imgElement, 0, 0);
+                                        currentMonsterData.token.data = canvas.toDataURL('image/webp');
+                                        console.log("Captured token data from preview image");
+                                    }
+                                } catch (error) {
+                                    console.error("Error capturing token:", error);
+                                }
+                            };
+                            
+                            const imageUrl = currentMonsterData.token.data || currentMonsterData.token.url;
+                            imgElement.src = imageUrl;
+                            imgElement.style.display = "block";
+                        } else {
+                            imgElement.style.display = "none";
+                        }
+    
+                        preview.style.display = "block";
+                        saveBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error("Error in monster data processing:", error);
+                    errorMessage.textContent = "Error parsing monster data. Please check the HTML.";
+                    errorMessage.style.display = "block";
+                    saveBtn.disabled = true;
+                } finally {
+                    loadingIndicator.style.display = "none";
+                }
+            }
+        });
+    
+        return new Promise((resolve) => {
+            saveBtn.addEventListener("click", async () => {
+                if (currentMonsterData) {
+                    // Ensure we have token data
+                    if (currentMonsterData.token && currentMonsterData.token.url && !currentMonsterData.token.data) {
+                        const imgElement = preview.querySelector(".monster-image img");
+                        if (imgElement && imgElement.complete) {
+                            try {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = imgElement.naturalWidth;
+                                canvas.height = imgElement.naturalHeight;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(imgElement, 0, 0);
+                                currentMonsterData.token.data = canvas.toDataURL('image/webp');
+                            } catch (error) {
+                                console.error("Final token capture failed:", error);
+                            }
+                        }
+                    }
+                    
+                    // Save to bestiary
+                    const key = currentMonsterData.basic.name.toLowerCase().replace(/\s+/g, "_");
+                    this.resources.bestiary.set(key, {
+                        id: key,
+                        name: currentMonsterData.basic.name,
+                        data: currentMonsterData,
+                        thumbnail: currentMonsterData.token?.data || this.generateMonsterThumbnail(currentMonsterData),
+                        cr: currentMonsterData.basic.cr,
+                        type: currentMonsterData.basic.type,
+                        size: currentMonsterData.basic.size,
+                        dateAdded: new Date().toISOString()
+                    });
+                    
+                    // Save to MonsterManager database too
+                    await this.monsterManager.saveMonsterToDatabase(currentMonsterData);
+                    
+                    // Update the gallery
+                    this.updateGallery(document.querySelector('.resource-manager-drawer'), 'bestiary', 'grid');
+                    
+                    dialog.hide();
+                    resolve(true);
+                }
+            });
+    
+            cancelBtn.addEventListener("click", () => {
+                dialog.hide();
+                resolve(false);
+            });
+    
+            dialog.addEventListener("sl-after-hide", () => {
+                dialog.remove();
+            });
+        });
+    }
+    
+    saveBestiaryToFile(filename = 'bestiary.json') {
+        try {
+            const bestiaryData = {
+                version: "1.0",
+                timestamp: new Date().toISOString(),
+                monsters: {}
+            };
+            
+            this.resources.bestiary.forEach((monster, key) => {
+                bestiaryData.monsters[key] = monster.data;
+            });
+            
+            const blob = new Blob([JSON.stringify(bestiaryData, null, 2)], {
+                type: 'application/json'
+            });
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            
+            console.log(`Saved ${this.resources.bestiary.size} monsters to ${filename}`);
+            return true;
+        } catch (error) {
+            console.error("Error saving bestiary:", error);
+            return false;
+        }
+    }
+    
+    async loadBestiaryFromFile(file) {
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            if (data.monsters) {
+                // Clear existing bestiary
+                this.resources.bestiary.clear();
+                
+                // Load monsters
+                Object.entries(data.monsters).forEach(([key, monster]) => {
+                    this.resources.bestiary.set(key, {
+                        id: key,
+                        name: monster.basic.name,
+                        data: monster,
+                        thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
+                        cr: monster.basic.cr,
+                        type: monster.basic.type,
+                        size: monster.basic.size,
+                        dateAdded: monster.dateAdded || new Date().toISOString()
+                    });
+                    
+                    // Also add to MonsterManager database
+                    this.monsterManager.saveMonsterToDatabase(monster);
+                });
+                
+                console.log(`Loaded ${this.resources.bestiary.size} monsters from file`);
+                return true;
+            } else {
+                throw new Error("Invalid bestiary file format");
+            }
+        } catch (error) {
+            console.error("Error loading bestiary file:", error);
+            return false;
+        }
+    }
+    
+    updateBestiaryGallery(drawer, view = 'grid') {
+        const container = drawer.querySelector('#bestiaryGallery');
+        if (!container) {
+            console.warn('Bestiary gallery container not found');
+            return;
+        }
+        
+        container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+        container.innerHTML = '';
+        
+        if (this.resources.bestiary.size === 0) {
+            container.innerHTML = `
+                <sl-card class="empty-gallery">
+                    <div style="text-align: center; padding: 2rem;">
+                        <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">pets</span>
+                        <p>No monsters in bestiary yet</p>
+                    </div>
+                </sl-card>
+            `;
+            return;
+        }
+
+            // Create filter controls if they don't exist
+    let filterBar = drawer.querySelector('.monster-filter-bar');
+    if (!filterBar) {
+        filterBar = document.createElement('div');
+        filterBar.className = 'monster-filter-bar';
+        
+        // Get unique CR values and monster types for filters
+        const crValues = new Set();
+        const typeValues = new Set();
+        const sizeValues = new Set(['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']);
+        
+        this.resources.bestiary.forEach(monster => {
+            if (monster.cr) crValues.add(monster.cr);
+            if (monster.type) typeValues.add(monster.type);
+        });
+        
+        // Create filter controls
+        filterBar.innerHTML = `
+            <sl-input placeholder="Search..." clearable id="monster-search"></sl-input>
+            
+            <sl-select placeholder="CR" clearable id="cr-filter">
+                ${Array.from(crValues).sort((a, b) => {
+                    // Convert CR strings to numbers for proper sorting
+                    const numA = a === '0' ? 0 : eval(String(a).replace('/','/')); 
+                    const numB = b === '0' ? 0 : eval(String(b).replace('/','/')); 
+                    return numA - numB;
+                }).map(cr => `<sl-option value="${cr}">CR ${cr}</sl-option>`).join('')}
+            </sl-select>
+            
+            <sl-select placeholder="Type" clearable id="type-filter">
+                ${Array.from(typeValues).sort().map(type => 
+                    `<sl-option value="${type}">${type}</sl-option>`
+                ).join('')}
+            </sl-select>
+            
+            <sl-select placeholder="Size" clearable id="size-filter">
+                ${Array.from(sizeValues).map(size => 
+                    `<sl-option value="${size}">${size}</sl-option>`
+                ).join('')}
+            </sl-select>
+            
+            <sl-button variant="text" id="clear-filters">
+                <span class="material-icons">filter_alt_off</span>
+                Clear Filters
+            </sl-button>
+        `;
+        
+        // Insert before the gallery
+        container.parentNode.insertBefore(filterBar, container);
+        
+        // Add event listeners for filtering
+        this.setupBestiaryFilters(drawer, filterBar);
+    }
+    
+    // Update container class based on view
+    container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+    container.innerHTML = '';
+    
+    if (this.resources.bestiary.size === 0) {
+        container.innerHTML = `
+            <sl-card class="empty-gallery">
+                <div style="text-align: center; padding: 2rem;">
+                    <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">pets</span>
+                    <p>No monsters in bestiary yet</p>
+                </div>
+            </sl-card>
+        `;
+        return;
+    }
+    
+    // Apply any active filters
+    const filteredMonsters = this.getFilteredBestiary(drawer);
+    
+    if (filteredMonsters.length === 0) {
+        container.innerHTML = `
+            <sl-card class="empty-gallery">
+                <div style="text-align: center; padding: 2rem;">
+                    <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">filter_alt_off</span>
+                    <p>No monsters match your filters</p>
+                </div>
+            </sl-card>
+        `;
+        return;
+    }
+        
+        // Create cards for each monster
+// Create cards for each filtered monster
+filteredMonsters.forEach(monster => {
+    const card = document.createElement('sl-card');
+    card.className = 'resource-item';
+    
+    const displayCR = monster.cr || '?';
+    const displayType = monster.type || 'Unknown';
+    
+    card.innerHTML = `
+        ${view === 'grid' ? `
+            <div style="position: relative;">
+                <img 
+                    src="${monster.thumbnail}" 
+                    alt="${monster.name}"
+                    class="resource-thumbnail"
+                />
+                <div class="monster-badge" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 10px; font-size: 0.75em;">
+                    CR ${displayCR}
+                </div>
+            </div>
+            <div class="resource-info">
+                <div class="resource-name">${monster.name}</div>
+                <div class="resource-meta">${monster.size} ${displayType}</div>
+            </div>
+        ` : `
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <img 
+                    src="${monster.thumbnail}" 
+                    alt="${monster.name}"
+                    class="resource-thumbnail"
+                    style="width: 50px; height: 50px;"
+                />
+                <div class="resource-info">
+                    <div class="resource-name">${monster.name}</div>
+                    <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
+                </div>
+            </div>
+        `}
+        <div slot="footer" class="resource-actions">
+            <sl-button-group>
+                <sl-button size="small" class="view-btn">
+                    <span class="material-icons">visibility</span>
+                </sl-button>
+                <sl-button size="small" class="edit-btn">
+                    <span class="material-icons">edit</span>
+                </sl-button>
+                <sl-button size="small" class="delete-btn" variant="danger">
+                    <span class="material-icons">delete</span>
+                </sl-button>
+            </sl-button-group>
+        </div>
+    `;
+    
+    // Add event listeners
+    card.querySelector('.view-btn').addEventListener('click', () => {
+        this.showMonsterDetails(monster.data);
+    });
+    
+    card.querySelector('.edit-btn').addEventListener('click', () => {
+        // TODO: Add monster editing capability later
+        alert('Monster editing will be implemented in a future update');
+    });
+    
+    card.querySelector('.delete-btn').addEventListener('click', () => {
+        if (confirm(`Remove ${monster.name} from bestiary?`)) {
+            this.resources.bestiary.delete(monster.id);
+            this.updateBestiaryGallery(drawer, view);
+        }
+    });
+    
+    container.appendChild(card);
+});
+
+    }
+
+    setupBestiaryFilters(drawer, filterBar) {
+        const searchInput = filterBar.querySelector('#monster-search');
+        const crFilter = filterBar.querySelector('#cr-filter');
+        const typeFilter = filterBar.querySelector('#type-filter');
+        const sizeFilter = filterBar.querySelector('#size-filter');
+        const clearFiltersBtn = filterBar.querySelector('#clear-filters');
+        
+        const applyFilters = () => {
+            // Re-render gallery with current filters
+            const view = drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+            this.updateBestiaryGallery(drawer, view);
+        };
+        
+        // Add event listeners
+        searchInput?.addEventListener('sl-input', applyFilters);
+        crFilter?.addEventListener('sl-change', applyFilters);
+        typeFilter?.addEventListener('sl-change', applyFilters);
+        sizeFilter?.addEventListener('sl-change', applyFilters);
+        
+        clearFiltersBtn?.addEventListener('click', () => {
+            // Reset all filters
+            if (searchInput) searchInput.value = '';
+            if (crFilter) crFilter.value = '';
+            if (typeFilter) typeFilter.value = '';
+            if (sizeFilter) sizeFilter.value = '';
+            applyFilters();
+        });
+    }
+    
+    getFilteredBestiary(drawer) {
+        // Get filter values
+        const searchTerm = drawer.querySelector('#monster-search')?.value?.toLowerCase() || '';
+        const crFilter = drawer.querySelector('#cr-filter')?.value || '';
+        const typeFilter = drawer.querySelector('#type-filter')?.value || '';
+        const sizeFilter = drawer.querySelector('#size-filter')?.value || '';
+        
+        // Convert Map to Array for filtering
+        return Array.from(this.resources.bestiary.values()).filter(monster => {
+            // Search filter
+            const nameMatch = monster.name.toLowerCase().includes(searchTerm);
+            
+            // CR filter
+            const crMatch = !crFilter || monster.cr === crFilter;
+            
+            // Type filter
+            const typeMatch = !typeFilter || monster.type === typeFilter;
+            
+            // Size filter 
+            const sizeMatch = !sizeFilter || monster.size === sizeFilter;
+            
+            return nameMatch && crMatch && typeMatch && sizeMatch;
+        });
+    }
+    
+    showMonsterDetails(monsterData) {
+        const dialog = document.createElement('sl-dialog');
+        dialog.label = monsterData.basic.name;
+        
+        // Generate full stat block HTML
+        dialog.innerHTML = `
+            <div style="max-height: 70vh; overflow-y: auto;">
+                <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;">
+                    ${monsterData.token?.data ? `
+                        <div style="flex: 0 0 150px; text-align: center;">
+                            <img src="${monsterData.token.data}" style="width: 150px; height: 150px; object-fit: contain; border-radius: 5px;">
+                        </div>
+                    ` : ''}
+                    
+                    <div style="flex: 1;">
+                        <div style="font-style: italic; color: #666; margin-bottom: 8px;">
+                            ${monsterData.basic.size} ${monsterData.basic.type}, ${monsterData.basic.alignment}
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+                            <div>
+                                <div style="font-weight: bold;">Armor Class</div>
+                                <div>${monsterData.stats.ac}</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold;">Hit Points</div>
+                                <div>${monsterData.stats.hp.average} (${monsterData.stats.hp.roll})</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold;">Speed</div>
+                                <div>${monsterData.stats.speed}</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div style="font-weight: bold;">Challenge Rating:</div>
+                            <div>${monsterData.basic.cr} (${monsterData.basic.xp} XP)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ability Scores -->
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-weight: bold;">STR</div>
+                        <div>${monsterData.abilities.str.score} (${monsterData.abilities.str.modifier >= 0 ? "+" : ""}${monsterData.abilities.str.modifier})</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold;">DEX</div>
+                        <div>${monsterData.abilities.dex.score} (${monsterData.abilities.dex.modifier >= 0 ? "+" : ""}${monsterData.abilities.dex.modifier})</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold;">CON</div>
+                        <div>${monsterData.abilities.con.score} (${monsterData.abilities.con.modifier >= 0 ? "+" : ""}${monsterData.abilities.con.modifier})</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold;">INT</div>
+                        <div>${monsterData.abilities.int.score} (${monsterData.abilities.int.modifier >= 0 ? "+" : ""}${monsterData.abilities.int.modifier})</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold;">WIS</div>
+                        <div>${monsterData.abilities.wis.score} (${monsterData.abilities.wis.modifier >= 0 ? "+" : ""}${monsterData.abilities.wis.modifier})</div>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold;">CHA</div>
+                        <div>${monsterData.abilities.cha.score} (${monsterData.abilities.cha.modifier >= 0 ? "+" : ""}${monsterData.abilities.cha.modifier})</div>
+                    </div>
+                </div>
+                
+                <!-- Additional Traits -->
+                <div style="margin-bottom: 16px;">
+                    ${monsterData.traits.senses.length > 0 ? `
+                        <div style="margin-bottom: 8px;">
+                            <strong>Senses:</strong> ${monsterData.traits.senses.join(', ')}
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>Languages:</strong> ${monsterData.traits.languages}
+                    </div>
+                    
+                    ${monsterData.traits.immunities.length > 0 ? `
+                        <div style="margin-bottom: 8px;">
+                            <strong>Immunities:</strong> ${monsterData.traits.immunities.join(', ')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div slot="footer">
+                <sl-button class="close-btn" variant="neutral">Close</sl-button>
+                <sl-button class="add-encounter-btn" variant="primary">
+                    <span class="material-icons">add_location</span>
+                    Add to Map
+                </sl-button>
+            </div>
+        `;
+
+
+    
+ 
+        
+        document.body.appendChild(dialog);
+
+                dialog.querySelector('[slot="footer"]').innerHTML = `
+        <sl-button class="close-btn" variant="neutral">Close</sl-button>
+        <sl-button class="add-encounter-btn" variant="primary">
+            <span class="material-icons">add_location</span>
+            Add to Map
+        </sl-button>
+    `;
+
+          // Add event handler for "Add to Map" button
+    dialog.querySelector('.add-encounter-btn').addEventListener('click', () => {
+        dialog.hide();
+        // Find the map editor instance
+        const mapEditor = window.mapEditor || document.querySelector('.map-editor')?.mapEditor;
+        if (mapEditor) {
+            this.addMonsterToMap(monsterData, mapEditor);
+        } else {
+            alert('Map editor not found or not initialized');
+        }
+    }); 
+        
+        // Add event handlers
+        dialog.querySelector('.close-btn').addEventListener('click', () => {
+            dialog.hide();
+        });
+        
+        dialog.querySelector('.add-encounter-btn').addEventListener('click', () => {
+            alert('Functionality to add monster directly to map will be implemented soon');
+            dialog.hide();
+        });
+        
+        dialog.addEventListener('sl-after-hide', () => {
+            dialog.remove();
+        });
+        
+        dialog.show();
+    }
+
+    addMonsterToMap(monster, mapEditor) {
+        if (!mapEditor) {
+            console.error('Map editor not available');
+            return false;
+        }
+        
+        try {
+            const monsterData = monster.data || monster;
+            
+            // Open a dialog to confirm placement
+            const dialog = document.createElement('sl-dialog');
+            dialog.label = `Add ${monsterData.basic.name} to Map`;
+            
+            dialog.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        ${monsterData.token?.data ? `
+                            <img src="${monsterData.token.data}" 
+                                 style="width: 80px; height: 80px; object-fit: contain; border-radius: 5px;">
+                        ` : ''}
+                        
+                        <div>
+                            <h3 style="margin: 0 0 8px 0;">${monsterData.basic.name}</h3>
+                            <div style="color: #666;">
+                                ${monsterData.basic.size} ${monsterData.basic.type}, CR ${monsterData.basic.cr}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="placement-option">
+                        <sl-radio-group label="Placement Option" name="placement">
+                            <sl-radio value="click" checked>Click on map to place</sl-radio>
+                            <sl-radio value="random">Place randomly in selected area</sl-radio>
+                        </sl-radio-group>
+                    </div>
+                    
+                    <div class="quantity-control">
+                        <sl-input type="number" label="Quantity" min="1" max="20" value="1" id="monsterQuantity"></sl-input>
+                    </div>
+                </div>
+                
+                <div slot="footer">
+                    <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+                    <sl-button variant="primary" class="add-btn">Add to Map</sl-button>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            return new Promise((resolve) => {
+                dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+                    dialog.hide();
+                    resolve(false);
+                });
+                
+                dialog.querySelector('.add-btn').addEventListener('click', () => {
+                    const placementOption = dialog.querySelector('sl-radio-group').value;
+                    const quantity = parseInt(dialog.querySelector('#monsterQuantity').value) || 1;
+                    
+                    const result = {
+                        monster: monsterData,
+                        placement: placementOption,
+                        quantity: quantity
+                    };
+                    
+                    dialog.hide();
+                    
+                    if (placementOption === 'click') {
+                        // Set map editor to encounter placement mode with this monster
+                        this.setMapEditorToPlacementMode(mapEditor, result);
+                    } else {
+                        // Random placement - would need coordinates of a selected area
+                        alert('Random placement coming in future update');
+                    }
+                    
+                    resolve(true);
+                });
+                
+                dialog.addEventListener('sl-after-hide', () => {
+                    dialog.remove();
+                });
+                
+                dialog.show();
+            });
+        } catch (error) {
+            console.error('Error adding monster to map:', error);
+            return false;
+        }
+    }
+    
+    setMapEditorToPlacementMode(mapEditor, placementData) {
+        const { monster, quantity } = placementData;
+        
+        // Store the monster data temporarily
+        mapEditor.pendingEncounterMonster = monster;
+        mapEditor.pendingEncounterQuantity = quantity;
+        
+        // Switch to encounter marker placement mode
+        mapEditor.setTool("marker-encounter");
+        
+        // Show instruction toast
+        const toast = document.createElement('div');
+        toast.className = 'placement-toast';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        `;
+        
+        toast.innerHTML = `
+            <span class="material-icons">touch_app</span>
+            <span>Click on the map to place ${monster.basic.name}</span>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Remove toast after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+        
+        // Modify the MapEditor's addMarker method temporarily to use our monster data
+        const originalAddMarker = mapEditor.addMarker;
+        mapEditor.addMarker = function(type, x, y, data = {}) {
+            if (type === "encounter" && this.pendingEncounterMonster) {
+                data.monster = this.pendingEncounterMonster;
+                
+                // Create the marker with our monster data
+                const marker = originalAddMarker.call(this, type, x, y, data);
+                
+                // Reset after placement
+                this.pendingEncounterMonster = null;
+                this.pendingEncounterQuantity = null;
+                
+                // Restore the original method
+                this.addMarker = originalAddMarker;
+                
+                // Remove toast if it's still there
+                document.querySelector('.placement-toast')?.remove();
+                
+                return marker;
+            }
+            
+            return originalAddMarker.call(this, type, x, y, data);
+        };
     }
 
 
