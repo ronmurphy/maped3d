@@ -390,7 +390,7 @@ window.ResourceManager = class {
         const textures = this.resources.textures[category];
         const firstTexture = textures.values().next().value;
 
-        console.log('Found texture:', firstTexture);
+        // console.log('Found texture:', firstTexture);
         return firstTexture;
     }
 

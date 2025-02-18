@@ -626,12 +626,6 @@ class MapEditor {
         this.playerStart = null;
       }
 
-      // Load resource pack if specified
-      //     if (saveData.textureData?.activeResourcePack && this.resourceManager) {
-      //     console.log("Loading associated resource pack:", saveData.textureData.activeResourcePack);
-      //     await this.resourceManager.loadResourcePackByName(saveData.textureData.activeResourcePack);
-      // }
-
       // Restore texture assignments
       if (saveData.textureData?.assignments && this.resourceManager) {
         this.resourceManager.deserializeTextureAssignments(saveData.textureData.assignments);
@@ -651,17 +645,6 @@ class MapEditor {
           img.src = saveData.mapImage;
         });
       }
-
-      // Restore grid settings
-      // this.cellSize = saveData.gridSettings.cellSize;
-      // this.gridDimensions = saveData.gridSettings.width && saveData.gridSettings.height
-      //     ? {
-      //         width: saveData.gridSettings.width,
-      //         height: saveData.gridSettings.height
-      //     }
-      //     : null;
-
-      // console.log("Grid settings restored:", this.gridDimensions);
 
       // Initialize default grid settings
       const defaultGridSettings = {
@@ -689,12 +672,12 @@ class MapEditor {
 
       // Restore rooms
       for (const roomData of saveData.rooms) {
-        console.log("Creating room:", {
-          id: roomData.id,
-          shape: roomData.shape,
-          type: roomData.type,
-          bounds: roomData.bounds
-        });
+        // console.log("Creating room:", {
+        //   id: roomData.id,
+        //   shape: roomData.shape,
+        //   type: roomData.type,
+        //   bounds: roomData.bounds
+        // });
 
         const room = Room.createFromSaved(roomData, this);
         // Restore raised block properties
@@ -2618,23 +2601,23 @@ class MapEditor {
       });
 
       if (nearestStructure) {
-        console.log('Found nearest structure:', nearestStructure);
+        // console.log('Found nearest structure:', nearestStructure);
         // Use snapToStructure instead of snapToWall to get rotation info
         const snappedPosition = this.snapToStructure(x, y, nearestStructure);
-        console.log('Snapped position:', snappedPosition);
+        // console.log('Snapped position:', snappedPosition);
 
         // Get texture from resource manager
         const textureCategory = "doors";
-        console.log('Getting door texture from resource manager');
+        // console.log('Getting door texture from resource manager');
         const texture = this.resourceManager.getSelectedTexture(textureCategory);
 
         if (!texture) {
-          console.warn('No door texture available');
+          // console.warn('No door texture available');
           alert('No door textures available. Please add some in the Resource Manager.');
           return null;
         }
 
-        console.log('Creating door marker with texture:', texture);
+        // console.log('Creating door marker with texture:', texture);
         const marker = this.createMarker("door", snappedPosition.x, snappedPosition.y, {
           texture: texture,
           door: {
@@ -2646,7 +2629,7 @@ class MapEditor {
         this.markers.push(marker);
         return marker;
       } else {
-        console.warn('No nearby structure found for door placement');
+        // console.warn('No nearby structure found for door placement');
         alert("Doors must be placed on a wall or room");
         return null;
       }
@@ -2907,10 +2890,10 @@ class MapEditor {
     markerElement.className = `map-marker marker-${type}`;
     markerElement.id = `marker-${marker.id}`;
 
-    if (data.texture) {
-      console.log('Applying texture to marker:', data.texture);
-      // You might want to add custom styling here based on the texture
-    }
+    // if (data.texture) {
+    //   console.log('Applying texture to marker:', data.texture);
+    //   // You might want to add custom styling here based on the texture
+    // }
 
     // Set up drag handling with edit mode check
 

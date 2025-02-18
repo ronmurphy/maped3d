@@ -944,17 +944,12 @@ class Scene3DController {
     );
     geometry.setIndex(indices);
 
-
-
-
     const material = room.type === "wall"
       ? this.textureManager.createMaterial(room, this.wallTextureRoom)
       : this.textureManager.createMaterial(room, this.roomTextureRoom);
 
     return new THREE.Mesh(geometry, material);
   }
-
-
 
   createRaisedBlockGeometry(room) {
     let geometry;
@@ -992,16 +987,6 @@ class Scene3DController {
 
     switch (room.shape) {
 
-      // case "circle": {
-      //   topTexture.rotation = Math.PI / 2;
-
-      //   topTexture.needsUpdate = true;
-      //   const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
-      //   geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
-      //   geometry.rotateZ(0);  // Keep it horizontal
-      //   // geometry.z = 1;
-      //   break;
-      // }
 
       case "circle": {
         topTexture.rotation = Math.PI / 2;
@@ -1070,9 +1055,6 @@ class Scene3DController {
         });
 
         geometry.rotateX(-Math.PI / 2);
-
-        // Remove the translate line - let mesh positioning handle it
-        // geometry.translate(minX / 50, 0, minY / 50);
 
         const topBottomFaces = room.points.length - 2;
         const sideFaces = room.points.length * 2;
@@ -1214,11 +1196,6 @@ class Scene3DController {
         (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2
       );
 
-      // mesh.position.set(
-      //   room.bounds.x / 50 - this.boxWidth / 2,  // Use absolute position
-      //   0,
-      //   room.bounds.y / 50 - this.boxDepth / 2
-      // );
     } else {
       mesh.position.set(0, 0, 0);
     }
@@ -1226,69 +1203,8 @@ class Scene3DController {
     return mesh;
   }
 
-  // getMonsterTokenData(marker) {
-  //   console.log("Processing marker:", {
-  //     type: marker.type,
-  //     data: marker.data,
-  //     hasMonster: !!marker.data?.monster,
-  //     hasToken: !!marker.data?.monster?.token,
-  //     tokenData: marker.data?.monster?.token?.data,
-  //     tokenUrl: marker.data?.monster?.token?.url
-  //   });
-
-  //   if (!marker || !marker.data || !marker.data.monster) {
-  //     console.log("Invalid marker data");
-  //     return null;
-  //   }
-
-  //   if (!marker.data.monster.token || (!marker.data.monster.token.data && !marker.data.monster.token.url)) {
-  //     console.log("No valid token data found");
-  //     return null;
-  //   }
-
-  //   // Get correct token image source
-  //   const tokenSource = marker.data.monster.token.data // || marker.data.monster.token.url;
-  //   console.log("Token image source type:", {
-  //     isBase64: tokenSource.startsWith('data:'),
-  //     length: tokenSource.length,
-  //     preview: tokenSource.substring(0, 100) + '...'
-  //   });
-
-  //   if (!tokenSource) {
-  //     console.log("No valid token data found");
-  //     return null;
-  // }
-
-  //   const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size || "medium");
-  //   const tokenData = {
-  //     x: marker.x,
-  //     y: marker.y,
-  //     size: monsterSize,
-  //     image: tokenSource,
-  //     type: "monster",
-  //     name: marker.data.monster.basic?.name || "Unknown Monster",
-  //     height: 2 * monsterSize
-  //   };
-
-  //   console.log("Created token data:", {
-  //     position: `${tokenData.x}, ${tokenData.y}`,
-  //     size: tokenData.size,
-  //     height: tokenData.height,
-  //     hasImage: !!tokenData.image
-  //   });
-
-  //   return tokenData;
-  // }
 
   getMonsterTokenData(marker) {
-    console.log("Processing marker:", {
-      type: marker.type,
-      data: marker.data,
-      hasMonster: !!marker.data?.monster,
-      hasToken: !!marker.data?.monster?.token,
-      tokenData: marker.data?.monster?.token?.data,
-      tokenUrl: marker.data?.monster?.token?.url
-    });
   
     if (!marker || !marker.data || !marker.data.monster) {
       console.log("Invalid marker data");
@@ -1340,11 +1256,11 @@ class Scene3DController {
       tokenSource = canvas.toDataURL('image/webp');
     }
   
-    console.log("Token image source type:", {
-      isBase64: tokenSource.startsWith('data:'),
-      length: tokenSource.length,
-      preview: tokenSource.substring(0, 100) + '...'
-    });
+    // console.log("Token image source type:", {
+    //   isBase64: tokenSource.startsWith('data:'),
+    //   length: tokenSource.length,
+    //   preview: tokenSource.substring(0, 100) + '...'
+    // });
   
     const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic?.size || "medium");
     const tokenData = {
@@ -1591,7 +1507,7 @@ class Scene3DController {
 
     const createTokenMesh = (token) => {
       // Debug log the token data
-      console.log("Creating token mesh with data:", token);
+      // console.log("Creating token mesh with data:", token);
 
       return new Promise((resolve, reject) => {
         const textureLoader = new THREE.TextureLoader();
