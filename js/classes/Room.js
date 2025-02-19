@@ -15,6 +15,48 @@
           this.locked = false;
         }
 
+        isPointInside(x, y) {
+          // For rectangle and circle shapes
+          if (this.shape === 'rectangle') {
+            return x >= this.bounds.x && x <= this.bounds.x + this.bounds.width &&
+                   y >= this.bounds.y && y <= this.bounds.y + this.bounds.height;
+          } 
+          else if (this.shape === 'circle') {
+            const centerX = this.bounds.x + this.bounds.width/2;
+            const centerY = this.bounds.y + this.bounds.height/2;
+            const radius = Math.max(this.bounds.width, this.bounds.height) / 2;
+            
+            const distSq = (x - centerX) * (x - centerX) + (y - centerY) * (y - centerY);
+            return distSq <= radius * radius;
+          }
+          else if (this.shape === 'polygon' && this.points) {
+            // For polygon shapes, we need point-in-polygon test
+            const absolutePoints = this.points.map(p => ({
+              x: p.x + this.bounds.x, 
+              y: p.y + this.bounds.y
+            }));
+            
+            return this.isPointInPolygon(x, y, absolutePoints);
+          }
+          
+          return false;
+        }
+        
+        // Helper to check if point is in polygon (as method on Room class)
+        isPointInPolygon(px, py, vertices) {
+          // Ray-casting algorithm
+          let inside = false;
+          for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+            const xi = vertices[i].x, yi = vertices[i].y;
+            const xj = vertices[j].x, yj = vertices[j].y;
+            
+            const intersect = ((yi > py) !== (yj > py)) && 
+                (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+          }
+          return inside;
+        }
+
         toggleVisibility() {
           this.visible = !this.visible;
           if (this.element) {

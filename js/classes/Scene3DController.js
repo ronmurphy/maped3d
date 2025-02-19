@@ -206,25 +206,69 @@ class Scene3DController {
     return texture;
   }
 
+  // createTokenMesh(token) {
+  //   // Create billboard material
+  //   const spriteMaterial = new THREE.SpriteMaterial({
+  //     map: new THREE.TextureLoader().load(token.image),
+  //     transparent: true,
+  //     sizeAttenuation: true
+  //   });
+
+  //   const sprite = new THREE.Sprite(spriteMaterial);
+
+  //   // Scale based on token size and grid
+  //   const scale = token.size * (this.cellSize / 50);
+  //   sprite.scale.set(scale, scale, 1);
+
+  //   // Position in world space
+  //   const x = token.x / this.cellSize - this.boxWidth / 2;
+  //   const z = token.y / this.cellSize - this.boxDepth / 2;
+  //   sprite.position.set(x, token.height, z);
+
+  //   return sprite;
+  // }
+
+  // Modify the createTokenMesh method to handle elevation
   createTokenMesh(token) {
-    // Create billboard material
+    // Debug token data
+    console.log("Creating token mesh for:", {
+      name: token.name,
+      position: `${token.x}, ${token.y}`,
+      size: token.size || 1,
+      height: token.height || 2
+    });
+  
+    // Create billboard material  
     const spriteMaterial = new THREE.SpriteMaterial({
       map: new THREE.TextureLoader().load(token.image),
       transparent: true,
       sizeAttenuation: true
     });
-
+  
     const sprite = new THREE.Sprite(spriteMaterial);
-
+    
     // Scale based on token size and grid
     const scale = token.size * (this.cellSize / 50);
-    sprite.scale.set(scale, scale, 1);
-
-    // Position in world space
-    const x = token.x / this.cellSize - this.boxWidth / 2;
-    const z = token.y / this.cellSize - this.boxDepth / 2;
-    sprite.position.set(x, token.height, z);
-
+    const aspectRatio = 1; // Assume square for now
+    sprite.scale.set(scale * aspectRatio, scale, 1);
+  
+    // Calculate world position  
+    const x = token.x / 50 - this.boxWidth / 2;
+    const z = token.y / 50 - this.boxDepth / 2;
+    
+    // Get elevation at token position
+    const { elevation, isInside } = this.getElevationAtPoint(x, z);
+    
+    // Set y position - tokens inside walls stay at normal height,
+    // tokens on raised blocks get placed on top
+    let y = token.height || 2;
+    if (!isInside && elevation > 0) {
+      y = elevation + (token.size || 1);
+    }
+    
+    sprite.position.set(x, y, z);
+    console.log(`Positioned token at (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`);
+    
     return sprite;
   }
 
@@ -1308,6 +1352,96 @@ class Scene3DController {
     return calculatedSize;
   }
 
+
+  // getElevationAtPoint(x, z) {
+  //   let elevation = 0;
+  //   let isInside = false;
+    
+  //   // Check all rooms/walls
+  //   this.rooms.forEach(room => {
+  //     // Skip non-wall and non-raised blocks
+  //     if (!room.isRaisedBlock && room.type !== 'wall') return;
+      
+  //     // Check if point is within bounds
+  //     const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+  //     const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+  //     const roomWidth = room.bounds.width / 50;
+  //     const roomDepth = room.bounds.height / 50;
+      
+  //     const isPointInside = this.isPointInRectangle(
+  //       x, z,
+  //       roomX, roomZ,
+  //       roomX + roomWidth, roomZ + roomDepth
+  //     );
+      
+  //     if (isPointInside) {
+  //       if (room.isRaisedBlock) {
+  //         // For raised blocks, we increase elevation
+  //         elevation = Math.max(elevation, room.blockHeight || 0);
+  //       } else if (room.type === 'wall' && !room.isRaisedBlock) {
+  //         // For regular walls, mark as inside
+  //         isInside = true;
+  //       }
+  //     }
+  //   });
+    
+  //   return { elevation, isInside };
+  // }
+  
+  // Helper methods as class methods instead of standalone functions
+  
+  getElevationAtPoint(x, z) {
+    let elevation = 0;
+    let isInside = false;
+    
+    // Check all rooms/walls
+    this.rooms.forEach(room => {
+      // Convert room bounds to world space
+      const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+      const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+      const roomWidth = room.bounds.width / 50;
+      const roomDepth = room.bounds.height / 50;
+      
+      // Simple rectangle check
+      if (x >= roomX && x <= roomX + roomWidth && 
+          z >= roomZ && z <= roomZ + roomDepth) {
+        
+        // For raised blocks, increase elevation
+        if (room.isRaisedBlock && room.blockHeight) {
+          elevation = Math.max(elevation, room.blockHeight);
+        } 
+        // For walls that aren't raised blocks, mark as inside
+        else if (room.type === 'wall' && !room.isRaisedBlock) {
+          isInside = true;
+        }
+      }
+    });
+    
+    console.log(`Elevation check at (${x.toFixed(2)}, ${z.toFixed(2)}): height=${elevation}, inside=${isInside}`);
+    return { elevation, isInside };
+  }
+  
+  
+  isPointInRectangle(px, pz, x1, z1, x2, z2) {
+    return px >= x1 && px <= x2 && pz >= z1 && pz <= z2;
+  }
+  
+  isPointInPolygon(px, pz, vertices) {
+    // Ray-casting algorithm
+    let inside = false;
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const xi = vertices[i].x, zi = vertices[i].y;
+      const xj = vertices[j].x, zj = vertices[j].y;
+      
+      const intersect = ((zi > pz) !== (zj > pz)) && 
+          (px < (xj - xi) * (pz - zi) / (zj - zi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  
+
   async init3DScene(updateStatus) {
     const renderState = {
       clippingEnabled: false // true
@@ -1550,19 +1684,65 @@ class Scene3DController {
     };
 
     // Then when creating tokens:
+    // if (this.tokens && this.tokens.length > 0) {
+    //   console.log("Processing tokens for 3D view:", this.tokens);
+
+    //   Promise.all(this.tokens.map(token => createTokenMesh(token)))
+    //     .then(sprites => {
+    //       sprites.forEach(sprite => this.scene.add(sprite));
+    //       console.log("All token sprites added to scene");
+    //     })
+    //     .catch(error => {
+    //       console.error("Error creating token sprites:", error);
+    //     });
+    // }
+
     if (this.tokens && this.tokens.length > 0) {
-      console.log("Processing tokens for 3D view:", this.tokens);
-
-      Promise.all(this.tokens.map(token => createTokenMesh(token)))
-        .then(sprites => {
-          sprites.forEach(sprite => this.scene.add(sprite));
-          console.log("All token sprites added to scene");
-        })
-        .catch(error => {
-          console.error("Error creating token sprites:", error);
+      console.log("Processing tokens for 3D view:", this.tokens.length);
+      
+      // Debug first token
+      if (this.tokens[0]) {
+        console.log("Example token data:", {
+          name: this.tokens[0].name,
+          position: `(${this.tokens[0].x}, ${this.tokens[0].y})`,
+          size: this.tokens[0].size
         });
+      }
+    
+      const tokenMeshes = [];
+      
+      // Process tokens one by one
+      for (let i = 0; i < this.tokens.length; i++) {
+        const token = this.tokens[i];
+        
+        try {
+          // Look for elevation data from the marker
+          const matchingMarker = this.markers?.find(m => 
+            m.type === 'encounter' && 
+            m.data?.monster?.basic?.name === token.name &&
+            m.x === token.x && 
+            m.y === token.y
+          );
+          
+          if (matchingMarker?.data?.elevation > 0 && !matchingMarker.data.insideWall) {
+            console.log(`Token ${token.name} at elevation ${matchingMarker.data.elevation}`);
+            // Add elevation to token height
+            token.height = (token.size || 1) + matchingMarker.data.elevation;
+          }
+          
+          // Create and add token mesh
+          const mesh = this.createTokenMesh(token);
+          if (mesh) {
+            this.scene.add(mesh);
+            tokenMeshes.push(mesh);
+          }
+        } catch (err) {
+          console.error(`Error creating token ${i}:`, err);
+        }
+      }
+      
+      console.log(`Added ${tokenMeshes.length} token meshes to scene`);
     }
-
 
     // const controls = new THREE.PointerLockControls(
     //   this.camera,

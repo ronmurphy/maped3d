@@ -2499,6 +2499,30 @@ this.hasUrlBasedTokens = true;
     }
   }
 
+  getElevationAtPoint(x, y) {
+    let elevation = 0;
+    let insideWall = false;
+    
+    // Check each room for overlap and elevation
+    this.rooms.forEach(room => {
+      // Skip non-walls and non-raised blocks
+      if (!room.isRaisedBlock && room.type !== 'wall') return;
+      
+      // Check if point is inside this room/wall
+      if (room.isPointInside(x, y)) {
+        if (room.isRaisedBlock && room.blockHeight) {
+          // Found a raised block, consider its height
+          elevation = Math.max(elevation, room.blockHeight);
+        } else if (room.type === 'wall' && !room.isRaisedBlock) {
+          // Point is inside a solid wall (not a raised block)
+          insideWall = true;
+        }
+      }
+    });
+    
+    return { elevation, insideWall };
+  }
+
   createTeleportConnection(pointA, pointB) {
 
 
@@ -2847,45 +2871,126 @@ this.hasUrlBasedTokens = true;
 
 
 
+  // updateMarkerAppearance(marker) {
+  //   if (marker.data.monster?.token) {
+  //     const tokenSource =
+  //       marker.data.monster.token.data || marker.data.monster.token.url;
+  //     const monsterSize = this.getMonsterSizeInSquares(
+  //       marker.data.monster.basic.size
+  //     );
+
+  //     // Use the existing cellSize property
+  //     const cellSize = this.cellSize || 32; // Fallback to 32 if cellSize not calculated yet
+  //     const totalSize = cellSize * monsterSize; // This will be both width and height
+
+  //     // Make the token square and centered
+  //     marker.element.innerHTML = `
+  //           <div class="monster-token" style="
+  //               width: ${totalSize}px; 
+  //               height: ${totalSize}px; 
+  //               border-radius: 10%; 
+  //               border: 2px solid #f44336; 
+  //               overflow: hidden;
+  //               display: flex;
+  //               align-items: center;
+  //               justify-content: center;
+  //               position: absolute;
+  //               left: -${totalSize / 2}px;
+  //               top: -${totalSize / 2}px;
+  //               transform-origin: center;
+  //               transform: scale(${this.scale}); /* Add map scaling */
+  //           ">
+  //               <img src="${tokenSource}" 
+  //                    style="width: 100%; height: 100%; object-fit: cover;"
+  //                    onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'material-icons\' style=\'font-size: ${totalSize * 0.75
+  //       }px;\'>local_fire_department</span>';" />
+  //           </div>
+  //       `;
+
+  //     // Update position with current scale and offset
+  //     this.updateMarkerPosition(marker);
+  //   }
+  // }
+
   updateMarkerAppearance(marker) {
     if (marker.data.monster?.token) {
-      const tokenSource =
-        marker.data.monster.token.data || marker.data.monster.token.url;
-      const monsterSize = this.getMonsterSizeInSquares(
-        marker.data.monster.basic.size
-      );
-
-      // Use the existing cellSize property
-      const cellSize = this.cellSize || 32; // Fallback to 32 if cellSize not calculated yet
-      const totalSize = cellSize * monsterSize; // This will be both width and height
-
-      // Make the token square and centered
+      const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
+      const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size);
+      
+      // Check if token is on elevated surface
+      const { elevation, insideWall } = this.checkTokenElevation(marker);
+      
+      // Store for 3D view
+      marker.data.elevation = elevation;
+      marker.data.insideWall = insideWall;
+      
+      // Use existing cellSize calculation
+      const cellSize = this.cellSize || 32;
+      const totalSize = cellSize * monsterSize;
+      
+      // Create token HTML with elevation indicators
       marker.element.innerHTML = `
-            <div class="monster-token" style="
-                width: ${totalSize}px; 
-                height: ${totalSize}px; 
-                border-radius: 10%; 
-                border: 2px solid #f44336; 
-                overflow: hidden;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                position: absolute;
-                left: -${totalSize / 2}px;
-                top: -${totalSize / 2}px;
-                transform-origin: center;
-                transform: scale(${this.scale}); /* Add map scaling */
-            ">
-                <img src="${tokenSource}" 
-                     style="width: 100%; height: 100%; object-fit: cover;"
-                     onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'material-icons\' style=\'font-size: ${totalSize * 0.75
-        }px;\'>local_fire_department</span>';" />
-            </div>
-        `;
-
-      // Update position with current scale and offset
+        <div class="monster-token" style="
+            width: ${totalSize}px; 
+            height: ${totalSize}px; 
+            border-radius: 10%; 
+            border: 2px solid ${insideWall ? '#ff9800' : '#f44336'}; 
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            left: -${totalSize / 2}px;
+            top: -${totalSize / 2}px;
+            transform-origin: center;
+            transform: scale(${this.scale});
+            ${elevation > 0 ? `box-shadow: 0 ${elevation * 2}px ${elevation * 3}px rgba(0,0,0,0.3);` : ''}
+        ">
+            <img src="${tokenSource}" 
+                style="width: 100%; height: 100%; object-fit: cover;"
+                onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size: ${totalSize * 0.75}px;\\'>local_fire_department</span>';" />
+            ${elevation > 0 ? `
+              <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; padding: 2px 4px; border-radius: 2px; font-size: 10px;">+${elevation}</div>
+            ` : ''}
+        </div>
+      `;
+  
+      // Update position
       this.updateMarkerPosition(marker);
     }
+  }
+
+  checkTokenElevation(marker) {
+    if (!marker || !marker.x || !marker.y) return { elevation: 0, insideWall: false };
+    
+    let elevation = 0;
+    let insideWall = false;
+    
+    // Check each room for overlap
+    this.rooms.forEach(room => {
+      // Skip non-walls and non-raised blocks
+      if (!room.isRaisedBlock && room.type !== 'wall') return;
+      
+      // Simple bounds check
+      const isInBounds = 
+        marker.x >= room.bounds.x && 
+        marker.x <= room.bounds.x + room.bounds.width &&
+        marker.y >= room.bounds.y && 
+        marker.y <= room.bounds.y + room.bounds.height;
+      
+      if (isInBounds) {
+        // For raised blocks, use height
+        if (room.isRaisedBlock && room.blockHeight) {
+          elevation = Math.max(elevation, room.blockHeight);
+        } 
+        // For regular walls, mark as inside
+        else if (room.type === 'wall' && !room.isRaisedBlock) {
+          insideWall = true;
+        }
+      }
+    });
+    
+    return { elevation, insideWall };
   }
 
   // Add new method to handle zoom scaling
