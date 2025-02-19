@@ -1578,6 +1578,10 @@ if (packNameInput) {
                     if (tabName === 'bestiary') {
                         this.updateBestiaryGallery(drawer, 'grid');
                     }
+
+                    if (tabName === 'bestiary') {
+                        this.debugBestiarySearch(drawer);
+                    }
                 });
             }
 
@@ -2203,6 +2207,75 @@ if (packNameInput) {
         }
     }
 
+
+    debugBestiarySearch(drawer) {
+        console.group("Bestiary Search Debugging");
+        
+        // Check if bestiary panel exists
+        const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+        console.log("Bestiary panel found:", !!bestiaryPanel);
+        
+        if (bestiaryPanel) {
+            // Check search elements
+            const searchInput = bestiaryPanel.querySelector('#monster-search');
+            const crFilter = bestiaryPanel.querySelector('#cr-filter');
+            const typeFilter = bestiaryPanel.querySelector('#type-filter');
+            const sizeFilter = bestiaryPanel.querySelector('#size-filter');
+            const clearFiltersBtn = bestiaryPanel.querySelector('#clear-filters');
+            
+            console.log("Filter elements:", {
+                searchInput: {
+                    found: !!searchInput,
+                    value: searchInput?.value || "N/A",
+                    id: searchInput?.id || "N/A",
+                    hasListeners: searchInput?._events?.length > 0
+                },
+                crFilter: {
+                    found: !!crFilter,
+                    value: crFilter?.value || "N/A",
+                    id: crFilter?.id || "N/A",
+                    hasListeners: crFilter?._events?.length > 0
+                },
+                typeFilter: {
+                    found: !!typeFilter,
+                    value: typeFilter?.value || "N/A",
+                    id: typeFilter?.id || "N/A",
+                    hasListeners: typeFilter?._events?.length > 0
+                },
+                sizeFilter: {
+                    found: !!sizeFilter,
+                    value: sizeFilter?.value || "N/A", 
+                    id: sizeFilter?.id || "N/A",
+                    hasListeners: sizeFilter?._events?.length > 0
+                },
+                clearBtn: {
+                    found: !!clearFiltersBtn,
+                    id: clearFiltersBtn?.id || "N/A",
+                    hasListeners: clearFiltersBtn?._events?.length > 0
+                }
+            });
+            
+            // Check if monster data exists
+            console.log("Bestiary data:", {
+                totalMonsters: this.resources.bestiary.size,
+                sampleMonster: this.resources.bestiary.size > 0 ? 
+                    Array.from(this.resources.bestiary.values())[0].name : "None"
+            });
+            
+            // Test a filter operation
+            if (this.resources.bestiary.size > 0) {
+                const testResults = Array.from(this.resources.bestiary.values()).filter(monster => 
+                    monster.name.toLowerCase().includes('a'));
+                console.log(`Test filter for names with 'a': ${testResults.length} results`);
+            }
+            
+            // Check HTML structure
+            console.log("Panel HTML structure:", bestiaryPanel.innerHTML.substring(0, 500) + "...");
+        }
+        
+        console.groupEnd();
+    }
+
 updateBestiaryGallery(drawer, view = 'grid') {
     const container = drawer.querySelector('#bestiaryGallery');
     if (!container) {
@@ -2225,10 +2298,6 @@ updateBestiaryGallery(drawer, view = 'grid') {
             const addMonsterBtn = panelHeader.querySelector('.add-monster-btn');
             panelHeader.innerHTML = '';
             
-            // Create new layout with filter controls
-            const filterBar = document.createElement('div');
-            filterBar.className = 'monster-filter-bar';
-            
             // Get unique CR values and monster types for filters
             const crValues = new Set();
             const typeValues = new Set();
@@ -2245,9 +2314,8 @@ updateBestiaryGallery(drawer, view = 'grid') {
             panelHeader.style.alignItems = 'flex-end';
             panelHeader.style.gap = '8px';
             
-            // Title and search input
+            // Create compact search layout
             panelHeader.innerHTML = `
-
                 <sl-input placeholder="Search..." clearable id="monster-search" size="small" style="flex: 1; min-width: 120px;"></sl-input>
                 
                 <sl-select placeholder="CR" clearable id="cr-filter" size="small" style="width: 80px;">
@@ -2283,10 +2351,10 @@ updateBestiaryGallery(drawer, view = 'grid') {
                 const newAddBtn = document.createElement('sl-button');
                 newAddBtn.setAttribute('size', 'small');
                 newAddBtn.classList.add('add-monster-btn');
-                newAddBtn.setAttribute('variant', 'primary');
+                newAddBtn.setAttribute('variant', 'primary'); 
+                newAddBtn.setAttribute('circle', '');
                 newAddBtn.innerHTML = `
-                    <span class="material-icons" slot="prefix">add_circle</span>
-                    Add Monster
+                    <span class="material-icons">add</span>
                 `;
                 panelHeader.appendChild(newAddBtn);
                 
@@ -2399,7 +2467,8 @@ updateBestiaryGallery(drawer, view = 'grid') {
                 </sl-button-group>
             </div>
         `;
-
+        
+        // Add hover tooltip for warning
         if (isTokenUrl) {
             const warning = card.querySelector('.token-warning');
             if (warning) {
@@ -2442,12 +2511,6 @@ updateBestiaryGallery(drawer, view = 'grid') {
             alert('Monster editing will be implemented in a future update');
         });
         
-        // card.querySelector('.delete-btn').addEventListener('click', () => {
-        //     if (confirm(`Remove ${monster.name} from bestiary?`)) {
-        //         this.resources.bestiary.delete(monster.id);
-        //         this.updateBestiaryGallery(drawer, view);
-        //     }
-        // });
         card.querySelector('.delete-btn').addEventListener('click', async () => {
             if (confirm(`Remove ${monster.name} from bestiary?`)) {
                 // First, remove from the resource manager's bestiary collection
@@ -2473,60 +2536,69 @@ updateBestiaryGallery(drawer, view = 'grid') {
                 this.updateBestiaryGallery(drawer, view);
             }
         });
-        // card.querySelector('.delete-btn').addEventListener('click', async () => {
-        //     if (confirm(`Remove ${monster.name} from bestiary?`)) {
-        //         // Remove from bestiary Map
-        //         this.resources.bestiary.delete(monster.id);
-                
-        //         // IMPORTANT: Also remove from MonsterManager database
-        //         if (this.monsterManager) {
-        //             const key = monster.name.toLowerCase().replace(/\s+/g, "_");
-        //             const database = this.monsterManager.loadDatabase();
-                    
-        //             if (database && database.monsters) {
-        //                 // Delete from database object
-        //                 delete database.monsters[key];
-                        
-        //                 // Save updated database to localStorage
-        //                 localStorage.setItem("monsterDatabase", JSON.stringify(database));
-        //                 console.log(`Deleted monster '${monster.name}' from persistent storage`);
-        //             }
-        //         }
-                
-        //         // Refresh the gallery
-        //         this.updateBestiaryGallery(drawer, view);
-        //     }
-        // });
         
         container.appendChild(card);
     });
 }
 
-
-    setupBestiaryFilters(drawer, panelHeader) {
-        // Ensure we're targeting elements within the bestiary panel
-        const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-        if (!bestiaryPanel) return;
-        
-        const searchInput = bestiaryPanel.querySelector('#monster-search');
-        const crFilter = bestiaryPanel.querySelector('#cr-filter');
-        const typeFilter = bestiaryPanel.querySelector('#type-filter');
-        const sizeFilter = bestiaryPanel.querySelector('#size-filter');
-        const clearFiltersBtn = bestiaryPanel.querySelector('#clear-filters');
-        
-        const applyFilters = () => {
-            // Re-render gallery with current filters
-            const view = bestiaryPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
-            this.updateBestiaryGallery(drawer, view);
-        };
-        
-        // Add event listeners
-        searchInput?.addEventListener('sl-input', applyFilters);
-        crFilter?.addEventListener('sl-change', applyFilters);
-        typeFilter?.addEventListener('sl-change', applyFilters);
-        sizeFilter?.addEventListener('sl-change', applyFilters);
-        
-        clearFiltersBtn?.addEventListener('click', () => {
+// Make sure we have the original working setup filters method
+setupBestiaryFilters(drawer, panelHeader) {
+    // Ensure we're targeting elements within the bestiary panel
+    const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+    if (!bestiaryPanel) return;
+    
+    const searchInput = bestiaryPanel.querySelector('#monster-search');
+    const crFilter = bestiaryPanel.querySelector('#cr-filter');
+    const typeFilter = bestiaryPanel.querySelector('#type-filter');
+    const sizeFilter = bestiaryPanel.querySelector('#size-filter');
+    const clearFiltersBtn = bestiaryPanel.querySelector('#clear-filters');
+    
+    console.log("Setting up bestiary filters with elements:", {
+        searchInput: !!searchInput,
+        crFilter: !!crFilter,
+        typeFilter: !!typeFilter,
+        sizeFilter: !!sizeFilter,
+        clearFiltersBtn: !!clearFiltersBtn
+    });
+    
+    const applyFilters = () => {
+        // Re-render gallery with current filters
+        const view = bestiaryPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+        this.updateBestiaryGallery(drawer, view);
+    };
+    
+    // Add event listeners
+    if (searchInput) {
+        searchInput.addEventListener('sl-input', (e) => {
+            console.log("Search input changed:", e.target.value);
+            applyFilters();
+        });
+    }
+    
+    if (crFilter) {
+        crFilter.addEventListener('sl-change', (e) => {
+            console.log("CR filter changed:", e.target.value);
+            applyFilters();
+        });
+    }
+    
+    if (typeFilter) {
+        typeFilter.addEventListener('sl-change', (e) => {
+            console.log("Type filter changed:", e.target.value);
+            applyFilters();
+        });
+    }
+    
+    if (sizeFilter) {
+        sizeFilter.addEventListener('sl-change', (e) => {
+            console.log("Size filter changed:", e.target.value);
+            applyFilters();
+        });
+    }
+    
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+            console.log("Clearing all filters");
             // Reset all filters
             if (searchInput) searchInput.value = '';
             if (crFilter) crFilter.value = '';
@@ -2535,38 +2607,57 @@ updateBestiaryGallery(drawer, view = 'grid') {
             applyFilters();
         });
     }
-    
-  
-    getFilteredBestiary(drawer) {
-        // Get bestiary panel specifically
-        const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-        if (!bestiaryPanel) {
-            return Array.from(this.resources.bestiary.values()); // Return all if panel not found
-        }
-        
-        // Get filter values from the bestiary panel
-        const searchTerm = bestiaryPanel.querySelector('#monster-search')?.value?.toLowerCase() || '';
-        const crFilter = bestiaryPanel.querySelector('#cr-filter')?.value || '';
-        const typeFilter = bestiaryPanel.querySelector('#type-filter')?.value || '';
-        const sizeFilter = bestiaryPanel.querySelector('#size-filter')?.value || '';
-        
-        // Convert Map to Array for filtering
-        return Array.from(this.resources.bestiary.values()).filter(monster => {
-            // Search filter
-            const nameMatch = monster.name.toLowerCase().includes(searchTerm);
-            
-            // CR filter
-            const crMatch = !crFilter || monster.cr === crFilter;
-            
-            // Type filter
-            const typeMatch = !typeFilter || monster.type === typeFilter;
-            
-            // Size filter 
-            const sizeMatch = !sizeFilter || monster.size === sizeFilter;
-            
-            return nameMatch && crMatch && typeMatch && sizeMatch;
-        });
+}
+
+// And the original working getFilteredBestiary method
+getFilteredBestiary(drawer) {
+    // Get bestiary panel specifically
+    const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+    if (!bestiaryPanel) {
+        console.log("Bestiary panel not found, returning all monsters");
+        return Array.from(this.resources.bestiary.values());
     }
+    
+    // Get filter values from the bestiary panel elements
+    const searchInput = bestiaryPanel.querySelector('#monster-search');
+    const crFilter = bestiaryPanel.querySelector('#cr-filter');
+    const typeFilter = bestiaryPanel.querySelector('#type-filter');  
+    const sizeFilter = bestiaryPanel.querySelector('#size-filter');
+    
+    // Get current values directly from elements
+    const searchTerm = searchInput?.value?.toLowerCase() || '';
+    const crValue = crFilter?.value || '';
+    const typeValue = typeFilter?.value || '';
+    const sizeValue = sizeFilter?.value || '';
+    
+    console.log("Filtering bestiary with:", {
+        searchTerm,
+        crFilter: crValue,
+        typeFilter: typeValue,
+        sizeFilter: sizeValue,
+        totalMonsters: this.resources.bestiary.size
+    });
+    
+    // Convert Map to Array for filtering
+    const filtered = Array.from(this.resources.bestiary.values()).filter(monster => {
+        // Search filter - match on monster name
+        const nameMatch = !searchTerm || monster.name.toLowerCase().includes(searchTerm);
+        
+        // CR filter
+        const crMatch = !crValue || monster.cr === crValue;
+        
+        // Type filter
+        const typeMatch = !typeValue || monster.type === typeValue;
+        
+        // Size filter 
+        const sizeMatch = !sizeValue || monster.size === sizeValue;
+        
+        return nameMatch && crMatch && typeMatch && sizeMatch;
+    });
+    
+    console.log(`Filtered from ${this.resources.bestiary.size} to ${filtered.length} monsters`);
+    return filtered;
+}
 
 
     showMonsterDetails(monsterData) {
