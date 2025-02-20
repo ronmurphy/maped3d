@@ -208,16 +208,61 @@
             }
           });
 
-          roomElement.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (!this.isMarkerEditMode) { // Only show if not in marker edit mode
-        window.mapEditor.showStructureContextMenu(this, e);
-    }
+//           roomElement.addEventListener('contextmenu', (e) => {
+//     e.preventDefault();
+//     if (!this.isMarkerEditMode) { // Only show if not in marker edit mode
+//         window.mapEditor.showStructureContextMenu(this, e);
+//     }
+// });
+
+
+
+//           this.element = roomElement;
+//           this.updateElement();
+//           return roomElement;
+
+roomElement.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (!this.isMarkerEditMode) { // Only show if not in marker edit mode
+    window.mapEditor.showStructureContextMenu(this, e);
+  }
 });
 
-          this.element = roomElement;
-          this.updateElement();
-          return roomElement;
+// Add height indicator if needed - ADD THIS CODE HERE
+if ((this.isRaisedBlock && this.blockHeight > 0) || this.isRegularWall) {
+  const heightLabel = document.createElement('div');
+  heightLabel.className = 'height-indicator';
+  heightLabel.style.cssText = `
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    z-index: 5;
+    pointer-events: none;
+    user-select: none;
+    backdrop-filter: blur(2px);
+  `;
+  
+  // Determine what to show
+  let displayText = '';
+  if (this.isRegularWall) {
+    displayText = `Wall`;
+  } else if (this.isRaisedBlock) {
+    const sliderValue = Math.round(this.blockHeight * 2);
+    displayText = `H:${sliderValue} (${this.blockHeight})`;
+  }
+  
+  heightLabel.textContent = displayText;
+  roomElement.appendChild(heightLabel);
+}
+
+this.element = roomElement;
+this.updateElement();
+return roomElement;
         }
 
         static createFromSaved(roomData, editor) {
@@ -292,22 +337,22 @@
 
         updateElement() {
           if (!this.element) return;
-
+        
           const editor = window.mapEditor;
           if (!editor) return;
-
+        
           // Calculate position based on scale and offset
           const left = this.bounds.x * editor.scale + editor.offset.x;
           const top = this.bounds.y * editor.scale + editor.offset.y;
           const width = this.bounds.width * editor.scale;
           const height = this.bounds.height * editor.scale;
-
+        
           // Update element style
           this.element.style.left = `${left}px`;
           this.element.style.top = `${top}px`;
           this.element.style.width = `${width}px`;
           this.element.style.height = `${height}px`;
-
+        
           // If this is a polygon room, update vertex positions
           if (this.shape === "polygon" && this.points) {
             const vertices = this.element.querySelectorAll(".polygon-vertex");
@@ -317,17 +362,96 @@
               vertex.style.top = `${(point.y / this.bounds.height) * 100}%`;
             });
           }
-
+        
           // Update appearance based on type and name
           this.element.classList.remove("wall-room", "room-room");
           this.element.classList.add(`${this.type}-room`);
-
+        
           // Special styling for texture rooms
           if (this.name === "WallTexture" || this.name === "RoomTexture") {
             this.element.style.border = "2px dashed #4CAF50";
             this.element.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
           }
+          
+          // Add or update height indicator for raised blocks and regular walls
+          let heightLabel = this.element.querySelector('.height-indicator');
+          if ((this.isRaisedBlock && this.blockHeight > 0) || this.isRegularWall) {
+            // Create height label if it doesn't exist
+            if (!heightLabel) {
+              heightLabel = document.createElement('div');
+              heightLabel.className = 'height-indicator';
+              heightLabel.style.cssText = `
+                position: absolute;
+                top: 32px;
+                left: 4px;
+                background: rgba(0, 0, 0, 0.6);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 11px;
+                z-index: 5;
+                pointer-events: none;
+                user-select: none;
+                backdrop-filter: blur(2px);
+              `;
+              this.element.appendChild(heightLabel);
+            }
+            
+            // Determine what to show
+            let displayText = '';
+            if (this.isRegularWall) {
+              displayText = `Wall`;
+            } else if (this.isRaisedBlock) {
+              const sliderValue = Math.round(this.blockHeight * 2);
+              displayText = `H:${sliderValue} (${this.blockHeight})`;
+            }
+            
+            heightLabel.textContent = displayText;
+            heightLabel.style.display = 'block';
+          } else if (heightLabel) {
+            // Hide height label if it exists but no longer needed
+            heightLabel.style.display = 'none';
+          }
         }
+
+        // updateElement() {
+        //   if (!this.element) return;
+
+        //   const editor = window.mapEditor;
+        //   if (!editor) return;
+
+        //   // Calculate position based on scale and offset
+        //   const left = this.bounds.x * editor.scale + editor.offset.x;
+        //   const top = this.bounds.y * editor.scale + editor.offset.y;
+        //   const width = this.bounds.width * editor.scale;
+        //   const height = this.bounds.height * editor.scale;
+
+        //   // Update element style
+        //   this.element.style.left = `${left}px`;
+        //   this.element.style.top = `${top}px`;
+        //   this.element.style.width = `${width}px`;
+        //   this.element.style.height = `${height}px`;
+
+        //   // If this is a polygon room, update vertex positions
+        //   if (this.shape === "polygon" && this.points) {
+        //     const vertices = this.element.querySelectorAll(".polygon-vertex");
+        //     vertices.forEach((vertex, index) => {
+        //       const point = this.points[index];
+        //       vertex.style.left = `${(point.x / this.bounds.width) * 100}%`;
+        //       vertex.style.top = `${(point.y / this.bounds.height) * 100}%`;
+        //     });
+        //   }
+
+        //   // Update appearance based on type and name
+        //   this.element.classList.remove("wall-room", "room-room");
+        //   this.element.classList.add(`${this.type}-room`);
+
+        //   // Special styling for texture rooms
+        //   if (this.name === "WallTexture" || this.name === "RoomTexture") {
+        //     this.element.style.border = "2px dashed #4CAF50";
+        //     this.element.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
+        //   }
+        // }
 
         createThumbnail(canvas) {
           const thumbnailCanvas = document.createElement("canvas");

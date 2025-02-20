@@ -265,8 +265,51 @@ class Scene3DController {
     if (!isInside && elevation > 0) {
       y = elevation + (token.size || 1);
     }
+
+        // Previous token height calculation
+    // let y = token.height || 2;
+    
+    // // Handle elevation based on wall type and position
+    // if (elevation > 0) {
+    //   if (!isInside) {
+    //     // Token is on top of a raised block
+    //     y = elevation + (token.size || 1);
+    //   } else {
+    //     // Token is inside a wall - check if it's a regular wall
+    //     const wallAtPosition = this.rooms.find(room => {
+    //       if (room.type !== 'wall') return false;
+          
+    //       // Convert room bounds to world space
+    //       const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+    //       const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+    //       const roomWidth = room.bounds.width / 50;
+    //       const roomDepth = room.bounds.height / 50;
+          
+    //       return this.isPointInRectangle(x, z, roomX, roomZ, roomX + roomWidth, roomZ + roomDepth);
+    //     });
+    
+    //     if (wallAtPosition?.isRegularWall) {
+    //       // Place token at normal height for regular walls
+    //       y = token.height || 2;
+    //     } else if (wallAtPosition?.isRaisedBlock) {
+    //       // Place token on top of raised block
+    //       y = wallAtPosition.blockHeight + (token.size || 1);
+    //     }
+    //   }
+    // }
+    
+    // console.log(`Token elevation at (${x.toFixed(2)}, ${z.toFixed(2)}):`, {
+    //   height: y,
+    //   isInside,
+    //   elevation,
+    //   tokenSize: token.size || 1
+    // });
+
     
     sprite.position.set(x, y, z);
+
+
+
     console.log(`Positioned token at (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`);
     
     return sprite;
@@ -365,37 +408,81 @@ class Scene3DController {
     return { drawer, container, progress };
   }
 
+  // handleKeyDown(event) {
+  //   switch (event.code) {
+  //     case "ArrowUp":
+  //     case "KeyW":
+  //       this.moveState.forward = true;
+  //       break;
+  //     case "ArrowDown":
+  //     case "KeyS":
+  //       this.moveState.backward = true;
+  //       break;
+  //     case "ArrowLeft":
+  //     case "KeyA":
+  //       this.moveState.left = true;
+  //       break;
+  //     case "ArrowRight":
+  //     case "KeyD":
+  //       this.moveState.right = true;
+  //       break;
+  //     case "ShiftLeft":
+  //       this.moveState.shiftHeld = true;
+  //       this.moveState.sprint = true;
+  //       this.moveState.speed = 0.05;
+  //       break;
+  //     case "KeyC":
+  //       if (!event.repeat) {
+  //         this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
+  //         this.updateWallClipping();
+  //       }
+  //       break;
+  //   }
+  // }
+
   handleKeyDown(event) {
     switch (event.code) {
-      case "ArrowUp":
-      case "KeyW":
-        this.moveState.forward = true;
-        break;
-      case "ArrowDown":
-      case "KeyS":
-        this.moveState.backward = true;
-        break;
-      case "ArrowLeft":
-      case "KeyA":
-        this.moveState.left = true;
-        break;
-      case "ArrowRight":
-      case "KeyD":
-        this.moveState.right = true;
-        break;
-      case "ShiftLeft":
-        this.moveState.shiftHeld = true;
-        this.moveState.sprint = true;
-        this.moveState.speed = 0.05;
-        break;
-      case "KeyC":
-        if (!event.repeat) {
-          this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
-          this.updateWallClipping();
-        }
-        break;
+        case "ArrowUp":
+        case "KeyW":
+            this.moveState.forward = true;
+            break;
+        case "ArrowDown":
+        case "KeyS":
+            this.moveState.backward = true;
+            break;
+        case "ArrowLeft":
+        case "KeyA":
+            this.moveState.left = true;
+            break;
+        case "ArrowRight":
+        case "KeyD":
+            this.moveState.right = true;
+            break;
+        case "ShiftLeft":
+            this.moveState.shiftHeld = true;
+            this.moveState.sprint = true;
+            this.moveState.speed = 0.05;
+            break;
+        case "Space":
+            // Initiate jump if not already jumping
+            if (this.physics && !event.repeat) {
+                const jumpStarted = this.physics.startJump();
+                if (jumpStarted) {
+                    // Play jump sound if available
+                    if (this.jumpSound) {
+                        this.jumpSound.play();
+                    }
+                }
+            }
+            break;
+        case "KeyC":
+            if (!event.repeat) {
+                this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
+                this.updateWallClipping();
+            }
+            break;
     }
-  }
+}
 
   handleKeyUp(event) {
     switch (event.code) {
@@ -1390,36 +1477,83 @@ class Scene3DController {
   
   // Helper methods as class methods instead of standalone functions
   
+
   getElevationAtPoint(x, z) {
     let elevation = 0;
     let isInside = false;
     
     // Check all rooms/walls
     this.rooms.forEach(room => {
-      // Convert room bounds to world space
-      const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-      const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-      const roomWidth = room.bounds.width / 50;
-      const roomDepth = room.bounds.height / 50;
-      
-      // Simple rectangle check
-      if (x >= roomX && x <= roomX + roomWidth && 
-          z >= roomZ && z <= roomZ + roomDepth) {
+        // Skip non-wall and non-raised blocks
+        if (!room.isRaisedBlock && room.type !== 'wall') return;
         
-        // For raised blocks, increase elevation
-        if (room.isRaisedBlock && room.blockHeight) {
-          elevation = Math.max(elevation, room.blockHeight);
-        } 
-        // For walls that aren't raised blocks, mark as inside
-        else if (room.type === 'wall' && !room.isRaisedBlock) {
-          isInside = true;
+        // Check if point is within bounds
+        const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+        const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+        const roomWidth = room.bounds.width / 50;
+        const roomDepth = room.bounds.height / 50;
+        
+        const isPointInside = this.isPointInRectangle(
+            x, z,
+            roomX, roomZ,
+            roomX + roomWidth, roomZ + roomDepth
+        );
+        
+        if (isPointInside) {
+            if (room.isRaisedBlock) {
+                // For raised blocks, we increase elevation
+                elevation = Math.max(elevation, room.blockHeight || 0);
+            } else if (room.isRegularWall) {
+                // For regular walls, consider top surface at boxHeight
+                // but only if the current elevation is near the top
+                const wallHeight = this.boxHeight || 4;
+                if (Math.abs(elevation - wallHeight) < 0.3) {
+                    elevation = wallHeight;
+                } else {
+                    // Inside wall but not on top
+                    isInside = true;
+                }
+            } else if (room.type === 'wall' && !room.isRaisedBlock) {
+                // For regular walls (backward compatibility), mark as inside
+                isInside = true;
+            }
         }
-      }
     });
     
-    console.log(`Elevation check at (${x.toFixed(2)}, ${z.toFixed(2)}): height=${elevation}, inside=${isInside}`);
     return { elevation, isInside };
-  }
+}
+
+
+  // getElevationAtPoint(x, z) {
+  //   let elevation = 0;
+  //   let isInside = false;
+    
+  //   // Check all rooms/walls
+  //   this.rooms.forEach(room => {
+  //     // Convert room bounds to world space
+  //     const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+  //     const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+  //     const roomWidth = room.bounds.width / 50;
+  //     const roomDepth = room.bounds.height / 50;
+      
+  //     // Simple rectangle check
+  //     if (x >= roomX && x <= roomX + roomWidth && 
+  //         z >= roomZ && z <= roomZ + roomDepth) {
+        
+  //       // For raised blocks, increase elevation
+  //       if (room.isRaisedBlock && room.blockHeight) {
+  //         elevation = Math.max(elevation, room.blockHeight);
+  //       } 
+  //       // For walls that aren't raised blocks, mark as inside
+  //       else if (room.type === 'wall' && !room.isRaisedBlock) {
+  //         isInside = true;
+  //       }
+  //     }
+  //   });
+    
+  //   console.log(`Elevation check at (${x.toFixed(2)}, ${z.toFixed(2)}): height=${elevation}, inside=${isInside}`);
+  //   return { elevation, isInside };
+  // }
   
   
   isPointInRectangle(px, pz, x1, z1, x2, z2) {
@@ -1532,37 +1666,68 @@ class Scene3DController {
       }
     });
 
-    this.rooms.forEach((room) => {
-      if (room.name === "WallTexture" || room.name === "RoomTexture") {
-          return;
-      }
+  //   this.rooms.forEach((room) => {
+  //     if (room.name === "WallTexture" || room.name === "RoomTexture") {
+  //         return;
+  //     }
      
-      let roomMesh;
-      if (room.isRaisedBlock && room.blockHeight) {
-          roomMesh = this.createRaisedBlockGeometry(room);
-          if (roomMesh) {
-              roomMesh.userData = {
-                  isWall: true,
-                  blockHeight: room.blockHeight,
-                  isRaisedBlock: true
-              };
-              // console.log("Created raised block:", roomMesh.userData);
-          }
-      } else {
-          roomMesh = this.createRoomGeometry(room);
-          if (roomMesh) {
-              roomMesh.userData = {
-                  isWall: room.type === "wall",
-                  type: room.type
-              };
-              // console.log("Created room:", roomMesh.userData);
-          }
-      }
+  //     let roomMesh;
+  //     if (room.isRaisedBlock && room.blockHeight) {
+  //         roomMesh = this.createRaisedBlockGeometry(room);
+  //         if (roomMesh) {
+  //             roomMesh.userData = {
+  //                 isWall: true,
+  //                 blockHeight: room.blockHeight,
+  //                 isRaisedBlock: true
+  //             };
+  //             // console.log("Created raised block:", roomMesh.userData);
+  //         }
+  //     } else {
+  //         roomMesh = this.createRoomGeometry(room);
+  //         if (roomMesh) {
+  //             roomMesh.userData = {
+  //                 isWall: room.type === "wall",
+  //                 type: room.type
+  //             };
+  //             // console.log("Created room:", roomMesh.userData);
+  //         }
+  //     }
       
-      if (roomMesh) {
-          this.scene.add(roomMesh);
-      }
-  });
+  //     if (roomMesh) {
+  //         this.scene.add(roomMesh);
+  //     }
+  // });
+
+  this.rooms.forEach((room) => {
+    if (room.name === "WallTexture" || room.name === "RoomTexture") {
+        return;
+    }
+   
+    let roomMesh;
+    if (room.isRaisedBlock && room.blockHeight) {
+        roomMesh = this.createRaisedBlockGeometry(room);
+        if (roomMesh) {
+            roomMesh.userData = {
+                isWall: true,
+                blockHeight: room.blockHeight,
+                isRaisedBlock: true
+            };
+        }
+    } else {
+        roomMesh = this.createRoomGeometry(room);
+        if (roomMesh) {
+            roomMesh.userData = {
+                isWall: room.type === "wall",
+                isRegularWall: room.isRegularWall || false,  // Add the regular wall flag
+                type: room.type
+            };
+        }
+    }
+    
+    if (roomMesh) {
+        this.scene.add(roomMesh);
+    }
+});
 
 
     const materials = [
@@ -1807,6 +1972,30 @@ return {
 };
 }
 
+// animate = () => {
+//   const currentSpeed = this.moveState.speed;
+//   let canMove = true;
+
+//   if (this.moveState.forward || this.moveState.backward) {
+//       const direction = new THREE.Vector3();
+//       this.camera.getWorldDirection(direction);
+//       if (this.moveState.backward) direction.negate();
+      
+//       canMove = this.physics.checkCollision(direction, currentSpeed);
+//   }
+
+//   if (canMove) {
+//       if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+//       if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+//   }
+
+//   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+//   if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+//   this.camera.position.y = this.physics.update();
+//   this.renderer.render(this.scene, this.camera);
+// };
+
 animate = () => {
   const currentSpeed = this.moveState.speed;
   let canMove = true;
@@ -1827,9 +2016,104 @@ animate = () => {
   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
   if (this.moveState.right) this.controls.moveRight(currentSpeed);
 
+  // Update physics and camera height
   this.camera.position.y = this.physics.update();
   this.renderer.render(this.scene, this.camera);
 };
+
+loadJumpSound() {
+  const listener = new THREE.AudioListener();
+  this.camera.add(listener);
+  
+  this.jumpSound = new THREE.Audio(listener);
+  const audioLoader = new THREE.AudioLoader();
+  
+  audioLoader.load('sounds/jump.mp3', (buffer) => {
+      this.jumpSound.setBuffer(buffer);
+      this.jumpSound.setVolume(0.5);
+  }, 
+  // Progress callback
+  (xhr) => {
+      console.log(`Jump sound: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+  },
+  // Error callback
+  (error) => {
+      console.warn('Could not load jump sound:', error);
+  });
+}
+
+// Optional: Add dust particle effect when landing
+createLandingEffect(position) {
+  // Create a particle system for dust effect
+  const particleCount = 20;
+  const particles = new THREE.BufferGeometry();
+  
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
+  
+  // Set up particles in a small radius around landing position
+  for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      // Position within small radius
+      const radius = 0.2 + Math.random() * 0.3;
+      const angle = Math.random() * Math.PI * 2;
+      
+      positions[i3] = position.x + Math.cos(angle) * radius;
+      positions[i3 + 1] = position.y + 0.05;  // Just above ground
+      positions[i3 + 2] = position.z + Math.sin(angle) * radius;
+      
+      // Dust color (light brown/gray)
+      colors[i3] = 0.8 + Math.random() * 0.2;
+      colors[i3 + 1] = 0.7 + Math.random() * 0.2;
+      colors[i3 + 2] = 0.6 + Math.random() * 0.2;
+  }
+  
+  particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  
+  // Material with particle texture
+  const particleMaterial = new THREE.PointsMaterial({
+      size: 0.1,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7
+  });
+  
+  const particleSystem = new THREE.Points(particles, particleMaterial);
+  this.scene.add(particleSystem);
+  
+  // Animate particles rising and fading
+  const startTime = Date.now();
+  const duration = 1000;  // 1 second
+  
+  const animateParticles = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = elapsed / duration;
+      
+      if (progress < 1) {
+          // Update particles
+          for (let i = 0; i < particleCount; i++) {
+              const i3 = i * 3;
+              // Move upward slowly
+              particles.attributes.position.array[i3 + 1] += 0.003;
+          }
+          
+          particles.attributes.position.needsUpdate = true;
+          
+          // Fade out
+          particleMaterial.opacity = 0.7 * (1 - progress);
+          
+          requestAnimationFrame(animateParticles);
+      } else {
+          // Remove when done
+          this.scene.remove(particleSystem);
+          particleSystem.geometry.dispose();
+          particleMaterial.dispose();
+      }
+  };
+  
+  animateParticles();
+}
 
   async show3DView() {
     const { drawer, container, progress } = this.setupDrawer();

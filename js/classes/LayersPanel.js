@@ -746,16 +746,30 @@ createLayerItem(room) {
                   <div style="margin-bottom: 16px;">
                       <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
                       
-                      <sl-range 
-                          id="blockHeight" 
-                          label="Height" 
-                          min="0" max="101" 
-                          step="1" 
-                          tooltip="top" 
-                          value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
-                          help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
-                          style="margin-bottom: 16px;"
-                      ></sl-range>
+                      <!-- Modified to show checkbox for regular wall -->
+                      <div style="display: flex; flex-direction: column; gap: 12px;">
+                          <!-- Wall Height Selector -->
+                          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                              <sl-checkbox id="isRegularWall" 
+                                  ${room.isRegularWall ? 'checked' : ''}
+                                  ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
+                                  Regular Wall (Full Height)
+                              </sl-checkbox>
+                          </div>
+                          
+                          <!-- Block height slider - disabled when isRegularWall is checked -->
+                          <sl-range 
+                              id="blockHeight" 
+                              label="Height" 
+                              min="0" max="101" 
+                              step="1" 
+                              tooltip="top" 
+                              value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
+                              help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
+                              style="margin-bottom: 16px;"
+                              ${room.isRegularWall ? 'disabled' : ''}
+                          ></sl-range>
+                      </div>
           
                       <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
                       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
@@ -813,6 +827,7 @@ createLayerItem(room) {
         const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
         const saveBtn = dialog.querySelector('.save-btn');
         const cancelBtn = dialog.querySelector('.cancel-btn');
+        const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
 
         const textureOptions = dialog.querySelectorAll('.texture-option');
         textureOptions.forEach(option => {
@@ -837,6 +852,7 @@ createLayerItem(room) {
 //         blockHeightSlider.label = `Block Height: ${height} ${height === 1 ? 'block' : 'blocks'}`;
 //     });
 // }
+
 
 const blockHeightSlider = dialog.querySelector('#blockHeight');
 if (blockHeightSlider) {
@@ -867,6 +883,18 @@ if (blockHeightSlider) {
     });
 }
 
+
+if (isRegularWallCheckbox && blockHeightSlider) {
+  isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+      if (e.target.checked) {
+          blockHeightSlider.disabled = true;
+          blockHeightSlider.value = 0; // Set height to 0 for regular walls
+      } else {
+          blockHeightSlider.disabled = false;
+      }
+  });
+}
+
       const handleSave = () => {
         const newName = nameInput.value.trim();
         if (newName) {
@@ -877,11 +905,26 @@ if (blockHeightSlider) {
     // room.isRaisedBlock = blockHeight > 0;
     // room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
 
-    if (blockHeightSlider) {
-      const blockHeight = parseInt(blockHeightSlider.value) / 2;
-      room.isRaisedBlock = blockHeight > 0;
-      room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
-  }
+                // Handle wall type settings
+                if (isRegularWallCheckbox && isRegularWallCheckbox.checked) {
+                  // Regular wall settings
+                  room.isRegularWall = true;
+                  room.isRaisedBlock = false;
+                  room.blockHeight = 0;
+                  room.type = 'wall';
+              } else if (blockHeightSlider) {
+                  // Raised block settings
+                  room.isRegularWall = false;
+                  const blockHeight = parseInt(blockHeightSlider.value) / 2;
+                  room.isRaisedBlock = blockHeight > 0;
+                  room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+              }
+
+  //   if (blockHeightSlider) {
+  //     const blockHeight = parseInt(blockHeightSlider.value) / 2;
+  //     room.isRaisedBlock = blockHeight > 0;
+  //     room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+  // }
 
     if (dialog.selectedTextureId && this.editor.resourceManager) {
         this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');

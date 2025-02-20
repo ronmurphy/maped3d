@@ -2499,29 +2499,58 @@ this.hasUrlBasedTokens = true;
     }
   }
 
-  getElevationAtPoint(x, y) {
-    let elevation = 0;
-    let insideWall = false;
+  // getElevationAtPoint(x, y) {
+  //   let elevation = 0;
+  //   let insideWall = false;
     
-    // Check each room for overlap and elevation
-    this.rooms.forEach(room => {
-      // Skip non-walls and non-raised blocks
-      if (!room.isRaisedBlock && room.type !== 'wall') return;
+  //   // Check each room for overlap and elevation
+  //   this.rooms.forEach(room => {
+  //     // Skip non-walls and non-raised blocks
+  //     if (!room.isRaisedBlock && room.type !== 'wall') return;
       
-      // Check if point is inside this room/wall
-      if (room.isPointInside(x, y)) {
-        if (room.isRaisedBlock && room.blockHeight) {
-          // Found a raised block, consider its height
-          elevation = Math.max(elevation, room.blockHeight);
-        } else if (room.type === 'wall' && !room.isRaisedBlock) {
-          // Point is inside a solid wall (not a raised block)
-          insideWall = true;
-        }
-      }
-    });
+  //     // Check if point is inside this room/wall
+  //     if (room.isPointInside(x, y)) {
+  //       if (room.isRaisedBlock && room.blockHeight) {
+  //         // Found a raised block, consider its height
+  //         elevation = Math.max(elevation, room.blockHeight);
+  //       } else if (room.type === 'wall' && !room.isRaisedBlock) {
+  //         // Point is inside a solid wall (not a raised block)
+  //         insideWall = true;
+  //       }
+  //     }
+  //   });
     
-    return { elevation, insideWall };
-  }
+  //   return { elevation, insideWall };
+  // }
+
+  getElevationAtPoint(x, z) {
+    let elevation = 0;
+    let isInside = false;
+    
+    // Check each room for overlap
+    for (const room of this.rooms) {
+        // Skip non-walls and non-raised blocks early
+        if (!room.isRaisedBlock && room.type !== 'wall') continue;
+        
+        // Quick bounds check
+        const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+        const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+        const roomWidth = room.bounds.width / 50;
+        const roomDepth = room.bounds.height / 50;
+        
+        if (x >= roomX && x <= roomX + roomWidth && 
+            z >= roomZ && z <= roomZ + roomDepth) {
+            
+            if (room.isRaisedBlock) {
+                elevation = Math.max(elevation, room.blockHeight || 0);
+            } else if (room.type === 'wall') {
+                isInside = true;
+            }
+        }
+    }
+    
+    return { elevation, isInside };
+}
 
   createTeleportConnection(pointA, pointB) {
 
@@ -3114,8 +3143,8 @@ this.hasUrlBasedTokens = true;
     // Add context menu handler
     markerElement.addEventListener("contextmenu", (e) => {
       e.preventDefault(); // Prevent default context menu
-      // this.showMarkerContextMenu(marker, e);
-      this.showMarkerContextMenuWithBestiary(marker, e);
+      this.showMarkerContextMenu(marker, e);
+      // this.showMarkerContextMenuWithBestiary(marker, e);
     });
 
     // Position marker
@@ -3487,254 +3516,426 @@ this.hasUrlBasedTokens = true;
 //     dialog.show();
 //   }
 
+  showMarkerContextMenu(marker, event) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Marker Options';
 
-// Add this to MapEditor class
-async showMarkerContextMenuWithBestiary(marker) {
-  // Original showMarkerContextMenu code
-  /*
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = 'Marker Options';
-  dialog.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div class="marker-header" style="display: flex; gap: 12px; align-items: center;">
-              <div class="marker-icon" style="font-size: 32px; color: var(--sl-color-primary-500);">
-                  <span class="material-icons" style="font-size: 32px;">${
-                      marker.type === "player-start" ? "person_pin_circle" :
-                      marker.type === "encounter" ? "local_fire_department" :
-                      marker.type === "treasure" ? "workspace_premium" :
-                      marker.type === "trap" ? "warning" :
-                      marker.type === "teleport" ? "swap_calls" : 
-                      "location_on"
-                  }</span>
-              </div>
-              <div>
-                  <h3 style="margin: 0 0 4px 0; font-size: 1.2em;">${
-                      marker.type.charAt(0).toUpperCase() + marker.type.slice(1)
-                  } Marker</h3>
-                  ${marker.data.description ? `<div style="color: #666;">${marker.data.description}</div>` : ''}
-              </div>
-          </div>
-      </div>
-  `;
-  */
+    const canChangeTexture = (marker.type === 'door' || marker.type === 'prop') && this.resourceManager;
 
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = 'Marker Options';
-  
-  // Build initial content based on marker type
-  let content = `<div style="display: flex; flex-direction: column; gap: 16px;">
-      <div class="marker-header" style="display: flex; gap: 12px; align-items: center;">
-          <div class="marker-icon" style="font-size: 32px; color: var(--sl-color-primary-500);">
-              <span class="material-icons" style="font-size: 32px;">${
-                  marker.type === "player-start" ? "person_pin_circle" :
-                  marker.type === "encounter" ? "local_fire_department" :
-                  marker.type === "treasure" ? "workspace_premium" :
-                  marker.type === "trap" ? "warning" :
-                  marker.type === "teleport" ? "swap_calls" : 
-                  "location_on"
-              }</span>
-          </div>
-          <div>
-              <h3 style="margin: 0 0 4px 0; font-size: 1.2em;">${
-                  marker.type.charAt(0).toUpperCase() + marker.type.slice(1)
-              } Marker</h3>
-              ${marker.data.description ? `<div style="color: #666;">${marker.data.description}</div>` : ''}
-          </div>
-      </div>`;
+    let content = '<div style="display: flex; flex-direction: column; gap: 10px;">';
 
-  // Special handling by marker type
-  if (marker.type === "encounter") {
-      if (marker.data.monster) {
-          const monster = marker.data.monster;
-          // Show monster info
-          content += `
-              <div style="margin-top: 8px;">
-                  <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
-                      ${monster.token?.data ? `
-                          <div style="flex: 0 0 80px; text-align: center;">
-                              <img src="${monster.token.data}" style="width: 80px; height: 80px; object-fit: contain; border-radius: 5px;">
-                          </div>
-                      ` : ''}
-                      
-                      <div style="flex: 1;">
-                          <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 4px;">${monster.basic.name}</div>
-                          <div style="color: #666; font-style: italic;">
-                              ${monster.basic.size} ${monster.basic.type}, ${monster.basic.alignment}
-                          </div>
-                          <div style="margin-top: 4px;">
-                              <span style="font-weight: bold;">CR ${monster.basic.cr}</span> 
-                              (${monster.basic.xp} XP)
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9em;">
-                      <div>
-                          <div style="font-weight: bold;">Armor Class</div>
-                          <div>${monster.stats.ac}</div>
-                      </div>
-                      <div>
-                          <div style="font-weight: bold;">Hit Points</div>
-                          <div>${monster.stats.hp.average} (${monster.stats.hp.roll})</div>
-                      </div>
-                      <div>
-                          <div style="font-weight: bold;">Speed</div>
-                          <div>${monster.stats.speed}</div>
-                      </div>
-                  </div>
-              </div>
-              
-              <div style="display: flex; gap: 8px;">
-                  <sl-button id="cloneMonster" size="small">
-                      <span class="material-icons">content_copy</span>
-                      Clone
-                  </sl-button>
-                  <sl-button id="changeMonster" size="small">
-                      <span class="material-icons">swap_horiz</span>
-                      Change Monster
-                  </sl-button>
-              </div>`;
-      } else {
-          // No monster assigned - Show mini bestiary
-          // We'll add the mini bestiary grid here
-          content += `
-              <div style="margin-top: 8px;">
-                  <div class="mini-bestiary">
-                      <div class="bestiary-search" style="margin-bottom: 8px;">
-                          <sl-input placeholder="Search monsters..." size="small" id="mini-monster-search" clearable></sl-input>
-                      </div>
-                      <div class="mini-bestiary-grid" style="
-                          display: grid;
-                          grid-template-columns: repeat(3, 1fr);
-                          gap: 8px;
-                          max-height: 300px;
-                          overflow-y: auto;
-                          padding: 8px;
-                          background: #f5f5f5;
-                          border-radius: 4px;">
-                          <div class="loading-indicator" style="grid-column: 1/-1; text-align: center; padding: 20px;">
-                              <sl-spinner></sl-spinner>
-                              <div>Loading monsters...</div>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div style="margin-top: 12px;">
-                      <sl-button id="linkMonster" size="small">
-                          <span class="material-icons">link</span>
-                          Paste Monster HTML
-                      </sl-button>
-                  </div>
-              </div>`;
-      }
-  } else if (["treasure", "trap"].includes(marker.type)) {
+    if (canChangeTexture) {
+      const textureCategory = marker.type === 'door' ? 'doors' : 'props';
       content += `
-          <sl-input id="markerDescription"
-                   label="Description"
-                   value="${marker.data.description || ""}">
-          </sl-input>
-      `;
-  } else if (marker.type === "teleport" && marker.data.pairId) {
-      content += `
-          <div style="margin-top: 8px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
-              <div style="font-weight: bold; margin-bottom: 4px;">Teleport ${marker.data.isPointA ? 'Point A' : 'Point B'}</div>
-              <div>Connected to ${marker.data.isPointA ? 'Point B' : 'Point A'}</div>
-          </div>
-      `;
-  }
-  
-  content += `</div>`;
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+            <label>Texture:</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 8px;">
+                ${Array.from(this.resourceManager.resources.textures[textureCategory].entries()).map(([id, texture]) => `
+                    <div class="texture-option" data-texture-id="${id}" 
+                        style="cursor: pointer; border: 2px solid ${marker.data.texture?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'}; 
+                        padding: 4px; border-radius: 4px; position: relative;">
+                        <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+                        <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
+                        ${marker.data.texture?.id === id ? `
+                            <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                check_circle
+                            </span>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    }
 
-  // Add standardized footer with delete button
+    if (marker.type === 'teleport') {
+      content += `
+            <div style="margin-bottom: 12px;">
+                <div style="font-weight: bold; margin-bottom: 4px;">Teleport Point ${marker.data.isPointA ? 'A' : 'B'}</div>
+                <div style="color: #666;">
+                    ${marker.data.hasPair ?
+          `Connected to Point ${marker.data.isPointA ? 'B' : 'A'}` :
+          'No connection - Place another point to connect'}
+                </div>
+            </div>
+        `;
+    } else if (marker.type === 'encounter') {
+// Inside showMarkerContextMenu, in the encounter marker section:
+if (!marker.data.monster) {
   content += `
-      <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="flex-spacer"></div>
-          <sl-button class="delete-marker-btn" variant="danger">
-              <span class="material-icons" style="margin-right: 4px;">delete</span>
-              Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
-          </sl-button>
+    <div style="margin-top: 8px;">
+      <div class="mini-bestiary">
+        <div class="bestiary-search" style="margin-bottom: 8px;">
+          <sl-input placeholder="Search monsters..." size="small" id="mini-monster-search" clearable></sl-input>
+        </div>
+        <div class="mini-bestiary-grid" style="
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+          max-height: 300px;
+          overflow-y: auto;
+          padding: 8px;
+          background: #f5f5f5;
+          border-radius: 4px;">
+          <div class="loading-indicator" style="grid-column: 1/-1; text-align: center; padding: 20px;">
+            <sl-spinner></sl-spinner>
+            <div>Loading monsters...</div>
+          </div>
+        </div>
       </div>
-  `;
-
-  dialog.innerHTML = content;
-  document.body.appendChild(dialog);
-
-  // If this is an encounter marker without a monster, load the mini bestiary
-  if (marker.type === "encounter" && !marker.data.monster) {
-      this.loadMiniBestiary(dialog, marker);
-  }
-
-  // Add event handlers
-  const deleteBtn = dialog.querySelector('.delete-marker-btn');
-  if (deleteBtn) {
-      deleteBtn.addEventListener('click', () => {
-          this.removeMarker(marker);
-          dialog.hide();
-      });
-  }
-
-  // Add handlers specific to marker types
-  if (marker.type === "encounter") {
-      if (marker.data.monster) {
-          const cloneBtn = dialog.querySelector("#cloneMonster");
-          if (cloneBtn) {
-              cloneBtn.addEventListener("click", () => {
-                  try {
-                      if (this.resourceManager?.monsterManager) {
-                          this.resourceManager.monsterManager.cloneEncounter(marker);
-                      } else if (this.monsterManager) {
-                          this.monsterManager.cloneEncounter(marker);
-                      }
-                      dialog.hide();
-                  } catch (error) {
-                      console.error("Error cloning monster:", error);
-                  }
-              });
-          }
-
-          const changeBtn = dialog.querySelector("#changeMonster");
-          if (changeBtn) {
-              changeBtn.addEventListener("click", () => {
-                  dialog.hide();
-                  // Show monster selector or mini bestiary in a new dialog
-                  if (this.resourceManager?.monsterManager) {
-                      this.showMiniBestiaryDialog(marker);
-                  } else if (this.monsterManager) {
-                      this.monsterManager.showMonsterSelector(marker);
-                  }
-              });
-          }
-      } else {
-          const linkBtn = dialog.querySelector("#linkMonster");
-          if (linkBtn) {
-              linkBtn.addEventListener("click", () => {
-                  dialog.hide();
-                  // Show monster selector
-                  if (this.resourceManager?.monsterManager) {
-                      this.resourceManager.monsterManager.showMonsterSelector(marker);
-                  } else if (this.monsterManager) {
-                      this.monsterManager.showMonsterSelector(marker);
-                  }
-              });
-          }
-      }
-  }
-
-  const descInput = dialog.querySelector("#markerDescription");
-  if (descInput) {
-      descInput.addEventListener("sl-change", (e) => {
-          marker.data.description = e.target.value;
-      });
-  }
-
-  dialog.addEventListener("sl-after-hide", () => {
-      dialog.remove();
-  });
-
-  dialog.show();
+      
+      <div style="margin-top: 12px;">
+        <sl-button id="linkMonster" size="small">
+          <span class="material-icons">link</span>
+          Paste Monster HTML
+        </sl-button>
+      </div>
+    </div>`;
 }
 
+      // Buttons always show for encounter markers
+      content += `
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+            ${marker.data.monster ? `
+                <sl-button id="cloneMonster" size="small">
+                    <span class="material-icons">content_copy</span>
+                    Clone
+                </sl-button>
+            ` : ''}
+            <sl-button id="linkMonster" size="small" style="grid-column: ${marker.data.monster ? 'auto' : '1 / -1'}">
+                <span class="material-icons">link</span>
+                ${marker.data.monster ? "Change" : "Add"} Monster
+            </sl-button>
+        </div>
+    `;
+    } else if (["treasure", "trap"].includes(marker.type)) {
+      content += `
+        <sl-input id="markerDescription"
+                 label="Description"
+                 value="${marker.data.description || ""}">
+        </sl-input>
+    `;
+    }
+
+    content += "</div>";
+
+    // Add standardized footer with delete button
+    content += `
+    <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="flex-spacer"></div>
+        <sl-button class="delete-marker-btn" variant="danger">
+            <span class="material-icons" style="margin-right: 4px;">delete</span>
+            Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
+        </sl-button>
+    </div>
+`;
+
+    dialog.innerHTML = content;
+    document.body.appendChild(dialog);
+
+
+    // Add texture selection handler
+    const textureOptions = dialog.querySelectorAll('.texture-option');
+    textureOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        const textureId = option.dataset.textureId;
+        const textureCategory = marker.type === 'door' ? 'doors' : 'props';
+        const texture = this.resourceManager.resources.textures[textureCategory].get(textureId);
+        if (texture) {
+          marker.data.texture = texture;
+          this.updateMarkerAppearance(marker);
+          textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
+          option.style.border = '2px solid var(--sl-color-primary-600)';
+        }
+      });
+    });
+
+
+    // dialog.show();
+
+    const deleteBtn = dialog.querySelector('.delete-marker-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        this.removeMarker(marker);
+        dialog.hide();
+      });
+    }
+
+    // Add other existing event handlers
+    const changeTextureBtn = dialog.querySelector('.change-texture-btn');
+    if (changeTextureBtn) {
+      changeTextureBtn.addEventListener('click', async () => {
+        dialog.hide();
+        const texture = await this.resourceManager.showTextureSelectionDialog({
+          type: marker.type === 'door' ? 'door' : 'prop'
+        });
+        if (texture) {
+          marker.data.texture = texture;
+          this.updateMarkerAppearance(marker);
+        }
+      });
+    }
+
+    const cloneBtn = dialog.querySelector("#cloneMonster");
+    if (cloneBtn) {
+      cloneBtn.addEventListener("click", () => {
+        this.monsterManager.cloneEncounter(marker);
+        dialog.hide();
+      });
+    }
+
+
+        const linkBtn = dialog.querySelector("#linkMonster");
+    if (linkBtn) {
+      linkBtn.addEventListener("click", () => {
+        dialog.hide();
+        this.showMiniBestiaryDialog(marker);
+      });
+    }
+
+
+    const descInput = dialog.querySelector("#markerDescription");
+    if (descInput) {
+      descInput.addEventListener("sl-change", (e) => {
+        marker.data.description = e.target.value;
+      });
+    }
+
+    dialog.addEventListener("sl-after-hide", () => {
+      dialog.remove();
+    });
+
+        // After creating dialog but before dialog.show():
+    if (marker.type === "encounter" && !marker.data.monster) {
+      this.loadMiniBestiary(dialog, marker);
+    }
+
+    dialog.show();
+  }
+
+
+// Add this to MapEditor class
+// async showMarkerContextMenuWithBestiary(marker) {
+//   const dialog = document.createElement('sl-dialog');
+//   dialog.label = 'Marker Options';
+  
+//   // Build initial content based on marker type
+//   let content = `<div style="display: flex; flex-direction: column; gap: 16px;">
+//       <div class="marker-header" style="display: flex; gap: 12px; align-items: center;">
+//           <div class="marker-icon" style="font-size: 32px; color: var(--sl-color-primary-500);">
+//               <span class="material-icons" style="font-size: 32px;">${
+//                   marker.type === "player-start" ? "person_pin_circle" :
+//                   marker.type === "encounter" ? "local_fire_department" :
+//                   marker.type === "treasure" ? "workspace_premium" :
+//                   marker.type === "trap" ? "warning" :
+//                   marker.type === "teleport" ? "swap_calls" : 
+//                   "location_on"
+//               }</span>
+//           </div>
+//           <div>
+//               <h3 style="margin: 0 0 4px 0; font-size: 1.2em;">${
+//                   marker.type.charAt(0).toUpperCase() + marker.type.slice(1)
+//               } Marker</h3>
+//               ${marker.data.description ? `<div style="color: #666;">${marker.data.description}</div>` : ''}
+//           </div>
+//       </div>`;
+
+//   // Special handling by marker type
+//   if (marker.type === "encounter") {
+//       if (marker.data.monster) {
+//           const monster = marker.data.monster;
+//           // Show monster info
+//           content += `
+//               <div style="margin-top: 8px;">
+//                   <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+//                       ${monster.token?.data ? `
+//                           <div style="flex: 0 0 80px; text-align: center;">
+//                               <img src="${monster.token.data}" style="width: 80px; height: 80px; object-fit: contain; border-radius: 5px;">
+//                           </div>
+//                       ` : ''}
+                      
+//                       <div style="flex: 1;">
+//                           <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 4px;">${monster.basic.name}</div>
+//                           <div style="color: #666; font-style: italic;">
+//                               ${monster.basic.size} ${monster.basic.type}, ${monster.basic.alignment}
+//                           </div>
+//                           <div style="margin-top: 4px;">
+//                               <span style="font-weight: bold;">CR ${monster.basic.cr}</span> 
+//                               (${monster.basic.xp} XP)
+//                           </div>
+//                       </div>
+//                   </div>
+                  
+//                   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9em;">
+//                       <div>
+//                           <div style="font-weight: bold;">Armor Class</div>
+//                           <div>${monster.stats.ac}</div>
+//                       </div>
+//                       <div>
+//                           <div style="font-weight: bold;">Hit Points</div>
+//                           <div>${monster.stats.hp.average} (${monster.stats.hp.roll})</div>
+//                       </div>
+//                       <div>
+//                           <div style="font-weight: bold;">Speed</div>
+//                           <div>${monster.stats.speed}</div>
+//                       </div>
+//                   </div>
+//               </div>
+              
+//               <div style="display: flex; gap: 8px;">
+//                   <sl-button id="cloneMonster" size="small">
+//                       <span class="material-icons">content_copy</span>
+//                       Clone
+//                   </sl-button>
+//                   <sl-button id="changeMonster" size="small">
+//                       <span class="material-icons">swap_horiz</span>
+//                       Change Monster
+//                   </sl-button>
+//               </div>`;
+//       } else {
+//           // No monster assigned - Show mini bestiary
+//           // We'll add the mini bestiary grid here
+//           content += `
+//               <div style="margin-top: 8px;">
+//                   <div class="mini-bestiary">
+//                       <div class="bestiary-search" style="margin-bottom: 8px;">
+//                           <sl-input placeholder="Search monsters..." size="small" id="mini-monster-search" clearable></sl-input>
+//                       </div>
+//                       <div class="mini-bestiary-grid" style="
+//                           display: grid;
+//                           grid-template-columns: repeat(3, 1fr);
+//                           gap: 8px;
+//                           max-height: 300px;
+//                           overflow-y: auto;
+//                           padding: 8px;
+//                           background: #f5f5f5;
+//                           border-radius: 4px;">
+//                           <div class="loading-indicator" style="grid-column: 1/-1; text-align: center; padding: 20px;">
+//                               <sl-spinner></sl-spinner>
+//                               <div>Loading monsters...</div>
+//                           </div>
+//                       </div>
+//                   </div>
+                  
+//                   <div style="margin-top: 12px;">
+//                       <sl-button id="linkMonster" size="small">
+//                           <span class="material-icons">link</span>
+//                           Paste Monster HTML
+//                       </sl-button>
+//                   </div>
+//               </div>`;
+//       }
+//   } else if (["treasure", "trap"].includes(marker.type)) {
+//       content += `
+//           <sl-input id="markerDescription"
+//                    label="Description"
+//                    value="${marker.data.description || ""}">
+//           </sl-input>
+//       `;
+//   } else if (marker.type === "teleport" && marker.data.pairId) {
+//       content += `
+//           <div style="margin-top: 8px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
+//               <div style="font-weight: bold; margin-bottom: 4px;">Teleport ${marker.data.isPointA ? 'Point A' : 'Point B'}</div>
+//               <div>Connected to ${marker.data.isPointA ? 'Point B' : 'Point A'}</div>
+//           </div>
+//       `;
+//   }
+  
+//   content += `</div>`;
+
+//   // Add standardized footer with delete button
+//   content += `
+//       <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
+//           <div class="flex-spacer"></div>
+//           <sl-button class="delete-marker-btn" variant="danger">
+//               <span class="material-icons" style="margin-right: 4px;">delete</span>
+//               Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
+//           </sl-button>
+//       </div>
+//   `;
+
+//   dialog.innerHTML = content;
+//   document.body.appendChild(dialog);
+
+//   // If this is an encounter marker without a monster, load the mini bestiary
+//   if (marker.type === "encounter" && !marker.data.monster) {
+//       this.loadMiniBestiary(dialog, marker);
+//   }
+
+//   // Add event handlers
+//   const deleteBtn = dialog.querySelector('.delete-marker-btn');
+//   if (deleteBtn) {
+//       deleteBtn.addEventListener('click', () => {
+//           this.removeMarker(marker);
+//           dialog.hide();
+//       });
+//   }
+
+//   // Add handlers specific to marker types
+//   if (marker.type === "encounter") {
+//       if (marker.data.monster) {
+//           const cloneBtn = dialog.querySelector("#cloneMonster");
+//           if (cloneBtn) {
+//               cloneBtn.addEventListener("click", () => {
+//                   try {
+//                       if (this.resourceManager?.monsterManager) {
+//                           this.resourceManager.monsterManager.cloneEncounter(marker);
+//                       } else if (this.monsterManager) {
+//                           this.monsterManager.cloneEncounter(marker);
+//                       }
+//                       dialog.hide();
+//                   } catch (error) {
+//                       console.error("Error cloning monster:", error);
+//                   }
+//               });
+//           }
+
+//           const changeBtn = dialog.querySelector("#changeMonster");
+//           if (changeBtn) {
+//               changeBtn.addEventListener("click", () => {
+//                   dialog.hide();
+//                   // Show monster selector or mini bestiary in a new dialog
+//                   if (this.resourceManager?.monsterManager) {
+//                       this.showMiniBestiaryDialog(marker);
+//                   } else if (this.monsterManager) {
+//                       this.monsterManager.showMonsterSelector(marker);
+//                   }
+//               });
+//           }
+//       } else {
+//           const linkBtn = dialog.querySelector("#linkMonster");
+//           if (linkBtn) {
+//               linkBtn.addEventListener("click", () => {
+//                   dialog.hide();
+//                   // Show monster selector
+//                   if (this.resourceManager?.monsterManager) {
+//                       this.resourceManager.monsterManager.showMonsterSelector(marker);
+//                   } else if (this.monsterManager) {
+//                       this.monsterManager.showMonsterSelector(marker);
+//                   }
+//               });
+//           }
+//       }
+//   }
+
+//   const descInput = dialog.querySelector("#markerDescription");
+//   if (descInput) {
+//       descInput.addEventListener("sl-change", (e) => {
+//           marker.data.description = e.target.value;
+//       });
+//   }
+
+//   dialog.addEventListener("sl-after-hide", () => {
+//       dialog.remove();
+//   });
+
+//   dialog.show();
+// }
+
 // Method to load mini bestiary content 
+
+
 async loadMiniBestiary(dialog, marker) {
   const bestiaryGrid = dialog.querySelector('.mini-bestiary-grid');
   const searchInput = dialog.querySelector('#mini-monster-search');
