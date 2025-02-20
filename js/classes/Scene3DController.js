@@ -9,8 +9,7 @@ class Scene3DController {
       sprint: false,
       mouseRightDown: false
     };
-    const PLAYER_HEIGHT = 1.7;  // Total height from feet to eyes
-const PLAYER_FEET_OFFSET = 0.1;  // Small offset to keep feet above ground
+    this.PLAYER_EYE_HEIGHT = 1.7;
     this.teleporters = [];
     this.clear();
   }
@@ -2520,78 +2519,164 @@ createLandingEffect(position) {
   }
   
   // Add method to handle the actual teleportation
-  executeTeleport() {
+  // executeTeleport() {
 
-    const PLAYER_HEIGHT = 1.7;  // Total height from feet to eyes
-    const PLAYER_FEET_OFFSET = 0.1;  // Small offset to keep feet above ground
+  //   const PLAYER_HEIGHT = 1.7;  // Total height from feet to eyes
+  //   const PLAYER_FEET_OFFSET = 0.1;  // Small offset to keep feet above ground
+
+  //   if (!this.activeTeleporter || !this.activeTeleporter.pairedMarker) return;
     
-    if (!this.activeTeleporter || !this.activeTeleporter.pairedMarker) return;
+  //   const destination = this.teleporters.find(t => 
+  //     t.marker.id === this.activeTeleporter.pairedMarker.id
+  //   );
     
-    const destination = this.teleporters.find(t => 
-      t.marker.id === this.activeTeleporter.pairedMarker.id
-    );
-    
-    if (destination) {
-      const destX = destination.position.x;
-      const destZ = destination.position.z;
+  //   if (destination) {
+  //     const destX = destination.position.x;
+  //     const destZ = destination.position.z;
       
-      // Get elevation info
-      const elevationInfo = this.getHighestElevationAtPoint(destX, destZ);
-      console.log("Teleport destination elevation:", elevationInfo);
+  //     // Get elevation info
+  //     const elevationInfo = this.getHighestElevationAtPoint(destX, destZ);
+  //     console.log("Teleport destination elevation:", elevationInfo);
       
-      // Calculate exact foot position
-      const feetPosition = elevationInfo.elevation + PLAYER_FEET_OFFSET;
-      // Calculate eye/camera position
-      const eyePosition = feetPosition + PLAYER_HEIGHT;
+  //     // Calculate exact foot position
+  //     const feetPosition = elevationInfo.elevation + PLAYER_FEET_OFFSET;
+  //     // Calculate eye/camera position
+  //     const eyePosition = feetPosition + PLAYER_HEIGHT;
       
-      console.log("Height calculation:", {
-        surfaceElevation: elevationInfo.elevation,
-        feetPosition: feetPosition,
-        eyePosition: eyePosition,
-        playerTotalHeight: PLAYER_HEIGHT
-      });
+  //     console.log("Height calculation:", {
+  //       surfaceElevation: elevationInfo.elevation,
+  //       feetPosition: feetPosition,
+  //       eyePosition: eyePosition,
+  //       playerTotalHeight: PLAYER_HEIGHT
+  //     });
       
-      // Create flash effect
-      const flash = document.createElement('div');
-      flash.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: white;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        z-index: 9999;
-      `;
-      document.body.appendChild(flash);
+  //     // Create flash effect
+  //     const flash = document.createElement('div');
+  //     flash.style.cssText = `
+  //       position: fixed;
+  //       top: 0;
+  //       left: 0;
+  //       right: 0;
+  //       bottom: 0;
+  //       background: white;
+  //       opacity: 0;
+  //       pointer-events: none;
+  //       transition: opacity 0.3s ease;
+  //       z-index: 9999;
+  //     `;
+  //     document.body.appendChild(flash);
       
-      // Animate teleportation
-      requestAnimationFrame(() => {
-        flash.style.opacity = '1';
-        setTimeout(() => {
-          // Move camera to eye position
-          this.camera.position.set(destX, eyePosition, destZ);
+  //     // Animate teleportation
+  //     requestAnimationFrame(() => {
+  //       flash.style.opacity = '1';
+  //       setTimeout(() => {
+  //         // Move camera to eye position
+  //         this.camera.position.set(destX, eyePosition, destZ);
           
-          // Log final position for debugging
-          const { x, y, z } = this.camera.position;
-          console.log("Final camera position:", {
-            x,
-            y,
-            z,
-            feetAt: y - PLAYER_HEIGHT,
-            surfaceAt: elevationInfo.elevation
-          });
+  //         // Log final position for debugging
+  //         const { x, y, z } = this.camera.position;
+  //         console.log("Final camera position:", {
+  //           x,
+  //           y,
+  //           z,
+  //           feetAt: y - PLAYER_HEIGHT,
+  //           surfaceAt: elevationInfo.elevation
+  //         });
           
-          // Fade out
-          flash.style.opacity = '0';
-          setTimeout(() => flash.remove(), 300);
-        }, 150);
-      });
-    }
+  //         // Fade out
+  //         flash.style.opacity = '0';
+  //         setTimeout(() => flash.remove(), 300);
+  //       }, 150);
+  //     });
+  //   }
+  // }
+
+
+  // Replace the executeTeleport method with this version
+// This should be added to Scene3DController.js
+
+
+
+// Replace the executeTeleport method in Scene3DController.js
+executeTeleport() {
+  if (!this.activeTeleporter || !this.activeTeleporter.pairedMarker) return;
+  
+  // Find the paired teleporter
+  const destination = this.teleporters.find(t => 
+    t.marker.id === this.activeTeleporter.pairedMarker.id
+  );
+  
+  if (destination) {
+    // Get destination coordinates from teleporter
+    const destX = destination.position.x;
+    const destZ = destination.position.z;
+    
+    // The teleporter circle is already at the correct height
+    // Get its Y position which accounts for elevation
+    const destY = destination.position.y;
+    
+    console.log("Teleport destination:", {
+      x: destX,
+      y: destY,
+      z: destZ,
+      teleporterPosition: destination.position
+    });
+    
+    // Create flash effect
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 9999;
+    `;
+    document.body.appendChild(flash);
+    
+    // Animate teleportation
+    requestAnimationFrame(() => {
+      flash.style.opacity = '1';
+      setTimeout(() => {
+        // Update the physics controller's ground height directly
+        if (this.physics) {
+          // Update the physics ground height to match destination elevation
+          // Subtract the small offset that's added to teleporter position (0.05)
+          this.physics.currentGroundHeight = destY - 0.05;
+          console.log("Setting physics ground height:", this.physics.currentGroundHeight);
+          
+          // Reset any jumping or falling state
+          this.physics.isJumping = false;
+          this.physics.isFalling = false;
+        }
+        
+        // Move the player - position + physics-controlled player height
+        const playerHeight = this.physics ? this.physics.playerHeight : 1.7;
+        this.camera.position.set(
+          destX,
+          destY - 0.05 + playerHeight, // Adjust to player eye level
+          destZ
+        );
+        
+        console.log("Final position:", {
+          x: this.camera.position.x,
+          y: this.camera.position.y,
+          z: this.camera.position.z,
+          groundHeight: this.physics ? this.physics.currentGroundHeight : "No physics",
+          playerHeight: playerHeight
+        });
+        
+        // Fade out
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 300);
+      }, 150);
+    });
   }
-
+}
 
 
 }
