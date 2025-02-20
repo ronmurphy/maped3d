@@ -9,6 +9,9 @@ class Scene3DController {
       sprint: false,
       mouseRightDown: false
     };
+    const PLAYER_HEIGHT = 1.7;  // Total height from feet to eyes
+const PLAYER_FEET_OFFSET = 0.1;  // Small offset to keep feet above ground
+    this.teleporters = [];
     this.clear();
   }
 
@@ -62,31 +65,52 @@ class Scene3DController {
 
   cleanup() {
     this.isActive = false;
-
+  
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
-
+  
+    // Clean up teleport prompt
+    if (this.teleportPrompt) {
+      this.teleportPrompt.remove();
+      this.teleportPrompt = null;
+    }
+    this.activeTeleporter = null;
+  
     if (this.renderer) {
       this.renderer.dispose();
       if (this.renderer.domElement?.parentNode) {
-        this.renderer.domElement.parentNode.removeChild(
-          this.renderer.domElement
-        );
+        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
       }
     }
-
+  
     if (this.controls) {
       this.controls.dispose();
     }
-
+  
     if (this.keyHandlers.keydown) {
       document.removeEventListener("keydown", this.keyHandlers.keydown);
     }
     if (this.keyHandlers.keyup) {
       document.removeEventListener("keyup", this.keyHandlers.keyup);
     }
-
+  
+    // Clean up all scene objects
+    if (this.scene) {
+      this.scene.traverse((object) => {
+        if (object.geometry) {
+          object.geometry.dispose();
+        }
+        if (object.material) {
+          if (Array.isArray(object.material)) {
+            object.material.forEach(material => material.dispose());
+          } else {
+            object.material.dispose();
+          }
+        }
+      });
+    }
+  
     this.clear();
   }
 
@@ -1450,6 +1474,55 @@ createPropMesh(propData) {
     return calculatedSize;
   }
 
+  getHighestElevationAtPoint(x, z) {
+    let maxElevation = 0;
+    let insideWall = false;
+    let elevationSource = null;
+    
+    console.log("Checking elevation at:", { x, z });
+    
+    this.rooms.forEach(room => {
+      const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+      const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+      const roomWidth = room.bounds.width / 50;
+      const roomDepth = room.bounds.height / 50;
+      
+      if (x >= roomX && x <= roomX + roomWidth && 
+          z >= roomZ && z <= roomZ + roomDepth) {
+        
+        if (room.isRaisedBlock && room.blockHeight) {
+          const blockHeight = room.blockHeight;
+          if (blockHeight > maxElevation) {
+            maxElevation = blockHeight;
+            elevationSource = 'raised block';
+            console.log("New max height from raised block:", blockHeight);
+          }
+        }
+        
+        if (room.type === 'wall' && !room.isRaisedBlock) {
+          const wallHeight = this.boxHeight || 4;
+          if (wallHeight > maxElevation) {
+            maxElevation = wallHeight;
+            elevationSource = 'wall';
+            insideWall = true;
+            console.log("New max height from wall:", wallHeight);
+          }
+        }
+      }
+    });
+    
+    console.log("Final elevation calculation:", {
+      height: maxElevation,
+      source: elevationSource || 'ground level',
+      insideWall
+    });
+    
+    return { 
+      elevation: maxElevation, 
+      insideWall,
+      source: elevationSource || 'ground level'
+    };
+  }
 
   getElevationAtPoint(x, z) {
     let elevation = 0;
@@ -1516,6 +1589,8 @@ createPropMesh(propData) {
     }
     return inside;
   }
+
+
 
   
 
@@ -1605,6 +1680,48 @@ if (propPromises.length > 0) {
       console.error("Error adding props to scene:", error);
     });
 }
+
+const teleportMarkers = this.markers.filter(m => m.type === 'teleport');
+// In Scene3DController.js, modify the teleport marker processing:
+teleportMarkers.forEach(marker => {
+  const x = marker.x / 50 - this.boxWidth / 2;
+  const z = marker.y / 50 - this.boxDepth / 2;
+  const { elevation, insideWall } = this.getHighestElevationAtPoint(x, z);
+  // const { elevation, insideWall } = this.getElevationAtPoint(x, z);
+  
+  // Store elevation data with marker
+  marker.data.elevation = elevation;
+  marker.data.insideWall = insideWall;
+  
+  // Create teleporter visual
+  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
+    transparent: true,
+    opacity: 0.5
+  });
+  
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Position at highest elevation
+  const finalHeight = elevation + 0.05; // Slightly above surface
+  mesh.position.set(x, finalHeight, z);
+  
+  const teleporterInfo = {
+    mesh,
+    marker,
+    pairedMarker: marker.data.pairedMarker,
+    isPointA: marker.data.isPointA,
+    position: new THREE.Vector3(x, finalHeight, z)
+  };
+  
+  this.teleporters.push(teleporterInfo);
+  this.scene.add(mesh);
+  
+  // Add particles at correct height
+  const particles = this.createTeleporterParticles(x, finalHeight, z);
+  this.scene.add(particles);
+});
 
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
@@ -1950,6 +2067,37 @@ animate = () => {
 
   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
   if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+  const playerPosition = this.camera.position.clone();
+  let nearestTeleporter = null;
+  let shortestDistance = Infinity;
+  
+  this.teleporters.forEach(teleporter => {
+    const distance = playerPosition.distanceTo(teleporter.position);
+    if (distance < 2 && distance < shortestDistance) {  // Within 2 units
+      shortestDistance = distance;
+      nearestTeleporter = teleporter;
+    }
+  });
+  
+  // Show/hide teleport prompt based on proximity
+  this.updateTeleportPrompt(nearestTeleporter);
+  
+  // Animate teleporter particles
+  this.scene.children.forEach(child => {
+    if (child instanceof THREE.Points && child.userData.animate) {
+      const positions = child.geometry.attributes.position.array;
+      for(let i = 0; i < positions.length; i += 3) {
+        // Circular motion
+        const time = Date.now() * 0.001;
+        const radius = 0.5;
+        positions[i] = Math.cos(time + i) * radius;
+        positions[i + 1] = Math.sin(time * 0.5) * 0.2;  // Vertical wobble
+        positions[i + 2] = Math.sin(time + i) * radius;
+      }
+      child.geometry.attributes.position.needsUpdate = true;
+    }
+  });
 
   // Update physics and camera height
   this.camera.position.y = this.physics.update();
@@ -2302,6 +2450,148 @@ createLandingEffect(position) {
 
     return prop;
   }
+
+  createTeleporterParticles(x, y, z) {
+    const geometry = new THREE.BufferGeometry();
+    const particleCount = 50;
+    const positions = new Float32Array(particleCount * 3);
+    
+    for(let i = 0; i < particleCount; i++) {
+      positions[i * 3] = 0;     // X
+      positions[i * 3 + 1] = 0; // Y
+      positions[i * 3 + 2] = 0; // Z
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const material = new THREE.PointsMaterial({
+      color: 0x88ccff,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.6
+    });
+    
+    const particles = new THREE.Points(geometry, material);
+    particles.position.set(x, y, z);
+    
+    // Store initial positions for animation
+    particles.userData.initialPositions = [...positions];
+    particles.userData.animate = true;
+    
+    return particles;
+  }
+
+  updateTeleportPrompt(nearestTeleporter) {
+    if (!this.teleportPrompt) {
+      // Create prompt if it doesn't exist
+      this.teleportPrompt = document.createElement('div');
+      this.teleportPrompt.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        display: none;
+        font-family: Arial, sans-serif;
+        pointer-events: none;
+        z-index: 1000;
+      `;
+      document.body.appendChild(this.teleportPrompt);
+      
+      // Add keypress listener for teleportation
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyE' && this.teleportPrompt.style.display === 'block') {
+          this.executeTeleport();
+        }
+      });
+    }
+    
+    if (nearestTeleporter) {
+      this.teleportPrompt.textContent = 'Press E to teleport';
+      this.teleportPrompt.style.display = 'block';
+      this.activeTeleporter = nearestTeleporter;
+    } else {
+      this.teleportPrompt.style.display = 'none';
+      this.activeTeleporter = null;
+    }
+  }
+  
+  // Add method to handle the actual teleportation
+  executeTeleport() {
+
+    const PLAYER_HEIGHT = 1.7;  // Total height from feet to eyes
+    const PLAYER_FEET_OFFSET = 0.1;  // Small offset to keep feet above ground
+    
+    if (!this.activeTeleporter || !this.activeTeleporter.pairedMarker) return;
+    
+    const destination = this.teleporters.find(t => 
+      t.marker.id === this.activeTeleporter.pairedMarker.id
+    );
+    
+    if (destination) {
+      const destX = destination.position.x;
+      const destZ = destination.position.z;
+      
+      // Get elevation info
+      const elevationInfo = this.getHighestElevationAtPoint(destX, destZ);
+      console.log("Teleport destination elevation:", elevationInfo);
+      
+      // Calculate exact foot position
+      const feetPosition = elevationInfo.elevation + PLAYER_FEET_OFFSET;
+      // Calculate eye/camera position
+      const eyePosition = feetPosition + PLAYER_HEIGHT;
+      
+      console.log("Height calculation:", {
+        surfaceElevation: elevationInfo.elevation,
+        feetPosition: feetPosition,
+        eyePosition: eyePosition,
+        playerTotalHeight: PLAYER_HEIGHT
+      });
+      
+      // Create flash effect
+      const flash = document.createElement('div');
+      flash.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: white;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 9999;
+      `;
+      document.body.appendChild(flash);
+      
+      // Animate teleportation
+      requestAnimationFrame(() => {
+        flash.style.opacity = '1';
+        setTimeout(() => {
+          // Move camera to eye position
+          this.camera.position.set(destX, eyePosition, destZ);
+          
+          // Log final position for debugging
+          const { x, y, z } = this.camera.position;
+          console.log("Final camera position:", {
+            x,
+            y,
+            z,
+            feetAt: y - PLAYER_HEIGHT,
+            surfaceAt: elevationInfo.elevation
+          });
+          
+          // Fade out
+          flash.style.opacity = '0';
+          setTimeout(() => flash.remove(), 300);
+        }, 150);
+      });
+    }
+  }
+
 
 
 }

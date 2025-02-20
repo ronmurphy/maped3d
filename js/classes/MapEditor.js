@@ -1359,6 +1359,29 @@ this.hasUrlBasedTokens = true;
         }
       });
 
+      document.querySelector('.canvas-container').addEventListener('click', (e) => {
+        if (this.currentTool?.startsWith('marker-')) {
+          // Prevent walls from blocking marker placement
+          e.stopPropagation();
+          
+          const rect = this.canvas.getBoundingClientRect();
+          const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+          const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+          
+          // Add the marker
+          const markerType = this.currentTool.replace('marker-', '');
+          this.addMarker(markerType, x, y);
+        }
+      }, true); // Use capture phase to handle click before walls
+      
+      // Modify the wall elements to allow click-through when placing markers
+      const updateWallClickBehavior = () => {
+        const walls = document.querySelectorAll('.room-block[data-type="wall"]');
+        walls.forEach(wall => {
+          wall.style.pointerEvents = this.currentTool?.startsWith('marker-') ? 'none' : 'auto';
+        });
+      };
+
     window.addEventListener("resize", () => this.handleResize());
   }
 
@@ -1367,6 +1390,7 @@ this.hasUrlBasedTokens = true;
       this.cleanupWallTool();
     }
     this.currentTool = tool;
+    this.updateWallClickBehavior();
 
     // Update UI
     const toolButtons = document.querySelectorAll(".tool-button");
@@ -1407,6 +1431,14 @@ this.hasUrlBasedTokens = true;
         .forEach((element) => {
           element.style.pointerEvents = "auto";
         });
+    });
+
+  }
+
+  updateWallClickBehavior() {
+    const walls = document.querySelectorAll('.room-block[data-type="wall"]');
+    walls.forEach(wall => {
+      wall.style.pointerEvents = this.currentTool?.startsWith('marker-') ? 'none' : 'auto';
     });
   }
 
@@ -2803,34 +2835,44 @@ this.hasUrlBasedTokens = true;
 
   // Add this new method to MapEditor class
   startMarkerDragging(marker, e) {
-    // Changed name from startDragging to startMarkerDragging
     if (!this.isMarkerEditMode) return;
-
+  
     const startX = e.clientX;
     const startY = e.clientY;
     const startMarkerX = marker.x;
     const startMarkerY = marker.y;
-
+  
     const moveHandler = (moveEvent) => {
       const dx = (moveEvent.clientX - startX) / this.scale;
       const dy = (moveEvent.clientY - startY) / this.scale;
-
+  
       marker.x = startMarkerX + dx;
       marker.y = startMarkerY + dy;
-
+  
       this.updateMarkerPosition(marker);
-
+  
       // Update teleport connections if needed
       if (marker.type === "teleport") {
+        // Update connection line
         this.updateTeleportConnections();
+        
+        // Update paired marker reference coordinates
+        if (marker.data.pairedMarker) {
+          if (marker.data.isPointA) {
+            marker.connection = this.createTeleportConnection(marker, marker.data.pairedMarker);
+            this.updateTeleportConnection(marker, marker.data.pairedMarker);
+          } else if (marker.data.pairedMarker.connection) {
+            this.updateTeleportConnection(marker.data.pairedMarker, marker);
+          }
+        }
       }
     };
-
+  
     const upHandler = () => {
       document.removeEventListener("mousemove", moveHandler);
       document.removeEventListener("mouseup", upHandler);
     };
-
+  
     document.addEventListener("mousemove", moveHandler);
     document.addEventListener("mouseup", upHandler);
   }

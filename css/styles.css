@@ -1383,3 +1383,32 @@ sl-tooltip {
   .prop-control-row label {
     min-width: 80px;
   }
+
+  .teleport-prompt {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+    z-index: 1000;
+    text-align: center;
+    transition: opacity 0.2s ease;
+  }
+  
+  .teleport-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+  }
