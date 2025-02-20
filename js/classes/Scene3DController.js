@@ -102,6 +102,7 @@ class Scene3DController {
     this.baseImage = data.baseImage || null;
     this.markers = data.markers || [];
     this.textureManager = data.textureManager;
+    this.props = data.props || [];
 
     // Initialize physics
     this.physics = new PhysicsController(this);
@@ -142,6 +143,79 @@ class Scene3DController {
 
     return true;
   }
+
+// Updated createPropMesh method for Scene3DController.js
+createPropMesh(propData) {
+  console.log("Creating prop mesh:", {
+    position: `${propData.x}, ${propData.y}`,
+    texture: !!propData.image,
+    rotation: propData.rotation || 0,
+    scale: propData.scale || 1.0,
+    height: propData.height || 1.0
+  });
+
+  return new Promise((resolve, reject) => {
+    const textureLoader = new THREE.TextureLoader();
+    
+    textureLoader.load(
+      propData.image,
+      (texture) => {
+        // Calculate dimensions based on texture aspect ratio
+        let width, height;
+        
+        if (texture.image) {
+          const aspectRatio = texture.image.width / texture.image.height;
+          width = propData.scale || 1;
+          height = width / aspectRatio;
+        } else {
+          // Fallback if image dimensions aren't available
+          width = propData.scale || 1;
+          height = propData.scale || 1;
+        }
+        
+        const geometry = new THREE.PlaneGeometry(width, height);
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+          alphaTest: 0.1 // Help with transparency sorting
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        // Position in world space
+        const x = propData.x / 50 - this.boxWidth / 2;
+        const z = propData.y / 50 - this.boxDepth / 2;
+        
+        // Get elevation at this point
+        const { elevation } = this.getElevationAtPoint(x, z);
+        
+        // The height value should determine vertical position from the ground or elevation
+        // Add elevation to the specified height - divide height by 2 since the plane's origin is at its center
+        const y = elevation + ((height / 2) * (propData.height || 1.0));
+        
+        mesh.position.set(x, y, z);
+        
+        // Rotate based on provided rotation
+        const rotationRad = (propData.rotation || 0) * Math.PI / 180;
+        mesh.rotation.y = rotationRad;
+        
+        // Add metadata
+        mesh.userData = {
+          type: 'prop',
+          id: propData.id
+        };
+        
+        resolve(mesh);
+      },
+      undefined,
+      (error) => {
+        console.error("Error loading prop texture:", error);
+        reject(error);
+      }
+    );
+  });
+}
 
   createTextureFromArea(room) {
     const canvas = document.createElement('canvas');
@@ -206,27 +280,6 @@ class Scene3DController {
     return texture;
   }
 
-  // createTokenMesh(token) {
-  //   // Create billboard material
-  //   const spriteMaterial = new THREE.SpriteMaterial({
-  //     map: new THREE.TextureLoader().load(token.image),
-  //     transparent: true,
-  //     sizeAttenuation: true
-  //   });
-
-  //   const sprite = new THREE.Sprite(spriteMaterial);
-
-  //   // Scale based on token size and grid
-  //   const scale = token.size * (this.cellSize / 50);
-  //   sprite.scale.set(scale, scale, 1);
-
-  //   // Position in world space
-  //   const x = token.x / this.cellSize - this.boxWidth / 2;
-  //   const z = token.y / this.cellSize - this.boxDepth / 2;
-  //   sprite.position.set(x, token.height, z);
-
-  //   return sprite;
-  // }
 
   // Modify the createTokenMesh method to handle elevation
   createTokenMesh(token) {
@@ -266,44 +319,34 @@ class Scene3DController {
       y = elevation + (token.size || 1);
     }
 
-        // Previous token height calculation
-    // let y = token.height || 2;
+    if (token.type === "prop") {
+      // Create billboard material with the prop texture
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: new THREE.TextureLoader().load(token.image),
+        transparent: true,
+        sizeAttenuation: true
+      });
     
-    // // Handle elevation based on wall type and position
-    // if (elevation > 0) {
-    //   if (!isInside) {
-    //     // Token is on top of a raised block
-    //     y = elevation + (token.size || 1);
-    //   } else {
-    //     // Token is inside a wall - check if it's a regular wall
-    //     const wallAtPosition = this.rooms.find(room => {
-    //       if (room.type !== 'wall') return false;
-          
-    //       // Convert room bounds to world space
-    //       const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-    //       const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-    //       const roomWidth = room.bounds.width / 50;
-    //       const roomDepth = room.bounds.height / 50;
-          
-    //       return this.isPointInRectangle(x, z, roomX, roomZ, roomX + roomWidth, roomZ + roomDepth);
-    //     });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      
+      // Scale based on prop size
+      const scale = token.scale || 1;
+      const aspectRatio = token.aspect || 1;
+      sprite.scale.set(scale * aspectRatio, scale, 1);
     
-    //     if (wallAtPosition?.isRegularWall) {
-    //       // Place token at normal height for regular walls
-    //       y = token.height || 2;
-    //     } else if (wallAtPosition?.isRaisedBlock) {
-    //       // Place token on top of raised block
-    //       y = wallAtPosition.blockHeight + (token.size || 1);
-    //     }
-    //   }
-    // }
-    
-    // console.log(`Token elevation at (${x.toFixed(2)}, ${z.toFixed(2)}):`, {
-    //   height: y,
-    //   isInside,
-    //   elevation,
-    //   tokenSize: token.size || 1
-    // });
+      // Position at grid location
+      const x = token.x / 50 - this.boxWidth / 2;
+      const z = token.y / 50 - this.boxDepth / 2;
+      const { elevation } = this.getElevationAtPoint(x, z);
+      
+      // Base height plus elevation
+      const y = (token.height || 2) + elevation;
+      
+      sprite.position.set(x, y, z);
+      sprite.rotation.y = (token.rotation || 0) * Math.PI / 180;
+      
+      return sprite;
+    }
 
     
     sprite.position.set(x, y, z);
@@ -407,38 +450,6 @@ class Scene3DController {
     document.body.appendChild(drawer);
     return { drawer, container, progress };
   }
-
-  // handleKeyDown(event) {
-  //   switch (event.code) {
-  //     case "ArrowUp":
-  //     case "KeyW":
-  //       this.moveState.forward = true;
-  //       break;
-  //     case "ArrowDown":
-  //     case "KeyS":
-  //       this.moveState.backward = true;
-  //       break;
-  //     case "ArrowLeft":
-  //     case "KeyA":
-  //       this.moveState.left = true;
-  //       break;
-  //     case "ArrowRight":
-  //     case "KeyD":
-  //       this.moveState.right = true;
-  //       break;
-  //     case "ShiftLeft":
-  //       this.moveState.shiftHeld = true;
-  //       this.moveState.sprint = true;
-  //       this.moveState.speed = 0.05;
-  //       break;
-  //     case "KeyC":
-  //       if (!event.repeat) {
-  //         this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
-  //         this.updateWallClipping();
-  //       }
-  //       break;
-  //   }
-  // }
 
   handleKeyDown(event) {
     switch (event.code) {
@@ -1440,44 +1451,6 @@ class Scene3DController {
   }
 
 
-  // getElevationAtPoint(x, z) {
-  //   let elevation = 0;
-  //   let isInside = false;
-    
-  //   // Check all rooms/walls
-  //   this.rooms.forEach(room => {
-  //     // Skip non-wall and non-raised blocks
-  //     if (!room.isRaisedBlock && room.type !== 'wall') return;
-      
-  //     // Check if point is within bounds
-  //     const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-  //     const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-  //     const roomWidth = room.bounds.width / 50;
-  //     const roomDepth = room.bounds.height / 50;
-      
-  //     const isPointInside = this.isPointInRectangle(
-  //       x, z,
-  //       roomX, roomZ,
-  //       roomX + roomWidth, roomZ + roomDepth
-  //     );
-      
-  //     if (isPointInside) {
-  //       if (room.isRaisedBlock) {
-  //         // For raised blocks, we increase elevation
-  //         elevation = Math.max(elevation, room.blockHeight || 0);
-  //       } else if (room.type === 'wall' && !room.isRaisedBlock) {
-  //         // For regular walls, mark as inside
-  //         isInside = true;
-  //       }
-  //     }
-  //   });
-    
-  //   return { elevation, isInside };
-  // }
-  
-  // Helper methods as class methods instead of standalone functions
-  
-
   getElevationAtPoint(x, z) {
     let elevation = 0;
     let isInside = false;
@@ -1524,36 +1497,6 @@ class Scene3DController {
 }
 
 
-  // getElevationAtPoint(x, z) {
-  //   let elevation = 0;
-  //   let isInside = false;
-    
-  //   // Check all rooms/walls
-  //   this.rooms.forEach(room => {
-  //     // Convert room bounds to world space
-  //     const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-  //     const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-  //     const roomWidth = room.bounds.width / 50;
-  //     const roomDepth = room.bounds.height / 50;
-      
-  //     // Simple rectangle check
-  //     if (x >= roomX && x <= roomX + roomWidth && 
-  //         z >= roomZ && z <= roomZ + roomDepth) {
-        
-  //       // For raised blocks, increase elevation
-  //       if (room.isRaisedBlock && room.blockHeight) {
-  //         elevation = Math.max(elevation, room.blockHeight);
-  //       } 
-  //       // For walls that aren't raised blocks, mark as inside
-  //       else if (room.type === 'wall' && !room.isRaisedBlock) {
-  //         isInside = true;
-  //       }
-  //     }
-  //   });
-    
-  //   console.log(`Elevation check at (${x.toFixed(2)}, ${z.toFixed(2)}): height=${elevation}, inside=${isInside}`);
-  //   return { elevation, isInside };
-  // }
   
   
   isPointInRectangle(px, pz, x1, z1, x2, z2) {
@@ -1615,7 +1558,53 @@ class Scene3DController {
       }
     });
 
-    console.log("Finished processing markers, total tokens:", this.tokens.length);
+
+
+    console.log("Finished processing Token markers, total tokens:", this.tokens.length);
+
+
+
+// Process prop markers
+console.log("Processing prop markers for 3D view");
+const propMarkers = this.markers.filter(m => m.type === 'prop' && m.data?.texture);
+const propPromises = [];
+
+propMarkers.forEach(marker => {
+  // Create prop data object
+  const propData = {
+    id: marker.id,
+    x: marker.x,
+    y: marker.y,
+    image: marker.data.texture.data,
+    rotation: marker.data.prop?.position?.rotation || 0,
+    scale: marker.data.prop?.scale || 1,
+    height: marker.data.prop?.height || 0  // Use 0 as default height instead of 1
+  };
+  
+  // Create and add prop mesh
+  propPromises.push(
+    this.createPropMesh(propData)
+      .then(mesh => {
+        this.scene.add(mesh);
+        return mesh;
+      })
+      .catch(error => {
+        console.error(`Error creating prop ${marker.id}:`, error);
+        return null;
+      })
+  );
+});
+
+// Wait for all props to be created
+if (propPromises.length > 0) {
+  Promise.all(propPromises)
+    .then(propMeshes => {
+      console.log(`Added ${propMeshes.filter(m => m !== null).length} prop meshes to scene`);
+    })
+    .catch(error => {
+      console.error("Error adding props to scene:", error);
+    });
+}
 
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
@@ -1666,37 +1655,6 @@ class Scene3DController {
       }
     });
 
-  //   this.rooms.forEach((room) => {
-  //     if (room.name === "WallTexture" || room.name === "RoomTexture") {
-  //         return;
-  //     }
-     
-  //     let roomMesh;
-  //     if (room.isRaisedBlock && room.blockHeight) {
-  //         roomMesh = this.createRaisedBlockGeometry(room);
-  //         if (roomMesh) {
-  //             roomMesh.userData = {
-  //                 isWall: true,
-  //                 blockHeight: room.blockHeight,
-  //                 isRaisedBlock: true
-  //             };
-  //             // console.log("Created raised block:", roomMesh.userData);
-  //         }
-  //     } else {
-  //         roomMesh = this.createRoomGeometry(room);
-  //         if (roomMesh) {
-  //             roomMesh.userData = {
-  //                 isWall: room.type === "wall",
-  //                 type: room.type
-  //             };
-  //             // console.log("Created room:", roomMesh.userData);
-  //         }
-  //     }
-      
-  //     if (roomMesh) {
-  //         this.scene.add(roomMesh);
-  //     }
-  // });
 
   this.rooms.forEach((room) => {
     if (room.name === "WallTexture" || room.name === "RoomTexture") {
@@ -1848,20 +1806,7 @@ class Scene3DController {
       });
     };
 
-    // Then when creating tokens:
-    // if (this.tokens && this.tokens.length > 0) {
-    //   console.log("Processing tokens for 3D view:", this.tokens);
-
-    //   Promise.all(this.tokens.map(token => createTokenMesh(token)))
-    //     .then(sprites => {
-    //       sprites.forEach(sprite => this.scene.add(sprite));
-    //       console.log("All token sprites added to scene");
-    //     })
-    //     .catch(error => {
-    //       console.error("Error creating token sprites:", error);
-    //     });
-    // }
-
+// token mesh processing
     if (this.tokens && this.tokens.length > 0) {
       console.log("Processing tokens for 3D view:", this.tokens.length);
       
@@ -1909,10 +1854,23 @@ class Scene3DController {
       console.log(`Added ${tokenMeshes.length} token meshes to scene`);
     }
 
-    // const controls = new THREE.PointerLockControls(
-    //   this.camera,
-    //   this.renderer.domElement
-    // );
+// Process prop markers
+this.markers.forEach(marker => {
+  if (marker.type === "prop" && marker.data?.texture) {
+    const propData = {
+      x: marker.x,
+      y: marker.y,
+      image: marker.data.texture.data,
+      type: "prop",
+      scale: marker.data.prop?.scale || 1,
+      aspect: marker.data.texture.aspect || 1,
+      rotation: marker.data.prop?.position?.rotation || 0,
+      height: marker.data.prop?.height || 1 // Use the height value from prop settings
+    };
+    this.tokens.push(propData);
+  }
+});
+
 
     this.controls = new THREE.PointerLockControls(
       this.camera,
@@ -1972,29 +1930,6 @@ return {
 };
 }
 
-// animate = () => {
-//   const currentSpeed = this.moveState.speed;
-//   let canMove = true;
-
-//   if (this.moveState.forward || this.moveState.backward) {
-//       const direction = new THREE.Vector3();
-//       this.camera.getWorldDirection(direction);
-//       if (this.moveState.backward) direction.negate();
-      
-//       canMove = this.physics.checkCollision(direction, currentSpeed);
-//   }
-
-//   if (canMove) {
-//       if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-//       if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-//   }
-
-//   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-//   if (this.moveState.right) this.controls.moveRight(currentSpeed);
-
-//   this.camera.position.y = this.physics.update();
-//   this.renderer.render(this.scene, this.camera);
-// };
 
 animate = () => {
   const currentSpeed = this.moveState.speed;

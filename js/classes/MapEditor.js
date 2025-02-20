@@ -1336,7 +1336,8 @@ this.hasUrlBasedTokens = true;
       treasureTool: "treasure",
       trapTool: "trap",
       teleportTool: "teleport",
-      doorTool: "door"
+      doorTool: "door",
+      propTool: "prop"
     };
 
     Object.entries(markerTools).forEach(([toolId, markerType]) => {
@@ -2144,12 +2145,6 @@ this.hasUrlBasedTokens = true;
       }
 
       // Update room bounds
-      // room.bounds.x = newX;
-      // room.bounds.y = newY;
-      // room.bounds.width = Math.max(newWidth, this.cellSize || 20);
-      // room.bounds.height = Math.max(newHeight, this.cellSize || 20);
-
-      // Update room bounds
       room.bounds.x = newX;
       room.bounds.y = newY;
 
@@ -2499,29 +2494,6 @@ this.hasUrlBasedTokens = true;
     }
   }
 
-  // getElevationAtPoint(x, y) {
-  //   let elevation = 0;
-  //   let insideWall = false;
-    
-  //   // Check each room for overlap and elevation
-  //   this.rooms.forEach(room => {
-  //     // Skip non-walls and non-raised blocks
-  //     if (!room.isRaisedBlock && room.type !== 'wall') return;
-      
-  //     // Check if point is inside this room/wall
-  //     if (room.isPointInside(x, y)) {
-  //       if (room.isRaisedBlock && room.blockHeight) {
-  //         // Found a raised block, consider its height
-  //         elevation = Math.max(elevation, room.blockHeight);
-  //       } else if (room.type === 'wall' && !room.isRaisedBlock) {
-  //         // Point is inside a solid wall (not a raised block)
-  //         insideWall = true;
-  //       }
-  //     }
-  //   });
-    
-  //   return { elevation, insideWall };
-  // }
 
   getElevationAtPoint(x, z) {
     let elevation = 0;
@@ -2721,7 +2693,28 @@ this.hasUrlBasedTokens = true;
       return this.playerStart;
     }
 
-
+    if (type === "prop") {
+      // Get texture from resource manager
+      const textureCategory = "props";
+      const texture = this.resourceManager.getSelectedTexture(textureCategory);
+      
+      if (!texture) {
+        alert('No prop textures available. Please add some in the Resource Manager.');
+        return null;
+      }
+      
+      console.log('Creating prop marker with texture:', texture);
+      const marker = this.createMarker("prop", x, y, {
+        texture: texture,
+        prop: {
+          position: { rotation: 0 },
+          scale: 1.0,
+          height: 1.0
+        }
+      });
+      this.markers.push(marker);
+      return marker;
+    }
 
 
     if (type === "teleport") {
@@ -2986,6 +2979,70 @@ this.hasUrlBasedTokens = true;
   
       // Update position
       this.updateMarkerPosition(marker);
+    }  
+    else if (marker.type === "prop" && marker.data.texture) {
+      const propSettings = marker.data.prop || {};
+      const scale = propSettings.scale || 1.0;
+      const rotation = propSettings.position?.rotation || 0;
+      
+      // Calculate dimensions - consider using real image aspect ratio if possible
+      let aspect = 1;
+      
+      // Create temporary image to get actual aspect ratio if not already stored
+      if (!marker.data.texture.aspect) {
+        const img = new Image();
+        img.src = marker.data.texture.data;
+        img.onload = () => {
+          const actualAspect = img.width / img.height;
+          // Store aspect ratio for future use
+          marker.data.texture.aspect = actualAspect;
+          // Update visual after getting the real dimensions
+          updatePropVisual(actualAspect);
+        };
+      } else {
+        aspect = marker.data.texture.aspect;
+      }
+      
+      // Update the visual element
+      updatePropVisual(aspect);
+      
+      function updatePropVisual(aspectRatio) {
+        const baseSize = 48;
+        const width = baseSize * scale;
+        const height = baseSize * scale / aspectRatio;
+        
+        marker.element.innerHTML = `
+          <div class="prop-visual" style="
+            width: ${width}px;
+            height: ${height}px;
+            background-image: url('${marker.data.texture.data}');
+            background-size: contain;
+            background-repeat: no-repeat; 
+            background-position: center;
+            position: absolute;
+            left: -${width/2}px;
+            top: -${height/2}px;
+            transform: rotate(${rotation}deg);
+            transform-origin: center;
+            border: 2px solid #4CAF50;
+            border-radius: 4px;
+          "></div>
+          ${marker.data.prop?.height > 0 ? `
+            <div class="prop-height-indicator" style="
+              position: absolute;
+              bottom: -15px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: rgba(0,0,0,0.6);
+              color: white;
+              padding: 2px 4px;
+              border-radius: 2px;
+              font-size: 10px;
+              pointer-events: none;
+            ">h: ${marker.data.prop.height}</div>
+          ` : ''}
+        `;
+      }
     }
   }
 
@@ -3106,7 +3163,8 @@ this.hasUrlBasedTokens = true;
         treasure: "workspace_premium",
         trap: "warning",
         teleport: "swap_calls",
-        door: "door_front"  // Add this line
+        door: "door_front",  // Add this line
+        prop: "category"
       }[type] || "location_on";
 
       markerElement.innerHTML = `<span class="material-icons">${icon}</span>`;
@@ -3138,6 +3196,78 @@ this.hasUrlBasedTokens = true;
 
     if (type === "door") {
       markerElement.style.transform = `rotate(${data.door?.position?.rotation || 0}deg)`;
+    } 
+    else if (type === "prop" && data.texture) {
+      // Default prop settings
+      if (!data.prop) {
+        data.prop = {
+          scale: 1.0,
+          height: 1.0,
+          position: {
+            rotation: 0
+          }
+        };
+      }
+      
+      // Create a temporary image to get dimensions
+      const img = new Image();
+      img.src = data.texture.data;
+      
+      // Default size until image loads
+      let width = 48;
+      let height = 48;
+      
+      // Create initial visual
+      markerElement.innerHTML = `
+        <div class="prop-visual" style="
+          width: ${width}px;
+          height: ${height}px;
+          background-image: url('${data.texture.data}');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          position: absolute;
+          left: -${width/2}px;
+          top: -${height/2}px;
+          transform: rotate(${data.prop?.position?.rotation || 0}deg);
+          transform-origin: center;
+          border: 2px solid #4CAF50;
+          border-radius: 4px;
+        "></div>
+        ${data.prop?.height > 0 ? `
+          <div class="prop-height-indicator" style="
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-size: 10px;
+            pointer-events: none;
+          ">h: ${data.prop.height}</div>
+        ` : ''}
+      `;
+      
+      // Update visual when image loads to use correct aspect ratio
+      img.onload = () => {
+        const aspect = img.width / img.height;
+        data.texture.aspect = aspect;
+        
+        const scale = data.prop?.scale || 1.0;
+        const baseSize = 48;
+        const actualWidth = baseSize * scale;
+        const actualHeight = baseSize * scale / aspect;
+        
+        const propVisual = markerElement.querySelector('.prop-visual');
+        if (propVisual) {
+          propVisual.style.width = `${actualWidth}px`;
+          propVisual.style.height = `${actualHeight}px`;
+          propVisual.style.left = `-${actualWidth/2}px`;
+          propVisual.style.top = `-${actualHeight/2}px`;
+        }
+      };
     }
 
     // Add context menu handler
@@ -3278,249 +3408,12 @@ this.hasUrlBasedTokens = true;
     }
   }
 
-//   showMarkerContextMenu(marker, event) {
-//     const dialog = document.createElement('sl-dialog');
-//     dialog.label = 'Marker Options';
-
-//     const canChangeTexture = (marker.type === 'door' || marker.type === 'prop') && this.resourceManager;
-
-//     let content = '<div style="display: flex; flex-direction: column; gap: 10px;">';
-
-//     if (canChangeTexture) {
-//       const textureCategory = marker.type === 'door' ? 'doors' : 'props';
-//       content += `
-//         <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-//             <label>Texture:</label>
-//             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 8px;">
-//                 ${Array.from(this.resourceManager.resources.textures[textureCategory].entries()).map(([id, texture]) => `
-//                     <div class="texture-option" data-texture-id="${id}" 
-//                         style="cursor: pointer; border: 2px solid ${marker.data.texture?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'}; 
-//                         padding: 4px; border-radius: 4px; position: relative;">
-//                         <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-//                         <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
-//                         ${marker.data.texture?.id === id ? `
-//                             <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
-//                                 background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
-//                                 check_circle
-//                             </span>
-//                         ` : ''}
-//                     </div>
-//                 `).join('')}
-//             </div>
-//         </div>
-//     `;
-//     }
-
-//     if (marker.type === 'teleport') {
-//       content += `
-//             <div style="margin-bottom: 12px;">
-//                 <div style="font-weight: bold; margin-bottom: 4px;">Teleport Point ${marker.data.isPointA ? 'A' : 'B'}</div>
-//                 <div style="color: #666;">
-//                     ${marker.data.hasPair ?
-//           `Connected to Point ${marker.data.isPointA ? 'B' : 'A'}` :
-//           'No connection - Place another point to connect'}
-//                 </div>
-//             </div>
-//         `;
-//     } else if (marker.type === 'encounter') {
-//       if (marker.data.monster) {
-//         // Create monster URL using name and source
-//         const baseUrl = "https://5e.tools/bestiary.html";
-//         const monsterName = marker.data.monster.basic.name
-//           .toLowerCase()
-//           .replace(/\s+/g, "_");
-//         const sourceCode = "xphb"; // We could extract this from source data if available
-//         const monsterUrl = `${baseUrl}#${monsterName}_${sourceCode}`;
-
-//         content += `
-//             <div style="margin-bottom: 16px;">
-//                 <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-//                     ${marker.data.monster.token ? `
-//                         <div style="width: 100px; height: 100px; border-radius: 8px; border: 2px solid #f44336; overflow: hidden;">
-//                             <img src="${marker.data.monster.token.data || marker.data.monster.token.url}" 
-//                                  style="width: 100%; height: 100%; object-fit: cover;" />
-//                         </div>
-//                     ` : ""}
-//                     <div style="flex: 1;">
-//                         <h3 style="margin: 0 0 4px 0; font-size: 1.2em;">
-//                             <a href="${monsterUrl}" target="_blank" style="color: #2196F3; text-decoration: none;">
-//                                 ${marker.data.monster.basic.name}
-//                                 <span class="material-icons" style="font-size: 14px; vertical-align: middle;">open_in_new</span>
-//                             </a>
-//                         </h3>
-//                         <div style="color: #666; font-style: italic; margin-bottom: 8px;">
-//                             ${marker.data.monster.basic.size} ${marker.data.monster.basic.type}, 
-//                             ${marker.data.monster.basic.alignment}
-//                         </div>
-//                         <div style="color: #666;">
-//                             CR ${marker.data.monster.basic.cr} (${marker.data.monster.basic.xp} XP)
-//                         </div>
-//                     </div>
-//                 </div>
-
-//                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px;">
-//                     <div>
-//                         <div style="font-weight: bold;">Armor Class</div>
-//                         <div>${marker.data.monster.stats.ac}</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">Hit Points</div>
-//                         <div>${marker.data.monster.stats.hp.average} (${marker.data.monster.stats.hp.roll})</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">Speed</div>
-//                         <div>${marker.data.monster.stats.speed}</div>
-//                     </div>
-//                 </div>
-
-//                 <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px;">
-//                     <div>
-//                         <div style="font-weight: bold;">STR</div>
-//                         <div>${marker.data.monster.abilities.str.score} (${marker.data.monster.abilities.str.modifier >= 0 ? "+" : ""}${marker.data.monster.abilities.str.modifier})</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">DEX</div>
-//                         <div>${marker.data.monster.abilities.dex.score} (${marker.data.monster.abilities.dex.modifier >= 0 ? "+" : ""}${marker.data.monster.abilities.dex.modifier})</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">CON</div>
-//                         <div>${marker.data.monster.abilities.con.score} (${marker.data.monster.abilities.con.modifier >= 0 ? "+" : ""}${marker.data.monster.abilities.con.modifier})</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">INT</div>
-//                         <div>${marker.data.monster.abilities.int.score} (${marker.data.monster.abilities.int.modifier >= 0 ? "+" : ""}${marker.data.monster.abilities.int.modifier})</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">WIS</div>
-//                         <div>${marker.data.monster.abilities.wis.score} (${marker.data.monster.abilities.wis.modifier >= 0 ? "+" : ""}${marker.data.monster.abilities.wis.modifier})</div>
-//                     </div>
-//                     <div>
-//                         <div style="font-weight: bold;">CHA</div>
-//                         <div>${marker.data.monster.abilities.cha.score} (${marker.data.monster.abilities.cha.modifier >= 0 ? "+" : ""}${marker.data.monster.abilities.cha.modifier})</div>
-//                     </div>
-//                 </div>
-//             </div>
-//         `;
-//       }
-
-//       // Buttons always show for encounter markers
-//       content += `
-//         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-//             ${marker.data.monster ? `
-//                 <sl-button id="cloneMonster" size="small">
-//                     <span class="material-icons">content_copy</span>
-//                     Clone
-//                 </sl-button>
-//             ` : ''}
-//             <sl-button id="linkMonster" size="small" style="grid-column: ${marker.data.monster ? 'auto' : '1 / -1'}">
-//                 <span class="material-icons">link</span>
-//                 ${marker.data.monster ? "Change" : "Add"} Monster
-//             </sl-button>
-//         </div>
-//     `;
-//     } else if (["treasure", "trap"].includes(marker.type)) {
-//       content += `
-//         <sl-input id="markerDescription"
-//                  label="Description"
-//                  value="${marker.data.description || ""}">
-//         </sl-input>
-//     `;
-//     }
-
-//     content += "</div>";
-
-//     // Add standardized footer with delete button
-//     content += `
-//     <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
-//         <div class="flex-spacer"></div>
-//         <sl-button class="delete-marker-btn" variant="danger">
-//             <span class="material-icons" style="margin-right: 4px;">delete</span>
-//             Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
-//         </sl-button>
-//     </div>
-// `;
-
-//     dialog.innerHTML = content;
-//     document.body.appendChild(dialog);
-
-
-//     // Add texture selection handler
-//     const textureOptions = dialog.querySelectorAll('.texture-option');
-//     textureOptions.forEach(option => {
-//       option.addEventListener('click', () => {
-//         const textureId = option.dataset.textureId;
-//         const textureCategory = marker.type === 'door' ? 'doors' : 'props';
-//         const texture = this.resourceManager.resources.textures[textureCategory].get(textureId);
-//         if (texture) {
-//           marker.data.texture = texture;
-//           this.updateMarkerAppearance(marker);
-//           textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
-//           option.style.border = '2px solid var(--sl-color-primary-600)';
-//         }
-//       });
-//     });
-
-
-//     // dialog.show();
-
-//     const deleteBtn = dialog.querySelector('.delete-marker-btn');
-//     if (deleteBtn) {
-//       deleteBtn.addEventListener('click', () => {
-//         this.removeMarker(marker);
-//         dialog.hide();
-//       });
-//     }
-
-//     // Add other existing event handlers
-//     const changeTextureBtn = dialog.querySelector('.change-texture-btn');
-//     if (changeTextureBtn) {
-//       changeTextureBtn.addEventListener('click', async () => {
-//         dialog.hide();
-//         const texture = await this.resourceManager.showTextureSelectionDialog({
-//           type: marker.type === 'door' ? 'door' : 'prop'
-//         });
-//         if (texture) {
-//           marker.data.texture = texture;
-//           this.updateMarkerAppearance(marker);
-//         }
-//       });
-//     }
-
-//     const cloneBtn = dialog.querySelector("#cloneMonster");
-//     if (cloneBtn) {
-//       cloneBtn.addEventListener("click", () => {
-//         this.monsterManager.cloneEncounter(marker);
-//         dialog.hide();
-//       });
-//     }
-
-//     const linkBtn = dialog.querySelector("#linkMonster");
-//     if (linkBtn) {
-//       linkBtn.addEventListener("click", () => {
-//         this.monsterManager.showMonsterSelector(marker);
-//         dialog.hide();
-//       });
-//     }
-
-//     const descInput = dialog.querySelector("#markerDescription");
-//     if (descInput) {
-//       descInput.addEventListener("sl-change", (e) => {
-//         marker.data.description = e.target.value;
-//       });
-//     }
-
-//     dialog.addEventListener("sl-after-hide", () => {
-//       dialog.remove();
-//     });
-
-//     dialog.show();
-//   }
-
   showMarkerContextMenu(marker, event) {
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Marker Options';
 
-    const canChangeTexture = (marker.type === 'door' || marker.type === 'prop') && this.resourceManager;
+    // const canChangeTexture = (marker.type === 'door' || marker.type === 'prop') && this.resourceManager;
+    const canChangeTexture = marker.type === 'door' && this.resourceManager;
 
     let content = '<div style="display: flex; flex-direction: column; gap: 10px;">';
 
@@ -3616,6 +3509,67 @@ if (!marker.data.monster) {
                  value="${marker.data.description || ""}">
         </sl-input>
     `;
+    } 
+
+    else if (marker.type === "prop") {
+      // Get current prop settings
+      const propSettings = marker.data.prop || {};
+      const rotation = propSettings.position?.rotation || 0;
+      const scale = propSettings.scale || 1.0;
+      const height = propSettings.height || 1.0;
+      
+      content += `
+        <div style="margin-top: 8px;">
+          <div style="border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
+            <label>Prop Type:</label>
+            <div class="prop-texture-grid" style="
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+              gap: 8px;
+              margin-top: 8px;
+              max-height: 200px;
+              overflow-y: auto;
+            ">
+              ${Array.from(this.resourceManager.resources.textures.props?.entries() || []).map(([id, texture]) => `
+                <div class="prop-texture-option ${marker.data.texture?.id === id ? 'selected' : ''}" data-texture-id="${id}">
+                  <img src="${texture.data}" style="width: 100%; height: 60px; object-fit: cover; border-radius: 2px;">
+                  <div style="font-size: 0.7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-top: 4px;">
+                    ${texture.name}
+                  </div>
+                  ${marker.data.texture?.id === id ? `
+                    <span class="material-icons" style="position: absolute; top: 2px; right: 2px; color: #4CAF50; background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px; font-size: 14px;">
+                      check_circle
+                    </span>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+    
+          <div class="prop-controls">
+            <div class="prop-control-row">
+              <label>Rotation:</label>
+              <sl-range min="0" max="359" step="15" value="${rotation}" id="prop-rotation" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${rotation}°</div>
+            </div>
+            
+            <div class="prop-control-row">
+              <label>Scale:</label>
+              <sl-range min="0.5" max="3" step="0.1" value="${scale}" id="prop-scale" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${scale}x</div>
+            </div>
+            
+            <div class="prop-control-row">
+              <label>Height:</label>
+              <sl-range min="0" max="4" step="0.1" value="${height}" id="prop-height" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${height}</div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     content += "</div>";
@@ -3632,6 +3586,90 @@ if (!marker.data.monster) {
 `;
 
     dialog.innerHTML = content;
+
+
+    if (marker.type === "prop") {
+      // Setup texture selection
+      dialog.querySelectorAll('.prop-texture-option').forEach(option => {
+        option.addEventListener('click', () => {
+          const textureId = option.dataset.textureId;
+          const texture = this.resourceManager.resources.textures.props.get(textureId);
+          if (texture) {
+            marker.data.texture = texture;
+            
+            // Update visual appearance
+            this.updateMarkerAppearance(marker);
+            
+            // Update selection in dialog
+            dialog.querySelectorAll('.prop-texture-option').forEach(opt => 
+              opt.classList.toggle('selected', opt.dataset.textureId === textureId)
+            );
+          }
+        });
+      });
+      
+      // Setup rotation control
+      const rotationSlider = dialog.querySelector('#prop-rotation');
+      if (rotationSlider) {
+        rotationSlider.addEventListener('sl-input', (e) => {
+          const rotation = parseInt(e.target.value);
+          // Update display
+          rotationSlider.nextElementSibling.textContent = `${rotation}°`;
+          
+          // Update prop data
+          if (!marker.data.prop) marker.data.prop = {};
+          if (!marker.data.prop.position) marker.data.prop.position = {};
+          marker.data.prop.position.rotation = rotation;
+          
+          // Update visual appearance
+          const propVisual = marker.element?.querySelector('.prop-visual');
+          if (propVisual) {
+            propVisual.style.transform = `rotate(${rotation}deg)`;
+          }
+        });
+      }
+      
+      // Setup scale control
+      const scaleSlider = dialog.querySelector('#prop-scale');
+      if (scaleSlider) {
+        scaleSlider.addEventListener('sl-input', (e) => {
+          const scale = parseFloat(e.target.value).toFixed(1);
+          // Update display
+          scaleSlider.nextElementSibling.textContent = `${scale}x`;
+          
+          // Update prop data
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.scale = parseFloat(scale);
+          
+          // Update visual appearance
+          const propVisual = marker.element?.querySelector('.prop-visual');
+          if (propVisual) {
+            const size = 48 * scale;
+            propVisual.style.width = `${size}px`;
+            propVisual.style.height = `${size}px`;
+            propVisual.style.left = `-${size/2}px`;
+            propVisual.style.top = `-${size/2}px`;
+          }
+        });
+      }
+      
+      // Add height control
+      const heightSlider = dialog.querySelector('#prop-height');
+      if (heightSlider) {
+        heightSlider.addEventListener('sl-input', (e) => {
+          const height = parseFloat(e.target.value).toFixed(1);
+          // Update display
+          heightSlider.nextElementSibling.textContent = `${height}`;
+          
+          // Update prop data
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.height = parseFloat(height);
+        });
+      }
+    }
+
+
+
     document.body.appendChild(dialog);
 
 
@@ -3715,227 +3753,9 @@ if (!marker.data.monster) {
   }
 
 
-// Add this to MapEditor class
-// async showMarkerContextMenuWithBestiary(marker) {
-//   const dialog = document.createElement('sl-dialog');
-//   dialog.label = 'Marker Options';
-  
-//   // Build initial content based on marker type
-//   let content = `<div style="display: flex; flex-direction: column; gap: 16px;">
-//       <div class="marker-header" style="display: flex; gap: 12px; align-items: center;">
-//           <div class="marker-icon" style="font-size: 32px; color: var(--sl-color-primary-500);">
-//               <span class="material-icons" style="font-size: 32px;">${
-//                   marker.type === "player-start" ? "person_pin_circle" :
-//                   marker.type === "encounter" ? "local_fire_department" :
-//                   marker.type === "treasure" ? "workspace_premium" :
-//                   marker.type === "trap" ? "warning" :
-//                   marker.type === "teleport" ? "swap_calls" : 
-//                   "location_on"
-//               }</span>
-//           </div>
-//           <div>
-//               <h3 style="margin: 0 0 4px 0; font-size: 1.2em;">${
-//                   marker.type.charAt(0).toUpperCase() + marker.type.slice(1)
-//               } Marker</h3>
-//               ${marker.data.description ? `<div style="color: #666;">${marker.data.description}</div>` : ''}
-//           </div>
-//       </div>`;
 
-//   // Special handling by marker type
-//   if (marker.type === "encounter") {
-//       if (marker.data.monster) {
-//           const monster = marker.data.monster;
-//           // Show monster info
-//           content += `
-//               <div style="margin-top: 8px;">
-//                   <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
-//                       ${monster.token?.data ? `
-//                           <div style="flex: 0 0 80px; text-align: center;">
-//                               <img src="${monster.token.data}" style="width: 80px; height: 80px; object-fit: contain; border-radius: 5px;">
-//                           </div>
-//                       ` : ''}
-                      
-//                       <div style="flex: 1;">
-//                           <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 4px;">${monster.basic.name}</div>
-//                           <div style="color: #666; font-style: italic;">
-//                               ${monster.basic.size} ${monster.basic.type}, ${monster.basic.alignment}
-//                           </div>
-//                           <div style="margin-top: 4px;">
-//                               <span style="font-weight: bold;">CR ${monster.basic.cr}</span> 
-//                               (${monster.basic.xp} XP)
-//                           </div>
-//                       </div>
-//                   </div>
-                  
-//                   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9em;">
-//                       <div>
-//                           <div style="font-weight: bold;">Armor Class</div>
-//                           <div>${monster.stats.ac}</div>
-//                       </div>
-//                       <div>
-//                           <div style="font-weight: bold;">Hit Points</div>
-//                           <div>${monster.stats.hp.average} (${monster.stats.hp.roll})</div>
-//                       </div>
-//                       <div>
-//                           <div style="font-weight: bold;">Speed</div>
-//                           <div>${monster.stats.speed}</div>
-//                       </div>
-//                   </div>
-//               </div>
-              
-//               <div style="display: flex; gap: 8px;">
-//                   <sl-button id="cloneMonster" size="small">
-//                       <span class="material-icons">content_copy</span>
-//                       Clone
-//                   </sl-button>
-//                   <sl-button id="changeMonster" size="small">
-//                       <span class="material-icons">swap_horiz</span>
-//                       Change Monster
-//                   </sl-button>
-//               </div>`;
-//       } else {
-//           // No monster assigned - Show mini bestiary
-//           // We'll add the mini bestiary grid here
-//           content += `
-//               <div style="margin-top: 8px;">
-//                   <div class="mini-bestiary">
-//                       <div class="bestiary-search" style="margin-bottom: 8px;">
-//                           <sl-input placeholder="Search monsters..." size="small" id="mini-monster-search" clearable></sl-input>
-//                       </div>
-//                       <div class="mini-bestiary-grid" style="
-//                           display: grid;
-//                           grid-template-columns: repeat(3, 1fr);
-//                           gap: 8px;
-//                           max-height: 300px;
-//                           overflow-y: auto;
-//                           padding: 8px;
-//                           background: #f5f5f5;
-//                           border-radius: 4px;">
-//                           <div class="loading-indicator" style="grid-column: 1/-1; text-align: center; padding: 20px;">
-//                               <sl-spinner></sl-spinner>
-//                               <div>Loading monsters...</div>
-//                           </div>
-//                       </div>
-//                   </div>
-                  
-//                   <div style="margin-top: 12px;">
-//                       <sl-button id="linkMonster" size="small">
-//                           <span class="material-icons">link</span>
-//                           Paste Monster HTML
-//                       </sl-button>
-//                   </div>
-//               </div>`;
-//       }
-//   } else if (["treasure", "trap"].includes(marker.type)) {
-//       content += `
-//           <sl-input id="markerDescription"
-//                    label="Description"
-//                    value="${marker.data.description || ""}">
-//           </sl-input>
-//       `;
-//   } else if (marker.type === "teleport" && marker.data.pairId) {
-//       content += `
-//           <div style="margin-top: 8px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
-//               <div style="font-weight: bold; margin-bottom: 4px;">Teleport ${marker.data.isPointA ? 'Point A' : 'Point B'}</div>
-//               <div>Connected to ${marker.data.isPointA ? 'Point B' : 'Point A'}</div>
-//           </div>
-//       `;
-//   }
-  
-//   content += `</div>`;
-
-//   // Add standardized footer with delete button
-//   content += `
-//       <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
-//           <div class="flex-spacer"></div>
-//           <sl-button class="delete-marker-btn" variant="danger">
-//               <span class="material-icons" style="margin-right: 4px;">delete</span>
-//               Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
-//           </sl-button>
-//       </div>
-//   `;
-
-//   dialog.innerHTML = content;
-//   document.body.appendChild(dialog);
-
-//   // If this is an encounter marker without a monster, load the mini bestiary
-//   if (marker.type === "encounter" && !marker.data.monster) {
-//       this.loadMiniBestiary(dialog, marker);
-//   }
-
-//   // Add event handlers
-//   const deleteBtn = dialog.querySelector('.delete-marker-btn');
-//   if (deleteBtn) {
-//       deleteBtn.addEventListener('click', () => {
-//           this.removeMarker(marker);
-//           dialog.hide();
-//       });
-//   }
-
-//   // Add handlers specific to marker types
-//   if (marker.type === "encounter") {
-//       if (marker.data.monster) {
-//           const cloneBtn = dialog.querySelector("#cloneMonster");
-//           if (cloneBtn) {
-//               cloneBtn.addEventListener("click", () => {
-//                   try {
-//                       if (this.resourceManager?.monsterManager) {
-//                           this.resourceManager.monsterManager.cloneEncounter(marker);
-//                       } else if (this.monsterManager) {
-//                           this.monsterManager.cloneEncounter(marker);
-//                       }
-//                       dialog.hide();
-//                   } catch (error) {
-//                       console.error("Error cloning monster:", error);
-//                   }
-//               });
-//           }
-
-//           const changeBtn = dialog.querySelector("#changeMonster");
-//           if (changeBtn) {
-//               changeBtn.addEventListener("click", () => {
-//                   dialog.hide();
-//                   // Show monster selector or mini bestiary in a new dialog
-//                   if (this.resourceManager?.monsterManager) {
-//                       this.showMiniBestiaryDialog(marker);
-//                   } else if (this.monsterManager) {
-//                       this.monsterManager.showMonsterSelector(marker);
-//                   }
-//               });
-//           }
-//       } else {
-//           const linkBtn = dialog.querySelector("#linkMonster");
-//           if (linkBtn) {
-//               linkBtn.addEventListener("click", () => {
-//                   dialog.hide();
-//                   // Show monster selector
-//                   if (this.resourceManager?.monsterManager) {
-//                       this.resourceManager.monsterManager.showMonsterSelector(marker);
-//                   } else if (this.monsterManager) {
-//                       this.monsterManager.showMonsterSelector(marker);
-//                   }
-//               });
-//           }
-//       }
-//   }
-
-//   const descInput = dialog.querySelector("#markerDescription");
-//   if (descInput) {
-//       descInput.addEventListener("sl-change", (e) => {
-//           marker.data.description = e.target.value;
-//       });
-//   }
-
-//   dialog.addEventListener("sl-after-hide", () => {
-//       dialog.remove();
-//   });
-
-//   dialog.show();
-// }
 
 // Method to load mini bestiary content 
-
-
 async loadMiniBestiary(dialog, marker) {
   const bestiaryGrid = dialog.querySelector('.mini-bestiary-grid');
   const searchInput = dialog.querySelector('#mini-monster-search');

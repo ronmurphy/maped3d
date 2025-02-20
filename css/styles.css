@@ -1316,3 +1316,70 @@ sl-radio[checked] {
 sl-tooltip {
     --z-index: 100; /* Higher z-index */
 }
+
+/* Style for prop markers */
+.marker-prop {
+    position: absolute;
+    z-index: 50;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    pointer-events: all;
+  }
+  
+  .marker-prop:hover .prop-visual {
+    border-color: #2196F3 !important;
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
+  }
+  
+  .marker-prop.editing {
+    z-index: 100;
+  }
+  
+  .marker-prop.editing .prop-visual {
+    border: 2px dashed #f44336 !important;
+  }
+  
+  .prop-visual {
+    transition: all 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid #4CAF50;
+    border-radius: 4px;
+    pointer-events: all;
+  }
+  
+  /* Add this to existing CSS for context menu */
+  .prop-texture-option {
+    cursor: pointer;
+    border: 2px solid transparent;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .prop-texture-option:hover {
+    background-color: rgba(33, 150, 243, 0.1);
+  }
+  
+  .prop-texture-option.selected {
+    border-color: var(--sl-color-primary-600);
+  }
+  
+  .prop-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    margin-top: 12px;
+  }
+  
+  .prop-control-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .prop-control-row label {
+    min-width: 80px;
+  }
