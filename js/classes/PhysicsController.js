@@ -9,6 +9,7 @@ class PhysicsController {
         this.debug = false; // Set to true to enable debug logs
         this.fallSpeed = 0.03; // Speed of falling
         this.isFalling = false;
+        this.insideRoomWall = false;
 
         this.isJumping = false;
         this.jumpHeight = 1.7; // Maximum jump height - slightly higher than 1 block
@@ -19,6 +20,9 @@ class PhysicsController {
         this.lastJumpCheck = 0; // Track last time we checked for landing surfaces
         this.jumpCheckInterval = 5; // Check every 5 frames
         this.jumpFrameCount = 0; // Frame counter for jump checks
+
+this.onTopOfWall = false;        // Flag for walking on top of a wall
+this.wallTopHeight = 0;
     }
 
     
@@ -63,11 +67,116 @@ class PhysicsController {
     }
 
 
+    // checkForwardCollision(direction, speed) {
+
+    //     if (this.insideRoomWall) {
+    //         return {
+    //             canMove: true,
+    //             hitObject: null
+    //         };
+    //     }
+
+    //     const groundPosition = new THREE.Vector3(
+    //         this.scene3D.camera.position.x,
+    //         this.currentGroundHeight + 0.1,
+    //         this.scene3D.camera.position.z
+    //     );
+    
+    //     const raycaster = new THREE.Raycaster(
+    //         groundPosition,
+    //         direction,
+    //         0,
+    //         speed + 0.5
+    //     );
+    
+    //     const intersects = raycaster.intersectObjects(
+    //         this.scene3D.scene.children.filter(obj => obj.userData?.isWall)
+    //     );
+    
+    //     if (intersects.length > 0) {
+    //         const hitObject = intersects[0].object;
+            
+    //         // If it's a half block
+    //         if (hitObject.userData.isRaisedBlock && hitObject.userData.blockHeight > 0) {
+    //             const heightDiff = hitObject.userData.blockHeight - this.currentGroundHeight;
+    //             // Allow stepping if height difference is manageable
+    //             return {
+    //                 canMove: heightDiff <= this.stepHeight,
+    //                 hitObject: hitObject
+    //             };
+    //         }
+            
+    //         // Regular wall - no passing
+    //         return {
+    //             canMove: false,
+    //             hitObject: hitObject
+    //         };
+    //     }
+    
+    //     // No collision
+    //     return {
+    //         canMove: true,
+    //         hitObject: null
+    //     };
+    // }
+
+
     checkForwardCollision(direction, speed) {
+        const playerPos = this.scene3D.camera.position;
+        
+        // Calculate player's feet position
+        const playerFeetY = playerPos.y - this.playerHeight;
+        
+        // First, check if we're on top of a wall
+        // We're on top if our feet are at the top height of the wall
+        if (this.onTopOfWall) {
+            // When on top of a wall, we still want collision detection
+            // but we need to ensure the player doesn't fall through
+            
+            // Check if we're about to walk off the edge
+            const nextPos = new THREE.Vector3(
+                playerPos.x + direction.x * speed,
+                playerPos.y,
+                playerPos.z + direction.z * speed
+            );
+            
+            // Cast a ray downward from the next position
+            const downRay = new THREE.Raycaster(
+                nextPos,
+                new THREE.Vector3(0, -1, 0),
+                0,
+                2  // Check a reasonable distance below
+            );
+            
+            const downHits = downRay.intersectObjects(
+                this.scene3D.scene.children.filter(obj => obj.userData?.isWall)
+            );
+            
+            // If we didn't hit anything, we're about to walk off the edge
+            // Or if we hit something that's too far below our current height
+            if (downHits.length === 0 || 
+                Math.abs(downHits[0].point.y - this.wallTopHeight) > 0.1) {
+                console.log("Would walk off edge of wall");
+                return {
+                    canMove: false,
+                    hitObject: null
+                };
+            }
+        }
+        
+        // If we're inside a room wall (not on top), allow free movement
+        if (this.insideRoomWall && !this.onTopOfWall) {
+            return {
+                canMove: true,
+                hitObject: null
+            };
+        }
+    
+        // Regular collision detection for walls
         const groundPosition = new THREE.Vector3(
-            this.scene3D.camera.position.x,
+            playerPos.x,
             this.currentGroundHeight + 0.1,
-            this.scene3D.camera.position.z
+            playerPos.z
         );
     
         const raycaster = new THREE.Raycaster(
@@ -109,9 +218,165 @@ class PhysicsController {
     }
 
 
+    checkWalkingSurface() {
+        const playerPos = this.scene3D.camera.position;
+        
+        // Calculate player's feet position
+        const playerFeetY = playerPos.y - this.playerHeight;
+        
+        // Cast ray downward to see what we're standing on
+        const downRay = new THREE.Raycaster(
+            playerPos,
+            new THREE.Vector3(0, -1, 0),
+            0,
+            this.playerHeight + 0.2  // Check slightly beyond feet
+        );
+        
+        const wallHits = downRay.intersectObjects(
+            this.scene3D.scene.children.filter(obj => obj.userData?.isWall)
+        );
+        
+        if (wallHits.length > 0) {
+            const hit = wallHits[0];
+            const hitY = hit.point.y;
+            const wallHeight = this.scene3D.boxHeight || 4;
+            
+            // Check if we're standing on top of a wall (feet at wall height)
+            if (Math.abs(playerFeetY - wallHeight) < 0.2) {
+                this.onTopOfWall = true;
+                this.wallTopHeight = wallHeight;
+                console.log("On top of wall at height", wallHeight);
+                return;
+            }
+            
+            // Check if we're inside a wall (not at the top)
+            const hitObject = hit.object;
+            if (hitObject.userData?.isWall) {
+                // If our head is below wall top, we're inside
+                if (playerPos.y < wallHeight - 0.2) {
+                    this.insideRoomWall = true;
+                    this.onTopOfWall = false;
+                    console.log("Inside wall room");
+                    return;
+                }
+            }
+        }
+        
+        // If we got here, we're not on top of or inside a wall
+        this.onTopOfWall = false;
+        this.insideRoomWall = false;
+    }
+
+    // updateGroundHeightAtPosition(x, z) {
+    //     // Get elevation at new position
+    //     const downRay = new THREE.Raycaster(
+    //       new THREE.Vector3(x, this.currentGroundHeight + 2, z),
+    //       new THREE.Vector3(0, -1, 0),
+    //       0,
+    //       4
+    //     );
+      
+    //     const intersectsDown = downRay.intersectObjects(
+    //       this.scene3D.scene.children.filter(obj =>
+    //         obj.userData?.isWall ||
+    //         obj.userData?.isRegularWall ||
+    //         obj.userData?.blockHeight !== undefined
+    //       )
+    //     );
+      
+    //     if (intersectsDown.length > 0) {
+    //       const hitObject = intersectsDown[0].object;
+    //       let groundHeight;
+      
+    //       // Handle different surface types
+    //       if (hitObject.userData?.isRegularWall) {
+    //         const wallHeight = this.scene3D.boxHeight || 4;
+            
+    //         // If we're at or near wall height, snap to it
+    //         if (Math.abs(this.currentGroundHeight - wallHeight) < 0.3) {
+    //           groundHeight = wallHeight;
+    //         } else {
+    //           groundHeight = 0; // Default case - not on top of wall
+    //         }
+    //       }
+    //       else if (this.currentGroundHeight >= 4.0 && 
+    //                hitObject.userData?.isWall && 
+    //                hitObject.userData?.blockHeight === 0) {
+    //         groundHeight = 4.0; // Keep height at wall level
+    //       } else {
+    //         groundHeight = hitObject.userData?.blockHeight ?? 0;
+    //       }
+      
+    //       // Update the ground height
+    //       this.currentGroundHeight = groundHeight;
+    //     } else {
+    //       // If no ground found, use default height
+    //       this.currentGroundHeight = 0;
+    //     }
+    //   }
 
         // Handle jump initiation
         
+
+        updateGroundHeightAtPosition(x, z) {
+            // Create ray starting above the destination position
+            const rayStart = new THREE.Vector3(
+              x,
+              this.currentGroundHeight + 2, // Start ray above current ground level
+              z
+            );
+            
+            const downRay = new THREE.Raycaster(
+              rayStart,
+              new THREE.Vector3(0, -1, 0), // cast straight down
+              0,
+              4 // reasonable search distance
+            );
+            
+            // Filter objects we can stand on
+            const intersects = downRay.intersectObjects(
+              this.scene3D.scene.children.filter(obj =>
+                obj.userData?.isWall ||
+                obj.userData?.isRegularWall ||
+                obj.userData?.blockHeight !== undefined
+              )
+            );
+            
+            if (intersects.length > 0) {
+              const hitObject = intersects[0].object;
+              
+              // Handle different types of surfaces
+              if (hitObject.userData?.isRaisedBlock) {
+                // Raised blocks - stand on top of them
+                this.currentGroundHeight = hitObject.userData.blockHeight || 0;
+              }
+              else if (hitObject.userData?.isRegularWall) {
+                const wallHeight = this.scene3D.boxHeight || 4;
+                
+                // If we're at or near wall height, we can stand on top of the wall
+                if (Math.abs(this.currentGroundHeight - wallHeight) < 0.3) {
+                  this.currentGroundHeight = wallHeight;
+                } else {
+                  // Not on top of the wall, so we're at ground level
+                  this.currentGroundHeight = 0;
+                }
+              }
+              else {
+                // Default ground level
+                this.currentGroundHeight = 0;
+              }
+            } else {
+              // No surface found below, default to ground level
+              this.currentGroundHeight = 0;
+            }
+            
+            console.log(`Updated ground height at (${x.toFixed(2)}, ${z.toFixed(2)}): ${this.currentGroundHeight.toFixed(2)}`);
+            
+            // Reset jumping and falling state
+            this.isJumping = false;
+            this.isFalling = false;
+          }
+
         updatePlayerHeight(direction, speed) {
             const nextPosition = new THREE.Vector3(
                 this.scene3D.camera.position.x + direction.x * speed,
@@ -330,6 +595,9 @@ class PhysicsController {
         
 
         update() {
+
+            this.checkWalkingSurface();
+            
             this.jumpFrameCount++;
             
             // Handle jumping physics

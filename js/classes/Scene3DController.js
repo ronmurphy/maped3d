@@ -11,6 +11,7 @@ class Scene3DController {
     };
     this.PLAYER_EYE_HEIGHT = 1.7;
     this.teleporters = [];
+    this.doors = []; // Add this line
     this.clear();
   }
 
@@ -26,6 +27,9 @@ class Scene3DController {
       keyup: null
     };
     this.keys = {};
+    this.doors = []; // Add this line
+    this.doorPrompt = null; // Add this line
+    this.activeDoor = null; // Add this line
   }
 
   initialize(container, width, height) {
@@ -75,6 +79,13 @@ class Scene3DController {
       this.teleportPrompt = null;
     }
     this.activeTeleporter = null;
+
+      // Clean up door prompt
+  if (this.doorPrompt) {
+    this.doorPrompt.remove();
+    this.doorPrompt = null;
+  }
+  this.activeDoor = null;
   
     if (this.renderer) {
       this.renderer.dispose();
@@ -1826,6 +1837,8 @@ teleportMarkers.forEach(marker => {
   this.scene.add(particles);
 });
 
+this.processDoorMarkers();
+
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
     );
@@ -2091,6 +2104,10 @@ this.markers.forEach(marker => {
   }
 });
 
+this.processDoorMarkers();
+
+// Try to load door sound
+this.loadDoorSound();
 
     this.controls = new THREE.PointerLockControls(
       this.camera,
@@ -2185,6 +2202,20 @@ animate = () => {
   
   // Show/hide teleport prompt based on proximity
   this.updateTeleportPrompt(nearestTeleporter);
+
+  let nearestDoor = null;
+  shortestDistance = Infinity;
+  
+  this.doors.forEach(door => {
+    const distance = playerPosition.distanceTo(door.position);
+    if (distance < 2 && distance < shortestDistance) { // Within 2 units
+      shortestDistance = distance;
+      nearestDoor = door;
+    }
+  });
+  
+  // Show/hide door prompt based on proximity
+  this.updateDoorPrompt(nearestDoor);
   
   // Animate teleporter particles
   this.scene.children.forEach(child => {
@@ -2525,6 +2556,540 @@ createLandingEffect(position) {
     }
 
     return assignment;
+  }
+
+  processDoorMarkers() {
+    const doorMarkers = this.markers.filter(m => m.type === 'door' && m.data.texture);
+    
+    doorMarkers.forEach(marker => {
+      console.log('Processing door for interaction:', marker);
+      
+      // Convert map coordinates to 3D world coordinates
+      const x = marker.x / 50 - this.boxWidth / 2;
+      const z = marker.y / 50 - this.boxDepth / 2;
+      
+      // Get elevation at door position
+      const { elevation } = this.getElevationAtPoint(x, z);
+      
+      // Create door interaction point
+      const doorInfo = {
+        marker: marker,
+        position: new THREE.Vector3(x, elevation + 1.0, z), // Position at eye level
+        rotation: marker.data.door?.position?.rotation || 0,
+        id: marker.id
+      };
+      
+      // Add a visual indicator for debugging (can be removed later)
+      const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+      const material = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.5,
+        visible: false // Hide in production, set to true for debugging
+      });
+      
+      const doorIndicator = new THREE.Mesh(geometry, material);
+      doorIndicator.position.copy(doorInfo.position);
+      this.scene.add(doorIndicator);
+      
+      doorInfo.indicator = doorIndicator;
+      this.doors.push(doorInfo);
+    });
+    
+    console.log(`Added ${this.doors.length} door interaction points`);
+  }
+
+  updateDoorPrompt(nearestDoor) {
+    if (!this.doorPrompt) {
+      // Create prompt if it doesn't exist
+      this.doorPrompt = document.createElement('div');
+      this.doorPrompt.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        display: none;
+        font-family: Arial, sans-serif;
+        pointer-events: none;
+        z-index: 1000;
+      `;
+      document.body.appendChild(this.doorPrompt);
+      
+      // Add keypress listener for door interaction
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyE') {
+          // Handle teleporter interaction
+          if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
+            this.executeTeleport();
+          }
+          // Handle door interaction
+          else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
+            this.executeDoorTeleport();
+          }
+        }
+      }); 
+    }
+    
+    // Only show door prompt if no teleporter prompt is active
+    const teleporterActive = this.teleportPrompt && this.teleportPrompt.style.display === 'block';
+    
+    if (nearestDoor && !teleporterActive) {
+      this.doorPrompt.textContent = 'Press E to open door';
+      this.doorPrompt.style.display = 'block';
+      this.activeDoor = nearestDoor;
+    } else {
+      this.doorPrompt.style.display = 'none';
+      this.activeDoor = null;
+    }
+  }
+
+  // executeDoorTeleport() {
+  //   if (!this.activeDoor) return;
+    
+  //   // Get the door's current position and rotation
+  //   const doorPosition = this.activeDoor.position.clone();
+  //   const doorRotation = (this.activeDoor.rotation || 0) * Math.PI / 180;
+    
+  //   // Calculate the teleport destination
+  //   // We'll move the player to the other side of the door based on door's orientation
+    
+  //   // Get the door's forward direction vector
+  //   const direction = new THREE.Vector3(0, 0, -1);
+  //   direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), doorRotation);
+    
+  //   // Start with the door's position
+  //   const destination = doorPosition.clone();
+    
+  //   // Determine which side of the door the player is on
+  //   const playerToDoor = new THREE.Vector3().subVectors(doorPosition, this.camera.position);
+  //   const dot = playerToDoor.dot(direction);
+    
+  //   // If dot product is positive, player is behind the door, otherwise in front
+  //   const teleportDistance = 1.5; // Distance to teleport past the door
+    
+  //   if (dot > 0) {
+  //     // Player is behind door, teleport to front
+  //     destination.add(direction.multiplyScalar(teleportDistance));
+  //   } else {
+  //     // Player is in front, teleport to back
+  //     destination.sub(direction.multiplyScalar(teleportDistance));
+  //   }
+    
+  //   // Create flash effect
+  //   const flash = document.createElement('div');
+  //   flash.style.cssText = `
+  //     position: fixed;
+  //     top: 0;
+  //     left: 0;
+  //     right: 0;
+  //     bottom: 0;
+  //     background: white;
+  //     opacity: 0;
+  //     pointer-events: none;
+  //     transition: opacity 0.2s ease;
+  //     z-index: 9999;
+  //   `;
+  //   document.body.appendChild(flash);
+    
+  //   // Play door sound if available
+  //   if (this.doorSound) {
+  //     this.doorSound.play();
+  //   }
+    
+  //   // Animate teleportation
+  //   requestAnimationFrame(() => {
+  //     flash.style.opacity = '0.7'; // Not full white flash for doors
+      
+  //     setTimeout(() => {
+  //       // Keep the player's current Y position
+  //       const playerY = this.camera.position.y;
+        
+  //       // Move player to destination
+  //       this.camera.position.x = destination.x;
+  //       this.camera.position.z = destination.z;
+        
+  //       // Update physics ground height
+  //       if (this.physics) {
+  //         this.physics.updateGroundHeightAtPosition(destination.x, destination.z);
+  //       }
+        
+  //       // Fade out flash
+  //       flash.style.opacity = '0';
+  //       setTimeout(() => flash.remove(), 200);
+  //     }, 100);
+  //   });
+  // }
+  
+  // Add a method to load door sounds
+  
+  // Replace the executeDoorTeleport method with this improved version
+
+
+
+
+// Add this helper method to your Scene3DController to process doors
+// This improved method extracts rotation info correctly
+
+
+// Replace the executeDoorTeleport method with this fixed version
+
+
+
+
+// processDoorMarkers() {
+//   const doorMarkers = this.markers.filter(m => m.type === 'door');
+//   console.log("Found door markers:", doorMarkers.length);
+  
+//   doorMarkers.forEach(marker => {
+//     // Extract the door position
+//     const x = marker.x / 50 - this.boxWidth / 2;
+//     const z = marker.y / 50 - this.boxDepth / 2;
+    
+//     // Get elevation at door position
+//     const { elevation } = this.getElevationAtPoint(x, z);
+    
+//     // Extract door rotation
+//     let rotation = 0;
+//     if (marker.data.door?.position?.rotation !== undefined) {
+//       rotation = marker.data.door.position.rotation;
+//     }
+    
+//     console.log(`Processing door at (${x}, ${z}) with rotation ${rotation}°`);
+    
+//     // Create door interaction point
+//     const doorInfo = {
+//       marker: marker,
+//       position: new THREE.Vector3(x, elevation + 1.0, z), // Position at eye level
+//       rotation: rotation,
+//       id: marker.id
+//     };
+    
+//     // Add a visual indicator for debugging (can be removed later)
+//     const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+//     const material = new THREE.MeshBasicMaterial({
+//       color: 0xff0000,
+//       transparent: true,
+//       opacity: 0.5,
+//       visible: false // Hide in production, set to true for debugging
+//     });
+    
+//     const doorIndicator = new THREE.Mesh(geometry, material);
+//     doorIndicator.position.copy(doorInfo.position);
+//     this.scene.add(doorIndicator);
+    
+//     doorInfo.indicator = doorIndicator;
+//     this.doors.push(doorInfo);
+//   });
+  
+//   console.log(`Added ${this.doors.length} door interaction points`);
+// }
+  
+
+// Replace the processDoorMarkers method with this improved version
+
+// This is a simplified, more direct approach to door teleportation
+// Replace the entire executeDoorTeleport method with this
+
+executeDoorTeleport() {
+  if (!this.activeDoor) return;
+
+  if (this.physics) {
+    // Reset walking surface flags - they'll be checked next frame
+    this.physics.insideRoomWall = false;
+    this.physics.onTopOfWall = false;
+    
+    // Force an immediate check of what surface we're on
+    setTimeout(() => {
+        this.physics.checkWalkingSurface();
+    }, 100);
+}
+
+  
+  console.log("Executing simplified door teleport");
+  
+  // Get the door's position and rotation
+  const doorX = this.activeDoor.position.x;
+  const doorZ = this.activeDoor.position.z;
+  const doorRotationDegrees = this.activeDoor.rotation;
+  
+  // Convert door rotation to radians if it's in degrees
+  const doorRotation = typeof doorRotationDegrees === 'number' 
+    ? doorRotationDegrees * Math.PI / 180 
+    : doorRotationDegrees;
+  
+  console.log(`Door at (${doorX}, ${doorZ}) with rotation ${doorRotationDegrees}°`);
+  
+  // Get player's current position
+  const playerX = this.camera.position.x;
+  const playerY = this.camera.position.y; // Keep player at same height
+  const playerZ = this.camera.position.z;
+  
+  console.log(`Player at (${playerX}, ${playerZ})`);
+  
+  // Determine teleport offset direction based on door rotation
+  // For a door at -90 degrees, this would be along the X-axis
+  let offsetX = 0;
+  let offsetZ = 0;
+  
+  if (Math.abs(doorRotationDegrees) === 90 || Math.abs(doorRotationDegrees) === 270) {
+    // Door faces along X axis (east-west)
+    offsetX = 4.0; // Use a larger offset for testing
+    offsetZ = 0;
+  } else {
+    // Door faces along Z axis (north-south) 
+    offsetX = 0;
+    offsetZ = 4.0; // Use a larger offset for testing
+  }
+  
+  // Determine which side of the door the player is on by comparing positions
+  let destX, destZ;
+  
+  if (doorRotationDegrees === 90 || doorRotationDegrees === -270) {
+    // Door faces east (+X)
+    if (playerX > doorX) {
+      // Player is east of door, teleport west
+      destX = doorX - offsetX;
+      destZ = doorZ;
+      console.log("Player is east, teleporting west");
+    } else {
+      // Player is west of door, teleport east
+      destX = doorX + offsetX;
+      destZ = doorZ;
+      console.log("Player is west, teleporting east");
+    }
+  } 
+  else if (doorRotationDegrees === -90 || doorRotationDegrees === 270) {
+    // Door faces west (-X)
+    if (playerX < doorX) {
+      // Player is west of door, teleport east
+      destX = doorX + offsetX;
+      destZ = doorZ;
+      console.log("Player is west, teleporting east");
+    } else {
+      // Player is east of door, teleport west
+      destX = doorX - offsetX;
+      destZ = doorZ;
+      console.log("Player is east, teleporting west");
+    }
+  }
+  else if (doorRotationDegrees === 0 || doorRotationDegrees === 360) {
+    // Door faces north (+Z)
+    if (playerZ > doorZ) {
+      // Player is north of door, teleport south
+      destX = doorX;
+      destZ = doorZ - offsetZ;
+      console.log("Player is north, teleporting south");
+    } else {
+      // Player is south of door, teleport north
+      destX = doorX;
+      destZ = doorZ + offsetZ;
+      console.log("Player is south, teleporting north");
+    }
+  }
+  else if (doorRotationDegrees === 180 || doorRotationDegrees === -180) {
+    // Door faces south (-Z)
+    if (playerZ < doorZ) {
+      // Player is south of door, teleport north
+      destX = doorX;
+      destZ = doorZ + offsetZ;
+      console.log("Player is south, teleporting north");
+    } else {
+      // Player is north of door, teleport south
+      destX = doorX;
+      destZ = doorZ - offsetZ;
+      console.log("Player is north, teleporting south");
+    }
+  }
+  else {
+    // For non-cardinal rotations, use a simpler approach
+    // Just teleport the player directly through the door
+    const dx = playerX - doorX;
+    const dz = playerZ - doorZ;
+    destX = doorX - dx * 2; // Teleport to opposite side
+    destZ = doorZ - dz * 2;
+    console.log("Using mirror teleport for angled door");
+  }
+  
+  console.log(`Teleporting to (${destX}, ${destZ})`);
+  
+  // Create flash effect
+  const flash = document.createElement('div');
+  flash.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 9999;
+  `;
+  document.body.appendChild(flash);
+  
+  // Play door sound if available
+  if (this.doorSound) {
+    this.doorSound.play();
+  }
+  
+  // Perform teleport
+  requestAnimationFrame(() => {
+    flash.style.opacity = '0.7';
+    
+    setTimeout(() => {
+      // DIRECTLY SET POSITION WITH NO FANCY MATH
+      this.camera.position.set(destX, playerY, destZ);
+      
+      // If using controls with their own position object, update it too
+      if (this.controls && this.controls.getObject) {
+        this.controls.getObject().position.set(destX, playerY, destZ);
+      }
+      
+      // Update physics if available
+      if (this.physics) {
+        this.physics.currentGroundHeight = 0; // Reset to ground level
+      }
+
+      if (this.physics) {
+        // Allow movement inside walls after teleporting
+        this.physics.insideRoomWall = true;
+        
+        // Log this change
+        console.log("Enabled movement inside wall rooms");
+    }
+      
+      console.log("Teleport complete");
+      
+      // Fade out flash
+      flash.style.opacity = '0';
+      setTimeout(() => flash.remove(), 200);
+    }, 100);
+  });
+}
+
+
+processDoorMarkers() {
+  const doorMarkers = this.markers.filter(m => m.type === 'door');
+  console.log(`Found ${doorMarkers.length} door markers`);
+  
+  if (doorMarkers.length === 0) return;
+  
+  doorMarkers.forEach(marker => {
+    // Get the basic position
+    const x = marker.x / 50 - this.boxWidth / 2;
+    const z = marker.y / 50 - this.boxDepth / 2;
+    
+    // Get elevation at door position
+    const { elevation } = this.getElevationAtPoint(x, z);
+    
+    // Extract rotation from door data or element
+    let rotation = 0;
+    
+    // Try to get rotation from the door data
+    if (marker.data && marker.data.door && marker.data.door.position && 
+        marker.data.door.position.rotation !== undefined) {
+      rotation = marker.data.door.position.rotation;
+      console.log(`Door rotation from data: ${rotation}°`);
+    }
+    // Try to get it from element style transform
+    else if (marker.element && marker.element.style && marker.element.style.transform) {
+      // Extract rotation from transform style: "rotate(Xdeg)"
+      const transformMatch = marker.element.style.transform.match(/rotate\((-?\d+)deg\)/);
+      if (transformMatch && transformMatch[1]) {
+        rotation = parseInt(transformMatch[1]);
+        console.log(`Door rotation from element style: ${rotation}°`);
+      }
+    } 
+    
+    console.log(`Door marker ${marker.id} at (${x.toFixed(2)}, ${z.toFixed(2)}) with rotation ${rotation}°`);
+    
+    // Create door interaction point
+    const doorInfo = {
+      marker,
+      position: new THREE.Vector3(x, elevation + 1.0, z), // Position at eye level
+      rotation, // Store in degrees for easier debugging
+      id: marker.id
+    };
+    
+    // Log door info for debugging
+    console.log("Door info:", {
+      id: doorInfo.id,
+      position: `(${x.toFixed(2)}, ${elevation.toFixed(2)}, ${z.toFixed(2)})`,
+      rotation: doorInfo.rotation
+    });
+    
+    // Add a visual indicator for debugging
+    const indicatorSize = 0.2; // Make it bigger for visibility
+    const geometry = new THREE.SphereGeometry(indicatorSize, 8, 8);
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0.6,
+      visible: true // Make visible for debugging
+    });
+    
+    const doorIndicator = new THREE.Mesh(geometry, material);
+    doorIndicator.position.copy(doorInfo.position);
+    this.scene.add(doorIndicator);
+    
+    doorInfo.indicator = doorIndicator;
+    this.doors.push(doorInfo);
+    
+    // Draw a line in the door's forward direction for debugging
+    const forwardVector = new THREE.Vector3(0, 0, -1);
+    forwardVector.applyAxisAngle(
+      new THREE.Vector3(0, 1, 0), 
+      doorInfo.rotation * Math.PI / 180
+    );
+    forwardVector.normalize().multiplyScalar(1.0); // 1 unit length
+    
+    const directionEnd = new THREE.Vector3()
+      .addVectors(doorInfo.position, forwardVector);
+      
+    const directionGeometry = new THREE.BufferGeometry().setFromPoints([
+      doorInfo.position, 
+      directionEnd
+    ]);
+    
+    const directionMaterial = new THREE.LineBasicMaterial({ 
+      color: 0x00ff00,
+      linewidth: 3
+    });
+    
+    const directionLine = new THREE.Line(directionGeometry, directionMaterial);
+    this.scene.add(directionLine);
+    
+    doorInfo.directionLine = directionLine;
+  });
+  
+  console.log(`Added ${this.doors.length} door interaction points`);
+}
+
+
+  loadDoorSound() {
+    const listener = new THREE.AudioListener();
+    this.camera.add(listener);
+    
+    this.doorSound = new THREE.Audio(listener);
+    const audioLoader = new THREE.AudioLoader();
+    
+    audioLoader.load('sounds/door.mp3', (buffer) => {
+        this.doorSound.setBuffer(buffer);
+        this.doorSound.setVolume(0.5);
+    },
+    // Progress callback
+    (xhr) => {
+        console.log(`Door sound: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+    },
+    // Error callback
+    (error) => {
+        console.warn('Could not load door sound:', error);
+    });
   }
 
   createProp(structure, assignment) {
