@@ -1274,6 +1274,9 @@ this.hasUrlBasedTokens = true;
           case "zoomFit":
             this.zoomToFit();
             break;
+          case "screenshotTool":
+            this.takeScreenshot();
+            break;
         }
       });
     });
@@ -1382,7 +1385,137 @@ this.hasUrlBasedTokens = true;
         });
       };
 
+      // screenshotBtn.addEventListener('click', () => {
+      //   this.takeScreenshot();
+      // });
+      
+      // // Add keyboard shortcut
+      // document.addEventListener('keydown', (e) => {
+      //   if (e.key === 'F12') {
+      //     e.preventDefault(); // Prevent opening dev tools
+      //     this.takeScreenshot();
+      //   }
+      // });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12') {
+          e.preventDefault(); // Prevent opening dev tools
+          this.takeScreenshot();
+        }
+      });
+
     window.addEventListener("resize", () => this.handleResize());
+  }
+
+  takeScreenshot() {
+    // Show a loading indicator
+    const loadingToast = document.createElement('div');
+    loadingToast.textContent = 'Taking screenshot...';
+    loadingToast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      z-index: 10000;
+    `;
+    document.body.appendChild(loadingToast);
+  
+    // Determine if we're in 2D or 3D mode
+    const is3DMode = !!document.querySelector('.drawer-3d-view[open]');
+    
+    if (is3DMode) {
+      // 3D screenshot
+      try {
+        this.take3DScreenshot();
+        loadingToast.remove();
+      } catch (err) {
+        console.error('Error taking 3D screenshot:', err);
+        loadingToast.textContent = 'Error taking screenshot';
+        setTimeout(() => loadingToast.remove(), 2000);
+      }
+    } else {
+      // 2D screenshot
+      if (typeof html2canvas !== 'undefined') {
+        // Use html2canvas for 2D view
+        const container = document.querySelector('.canvas-container');
+        
+        html2canvas(container, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+          scale: 1,
+          logging: true,
+        }).then(canvas => {
+          this.processScreenshot(canvas, '2D_Map');
+          loadingToast.remove();
+        }).catch(err => {
+          console.error('Error taking 2D screenshot:', err);
+          loadingToast.textContent = 'Error taking screenshot';
+          setTimeout(() => loadingToast.remove(), 2000);
+        });
+      } else {
+        alert('Screenshot library not loaded. Please add html2canvas to your project.');
+        loadingToast.remove();
+      }
+    }
+  }
+  
+  // For 3D screenshots
+  take3DScreenshot() {
+    // For 3D view, we capture the renderer output
+    if (this.scene3D && this.scene3D.renderer) {
+      // Make sure we're rendering the latest state
+      this.scene3D.renderer.render(this.scene3D.scene, this.scene3D.camera);
+      
+      // Get the canvas and convert
+      const canvas = this.scene3D.renderer.domElement;
+      this.processScreenshot(canvas, '3D_View');
+    } else {
+      alert('3D view not initialized or renderer not available');
+    }
+  }
+  
+  // Process and download the screenshot
+  processScreenshot(canvas, prefix) {
+    try {
+      // Create download link
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const mapName = this.mapName || 'Map';
+      link.download = `${mapName}_${prefix}_${timestamp}.png`;
+      
+      // Convert canvas to blob and trigger download
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // Show success toast
+        const toast = document.createElement('div');
+        toast.textContent = 'Screenshot saved!';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          background: #4CAF50;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 4px;
+          z-index: 10000;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      }, 'image/png');
+    } catch (err) {
+      console.error('Error processing screenshot:', err);
+      alert('Error saving screenshot: ' + err.message);
+    }
   }
 
   setTool(tool) {
