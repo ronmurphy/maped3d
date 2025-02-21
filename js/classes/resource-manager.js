@@ -64,27 +64,6 @@ window.ResourceManager = class {
         }
     }
 
-    // async saveResourcePack(filename = 'resource-pack.json') {
-    //     const packData = {
-    //         name: this.activeResourcePack?.name || 'New Resource Pack',
-    //         version: '1.0',
-    //         textures: this.serializeTextures(),
-    //         sounds: this.serializeSounds(),
-    //         splashArt: this.serializeSplashArt()
-    //     };
-
-    //     const blob = new Blob([JSON.stringify(packData, null, 2)],
-    //         { type: 'application/json' });
-
-    //     const a = document.createElement('a');
-    //     a.href = URL.createObjectURL(blob);
-    //     a.download = filename;
-    //     document.body.appendChild(a);
-    //     a.click();
-    //     document.body.removeChild(a);
-    //     URL.revokeObjectURL(a.href);
-    // }
-
     async saveResourcePack(mapName = null) {
         const packData = {
             name: this.activeResourcePack?.name || 'New Resource Pack',
@@ -430,6 +409,73 @@ window.ResourceManager = class {
         // console.log('Found texture:', firstTexture);
         return firstTexture;
     }
+
+    // Add this method to the ResourceManager class
+
+/**
+ * Get a specific texture by ID, name, or other criteria
+ * @param {string} category - The texture category (walls, doors, props, etc.)
+ * @param {object} criteria - Object with criteria to match (id, name, etc.)
+ * @return {object|null} - The matching texture or null if not found
+ */
+getSpecificTexture(category, criteria) {
+    console.log('Getting specific texture:', { category, criteria });
+    
+    // Check if category exists
+    if (!this.resources?.textures[category]) {
+      console.warn(`No textures found for category: ${category}`);
+      return null;
+    }
+    
+    const textures = this.resources.textures[category];
+    
+    // If criteria is a string, assume it's an ID
+    if (typeof criteria === 'string') {
+      const texture = textures.get(criteria);
+      if (texture) {
+        console.log('Found texture by ID:', texture.name);
+        return texture;
+      }
+      
+      // If not found by ID, try to match by name
+      for (const [id, texture] of textures.entries()) {
+        if (texture.name === criteria) {
+          console.log('Found texture by name:', texture.name);
+          return texture;
+        }
+      }
+      
+      console.warn(`Texture not found with ID or name: ${criteria}`);
+      return null;
+    }
+    
+    // If criteria is an object, match by specified properties
+    if (typeof criteria === 'object') {
+      // Search through all textures in this category
+      for (const [id, texture] of textures.entries()) {
+        let isMatch = true;
+        
+        // Check each criteria property against the texture
+        for (const [key, value] of Object.entries(criteria)) {
+          if (texture[key] !== value) {
+            isMatch = false;
+            break;
+          }
+        }
+        
+        if (isMatch) {
+          console.log('Found texture matching criteria:', texture.name);
+          return texture;
+        }
+      }
+      
+      console.warn('No texture found matching criteria:', criteria);
+      return null;
+    }
+    
+    // If no match or invalid criteria, return null
+    return null;
+  }
 
 
     async addTexture(file, category, subcategory) {

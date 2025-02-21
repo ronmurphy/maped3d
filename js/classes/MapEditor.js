@@ -474,7 +474,7 @@ async saveMap() {
           y: marker.y,
           data: {}
         };
-
+      
         // Copy non-circular data
         if (marker.data) {
           Object.keys(marker.data).forEach((key) => {
@@ -482,18 +482,13 @@ async saveMap() {
               markerData.data[key] = marker.data[key];
             }
           });
-
+      
           if (marker.data.parentWall) {
             markerData.data.parentWallId = marker.data.parentWall.id;
             delete markerData.data.parentWall;
           }
-
-          if (marker.data.texture) {
-            markerData.data.textureId = marker.data.texture.id;
-            markerData.data.textureCategory = marker.data.texture.category;
-          }
         }
-
+      
         // Special handling for different marker types
         if (marker.type === "encounter" && marker.data.monster) {
           markerData.data.monster = {
@@ -514,40 +509,58 @@ async saveMap() {
           markerData.data.pairId = marker.data.pairedMarker.id;
           markerData.data.isPointA = marker.data.isPointA;
           markerData.data.hasPair = true;
-        } else if (marker.type === "prop") {
-          // Enhanced prop data saving
-          if (marker.data.prop) {
-            markerData.data.prop = {
-              scale: marker.data.prop.scale || 1.0,
-              height: marker.data.prop.height || 1.0,
-              isHorizontal: marker.data.prop.isHorizontal || false,
-              position: {
-                rotation: marker.data.prop.position?.rotation || 0
-              }
-            };
-          }
+        } // Improved prop handling in the saveMap function:
+
+        // Find the prop-specific section in the markers part of saveMap:
+        else if (marker.type === "prop") {
+          // IMPROVED PROP DATA HANDLING
+          console.log("Saving prop data:", {
+            id: marker.id,
+            hasTexture: !!marker.data.texture,
+            textureName: marker.data.texture?.name,
+            prop: marker.data.prop
+          });
           
-          // Make sure we preserve texture data for props
+          // Save complete prop configuration
+          markerData.data.prop = {
+            scale: marker.data.prop?.scale || 1.0,
+            height: marker.data.prop?.height || 1.0,
+            isHorizontal: !!marker.data.prop?.isHorizontal, // Ensure boolean
+            position: {
+              rotation: marker.data.prop?.position?.rotation || 0
+            }
+          };
+          
+          // Directly embed complete texture data
           if (marker.data.texture) {
-            // Keep the texture data directly in the saved file
-            // This ensures a complete self-contained prop definition
-            markerData.data.textureData = {
+            // Save under embeddedTexture for v1.3+ format
+            markerData.data.embeddedTexture = {
               id: marker.data.texture.id,
               name: marker.data.texture.name,
-              data: marker.data.texture.data,
+              category: marker.data.texture.category || "props",
+              data: marker.data.texture.data, // The actual image data
               aspect: marker.data.texture.aspect || 1.0
             };
+            
+            // For backwards compatibility
+            markerData.data.textureId = marker.data.texture.id;
+            markerData.data.textureCategory = marker.data.texture.category || "props";
           }
         } else if (marker.type === "door") {
-          // Save door position/rotation data
           if (marker.data.door) {
             markerData.data.door = { ...marker.data.door };
             if (marker.data.door.position) {
               markerData.data.door.position = { ...marker.data.door.position };
             }
           }
+          
+          // Also save texture for doors
+          if (marker.data.texture) {
+            markerData.data.textureId = marker.data.texture.id;
+            markerData.data.textureCategory = marker.data.texture.category || "doors";
+          }
         }
-
+      
         return markerData;
       }),
       resourcePack: this.resourceManager?.activeResourcePack?.name || null
@@ -757,7 +770,9 @@ async loadMap(file) {
 
       // Handle prop texture data - FIXED SECTION
       if (markerData.type === "prop") {
-        // Ensure prop data structure exists
+        console.log("Loading prop marker data:", markerData.data);
+        
+        // Ensure prop data structure exists with proper defaults
         if (!markerData.data.prop) {
           markerData.data.prop = {
             scale: 1.0,
@@ -765,13 +780,39 @@ async loadMap(file) {
             isHorizontal: false,
             position: { rotation: 0 }
           };
+        } else {
+          // Ensure boolean value for isHorizontal
+          markerData.data.prop.isHorizontal = !!markerData.data.prop.isHorizontal;
+          
+          // Ensure all prop properties exist
+          markerData.data.prop.scale = markerData.data.prop.scale || 1.0;
+          markerData.data.prop.height = markerData.data.prop.height || 1.0;
+          if (!markerData.data.prop.position) {
+            markerData.data.prop.position = { rotation: 0 };
+          } else {
+            markerData.data.prop.position.rotation = markerData.data.prop.position.rotation || 0;
+          }
         }
         
-        // Check for embedded texture data first (v1.3 format)
-        if (markerData.data.textureData) {
-          console.log("Restoring prop with embedded texture data", markerData.data.textureData);
+        // First try to load from embedded texture data (v1.3+ format)
+        if (markerData.data.embeddedTexture) {
+          console.log("Using embedded texture data for prop");
+          markerData.data.texture = { ...markerData.data.embeddedTexture };
           
-          // Create a texture object from the embedded data
+          // Store this texture in resourceManager if it doesn't exist
+          // This ensures the texture is available for future reference
+          if (this.resourceManager && 
+              !this.resourceManager.resources.textures.props.has(markerData.data.texture.id)) {
+            console.log("Adding embedded texture to resource manager:", markerData.data.texture.name);
+            this.resourceManager.resources.textures.props.set(
+              markerData.data.texture.id, 
+              markerData.data.texture
+            );
+          }
+        }
+        // Then try the older textureData field (for compatibility)
+        else if (markerData.data.textureData) {
+          console.log("Using textureData field for prop");
           markerData.data.texture = {
             id: markerData.data.textureData.id,
             name: markerData.data.textureData.name,
@@ -779,26 +820,35 @@ async loadMap(file) {
             aspect: markerData.data.textureData.aspect || 1.0,
             category: "props"
           };
-        } 
-        // For compatibility with older files, try to get texture from resource manager
+        }
+        // Finally try to get texture from resource manager by ID
         else if (markerData.data.textureId && this.resourceManager) {
-          const category = markerData.data.textureCategory || "props";      
-          const texture = this.resourceManager.resources.textures[category]?.get(markerData.data.textureId);
+          const category = markerData.data.textureCategory || "props";
+          console.log(`Attempting to load specific prop texture: ${markerData.data.textureId}`);
+          
+          // Use getSpecificTexture instead of direct lookup
+          const texture = this.resourceManager.getSpecificTexture(category, markerData.data.textureId);
+          
           if (texture) {
-            console.log("Restored prop texture from resource manager", texture);
+            console.log("Found texture in resource manager:", texture.name);
             markerData.data.texture = texture;
           } else {
             console.warn(`Could not find texture ${markerData.data.textureId} in category ${category}`);
+            // Only use fallback if absolutely necessary
+            console.warn("Will attempt to recreate prop with saved ID, visuals may be incorrect");
           }
         }
         
-        // Ensure isHorizontal property is properly set as boolean
-        if (markerData.data.prop.isHorizontal !== undefined) {
-          // Convert to actual boolean in case it was saved as a string
-          markerData.data.prop.isHorizontal = !!markerData.data.prop.isHorizontal;
-          console.log(`Prop horizontal setting: ${markerData.data.prop.isHorizontal}`);
-        }
+        console.log("Final prop data being used:", {
+          prop: markerData.data.prop,
+          texture: markerData.data.texture ? {
+            id: markerData.data.texture.id,
+            name: markerData.data.texture.name
+          } : "No texture found"
+        });
       }
+
+
       // Handle regular texture restoration for other marker types
       else if (markerData.data.textureId && this.resourceManager) {
         const category = markerData.data.textureCategory || 
@@ -1874,6 +1924,186 @@ async promptForFile(message, suggestedFilename = null) {
     // Update the setupEventListeners method in MapEditor.js
 // Modify the openMapBtn click handler:
 
+// openMapBtn.addEventListener("click", () => {
+//   const dialog = document.createElement("sl-dialog");
+//   dialog.label = "Open Map or Project";
+
+//   dialog.innerHTML = `
+//       <div style="display: flex; flex-direction: column; gap: 16px;">
+//           <sl-button size="large" class="new-map-btn" style="justify-content: flex-start;">
+//               <span slot="prefix" class="material-icons">add_circle</span>
+//               New Map
+//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                   Start fresh with a new map (clears everything)
+//               </div>
+//           </sl-button>
+
+//           <sl-button size="large" class="change-picture-btn" style="justify-content: flex-start;">
+//               <span slot="prefix" class="material-icons">image</span>
+//               Change Background
+//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                   Change map background while keeping rooms and markers
+//               </div>
+//           </sl-button>
+          
+//           <sl-divider></sl-divider>
+          
+//           <!-- Add Recent Projects button -->
+//           <sl-button size="large" class="recent-projects-btn" style="justify-content: flex-start;">
+//               <span slot="prefix" class="material-icons">history</span>
+//               Recent Projects
+//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                   Open a recently saved project
+//               </div>
+//           </sl-button>
+
+//           <sl-button size="large" class="load-project-btn" style="justify-content: flex-start;">
+//               <span slot="prefix" class="material-icons">folder_open</span>
+//               Open Project File
+//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                   Open a complete project with resources and map
+//               </div>
+//           </sl-button>
+
+//           <sl-button size="large" class="load-map-btn" style="justify-content: flex-start;">
+//               <span slot="prefix" class="material-icons">map</span>
+//               Open Map File
+//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                   Open only a map file (.map.json)
+//               </div>
+//           </sl-button>
+          
+//           <sl-button size="large" class="load-resource-btn" style="justify-content: flex-start;">
+//               <span slot="prefix" class="material-icons">texture</span>
+//               Open Resource Pack
+//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                   Open only a resource pack (.resource.json)
+//               </div>
+//           </sl-button>
+//       </div>
+//   `;
+
+//   // Create hidden file inputs
+//   const pictureInput = document.createElement("input");
+//   pictureInput.type = "file";
+//   pictureInput.accept = "image/*";
+//   pictureInput.style.display = "none";
+
+//   const projectInput = document.createElement("input");
+//   projectInput.type = "file";
+//   projectInput.accept = ".project.json";
+//   projectInput.style.display = "none";
+
+//   const mapInput = document.createElement("input");
+//   mapInput.type = "file";
+//   mapInput.accept = ".map.json,.json";
+//   mapInput.style.display = "none";
+  
+//   const resourceInput = document.createElement("input");
+//   resourceInput.type = "file";
+//   resourceInput.accept = ".resource.json,.json";
+//   resourceInput.style.display = "none";
+
+//   document.body.appendChild(pictureInput);
+//   document.body.appendChild(projectInput);
+//   document.body.appendChild(mapInput);
+//   document.body.appendChild(resourceInput);
+
+//   // Add handler for recent projects button
+//   dialog.querySelector('.recent-projects-btn').addEventListener('click', () => {
+//     dialog.hide();
+//     this.showRecentProjectsDialog();
+//   });
+
+//   // Handle picture file selection
+//   pictureInput.addEventListener('change', async e => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       // Existing picture handling code...
+//       dialog.hide();
+//     }
+//   });
+
+//   // Handle project file selection
+//   projectInput.addEventListener("change", async (e) => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       await this.loadProjectFile(file);
+//       dialog.hide();
+//     }
+//   });
+
+//   // Handle map file selection
+//   mapInput.addEventListener("change", async (e) => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       await this.loadMap(file);
+//       dialog.hide();
+//     }
+//   });
+  
+//   // Handle resource file selection
+//   resourceInput.addEventListener("change", async (e) => {
+//     const file = e.target.files[0];
+//     if (file) {
+//       if (this.resourceManager) {
+//         const success = await this.resourceManager.loadResourcePack(file);
+//         if (success) {
+//           alert("Resource pack loaded successfully");
+//         } else {
+//           alert("Failed to load resource pack");
+//         }
+//       }
+//       dialog.hide();
+//     }
+//   });
+
+//   // Button click handlers
+//   dialog.querySelector(".new-map-btn").addEventListener("click", () => {
+//     pictureInput.click();
+//     this.clearMap();
+//     dialog.hide();
+//   });
+
+//   dialog.querySelector(".change-picture-btn").addEventListener("click", () => {
+//     pictureInput.click();
+//     dialog.hide();
+//   });
+
+//   dialog.querySelector(".load-project-btn").addEventListener("click", () => {
+//     projectInput.click();
+//   });
+  
+//   dialog.querySelector(".load-map-btn").addEventListener("click", () => {
+//     mapInput.click();
+//   });
+  
+//   dialog.querySelector(".load-resource-btn").addEventListener("click", () => {
+//     resourceInput.click();
+//   });
+
+//   // Clean up on close
+//   dialog.addEventListener("sl-after-hide", () => {
+//     dialog.remove();
+//     pictureInput.remove();
+//     projectInput.remove();
+//     mapInput.remove();
+//     resourceInput.remove();
+//   });
+
+//   // Show the dialog
+//   document.body.appendChild(dialog);
+//   dialog.show();
+// });
+
+// Also update the saveProjectBtn click handler or add a new one
+
+
+// The issue is likely in the openMapBtn click handler where the "New Map" button 
+// creates the file input and handles the file selection
+
+// Here's the fixed version of the relevant code in the openMapBtn click handler:
+
 openMapBtn.addEventListener("click", () => {
   const dialog = document.createElement("sl-dialog");
   dialog.label = "Open Map or Project";
@@ -1959,22 +2189,177 @@ openMapBtn.addEventListener("click", () => {
   document.body.appendChild(mapInput);
   document.body.appendChild(resourceInput);
 
-  // Add handler for recent projects button
-  dialog.querySelector('.recent-projects-btn').addEventListener('click', () => {
-    dialog.hide();
-    this.showRecentProjectsDialog();
-  });
-
-  // Handle picture file selection
+  // Fix the New Map handler
+  // This is the important part that needs fixing
   pictureInput.addEventListener('change', async e => {
     const file = e.target.files[0];
     if (file) {
-      // Existing picture handling code...
-      dialog.hide();
+      try {
+        // Parse filename first (optional)
+        const parseResult = this.parseMapFilename(file.name);
+        let mapName = parseResult.mapName;
+
+        // If we couldn't get a map name or user wants to change it, show dialog
+        if (!mapName || !parseResult.success) {
+          // Show name dialog
+          const nameConfirmed = await this.showMapNameDialog();
+          if (!nameConfirmed) {
+            dialog.hide();
+            return; // User cancelled
+          }
+        } else {
+          // Found a name, confirm with the user
+          const nameDialog = document.createElement('sl-dialog');
+          nameDialog.label = 'Map Name';
+          nameDialog.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <sl-input
+                id="mapNameInput"
+                label="Map Name"
+                value="${mapName}"
+                help-text="Parsed from filename. You can modify if needed."
+              ></sl-input>
+              ${parseResult.gridDimensions ? `
+                <div style="color: #666;">
+                  Grid Size: ${parseResult.gridDimensions.width}x${parseResult.gridDimensions.height}
+                </div>
+              ` : ''}
+            </div>
+            <div slot="footer">
+              <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+              <sl-button variant="primary" class="save-btn">Continue</sl-button>
+            </div>
+          `;
+
+          document.body.appendChild(nameDialog);
+
+          // Get user confirmation
+          const proceed = await new Promise((resolve) => {
+            const mapNameInput = nameDialog.querySelector('#mapNameInput');
+            const saveBtn = nameDialog.querySelector('.save-btn');
+            const cancelBtn = nameDialog.querySelector('.cancel-btn');
+
+            saveBtn.addEventListener('click', () => {
+              mapName = mapNameInput.value.trim();
+              this.mapName = mapName;
+              this.originalMapName = mapName;
+              nameDialog.hide();
+              resolve(true);
+            });
+
+            cancelBtn.addEventListener('click', () => {
+              nameDialog.hide();
+              resolve(false);
+            });
+
+            nameDialog.addEventListener('sl-after-hide', () => {
+              nameDialog.remove();
+            });
+
+            nameDialog.show();
+          });
+
+          if (!proceed) {
+            dialog.hide();
+            return; // User cancelled
+          }
+        }
+
+        // Set grid dimensions if found
+        if (parseResult.gridDimensions) {
+          this.gridDimensions = parseResult.gridDimensions;
+        }
+
+        // Show loading notification
+        const toast = document.createElement("div");
+        toast.style.position = "fixed";
+        toast.style.bottom = "20px";
+        toast.style.right = "20px";
+        toast.style.zIndex = "1000";
+        toast.style.backgroundColor = "#333";
+        toast.style.color = "white";
+        toast.style.padding = "10px 20px";
+        toast.style.borderRadius = "4px";
+        toast.style.display = "flex";
+        toast.style.alignItems = "center";
+        toast.style.gap = "10px";
+        toast.innerHTML = `
+            <span class="material-icons">hourglass_top</span>
+            <span>Loading ${file.name}...</span>
+        `;
+        document.body.appendChild(toast);
+
+        // Clear existing map if this is a "New Map" request
+        this.clearMap();
+        
+        // Load the image file
+        const reader = new FileReader();
+        await new Promise((resolve, reject) => {
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              this.baseImage = img;
+
+              // Calculate DPI if possible
+              if (this.gridDimensions) {
+                const cellWidth = img.width / this.gridDimensions.width;
+                const cellHeight = img.height / this.gridDimensions.height;
+                this.cellSize = Math.min(cellWidth, cellHeight);
+                console.log(`Calculated cell size: ${this.cellSize}px`);
+              } else {
+                // Set a default cell size if we couldn't calculate
+                this.cellSize = 50;
+              }
+
+              // Store the natural dimensions
+              this.naturalWidth = img.naturalWidth;
+              this.naturalHeight = img.naturalHeight;
+
+              // Center and render
+              this.centerMap();
+              this.render();
+              this.updateMapTitle(); // Update the title with the new map name
+              resolve();
+            };
+            img.onerror = reject;
+            img.src = event.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // Success notification
+        toast.style.backgroundColor = "#4CAF50";
+        toast.innerHTML = `
+            <span class="material-icons">check_circle</span>
+            <span>Map loaded successfully!</span>
+        `;
+        setTimeout(() => toast.remove(), 2000);
+        
+        dialog.hide();
+      } catch (error) {
+        console.error("Error loading map:", error);
+        // Error notification
+        const toast = document.createElement("div");
+        toast.style.position = "fixed";
+        toast.style.bottom = "20px";
+        toast.style.right = "20px";
+        toast.style.zIndex = "1000";
+        toast.style.backgroundColor = "#f44336";
+        toast.style.color = "white";
+        toast.style.padding = "10px 20px";
+        toast.style.borderRadius = "4px";
+        toast.innerHTML = `
+            <span class="material-icons">error</span>
+            <span>Error loading map: ${error.message}</span>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      }
     }
   });
 
-  // Handle project file selection
+  // Handle JSON file selection
   projectInput.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1982,8 +2367,7 @@ openMapBtn.addEventListener("click", () => {
       dialog.hide();
     }
   });
-
-  // Handle map file selection
+  
   mapInput.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1992,7 +2376,6 @@ openMapBtn.addEventListener("click", () => {
     }
   });
   
-  // Handle resource file selection
   resourceInput.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -2011,7 +2394,6 @@ openMapBtn.addEventListener("click", () => {
   // Button click handlers
   dialog.querySelector(".new-map-btn").addEventListener("click", () => {
     pictureInput.click();
-    this.clearMap();
     dialog.hide();
   });
 
@@ -2032,6 +2414,15 @@ openMapBtn.addEventListener("click", () => {
     resourceInput.click();
   });
 
+  // Add handler for recent projects button if it exists
+  const recentProjectsBtn = dialog.querySelector('.recent-projects-btn');
+  if (recentProjectsBtn) {
+    recentProjectsBtn.addEventListener('click', () => {
+      dialog.hide();
+      this.showRecentProjectsDialog();
+    });
+  }
+
   // Clean up on close
   dialog.addEventListener("sl-after-hide", () => {
     dialog.remove();
@@ -2046,15 +2437,62 @@ openMapBtn.addEventListener("click", () => {
   dialog.show();
 });
 
-// Also update the saveProjectBtn click handler or add a new one
+// const saveProjectBtn = document.getElementById("saveProjectBtn");
+// if (saveProjectBtn) {
+//   saveProjectBtn.addEventListener("click", () => {
+//     const dialog = document.createElement("sl-dialog");
+//     dialog.label = "Save Options";
+//     dialog.innerHTML = `
+//       <div style="display: flex; flex-direction: column; gap: 16px;">
+//         <sl-button size="large" class="save-map-btn" style="justify-content: flex-start;">
+//           <span slot="prefix" class="material-icons">map</span>
+//           Save Map Only
+//           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//             Save only the map file (.map.json)
+//           </div>
+//         </sl-button>
+        
+//         <sl-button size="large" class="save-project-btn" style="justify-content: flex-start;">
+//           <span slot="prefix" class="material-icons">folder</span>
+//           Save Complete Project
+//           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//             Save map, resources, and project file
+//           </div>
+//         </sl-button>
+//       </div>
+//     `;
+    
+//     dialog.querySelector(".save-map-btn").addEventListener("click", async () => {
+//       await this.saveMap();
+//       dialog.hide();
+//     });
+    
+//     dialog.querySelector(".save-project-btn").addEventListener("click", async () => {
+//       await this.saveProjectFile();
+//       dialog.hide();
+//     });
+    
+//     dialog.addEventListener("sl-after-hide", () => {
+//       dialog.remove();
+//     });
+    
+//     document.body.appendChild(dialog);
+//     dialog.show();
+//   });
+// }
+    
+
+//  fixed version:
+
 const saveProjectBtn = document.getElementById("saveProjectBtn");
 if (saveProjectBtn) {
   saveProjectBtn.addEventListener("click", () => {
+    // Create dialog with save options
     const dialog = document.createElement("sl-dialog");
     dialog.label = "Save Options";
     dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <sl-button size="large" class="save-map-btn" style="justify-content: flex-start;">
+        <sl-button size="large" class="save-map-btnX" style="justify-content: flex-start;">
           <span slot="prefix" class="material-icons">map</span>
           Save Map Only
           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
@@ -2062,7 +2500,7 @@ if (saveProjectBtn) {
           </div>
         </sl-button>
         
-        <sl-button size="large" class="save-project-btn" style="justify-content: flex-start;">
+        <sl-button size="large" class="save-project-btnX" style="justify-content: flex-start;">
           <span slot="prefix" class="material-icons">folder</span>
           Save Complete Project
           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
@@ -2072,32 +2510,30 @@ if (saveProjectBtn) {
       </div>
     `;
     
-    dialog.querySelector(".save-map-btn").addEventListener("click", async () => {
+    // Add event handlers for the dialog buttons
+    dialog.querySelector(".save-map-btnX").addEventListener("click", async () => {
       await this.saveMap();
       dialog.hide();
     });
     
-    dialog.querySelector(".save-project-btn").addEventListener("click", async () => {
+    dialog.querySelector(".save-project-btnX").addEventListener("click", async () => {
       await this.saveProjectFile();
       dialog.hide();
     });
     
+    // Cleanup when dialog is closed
     dialog.addEventListener("sl-after-hide", () => {
       dialog.remove();
     });
     
+    // Show the dialog
     document.body.appendChild(dialog);
     dialog.show();
   });
 }
     
-    
     }
 
-    const saveProjectBtn = document.getElementById("saveProjectBtn");
-    if (saveProjectBtn) {
-      saveProjectBtn.addEventListener("click", () => this.saveMap());
-    }
 
     // In MapEditor's event listener for create3d button
     const create3dBtn = document.getElementById("create3d");
@@ -2255,17 +2691,7 @@ if (saveProjectBtn) {
         });
       };
 
-      // screenshotBtn.addEventListener('click', () => {
-      //   this.takeScreenshot();
-      // });
-      
-      // // Add keyboard shortcut
-      // document.addEventListener('keydown', (e) => {
-      //   if (e.key === 'F12') {
-      //     e.preventDefault(); // Prevent opening dev tools
-      //     this.takeScreenshot();
-      //   }
-      // });
+
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'F12') {
@@ -3729,24 +4155,55 @@ if (saveProjectBtn) {
     }
 
     if (type === "prop") {
-      // Get texture from resource manager
+      // Get texture from resource manager - UPDATED CODE
       const textureCategory = "props";
-      const texture = this.resourceManager.getSelectedTexture(textureCategory);
+      
+      // If we have specific texture info in the data, use it
+      let texture = null;
+      
+      if (data.texture) {
+        // Keep existing texture object if it's already complete
+        texture = data.texture;
+        console.log("Using provided texture for prop:", texture.name);
+      } 
+      else if (data.textureId && this.resourceManager) {
+        // Try to get the specific texture by ID
+        texture = this.resourceManager.getSpecificTexture(textureCategory, data.textureId);
+        console.log("Retrieved texture by ID:", texture?.name);
+      }
+      else if (data.embeddedTexture) {
+        // Use embedded texture data
+        texture = data.embeddedTexture;
+        console.log("Using embedded texture data:", texture.name);
+      }
+      
+      // Fallback to default if needed
+      if (!texture && this.resourceManager) {
+        console.warn("No specific texture found, using default");
+        texture = this.resourceManager.getSelectedTexture(textureCategory);
+      }
       
       if (!texture) {
-        alert('No prop textures available. Please add some in the Resource Manager.');
+        console.error("No texture available for prop marker");
+        // Return early or show error message
         return null;
       }
       
-      console.log('Creating prop marker with texture:', texture);
+      console.log("Creating prop marker with texture:", {
+        id: texture.id,
+        name: texture.name
+      });
+      
       const marker = this.createMarker("prop", x, y, {
         texture: texture,
-        prop: {
-          position: { rotation: 0 },
+        prop: data.prop || {
           scale: 1.0,
-          height: 1.0
+          height: 1.0,
+          isHorizontal: false,
+          position: { rotation: 0 }
         }
       });
+      
       this.markers.push(marker);
       return marker;
     }
@@ -3984,30 +4441,33 @@ if (saveProjectBtn) {
       this.updateMarkerPosition(marker);
     }  
     else if (marker.type === "prop" && marker.data.texture) {
+      // Default prop settings
       const propSettings = marker.data.prop || {};
-      const scale = propSettings.scale || 1.0;
       const rotation = propSettings.position?.rotation || 0;
+      const scale = propSettings.scale || 1.0;
+      const height = propSettings.height || 1.0;
+      const isHorizontal = !!propSettings.isHorizontal;
       
-      // Calculate dimensions - consider using real image aspect ratio if possible
-      let aspect = 1;
+      console.log("Updating prop appearance:", {
+        scale, height, isHorizontal, rotation, 
+        textureId: marker.data.texture.id,
+        textureName: marker.data.texture.name
+      });
       
-      // Create temporary image to get actual aspect ratio if not already stored
-      if (!marker.data.texture.aspect) {
+      // Get texture aspect ratio
+      let aspect = marker.data.texture.aspect || 1.0;
+      
+      // If we have the actual image data, calculate actual aspect
+      if (!aspect && marker.data.texture.data) {
         const img = new Image();
         img.src = marker.data.texture.data;
         img.onload = () => {
-          const actualAspect = img.width / img.height;
-          // Store aspect ratio for future use
-          marker.data.texture.aspect = actualAspect;
-          // Update visual after getting the real dimensions
-          updatePropVisual(actualAspect);
+          marker.data.texture.aspect = img.width / img.height;
+          updatePropVisual(marker.data.texture.aspect);
         };
       } else {
-        aspect = marker.data.texture.aspect;
+        updatePropVisual(aspect);
       }
-      
-      // Update the visual element
-      updatePropVisual(aspect);
       
       function updatePropVisual(aspectRatio) {
         const baseSize = 48;
@@ -4045,8 +4505,9 @@ if (saveProjectBtn) {
             ">h: ${marker.data.prop.height}</div>
           ` : ''}
         `;
-
-        if (marker.data.prop?.isHorizontal) {
+    
+        // Apply horizontal class if needed
+        if (isHorizontal) {
           const propVisual = marker.element.querySelector('.prop-visual');
           if (propVisual) {
             propVisual.classList.add('horizontal-prop');
@@ -4519,68 +4980,6 @@ if (!marker.data.monster) {
         </sl-input>
     `;
     } 
-
-    // else if (marker.type === "prop") {
-    //   // Get current prop settings
-    //   const propSettings = marker.data.prop || {};
-    //   const rotation = propSettings.position?.rotation || 0;
-    //   const scale = propSettings.scale || 1.0;
-    //   const height = propSettings.height || 1.0;
-      
-    //   content += `
-    //     <div style="margin-top: 8px;">
-    //       <div style="border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
-    //         <label>Prop Type:</label>
-    //         <div class="prop-texture-grid" style="
-    //           display: grid;
-    //           grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    //           gap: 8px;
-    //           margin-top: 8px;
-    //           max-height: 200px;
-    //           overflow-y: auto;
-    //         ">
-    //           ${Array.from(this.resourceManager.resources.textures.props?.entries() || []).map(([id, texture]) => `
-    //             <div class="prop-texture-option ${marker.data.texture?.id === id ? 'selected' : ''}" data-texture-id="${id}">
-    //               <img src="${texture.data}" style="width: 100%; height: 60px; object-fit: cover; border-radius: 2px;">
-    //               <div style="font-size: 0.7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-top: 4px;">
-    //                 ${texture.name}
-    //               </div>
-    //               ${marker.data.texture?.id === id ? `
-    //                 <span class="material-icons" style="position: absolute; top: 2px; right: 2px; color: #4CAF50; background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px; font-size: 14px;">
-    //                   check_circle
-    //                 </span>
-    //               ` : ''}
-    //             </div>
-    //           `).join('')}
-    //         </div>
-    //       </div>
-    
-    //       <div class="prop-controls">
-    //         <div class="prop-control-row">
-    //           <label>Rotation:</label>
-    //           <sl-range min="0" max="359" step="15" value="${rotation}" id="prop-rotation" 
-    //                    style="width: 100%;"></sl-range>
-    //           <div style="min-width: 40px; text-align: right;">${rotation}°</div>
-    //         </div>
-            
-    //         <div class="prop-control-row">
-    //           <label>Scale:</label>
-    //           <sl-range min="0.5" max="3" step="0.1" value="${scale}" id="prop-scale" 
-    //                    style="width: 100%;"></sl-range>
-    //           <div style="min-width: 40px; text-align: right;">${scale}x</div>
-    //         </div>
-            
-    //         <div class="prop-control-row">
-    //           <label>Height:</label>
-    //           <sl-range min="0" max="4" step="0.1" value="${height}" id="prop-height" 
-    //                    style="width: 100%;"></sl-range>
-    //           <div style="min-width: 40px; text-align: right;">${height}</div>
-    //         </div>
-    //       </div>
-    //     </div>
-    //   `;
-    // }
-
     else if (marker.type === "prop") {
       // Get current prop settings
       const propSettings = marker.data.prop || {};

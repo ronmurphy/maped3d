@@ -168,13 +168,15 @@ class Scene3DController {
   }
 
 
-//   createPropMesh(propData) {
+
+// createPropMesh(propData) {
 //   console.log("Creating prop mesh:", {
 //     position: `${propData.x}, ${propData.y}`,
 //     texture: !!propData.image,
 //     rotation: propData.rotation || 0,
 //     scale: propData.scale || 1.0,
-//     height: propData.height || 1.0
+//     height: propData.height || 1.0,
+//     isHorizontal: propData.isHorizontal || false
 //   });
 
 //   return new Promise((resolve, reject) => {
@@ -213,20 +215,32 @@ class Scene3DController {
 //         // Get elevation at this point
 //         const { elevation } = this.getElevationAtPoint(x, z);
         
-//         // The height value should determine vertical position from the ground or elevation
-//         // Add elevation to the specified height - divide height by 2 since the plane's origin is at its center
-//         const y = elevation + ((height / 2) * (propData.height || 1.0));
-        
-//         mesh.position.set(x, y, z);
-        
-//         // Rotate based on provided rotation
-//         const rotationRad = (propData.rotation || 0) * Math.PI / 180;
-//         mesh.rotation.y = rotationRad;
+//         // Handle horizontal vs vertical orientation
+//         if (propData.isHorizontal) {
+//           // Horizontal prop - lie flat on surface
+//           // Rotate 90 degrees on X axis to make it horizontal
+//           mesh.rotation.x = -Math.PI / 2;
+          
+//           // Set position slightly above surface
+//           const y = elevation + 0.01; // Just above surface
+//           mesh.position.set(x, y, z);
+          
+//           // Apply rotation around Y axis (which is now the up vector)
+//           mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
+//         } else {
+//           // Vertical prop (original behavior)
+//           const y = propData.height + elevation;
+//           mesh.position.set(x, y, z);
+          
+//           // Standard rotation around Y axis
+//           mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
+//         }
         
 //         // Add metadata
 //         mesh.userData = {
 //           type: 'prop',
-//           id: propData.id
+//           id: propData.id,
+//           isHorizontal: propData.isHorizontal || false
 //         };
         
 //         resolve(mesh);
@@ -239,6 +253,9 @@ class Scene3DController {
 //     );
 //   });
 // }
+
+// This is the updated createPropMesh method for Scene3DController
+// with the z-fighting fix for horizontal props
 
 createPropMesh(propData) {
   console.log("Creating prop mesh:", {
@@ -292,8 +309,9 @@ createPropMesh(propData) {
           // Rotate 90 degrees on X axis to make it horizontal
           mesh.rotation.x = -Math.PI / 2;
           
-          // Set position slightly above surface
-          const y = elevation + 0.01; // Just above surface
+          // Set position slightly above surface to prevent z-fighting
+          // Add 0.01 units above the surface
+          const y = elevation + 0.02; // <-- Add this small offset for horizontal props
           mesh.position.set(x, y, z);
           
           // Apply rotation around Y axis (which is now the up vector)
