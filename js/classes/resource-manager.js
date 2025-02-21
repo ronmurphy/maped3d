@@ -1382,21 +1382,35 @@ if (packNameInput) {
 
         const saveBtn = drawer.querySelector('#saveResourcePack');
         const loadBtn = drawer.querySelector('#loadResourcePack');
+        const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+        const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
 
 
 
    
+        // if (saveBtn) {
+        //     saveBtn.addEventListener('click', () => {
+        //         this.saveResourcePack();
+        //     });
+        // }
+
         if (saveBtn) {
-            // Keep existing save handler, but modify to include bestiary
-            const originalSaveHandler = saveBtn.onclick;
-            saveBtn.onclick = async () => {
-                if (originalSaveHandler) originalSaveHandler();
+            saveBtn.addEventListener('click', () => {
+                const action = saveBtn.getAttribute('data-action') || 'save-resources';
                 
-                // Also save bestiary if we have monsters
-                if (this.resources.bestiary.size > 0) {
-                    this.saveBestiaryToFile();
+                if (action === 'save-all') {
+                    // In bestiary tab, save both resources and bestiary
+                    this.saveResourcePack();
+                    
+                    // Also save bestiary if we have monsters
+                    if (this.resources.bestiary.size > 0) {
+                        this.saveBestiaryToFile();
+                    }
+                } else {
+                    // Default action - save resource pack only
+                    this.saveResourcePack();
                 }
-            };
+            });
         }
     
         if (loadBtn) {
@@ -1494,6 +1508,33 @@ if (packNameInput) {
             };
         }
 
+        if (exportBestiaryBtn) {
+            exportBestiaryBtn.addEventListener('click', () => {
+                this.saveBestiaryToFile();
+            });
+        }
+        
+        if (importBestiaryBtn) {
+            importBestiaryBtn.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const success = await this.loadBestiaryFromFile(file);
+                        if (success) {
+                            this.updateBestiaryGallery(drawer, 'grid');
+                            alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+                        } else {
+                            alert('Failed to load bestiary file');
+                        }
+                    }
+                };
+                input.click();
+            });
+        }
+
         // Update the view toggle handler
         drawer.querySelectorAll('.view-toggle').forEach(toggle => {
             toggle.addEventListener('click', () => {
@@ -1559,31 +1600,47 @@ if (packNameInput) {
         });
 
             // Handle tab changes to load bestiary when tab is activated
-            const tabGroup = drawer.querySelector('sl-tab-group');
-            if (tabGroup) {
-                tabGroup.addEventListener('sl-tab-show', (e) => {
-                    const tabName = e.detail.name;
-                    
-                    // Toggle bestiary-specific buttons
-                    const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-                    const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-                    
-                    if (exportBestiaryBtn && importBestiaryBtn) {
-                        const isBestiaryTab = tabName === 'bestiary';
-                        exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
-                        importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
-                    }
-                    
-                    // Update gallery if needed
-                    if (tabName === 'bestiary') {
-                        this.updateBestiaryGallery(drawer, 'grid');
-                    }
 
-                    // if (tabName === 'bestiary') {
-                    //     this.debugBestiarySearch(drawer);
-                    // }
-                });
+const tabGroup = drawer.querySelector('sl-tab-group');
+if (tabGroup) {
+    tabGroup.addEventListener('sl-tab-show', (e) => {
+        const tabName = e.detail.name;
+        
+        // Toggle bestiary-specific buttons
+        const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+        const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+        const saveResourceBtn = drawer.querySelector('#saveResourcePack');
+        const loadResourceBtn = drawer.querySelector('#loadResourcePack');
+        
+        if (exportBestiaryBtn && importBestiaryBtn && saveResourceBtn && loadResourceBtn) {
+            const isBestiaryTab = tabName === 'bestiary';
+            
+            // Show/hide bestiary buttons
+            exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+            importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+            
+            // Update save/load button text based on context
+            if (isBestiaryTab) {
+                saveResourceBtn.innerHTML = `
+                    <span class="material-icons" slot="prefix">save</span>
+                    Save All
+                `;
+                saveResourceBtn.setAttribute('data-action', 'save-all');
+            } else {
+                saveResourceBtn.innerHTML = `
+                    <span class="material-icons" slot="prefix">save</span>
+                    Save
+                `;
+                saveResourceBtn.setAttribute('data-action', 'save-resources');
             }
+        }
+        
+        // Update gallery if needed
+        if (tabName === 'bestiary') {
+            this.updateBestiaryGallery(drawer, 'grid');
+        }
+    });
+}
 
         // Handle file uploads for each type
         const setupUploadHandler = (btnClass, inputClass, type) => {
@@ -1645,34 +1702,34 @@ if (packNameInput) {
         setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
 
 
-        const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-        if (exportBestiaryBtn) {
-            exportBestiaryBtn.addEventListener('click', () => {
-                this.saveBestiaryToFile();
-            });
-        }
+        // const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+        // if (exportBestiaryBtn) {
+        //     exportBestiaryBtn.addEventListener('click', () => {
+        //         this.saveBestiaryToFile();
+        //     });
+        // }
         
-        const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-        if (importBestiaryBtn) {
-            importBestiaryBtn.addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
-                input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const success = await this.loadBestiaryFromFile(file);
-                        if (success) {
-                            this.updateBestiaryGallery(drawer, 'grid');
-                            alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
-                        } else {
-                            alert('Failed to load bestiary file');
-                        }
-                    }
-                };
-                input.click();
-            });
-        }
+        // const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+        // if (importBestiaryBtn) {
+        //     importBestiaryBtn.addEventListener('click', () => {
+        //         const input = document.createElement('input');
+        //         input.type = 'file';
+        //         input.accept = '.json';
+        //         input.onchange = async (e) => {
+        //             const file = e.target.files[0];
+        //             if (file) {
+        //                 const success = await this.loadBestiaryFromFile(file);
+        //                 if (success) {
+        //                     this.updateBestiaryGallery(drawer, 'grid');
+        //                     alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+        //                 } else {
+        //                     alert('Failed to load bestiary file');
+        //                 }
+        //             }
+        //         };
+        //         input.click();
+        //     });
+        // }
 
             // Setup Bestiary tab handlers
     const addMonsterBtn = drawer.querySelector('.add-monster-btn');
