@@ -2934,48 +2934,6 @@ this.hasUrlBasedTokens = true;
   }
 
 
-
-  // updateMarkerAppearance(marker) {
-  //   if (marker.data.monster?.token) {
-  //     const tokenSource =
-  //       marker.data.monster.token.data || marker.data.monster.token.url;
-  //     const monsterSize = this.getMonsterSizeInSquares(
-  //       marker.data.monster.basic.size
-  //     );
-
-  //     // Use the existing cellSize property
-  //     const cellSize = this.cellSize || 32; // Fallback to 32 if cellSize not calculated yet
-  //     const totalSize = cellSize * monsterSize; // This will be both width and height
-
-  //     // Make the token square and centered
-  //     marker.element.innerHTML = `
-  //           <div class="monster-token" style="
-  //               width: ${totalSize}px; 
-  //               height: ${totalSize}px; 
-  //               border-radius: 10%; 
-  //               border: 2px solid #f44336; 
-  //               overflow: hidden;
-  //               display: flex;
-  //               align-items: center;
-  //               justify-content: center;
-  //               position: absolute;
-  //               left: -${totalSize / 2}px;
-  //               top: -${totalSize / 2}px;
-  //               transform-origin: center;
-  //               transform: scale(${this.scale}); /* Add map scaling */
-  //           ">
-  //               <img src="${tokenSource}" 
-  //                    style="width: 100%; height: 100%; object-fit: cover;"
-  //                    onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'material-icons\' style=\'font-size: ${totalSize * 0.75
-  //       }px;\'>local_fire_department</span>';" />
-  //           </div>
-  //       `;
-
-  //     // Update position with current scale and offset
-  //     this.updateMarkerPosition(marker);
-  //   }
-  // }
-
   updateMarkerAppearance(marker) {
     if (marker.data.monster?.token) {
       const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
@@ -3084,6 +3042,13 @@ this.hasUrlBasedTokens = true;
             ">h: ${marker.data.prop.height}</div>
           ` : ''}
         `;
+
+        if (marker.data.prop?.isHorizontal) {
+          const propVisual = marker.element.querySelector('.prop-visual');
+          if (propVisual) {
+            propVisual.classList.add('horizontal-prop');
+          }
+        }
       }
     }
   }
@@ -3316,7 +3281,6 @@ this.hasUrlBasedTokens = true;
     markerElement.addEventListener("contextmenu", (e) => {
       e.preventDefault(); // Prevent default context menu
       this.showMarkerContextMenu(marker, e);
-      // this.showMarkerContextMenuWithBestiary(marker, e);
     });
 
     // Position marker
@@ -3553,12 +3517,74 @@ if (!marker.data.monster) {
     `;
     } 
 
+    // else if (marker.type === "prop") {
+    //   // Get current prop settings
+    //   const propSettings = marker.data.prop || {};
+    //   const rotation = propSettings.position?.rotation || 0;
+    //   const scale = propSettings.scale || 1.0;
+    //   const height = propSettings.height || 1.0;
+      
+    //   content += `
+    //     <div style="margin-top: 8px;">
+    //       <div style="border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
+    //         <label>Prop Type:</label>
+    //         <div class="prop-texture-grid" style="
+    //           display: grid;
+    //           grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    //           gap: 8px;
+    //           margin-top: 8px;
+    //           max-height: 200px;
+    //           overflow-y: auto;
+    //         ">
+    //           ${Array.from(this.resourceManager.resources.textures.props?.entries() || []).map(([id, texture]) => `
+    //             <div class="prop-texture-option ${marker.data.texture?.id === id ? 'selected' : ''}" data-texture-id="${id}">
+    //               <img src="${texture.data}" style="width: 100%; height: 60px; object-fit: cover; border-radius: 2px;">
+    //               <div style="font-size: 0.7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-top: 4px;">
+    //                 ${texture.name}
+    //               </div>
+    //               ${marker.data.texture?.id === id ? `
+    //                 <span class="material-icons" style="position: absolute; top: 2px; right: 2px; color: #4CAF50; background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px; font-size: 14px;">
+    //                   check_circle
+    //                 </span>
+    //               ` : ''}
+    //             </div>
+    //           `).join('')}
+    //         </div>
+    //       </div>
+    
+    //       <div class="prop-controls">
+    //         <div class="prop-control-row">
+    //           <label>Rotation:</label>
+    //           <sl-range min="0" max="359" step="15" value="${rotation}" id="prop-rotation" 
+    //                    style="width: 100%;"></sl-range>
+    //           <div style="min-width: 40px; text-align: right;">${rotation}°</div>
+    //         </div>
+            
+    //         <div class="prop-control-row">
+    //           <label>Scale:</label>
+    //           <sl-range min="0.5" max="3" step="0.1" value="${scale}" id="prop-scale" 
+    //                    style="width: 100%;"></sl-range>
+    //           <div style="min-width: 40px; text-align: right;">${scale}x</div>
+    //         </div>
+            
+    //         <div class="prop-control-row">
+    //           <label>Height:</label>
+    //           <sl-range min="0" max="4" step="0.1" value="${height}" id="prop-height" 
+    //                    style="width: 100%;"></sl-range>
+    //           <div style="min-width: 40px; text-align: right;">${height}</div>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   `;
+    // }
+
     else if (marker.type === "prop") {
       // Get current prop settings
       const propSettings = marker.data.prop || {};
       const rotation = propSettings.position?.rotation || 0;
       const scale = propSettings.scale || 1.0;
       const height = propSettings.height || 1.0;
+      const isHorizontal = propSettings.isHorizontal || false;
       
       content += `
         <div style="margin-top: 8px;">
@@ -3589,6 +3615,15 @@ if (!marker.data.monster) {
           </div>
     
           <div class="prop-controls">
+            <div style="margin-bottom: 16px;">
+              <sl-switch id="prop-orientation" ${isHorizontal ? 'checked' : ''}>
+                <span style="margin-right: 8px;">Horizontal</span>
+                <sl-tooltip content="When enabled, prop will lie flat on surfaces">
+                  <span class="material-icons" style="font-size: 16px; color: #666;">help_outline</span>
+                </sl-tooltip>
+              </sl-switch>
+            </div>
+            
             <div class="prop-control-row">
               <label>Rotation:</label>
               <sl-range min="0" max="359" step="15" value="${rotation}" id="prop-rotation" 
@@ -3608,6 +3643,15 @@ if (!marker.data.monster) {
               <sl-range min="0" max="4" step="0.1" value="${height}" id="prop-height" 
                        style="width: 100%;"></sl-range>
               <div style="min-width: 40px; text-align: right;">${height}</div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 12px;">
+            <div style="color: #666; font-size: 0.9em; display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons" style="font-size: 16px;">info</span>
+              <span>${isHorizontal ? 
+                'Prop will lie flat on surfaces like a book, map, or scroll' : 
+                'Prop will appear as a vertical standing image in 3D view'}</span>
             </div>
           </div>
         </div>
@@ -3708,6 +3752,33 @@ if (!marker.data.monster) {
           marker.data.prop.height = parseFloat(height);
         });
       }
+
+      const orientationSwitch = dialog.querySelector('#prop-orientation');
+      if (orientationSwitch) {
+        orientationSwitch.addEventListener('sl-change', (e) => {
+          const isHorizontal = e.target.checked;
+          
+          // Update prop data
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.isHorizontal = isHorizontal;
+          
+          // Update help text
+          const helpText = dialog.querySelector('.prop-controls + div span:last-child');
+          if (helpText) {
+            helpText.textContent = isHorizontal ? 
+              'Prop will lie flat on surfaces like a book, map, or scroll' : 
+              'Prop will appear as a vertical standing image in 3D view';
+          }
+          
+          // Update visual appearance if needed
+          const propVisual = marker.element?.querySelector('.prop-visual');
+          if (propVisual) {
+            // Could add a small indicator for horizontal props in 2D view
+            propVisual.classList.toggle('horizontal-prop', isHorizontal);
+          }
+        });
+      }
+
     }
 
 

@@ -1,254 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DnD Map Editor</title>
 
-    <!-- Material Icons -->
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons+Round"
-      rel="stylesheet"
-    />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DnD Map Editor</title>
 
-    <link rel="stylesheet" href="css/styles.css">
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
 
-    <!-- Load Shoelace components -->
-    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/dark.css"> -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css"
-    />
+  <link rel="stylesheet" href="css/styles.css">
 
-    <!-- Load required Shoelace components -->
-    <script type="module">
-      import { setBasePath } from "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/utilities/base-path.js";
-      setBasePath(
-        "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/"
-      );
-    </script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button/button.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/dialog/dialog.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/drawer/drawer.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/icon/icon.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/input/input.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tooltip/tooltip.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tab/tab.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tab-group/tab-group.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tab-panel/tab-panel.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/drawer/drawer.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/progress-bar/progress-bar.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/radio/radio.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/radio-group/radio-group.js"
-    ></script>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/checkbox/checkbox.js"
-    ></script>
+  <!-- Load Shoelace components -->
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/dark.css"> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
 
-    <script
-  type="module"
-  src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/select/select.js"
-></script>
-<script
-  type="module"
-  src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/option/option.js"
-></script>
-<script
-  type="module"
-  src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/range/range.js"
-></script>
+  <!-- Load required Shoelace components -->
+  <script type="module">
+    import { setBasePath } from "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/utilities/base-path.js";
+    setBasePath(
+      "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/"
+    );
+  </script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button/button.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/dialog/dialog.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/drawer/drawer.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/icon/icon.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/input/input.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tooltip/tooltip.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tab/tab.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tab-group/tab-group.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/tab-panel/tab-panel.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/drawer/drawer.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/progress-bar/progress-bar.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/radio/radio.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/radio-group/radio-group.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/checkbox/checkbox.js"></script>
 
-    <!-- Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/select/select.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/option/option.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/range/range.js"></script>
+
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/switch/switch.js"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
 
-    <!-- Core Dependencies -->
-<script src="js/classes/Token.js"></script>
-<script src="js/classes/Room.js"></script>
+  <!-- Core Dependencies -->
+  <script src="js/classes/Token.js"></script>
+  <script src="js/classes/Room.js"></script>
 
-<!-- Resource Management -->
-<script src="js/classes/resource-manager.js"></script>
-<script src="js/classes/texture-manager.js"></script>
+  <!-- Resource Management -->
+  <script src="js/classes/resource-manager.js"></script>
+  <script src="js/classes/texture-manager.js"></script>
 
-<!-- UI and Control Classes -->
-<script src="js/classes/LayersPanel.js"></script>
-<!-- Physics -->
-<script src="js/classes/PhysicsController.js"></script>
-<script src="js/classes/Scene3DController.js"></script>
-<script src="js/classes/MonsterManager.js"></script>
+  <!-- UI and Control Classes -->
+  <script src="js/classes/LayersPanel.js"></script>
+  <!-- Physics -->
+  <script src="js/classes/PhysicsController.js"></script>
+  <script src="js/classes/Scene3DController.js"></script>
+  <script src="js/classes/MonsterManager.js"></script>
 
-<!-- Main Editor Class -->
-<script src="js/classes/MapEditor.js"></script>
+  <!-- Main Editor Class -->
+  <script src="js/classes/MapEditor.js"></script>
 
-<!-- Initialize Everything -->
-<script src="js/main.js"></script>
+  <!-- Initialize Everything -->
+  <script src="js/main.js"></script>
 
 
 </head>
 
-  <body>
-    <div class="app-container">
+<body>
+  <div class="app-container">
 
-      <header class="header">
-        <sl-button-group>
-            <sl-tooltip content="Maps" placement="right-top">
-                <sl-button size="medium" variant="default" id="openMapBtn">
-                    <span class="material-icons">map</span>
-                </sl-button>
-            </sl-tooltip>
-            <sl-tooltip content="Save Project" placement="right-top">
-                <sl-button size="medium" variant="default" id="saveProjectBtn">
-                    <span class="material-icons">save</span>
-                </sl-button>
-            </sl-tooltip>
-            <sl-tooltip content="Resource Manager" placement="right-top">
-                <sl-button size="medium" variant="default" id="resourceManagerBtn" style="display: none;">
-                    <span class="material-icons">palette</span>
-                </sl-button>
-            </sl-tooltip>
+    <header class="header">
+      <sl-button-group>
+        <sl-tooltip content="Maps" placement="right-top">
+          <sl-button size="medium" variant="default" id="openMapBtn">
+            <span class="material-icons">map</span>
+          </sl-button>
+        </sl-tooltip>
+        <sl-tooltip content="Save Project" placement="right-top">
+          <sl-button size="medium" variant="default" id="saveProjectBtn">
+            <span class="material-icons">save</span>
+          </sl-button>
+        </sl-tooltip>
+        <sl-tooltip content="Resource Manager" placement="right-top">
+          <sl-button size="medium" variant="default" id="resourceManagerBtn" style="display: none;">
+            <span class="material-icons">palette</span>
+          </sl-button>
+        </sl-tooltip>
         <sl-tooltip content="View in 3D" placement="right-top">
-            <sl-button size="medium" variant="primary" id="create3d">
-                <span class="material-icons">view_in_ar</span>
-            </sl-button>
+          <sl-button size="medium" variant="primary" id="create3d">
+            <span class="material-icons">view_in_ar</span>
+          </sl-button>
         </sl-tooltip>
 
-        </sl-button-group>
-    
-        <div class="header-title" id="mapTitle">
-            <span id="mapTitleText">D&D Map Editor</span>
-            <span class="material-icons header-title-edit">edit</span>
-        </div>
-    
+      </sl-button-group>
+
+      <div class="header-title" id="mapTitle">
+        <span id="mapTitleText">D&D Map Editor</span>
+        <span class="material-icons header-title-edit">edit</span>
+      </div>
+
 
     </header>
 
-      <aside class="sidebar">
-        <div class="sidebar-content">
-          <div class="tool-section">
-            <div class="tool-section-title">Tools</div>
-            <div class="tool-grid">
-              <div
-                class="tool-button"
-                id="selectTool"
-                data-tooltip="Rectangle [R]"
-              >
-                <span class="material-icons">crop_square</span>
-              </div>
-              <div
-                class="tool-button"
-                id="circleTool"
-                data-tooltip="Circle [C]"
-              >
-                <span class="material-icons">circle</span>
-              </div>
-              <div
-                class="tool-button"
-                id="wallTool"
-                data-tooltip="Create Polygon/Wall [W]"
-              >
-                <span class="material-icons">account_tree</span>
-              </div>
+    <aside class="sidebar">
+      <div class="sidebar-content">
+        <div class="tool-section">
+          <div class="tool-section-title">Tools</div>
+          <div class="tool-grid">
+            <div class="tool-button" id="selectTool" data-tooltip="Rectangle [R]">
+              <span class="material-icons">crop_square</span>
             </div>
-          </div>
-
-          <div class="tool-divider"></div>
-
-          <div class="tool-section">
-            <div class="tool-section-title">Map Markers</div>
-            <div class="tool-grid marker-tools">
-              <div class="tool-button" id="playerStartTool" data-tooltip="Player Start [S]">
-                <span class="material-icons">person_pin_circle</span>
-              </div>
-              <div class="tool-button" id="encounterTool" data-tooltip="Add Encounter [E]">
-                <span class="material-icons">local_fire_department</span>
-              </div>
-              <div class="tool-button" id="treasureTool" data-tooltip="Add Treasure [T]">
-                <span class="material-icons">workspace_premium</span>
-              </div>
-              <div class="tool-button" id="trapTool" data-tooltip="Add Trap [X]">
-                <span class="material-icons">warning</span>
-              </div>
-              <div class="tool-button" id="teleportTool" data-tooltip="Add Teleport">
-                <span class="material-icons">swap_calls</span>
-              </div>
-              <div class="tool-button" id="doorTool" data-tooltip="Add Door [D]">
-                <span class="material-icons">door_front</span>
-              </div>
-              <div class="tool-button" id="propTool" data-tooltip="Add Prop [P]">
-                <span class="material-icons">category</span>
-              </div>
+            <div class="tool-button" id="circleTool" data-tooltip="Circle [C]">
+              <span class="material-icons">circle</span>
             </div>
-          </div>
-
-          <div class="tool-divider"></div>
-
-          <div class="layers-panel">
-            <div class="tool-section-title">Rooms</div>
-            <div class="layers-list" id="layersList">
-              <!-- Room layers will be added here dynamically -->
+            <div class="tool-button" id="wallTool" data-tooltip="Create Polygon/Wall [W]">
+              <span class="material-icons">account_tree</span>
             </div>
           </div>
         </div>
-      </aside>
 
-      <main class="canvas-container">
-        <div
-          id="canvasWrapper"
-          style="position: relative; width: 100%; height: 100%; overflow: auto"
-        >
-          <canvas id="mainCanvas"></canvas>
+        <div class="tool-divider"></div>
+
+        <div class="tool-section">
+          <div class="tool-section-title">Map Markers</div>
+          <div class="tool-grid marker-tools">
+            <div class="tool-button" id="playerStartTool" data-tooltip="Player Start [S]">
+              <span class="material-icons">person_pin_circle</span>
+            </div>
+            <div class="tool-button" id="encounterTool" data-tooltip="Add Encounter [E]">
+              <span class="material-icons">local_fire_department</span>
+            </div>
+            <div class="tool-button" id="treasureTool" data-tooltip="Add Treasure [T]">
+              <span class="material-icons">workspace_premium</span>
+            </div>
+            <div class="tool-button" id="trapTool" data-tooltip="Add Trap [X]">
+              <span class="material-icons">warning</span>
+            </div>
+            <div class="tool-button" id="teleportTool" data-tooltip="Add Teleport">
+              <span class="material-icons">swap_calls</span>
+            </div>
+            <div class="tool-button" id="doorTool" data-tooltip="Add Door [D]">
+              <span class="material-icons">door_front</span>
+            </div>
+            <div class="tool-button" id="propTool" data-tooltip="Add Prop [P]">
+              <span class="material-icons">category</span>
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+
+        <div class="tool-divider"></div>
+
+        <div class="layers-panel">
+          <div class="tool-section-title">Rooms</div>
+          <div class="layers-list" id="layersList">
+            <!-- Room layers will be added here dynamically -->
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="canvas-container">
+      <div id="canvasWrapper" style="position: relative; width: 100%; height: 100%; overflow: auto">
+        <canvas id="mainCanvas"></canvas>
+      </div>
+    </main>
+  </div>
 
 
-  </body>
+</body>
+
 </html>
