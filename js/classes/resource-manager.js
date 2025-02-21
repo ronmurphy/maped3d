@@ -64,7 +64,28 @@ window.ResourceManager = class {
         }
     }
 
-    async saveResourcePack(filename = 'resource-pack.json') {
+    // async saveResourcePack(filename = 'resource-pack.json') {
+    //     const packData = {
+    //         name: this.activeResourcePack?.name || 'New Resource Pack',
+    //         version: '1.0',
+    //         textures: this.serializeTextures(),
+    //         sounds: this.serializeSounds(),
+    //         splashArt: this.serializeSplashArt()
+    //     };
+
+    //     const blob = new Blob([JSON.stringify(packData, null, 2)],
+    //         { type: 'application/json' });
+
+    //     const a = document.createElement('a');
+    //     a.href = URL.createObjectURL(blob);
+    //     a.download = filename;
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     document.body.removeChild(a);
+    //     URL.revokeObjectURL(a.href);
+    // }
+
+    async saveResourcePack(mapName = null) {
         const packData = {
             name: this.activeResourcePack?.name || 'New Resource Pack',
             version: '1.0',
@@ -72,10 +93,15 @@ window.ResourceManager = class {
             sounds: this.serializeSounds(),
             splashArt: this.serializeSplashArt()
         };
-
+    
         const blob = new Blob([JSON.stringify(packData, null, 2)],
             { type: 'application/json' });
-
+    
+        // Use provided mapName or default to resource-pack
+        const filename = mapName ? 
+            `${mapName}.resource.json` : 
+            'resource-pack.json';  // New naming convention
+    
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = filename;
@@ -83,6 +109,8 @@ window.ResourceManager = class {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
+        
+        return filename;
     }
 
     // Add these methods to ResourceManager class
@@ -2193,6 +2221,8 @@ if (tabGroup) {
             });
         });
     }
+
+
 
 
     saveBestiaryToFile(filename = 'bestiary.json') {
