@@ -94,24 +94,26 @@
     folderElement.dataset.folderId = folder.id;
    
     folderElement.innerHTML = `
-      <div class="folder-header">
-        <span class="material-icons folder-toggle">
-          ${folder.expanded ? 'expand_more' : 'chevron_right'}
-        </span>
-        <span class="material-icons folder-icon">folder${folder.expanded ? '_open' : ''}</span>
-        <span class="folder-name">${folder.name}</span>
-        <div class="folder-controls">
-          <span class="material-icons visibility-toggle" style="cursor: pointer;">visibility</span>
-          <span class="material-icons lock-toggle" style="cursor: pointer; color: ${
-              folder.locked ? '#f44336' : '#fff'
-          };">${folder.locked ? 'lock' : 'lock_open'}</span>
-          <span class="material-icons rename-folder">edit</span>
-          <span class="material-icons delete-folder">delete</span>
-        </div>
+    <div class="folder-header">
+      <span class="material-icons folder-toggle">
+        ${folder.expanded ? 'expand_more' : 'chevron_right'}
+      </span>
+      <span class="material-icons folder-icon" style="color: ${this.getFolderColor(folder)};">
+        folder${folder.expanded ? '_open' : ''}
+      </span>
+      <span class="folder-name">${folder.name}</span>
+      <div class="folder-controls">
+        <span class="material-icons visibility-toggle" style="cursor: pointer;">visibility</span>
+        <span class="material-icons lock-toggle" style="cursor: pointer; color: ${
+            folder.locked ? '#f44336' : '#fff'
+        };">${folder.locked ? 'lock' : 'lock_open'}</span>
+        <span class="material-icons rename-folder">edit</span>
+        <span class="material-icons delete-folder">delete</span>
       </div>
-      <div class="folder-content" style="display: ${folder.expanded ? 'block' : 'none'}">
-      </div>
-    `;
+    </div>
+    <div class="folder-content" style="display: ${folder.expanded ? 'block' : 'none'}">
+    </div>
+  `;
 
     const lockToggle = folderElement.querySelector('.lock-toggle');
     lockToggle.addEventListener('click', (e) => {
@@ -184,132 +186,361 @@ toggleFolderLock(folder) {
     this.updateLayersList();
 }
 
+// setupDragAndDrop() {
+//     this.layersList.addEventListener('dragstart', (e) => {
+//         if (!e.target.classList.contains('layer-item')) return;
+//         const roomId = parseInt(e.target.dataset.roomId);
+//         const room = this.editor.rooms.find(r => r.id === roomId);
+//         if (room && room.locked) {
+//             e.preventDefault();
+//             this.editor.showLockedMessage();
+//             return;
+//         }
+//     this.draggedItem = e.target;
+//     e.target.classList.add('dragging');
+//     e.dataTransfer.effectAllowed = 'move';
+//     e.dataTransfer.setData('text/plain', e.target.dataset.roomId);
+//   });
+
+//   this.layersList.addEventListener('dragend', (e) => {
+//     if (!e.target.classList.contains('layer-item')) return;
+//     e.target.classList.remove('dragging');
+//     this.draggedItem = null;
+//     this.updateRoomOrder();
+//   });
+
+//   // Update dragover to handle folders
+//   this.layersList.addEventListener('dragover', (e) => {
+//     e.preventDefault();
+//     if (!this.draggedItem) return;
+
+//     const folderContent = e.target.closest('.folder-content');
+//     const folderHeader = e.target.closest('.folder-header');
+
+//     // Remove any existing drag-over indicators
+//     document.querySelectorAll('.drag-over').forEach(el => 
+//       el.classList.remove('drag-over')
+//     );
+
+//     if (folderContent) {
+//       // Dragging within a folder
+//       const afterElement = this.getDragAfterElement(folderContent, e.clientY);
+//       if (afterElement) {
+//         folderContent.insertBefore(this.draggedItem, afterElement);
+//       } else {
+//         folderContent.appendChild(this.draggedItem);
+//       }
+//       folderContent.classList.add('drag-over');
+//     } else if (folderHeader) {
+//       // Dragging over a folder header - indicate can drop into folder
+//       folderHeader.classList.add('drag-over');
+//     } else {
+//       // Dragging in root list
+//       const afterElement = this.getDragAfterElement(this.layersList, e.clientY);
+//       if (afterElement) {
+//         this.layersList.insertBefore(this.draggedItem, afterElement);
+//       } else {
+//         this.layersList.appendChild(this.draggedItem);
+//       }
+//     }
+//   });
+
+//   // Add drop handling for folders
+// // In the drop handler in setupDragAndDrop:
+// this.layersList.addEventListener('drop', (e) => {
+//     e.preventDefault();
+//     if (!this.draggedItem) return;
+
+//     const folderHeader = e.target.closest('.folder-header');
+//     const folderContent = e.target.closest('.folder-content');
+    
+//     if (folderHeader || folderContent) {
+//         const folderElement = folderHeader ? 
+//             folderHeader.closest('.layer-folder') : 
+//             folderContent.closest('.layer-folder');
+        
+//         const folderId = folderElement.dataset.folderId;
+//         const folder = this.folders.find(f => f.id === parseInt(folderId));
+        
+//         if (folder) {
+//             const roomId = parseInt(this.draggedItem.dataset.roomId);
+//             const room = this.editor.rooms.find(r => r.id === roomId);
+//             if (room && room.locked) {
+//         this.editor.showLockedMessage();
+//         return;
+//     }
+            
+//             if (room) {
+//                 console.log("Adding room to folder:", {
+//                     roomId,
+//                     roomName: room.name,
+//                     folderId,
+//                     folderName: folder.name
+//                 });
+
+//                 // Remove from any other folder first
+//                 this.folders.forEach(f => {
+//                     f.rooms = f.rooms.filter(r => r.id !== roomId);
+//                 });
+
+//                 // Add to new folder
+//                 folder.rooms.push(room);
+//                 console.log("Folder rooms after add:", folder.rooms);
+//             }
+//         }
+        
+//         this.updateLayersList();
+//     }
+
+//     // Remove drag-over indicators
+//     document.querySelectorAll('.drag-over').forEach(el => 
+//         el.classList.remove('drag-over')
+//     );
+// });
+// }
+
+// Update getDragAfterElement to work with folders
+
 setupDragAndDrop() {
-    this.layersList.addEventListener('dragstart', (e) => {
-        if (!e.target.classList.contains('layer-item')) return;
-        const roomId = parseInt(e.target.dataset.roomId);
-        const room = this.editor.rooms.find(r => r.id === roomId);
-        if (room && room.locked) {
-            e.preventDefault();
-            this.editor.showLockedMessage();
-            return;
-        }
-    this.draggedItem = e.target;
-    e.target.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', e.target.dataset.roomId);
+  this.layersList.addEventListener('dragstart', (e) => {
+      // Only handle layer-item elements
+      if (!e.target.classList.contains('layer-item')) return;
+      
+      // Get room ID and check if locked
+      const roomId = parseInt(e.target.dataset.roomId);
+      const room = this.editor.rooms.find(r => r.id === roomId);
+      
+      if (room && room.locked) {
+          e.preventDefault();
+          this.editor.showLockedMessage();
+          return;
+      }
+      
+      // Store the dragged element and add dragging class
+      this.draggedItem = e.target;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', e.target.dataset.roomId);
+      
+      // Add helper text to indicate what's being dragged
+      const ghostText = document.createElement('div');
+      ghostText.textContent = room ? room.name : 'Layer item';
+      ghostText.style.position = 'absolute';
+      ghostText.style.top = '-1000px'; // Off-screen
+      document.body.appendChild(ghostText);
+      
+      // Clean up ghost element after dragend
+      setTimeout(() => {
+          if (document.body.contains(ghostText)) {
+              document.body.removeChild(ghostText);
+          }
+      }, 100);
   });
 
   this.layersList.addEventListener('dragend', (e) => {
-    if (!e.target.classList.contains('layer-item')) return;
-    e.target.classList.remove('dragging');
-    this.draggedItem = null;
-    this.updateRoomOrder();
+      if (!e.target.classList.contains('layer-item')) return;
+      
+      e.target.classList.remove('dragging');
+      this.draggedItem = null;
+      
+      // Remove any drag-over indicators
+      document.querySelectorAll('.drag-over').forEach(el => 
+          el.classList.remove('drag-over')
+      );
+      
+      this.updateRoomOrder();
   });
 
-  // Update dragover to handle folders
+  // Improved dragover event with better target detection
   this.layersList.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    if (!this.draggedItem) return;
+      e.preventDefault();
+      if (!this.draggedItem) return;
 
-    const folderContent = e.target.closest('.folder-content');
-    const folderHeader = e.target.closest('.folder-header');
+      // Remove any existing drag-over indicators
+      document.querySelectorAll('.drag-over').forEach(el => 
+          el.classList.remove('drag-over')
+      );
+      
+      // Find the closest relevant container
+      const folderContent = this.findClosestElement(e.target, '.folder-content');
+      const folderHeader = this.findClosestElement(e.target, '.folder-header');
+      const layerFolder = this.findClosestElement(e.target, '.layer-folder');
 
-    // Remove any existing drag-over indicators
-    document.querySelectorAll('.drag-over').forEach(el => 
-      el.classList.remove('drag-over')
-    );
-
-    if (folderContent) {
-      // Dragging within a folder
-      const afterElement = this.getDragAfterElement(folderContent, e.clientY);
-      if (afterElement) {
-        folderContent.insertBefore(this.draggedItem, afterElement);
-      } else {
-        folderContent.appendChild(this.draggedItem);
+      if (folderContent) {
+          // Dragging within a folder's content area
+          const afterElement = this.getDragAfterElement(folderContent, e.clientY);
+          if (afterElement) {
+              folderContent.insertBefore(this.draggedItem, afterElement);
+          } else {
+              folderContent.appendChild(this.draggedItem);
+          }
+          folderContent.classList.add('drag-over');
+      } 
+      else if (folderHeader) {
+          // Dragging over a folder header - indicate can drop into folder
+          folderHeader.classList.add('drag-over');
       }
-      folderContent.classList.add('drag-over');
-    } else if (folderHeader) {
-      // Dragging over a folder header - indicate can drop into folder
-      folderHeader.classList.add('drag-over');
-    } else {
-      // Dragging in root list
-      const afterElement = this.getDragAfterElement(this.layersList, e.clientY);
-      if (afterElement) {
-        this.layersList.insertBefore(this.draggedItem, afterElement);
-      } else {
-        this.layersList.appendChild(this.draggedItem);
+      else if (layerFolder && !folderContent && !folderHeader) {
+          // Dragging over the folder but not specifically header or content
+          // Find the folder's content area and use that
+          const content = layerFolder.querySelector('.folder-content');
+          if (content) {
+              content.classList.add('drag-over');
+          }
       }
-    }
+      else {
+          // Dragging in root list
+          const afterElement = this.getDragAfterElement(this.layersList, e.clientY);
+          if (afterElement) {
+              // Don't insert before a folder
+              if (!afterElement.classList.contains('layer-folder')) {
+                  this.layersList.insertBefore(this.draggedItem, afterElement);
+              }
+          } else {
+              this.layersList.appendChild(this.draggedItem);
+          }
+      }
   });
 
-  // Add drop handling for folders
-// In the drop handler in setupDragAndDrop:
-this.layersList.addEventListener('drop', (e) => {
-    e.preventDefault();
-    if (!this.draggedItem) return;
+  // Improved drop handler with better folder detection
+  this.layersList.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!this.draggedItem) return;
 
-    const folderHeader = e.target.closest('.folder-header');
-    const folderContent = e.target.closest('.folder-content');
-    
-    if (folderHeader || folderContent) {
-        const folderElement = folderHeader ? 
-            folderHeader.closest('.layer-folder') : 
-            folderContent.closest('.layer-folder');
-        
-        const folderId = folderElement.dataset.folderId;
-        const folder = this.folders.find(f => f.id === parseInt(folderId));
-        
-        if (folder) {
-            const roomId = parseInt(this.draggedItem.dataset.roomId);
-            const room = this.editor.rooms.find(r => r.id === roomId);
-            if (room && room.locked) {
-        this.editor.showLockedMessage();
-        return;
-    }
-            
-            if (room) {
-                console.log("Adding room to folder:", {
-                    roomId,
-                    roomName: room.name,
-                    folderId,
-                    folderName: folder.name
-                });
+      // Find relevant container elements
+      const folderHeader = this.findClosestElement(e.target, '.folder-header');
+      const folderContent = this.findClosestElement(e.target, '.folder-content');
+      const layerFolder = this.findClosestElement(e.target, '.layer-folder');
+      
+      let targetFolder = null;
+      
+      // Determine the target folder based on where the drop occurred
+      if (folderHeader) {
+          // Dropped on folder header
+          targetFolder = folderHeader.closest('.layer-folder');
+      }
+      else if (folderContent) {
+          // Dropped in folder content
+          targetFolder = folderContent.closest('.layer-folder');
+      }
+      else if (layerFolder) {
+          // Dropped on folder but not on header or content
+          targetFolder = layerFolder;
+      }
+      
+      if (targetFolder) {
+          const folderId = parseInt(targetFolder.dataset.folderId);
+          const folder = this.folders.find(f => f.id === folderId);
+          
+          if (folder) {
+              const roomId = parseInt(this.draggedItem.dataset.roomId);
+              const room = this.editor.rooms.find(r => r.id === roomId);
+              
+              // Double-check that room is not locked
+              if (room && room.locked) {
+                  this.editor.showLockedMessage();
+                  return;
+              }
+              
+              if (room) {
+                  console.log("Adding room to folder:", {
+                      roomId,
+                      roomName: room.name,
+                      folderId,
+                      folderName: folder.name
+                  });
 
-                // Remove from any other folder first
-                this.folders.forEach(f => {
-                    f.rooms = f.rooms.filter(r => r.id !== roomId);
-                });
+                  // Remove from any other folder first
+                  this.folders.forEach(f => {
+                      f.rooms = f.rooms.filter(r => r.id !== roomId);
+                  });
 
-                // Add to new folder
-                folder.rooms.push(room);
-                console.log("Folder rooms after add:", folder.rooms);
-            }
-        }
-        
-        this.updateLayersList();
-    }
-
-    // Remove drag-over indicators
-    document.querySelectorAll('.drag-over').forEach(el => 
-        el.classList.remove('drag-over')
-    );
-});
+                  // Add to new folder
+                  folder.rooms.push(room);
+              }
+          }
+      } else {
+          // Dropped outside any folder - remove from all folders
+          const roomId = parseInt(this.draggedItem.dataset.roomId);
+          this.folders.forEach(f => {
+              f.rooms = f.rooms.filter(r => r.id !== roomId);
+          });
+      }
+      
+      // Remove all drag-over indicators
+      document.querySelectorAll('.drag-over').forEach(el => 
+          el.classList.remove('drag-over')
+      );
+      
+      // Update the UI
+      this.updateLayersList();
+  });
 }
 
-// Update getDragAfterElement to work with folders
+// Add this helper method to find the closest parent with a specific selector
+findClosestElement(element, selector) {
+  // Check if element itself matches
+  if (element.matches && element.matches(selector)) {
+      return element;
+  }
+  
+  // Walk up the DOM tree
+  let current = element;
+  while (current && current !== document) {
+      if (current.matches && current.matches(selector)) {
+          return current;
+      }
+      current = current.parentElement;
+  }
+  
+  return null;
+}
+
 getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.layer-item:not(.dragging)')];
+  
   return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) {
-      return { offset: offset, element: child };
-    } else {
-      return closest;
-    }
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      // We're looking for the element that has the smallest negative offset
+      // (meaning the cursor is just above it)
+      if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+      } else {
+          return closest;
+      }
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+
+getFolderColor(folder) {
+  // If folder has a custom color, use that
+  if (folder.color) return folder.color;
+  
+  // Otherwise generate a consistent color based on folder name
+  // This ensures the same folder always gets the same color
+  const hash = folder.name.split('').reduce((hash, char) => {
+    return ((hash << 5) - hash) + char.charCodeAt(0);
+  }, 0);
+  
+  // Generate a pastel color (lighter and less saturated)
+  // Using HSL for more pleasing colors
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 80%)`;
+}
+
+// getDragAfterElement(container, y) {
+//   const draggableElements = [...container.querySelectorAll('.layer-item:not(.dragging)')];
+//   return draggableElements.reduce((closest, child) => {
+//     const box = child.getBoundingClientRect();
+//     const offset = y - box.top - box.height / 2;
+//     if (offset < 0 && offset > closest.offset) {
+//       return { offset: offset, element: child };
+//     } else {
+//       return closest;
+//     }
+//   }, { offset: Number.NEGATIVE_INFINITY }).element;
+// }
 
   updateRoomOrder() {
     const newOrder = [...this.layersList.querySelectorAll('.layer-item')]
@@ -534,6 +765,11 @@ toggleFolderVisibility(folder) {
 
 createLayerItem(room) {
     const layerItem = document.createElement('div');
+
+    if (room.id === this.editor.selectedRoomId) {
+      layerItem.classList.add('selected');
+    }
+
     layerItem.className = `layer-item ${room.type}-room ${
         room.finalized ? '' : 'editing'
     } ${room.id === this.editor.selectedRoomId ? 'selected' : ''} ${
@@ -661,6 +897,34 @@ createLayerItem(room) {
               if (room.shape === "polygon") {
                 roomElement.style.transform = "";
               }
+            }
+          });
+
+          layerItem.addEventListener('click', (e) => {
+            // Don't trigger for clicks on controls
+            if (e.target.closest('.layer-controls')) return;
+            
+            // Remove selected class from all items
+            document.querySelectorAll('.layer-item').forEach(item => {
+              item.classList.remove('selected');
+            });
+            
+            // Add selected class to this item
+            layerItem.classList.add('selected');
+            
+            // Update editor's selected room id
+            this.editor.selectedRoomId = room.id;
+            
+            // Optionally, add any selection behaviors here
+            // For example, highlight the room in the canvas
+            const roomElement = document.getElementById(`room-${room.id}`);
+            if (roomElement) {
+              roomElement.classList.add('selected-in-canvas');
+              
+              // Remove the highlight after a delay
+              setTimeout(() => {
+                roomElement.classList.remove('selected-in-canvas');
+              }, 1500);
             }
           });
 

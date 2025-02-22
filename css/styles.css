@@ -1434,3 +1434,59 @@ sl-tooltip {
     transition: opacity 0.3s ease;
     z-index: 9999;
   }
+
+ .selected-in-canvas {
+   outline: 3px solid rgba(66, 135, 245, 0.7) !important;
+   outline-offset: 2px;
+   z-index: 100 !important;
+}
+
+.layer-item {
+    transition: background-color 0.2s, border-left 0.2s;
+    border-left: 3px solid transparent;
+  }
+  
+  .layer-item:hover {
+    background-color: rgba(180, 180, 180, 0.25) !important;
+    border-left: 3px solid #aaa !important;
+  }
+  
+  .layer-item.selected {
+    background-color: rgba(66, 135, 245, 0.15) !important;
+    border-left: 3px solid #4287f5 !important;
+  }
+  
+  /* Alternating row colors for better visual separation */
+  .layer-item:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  .layer-item:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.01);
+  }
+  
+  .folder-header {
+    transition: background-color 0.2s;
+  }
+  
+  .folder-header:hover {
+    background-color: rgba(180, 180, 180, 0.2);
+  }
+  
+  /* Improved folder styling */
+  .layer-folder {
+    margin-bottom: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  
+  .layer-folder:hover {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .folder-content {
+    padding-left: 8px;
+    border-left: 1px solid #eee;
+    margin-left: 12px;
+  }

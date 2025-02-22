@@ -48,6 +48,8 @@ class MapEditor {
     this.setupLayersObserver();
     setTimeout(() => this.calculateLayersListHeight(), 100);
     window.addEventListener("resize", this.calculateLayersListHeight);
+
+    this.fixZoomIssues();
   }
 
   checkResourceManager(callback) {
@@ -454,6 +456,16 @@ async saveMap() {
           locked: room.locked
         };
       }),
+      folders: this.layersPanel.folders.map(folder => {
+        return {
+          id: folder.id,
+          name: folder.name,
+          expanded: folder.expanded,
+          locked: folder.locked,
+          color: folder.color,
+          rooms: folder.rooms.map(room => room.id) // Store just the room IDs
+        };
+      }),
       textureData: {
         assignments: this.resourceManager?.serializeTextureAssignments(),
         activeResourcePack: this.resourceManager?.activeResourcePack?.name
@@ -730,6 +742,36 @@ async loadMap(file) {
       document.querySelector('.canvas-container').appendChild(room.element);
     }
 
+    if (saveData.folders && Array.isArray(saveData.folders)) {
+      console.log(`Restoring ${saveData.folders.length} folders`);
+      
+      // Clear existing folders
+      this.layersPanel.folders = [];
+      
+      // Create new folders
+      for (const folderData of saveData.folders) {
+        // Create basic folder structure
+        const folder = {
+          id: folderData.id,
+          name: folderData.name,
+          expanded: folderData.expanded !== undefined ? folderData.expanded : true,
+          locked: folderData.locked || false,
+          color: folderData.color || null,
+          rooms: [] // Will fill with room objects
+        };
+        
+        // Find all the rooms for this folder
+        if (folderData.rooms && Array.isArray(folderData.rooms)) {
+          folder.rooms = folderData.rooms
+            .map(roomId => this.rooms.find(room => room.id === roomId))
+            .filter(room => room); // Remove any undefined (not found) rooms
+        }
+        
+        // Add the folder
+        this.layersPanel.folders.push(folder);
+      }
+    }
+
     // Restore player start marker if it exists
     if (saveData.playerStart) {
       console.log("Restoring player start marker:", saveData.playerStart);
@@ -929,12 +971,13 @@ async loadMap(file) {
     }
 
     // Update all marker positions
-    this.markers.forEach(marker => {
-      this.updateMarkerPosition(marker);
-    });
-
+    // this.markers.forEach(marker => {
+    //   this.updateMarkerPosition(marker);
+    // });
+    this.updateMarkerPositions();
     // Update display
     this.centerMap();
+
     this.render();
     this.layersPanel.updateLayersList();
 
@@ -3837,6 +3880,134 @@ if (saveProjectBtn) {
     this.render();
   }
 
+  fixMarkerScaling() {
+    console.log("Applying marker scaling fix");
+    
+    // Fix encounter markers
+    document.querySelectorAll('.marker-encounter .monster-token').forEach(token => {
+      // Extract current transform to check for rotation
+      const currentTransform = token.style.transform || '';
+      
+      // Remove any scaling transforms
+      if (currentTransform.includes('scale')) {
+        // If there's rotation, preserve it
+        const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
+        const rotation = rotateMatch ? rotateMatch[0] : '';
+        
+        // Apply only rotation, no scaling
+        token.style.transform = rotation;
+      }
+    });
+    
+    // Fix prop markers
+    document.querySelectorAll('.marker-prop .prop-visual').forEach(prop => {
+      // Extract current transform to check for rotation
+      const currentTransform = prop.style.transform || '';
+      
+      // Remove any scaling transforms
+      if (currentTransform.includes('scale')) {
+        // If there's rotation, preserve it
+        const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
+        const rotation = rotateMatch ? rotateMatch[0] : '';
+        
+        // Apply only rotation, no scaling
+        prop.style.transform = rotation;
+      }
+    });
+    
+    console.log("Marker scaling fix applied");
+  }
+
+
+
+
+
+
+
+  fixZoomIssues() {
+    console.log("Fixing zoom issues for overlapping elements");
+    
+    // 1. Make the canvas wrapper capture all wheel events in its area
+    const wrapper = document.getElementById("canvasWrapper");
+    
+    // Use a capturing event listener that runs before regular listeners
+    wrapper.addEventListener("wheel", (e) => {
+      // Only handle wheel events if we're in the canvas area
+      const rect = wrapper.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && 
+          e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        
+        // Stop propagation to prevent other elements from handling it
+        e.stopPropagation();
+        
+        // Call our zoom handler
+        this.handleWheel(e);
+      }
+    }, {capture: true}); // The capture: true is critical - it runs before other handlers
+    
+    // 2. Fix any existing room elements
+    const fixRoomElements = () => {
+      document.querySelectorAll('.room-block').forEach(element => {
+        // Disable pointer events on wheel to let it reach the wrapper
+        element.addEventListener('wheel', (e) => {
+          e.stopPropagation();
+          // Forward the event to the wrapper
+          const newEvent = new WheelEvent('wheel', e);
+          wrapper.dispatchEvent(newEvent);
+        });
+      });
+    };
+    
+    // 3. Fix any existing marker elements
+    const fixMarkerElements = () => {
+      document.querySelectorAll('.map-marker').forEach(element => {
+        // Disable pointer events on wheel to let it reach the wrapper
+        element.addEventListener('wheel', (e) => {
+          e.stopPropagation();
+          // Forward the event to the wrapper
+          const newEvent = new WheelEvent('wheel', e);
+          wrapper.dispatchEvent(newEvent);
+        });
+      });
+    };
+    
+    // Run immediately
+    fixRoomElements();
+    fixMarkerElements();
+    
+    // Create a mutation observer to fix new elements as they're added
+    const observer = new MutationObserver((mutations) => {
+      let needsFix = false;
+      
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.classList) {
+              if (node.classList.contains('room-block') || 
+                  node.classList.contains('map-marker')) {
+                needsFix = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (needsFix) {
+        fixRoomElements();
+        fixMarkerElements();
+      }
+    });
+    
+    // Observe the canvas container for new elements
+    observer.observe(document.querySelector('.canvas-container'), {
+      childList: true,
+      subtree: true
+    });
+    
+    console.log("Zoom fix applied");
+    this.centerMap();
+  }
+
   centerMap() {
     if (!this.baseImage) return;
 
@@ -3928,38 +4099,174 @@ if (saveProjectBtn) {
     }
   }
 
+  // updateMarkerPositions() {
+  //   this.markers.forEach((marker) => {
+  //     if (marker.element) {
+  //       // Update position
+  //       marker.element.style.left = `${marker.x * this.scale + this.offset.x
+  //         }px`;
+  //       marker.element.style.top = `${marker.y * this.scale + this.offset.y
+  //         }px`;
+
+  //       // Update zoom scale
+  //       this.updateMarkerZoom(marker);
+
+  //       // Handle teleport connections if present
+  //       if (
+  //         marker.type === "teleport" &&
+  //         marker.data.isPointA &&
+  //         marker.data.pairedMarker &&
+  //         marker.connection
+  //       ) {
+  //         this.updateTeleportConnection(marker, marker.data.pairedMarker);
+  //       }
+  //     }
+  //   });
+
+  //   if (this.playerStart && this.playerStart.element) {
+  //     this.playerStart.element.style.left = `${this.playerStart.x * this.scale + this.offset.x
+  //       }px`;
+  //     this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y
+  //       }px`;
+  //     this.updateMarkerZoom(this.playerStart);
+  //   }
+  // }
+
   updateMarkerPositions() {
+    // Update regular markers
     this.markers.forEach((marker) => {
       if (marker.element) {
         // Update position
-        marker.element.style.left = `${marker.x * this.scale + this.offset.x
-          }px`;
-        marker.element.style.top = `${marker.y * this.scale + this.offset.y
-          }px`;
-
-        // Update zoom scale
-        this.updateMarkerZoom(marker);
-
-        // Handle teleport connections if present
-        if (
-          marker.type === "teleport" &&
-          marker.data.isPointA &&
-          marker.data.pairedMarker &&
-          marker.connection
-        ) {
+        marker.element.style.left = `${marker.x * this.scale + this.offset.x}px`;
+        marker.element.style.top = `${marker.y * this.scale + this.offset.y}px`;
+  
+        // Handle special marker types
+        if (marker.type === "encounter" && marker.data.monster) {
+          // For encounter markers, we need to COUNTERACT the zoom scale
+          // When overall zoom is smaller, we need to make the token LARGER to maintain apparent size
+          const token = marker.element.querySelector(".monster-token");
+          if (token) {
+            // Calculate monster size in squares (if available)
+            const monsterSize = marker.data.monster.basic && marker.data.monster.basic.size 
+              ? this.getMonsterSizeInSquares(marker.data.monster.basic.size) 
+              : 1;
+              
+            // Set a fixed pixel size that we maintain regardless of zoom
+            const baseSize = (this.cellSize || 32) * monsterSize;
+            
+            // Update token size to maintain apparent size
+            token.style.width = `${baseSize}px`;
+            token.style.height = `${baseSize}px`;
+            token.style.left = `-${baseSize / 2}px`;
+            token.style.top = `-${baseSize / 2}px`;
+            
+            // No scale transform needed - we're setting absolute size
+            token.style.transform = 'none';
+          }
+        }
+        
+        // Handle prop markers
+        const propVisual = marker.element.querySelector(".prop-visual");
+        if (propVisual) {
+          // For props, maintain apparent size regardless of zoom
+          // But keep any rotation
+          const currentTransform = propVisual.style.transform || "";
+          const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
+          const rotateVal = rotateMatch ? rotateMatch[1] : "0deg";
+          
+          // Calculate base size
+          const baseSize = 48; // Default base size
+          const scale = marker.data.prop?.scale || 1.0;
+          const width = baseSize * scale;
+          
+          // Get aspect ratio if available
+          let height = width;
+          if (marker.data.texture?.aspect) {
+            height = width / marker.data.texture.aspect;
+          }
+          
+          // Update sizes to maintain apparent size
+          propVisual.style.width = `${width}px`;
+          propVisual.style.height = `${height}px`;
+          propVisual.style.left = `-${width / 2}px`;
+          propVisual.style.top = `-${height / 2}px`;
+          
+          // Apply only rotation, not scaling
+          propVisual.style.transform = `rotate(${rotateVal})`;
+        }
+  
+        // Handle teleport connections
+        if (marker.type === "teleport" && marker.data.isPointA && marker.data.pairedMarker && marker.connection) {
           this.updateTeleportConnection(marker, marker.data.pairedMarker);
         }
       }
     });
-
+  
+    // Update player start marker if it exists
     if (this.playerStart && this.playerStart.element) {
-      this.playerStart.element.style.left = `${this.playerStart.x * this.scale + this.offset.x
-        }px`;
-      this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y
-        }px`;
-      this.updateMarkerZoom(this.playerStart);
+      this.playerStart.element.style.left = `${this.playerStart.x * this.scale + this.offset.x}px`;
+      this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y}px`;
+      
+      // Set fixed size for player start icon
+      const playerIcon = this.playerStart.element.querySelector(".material-icons");
+      if (playerIcon) {
+        playerIcon.style.fontSize = '24px'; // Fixed size
+        playerIcon.style.transform = 'none';
+      }
     }
   }
+
+  // updateMarkerPositions() {
+  //   // Update regular markers
+  //   this.markers.forEach((marker) => {
+  //     if (marker.element) {
+  //       // Update position
+  //       marker.element.style.left = `${marker.x * this.scale + this.offset.x}px`;
+  //       marker.element.style.top = `${marker.y * this.scale + this.offset.y}px`;
+  
+  //       // Handle special marker types
+  //       if (marker.type === "encounter" && marker.data.monster) {
+  //         // Additional zoom handling for encounter markers
+  //         const token = marker.element.querySelector(".monster-token");
+  //         if (token) {
+  //           token.style.transform = `scale(${this.scale})`;
+  //           token.style.transformOrigin = "center";
+  //         }
+  //       }
+        
+  //       // Handle prop markers
+  //       const propVisual = marker.element.querySelector(".prop-visual");
+  //       if (propVisual) {
+  //         // For props, we want to preserve the rotation
+  //         const currentTransform = propVisual.style.transform || "";
+  //         const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
+  //         const rotateVal = rotateMatch ? rotateMatch[1] : "0deg";
+          
+  //         // Apply both scale and rotation
+  //         propVisual.style.transform = `scale(${this.scale}) rotate(${rotateVal})`;
+  //         propVisual.style.transformOrigin = "center";
+  //       }
+  
+  //       // Handle teleport connections
+  //       if (marker.type === "teleport" && marker.data.isPointA && marker.data.pairedMarker && marker.connection) {
+  //         this.updateTeleportConnection(marker, marker.data.pairedMarker);
+  //       }
+  //     }
+  //   });
+  
+  //   // Update player start marker if it exists
+  //   if (this.playerStart && this.playerStart.element) {
+  //     this.playerStart.element.style.left = `${this.playerStart.x * this.scale + this.offset.x}px`;
+  //     this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y}px`;
+      
+  //     // Apply scaling to player start marker visuals if needed
+  //     const playerIcon = this.playerStart.element.querySelector(".material-icons");
+  //     if (playerIcon) {
+  //       playerIcon.style.transform = `scale(${this.scale * 0.8})`;
+  //       playerIcon.style.transformOrigin = "center";
+  //     }
+  //   }
+  // }
 
 
   getElevationAtPoint(x, z) {
@@ -4401,6 +4708,7 @@ if (saveProjectBtn) {
 
 
   updateMarkerAppearance(marker) {
+
     if (marker.data.monster?.token) {
       const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
       const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size);
@@ -4415,6 +4723,13 @@ if (saveProjectBtn) {
       // Use existing cellSize calculation
       const cellSize = this.cellSize || 32;
       const totalSize = cellSize * monsterSize;
+      
+      // Determine content based on token source
+      const tokenContent = tokenSource ? 
+        `<img src="${tokenSource}" 
+             style="width: 100%; height: 100%; object-fit: cover;"
+             onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size: ${totalSize * 0.75}px;\\'>local_fire_department</span>';" />` :
+        `<span class="material-icons" style="font-size: ${totalSize * 0.75}px;">local_fire_department</span>`;
       
       // Create token HTML with elevation indicators
       marker.element.innerHTML = `
@@ -4431,21 +4746,63 @@ if (saveProjectBtn) {
             left: -${totalSize / 2}px;
             top: -${totalSize / 2}px;
             transform-origin: center;
-            transform: scale(${this.scale});
             ${elevation > 0 ? `box-shadow: 0 ${elevation * 2}px ${elevation * 3}px rgba(0,0,0,0.3);` : ''}
         ">
-            <img src="${tokenSource}" 
-                style="width: 100%; height: 100%; object-fit: cover;"
-                onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size: ${totalSize * 0.75}px;\\'>local_fire_department</span>';" />
+            ${tokenContent}
             ${elevation > 0 ? `
               <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; padding: 2px 4px; border-radius: 2px; font-size: 10px;">+${elevation}</div>
             ` : ''}
         </div>
       `;
-  
+    
       // Update position
       this.updateMarkerPosition(marker);
-    }  
+    }
+    // if (marker.data.monster?.token) {
+    //   const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
+    //   const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size);
+      
+    //   // Check if token is on elevated surface
+    //   const { elevation, insideWall } = this.checkTokenElevation(marker);
+      
+    //   // Store for 3D view
+    //   marker.data.elevation = elevation;
+    //   marker.data.insideWall = insideWall;
+      
+    //   // Use existing cellSize calculation
+    //   const cellSize = this.cellSize || 32;
+    //   const totalSize = cellSize * monsterSize;
+      
+    //   // Create token HTML with elevation indicators
+    //   marker.element.innerHTML = `
+    //     <div class="monster-token" style="
+    //         width: ${totalSize}px; 
+    //         height: ${totalSize}px; 
+    //         border-radius: 10%; 
+    //         border: 2px solid ${insideWall ? '#ff9800' : '#f44336'}; 
+    //         overflow: hidden;
+    //         display: flex;
+    //         align-items: center;
+    //         justify-content: center;
+    //         position: absolute;
+    //         left: -${totalSize / 2}px;
+    //         top: -${totalSize / 2}px;
+    //         transform-origin: center;
+    //         transform: scale(${this.scale});
+    //         ${elevation > 0 ? `box-shadow: 0 ${elevation * 2}px ${elevation * 3}px rgba(0,0,0,0.3);` : ''}
+    //     ">
+    //         <img src="${tokenSource}" 
+    //             style="width: 100%; height: 100%; object-fit: cover;"
+    //             onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size: ${totalSize * 0.75}px;\\'>local_fire_department</span>';" />
+    //         ${elevation > 0 ? `
+    //           <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; padding: 2px 4px; border-radius: 2px; font-size: 10px;">+${elevation}</div>
+    //         ` : ''}
+    //     </div>
+    //   `;
+  
+    //   // Update position
+    //   this.updateMarkerPosition(marker);
+    // }  
     else if (marker.type === "prop" && marker.data.texture) {
       // Default prop settings
       const propSettings = marker.data.prop || {};
@@ -4521,6 +4878,7 @@ if (saveProjectBtn) {
         }
       }
     }
+    this.fixZoomIssues();
   }
 
   checkTokenElevation(marker) {
