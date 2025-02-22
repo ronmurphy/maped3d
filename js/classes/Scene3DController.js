@@ -11,7 +11,7 @@ class Scene3DController {
     };
     this.PLAYER_EYE_HEIGHT = 1.7;
     this.teleporters = [];
-    this.doors = []; // Add this line
+    this.doors = []; 
     this.debugVisuals = false;
     this.clear();
   }
@@ -28,9 +28,9 @@ class Scene3DController {
       keyup: null
     };
     this.keys = {};
-    this.doors = []; // Add this line
-    this.doorPrompt = null; // Add this line
-    this.activeDoor = null; // Add this line
+    this.doors = []; 
+    this.doorPrompt = null; 
+    this.activeDoor = null; 
   }
 
   initialize(container, width, height) {
@@ -178,96 +178,6 @@ class Scene3DController {
 
     return true;
   }
-
-
-
-// createPropMesh(propData) {
-//   console.log("Creating prop mesh:", {
-//     position: `${propData.x}, ${propData.y}`,
-//     texture: !!propData.image,
-//     rotation: propData.rotation || 0,
-//     scale: propData.scale || 1.0,
-//     height: propData.height || 1.0,
-//     isHorizontal: propData.isHorizontal || false
-//   });
-
-//   return new Promise((resolve, reject) => {
-//     const textureLoader = new THREE.TextureLoader();
-    
-//     textureLoader.load(
-//       propData.image,
-//       (texture) => {
-//         // Calculate dimensions based on texture aspect ratio
-//         let width, height;
-        
-//         if (texture.image) {
-//           const aspectRatio = texture.image.width / texture.image.height;
-//           width = propData.scale || 1;
-//           height = width / aspectRatio;
-//         } else {
-//           // Fallback if image dimensions aren't available
-//           width = propData.scale || 1;
-//           height = propData.scale || 1;
-//         }
-        
-//         const geometry = new THREE.PlaneGeometry(width, height);
-//         const material = new THREE.MeshBasicMaterial({
-//           map: texture,
-//           transparent: true,
-//           side: THREE.DoubleSide,
-//           alphaTest: 0.1 // Help with transparency sorting
-//         });
-        
-//         const mesh = new THREE.Mesh(geometry, material);
-        
-//         // Position in world space
-//         const x = propData.x / 50 - this.boxWidth / 2;
-//         const z = propData.y / 50 - this.boxDepth / 2;
-        
-//         // Get elevation at this point
-//         const { elevation } = this.getElevationAtPoint(x, z);
-        
-//         // Handle horizontal vs vertical orientation
-//         if (propData.isHorizontal) {
-//           // Horizontal prop - lie flat on surface
-//           // Rotate 90 degrees on X axis to make it horizontal
-//           mesh.rotation.x = -Math.PI / 2;
-          
-//           // Set position slightly above surface
-//           const y = elevation + 0.01; // Just above surface
-//           mesh.position.set(x, y, z);
-          
-//           // Apply rotation around Y axis (which is now the up vector)
-//           mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
-//         } else {
-//           // Vertical prop (original behavior)
-//           const y = propData.height + elevation;
-//           mesh.position.set(x, y, z);
-          
-//           // Standard rotation around Y axis
-//           mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
-//         }
-        
-//         // Add metadata
-//         mesh.userData = {
-//           type: 'prop',
-//           id: propData.id,
-//           isHorizontal: propData.isHorizontal || false
-//         };
-        
-//         resolve(mesh);
-//       },
-//       undefined,
-//       (error) => {
-//         console.error("Error loading prop texture:", error);
-//         reject(error);
-//       }
-//     );
-//   });
-// }
-
-// This is the updated createPropMesh method for Scene3DController
-// with the z-fighting fix for horizontal props
 
 createPropMesh(propData) {
   console.log("Creating prop mesh:", {
