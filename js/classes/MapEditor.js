@@ -3814,6 +3814,12 @@ if (saveProjectBtn) {
           token.style.transformOrigin = "center";
         }
       }
+
+      const propToken = marker.element.querySelector(".prop-visual");
+      if (propToken) {
+        propToken.style.transform = `scale(${this.scale})`;
+        propToken.style.transformOrigin = "center";
+      }
     });
 
     // Update player start marker if it exists

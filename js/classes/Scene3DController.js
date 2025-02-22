@@ -12,6 +12,7 @@ class Scene3DController {
     this.PLAYER_EYE_HEIGHT = 1.7;
     this.teleporters = [];
     this.doors = []; // Add this line
+    this.debugVisuals = false;
     this.clear();
   }
 
@@ -2884,7 +2885,7 @@ processDoorMarkers() {
       color: 0xff0000,
       transparent: true,
       opacity: 0.6,
-      visible: true // Make visible for debugging
+      visible: this.debugVisuals // Make visible for debugging
     });
     
     const doorIndicator = new THREE.Mesh(geometry, material);
@@ -2894,7 +2895,8 @@ processDoorMarkers() {
     doorInfo.indicator = doorIndicator;
     this.doors.push(doorInfo);
     
-    // Draw a line in the door's forward direction for debugging
+    if (this.debugVisuals) {
+    // // Draw a line in the door's forward direction for debugging
     const forwardVector = new THREE.Vector3(0, 0, -1);
     forwardVector.applyAxisAngle(
       new THREE.Vector3(0, 1, 0), 
@@ -2919,6 +2921,8 @@ processDoorMarkers() {
     this.scene.add(directionLine);
     
     doorInfo.directionLine = directionLine;
+  }
+
   });
   
   console.log(`Added ${this.doors.length} door interaction points`);

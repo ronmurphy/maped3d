@@ -10,6 +10,8 @@ class PhysicsController {
         this.fallSpeed = 0.03; // Speed of falling
         this.isFalling = false;
         this.insideRoomWall = false;
+        this.onTopOfWall = false;        // Flag for walking on top of a wall
+        this.wallTopHeight = 0;
 
         this.isJumping = false;
         this.jumpHeight = 1.7; // Maximum jump height - slightly higher than 1 block
@@ -21,8 +23,7 @@ class PhysicsController {
         this.jumpCheckInterval = 5; // Check every 5 frames
         this.jumpFrameCount = 0; // Frame counter for jump checks
 
-this.onTopOfWall = false;        // Flag for walking on top of a wall
-this.wallTopHeight = 0;
+
     }
 
     
@@ -122,6 +123,9 @@ this.wallTopHeight = 0;
 
 
     checkForwardCollision(direction, speed) {
+
+
+
         const playerPos = this.scene3D.camera.position;
         
         // Calculate player's feet position
@@ -154,14 +158,14 @@ this.wallTopHeight = 0;
             
             // If we didn't hit anything, we're about to walk off the edge
             // Or if we hit something that's too far below our current height
-            if (downHits.length === 0 || 
-                Math.abs(downHits[0].point.y - this.wallTopHeight) > 0.1) {
-                console.log("Would walk off edge of wall");
-                return {
-                    canMove: false,
-                    hitObject: null
-                };
-            }
+            // if (downHits.length === 0 || 
+            //     Math.abs(downHits[0].point.y - this.wallTopHeight) > 0.1) {
+            //     console.log("Would walk off edge of wall");
+            //     return {
+            //         canMove: false,
+            //         hitObject: null
+            //     };
+            // }
         }
         
         // If we're inside a room wall (not on top), allow free movement
@@ -596,9 +600,9 @@ this.wallTopHeight = 0;
 
         update() {
 
-            this.checkWalkingSurface();
-            
             this.jumpFrameCount++;
+
+                        this.checkWalkingSurface();
             
             // Handle jumping physics
             if (this.isJumping) {
