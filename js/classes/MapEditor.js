@@ -4559,8 +4559,18 @@ if (saveProjectBtn) {
       token.style.transform = `scale(${this.scale})`;
       token.style.transformOrigin = "center";
     }
+
+    const propToken = marker.element.querySelector(".prop-visual");
+    if (propToken) {
+      propToken.style.transform = `scale(${this.scale})`;
+      propToken.style.transformOrigin = "center";
+    }
+
+
   }
 
+
+  
   // Helper method to create marker elements
   createMarker(type, x, y, data) {
     const marker = {
