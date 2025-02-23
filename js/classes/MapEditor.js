@@ -5397,13 +5397,19 @@ class MapEditor {
     content += `
       <div class="prop-controls">
 <div style="margin-bottom: 16px;">
-    <div class="tooltip-container" style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 8px;">
         <sl-switch id="prop-orientation" ${marker.data.prop?.isHorizontal ? 'checked' : ''}>
             <span style="margin-right: 8px;">Horizontal</span>
         </sl-switch>
-        <sl-button size="small" variant="text" class="help-button" style="padding: 0; margin-left: 4px;">
-            <span class="material-icons" style="font-size: 16px; color: #666;">help_outline</span>
-        </sl-button>
+        <!-- Separated tooltip with hover event -->
+        <div style="display: inline-block;">
+            <sl-tooltip content="When enabled, prop will lie flat on surfaces" placement="right">
+                <span 
+                    class="help-icon material-icons" 
+                    style="font-size: 16px; color: #666; display: inline-flex; vertical-align: middle; cursor: help;"
+                >help_outline</span>
+            </sl-tooltip>
+        </div>
     </div>
 </div>
           </div>
@@ -5677,19 +5683,56 @@ class MapEditor {
       });
     }
 
-    const helpButton = dialog.querySelector('.help-button');
-if (helpButton) {
-    helpButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const toast = document.createElement('sl-alert');
-        toast.variant = 'primary';
-        toast.duration = 3000;
-        toast.innerHTML = 'When enabled, prop will lie flat on surfaces';
-        document.body.appendChild(toast);
-        toast.show();
-    });
-}
+    const helpIcon = document.querySelector('.help-icon');
+
+        if (helpIcon) {
+            helpIcon.addEventListener('mouseenter', () => {
+                showShoelaceToast(
+                    "When enabled, prop will lie flat on surfaces.",
+                    "exclamation-triangle",
+                    3000,
+                    "warning"
+                );
+            });
+        }
+    
   }
+
+showShoelaceToast(message, icon, timeout, variant) {
+    // Ensure there's a valid container to append the alert to
+    const container = document.querySelector('.alert-toast');
+    if (!container) return;
+
+    // Create the alert element
+    const alert = document.createElement('sl-alert');
+    alert.setAttribute('variant', variant);
+    alert.setAttribute('duration', timeout);
+    alert.setAttribute('closable', '');
+
+    // Create the icon element if an icon is provided
+    if (icon) {
+        const alertIcon = document.createElement('sl-icon');
+        alertIcon.setAttribute('slot', 'icon');
+        alertIcon.setAttribute('name', icon);
+        alert.appendChild(alertIcon);
+    }
+
+    // Append the message text
+    alert.appendChild(document.createTextNode(message));
+
+    // Append to the container
+    container.appendChild(alert);
+
+    // Ensure it's in the DOM before triggering the toast
+    requestAnimationFrame(() => alert.toast());
+
+    return alert;
+}
+
+// Example Usage
+// showShoelaceAlert('This is a warning!', 'exclamation-triangle', 3000, 'warning');
+// showShoelaceAlert('Success!', 'check-circle', 4000, 'success');
+
 
   setupEncounterEventHandlers(dialog, marker) {
     if (!marker.data.monster) {
@@ -6145,6 +6188,7 @@ if (helpButton) {
 
     return toast;
   }
+
 
 
 }
