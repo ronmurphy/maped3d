@@ -1099,7 +1099,7 @@ updateGallery(drawer, category, view = 'grid') {
                         class="resource-thumbnail"
                     />
                     <div class="resource-info">
-                        <div class="resource-name">${resource.name}</div>
+                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
                         <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
                         ${category === 'splashArt' && resource.description ? 
                             `<div class="resource-description">${resource.description}</div>` : ''}
@@ -1113,7 +1113,7 @@ updateGallery(drawer, category, view = 'grid') {
                             style="width: 50px; height: 50px;"
                         />
                         <div class="resource-info">
-                            <div class="resource-name">${resource.name}</div>
+                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
                             <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
                             ${category === 'splashArt' && resource.description ? 
                                 `<div class="resource-description">${resource.description}</div>` : ''}
@@ -3048,7 +3048,7 @@ updateBestiaryGallery(drawer, view = 'grid') {
                     ` : ''}
                 </div>
                 <div class="resource-info">
-                    <div class="resource-name">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
+                    <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
                     <div class="resource-meta">${monster.size} ${displayType}</div>
                 </div>
             ` : `
@@ -3067,7 +3067,7 @@ updateBestiaryGallery(drawer, view = 'grid') {
                         ` : ''}
                     </div>
                     <div class="resource-info">
-                        <div class="resource-name">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
+                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
                         <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
                     </div>
                 </div>

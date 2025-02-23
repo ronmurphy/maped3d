@@ -5198,8 +5198,8 @@ if (saveProjectBtn) {
     dialog.label = 'Marker Options';
 
     // const canChangeTexture = (marker.type === 'door' || marker.type === 'prop') && this.resourceManager;
+    // const canChangeTexture = marker.type === 'door' && this.resourceManager;
     const canChangeTexture = marker.type === 'door' && this.resourceManager;
-
     let content = '<div style="display: flex; flex-direction: column; gap: 10px;">';
 
     if (canChangeTexture) {
@@ -5302,7 +5302,13 @@ if (!marker.data.monster) {
       const scale = propSettings.scale || 1.0;
       const height = propSettings.height || 1.0;
       const isHorizontal = propSettings.isHorizontal || false;
+      const propTextures = this.resourceManager?.resources.textures.props;
+      const envTextures = this.resourceManager?.resources.textures.environmental;
+      const hasTextures = (propTextures && propTextures.size > 0) || (envTextures && envTextures.size > 0);
       
+      
+
+
       content += `
         <div style="margin-top: 8px;">
           <div style="border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
