@@ -5367,12 +5367,14 @@ class MapEditor {
             availableTextures.push(...Array.from(envTextures.entries()));
           }
 
+//style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">
+
           return availableTextures.map(([id, texture]) => `
                           <div class="texture-option" data-texture-id="${id}" 
                               style="cursor: pointer; border: 2px solid ${marker.data.texture?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'
             }; padding: 4px; border-radius: 4px; position: relative;">
                               <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-                              <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">
+                              <div style="font-size: 0.8em; text-align: center; margin-top: 4px; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">
                                   ${texture.name}
                                   ${texture.category === 'environmental' ?
               `<span style="display: block; font-size: 0.9em; color: #666;">(Environmental)</span>` : ''}
@@ -5394,13 +5396,16 @@ class MapEditor {
     // Prop settings
     content += `
       <div class="prop-controls">
-          <div style="margin-bottom: 16px;">
-              <sl-switch id="prop-orientation" ${marker.data.prop?.isHorizontal ? 'checked' : ''}>
-                  <span style="margin-right: 8px;">Horizontal</span>
-                  <sl-tooltip content="When enabled, prop will lie flat on surfaces">
-                      <span class="material-icons" style="font-size: 16px; color: #666;">help_outline</span>
-                  </sl-tooltip>
-              </sl-switch>
+<div style="margin-bottom: 16px;">
+    <div class="tooltip-container" style="display: flex; align-items: center;">
+        <sl-switch id="prop-orientation" ${marker.data.prop?.isHorizontal ? 'checked' : ''}>
+            <span style="margin-right: 8px;">Horizontal</span>
+        </sl-switch>
+        <sl-button size="small" variant="text" class="help-button" style="padding: 0; margin-left: 4px;">
+            <span class="material-icons" style="font-size: 16px; color: #666;">help_outline</span>
+        </sl-button>
+    </div>
+</div>
           </div>
           
           <div class="prop-control-row">
@@ -5671,6 +5676,19 @@ class MapEditor {
         }
       });
     }
+
+    const helpButton = dialog.querySelector('.help-button');
+if (helpButton) {
+    helpButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const toast = document.createElement('sl-alert');
+        toast.variant = 'primary';
+        toast.duration = 3000;
+        toast.innerHTML = 'When enabled, prop will lie flat on surfaces';
+        document.body.appendChild(toast);
+        toast.show();
+    });
+}
   }
 
   setupEncounterEventHandlers(dialog, marker) {
