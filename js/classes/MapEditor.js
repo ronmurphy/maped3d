@@ -48,10 +48,10 @@ class MapEditor {
       // Pass resourceManager to Scene3D
       this.scene3D.resourceManager = this.resourceManager;
       this.checkTextureManager(() => {
-          console.log('TextureManager initialized:', !!this.textureManager);
-          this.setupEventListeners();
+        console.log('TextureManager initialized:', !!this.textureManager);
+        this.setupEventListeners();
       });
-  });
+    });
 
 
     this.setupCanvas();
@@ -65,23 +65,23 @@ class MapEditor {
 
   checkResourceManager(callback) {
     const resourceManagerBtn = document.getElementById('resourceManagerBtn');
-  
+
     // Create a temporary script element to test loading
     const script = document.createElement('script');
     script.src = 'js/classes/resource-manager.js';
     script.onload = () => {
       // Resource manager loaded successfully
       this.resourceManager = new ResourceManager();
-      
+
       // Initialize MonsterManager in ResourceManager
       this.resourceManager.initializeMonsterManager(this);
-      
+
       if (resourceManagerBtn) {
         resourceManagerBtn.style.display = 'flex';
         resourceManagerBtn.innerHTML = `
                 <span class="material-icons">palette</span>
             `;
-  
+
         // Add click handler
         resourceManagerBtn.addEventListener('click', () => {
           const drawer = this.resourceManager.createResourceManagerUI();
@@ -419,898 +419,898 @@ class MapEditor {
 
 
 
-async saveMap() {
-  // Show saving notification
-  const toast = document.createElement("div");
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.right = "20px";
-  toast.style.zIndex = "1000";
-  toast.style.backgroundColor = "#333";
-  toast.style.color = "white";
-  toast.style.padding = "10px 20px";
-  toast.style.borderRadius = "4px";
-  toast.style.display = "flex";
-  toast.style.alignItems = "center";
-  toast.style.gap = "10px";
-  toast.innerHTML = `
+  async saveMap() {
+    // Show saving notification
+    const toast = document.createElement("div");
+    toast.style.position = "fixed";
+    toast.style.bottom = "20px";
+    toast.style.right = "20px";
+    toast.style.zIndex = "1000";
+    toast.style.backgroundColor = "#333";
+    toast.style.color = "white";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "4px";
+    toast.style.display = "flex";
+    toast.style.alignItems = "center";
+    toast.style.gap = "10px";
+    toast.innerHTML = `
       <span class="material-icons">save</span>
       <span>Saving map...</span>
   `;
-  document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-  try {
-    console.log("Starting map save...");
-    // Create the save data structure
-    const saveData = {
-      version: "1.3", // Bump version for prop support
-      timestamp: new Date().toISOString(),
-      mapImage: null,
-      gridSettings: {
-        cellSize: this.cellSize,
-        width: this.gridDimensions?.width,
-        height: this.gridDimensions?.height
-      },
-      rooms: this.rooms.map((room) => {
-        return {
-          id: room.id,
-          name: room.name,
-          shape: room.shape,
-          bounds: { ...room.bounds },
-          points: room.points ? [...room.points] : null,
-          isRaisedBlock: room.isRaisedBlock || false,
-          blockHeight: room.blockHeight || 0,
-          finalized: room.finalized,
-          locked: room.locked,
-          thumbnail: room.thumbnail,
-          type: room.type,
-          locked: room.locked
-        };
-      }),
-      folders: this.layersPanel.folders.map(folder => {
-        return {
-          id: folder.id,
-          name: folder.name,
-          expanded: folder.expanded,
-          locked: folder.locked,
-          color: folder.color,
-          rooms: folder.rooms.map(room => room.id) // Store just the room IDs
-        };
-      }),
-      textureData: {
-        assignments: this.resourceManager?.serializeTextureAssignments(),
-        activeResourcePack: this.resourceManager?.activeResourcePack?.name
-      },
-      playerStart: this.playerStart ? {
-        id: this.playerStart.id,
-        type: this.playerStart.type,
-        x: this.playerStart.x,
-        y: this.playerStart.y,
-        data: { ...this.playerStart.data }
-      } : null,
-      markers: this.markers.map((marker) => {
-        // Create a clean copy of marker data
-        const markerData = {
-          id: marker.id,
-          type: marker.type,
-          x: marker.x,
-          y: marker.y,
-          data: {}
-        };
-      
-        // Copy non-circular data
-        if (marker.data) {
-          Object.keys(marker.data).forEach((key) => {
-            if (key !== "pairedMarker") {
-              markerData.data[key] = marker.data[key];
-            }
-          });
-      
-          if (marker.data.parentWall) {
-            markerData.data.parentWallId = marker.data.parentWall.id;
-            delete markerData.data.parentWall;
-          }
-        }
-      
-        // Special handling for different marker types
-        if (marker.type === "encounter" && marker.data.monster) {
-          markerData.data.monster = {
-            basic: { ...marker.data.monster.basic },
-            stats: {
-              ac: marker.data.monster.stats.ac,
-              hp: { ...marker.data.monster.stats.hp },
-              speed: marker.data.monster.stats.speed
-            },
-            abilities: { ...marker.data.monster.abilities },
-            traits: { ...marker.data.monster.traits },
-            token: {
-              data: marker.data.monster.token.data,
-              url: marker.data.monster.token.url
-            }
+    try {
+      console.log("Starting map save...");
+      // Create the save data structure
+      const saveData = {
+        version: "1.3", // Bump version for prop support
+        timestamp: new Date().toISOString(),
+        mapImage: null,
+        gridSettings: {
+          cellSize: this.cellSize,
+          width: this.gridDimensions?.width,
+          height: this.gridDimensions?.height
+        },
+        rooms: this.rooms.map((room) => {
+          return {
+            id: room.id,
+            name: room.name,
+            shape: room.shape,
+            bounds: { ...room.bounds },
+            points: room.points ? [...room.points] : null,
+            isRaisedBlock: room.isRaisedBlock || false,
+            blockHeight: room.blockHeight || 0,
+            finalized: room.finalized,
+            locked: room.locked,
+            thumbnail: room.thumbnail,
+            type: room.type,
+            locked: room.locked
           };
-        } else if (marker.type === "teleport" && marker.data.pairedMarker) {
-          markerData.data.pairId = marker.data.pairedMarker.id;
-          markerData.data.isPointA = marker.data.isPointA;
-          markerData.data.hasPair = true;
-        } // Improved prop handling in the saveMap function:
-
-        // Find the prop-specific section in the markers part of saveMap:
-        else if (marker.type === "prop") {
-          // IMPROVED PROP DATA HANDLING
-          console.log("Saving prop data:", {
+        }),
+        folders: this.layersPanel.folders.map(folder => {
+          return {
+            id: folder.id,
+            name: folder.name,
+            expanded: folder.expanded,
+            locked: folder.locked,
+            color: folder.color,
+            rooms: folder.rooms.map(room => room.id) // Store just the room IDs
+          };
+        }),
+        textureData: {
+          assignments: this.resourceManager?.serializeTextureAssignments(),
+          activeResourcePack: this.resourceManager?.activeResourcePack?.name
+        },
+        playerStart: this.playerStart ? {
+          id: this.playerStart.id,
+          type: this.playerStart.type,
+          x: this.playerStart.x,
+          y: this.playerStart.y,
+          data: { ...this.playerStart.data }
+        } : null,
+        markers: this.markers.map((marker) => {
+          // Create a clean copy of marker data
+          const markerData = {
             id: marker.id,
-            hasTexture: !!marker.data.texture,
-            textureName: marker.data.texture?.name,
-            prop: marker.data.prop
-          });
-          
-          // Save complete prop configuration
-          markerData.data.prop = {
-            scale: marker.data.prop?.scale || 1.0,
-            height: marker.data.prop?.height || 1.0,
-            isHorizontal: !!marker.data.prop?.isHorizontal, // Ensure boolean
-            position: {
-              rotation: marker.data.prop?.position?.rotation || 0
-            }
+            type: marker.type,
+            x: marker.x,
+            y: marker.y,
+            data: {}
           };
-          
-          // Directly embed complete texture data
-          if (marker.data.texture) {
-            // Save under embeddedTexture for v1.3+ format
-            markerData.data.embeddedTexture = {
-              id: marker.data.texture.id,
-              name: marker.data.texture.name,
-              category: marker.data.texture.category || "props",
-              data: marker.data.texture.data, // The actual image data
-              aspect: marker.data.texture.aspect || 1.0
-            };
-            
-            // For backwards compatibility
-            markerData.data.textureId = marker.data.texture.id;
-            markerData.data.textureCategory = marker.data.texture.category || "props";
-          }
-        } else if (marker.type === "door") {
-          if (marker.data.door) {
-            markerData.data.door = { ...marker.data.door };
-            if (marker.data.door.position) {
-              markerData.data.door.position = { ...marker.data.door.position };
+
+          // Copy non-circular data
+          if (marker.data) {
+            Object.keys(marker.data).forEach((key) => {
+              if (key !== "pairedMarker") {
+                markerData.data[key] = marker.data[key];
+              }
+            });
+
+            if (marker.data.parentWall) {
+              markerData.data.parentWallId = marker.data.parentWall.id;
+              delete markerData.data.parentWall;
             }
           }
-          
-          // Also save texture for doors
-          if (marker.data.texture) {
-            markerData.data.textureId = marker.data.texture.id;
-            markerData.data.textureCategory = marker.data.texture.category || "doors";
+
+          // Special handling for different marker types
+          if (marker.type === "encounter" && marker.data.monster) {
+            markerData.data.monster = {
+              basic: { ...marker.data.monster.basic },
+              stats: {
+                ac: marker.data.monster.stats.ac,
+                hp: { ...marker.data.monster.stats.hp },
+                speed: marker.data.monster.stats.speed
+              },
+              abilities: { ...marker.data.monster.abilities },
+              traits: { ...marker.data.monster.traits },
+              token: {
+                data: marker.data.monster.token.data,
+                url: marker.data.monster.token.url
+              }
+            };
+          } else if (marker.type === "teleport" && marker.data.pairedMarker) {
+            markerData.data.pairId = marker.data.pairedMarker.id;
+            markerData.data.isPointA = marker.data.isPointA;
+            markerData.data.hasPair = true;
+          } // Improved prop handling in the saveMap function:
+
+          // Find the prop-specific section in the markers part of saveMap:
+          else if (marker.type === "prop") {
+            // IMPROVED PROP DATA HANDLING
+            console.log("Saving prop data:", {
+              id: marker.id,
+              hasTexture: !!marker.data.texture,
+              textureName: marker.data.texture?.name,
+              prop: marker.data.prop
+            });
+
+            // Save complete prop configuration
+            markerData.data.prop = {
+              scale: marker.data.prop?.scale || 1.0,
+              height: marker.data.prop?.height || 1.0,
+              isHorizontal: !!marker.data.prop?.isHorizontal, // Ensure boolean
+              position: {
+                rotation: marker.data.prop?.position?.rotation || 0
+              }
+            };
+
+            // Directly embed complete texture data
+            if (marker.data.texture) {
+              // Save under embeddedTexture for v1.3+ format
+              markerData.data.embeddedTexture = {
+                id: marker.data.texture.id,
+                name: marker.data.texture.name,
+                category: marker.data.texture.category || "props",
+                data: marker.data.texture.data, // The actual image data
+                aspect: marker.data.texture.aspect || 1.0
+              };
+
+              // For backwards compatibility
+              markerData.data.textureId = marker.data.texture.id;
+              markerData.data.textureCategory = marker.data.texture.category || "props";
+            }
+          } else if (marker.type === "door") {
+            if (marker.data.door) {
+              markerData.data.door = { ...marker.data.door };
+              if (marker.data.door.position) {
+                markerData.data.door.position = { ...marker.data.door.position };
+              }
+            }
+
+            // Also save texture for doors
+            if (marker.data.texture) {
+              markerData.data.textureId = marker.data.texture.id;
+              markerData.data.textureCategory = marker.data.texture.category || "doors";
+            }
           }
-        }
-      
-        return markerData;
-      }),
-      resourcePack: this.resourceManager?.activeResourcePack?.name || null
-    };
 
-    // Convert main map image to base64
-    if (this.baseImage) {
-      const canvas = document.createElement("canvas");
-      canvas.width = this.baseImage.width;
-      canvas.height = this.baseImage.height;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(this.baseImage, 0, 0);
-      saveData.mapImage = canvas.toDataURL("image/webp");
-    }
+          return markerData;
+        }),
+        resourcePack: this.resourceManager?.activeResourcePack?.name || null
+      };
 
-    // Create the file
-    const blob = new Blob([JSON.stringify(saveData, null, 2)], {
-      type: "application/json"
-    });
+      // Convert main map image to base64
+      if (this.baseImage) {
+        const canvas = document.createElement("canvas");
+        canvas.width = this.baseImage.width;
+        canvas.height = this.baseImage.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(this.baseImage, 0, 0);
+        saveData.mapImage = canvas.toDataURL("image/webp");
+      }
 
-    // Generate filename based on map name and timestamp
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-    const mapName = this.mapName || this.originalMapName || "untitled";
-    const filename = `${mapName}.map.json`;  // New naming convention
+      // Create the file
+      const blob = new Blob([JSON.stringify(saveData, null, 2)], {
+        type: "application/json"
+      });
 
-    // Trigger download
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+      // Generate filename based on map name and timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+      const mapName = this.mapName || this.originalMapName || "untitled";
+      const filename = `${mapName}.map.json`;  // New naming convention
 
-    console.log("Map save completed");
+      // Trigger download
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
 
-    // Show success toast
-    toast.style.backgroundColor = "#4CAF50";
-    toast.innerHTML = `
+      console.log("Map save completed");
+
+      // Show success toast
+      toast.style.backgroundColor = "#4CAF50";
+      toast.innerHTML = `
           <span class="material-icons">check_circle</span>
           <span>Map saved successfully!</span>
       `;
-      
-    // Return the filename for potential project file creation
-    return filename;
-  } catch (error) {
-    console.error("Error saving map:", error);
-    toast.style.backgroundColor = "#f44336";
-    toast.innerHTML = `
+
+      // Return the filename for potential project file creation
+      return filename;
+    } catch (error) {
+      console.error("Error saving map:", error);
+      toast.style.backgroundColor = "#f44336";
+      toast.innerHTML = `
           <span class="material-icons">error</span>
           <span>Error saving map!</span>
       `;
-    return null;
-  } finally {
-    // Remove toast after delay
-    setTimeout(() => toast.remove(), 2000);
+      return null;
+    } finally {
+      // Remove toast after delay
+      setTimeout(() => toast.remove(), 2000);
+    }
   }
-}
 
-// Updated loadMap function to handle props (version 1.3)
-async loadMap(file) {
-  const toast = document.createElement("div");
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.right = "20px";
-  toast.style.zIndex = "1000";
-  toast.style.backgroundColor = "#333";
-  toast.style.color = "white";
-  toast.style.padding = "10px 20px";
-  toast.style.borderRadius = "4px";
-  toast.style.display = "flex";
-  toast.style.alignItems = "center";
-  toast.style.gap = "10px";
-  toast.innerHTML = `
+  // Updated loadMap function to handle props (version 1.3)
+  async loadMap(file) {
+    const toast = document.createElement("div");
+    toast.style.position = "fixed";
+    toast.style.bottom = "20px";
+    toast.style.right = "20px";
+    toast.style.zIndex = "1000";
+    toast.style.backgroundColor = "#333";
+    toast.style.color = "white";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "4px";
+    toast.style.display = "flex";
+    toast.style.alignItems = "center";
+    toast.style.gap = "10px";
+    toast.innerHTML = `
       <span class="material-icons">hourglass_top</span>
       <span>Loading map...</span>
   `;
-  document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-  try {
-    console.log("Starting map load...");
-    const text = await file.text();
-    const saveData = JSON.parse(text);
+    try {
+      console.log("Starting map load...");
+      const text = await file.text();
+      const saveData = JSON.parse(text);
 
-    // Version check
-    console.log("Loading map version:", saveData.version);
-    const isVersion13OrHigher = saveData.version && 
-      (saveData.version === "1.3" || parseFloat(saveData.version) >= 1.3);
-    
-    // Set map name if available
-    if (saveData.name) {
-      this.mapName = saveData.name;
-      this.updateMapTitle();
-    }
+      // Version check
+      console.log("Loading map version:", saveData.version);
+      const isVersion13OrHigher = saveData.version &&
+        (saveData.version === "1.3" || parseFloat(saveData.version) >= 1.3);
 
-    // Clear existing rooms and markers first
-    this.rooms.forEach(room => {
-      room.element?.remove();
-    });
-    this.rooms = [];
+      // Set map name if available
+      if (saveData.name) {
+        this.mapName = saveData.name;
+        this.updateMapTitle();
+      }
 
-    this.markers.forEach(marker => {
-      marker.element?.remove();
-    });
-    this.markers = [];
-
-    if (this.playerStart?.element) {
-      this.playerStart.element.remove();
-      this.playerStart = null;
-    }
-
-    // Restore texture assignments
-    if (saveData.textureData?.assignments && this.resourceManager) {
-      this.resourceManager.deserializeTextureAssignments(saveData.textureData.assignments);
-    }
-
-    // Load map image first and wait for it to complete
-    if (saveData.mapImage) {
-      await new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          this.baseImage = img;
-          this.naturalWidth = img.naturalWidth;
-          this.naturalHeight = img.naturalHeight;
-          resolve();
-        };
-        img.onerror = reject;
-        img.src = saveData.mapImage;
+      // Clear existing rooms and markers first
+      this.rooms.forEach(room => {
+        room.element?.remove();
       });
-    }
+      this.rooms = [];
 
-    // Initialize default grid settings
-    const defaultGridSettings = {
-      cellSize: 50,  // default cell size
-      width: null,
-      height: null
-    };
-
-    // Try to get grid settings from save data, fall back to defaults
-    const gridSettings = saveData.gridSettings || defaultGridSettings;
-
-    // Apply grid settings with fallback values
-    this.cellSize = gridSettings.cellSize || defaultGridSettings.cellSize;
-    this.gridDimensions = gridSettings.width && gridSettings.height
-      ? {
-        width: gridSettings.width,
-        height: gridSettings.height
-      }
-      : null;
-
-    console.log("Grid settings restored:", {
-      cellSize: this.cellSize,
-      dimensions: this.gridDimensions
-    });
-
-    // Restore rooms
-    for (const roomData of saveData.rooms) {
-      const room = Room.createFromSaved(roomData, this);
-      // Restore raised block properties
-      room.isRaisedBlock = roomData.isRaisedBlock || false;
-      room.blockHeight = roomData.blockHeight || 0;
-
-      if (roomData.locked) {
-        room.locked = true;
-      }
-      this.rooms.push(room);
-      document.querySelector('.canvas-container').appendChild(room.element);
-    }
-
-    if (saveData.folders && Array.isArray(saveData.folders)) {
-      console.log(`Restoring ${saveData.folders.length} folders`);
-      
-      // Clear existing folders
-      this.layersPanel.folders = [];
-      
-      // Create new folders
-      for (const folderData of saveData.folders) {
-        // Create basic folder structure
-        const folder = {
-          id: folderData.id,
-          name: folderData.name,
-          expanded: folderData.expanded !== undefined ? folderData.expanded : true,
-          locked: folderData.locked || false,
-          color: folderData.color || null,
-          rooms: [] // Will fill with room objects
-        };
-        
-        // Find all the rooms for this folder
-        if (folderData.rooms && Array.isArray(folderData.rooms)) {
-          folder.rooms = folderData.rooms
-            .map(roomId => this.rooms.find(room => room.id === roomId))
-            .filter(room => room); // Remove any undefined (not found) rooms
-        }
-        
-        // Add the folder
-        this.layersPanel.folders.push(folder);
-      }
-    }
-
-    // Restore player start marker if it exists
-    if (saveData.playerStart) {
-      console.log("Restoring player start marker:", saveData.playerStart);
-      this.playerStart = this.addMarker(
-        "player-start",
-        saveData.playerStart.x,
-        saveData.playerStart.y,
-        saveData.playerStart.data || {}
-      );
-    }
-
-    // Restore markers
-    console.log("Starting marker restoration...");
-    for (const markerData of saveData.markers) {
-      console.log("Loading marker:", {
-        type: markerData.type,
-        data: markerData.data
+      this.markers.forEach(marker => {
+        marker.element?.remove();
       });
+      this.markers = [];
 
-      // Check for URL-based tokens in encounter markers
-      const hasUrlToken = markerData.type === "encounter" && 
-        markerData.data?.monster?.token?.url && 
-        !markerData.data.monster.token.data?.startsWith('data:');
-
-      // Log and track URL token issues
-      if (hasUrlToken) {
-        console.warn("Found URL-based token in marker:", {
-          type: markerData.type,
-          monsterId: markerData.data.monster.basic.name,
-          tokenUrl: markerData.data.monster.token.url
-        });
-
-        setTimeout(() => this.showTokenWarningToast(), 2000);
-
-        // Set flag to show warning toast later
-        this.hasUrlBasedTokens = true;
+      if (this.playerStart?.element) {
+        this.playerStart.element.remove();
+        this.playerStart = null;
       }
 
-      // Handle prop texture data - FIXED SECTION
-      if (markerData.type === "prop") {
-        console.log("Loading prop marker data:", markerData.data);
-        
-        // Ensure prop data structure exists with proper defaults
-        if (!markerData.data.prop) {
-          markerData.data.prop = {
-            scale: 1.0,
-            height: 1.0,
-            isHorizontal: false,
-            position: { rotation: 0 }
+      // Restore texture assignments
+      if (saveData.textureData?.assignments && this.resourceManager) {
+        this.resourceManager.deserializeTextureAssignments(saveData.textureData.assignments);
+      }
+
+      // Load map image first and wait for it to complete
+      if (saveData.mapImage) {
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            this.baseImage = img;
+            this.naturalWidth = img.naturalWidth;
+            this.naturalHeight = img.naturalHeight;
+            resolve();
           };
-        } else {
-          // Ensure boolean value for isHorizontal
-          markerData.data.prop.isHorizontal = !!markerData.data.prop.isHorizontal;
-          
-          // Ensure all prop properties exist
-          markerData.data.prop.scale = markerData.data.prop.scale || 1.0;
-          markerData.data.prop.height = markerData.data.prop.height || 1.0;
-          if (!markerData.data.prop.position) {
-            markerData.data.prop.position = { rotation: 0 };
-          } else {
-            markerData.data.prop.position.rotation = markerData.data.prop.position.rotation || 0;
-          }
-        }
-        
-        // First try to load from embedded texture data (v1.3+ format)
-        if (markerData.data.embeddedTexture) {
-          console.log("Using embedded texture data for prop");
-          markerData.data.texture = { ...markerData.data.embeddedTexture };
-          
-          // Store this texture in resourceManager if it doesn't exist
-          // This ensures the texture is available for future reference
-          if (this.resourceManager && 
-              !this.resourceManager.resources.textures.props.has(markerData.data.texture.id)) {
-            console.log("Adding embedded texture to resource manager:", markerData.data.texture.name);
-            this.resourceManager.resources.textures.props.set(
-              markerData.data.texture.id, 
-              markerData.data.texture
-            );
-          }
-        }
-        // Then try the older textureData field (for compatibility)
-        else if (markerData.data.textureData) {
-          console.log("Using textureData field for prop");
-          markerData.data.texture = {
-            id: markerData.data.textureData.id,
-            name: markerData.data.textureData.name,
-            data: markerData.data.textureData.data,
-            aspect: markerData.data.textureData.aspect || 1.0,
-            category: "props"
-          };
-        }
-        // Finally try to get texture from resource manager by ID
-        else if (markerData.data.textureId && this.resourceManager) {
-          const category = markerData.data.textureCategory || "props";
-          console.log(`Attempting to load specific prop texture: ${markerData.data.textureId}`);
-          
-          // Use getSpecificTexture instead of direct lookup
-          const texture = this.resourceManager.getSpecificTexture(category, markerData.data.textureId);
-          
-          if (texture) {
-            console.log("Found texture in resource manager:", texture.name);
-            markerData.data.texture = texture;
-          } else {
-            console.warn(`Could not find texture ${markerData.data.textureId} in category ${category}`);
-            // Only use fallback if absolutely necessary
-            console.warn("Will attempt to recreate prop with saved ID, visuals may be incorrect");
-          }
-        }
-        
-        console.log("Final prop data being used:", {
-          prop: markerData.data.prop,
-          texture: markerData.data.texture ? {
-            id: markerData.data.texture.id,
-            name: markerData.data.texture.name
-          } : "No texture found"
+          img.onerror = reject;
+          img.src = saveData.mapImage;
         });
       }
 
+      // Initialize default grid settings
+      const defaultGridSettings = {
+        cellSize: 50,  // default cell size
+        width: null,
+        height: null
+      };
 
-      // Handle regular texture restoration for other marker types
-      else if (markerData.data.textureId && this.resourceManager) {
-        const category = markerData.data.textureCategory || 
-                        (markerData.type === "door" ? "doors" : "walls");
-                       
-        const texture = this.resourceManager.resources.textures[category]?.get(markerData.data.textureId);
-        if (texture) {
-          markerData.data.texture = texture;
+      // Try to get grid settings from save data, fall back to defaults
+      const gridSettings = saveData.gridSettings || defaultGridSettings;
+
+      // Apply grid settings with fallback values
+      this.cellSize = gridSettings.cellSize || defaultGridSettings.cellSize;
+      this.gridDimensions = gridSettings.width && gridSettings.height
+        ? {
+          width: gridSettings.width,
+          height: gridSettings.height
         }
+        : null;
+
+      console.log("Grid settings restored:", {
+        cellSize: this.cellSize,
+        dimensions: this.gridDimensions
+      });
+
+      // Restore rooms
+      for (const roomData of saveData.rooms) {
+        const room = Room.createFromSaved(roomData, this);
+        // Restore raised block properties
+        room.isRaisedBlock = roomData.isRaisedBlock || false;
+        room.blockHeight = roomData.blockHeight || 0;
+
+        if (roomData.locked) {
+          room.locked = true;
+        }
+        this.rooms.push(room);
+        document.querySelector('.canvas-container').appendChild(room.element);
       }
 
-      // Handle parent wall restoration for doors
-      if (markerData.data.parentWallId) {
-        markerData.data.parentWall = this.rooms.find(r => r.id === markerData.data.parentWallId);
-      }
+      if (saveData.folders && Array.isArray(saveData.folders)) {
+        console.log(`Restoring ${saveData.folders.length} folders`);
 
-      // Add the marker
-      const marker = this.addMarker(
-        markerData.type,
-        markerData.x,
-        markerData.y,
-        markerData.data
-      );
+        // Clear existing folders
+        this.layersPanel.folders = [];
 
-      // Update appearance for special marker types
-      if (marker) {
-        if (marker.type === "encounter" && marker.data.monster) {
-          this.updateMarkerAppearance(marker);
-        }
-        else if (marker.type === "prop") {
-          // Force update the prop's appearance to reflect loaded settings
-          this.updateMarkerAppearance(marker);
-          
-          // Apply horizontal class if needed
-          if (marker.data.prop?.isHorizontal) {
-            const propVisual = marker.element.querySelector('.prop-visual');
-            if (propVisual) {
-              propVisual.classList.add('horizontal-prop');
-            }
+        // Create new folders
+        for (const folderData of saveData.folders) {
+          // Create basic folder structure
+          const folder = {
+            id: folderData.id,
+            name: folderData.name,
+            expanded: folderData.expanded !== undefined ? folderData.expanded : true,
+            locked: folderData.locked || false,
+            color: folderData.color || null,
+            rooms: [] // Will fill with room objects
+          };
+
+          // Find all the rooms for this folder
+          if (folderData.rooms && Array.isArray(folderData.rooms)) {
+            folder.rooms = folderData.rooms
+              .map(roomId => this.rooms.find(room => room.id === roomId))
+              .filter(room => room); // Remove any undefined (not found) rooms
           }
-        }
-        else if (marker.type === "door" && marker.data.door) {
-          if (marker.data.door.position?.rotation) {
-            marker.element.style.transform = `rotate(${marker.data.door.position.rotation}deg)`;
-          }
+
+          // Add the folder
+          this.layersPanel.folders.push(folder);
         }
       }
-    }
 
-    // Restore teleport connections
-    console.log("Restoring teleport connections...");
-    const teleportMarkers = this.markers.filter(m => m.type === "teleport");
-    for (const marker of teleportMarkers) {
-      if (marker.data.pairId) {
-        const pair = teleportMarkers.find(
-          m => m.data.pairId === marker.data.pairId && m !== marker
+      // Restore player start marker if it exists
+      if (saveData.playerStart) {
+        console.log("Restoring player start marker:", saveData.playerStart);
+        this.playerStart = this.addMarker(
+          "player-start",
+          saveData.playerStart.x,
+          saveData.playerStart.y,
+          saveData.playerStart.data || {}
         );
-        if (pair) {
-          console.log("Connecting teleport pair:", {
-            markerA: marker.id,
-            markerB: pair.id
+      }
+
+      // Restore markers
+      console.log("Starting marker restoration...");
+      for (const markerData of saveData.markers) {
+        console.log("Loading marker:", {
+          type: markerData.type,
+          data: markerData.data
+        });
+
+        // Check for URL-based tokens in encounter markers
+        const hasUrlToken = markerData.type === "encounter" &&
+          markerData.data?.monster?.token?.url &&
+          !markerData.data.monster.token.data?.startsWith('data:');
+
+        // Log and track URL token issues
+        if (hasUrlToken) {
+          console.warn("Found URL-based token in marker:", {
+            type: markerData.type,
+            monsterId: markerData.data.monster.basic.name,
+            tokenUrl: markerData.data.monster.token.url
           });
 
-          marker.data.pairedMarker = pair;
-          pair.data.pairedMarker = marker;
-          marker.data.hasPair = true;
-          pair.data.hasPair = true;
+          setTimeout(() => this.showTokenWarningToast(), 2000);
 
-          if (marker.data.isPointA) {
-            if (marker.connection) {
-              marker.connection.remove();
+          // Set flag to show warning toast later
+          this.hasUrlBasedTokens = true;
+        }
+
+        // Handle prop texture data - FIXED SECTION
+        if (markerData.type === "prop") {
+          console.log("Loading prop marker data:", markerData.data);
+
+          // Ensure prop data structure exists with proper defaults
+          if (!markerData.data.prop) {
+            markerData.data.prop = {
+              scale: 1.0,
+              height: 1.0,
+              isHorizontal: false,
+              position: { rotation: 0 }
+            };
+          } else {
+            // Ensure boolean value for isHorizontal
+            markerData.data.prop.isHorizontal = !!markerData.data.prop.isHorizontal;
+
+            // Ensure all prop properties exist
+            markerData.data.prop.scale = markerData.data.prop.scale || 1.0;
+            markerData.data.prop.height = markerData.data.prop.height || 1.0;
+            if (!markerData.data.prop.position) {
+              markerData.data.prop.position = { rotation: 0 };
+            } else {
+              markerData.data.prop.position.rotation = markerData.data.prop.position.rotation || 0;
             }
-            marker.connection = this.createTeleportConnection(marker, pair);
-            this.updateTeleportConnection(marker, pair);
+          }
+
+          // First try to load from embedded texture data (v1.3+ format)
+          if (markerData.data.embeddedTexture) {
+            console.log("Using embedded texture data for prop");
+            markerData.data.texture = { ...markerData.data.embeddedTexture };
+
+            // Store this texture in resourceManager if it doesn't exist
+            // This ensures the texture is available for future reference
+            if (this.resourceManager &&
+              !this.resourceManager.resources.textures.props.has(markerData.data.texture.id)) {
+              console.log("Adding embedded texture to resource manager:", markerData.data.texture.name);
+              this.resourceManager.resources.textures.props.set(
+                markerData.data.texture.id,
+                markerData.data.texture
+              );
+            }
+          }
+          // Then try the older textureData field (for compatibility)
+          else if (markerData.data.textureData) {
+            console.log("Using textureData field for prop");
+            markerData.data.texture = {
+              id: markerData.data.textureData.id,
+              name: markerData.data.textureData.name,
+              data: markerData.data.textureData.data,
+              aspect: markerData.data.textureData.aspect || 1.0,
+              category: "props"
+            };
+          }
+          // Finally try to get texture from resource manager by ID
+          else if (markerData.data.textureId && this.resourceManager) {
+            const category = markerData.data.textureCategory || "props";
+            console.log(`Attempting to load specific prop texture: ${markerData.data.textureId}`);
+
+            // Use getSpecificTexture instead of direct lookup
+            const texture = this.resourceManager.getSpecificTexture(category, markerData.data.textureId);
+
+            if (texture) {
+              console.log("Found texture in resource manager:", texture.name);
+              markerData.data.texture = texture;
+            } else {
+              console.warn(`Could not find texture ${markerData.data.textureId} in category ${category}`);
+              // Only use fallback if absolutely necessary
+              console.warn("Will attempt to recreate prop with saved ID, visuals may be incorrect");
+            }
+          }
+
+          console.log("Final prop data being used:", {
+            prop: markerData.data.prop,
+            texture: markerData.data.texture ? {
+              id: markerData.data.texture.id,
+              name: markerData.data.texture.name
+            } : "No texture found"
+          });
+        }
+
+
+        // Handle regular texture restoration for other marker types
+        else if (markerData.data.textureId && this.resourceManager) {
+          const category = markerData.data.textureCategory ||
+            (markerData.type === "door" ? "doors" : "walls");
+
+          const texture = this.resourceManager.resources.textures[category]?.get(markerData.data.textureId);
+          if (texture) {
+            markerData.data.texture = texture;
+          }
+        }
+
+        // Handle parent wall restoration for doors
+        if (markerData.data.parentWallId) {
+          markerData.data.parentWall = this.rooms.find(r => r.id === markerData.data.parentWallId);
+        }
+
+        // Add the marker
+        const marker = this.addMarker(
+          markerData.type,
+          markerData.x,
+          markerData.y,
+          markerData.data
+        );
+
+        // Update appearance for special marker types
+        if (marker) {
+          if (marker.type === "encounter" && marker.data.monster) {
+            this.updateMarkerAppearance(marker);
+          }
+          else if (marker.type === "prop") {
+            // Force update the prop's appearance to reflect loaded settings
+            this.updateMarkerAppearance(marker);
+
+            // Apply horizontal class if needed
+            if (marker.data.prop?.isHorizontal) {
+              const propVisual = marker.element.querySelector('.prop-visual');
+              if (propVisual) {
+                propVisual.classList.add('horizontal-prop');
+              }
+            }
+          }
+          else if (marker.type === "door" && marker.data.door) {
+            if (marker.data.door.position?.rotation) {
+              marker.element.style.transform = `rotate(${marker.data.door.position.rotation}deg)`;
+            }
           }
         }
       }
-    }
 
-    // Update all marker positions
-    // this.markers.forEach(marker => {
-    //   this.updateMarkerPosition(marker);
-    // });
-    this.updateMarkerPositions();
-    // Update display
-    this.centerMap();
+      // Restore teleport connections
+      console.log("Restoring teleport connections...");
+      const teleportMarkers = this.markers.filter(m => m.type === "teleport");
+      for (const marker of teleportMarkers) {
+        if (marker.data.pairId) {
+          const pair = teleportMarkers.find(
+            m => m.data.pairId === marker.data.pairId && m !== marker
+          );
+          if (pair) {
+            console.log("Connecting teleport pair:", {
+              markerA: marker.id,
+              markerB: pair.id
+            });
 
-    this.render();
-    this.layersPanel.updateLayersList();
+            marker.data.pairedMarker = pair;
+            pair.data.pairedMarker = marker;
+            marker.data.hasPair = true;
+            pair.data.hasPair = true;
 
-    console.log("Map load completed");
+            if (marker.data.isPointA) {
+              if (marker.connection) {
+                marker.connection.remove();
+              }
+              marker.connection = this.createTeleportConnection(marker, pair);
+              this.updateTeleportConnection(marker, pair);
+            }
+          }
+        }
+      }
 
-    // Success notification
-    toast.style.backgroundColor = "#4CAF50";
-    toast.innerHTML = `
+      // Update all marker positions
+      // this.markers.forEach(marker => {
+      //   this.updateMarkerPosition(marker);
+      // });
+      this.updateMarkerPositions();
+      // Update display
+      this.centerMap();
+
+      this.render();
+      this.layersPanel.updateLayersList();
+
+      console.log("Map load completed");
+
+      // Success notification
+      toast.style.backgroundColor = "#4CAF50";
+      toast.innerHTML = `
           <span class="material-icons">check_circle</span>
           <span>Map loaded successfully!</span>
       `;
-  } catch (error) {
-    console.error("Error loading map:", error);
-    toast.style.backgroundColor = "#f44336";
-    toast.innerHTML = `
+    } catch (error) {
+      console.error("Error loading map:", error);
+      toast.style.backgroundColor = "#f44336";
+      toast.innerHTML = `
           <span class="material-icons">error</span>
           <span>Error loading map!</span>
       `;
-  }
+    }
 
-  // Remove toast after delay
-  setTimeout(() => {
-    toast.remove();
+    // Remove toast after delay
+    setTimeout(() => {
+      toast.remove();
 
-    // Temporarily zoom out and back in to force marker updates
-    const originalScale = this.scale;
+      // Temporarily zoom out and back in to force marker updates
+      const originalScale = this.scale;
 
-    // Zoom out
-    this.scale *= 0.9;
-    this.rooms.forEach(room => room.updateElement());
-    this.updateMarkerPositions();
-
-    // Wait a frame then zoom back in
-    requestAnimationFrame(() => {
-      this.scale = originalScale;
+      // Zoom out
+      this.scale *= 0.9;
       this.rooms.forEach(room => room.updateElement());
       this.updateMarkerPositions();
-      this.render();
-    });
-  }, 1000);
 
-  this.centerMap();
-}
+      // Wait a frame then zoom back in
+      requestAnimationFrame(() => {
+        this.scale = originalScale;
+        this.rooms.forEach(room => room.updateElement());
+        this.updateMarkerPositions();
+        this.render();
+      });
+    }, 1000);
 
-async saveProjectFile() {
-  const toast = document.createElement("div");
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.right = "20px";
-  toast.style.zIndex = "1000";
-  toast.style.backgroundColor = "#333";
-  toast.style.color = "white";
-  toast.style.padding = "10px 20px";
-  toast.style.borderRadius = "4px";
-  toast.style.display = "flex";
-  toast.style.alignItems = "center";
-  toast.style.gap = "10px";
-  toast.innerHTML = `
+    this.centerMap();
+  }
+
+  async saveProjectFile() {
+    const toast = document.createElement("div");
+    toast.style.position = "fixed";
+    toast.style.bottom = "20px";
+    toast.style.right = "20px";
+    toast.style.zIndex = "1000";
+    toast.style.backgroundColor = "#333";
+    toast.style.color = "white";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "4px";
+    toast.style.display = "flex";
+    toast.style.alignItems = "center";
+    toast.style.gap = "10px";
+    toast.innerHTML = `
       <span class="material-icons">save</span>
       <span>Saving project...</span>
   `;
-  document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-  try {
-    // First save resource pack
-    const mapName = this.mapName || this.originalMapName || "untitled";
-    const resourceFilename = await this.resourceManager.saveResourcePack(mapName);
-    
-    // Then save map
-    const mapFilename = await this.saveMap();
-    
-    if (!resourceFilename || !mapFilename) {
-      throw new Error("Failed to save resource pack or map");
-    }
-    
-    // Create project data with relative paths
-    const projectData = {
-      name: mapName,
-      version: "1.0",
-      timestamp: new Date().toISOString(),
-      resources: {
-        filename: resourceFilename,
-        relativePath: "./", // Store relative path - same directory as project
-        lastModified: new Date().toISOString()
-      },
-      map: {
-        filename: mapFilename,
-        relativePath: "./", // Store relative path - same directory as project
-        lastModified: new Date().toISOString()
-      },
-      settings: {
-        defaultView: "2D",
-        autoSave: false
+    try {
+      // First save resource pack
+      const mapName = this.mapName || this.originalMapName || "untitled";
+      const resourceFilename = await this.resourceManager.saveResourcePack(mapName);
+
+      // Then save map
+      const mapFilename = await this.saveMap();
+
+      if (!resourceFilename || !mapFilename) {
+        throw new Error("Failed to save resource pack or map");
       }
-    };
-    
-    // Create project file
-    const blob = new Blob([JSON.stringify(projectData, null, 2)], {
-      type: "application/json"
-    });
-    
-    // Use project naming convention
-    const projectFilename = `${mapName}.project.json`;
-    
-    // Trigger download
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = projectFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    
-    // Show success toast
-    toast.style.backgroundColor = "#4CAF50";
-    toast.innerHTML = `
+
+      // Create project data with relative paths
+      const projectData = {
+        name: mapName,
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        resources: {
+          filename: resourceFilename,
+          relativePath: "./", // Store relative path - same directory as project
+          lastModified: new Date().toISOString()
+        },
+        map: {
+          filename: mapFilename,
+          relativePath: "./", // Store relative path - same directory as project
+          lastModified: new Date().toISOString()
+        },
+        settings: {
+          defaultView: "2D",
+          autoSave: false
+        }
+      };
+
+      // Create project file
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], {
+        type: "application/json"
+      });
+
+      // Use project naming convention
+      const projectFilename = `${mapName}.project.json`;
+
+      // Trigger download
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = projectFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+
+      // Show success toast
+      toast.style.backgroundColor = "#4CAF50";
+      toast.innerHTML = `
         <span class="material-icons">check_circle</span>
         <span>Project saved successfully!</span>
     `;
-    
-    this.updateRecentProjects(projectData);
 
-    return true;
-  
-  
-  } catch (error) {
-    console.error("Error saving project:", error);
-    toast.style.backgroundColor = "#f44336";
-    toast.innerHTML = `
+      this.updateRecentProjects(projectData);
+
+      return true;
+
+
+    } catch (error) {
+      console.error("Error saving project:", error);
+      toast.style.backgroundColor = "#f44336";
+      toast.innerHTML = `
         <span class="material-icons">error</span>
         <span>Error saving project: ${error.message}</span>
     `;
-    return false;
-  } finally {
-    // Remove toast after delay
-    setTimeout(() => toast.remove(), 3000);
+      return false;
+    } finally {
+      // Remove toast after delay
+      setTimeout(() => toast.remove(), 3000);
+    }
   }
-}
 
-// Updated loadProjectFile method to try automatically loading files
-async loadProjectFile(file) {
-  const toast = document.createElement("div");
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.right = "20px";
-  toast.style.zIndex = "1000";
-  toast.style.backgroundColor = "#333";
-  toast.style.color = "white";
-  toast.style.padding = "10px 20px";
-  toast.style.borderRadius = "4px";
-  toast.style.display = "flex";
-  toast.style.alignItems = "center";
-  toast.style.gap = "10px";
-  toast.innerHTML = `
+  // Updated loadProjectFile method to try automatically loading files
+  async loadProjectFile(file) {
+    const toast = document.createElement("div");
+    toast.style.position = "fixed";
+    toast.style.bottom = "20px";
+    toast.style.right = "20px";
+    toast.style.zIndex = "1000";
+    toast.style.backgroundColor = "#333";
+    toast.style.color = "white";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "4px";
+    toast.style.display = "flex";
+    toast.style.alignItems = "center";
+    toast.style.gap = "10px";
+    toast.innerHTML = `
       <span class="material-icons">hourglass_top</span>
       <span>Loading project...</span>
   `;
-  document.body.appendChild(toast);
+    document.body.appendChild(toast);
 
-  try {
-    // Parse project file
-    const projectText = await file.text();
-    const projectData = JSON.parse(projectText);
-    
-    // Check if this is a valid project file
-    if (!projectData.resources || !projectData.map) {
-      throw new Error("Invalid project file format");
-    }
-    
-    // Extract filenames and paths
-    const resourceFilename = projectData.resources.filename;
-    const resourcePath = projectData.resources.relativePath || "./";
-    const mapFilename = projectData.map.filename;
-    const mapPath = projectData.map.relativePath || "./";
-    
-    let resourceFile = null;
-    let mapFile = null;
-    
-    // This function attempts to load a file from a given path
-    const tryLoadFile = async (path, filename) => {
-      try {
-        if (window.showDirectoryPicker) { // Modern File System Access API
-          const handle = await window.showDirectoryPicker({
-            id: 'project-dir',
-            startIn: 'downloads',
-            mode: 'read'
-          });
-          
-          try {
-            const fileHandle = await handle.getFileHandle(filename);
-            return await fileHandle.getFile();
-          } catch (e) {
-            console.warn(`File not found at selected directory: ${filename}`);
-            return null;
-          }
-        }
-        return null; // Fallback: can't auto-load without File System Access API
-      } catch (err) {
-        console.warn(`Unable to auto-load file: ${filename}`, err);
-        return null;
+    try {
+      // Parse project file
+      const projectText = await file.text();
+      const projectData = JSON.parse(projectText);
+
+      // Check if this is a valid project file
+      if (!projectData.resources || !projectData.map) {
+        throw new Error("Invalid project file format");
       }
-    };
-    
-    // Show progress
-    toast.innerHTML = `
+
+      // Extract filenames and paths
+      const resourceFilename = projectData.resources.filename;
+      const resourcePath = projectData.resources.relativePath || "./";
+      const mapFilename = projectData.map.filename;
+      const mapPath = projectData.map.relativePath || "./";
+
+      let resourceFile = null;
+      let mapFile = null;
+
+      // This function attempts to load a file from a given path
+      const tryLoadFile = async (path, filename) => {
+        try {
+          if (window.showDirectoryPicker) { // Modern File System Access API
+            const handle = await window.showDirectoryPicker({
+              id: 'project-dir',
+              startIn: 'downloads',
+              mode: 'read'
+            });
+
+            try {
+              const fileHandle = await handle.getFileHandle(filename);
+              return await fileHandle.getFile();
+            } catch (e) {
+              console.warn(`File not found at selected directory: ${filename}`);
+              return null;
+            }
+          }
+          return null; // Fallback: can't auto-load without File System Access API
+        } catch (err) {
+          console.warn(`Unable to auto-load file: ${filename}`, err);
+          return null;
+        }
+      };
+
+      // Show progress
+      toast.innerHTML = `
         <span class="material-icons">hourglass_top</span>
         <span>Loading resources (1/2)...</span>
     `;
-    
-    // Try to auto-load the resource file
-    resourceFile = await tryLoadFile(resourcePath, resourceFilename);
-    
-    // If auto-load failed, ask user to select the file
-    if (!resourceFile) {
-      resourceFile = await this.promptForFile(
-        `Please select the resource file: ${resourceFilename}`
-      );
-    }
-    
-    if (!resourceFile) {
-      throw new Error("Resource file selection cancelled");
-    }
-    
-    // Load resource pack
-    await this.resourceManager.loadResourcePack(resourceFile);
-    
-    // Update progress
-    toast.innerHTML = `
+
+      // Try to auto-load the resource file
+      resourceFile = await tryLoadFile(resourcePath, resourceFilename);
+
+      // If auto-load failed, ask user to select the file
+      if (!resourceFile) {
+        resourceFile = await this.promptForFile(
+          `Please select the resource file: ${resourceFilename}`
+        );
+      }
+
+      if (!resourceFile) {
+        throw new Error("Resource file selection cancelled");
+      }
+
+      // Load resource pack
+      await this.resourceManager.loadResourcePack(resourceFile);
+
+      // Update progress
+      toast.innerHTML = `
         <span class="material-icons">hourglass_top</span>
         <span>Loading map (2/2)...</span>
     `;
-    
-    // Try to auto-load the map file
-    mapFile = await tryLoadFile(mapPath, mapFilename);
-    
-    // If auto-load failed, ask user to select the file
-    if (!mapFile) {
-      mapFile = await this.promptForFile(
-        `Please select the map file: ${mapFilename}`
-      );
-    }
-    
-    if (!mapFile) {
-      throw new Error("Map file selection cancelled");
-    }
-    
-    // Load map
-    await this.loadMap(mapFile);
-    
-    // Set project name
-    this.mapName = projectData.name;
-    this.updateMapTitle();
 
-    this.updateRecentProjects({
-      name: projectData.name,
-      resources: {
-        filename: resourceFilename
-      },
-      map: {
-        filename: mapFilename
+      // Try to auto-load the map file
+      mapFile = await tryLoadFile(mapPath, mapFilename);
+
+      // If auto-load failed, ask user to select the file
+      if (!mapFile) {
+        mapFile = await this.promptForFile(
+          `Please select the map file: ${mapFilename}`
+        );
       }
-    });
-    
-    // Show success toast
-    toast.style.backgroundColor = "#4CAF50";
-    toast.innerHTML = `
+
+      if (!mapFile) {
+        throw new Error("Map file selection cancelled");
+      }
+
+      // Load map
+      await this.loadMap(mapFile);
+
+      // Set project name
+      this.mapName = projectData.name;
+      this.updateMapTitle();
+
+      this.updateRecentProjects({
+        name: projectData.name,
+        resources: {
+          filename: resourceFilename
+        },
+        map: {
+          filename: mapFilename
+        }
+      });
+
+      // Show success toast
+      toast.style.backgroundColor = "#4CAF50";
+      toast.innerHTML = `
         <span class="material-icons">check_circle</span>
         <span>Project "${projectData.name}" loaded successfully!</span>
     `;
-    
-    return true;
-  } catch (error) {
-    console.error("Error loading project:", error);
-    toast.style.backgroundColor = "#f44336";
-    toast.innerHTML = `
+
+      return true;
+    } catch (error) {
+      console.error("Error loading project:", error);
+      toast.style.backgroundColor = "#f44336";
+      toast.innerHTML = `
         <span class="material-icons">error</span>
         <span>Error loading project: ${error.message}</span>
     `;
-    return false;
-  } finally {
-    // Remove toast after delay
-    setTimeout(() => toast.remove(), 3000);
-  }
-}
-
-// Enhanced promptForFile method
-async promptForFile(message, suggestedFilename = null) {
-  // Try to use modern File System Access API first
-  if (window.showOpenFilePicker) {
-    try {
-      const options = {
-        types: [
-          {
-            description: 'JSON Files',
-            accept: {
-              'application/json': ['.json']
-            }
-          }
-        ],
-        excludeAcceptAllOption: false,
-        multiple: false
-      };
-      
-      // Add suggested name if provided
-      if (suggestedFilename) {
-        options.suggestedName = suggestedFilename;
-      }
-      
-      const [fileHandle] = await window.showOpenFilePicker(options);
-      return await fileHandle.getFile();
-    } catch (e) {
-      console.warn("File System Access API failed, falling back to traditional input", e);
-      // Fall back to traditional input if modern API fails or is cancelled
+      return false;
+    } finally {
+      // Remove toast after delay
+      setTimeout(() => toast.remove(), 3000);
     }
   }
-  
-  // Fallback to traditional file input
-  return new Promise((resolve) => {
-    // Create dialog
-    const dialog = document.createElement("sl-dialog");
-    dialog.label = "Select File";
-    dialog.innerHTML = `
+
+  // Enhanced promptForFile method
+  async promptForFile(message, suggestedFilename = null) {
+    // Try to use modern File System Access API first
+    if (window.showOpenFilePicker) {
+      try {
+        const options = {
+          types: [
+            {
+              description: 'JSON Files',
+              accept: {
+                'application/json': ['.json']
+              }
+            }
+          ],
+          excludeAcceptAllOption: false,
+          multiple: false
+        };
+
+        // Add suggested name if provided
+        if (suggestedFilename) {
+          options.suggestedName = suggestedFilename;
+        }
+
+        const [fileHandle] = await window.showOpenFilePicker(options);
+        return await fileHandle.getFile();
+      } catch (e) {
+        console.warn("File System Access API failed, falling back to traditional input", e);
+        // Fall back to traditional input if modern API fails or is cancelled
+      }
+    }
+
+    // Fallback to traditional file input
+    return new Promise((resolve) => {
+      // Create dialog
+      const dialog = document.createElement("sl-dialog");
+      dialog.label = "Select File";
+      dialog.innerHTML = `
       <div>
         <p>${message}</p>
         <input type="file" accept=".json" style="margin-top: 10px; width: 100%;">
@@ -1319,38 +1319,38 @@ async promptForFile(message, suggestedFilename = null) {
         <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
       </div>
     `;
-    
-    // Add event handlers
-    const fileInput = dialog.querySelector('input[type="file"]');
-    const cancelBtn = dialog.querySelector('.cancel-btn');
-    
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      dialog.hide();
-      resolve(file);
+
+      // Add event handlers
+      const fileInput = dialog.querySelector('input[type="file"]');
+      const cancelBtn = dialog.querySelector('.cancel-btn');
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        dialog.hide();
+        resolve(file);
+      });
+
+      cancelBtn.addEventListener('click', () => {
+        dialog.hide();
+        resolve(null);
+      });
+
+      // Show dialog
+      document.body.appendChild(dialog);
+      dialog.addEventListener('sl-after-hide', () => {
+        dialog.remove();
+      });
+
+      dialog.show();
     });
-    
-    cancelBtn.addEventListener('click', () => {
-      dialog.hide();
-      resolve(null);
-    });
-    
-    // Show dialog
-    document.body.appendChild(dialog);
-    dialog.addEventListener('sl-after-hide', () => {
-      dialog.remove();
-    });
-    
-    dialog.show();
-  });
-}
+  }
 
 
   updateRecentProjects(projectData) {
     try {
       // Get existing recent projects
       let recentProjects = JSON.parse(localStorage.getItem('recentProjects') || '[]');
-      
+
       // Create entry for this project
       const projectEntry = {
         name: projectData.name,
@@ -1359,7 +1359,7 @@ async promptForFile(message, suggestedFilename = null) {
         mapFilename: projectData.map.filename,
         projectFilename: `${projectData.name}.project.json`
       };
-      
+
       // Add thumbnail if possible (mini screenshot of current map)
       if (this.canvas) {
         try {
@@ -1374,46 +1374,46 @@ async promptForFile(message, suggestedFilename = null) {
           console.warn('Could not create project thumbnail:', e);
         }
       }
-      
+
       // Remove existing entry with the same name
       recentProjects = recentProjects.filter(p => p.name !== projectData.name);
-      
+
       // Add new entry at the beginning
       recentProjects.unshift(projectEntry);
-      
+
       // Keep only the 5 most recent
       recentProjects = recentProjects.slice(0, 5);
-      
+
       // Save back to localStorage
       localStorage.setItem('recentProjects', JSON.stringify(recentProjects));
-      
+
     } catch (e) {
       console.warn('Error updating recent projects:', e);
     }
   }
-  
+
   // Show dialog with recent projects
   showRecentProjectsDialog() {
     try {
       // Get recent projects from localStorage
       const recentProjects = JSON.parse(localStorage.getItem('recentProjects') || '[]');
-      
+
       if (recentProjects.length === 0) {
         alert('No recent projects found');
         return;
       }
-      
+
       // Create dialog
       const dialog = document.createElement('sl-dialog');
       dialog.label = 'Recent Projects';
-      
+
       // Generate content
       let content = '<div style="display: flex; flex-direction: column; gap: 16px;">';
-      
+
       recentProjects.forEach((project, index) => {
         const date = new Date(project.timestamp);
         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-        
+
         content += `
           <div class="recent-project-card" data-index="${index}" style="
             display: flex;
@@ -1452,9 +1452,9 @@ async promptForFile(message, suggestedFilename = null) {
           </div>
         `;
       });
-      
+
       content += '</div>';
-      
+
       // Add option to clear history
       content += `
         <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
@@ -1464,12 +1464,12 @@ async promptForFile(message, suggestedFilename = null) {
           </sl-button>
         </div>
       `;
-      
+
       dialog.innerHTML = content;
-      
+
       // Add to document
       document.body.appendChild(dialog);
-      
+
       // Add event handlers
       dialog.querySelectorAll('.recent-project-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -1478,7 +1478,7 @@ async promptForFile(message, suggestedFilename = null) {
           dialog.hide();
         });
       });
-      
+
       // Clear history button
       dialog.querySelector('.clear-history-btn')?.addEventListener('click', () => {
         if (confirm('Clear recent projects history?')) {
@@ -1486,20 +1486,20 @@ async promptForFile(message, suggestedFilename = null) {
           dialog.hide();
         }
       });
-      
+
       // Cleanup when closed
       dialog.addEventListener('sl-after-hide', () => {
         dialog.remove();
       });
-      
+
       dialog.show();
-      
+
     } catch (e) {
       console.error('Error showing recent projects:', e);
       alert('Could not load recent projects');
     }
   }
-  
+
   // Load a project from the recent list
   async loadRecentProject(projectEntry) {
     const toast = document.createElement("div");
@@ -1519,7 +1519,7 @@ async promptForFile(message, suggestedFilename = null) {
       <span>Loading project ${projectEntry.name}...</span>
     `;
     document.body.appendChild(toast);
-  
+
     try {
       // Show helper message with expected filenames
       const helperMessage = document.createElement('div');
@@ -1550,7 +1550,7 @@ async promptForFile(message, suggestedFilename = null) {
         </p>
       `;
       document.body.appendChild(helperMessage);
-      
+
       // Wait for user to continue
       await new Promise(resolve => {
         helperMessage.querySelector('.continue-btn').addEventListener('click', () => {
@@ -1558,26 +1558,26 @@ async promptForFile(message, suggestedFilename = null) {
           resolve();
         });
       });
-      
+
       // First, prompt for project file
       const projectFile = await this.promptForFile(
         `Select the project file: ${projectEntry.projectFilename}`
       );
-      
+
       if (!projectFile) {
         throw new Error("Project file selection cancelled");
       }
-      
+
       // Now load the project as usual
       await this.loadProjectFile(projectFile);
-      
+
       // Success toast
       toast.style.backgroundColor = "#4CAF50";
       toast.innerHTML = `
         <span class="material-icons">check_circle</span>
         <span>Project loaded successfully!</span>
       `;
-      
+
     } catch (error) {
       console.error("Error loading recent project:", error);
       toast.style.backgroundColor = "#f44336";
@@ -1974,195 +1974,195 @@ async promptForFile(message, suggestedFilename = null) {
       //   document.body.appendChild(dialog);
       //   dialog.show();
       // });
-    
-    // Update the setupEventListeners method in MapEditor.js
-// Modify the openMapBtn click handler:
 
-// openMapBtn.addEventListener("click", () => {
-//   const dialog = document.createElement("sl-dialog");
-//   dialog.label = "Open Map or Project";
+      // Update the setupEventListeners method in MapEditor.js
+      // Modify the openMapBtn click handler:
 
-//   dialog.innerHTML = `
-//       <div style="display: flex; flex-direction: column; gap: 16px;">
-//           <sl-button size="large" class="new-map-btn" style="justify-content: flex-start;">
-//               <span slot="prefix" class="material-icons">add_circle</span>
-//               New Map
-//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                   Start fresh with a new map (clears everything)
-//               </div>
-//           </sl-button>
+      // openMapBtn.addEventListener("click", () => {
+      //   const dialog = document.createElement("sl-dialog");
+      //   dialog.label = "Open Map or Project";
 
-//           <sl-button size="large" class="change-picture-btn" style="justify-content: flex-start;">
-//               <span slot="prefix" class="material-icons">image</span>
-//               Change Background
-//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                   Change map background while keeping rooms and markers
-//               </div>
-//           </sl-button>
-          
-//           <sl-divider></sl-divider>
-          
-//           <!-- Add Recent Projects button -->
-//           <sl-button size="large" class="recent-projects-btn" style="justify-content: flex-start;">
-//               <span slot="prefix" class="material-icons">history</span>
-//               Recent Projects
-//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                   Open a recently saved project
-//               </div>
-//           </sl-button>
+      //   dialog.innerHTML = `
+      //       <div style="display: flex; flex-direction: column; gap: 16px;">
+      //           <sl-button size="large" class="new-map-btn" style="justify-content: flex-start;">
+      //               <span slot="prefix" class="material-icons">add_circle</span>
+      //               New Map
+      //               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      //                   Start fresh with a new map (clears everything)
+      //               </div>
+      //           </sl-button>
 
-//           <sl-button size="large" class="load-project-btn" style="justify-content: flex-start;">
-//               <span slot="prefix" class="material-icons">folder_open</span>
-//               Open Project File
-//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                   Open a complete project with resources and map
-//               </div>
-//           </sl-button>
+      //           <sl-button size="large" class="change-picture-btn" style="justify-content: flex-start;">
+      //               <span slot="prefix" class="material-icons">image</span>
+      //               Change Background
+      //               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      //                   Change map background while keeping rooms and markers
+      //               </div>
+      //           </sl-button>
 
-//           <sl-button size="large" class="load-map-btn" style="justify-content: flex-start;">
-//               <span slot="prefix" class="material-icons">map</span>
-//               Open Map File
-//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                   Open only a map file (.map.json)
-//               </div>
-//           </sl-button>
-          
-//           <sl-button size="large" class="load-resource-btn" style="justify-content: flex-start;">
-//               <span slot="prefix" class="material-icons">texture</span>
-//               Open Resource Pack
-//               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                   Open only a resource pack (.resource.json)
-//               </div>
-//           </sl-button>
-//       </div>
-//   `;
+      //           <sl-divider></sl-divider>
 
-//   // Create hidden file inputs
-//   const pictureInput = document.createElement("input");
-//   pictureInput.type = "file";
-//   pictureInput.accept = "image/*";
-//   pictureInput.style.display = "none";
+      //           <!-- Add Recent Projects button -->
+      //           <sl-button size="large" class="recent-projects-btn" style="justify-content: flex-start;">
+      //               <span slot="prefix" class="material-icons">history</span>
+      //               Recent Projects
+      //               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      //                   Open a recently saved project
+      //               </div>
+      //           </sl-button>
 
-//   const projectInput = document.createElement("input");
-//   projectInput.type = "file";
-//   projectInput.accept = ".project.json";
-//   projectInput.style.display = "none";
+      //           <sl-button size="large" class="load-project-btn" style="justify-content: flex-start;">
+      //               <span slot="prefix" class="material-icons">folder_open</span>
+      //               Open Project File
+      //               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      //                   Open a complete project with resources and map
+      //               </div>
+      //           </sl-button>
 
-//   const mapInput = document.createElement("input");
-//   mapInput.type = "file";
-//   mapInput.accept = ".map.json,.json";
-//   mapInput.style.display = "none";
-  
-//   const resourceInput = document.createElement("input");
-//   resourceInput.type = "file";
-//   resourceInput.accept = ".resource.json,.json";
-//   resourceInput.style.display = "none";
+      //           <sl-button size="large" class="load-map-btn" style="justify-content: flex-start;">
+      //               <span slot="prefix" class="material-icons">map</span>
+      //               Open Map File
+      //               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      //                   Open only a map file (.map.json)
+      //               </div>
+      //           </sl-button>
 
-//   document.body.appendChild(pictureInput);
-//   document.body.appendChild(projectInput);
-//   document.body.appendChild(mapInput);
-//   document.body.appendChild(resourceInput);
+      //           <sl-button size="large" class="load-resource-btn" style="justify-content: flex-start;">
+      //               <span slot="prefix" class="material-icons">texture</span>
+      //               Open Resource Pack
+      //               <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      //                   Open only a resource pack (.resource.json)
+      //               </div>
+      //           </sl-button>
+      //       </div>
+      //   `;
 
-//   // Add handler for recent projects button
-//   dialog.querySelector('.recent-projects-btn').addEventListener('click', () => {
-//     dialog.hide();
-//     this.showRecentProjectsDialog();
-//   });
+      //   // Create hidden file inputs
+      //   const pictureInput = document.createElement("input");
+      //   pictureInput.type = "file";
+      //   pictureInput.accept = "image/*";
+      //   pictureInput.style.display = "none";
 
-//   // Handle picture file selection
-//   pictureInput.addEventListener('change', async e => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       // Existing picture handling code...
-//       dialog.hide();
-//     }
-//   });
+      //   const projectInput = document.createElement("input");
+      //   projectInput.type = "file";
+      //   projectInput.accept = ".project.json";
+      //   projectInput.style.display = "none";
 
-//   // Handle project file selection
-//   projectInput.addEventListener("change", async (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       await this.loadProjectFile(file);
-//       dialog.hide();
-//     }
-//   });
+      //   const mapInput = document.createElement("input");
+      //   mapInput.type = "file";
+      //   mapInput.accept = ".map.json,.json";
+      //   mapInput.style.display = "none";
 
-//   // Handle map file selection
-//   mapInput.addEventListener("change", async (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       await this.loadMap(file);
-//       dialog.hide();
-//     }
-//   });
-  
-//   // Handle resource file selection
-//   resourceInput.addEventListener("change", async (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       if (this.resourceManager) {
-//         const success = await this.resourceManager.loadResourcePack(file);
-//         if (success) {
-//           alert("Resource pack loaded successfully");
-//         } else {
-//           alert("Failed to load resource pack");
-//         }
-//       }
-//       dialog.hide();
-//     }
-//   });
+      //   const resourceInput = document.createElement("input");
+      //   resourceInput.type = "file";
+      //   resourceInput.accept = ".resource.json,.json";
+      //   resourceInput.style.display = "none";
 
-//   // Button click handlers
-//   dialog.querySelector(".new-map-btn").addEventListener("click", () => {
-//     pictureInput.click();
-//     this.clearMap();
-//     dialog.hide();
-//   });
+      //   document.body.appendChild(pictureInput);
+      //   document.body.appendChild(projectInput);
+      //   document.body.appendChild(mapInput);
+      //   document.body.appendChild(resourceInput);
 
-//   dialog.querySelector(".change-picture-btn").addEventListener("click", () => {
-//     pictureInput.click();
-//     dialog.hide();
-//   });
+      //   // Add handler for recent projects button
+      //   dialog.querySelector('.recent-projects-btn').addEventListener('click', () => {
+      //     dialog.hide();
+      //     this.showRecentProjectsDialog();
+      //   });
 
-//   dialog.querySelector(".load-project-btn").addEventListener("click", () => {
-//     projectInput.click();
-//   });
-  
-//   dialog.querySelector(".load-map-btn").addEventListener("click", () => {
-//     mapInput.click();
-//   });
-  
-//   dialog.querySelector(".load-resource-btn").addEventListener("click", () => {
-//     resourceInput.click();
-//   });
+      //   // Handle picture file selection
+      //   pictureInput.addEventListener('change', async e => {
+      //     const file = e.target.files[0];
+      //     if (file) {
+      //       // Existing picture handling code...
+      //       dialog.hide();
+      //     }
+      //   });
 
-//   // Clean up on close
-//   dialog.addEventListener("sl-after-hide", () => {
-//     dialog.remove();
-//     pictureInput.remove();
-//     projectInput.remove();
-//     mapInput.remove();
-//     resourceInput.remove();
-//   });
+      //   // Handle project file selection
+      //   projectInput.addEventListener("change", async (e) => {
+      //     const file = e.target.files[0];
+      //     if (file) {
+      //       await this.loadProjectFile(file);
+      //       dialog.hide();
+      //     }
+      //   });
 
-//   // Show the dialog
-//   document.body.appendChild(dialog);
-//   dialog.show();
-// });
+      //   // Handle map file selection
+      //   mapInput.addEventListener("change", async (e) => {
+      //     const file = e.target.files[0];
+      //     if (file) {
+      //       await this.loadMap(file);
+      //       dialog.hide();
+      //     }
+      //   });
 
-// Also update the saveProjectBtn click handler or add a new one
+      //   // Handle resource file selection
+      //   resourceInput.addEventListener("change", async (e) => {
+      //     const file = e.target.files[0];
+      //     if (file) {
+      //       if (this.resourceManager) {
+      //         const success = await this.resourceManager.loadResourcePack(file);
+      //         if (success) {
+      //           alert("Resource pack loaded successfully");
+      //         } else {
+      //           alert("Failed to load resource pack");
+      //         }
+      //       }
+      //       dialog.hide();
+      //     }
+      //   });
+
+      //   // Button click handlers
+      //   dialog.querySelector(".new-map-btn").addEventListener("click", () => {
+      //     pictureInput.click();
+      //     this.clearMap();
+      //     dialog.hide();
+      //   });
+
+      //   dialog.querySelector(".change-picture-btn").addEventListener("click", () => {
+      //     pictureInput.click();
+      //     dialog.hide();
+      //   });
+
+      //   dialog.querySelector(".load-project-btn").addEventListener("click", () => {
+      //     projectInput.click();
+      //   });
+
+      //   dialog.querySelector(".load-map-btn").addEventListener("click", () => {
+      //     mapInput.click();
+      //   });
+
+      //   dialog.querySelector(".load-resource-btn").addEventListener("click", () => {
+      //     resourceInput.click();
+      //   });
+
+      //   // Clean up on close
+      //   dialog.addEventListener("sl-after-hide", () => {
+      //     dialog.remove();
+      //     pictureInput.remove();
+      //     projectInput.remove();
+      //     mapInput.remove();
+      //     resourceInput.remove();
+      //   });
+
+      //   // Show the dialog
+      //   document.body.appendChild(dialog);
+      //   dialog.show();
+      // });
+
+      // Also update the saveProjectBtn click handler or add a new one
 
 
-// The issue is likely in the openMapBtn click handler where the "New Map" button 
-// creates the file input and handles the file selection
+      // The issue is likely in the openMapBtn click handler where the "New Map" button 
+      // creates the file input and handles the file selection
 
-// Here's the fixed version of the relevant code in the openMapBtn click handler:
+      // Here's the fixed version of the relevant code in the openMapBtn click handler:
 
-openMapBtn.addEventListener("click", () => {
-  const dialog = document.createElement("sl-dialog");
-  dialog.label = "Open Map or Project";
+      openMapBtn.addEventListener("click", () => {
+        const dialog = document.createElement("sl-dialog");
+        dialog.label = "Open Map or Project";
 
-  dialog.innerHTML = `
+        dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
           <sl-button size="large" class="new-map-btn" style="justify-content: flex-start;">
               <span slot="prefix" class="material-icons">add_circle</span>
@@ -2217,55 +2217,55 @@ openMapBtn.addEventListener("click", () => {
       </div>
   `;
 
-  // Create hidden file inputs
-  const pictureInput = document.createElement("input");
-  pictureInput.type = "file";
-  pictureInput.accept = "image/*";
-  pictureInput.style.display = "none";
+        // Create hidden file inputs
+        const pictureInput = document.createElement("input");
+        pictureInput.type = "file";
+        pictureInput.accept = "image/*";
+        pictureInput.style.display = "none";
 
-  const projectInput = document.createElement("input");
-  projectInput.type = "file";
-  projectInput.accept = ".project.json";
-  projectInput.style.display = "none";
+        const projectInput = document.createElement("input");
+        projectInput.type = "file";
+        projectInput.accept = ".project.json";
+        projectInput.style.display = "none";
 
-  const mapInput = document.createElement("input");
-  mapInput.type = "file";
-  mapInput.accept = ".map.json,.json";
-  mapInput.style.display = "none";
-  
-  const resourceInput = document.createElement("input");
-  resourceInput.type = "file";
-  resourceInput.accept = ".resource.json,.json";
-  resourceInput.style.display = "none";
+        const mapInput = document.createElement("input");
+        mapInput.type = "file";
+        mapInput.accept = ".map.json,.json";
+        mapInput.style.display = "none";
 
-  document.body.appendChild(pictureInput);
-  document.body.appendChild(projectInput);
-  document.body.appendChild(mapInput);
-  document.body.appendChild(resourceInput);
+        const resourceInput = document.createElement("input");
+        resourceInput.type = "file";
+        resourceInput.accept = ".resource.json,.json";
+        resourceInput.style.display = "none";
 
-  // Fix the New Map handler
-  // This is the important part that needs fixing
-  pictureInput.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        // Parse filename first (optional)
-        const parseResult = this.parseMapFilename(file.name);
-        let mapName = parseResult.mapName;
+        document.body.appendChild(pictureInput);
+        document.body.appendChild(projectInput);
+        document.body.appendChild(mapInput);
+        document.body.appendChild(resourceInput);
 
-        // If we couldn't get a map name or user wants to change it, show dialog
-        if (!mapName || !parseResult.success) {
-          // Show name dialog
-          const nameConfirmed = await this.showMapNameDialog();
-          if (!nameConfirmed) {
-            dialog.hide();
-            return; // User cancelled
-          }
-        } else {
-          // Found a name, confirm with the user
-          const nameDialog = document.createElement('sl-dialog');
-          nameDialog.label = 'Map Name';
-          nameDialog.innerHTML = `
+        // Fix the New Map handler
+        // This is the important part that needs fixing
+        pictureInput.addEventListener('change', async e => {
+          const file = e.target.files[0];
+          if (file) {
+            try {
+              // Parse filename first (optional)
+              const parseResult = this.parseMapFilename(file.name);
+              let mapName = parseResult.mapName;
+
+              // If we couldn't get a map name or user wants to change it, show dialog
+              if (!mapName || !parseResult.success) {
+                // Show name dialog
+                const nameConfirmed = await this.showMapNameDialog();
+                if (!nameConfirmed) {
+                  dialog.hide();
+                  return; // User cancelled
+                }
+              } else {
+                // Found a name, confirm with the user
+                const nameDialog = document.createElement('sl-dialog');
+                nameDialog.label = 'Map Name';
+                nameDialog.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 16px;">
               <sl-input
                 id="mapNameInput"
@@ -2285,219 +2285,219 @@ openMapBtn.addEventListener("click", () => {
             </div>
           `;
 
-          document.body.appendChild(nameDialog);
+                document.body.appendChild(nameDialog);
 
-          // Get user confirmation
-          const proceed = await new Promise((resolve) => {
-            const mapNameInput = nameDialog.querySelector('#mapNameInput');
-            const saveBtn = nameDialog.querySelector('.save-btn');
-            const cancelBtn = nameDialog.querySelector('.cancel-btn');
+                // Get user confirmation
+                const proceed = await new Promise((resolve) => {
+                  const mapNameInput = nameDialog.querySelector('#mapNameInput');
+                  const saveBtn = nameDialog.querySelector('.save-btn');
+                  const cancelBtn = nameDialog.querySelector('.cancel-btn');
 
-            saveBtn.addEventListener('click', () => {
-              mapName = mapNameInput.value.trim();
-              this.mapName = mapName;
-              this.originalMapName = mapName;
-              nameDialog.hide();
-              resolve(true);
-            });
+                  saveBtn.addEventListener('click', () => {
+                    mapName = mapNameInput.value.trim();
+                    this.mapName = mapName;
+                    this.originalMapName = mapName;
+                    nameDialog.hide();
+                    resolve(true);
+                  });
 
-            cancelBtn.addEventListener('click', () => {
-              nameDialog.hide();
-              resolve(false);
-            });
+                  cancelBtn.addEventListener('click', () => {
+                    nameDialog.hide();
+                    resolve(false);
+                  });
 
-            nameDialog.addEventListener('sl-after-hide', () => {
-              nameDialog.remove();
-            });
+                  nameDialog.addEventListener('sl-after-hide', () => {
+                    nameDialog.remove();
+                  });
 
-            nameDialog.show();
-          });
+                  nameDialog.show();
+                });
 
-          if (!proceed) {
-            dialog.hide();
-            return; // User cancelled
-          }
-        }
+                if (!proceed) {
+                  dialog.hide();
+                  return; // User cancelled
+                }
+              }
 
-        // Set grid dimensions if found
-        if (parseResult.gridDimensions) {
-          this.gridDimensions = parseResult.gridDimensions;
-        }
+              // Set grid dimensions if found
+              if (parseResult.gridDimensions) {
+                this.gridDimensions = parseResult.gridDimensions;
+              }
 
-        // Show loading notification
-        const toast = document.createElement("div");
-        toast.style.position = "fixed";
-        toast.style.bottom = "20px";
-        toast.style.right = "20px";
-        toast.style.zIndex = "1000";
-        toast.style.backgroundColor = "#333";
-        toast.style.color = "white";
-        toast.style.padding = "10px 20px";
-        toast.style.borderRadius = "4px";
-        toast.style.display = "flex";
-        toast.style.alignItems = "center";
-        toast.style.gap = "10px";
-        toast.innerHTML = `
+              // Show loading notification
+              const toast = document.createElement("div");
+              toast.style.position = "fixed";
+              toast.style.bottom = "20px";
+              toast.style.right = "20px";
+              toast.style.zIndex = "1000";
+              toast.style.backgroundColor = "#333";
+              toast.style.color = "white";
+              toast.style.padding = "10px 20px";
+              toast.style.borderRadius = "4px";
+              toast.style.display = "flex";
+              toast.style.alignItems = "center";
+              toast.style.gap = "10px";
+              toast.innerHTML = `
             <span class="material-icons">hourglass_top</span>
             <span>Loading ${file.name}...</span>
         `;
-        document.body.appendChild(toast);
+              document.body.appendChild(toast);
 
-        // Clear existing map if this is a "New Map" request
-        this.clearMap();
-        
-        // Load the image file
-        const reader = new FileReader();
-        await new Promise((resolve, reject) => {
-          reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-              this.baseImage = img;
+              // Clear existing map if this is a "New Map" request
+              this.clearMap();
 
-              // Calculate DPI if possible
-              if (this.gridDimensions) {
-                const cellWidth = img.width / this.gridDimensions.width;
-                const cellHeight = img.height / this.gridDimensions.height;
-                this.cellSize = Math.min(cellWidth, cellHeight);
-                console.log(`Calculated cell size: ${this.cellSize}px`);
-              } else {
-                // Set a default cell size if we couldn't calculate
-                this.cellSize = 50;
-              }
+              // Load the image file
+              const reader = new FileReader();
+              await new Promise((resolve, reject) => {
+                reader.onload = (event) => {
+                  const img = new Image();
+                  img.onload = () => {
+                    this.baseImage = img;
 
-              // Store the natural dimensions
-              this.naturalWidth = img.naturalWidth;
-              this.naturalHeight = img.naturalHeight;
+                    // Calculate DPI if possible
+                    if (this.gridDimensions) {
+                      const cellWidth = img.width / this.gridDimensions.width;
+                      const cellHeight = img.height / this.gridDimensions.height;
+                      this.cellSize = Math.min(cellWidth, cellHeight);
+                      console.log(`Calculated cell size: ${this.cellSize}px`);
+                    } else {
+                      // Set a default cell size if we couldn't calculate
+                      this.cellSize = 50;
+                    }
 
-              // Center and render
-              this.centerMap();
-              this.render();
-              this.updateMapTitle(); // Update the title with the new map name
-              resolve();
-            };
-            img.onerror = reject;
-            img.src = event.target.result;
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+                    // Store the natural dimensions
+                    this.naturalWidth = img.naturalWidth;
+                    this.naturalHeight = img.naturalHeight;
 
-        // Success notification
-        toast.style.backgroundColor = "#4CAF50";
-        toast.innerHTML = `
+                    // Center and render
+                    this.centerMap();
+                    this.render();
+                    this.updateMapTitle(); // Update the title with the new map name
+                    resolve();
+                  };
+                  img.onerror = reject;
+                  img.src = event.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+
+              // Success notification
+              toast.style.backgroundColor = "#4CAF50";
+              toast.innerHTML = `
             <span class="material-icons">check_circle</span>
             <span>Map loaded successfully!</span>
         `;
-        setTimeout(() => toast.remove(), 2000);
-        
-        dialog.hide();
-      } catch (error) {
-        console.error("Error loading map:", error);
-        // Error notification
-        const toast = document.createElement("div");
-        toast.style.position = "fixed";
-        toast.style.bottom = "20px";
-        toast.style.right = "20px";
-        toast.style.zIndex = "1000";
-        toast.style.backgroundColor = "#f44336";
-        toast.style.color = "white";
-        toast.style.padding = "10px 20px";
-        toast.style.borderRadius = "4px";
-        toast.innerHTML = `
+              setTimeout(() => toast.remove(), 2000);
+
+              dialog.hide();
+            } catch (error) {
+              console.error("Error loading map:", error);
+              // Error notification
+              const toast = document.createElement("div");
+              toast.style.position = "fixed";
+              toast.style.bottom = "20px";
+              toast.style.right = "20px";
+              toast.style.zIndex = "1000";
+              toast.style.backgroundColor = "#f44336";
+              toast.style.color = "white";
+              toast.style.padding = "10px 20px";
+              toast.style.borderRadius = "4px";
+              toast.innerHTML = `
             <span class="material-icons">error</span>
             <span>Error loading map: ${error.message}</span>
         `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-      }
-    }
-  });
+              document.body.appendChild(toast);
+              setTimeout(() => toast.remove(), 2000);
+            }
+          }
+        });
 
-  // Handle JSON file selection
-  projectInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      await this.loadProjectFile(file);
-      dialog.hide();
-    }
-  });
-  
-  mapInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      await this.loadMap(file);
-      dialog.hide();
-    }
-  });
-  
-  resourceInput.addEventListener("change", async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (this.resourceManager) {
-        const success = await this.resourceManager.loadResourcePack(file);
-        if (success) {
-          alert("Resource pack loaded successfully");
-        } else {
-          alert("Failed to load resource pack");
+        // Handle JSON file selection
+        projectInput.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            await this.loadProjectFile(file);
+            dialog.hide();
+          }
+        });
+
+        mapInput.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            await this.loadMap(file);
+            dialog.hide();
+          }
+        });
+
+        resourceInput.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            if (this.resourceManager) {
+              const success = await this.resourceManager.loadResourcePack(file);
+              if (success) {
+                alert("Resource pack loaded successfully");
+              } else {
+                alert("Failed to load resource pack");
+              }
+            }
+            dialog.hide();
+          }
+        });
+
+        // Button click handlers
+        dialog.querySelector(".new-map-btn").addEventListener("click", () => {
+          pictureInput.click();
+          dialog.hide();
+        });
+
+        dialog.querySelector(".change-picture-btn").addEventListener("click", () => {
+          pictureInput.click();
+          dialog.hide();
+        });
+
+        dialog.querySelector(".load-project-btn").addEventListener("click", () => {
+          projectInput.click();
+        });
+
+        dialog.querySelector(".load-map-btn").addEventListener("click", () => {
+          mapInput.click();
+        });
+
+        dialog.querySelector(".load-resource-btn").addEventListener("click", () => {
+          resourceInput.click();
+        });
+
+        // Add handler for recent projects button if it exists
+        const recentProjectsBtn = dialog.querySelector('.recent-projects-btn');
+        if (recentProjectsBtn) {
+          recentProjectsBtn.addEventListener('click', () => {
+            dialog.hide();
+            this.showRecentProjectsDialog();
+          });
         }
-      }
-      dialog.hide();
-    }
-  });
 
-  // Button click handlers
-  dialog.querySelector(".new-map-btn").addEventListener("click", () => {
-    pictureInput.click();
-    dialog.hide();
-  });
+        // Clean up on close
+        dialog.addEventListener("sl-after-hide", () => {
+          dialog.remove();
+          pictureInput.remove();
+          projectInput.remove();
+          mapInput.remove();
+          resourceInput.remove();
+        });
 
-  dialog.querySelector(".change-picture-btn").addEventListener("click", () => {
-    pictureInput.click();
-    dialog.hide();
-  });
+        // Show the dialog
+        document.body.appendChild(dialog);
+        dialog.show();
+      });
 
-  dialog.querySelector(".load-project-btn").addEventListener("click", () => {
-    projectInput.click();
-  });
-  
-  dialog.querySelector(".load-map-btn").addEventListener("click", () => {
-    mapInput.click();
-  });
-  
-  dialog.querySelector(".load-resource-btn").addEventListener("click", () => {
-    resourceInput.click();
-  });
-
-  // Add handler for recent projects button if it exists
-  const recentProjectsBtn = dialog.querySelector('.recent-projects-btn');
-  if (recentProjectsBtn) {
-    recentProjectsBtn.addEventListener('click', () => {
-      dialog.hide();
-      this.showRecentProjectsDialog();
-    });
-  }
-
-  // Clean up on close
-  dialog.addEventListener("sl-after-hide", () => {
-    dialog.remove();
-    pictureInput.remove();
-    projectInput.remove();
-    mapInput.remove();
-    resourceInput.remove();
-  });
-
-  // Show the dialog
-  document.body.appendChild(dialog);
-  dialog.show();
-});
-
-const saveProjectBtn = document.getElementById("saveProjectBtn");
-if (saveProjectBtn) {
-  saveProjectBtn.addEventListener("click", () => {
-    // Create dialog with save options
-    const dialog = document.createElement("sl-dialog");
-    dialog.label = "Save Options";
-    dialog.innerHTML = `
+      const saveProjectBtn = document.getElementById("saveProjectBtn");
+      if (saveProjectBtn) {
+        saveProjectBtn.addEventListener("click", () => {
+          // Create dialog with save options
+          const dialog = document.createElement("sl-dialog");
+          dialog.label = "Save Options";
+          dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
         <sl-button size="large" class="save-map-btnX" style="justify-content: flex-start;">
           <span slot="prefix" class="material-icons">map</span>
@@ -2516,29 +2516,29 @@ if (saveProjectBtn) {
         </sl-button>
       </div>
     `;
-    
-    // Add event handlers for the dialog buttons
-    dialog.querySelector(".save-map-btnX").addEventListener("click", async () => {
-      await this.saveMap();
-      dialog.hide();
-    });
-    
-    dialog.querySelector(".save-project-btnX").addEventListener("click", async () => {
-      await this.saveProjectFile();
-      dialog.hide();
-    });
-    
-    // Cleanup when dialog is closed
-    dialog.addEventListener("sl-after-hide", () => {
-      dialog.remove();
-    });
-    
-    // Show the dialog
-    document.body.appendChild(dialog);
-    dialog.show();
-  });
-}
-    
+
+          // Add event handlers for the dialog buttons
+          dialog.querySelector(".save-map-btnX").addEventListener("click", async () => {
+            await this.saveMap();
+            dialog.hide();
+          });
+
+          dialog.querySelector(".save-project-btnX").addEventListener("click", async () => {
+            await this.saveProjectFile();
+            dialog.hide();
+          });
+
+          // Cleanup when dialog is closed
+          dialog.addEventListener("sl-after-hide", () => {
+            dialog.remove();
+          });
+
+          // Show the dialog
+          document.body.appendChild(dialog);
+          dialog.show();
+        });
+      }
+
     }
 
 
@@ -2675,37 +2675,37 @@ if (saveProjectBtn) {
         }
       });
 
-      document.querySelector('.canvas-container').addEventListener('click', (e) => {
-        if (this.currentTool?.startsWith('marker-')) {
-          // Prevent walls from blocking marker placement
-          e.stopPropagation();
-          
-          const rect = this.canvas.getBoundingClientRect();
-          const x = (e.clientX - rect.left - this.offset.x) / this.scale;
-          const y = (e.clientY - rect.top - this.offset.y) / this.scale;
-          
-          // Add the marker
-          const markerType = this.currentTool.replace('marker-', '');
-          this.addMarker(markerType, x, y);
-        }
-      }, true); // Use capture phase to handle click before walls
-      
-      // Modify the wall elements to allow click-through when placing markers
-      const updateWallClickBehavior = () => {
-        const walls = document.querySelectorAll('.room-block[data-type="wall"]');
-        walls.forEach(wall => {
-          wall.style.pointerEvents = this.currentTool?.startsWith('marker-') ? 'none' : 'auto';
-        });
-      };
+    document.querySelector('.canvas-container').addEventListener('click', (e) => {
+      if (this.currentTool?.startsWith('marker-')) {
+        // Prevent walls from blocking marker placement
+        e.stopPropagation();
 
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+        const y = (e.clientY - rect.top - this.offset.y) / this.scale;
 
+        // Add the marker
+        const markerType = this.currentTool.replace('marker-', '');
+        this.addMarker(markerType, x, y);
+      }
+    }, true); // Use capture phase to handle click before walls
 
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'F12') {
-          e.preventDefault(); // Prevent opening dev tools
-          this.takeScreenshot();
-        }
+    // Modify the wall elements to allow click-through when placing markers
+    const updateWallClickBehavior = () => {
+      const walls = document.querySelectorAll('.room-block[data-type="wall"]');
+      walls.forEach(wall => {
+        wall.style.pointerEvents = this.currentTool?.startsWith('marker-') ? 'none' : 'auto';
       });
+    };
+
+
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault(); // Prevent opening dev tools
+        this.takeScreenshot();
+      }
+    });
 
     window.addEventListener("resize", () => this.handleResize());
   }
@@ -2725,10 +2725,10 @@ if (saveProjectBtn) {
       z-index: 10000;
     `;
     document.body.appendChild(loadingToast);
-  
+
     // Determine if we're in 2D or 3D mode
     const is3DMode = !!document.querySelector('.drawer-3d-view[open]');
-    
+
     if (is3DMode) {
       // 3D screenshot
       try {
@@ -2744,7 +2744,7 @@ if (saveProjectBtn) {
       if (typeof html2canvas !== 'undefined') {
         // Use html2canvas for 2D view
         const container = document.querySelector('.canvas-container');
-        
+
         html2canvas(container, {
           useCORS: true,
           allowTaint: true,
@@ -2765,14 +2765,14 @@ if (saveProjectBtn) {
       }
     }
   }
-  
+
   // For 3D screenshots
   take3DScreenshot() {
     // For 3D view, we capture the renderer output
     if (this.scene3D && this.scene3D.renderer) {
       // Make sure we're rendering the latest state
       this.scene3D.renderer.render(this.scene3D.scene, this.scene3D.camera);
-      
+
       // Get the canvas and convert
       const canvas = this.scene3D.renderer.domElement;
       this.processScreenshot(canvas, '3D_View');
@@ -2780,7 +2780,7 @@ if (saveProjectBtn) {
       alert('3D view not initialized or renderer not available');
     }
   }
-  
+
   // Process and download the screenshot
   processScreenshot(canvas, prefix) {
     try {
@@ -2789,7 +2789,7 @@ if (saveProjectBtn) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const mapName = this.mapName || 'Map';
       link.download = `${mapName}_${prefix}_${timestamp}.png`;
-      
+
       // Convert canvas to blob and trigger download
       canvas.toBlob(blob => {
         const url = URL.createObjectURL(blob);
@@ -2798,7 +2798,7 @@ if (saveProjectBtn) {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         // Show success toast
         const toast = document.createElement('div');
         toast.textContent = 'Screenshot saved!';
@@ -3790,55 +3790,55 @@ if (saveProjectBtn) {
 
   handleWheel(e) {
     e.preventDefault();
-    
+
     // Adjust sensitivity - make the zoom effect more gradual
     const sensitivity = 0.0005;
     const delta = e.deltaY * -sensitivity;
-    
+
     // Clamp the delta to prevent too rapid changes
     const clampedDelta = Math.max(Math.min(delta, 0.1), -0.1);
-    
+
     // Calculate new scale with smoother transition
     const newScale = Math.min(Math.max(0.1, this.scale + clampedDelta), 4);
-    
+
     // Only proceed if the scale actually changed
     if (newScale === this.scale) return;
-    
+
     // Get mouse position relative to canvas
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
+
     // Calculate the position under the mouse in image coordinates
     const imageX = (mouseX - this.offset.x) / this.scale;
     const imageY = (mouseY - this.offset.y) / this.scale;
-    
+
     // Store previous scale for smooth transition
     const prevScale = this.scale;
-    
+
     // Update the scale
     this.scale = newScale;
-    
+
     // Calculate new offset to keep the same image position under the mouse
     const smoothing = 0.95;
     this.offset.x = mouseX - imageX * this.scale;
     this.offset.y = mouseY - imageY * this.scale;
-    
+
     // Smooth the transition
     this.offset.x = this.offset.x * smoothing + (mouseX - imageX * prevScale) * (1 - smoothing);
     this.offset.y = this.offset.y * smoothing + (mouseY - imageY * prevScale) * (1 - smoothing);
-  
+
     // Update room positions and transformations
     this.rooms.forEach(room => {
       if (room.element) {
         // Update position
         room.element.style.left = `${room.bounds.x * this.scale + this.offset.x}px`;
         room.element.style.top = `${room.bounds.y * this.scale + this.offset.y}px`;
-        
+
         // Update size
         room.element.style.width = `${room.bounds.width * this.scale}px`;
         room.element.style.height = `${room.bounds.height * this.scale}px`;
-  
+
         // If this is a polygon room, update the clip path
         if (room.shape === 'polygon' && room.points) {
           const clipPath = room.points
@@ -3848,7 +3848,7 @@ if (saveProjectBtn) {
         }
       }
     });
-  
+
     // Update markers
     this.markers.forEach((marker) => {
       this.updateMarkerPosition(marker);
@@ -3857,24 +3857,24 @@ if (saveProjectBtn) {
         const token = marker.element.querySelector(".monster-token");
         if (token) {
           // Calculate monster size in squares (if available)
-          const monsterSize = marker.data.monster.basic && marker.data.monster.basic.size 
-            ? this.getMonsterSizeInSquares(marker.data.monster.basic.size) 
+          const monsterSize = marker.data.monster.basic && marker.data.monster.basic.size
+            ? this.getMonsterSizeInSquares(marker.data.monster.basic.size)
             : 1;
-            
+
           // Set a fixed pixel size that we maintain regardless of zoom
           const baseSize = (this.cellSize || 32) * monsterSize;
-          
+
           // Update token size to maintain apparent size
           token.style.width = `${baseSize}px`;
           token.style.height = `${baseSize}px`;
           token.style.left = `-${baseSize / 2}px`;
           token.style.top = `-${baseSize / 2}px`;
-          
+
           // No scale transform needed - we're setting absolute size
           token.style.transform = 'none';
         }
       }
-  
+
       // Handle prop markers
       const propVisual = marker.element.querySelector(".prop-visual");
       if (propVisual) {
@@ -3883,77 +3883,77 @@ if (saveProjectBtn) {
         const currentTransform = propVisual.style.transform || "";
         const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
         const rotateVal = rotateMatch ? rotateMatch[1] : "0deg";
-        
+
         // Calculate base size
         const baseSize = 48; // Default base size
         const scale = marker.data.prop?.scale || 1.0;
         const width = baseSize * scale;
-        
+
         // Get aspect ratio if available
         let height = width;
         if (marker.data.texture?.aspect) {
           height = width / marker.data.texture.aspect;
         }
-        
+
         // Update sizes to maintain apparent size
         propVisual.style.width = `${width}px`;
         propVisual.style.height = `${height}px`;
         propVisual.style.left = `-${width / 2}px`;
         propVisual.style.top = `-${height / 2}px`;
-        
+
         // Apply only rotation, not scaling
         propVisual.style.transform = `rotate(${rotateVal})`;
       }
-  
+
       // Handle teleport connections
       if (marker.type === 'teleport' && marker.data.isPointA && marker.data.pairedMarker) {
         this.updateTeleportConnection(marker, marker.data.pairedMarker);
       }
     });
-  
+
     // Update player start marker if it exists
     if (this.playerStart) {
       this.updateMarkerPosition(this.playerStart);
     }
-  
+
     this.render();
   }
 
   fixMarkerScaling() {
     console.log("Applying marker scaling fix");
-    
+
     // Fix encounter markers
     document.querySelectorAll('.marker-encounter .monster-token').forEach(token => {
       // Extract current transform to check for rotation
       const currentTransform = token.style.transform || '';
-      
+
       // Remove any scaling transforms
       if (currentTransform.includes('scale')) {
         // If there's rotation, preserve it
         const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
         const rotation = rotateMatch ? rotateMatch[0] : '';
-        
+
         // Apply only rotation, no scaling
         token.style.transform = rotation;
       }
     });
-    
+
     // Fix prop markers
     document.querySelectorAll('.marker-prop .prop-visual').forEach(prop => {
       // Extract current transform to check for rotation
       const currentTransform = prop.style.transform || '';
-      
+
       // Remove any scaling transforms
       if (currentTransform.includes('scale')) {
         // If there's rotation, preserve it
         const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
         const rotation = rotateMatch ? rotateMatch[0] : '';
-        
+
         // Apply only rotation, no scaling
         prop.style.transform = rotation;
       }
     });
-    
+
     console.log("Marker scaling fix applied");
   }
 
@@ -3965,25 +3965,25 @@ if (saveProjectBtn) {
 
   // fixZoomIssues() {
   //   console.log("Fixing zoom issues for overlapping elements");
-    
+
   //   // 1. Make the canvas wrapper capture all wheel events in its area
   //   const wrapper = document.getElementById("canvasWrapper");
-    
+
   //   // Use a capturing event listener that runs before regular listeners
   //   wrapper.addEventListener("wheel", (e) => {
   //     // Only handle wheel events if we're in the canvas area
   //     const rect = wrapper.getBoundingClientRect();
   //     if (e.clientX >= rect.left && e.clientX <= rect.right && 
   //         e.clientY >= rect.top && e.clientY <= rect.bottom) {
-        
+
   //       // Stop propagation to prevent other elements from handling it
   //       e.stopPropagation();
-        
+
   //       // Call our zoom handler
   //       this.handleWheel(e);
   //     }
   //   }, {capture: true}); // The capture: true is critical - it runs before other handlers
-    
+
   //   // 2. Fix any existing room elements
   //   const fixRoomElements = () => {
   //     document.querySelectorAll('.room-block').forEach(element => {
@@ -3996,7 +3996,7 @@ if (saveProjectBtn) {
   //       });
   //     });
   //   };
-    
+
   //   // 3. Fix any existing marker elements
   //   const fixMarkerElements = () => {
   //     document.querySelectorAll('.map-marker').forEach(element => {
@@ -4009,15 +4009,15 @@ if (saveProjectBtn) {
   //       });
   //     });
   //   };
-    
+
   //   // Run immediately
   //   fixRoomElements();
   //   fixMarkerElements();
-    
+
   //   // Create a mutation observer to fix new elements as they're added
   //   const observer = new MutationObserver((mutations) => {
   //     let needsFix = false;
-      
+
   //     mutations.forEach(mutation => {
   //       if (mutation.type === 'childList') {
   //         mutation.addedNodes.forEach(node => {
@@ -4030,19 +4030,19 @@ if (saveProjectBtn) {
   //         });
   //       }
   //     });
-      
+
   //     if (needsFix) {
   //       fixRoomElements();
   //       fixMarkerElements();
   //     }
   //   });
-    
+
   //   // Observe the canvas container for new elements
   //   observer.observe(document.querySelector('.canvas-container'), {
   //     childList: true,
   //     subtree: true
   //   });
-    
+
   //   console.log("Zoom fix applied");
   //   this.centerMap();
   // }
@@ -4178,7 +4178,7 @@ if (saveProjectBtn) {
         // Update position
         marker.element.style.left = `${marker.x * this.scale + this.offset.x}px`;
         marker.element.style.top = `${marker.y * this.scale + this.offset.y}px`;
-  
+
         // Handle special marker types
         if (marker.type === "encounter" && marker.data.monster) {
           // For encounter markers, we need to COUNTERACT the zoom scale
@@ -4186,24 +4186,24 @@ if (saveProjectBtn) {
           const token = marker.element.querySelector(".monster-token");
           if (token) {
             // Calculate monster size in squares (if available)
-            const monsterSize = marker.data.monster.basic && marker.data.monster.basic.size 
-              ? this.getMonsterSizeInSquares(marker.data.monster.basic.size) 
+            const monsterSize = marker.data.monster.basic && marker.data.monster.basic.size
+              ? this.getMonsterSizeInSquares(marker.data.monster.basic.size)
               : 1;
-              
+
             // Set a fixed pixel size that we maintain regardless of zoom
             const baseSize = (this.cellSize || 32) * monsterSize;
-            
+
             // Update token size to maintain apparent size
             token.style.width = `${baseSize}px`;
             token.style.height = `${baseSize}px`;
             token.style.left = `-${baseSize / 2}px`;
             token.style.top = `-${baseSize / 2}px`;
-            
+
             // No scale transform needed - we're setting absolute size
             token.style.transform = 'none';
           }
         }
-        
+
         // Handle prop markers
         const propVisual = marker.element.querySelector(".prop-visual");
         if (propVisual) {
@@ -4212,40 +4212,40 @@ if (saveProjectBtn) {
           const currentTransform = propVisual.style.transform || "";
           const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
           const rotateVal = rotateMatch ? rotateMatch[1] : "0deg";
-          
+
           // Calculate base size
           const baseSize = 48; // Default base size
           const scale = marker.data.prop?.scale || 1.0;
           const width = baseSize * scale;
-          
+
           // Get aspect ratio if available
           let height = width;
           if (marker.data.texture?.aspect) {
             height = width / marker.data.texture.aspect;
           }
-          
+
           // Update sizes to maintain apparent size
           propVisual.style.width = `${width}px`;
           propVisual.style.height = `${height}px`;
           propVisual.style.left = `-${width / 2}px`;
           propVisual.style.top = `-${height / 2}px`;
-          
+
           // Apply only rotation, not scaling
           propVisual.style.transform = `rotate(${rotateVal})`;
         }
-  
+
         // Handle teleport connections
         if (marker.type === "teleport" && marker.data.isPointA && marker.data.pairedMarker && marker.connection) {
           this.updateTeleportConnection(marker, marker.data.pairedMarker);
         }
       }
     });
-  
+
     // Update player start marker if it exists
     if (this.playerStart && this.playerStart.element) {
       this.playerStart.element.style.left = `${this.playerStart.x * this.scale + this.offset.x}px`;
       this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y}px`;
-      
+
       // Set fixed size for player start icon
       const playerIcon = this.playerStart.element.querySelector(".material-icons");
       if (playerIcon) {
@@ -4258,31 +4258,31 @@ if (saveProjectBtn) {
   getElevationAtPoint(x, z) {
     let elevation = 0;
     let isInside = false;
-    
+
     // Check each room for overlap
     for (const room of this.rooms) {
-        // Skip non-walls and non-raised blocks early
-        if (!room.isRaisedBlock && room.type !== 'wall') continue;
-        
-        // Quick bounds check
-        const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-        const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-        const roomWidth = room.bounds.width / 50;
-        const roomDepth = room.bounds.height / 50;
-        
-        if (x >= roomX && x <= roomX + roomWidth && 
-            z >= roomZ && z <= roomZ + roomDepth) {
-            
-            if (room.isRaisedBlock) {
-                elevation = Math.max(elevation, room.blockHeight || 0);
-            } else if (room.type === 'wall') {
-                isInside = true;
-            }
+      // Skip non-walls and non-raised blocks early
+      if (!room.isRaisedBlock && room.type !== 'wall') continue;
+
+      // Quick bounds check
+      const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+      const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+      const roomWidth = room.bounds.width / 50;
+      const roomDepth = room.bounds.height / 50;
+
+      if (x >= roomX && x <= roomX + roomWidth &&
+        z >= roomZ && z <= roomZ + roomDepth) {
+
+        if (room.isRaisedBlock) {
+          elevation = Math.max(elevation, room.blockHeight || 0);
+        } else if (room.type === 'wall') {
+          isInside = true;
         }
+      }
     }
-    
+
     return { elevation, isInside };
-}
+  }
 
   createTeleportConnection(pointA, pointB) {
 
@@ -4456,15 +4456,15 @@ if (saveProjectBtn) {
     if (type === "prop") {
       // Get texture from resource manager - UPDATED CODE
       const textureCategory = "props";
-      
+
       // If we have specific texture info in the data, use it
       let texture = null;
-      
+
       if (data.texture) {
         // Keep existing texture object if it's already complete
         texture = data.texture;
         console.log("Using provided texture for prop:", texture.name);
-      } 
+      }
       else if (data.textureId && this.resourceManager) {
         // Try to get the specific texture by ID
         texture = this.resourceManager.getSpecificTexture(textureCategory, data.textureId);
@@ -4475,24 +4475,24 @@ if (saveProjectBtn) {
         texture = data.embeddedTexture;
         console.log("Using embedded texture data:", texture.name);
       }
-      
+
       // Fallback to default if needed
       if (!texture && this.resourceManager) {
         console.warn("No specific texture found, using default");
         texture = this.resourceManager.getSelectedTexture(textureCategory);
       }
-      
+
       if (!texture) {
         console.error("No texture available for prop marker");
         // Return early or show error message
         return null;
       }
-      
+
       console.log("Creating prop marker with texture:", {
         id: texture.id,
         name: texture.name
       });
-      
+
       const marker = this.createMarker("prop", x, y, {
         texture: texture,
         prop: data.prop || {
@@ -4502,7 +4502,7 @@ if (saveProjectBtn) {
           position: { rotation: 0 }
         }
       });
-      
+
       this.markers.push(marker);
       return marker;
     }
@@ -4595,26 +4595,26 @@ if (saveProjectBtn) {
   // Add this new method to MapEditor class
   startMarkerDragging(marker, e) {
     if (!this.isMarkerEditMode) return;
-  
+
     const startX = e.clientX;
     const startY = e.clientY;
     const startMarkerX = marker.x;
     const startMarkerY = marker.y;
-  
+
     const moveHandler = (moveEvent) => {
       const dx = (moveEvent.clientX - startX) / this.scale;
       const dy = (moveEvent.clientY - startY) / this.scale;
-  
+
       marker.x = startMarkerX + dx;
       marker.y = startMarkerY + dy;
-  
+
       this.updateMarkerPosition(marker);
-  
+
       // Update teleport connections if needed
       if (marker.type === "teleport") {
         // Update connection line
         this.updateTeleportConnections();
-        
+
         // Update paired marker reference coordinates
         if (marker.data.pairedMarker) {
           if (marker.data.isPointA) {
@@ -4626,12 +4626,12 @@ if (saveProjectBtn) {
         }
       }
     };
-  
+
     const upHandler = () => {
       document.removeEventListener("mousemove", moveHandler);
       document.removeEventListener("mouseup", upHandler);
     };
-  
+
     document.addEventListener("mousemove", moveHandler);
     document.addEventListener("mouseup", upHandler);
   }
@@ -4698,25 +4698,25 @@ if (saveProjectBtn) {
     if (marker.data.monster?.token) {
       const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
       const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size);
-      
+
       // Check if token is on elevated surface
       const { elevation, insideWall } = this.checkTokenElevation(marker);
-      
+
       // Store for 3D view
       marker.data.elevation = elevation;
       marker.data.insideWall = insideWall;
-      
+
       // Use existing cellSize calculation
       const cellSize = this.cellSize || 32;
       const totalSize = cellSize * monsterSize;
-      
+
       // Determine content based on token source
-      const tokenContent = tokenSource ? 
+      const tokenContent = tokenSource ?
         `<img src="${tokenSource}" 
              style="width: 100%; height: 100%; object-fit: cover;"
              onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size: ${totalSize * 0.75}px;\\'>local_fire_department</span>';" />` :
         `<span class="material-icons" style="font-size: ${totalSize * 0.75}px;">local_fire_department</span>`;
-      
+
       // Create token HTML with elevation indicators
       marker.element.innerHTML = `
         <div class="monster-token" style="
@@ -4740,7 +4740,7 @@ if (saveProjectBtn) {
             ` : ''}
         </div>
       `;
-    
+
       // Update position
       this.updateMarkerPosition(marker);
     }
@@ -4751,16 +4751,16 @@ if (saveProjectBtn) {
       const scale = propSettings.scale || 1.0;
       const height = propSettings.height || 1.0;
       const isHorizontal = !!propSettings.isHorizontal;
-      
+
       console.log("Updating prop appearance:", {
-        scale, height, isHorizontal, rotation, 
+        scale, height, isHorizontal, rotation,
         textureId: marker.data.texture.id,
         textureName: marker.data.texture.name
       });
-      
+
       // Get texture aspect ratio
       let aspect = marker.data.texture.aspect || 1.0;
-      
+
       // If we have the actual image data, calculate actual aspect
       if (!aspect && marker.data.texture.data) {
         const img = new Image();
@@ -4772,12 +4772,12 @@ if (saveProjectBtn) {
       } else {
         updatePropVisual(aspect);
       }
-      
+
       function updatePropVisual(aspectRatio) {
         const baseSize = 48;
         const width = baseSize * scale;
         const height = baseSize * scale / aspectRatio;
-        
+
         marker.element.innerHTML = `
           <div class="prop-visual" style="
             width: ${width}px;
@@ -4787,8 +4787,8 @@ if (saveProjectBtn) {
             background-repeat: no-repeat; 
             background-position: center;
             position: absolute;
-            left: -${width/2}px;
-            top: -${height/2}px;
+            left: -${width / 2}px;
+            top: -${height / 2}px;
             transform: rotate(${rotation}deg);
             transform-origin: center;
             border: 2px solid #4CAF50;
@@ -4809,7 +4809,7 @@ if (saveProjectBtn) {
             ">h: ${marker.data.prop.height}</div>
           ` : ''}
         `;
-    
+
         // Apply horizontal class if needed
         if (isHorizontal) {
           const propVisual = marker.element.querySelector('.prop-visual');
@@ -4824,34 +4824,34 @@ if (saveProjectBtn) {
 
   checkTokenElevation(marker) {
     if (!marker || !marker.x || !marker.y) return { elevation: 0, insideWall: false };
-    
+
     let elevation = 0;
     let insideWall = false;
-    
+
     // Check each room for overlap
     this.rooms.forEach(room => {
       // Skip non-walls and non-raised blocks
       if (!room.isRaisedBlock && room.type !== 'wall') return;
-      
+
       // Simple bounds check
-      const isInBounds = 
-        marker.x >= room.bounds.x && 
+      const isInBounds =
+        marker.x >= room.bounds.x &&
         marker.x <= room.bounds.x + room.bounds.width &&
-        marker.y >= room.bounds.y && 
+        marker.y >= room.bounds.y &&
         marker.y <= room.bounds.y + room.bounds.height;
-      
+
       if (isInBounds) {
         // For raised blocks, use height
         if (room.isRaisedBlock && room.blockHeight) {
           elevation = Math.max(elevation, room.blockHeight);
-        } 
+        }
         // For regular walls, mark as inside
         else if (room.type === 'wall' && !room.isRaisedBlock) {
           insideWall = true;
         }
       }
     });
-    
+
     return { elevation, insideWall };
   }
 
@@ -4875,7 +4875,7 @@ if (saveProjectBtn) {
   }
 
 
-  
+
   // Helper method to create marker elements
   createMarker(type, x, y, data) {
     const marker = {
@@ -4982,7 +4982,7 @@ if (saveProjectBtn) {
 
     if (type === "door") {
       markerElement.style.transform = `rotate(${data.door?.position?.rotation || 0}deg)`;
-    } 
+    }
     else if (type === "prop" && data.texture) {
       // Default prop settings
       if (!data.prop) {
@@ -4994,15 +4994,15 @@ if (saveProjectBtn) {
           }
         };
       }
-      
+
       // Create a temporary image to get dimensions
       const img = new Image();
       img.src = data.texture.data;
-      
+
       // Default size until image loads
       let width = 48;
       let height = 48;
-      
+
       // Create initial visual
       markerElement.innerHTML = `
         <div class="prop-visual" style="
@@ -5013,8 +5013,8 @@ if (saveProjectBtn) {
           background-repeat: no-repeat;
           background-position: center;
           position: absolute;
-          left: -${width/2}px;
-          top: -${height/2}px;
+          left: -${width / 2}px;
+          top: -${height / 2}px;
           transform: rotate(${data.prop?.position?.rotation || 0}deg);
           transform-origin: center;
           border: 2px solid #4CAF50;
@@ -5035,23 +5035,23 @@ if (saveProjectBtn) {
           ">h: ${data.prop.height}</div>
         ` : ''}
       `;
-      
+
       // Update visual when image loads to use correct aspect ratio
       img.onload = () => {
         const aspect = img.width / img.height;
         data.texture.aspect = aspect;
-        
+
         const scale = data.prop?.scale || 1.0;
         const baseSize = 48;
         const actualWidth = baseSize * scale;
         const actualHeight = baseSize * scale / aspect;
-        
+
         const propVisual = markerElement.querySelector('.prop-visual');
         if (propVisual) {
           propVisual.style.width = `${actualWidth}px`;
           propVisual.style.height = `${actualHeight}px`;
-          propVisual.style.left = `-${actualWidth/2}px`;
-          propVisual.style.top = `-${actualHeight/2}px`;
+          propVisual.style.left = `-${actualWidth / 2}px`;
+          propVisual.style.top = `-${actualHeight / 2}px`;
         }
       };
     }
@@ -5193,457 +5193,698 @@ if (saveProjectBtn) {
     }
   }
 
-  showMarkerContextMenu(marker, event) {
+
+  async showMarkerContextMenu(marker, event) {
+    event.preventDefault();
+
     const dialog = document.createElement('sl-dialog');
-    dialog.label = 'Marker Options';
+    dialog.label = `${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)} Options`;
 
-    // const canChangeTexture = (marker.type === 'door' || marker.type === 'prop') && this.resourceManager;
-    const canChangeTexture = marker.type === 'door' && this.resourceManager;
+    // Generate marker-specific content
+    dialog.innerHTML = this.generateMarkerHTML(marker);
 
-    let content = '<div style="display: flex; flex-direction: column; gap: 10px;">';
-
-    if (canChangeTexture) {
-      const textureCategory = marker.type === 'door' ? 'doors' : 'props';
-      content += `
-        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-            <label>Texture:</label>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 8px;">
-                ${Array.from(this.resourceManager.resources.textures[textureCategory].entries()).map(([id, texture]) => `
-                    <div class="texture-option" data-texture-id="${id}" 
-                        style="cursor: pointer; border: 2px solid ${marker.data.texture?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'}; 
-                        padding: 4px; border-radius: 4px; position: relative;">
-                        <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-                        <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
-                        ${marker.data.texture?.id === id ? `
-                            <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
-                                background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
-                                check_circle
-                            </span>
-                        ` : ''}
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    }
-
-    if (marker.type === 'teleport') {
-      content += `
-            <div style="margin-bottom: 12px;">
-                <div style="font-weight: bold; margin-bottom: 4px;">Teleport Point ${marker.data.isPointA ? 'A' : 'B'}</div>
-                <div style="color: #666;">
-                    ${marker.data.hasPair ?
-          `Connected to Point ${marker.data.isPointA ? 'B' : 'A'}` :
-          'No connection - Place another point to connect'}
-                </div>
-            </div>
-        `;
-    } else if (marker.type === 'encounter') {
-// Inside showMarkerContextMenu, in the encounter marker section:
-if (!marker.data.monster) {
-  content += `
-    <div style="margin-top: 8px;">
-      <div class="mini-bestiary">
-        <div class="bestiary-search" style="margin-bottom: 8px;">
-          <sl-input placeholder="Search monsters..." size="small" id="mini-monster-search" clearable></sl-input>
-        </div>
-        <div class="mini-bestiary-grid" style="
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
-          max-height: 300px;
-          overflow-y: auto;
-          padding: 8px;
-          background: #f5f5f5;
-          border-radius: 4px;">
-          <div class="loading-indicator" style="grid-column: 1/-1; text-align: center; padding: 20px;">
-            <sl-spinner></sl-spinner>
-            <div>Loading monsters...</div>
-          </div>
-        </div>
-      </div>
-      
-      <div style="margin-top: 12px;">
-        <sl-button id="linkMonster" size="small">
-          <span class="material-icons">link</span>
-          Paste Monster HTML
-        </sl-button>
-      </div>
-    </div>`;
-}
-
-      // Buttons always show for encounter markers
-      content += `
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-            ${marker.data.monster ? `
-                <sl-button id="cloneMonster" size="small">
-                    <span class="material-icons">content_copy</span>
-                    Clone
-                </sl-button>
-            ` : ''}
-            <sl-button id="linkMonster" size="small" style="grid-column: ${marker.data.monster ? 'auto' : '1 / -1'}">
-                <span class="material-icons">link</span>
-                ${marker.data.monster ? "Change" : "Add"} Monster
-            </sl-button>
-        </div>
-    `;
-    } else if (["treasure", "trap"].includes(marker.type)) {
-      content += `
-        <sl-input id="markerDescription"
-                 label="Description"
-                 value="${marker.data.description || ""}">
-        </sl-input>
-    `;
-    } 
-    else if (marker.type === "prop") {
-      // Get current prop settings
-      const propSettings = marker.data.prop || {};
-      const rotation = propSettings.position?.rotation || 0;
-      const scale = propSettings.scale || 1.0;
-      const height = propSettings.height || 1.0;
-      const isHorizontal = propSettings.isHorizontal || false;
-      
-      content += `
-        <div style="margin-top: 8px;">
-          <div style="border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 12px;">
-            <label>Prop Type:</label>
-            <div class="prop-texture-grid" style="
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-              gap: 8px;
-              margin-top: 8px;
-              max-height: 200px;
-              overflow-y: auto;
-            ">
-              ${Array.from(this.resourceManager.resources.textures.props?.entries() || []).map(([id, texture]) => `
-                <div class="prop-texture-option ${marker.data.texture?.id === id ? 'selected' : ''}" data-texture-id="${id}">
-                  <img src="${texture.data}" style="width: 100%; height: 60px; object-fit: cover; border-radius: 2px;">
-                  <div style="font-size: 0.7em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-top: 4px;">
-                    ${texture.name}
-                  </div>
-                  ${marker.data.texture?.id === id ? `
-                    <span class="material-icons" style="position: absolute; top: 2px; right: 2px; color: #4CAF50; background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px; font-size: 14px;">
-                      check_circle
-                    </span>
-                  ` : ''}
-                </div>
-              `).join('')}
-            </div>
-          </div>
-    
-          <div class="prop-controls">
-            <div style="margin-bottom: 16px;">
-              <sl-switch id="prop-orientation" ${isHorizontal ? 'checked' : ''}>
-                <span style="margin-right: 8px;">Horizontal</span>
-                <sl-tooltip content="When enabled, prop will lie flat on surfaces">
-                  <span class="material-icons" style="font-size: 16px; color: #666;">help_outline</span>
-                </sl-tooltip>
-              </sl-switch>
-            </div>
-            
-            <div class="prop-control-row">
-              <label>Rotation:</label>
-              <sl-range min="0" max="359" step="15" value="${rotation}" id="prop-rotation" 
-                       style="width: 100%;"></sl-range>
-              <div style="min-width: 40px; text-align: right;">${rotation}°</div>
-            </div>
-            
-            <div class="prop-control-row">
-              <label>Scale:</label>
-              <sl-range min="0.5" max="3" step="0.1" value="${scale}" id="prop-scale" 
-                       style="width: 100%;"></sl-range>
-              <div style="min-width: 40px; text-align: right;">${scale}x</div>
-            </div>
-            
-            <div class="prop-control-row">
-              <label>Height:</label>
-              <sl-range min="0" max="4" step="0.1" value="${height}" id="prop-height" 
-                       style="width: 100%;"></sl-range>
-              <div style="min-width: 40px; text-align: right;">${height}</div>
-            </div>
-          </div>
-          
-          <div style="margin-top: 12px;">
-            <div style="color: #666; font-size: 0.9em; display: flex; align-items: center; gap: 8px;">
-              <span class="material-icons" style="font-size: 16px;">info</span>
-              <span>${isHorizontal ? 
-                'Prop will lie flat on surfaces like a book, map, or scroll' : 
-                'Prop will appear as a vertical standing image in 3D view'}</span>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    content += "</div>";
-
-    // Add standardized footer with delete button
-    content += `
-    <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="flex-spacer"></div>
-        <sl-button class="delete-marker-btn" variant="danger">
-            <span class="material-icons" style="margin-right: 4px;">delete</span>
-            Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
-        </sl-button>
-    </div>
-`;
-
-    dialog.innerHTML = content;
-
-
-    if (marker.type === "prop") {
-      // Setup texture selection
-      dialog.querySelectorAll('.prop-texture-option').forEach(option => {
-        option.addEventListener('click', () => {
-          const textureId = option.dataset.textureId;
-          const texture = this.resourceManager.resources.textures.props.get(textureId);
-          if (texture) {
-            marker.data.texture = texture;
-            
-            // Update visual appearance
-            this.updateMarkerAppearance(marker);
-            
-            // Update selection in dialog
-            dialog.querySelectorAll('.prop-texture-option').forEach(opt => 
-              opt.classList.toggle('selected', opt.dataset.textureId === textureId)
-            );
-          }
-        });
-      });
-      
-      // Setup rotation control
-      const rotationSlider = dialog.querySelector('#prop-rotation');
-      if (rotationSlider) {
-        rotationSlider.addEventListener('sl-input', (e) => {
-          const rotation = parseInt(e.target.value);
-          // Update display
-          rotationSlider.nextElementSibling.textContent = `${rotation}°`;
-          
-          // Update prop data
-          if (!marker.data.prop) marker.data.prop = {};
-          if (!marker.data.prop.position) marker.data.prop.position = {};
-          marker.data.prop.position.rotation = rotation;
-          
-          // Update visual appearance
-          const propVisual = marker.element?.querySelector('.prop-visual');
-          if (propVisual) {
-            propVisual.style.transform = `rotate(${rotation}deg)`;
-          }
-        });
-      }
-      
-      // Setup scale control
-      const scaleSlider = dialog.querySelector('#prop-scale');
-      if (scaleSlider) {
-        scaleSlider.addEventListener('sl-input', (e) => {
-          const scale = parseFloat(e.target.value).toFixed(1);
-          // Update display
-          scaleSlider.nextElementSibling.textContent = `${scale}x`;
-          
-          // Update prop data
-          if (!marker.data.prop) marker.data.prop = {};
-          marker.data.prop.scale = parseFloat(scale);
-          
-          // Update visual appearance
-          const propVisual = marker.element?.querySelector('.prop-visual');
-          if (propVisual) {
-            const size = 48 * scale;
-            propVisual.style.width = `${size}px`;
-            propVisual.style.height = `${size}px`;
-            propVisual.style.left = `-${size/2}px`;
-            propVisual.style.top = `-${size/2}px`;
-          }
-        });
-      }
-      
-      // Add height control
-      const heightSlider = dialog.querySelector('#prop-height');
-      if (heightSlider) {
-        heightSlider.addEventListener('sl-input', (e) => {
-          const height = parseFloat(e.target.value).toFixed(1);
-          // Update display
-          heightSlider.nextElementSibling.textContent = `${height}`;
-          
-          // Update prop data
-          if (!marker.data.prop) marker.data.prop = {};
-          marker.data.prop.height = parseFloat(height);
-        });
-      }
-
-      const orientationSwitch = dialog.querySelector('#prop-orientation');
-      if (orientationSwitch) {
-        orientationSwitch.addEventListener('sl-change', (e) => {
-          const isHorizontal = e.target.checked;
-          
-          // Update prop data
-          if (!marker.data.prop) marker.data.prop = {};
-          marker.data.prop.isHorizontal = isHorizontal;
-          
-          // Update help text
-          const helpText = dialog.querySelector('.prop-controls + div span:last-child');
-          if (helpText) {
-            helpText.textContent = isHorizontal ? 
-              'Prop will lie flat on surfaces like a book, map, or scroll' : 
-              'Prop will appear as a vertical standing image in 3D view';
-          }
-          
-          // Update visual appearance if needed
-          const propVisual = marker.element?.querySelector('.prop-visual');
-          if (propVisual) {
-            // Could add a small indicator for horizontal props in 2D view
-            propVisual.classList.toggle('horizontal-prop', isHorizontal);
-          }
-        });
-      }
-
-    }
-
-
+    // Add common delete button to footer
+    const footer = document.createElement('div');
+    footer.slot = 'footer';
+    footer.innerHTML = `
+      <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+      <sl-button variant="danger" class="delete-btn">
+          <span class="material-icons">delete</span>
+          Remove ${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)}
+      </sl-button>
+  `;
+    dialog.appendChild(footer);
 
     document.body.appendChild(dialog);
 
+    // Setup marker-specific event handlers
+    switch (marker.type) {
+      case 'prop':
+        this.setupPropEventHandlers(dialog, marker);
+        break;
+      case 'encounter':
+        this.setupEncounterEventHandlers(dialog, marker);
+        break;
+      case 'door':
+        this.setupDoorEventHandlers(dialog, marker);
+        break;
+      case 'teleport':
+        this.setupTeleportEventHandlers(dialog, marker);
+        break;
+      default:
+        this.setupDefaultEventHandlers(dialog, marker);
+    }
 
-    // Add texture selection handler
-    const textureOptions = dialog.querySelectorAll('.texture-option');
-    textureOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const textureId = option.dataset.textureId;
-        const textureCategory = marker.type === 'door' ? 'doors' : 'props';
-        const texture = this.resourceManager.resources.textures[textureCategory].get(textureId);
-        if (texture) {
-          marker.data.texture = texture;
-          this.updateMarkerAppearance(marker);
-          textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
-          option.style.border = '2px solid var(--sl-color-primary-600)';
-        }
-      });
+    // Setup common event handlers
+    dialog.querySelector('.delete-btn')?.addEventListener('click', () => {
+      this.removeMarker(marker);
+      dialog.hide();
     });
 
+    dialog.querySelector('.cancel-btn')?.addEventListener('click', () => {
+      dialog.hide();
+    });
 
-    // dialog.show();
-
-    const deleteBtn = dialog.querySelector('.delete-marker-btn');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', () => {
-        this.removeMarker(marker);
-        dialog.hide();
-      });
-    }
-
-    // Add other existing event handlers
-    const changeTextureBtn = dialog.querySelector('.change-texture-btn');
-    if (changeTextureBtn) {
-      changeTextureBtn.addEventListener('click', async () => {
-        dialog.hide();
-        const texture = await this.resourceManager.showTextureSelectionDialog({
-          type: marker.type === 'door' ? 'door' : 'prop'
-        });
-        if (texture) {
-          marker.data.texture = texture;
-          this.updateMarkerAppearance(marker);
-        }
-      });
-    }
-
-    const cloneBtn = dialog.querySelector("#cloneMonster");
-    if (cloneBtn) {
-      cloneBtn.addEventListener("click", () => {
-        this.monsterManager.cloneEncounter(marker);
-        dialog.hide();
-      });
-    }
-
-
-        const linkBtn = dialog.querySelector("#linkMonster");
-    if (linkBtn) {
-      linkBtn.addEventListener("click", () => {
-        dialog.hide();
-        this.showMiniBestiaryDialog(marker);
-      });
-    }
-
-
-    const descInput = dialog.querySelector("#markerDescription");
-    if (descInput) {
-      descInput.addEventListener("sl-change", (e) => {
-        marker.data.description = e.target.value;
-      });
-    }
-
-    dialog.addEventListener("sl-after-hide", () => {
+    dialog.addEventListener('sl-after-hide', () => {
       dialog.remove();
     });
-
-        // After creating dialog but before dialog.show():
-    if (marker.type === "encounter" && !marker.data.monster) {
-      this.loadMiniBestiary(dialog, marker);
-    }
 
     dialog.show();
   }
 
+  generateMarkerHTML(marker) {
+    switch (marker.type) {
+      case 'prop':
+        return this.generatePropMarkerHTML(marker);
+      case 'encounter':
+        return this.generateEncounterMarkerHTML(marker);
+      case 'door':
+        return this.generateDoorMarkerHTML(marker);
+      case 'teleport':
+        return this.generateTeleportMarkerHTML(marker);
+      default:
+        return this.generateDefaultMarkerHTML(marker);
+    }
+  }
 
+  generateDoorMarkerHTML(marker) {
+    const textureCategory = 'doors';
+    const hasTextures = this.resourceManager?.resources.textures[textureCategory]?.size > 0;
 
+    let content = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">`;
 
-// Method to load mini bestiary content 
-async loadMiniBestiary(dialog, marker) {
-  const bestiaryGrid = dialog.querySelector('.mini-bestiary-grid');
-  const searchInput = dialog.querySelector('#mini-monster-search');
-  const loadingIndicator = dialog.querySelector('.loading-indicator');
-  
-  if (!bestiaryGrid) return;
-  
-  try {
+    if (hasTextures) {
+      content += `
+          <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+              <label style="display: block; margin-bottom: 8px;">Door Type:</label>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+                  ${Array.from(this.resourceManager.resources.textures[textureCategory].entries()).map(([id, texture]) => `
+                      <div class="texture-option" data-texture-id="${id}" 
+                          style="cursor: pointer; border: 2px solid ${marker.data.texture?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'
+        }; padding: 4px; border-radius: 4px; position: relative;">
+                          <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+                          <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">
+                              ${texture.name}
+                          </div>
+                          ${marker.data.texture?.id === id ? `
+                              <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                  background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                  check_circle
+                              </span>
+                          ` : ''}
+                      </div>
+                  `).join('')}
+              </div>
+          </div>`;
+    }
+
+    // Door position and state controls
+    content += `
+      <div class="door-controls">
+          <div class="door-control-row" style="margin-bottom: 16px;">
+              <label>Rotation:</label>
+              <sl-range min="0" max="359" step="45" value="${marker.data.door?.position?.rotation || 0}" id="door-rotation" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${marker.data.door?.position?.rotation || 0}°</div>
+          </div>
+          
+          <sl-switch id="door-state" ${marker.data.door?.isOpen ? 'checked' : ''}>
+              <span style="margin-right: 8px;">Door Open</span>
+          </sl-switch>
+      </div>
+
+      <!-- Door Sound Selection -->
+      <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <label style="display: block; margin-bottom: 8px;">Door Sound:</label>
+          <div class="sound-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+              ${Array.from(this.resourceManager?.resources.sounds.effects.entries() || []).map(([id, sound]) => `
+                  <div class="sound-option" data-sound-id="${id}" 
+                       style="border: 1px solid #666; padding: 8px; border-radius: 4px; cursor: pointer;">
+                      <div style="text-align: center;">
+                          <span class="material-icons" style="font-size: 32px; color: #666;">volume_up</span>
+                      </div>
+                      <div style="text-align: center; margin-top: 4px; font-size: 0.9em;">
+                          ${sound.name}
+                      </div>
+                      <div style="text-align: center; color: #666; font-size: 0.8em;">
+                          ${sound.duration ? sound.duration.toFixed(1) + 's' : 'Unknown duration'}
+                      </div>
+                  </div>
+              `).join('')}
+          </div>
+      </div>`;
+
+    content += '</div>';
+    return content;
+  }
+
+  generatePropMarkerHTML(marker) {
+    const propTextures = this.resourceManager?.resources.textures.props;
+    const envTextures = this.resourceManager?.resources.textures.environmental;
+    const hasTextures = (propTextures && propTextures.size > 0) || (envTextures && envTextures.size > 0);
+
+    let content = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+  `;
+
+    if (hasTextures) {
+      content += `
+          <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+    <label style="display: block; margin-bottom: 8px;">Prop Type:</label>
+    <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">  <!-- Added container with scroll -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+            ${(() => {
+          let availableTextures = [];
+
+          // Get prop textures
+          if (propTextures && propTextures.size > 0) {
+            availableTextures.push(...Array.from(propTextures.entries()));
+          }
+
+          // Get environmental textures
+          if (envTextures && envTextures.size > 0) {
+            availableTextures.push(...Array.from(envTextures.entries()));
+          }
+
+          return availableTextures.map(([id, texture]) => `
+                          <div class="texture-option" data-texture-id="${id}" 
+                              style="cursor: pointer; border: 2px solid ${marker.data.texture?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'
+            }; padding: 4px; border-radius: 4px; position: relative;">
+                              <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+                              <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">
+                                  ${texture.name}
+                                  ${texture.category === 'environmental' ?
+              `<span style="display: block; font-size: 0.9em; color: #666;">(Environmental)</span>` : ''}
+                              </div>
+                              ${marker.data.texture?.id === id ? `
+                                  <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                      background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                      check_circle
+                                  </span>
+                              ` : ''}
+                          </div>
+                      `).join('')
+        })()}
+              </div>
+          </div>
+      `;
+    }
+
+    // Prop settings
+    content += `
+      <div class="prop-controls">
+          <div style="margin-bottom: 16px;">
+              <sl-switch id="prop-orientation" ${marker.data.prop?.isHorizontal ? 'checked' : ''}>
+                  <span style="margin-right: 8px;">Horizontal</span>
+                  <sl-tooltip content="When enabled, prop will lie flat on surfaces">
+                      <span class="material-icons" style="font-size: 16px; color: #666;">help_outline</span>
+                  </sl-tooltip>
+              </sl-switch>
+          </div>
+          
+          <div class="prop-control-row">
+              <label>Rotation:</label>
+              <sl-range min="0" max="359" step="15" value="${marker.data.prop?.position?.rotation || 0}" id="prop-rotation" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${marker.data.prop?.position?.rotation || 0}°</div>
+          </div>
+          
+          <div class="prop-control-row">
+              <label>Scale:</label>
+              <sl-range min="0.5" max="3" step="0.1" value="${marker.data.prop?.scale || 1.0}" id="prop-scale" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${marker.data.prop?.scale || 1.0}x</div>
+          </div>
+          
+          <div class="prop-control-row">
+              <label>Height:</label>
+              <sl-range min="0" max="4" step="0.1" value="${marker.data.prop?.height || 1.0}" id="prop-height" 
+                       style="width: 100%;"></sl-range>
+              <div style="min-width: 40px; text-align: right;">${marker.data.prop?.height || 1.0}</div>
+          </div>
+      </div>
+
+      <div style="margin-top: 12px;">
+          <div style="color: #666; font-size: 0.9em; display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons" style="font-size: 16px;">info</span>
+              <span>${marker.data.prop?.isHorizontal ?
+        'Prop will lie flat on surfaces like a book, map, or scroll' :
+        'Prop will appear as a vertical standing image in 3D view'}</span>
+          </div>
+      </div>
+  `;
+
+    content += '</div>';
+    return content;
+  }
+
+  generateEncounterMarkerHTML(marker) {
+    let content = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">`;
+
+    if (!marker.data.monster) {
+      content += `
+          <div style="margin-top: 8px;">
+              <div class="mini-bestiary">
+                  <div class="bestiary-search" style="margin-bottom: 8px;">
+                      <sl-input placeholder="Search monsters..." size="small" id="mini-monster-search" clearable></sl-input>
+                  </div>
+                  <div class="mini-bestiary-grid" style="
+                      display: grid;
+                      grid-template-columns: repeat(3, 1fr);
+                      gap: 8px;
+                      max-height: 300px;
+                      overflow-y: auto;
+                      padding: 8px;
+                      background: #f5f5f5;
+                      border-radius: 4px;">
+                      <div class="loading-indicator" style="grid-column: 1/-1; text-align: center; padding: 20px;">
+                          <sl-spinner></sl-spinner>
+                          <div>Loading monsters...</div>
+                      </div>
+                  </div>
+              </div>
+              
+              <div style="margin-top: 12px;">
+                  <sl-button id="linkMonster" size="small">
+                      <span class="material-icons">link</span>
+                      Paste Monster HTML
+                  </sl-button>
+              </div>
+          </div>`;
+    } else {
+      content += `
+          <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;">
+              ${marker.data.monster.token?.data ? `
+                  <div style="flex: 0 0 150px; text-align: center;">
+                      <img src="${marker.data.monster.token.data}" style="width: 150px; height: 150px; object-fit: contain; border-radius: 5px;">
+                  </div>
+              ` : ''}
+              
+              <div style="flex: 1;">
+                  <div style="font-style: italic; color: #666; margin-bottom: 8px;">
+                      ${marker.data.monster.basic.size} ${marker.data.monster.basic.type}, ${marker.data.monster.basic.alignment}
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+                      <div>
+                          <div style="font-weight: bold;">Armor Class</div>
+                          <div>${marker.data.monster.stats.ac}</div>
+                      </div>
+                      <div>
+                          <div style="font-weight: bold;">Hit Points</div>
+                          <div>${marker.data.monster.stats.hp.average} (${marker.data.monster.stats.hp.roll})</div>
+                      </div>
+                      <div>
+                          <div style="font-weight: bold;">Speed</div>
+                          <div>${marker.data.monster.stats.speed}</div>
+                      </div>
+                  </div>
+                  
+                  <div>
+                      <div style="font-weight: bold;">Challenge Rating:</div>
+                      <div>${marker.data.monster.basic.cr} (${marker.data.monster.basic.xp} XP)</div>
+                  </div>
+              </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+              <sl-button id="cloneMonster" size="small">
+                  <span class="material-icons">content_copy</span>
+                  Clone
+              </sl-button>
+              <sl-button id="linkMonster" size="small">
+                  <span class="material-icons">link</span>
+                  Change Monster
+              </sl-button>
+          </div>`;
+    }
+
+    content += '</div>';
+    return content;
+  }
+
+  generateTeleportMarkerHTML(marker) {
+    let content = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="margin-bottom: 12px;">
+              <div style="font-weight: bold; margin-bottom: 4px;">
+                  Teleport Point ${marker.data.isPointA ? 'A' : 'B'}
+              </div>
+              <div style="color: #666;">
+                  ${marker.data.hasPair ?
+        `Connected to Point ${marker.data.isPointA ? 'B' : 'A'}` :
+        'No connection - Place another point to connect'
+      }
+              </div>
+          </div>`;
+
+    // For paired teleports, add sound options
+    if (marker.data.hasPair) {
+      content += `
+          <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+              <label style="display: block; margin-bottom: 8px;">Teleport Sound:</label>
+              <div class="sound-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+                  ${Array.from(this.resourceManager?.resources.sounds.effects.entries() || []).map(([id, sound]) => `
+                      <div class="sound-option" data-sound-id="${id}" 
+                           style="border: 1px solid #666; padding: 8px; border-radius: 4px; cursor: pointer;">
+                          <div style="text-align: center;">
+                              <span class="material-icons" style="font-size: 32px; color: #666;">volume_up</span>
+                          </div>
+                          <div style="text-align: center; margin-top: 4px; font-size: 0.9em;">
+                              ${sound.name}
+                          </div>
+                          <div style="text-align: center; color: #666; font-size: 0.8em;">
+                              ${sound.duration ? sound.duration.toFixed(1) + 's' : 'Unknown duration'}
+                          </div>
+                      </div>
+                  `).join('')}
+              </div>
+          </div>`;
+    }
+
+    content += '</div>';
+    return content;
+  }
+
+  generateDefaultMarkerHTML(marker) {
+    return `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="text-align: center; padding: 20px;">
+              <span class="material-icons" style="font-size: 48px; color: #666;">place</span>
+              <div style="margin-top: 8px;">${marker.type.charAt(0).toUpperCase() + marker.type.slice(1)} Marker</div>
+          </div>
+      </div>
+  `;
+  }
+
+  setupPropEventHandlers(dialog, marker) {
+    // Setup texture selection
+    dialog.querySelectorAll('.texture-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const textureId = option.dataset.textureId;
+        const texture = this.resourceManager.resources.textures.props.get(textureId) ||
+          this.resourceManager.resources.textures.environmental.get(textureId);
+        if (texture) {
+          marker.data.texture = texture;
+
+          // Update visual appearance
+          this.updateMarkerAppearance(marker);
+
+          // Update selection in dialog
+          dialog.querySelectorAll('.texture-option').forEach(opt =>
+            opt.style.border = opt.dataset.textureId === textureId ?
+              '2px solid var(--sl-color-primary-600)' : '2px solid transparent'
+          );
+        }
+      });
+    });
+
+    // Setup rotation control
+    const rotationSlider = dialog.querySelector('#prop-rotation');
+    if (rotationSlider) {
+      rotationSlider.addEventListener('sl-input', (e) => {
+        const rotation = parseInt(e.target.value);
+        // Update display
+        rotationSlider.nextElementSibling.textContent = `${rotation}°`;
+
+        // Update prop data
+        if (!marker.data.prop) marker.data.prop = {};
+        if (!marker.data.prop.position) marker.data.prop.position = {};
+        marker.data.prop.position.rotation = rotation;
+
+        // Update visual appearance
+        const propVisual = marker.element?.querySelector('.prop-visual');
+        if (propVisual) {
+          propVisual.style.transform = `rotate(${rotation}deg)`;
+        }
+      });
+    }
+
+    // Setup scale control
+    const scaleSlider = dialog.querySelector('#prop-scale');
+    if (scaleSlider) {
+      scaleSlider.addEventListener('sl-input', (e) => {
+        const scale = parseFloat(e.target.value).toFixed(1);
+        // Update display
+        scaleSlider.nextElementSibling.textContent = `${scale}x`;
+
+        // Update prop data
+        if (!marker.data.prop) marker.data.prop = {};
+        marker.data.prop.scale = parseFloat(scale);
+
+        // Update visual appearance
+        this.updateMarkerAppearance(marker);
+      });
+    }
+
+    // Setup height control
+    const heightSlider = dialog.querySelector('#prop-height');
+    if (heightSlider) {
+      heightSlider.addEventListener('sl-input', (e) => {
+        const height = parseFloat(e.target.value).toFixed(1);
+        // Update display
+        heightSlider.nextElementSibling.textContent = `${height}`;
+
+        // Update prop data
+        if (!marker.data.prop) marker.data.prop = {};
+        marker.data.prop.height = parseFloat(height);
+        this.updateMarkerAppearance(marker);
+      });
+    }
+
+    // Setup orientation switch
+    const orientationSwitch = dialog.querySelector('#prop-orientation');
+    if (orientationSwitch) {
+      orientationSwitch.addEventListener('sl-change', (e) => {
+        const isHorizontal = e.target.checked;
+
+        // Update prop data
+        if (!marker.data.prop) marker.data.prop = {};
+        marker.data.prop.isHorizontal = isHorizontal;
+
+        // Update visual appearance
+        const propVisual = marker.element?.querySelector('.prop-visual');
+        if (propVisual) {
+          propVisual.classList.toggle('horizontal-prop', isHorizontal);
+        }
+      });
+    }
+  }
+
+  setupEncounterEventHandlers(dialog, marker) {
+    if (!marker.data.monster) {
+      // Load mini bestiary if no monster selected
+      this.loadMiniBestiary(dialog, marker);
+
+      // Setup paste monster HTML button
+      const linkMonsterBtn = dialog.querySelector('#linkMonster');
+      if (linkMonsterBtn) {
+        linkMonsterBtn.addEventListener('click', () => {
+          dialog.hide();
+          this.showMonsterSelector(marker);
+        });
+      }
+    } else {
+      // Setup clone button
+      const cloneBtn = dialog.querySelector('#cloneMonster');
+      if (cloneBtn) {
+        cloneBtn.addEventListener('click', () => {
+          if (this.monsterManager) {
+            this.monsterManager.cloneEncounter(marker);
+          }
+          dialog.hide();
+        });
+      }
+
+      // Setup change monster button
+      const linkMonsterBtn = dialog.querySelector('#linkMonster');
+      if (linkMonsterBtn) {
+        linkMonsterBtn.addEventListener('click', () => {
+          dialog.hide();
+          this.showMonsterSelector(marker);
+        });
+      }
+    }
+  }
+
+  setupDoorEventHandlers(dialog, marker) {
+    // Setup texture selection
+    dialog.querySelectorAll('.texture-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const textureId = option.dataset.textureId;
+        const texture = this.resourceManager.resources.textures.doors.get(textureId);
+        if (texture) {
+          marker.data.texture = texture;
+          this.updateMarkerAppearance(marker);
+
+          // Update selection in dialog
+          dialog.querySelectorAll('.texture-option').forEach(opt =>
+            opt.style.border = opt.dataset.textureId === textureId ?
+              '2px solid var(--sl-color-primary-600)' : '2px solid transparent'
+          );
+        }
+      });
+    });
+
+    // Setup rotation control
+    const rotationSlider = dialog.querySelector('#door-rotation');
+    if (rotationSlider) {
+      rotationSlider.addEventListener('sl-input', (e) => {
+        const rotation = parseInt(e.target.value);
+        // Update display
+        rotationSlider.nextElementSibling.textContent = `${rotation}°`;
+
+        // Update door data
+        if (!marker.data.door) marker.data.door = {};
+        if (!marker.data.door.position) marker.data.door.position = {};
+        marker.data.door.position.rotation = rotation;
+
+        // Update visual appearance
+        marker.element.style.transform = `rotate(${rotation}deg)`;
+      });
+    }
+
+    // Setup door state toggle
+    // Enhanced door state toggle
+    const stateSwitch = dialog.querySelector('#door-state');
+    if (stateSwitch) {
+      stateSwitch.addEventListener('sl-change', (e) => {
+        if (!marker.data.door) marker.data.door = {};
+        const isOpen = e.target.checked;
+        marker.data.door.isOpen = isOpen;
+
+        // Visual feedback for door state
+        const doorVisual = marker.element.querySelector('.door-visual');
+        if (doorVisual) {
+          doorVisual.classList.toggle('door-open', isOpen);
+          doorVisual.style.opacity = isOpen ? '0.6' : '1'; // Make door look more "open"
+        }
+
+        // Play door sound if one is assigned
+        if (marker.data.effects?.doorSound) {
+          this.resourceManager.playSound(marker.data.effects.doorSound.id, 'effects');
+        }
+      });
+    }
+
+    // Sound selection handler
+    dialog.querySelectorAll('.sound-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const soundId = option.dataset.soundId;
+        const sound = this.resourceManager.resources.sounds.effects.get(soundId);
+        if (sound) {
+          // Preview the sound
+          if (this.resourceManager.activeAudio) {
+            this.resourceManager.stopSound(soundId);
+          }
+          this.resourceManager.playSound(soundId, 'effects');
+
+          // Store the sound selection
+          if (!marker.data.effects) marker.data.effects = {};
+          marker.data.effects.doorSound = sound;
+
+          // Update selection in dialog
+          dialog.querySelectorAll('.sound-option').forEach(opt =>
+            opt.style.border = opt.dataset.soundId === soundId ?
+              '2px solid var(--sl-color-primary-600)' : '1px solid #666'
+          );
+        }
+      });
+    });
+  }
+
+  setupTeleportEventHandlers(dialog, marker) {
+    // Setup sound selection
+    dialog.querySelectorAll('.sound-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const soundId = option.dataset.soundId;
+        const sound = this.resourceManager.resources.sounds.effects.get(soundId);
+        if (sound) {
+          // Preview the sound
+          if (this.resourceManager.activeAudio) {
+            this.resourceManager.stopSound(soundId);
+          }
+          this.resourceManager.playSound(soundId, 'effects');
+
+          // Store the sound selection
+          if (!marker.data.effects) marker.data.effects = {};
+          marker.data.effects.teleportSound = sound;
+
+          // Update selection in dialog
+          dialog.querySelectorAll('.sound-option').forEach(opt =>
+            opt.style.border = opt.dataset.soundId === soundId ?
+              '2px solid var(--sl-color-primary-600)' : '1px solid #666'
+          );
+        }
+      });
+    });
+  }
+
+  setupDefaultEventHandlers(dialog, marker) {
+    // Add any default event handlers that should apply to all marker types
+  }
+
+  // Method to load mini bestiary content 
+  async loadMiniBestiary(dialog, marker) {
+    const bestiaryGrid = dialog.querySelector('.mini-bestiary-grid');
+    const searchInput = dialog.querySelector('#mini-monster-search');
+    const loadingIndicator = dialog.querySelector('.loading-indicator');
+
+    if (!bestiaryGrid) return;
+
+    try {
       // Get monsters from resource manager or monster manager
       let monsters = [];
       if (this.resourceManager?.resources?.bestiary) {
-          monsters = Array.from(this.resourceManager.resources.bestiary.values());
+        monsters = Array.from(this.resourceManager.resources.bestiary.values());
       } else if (this.monsterManager) {
-          // If we only have monster manager, try to get monsters from there
-          const database = this.monsterManager.loadDatabase();
-          monsters = Object.values(database.monsters || {}).map(monster => ({
-              id: monster.basic.name.toLowerCase().replace(/\s+/g, "_"),
-              name: monster.basic.name,
-              data: monster,
-              thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
-              cr: monster.basic.cr,
-              type: monster.basic.type,
-              size: monster.basic.size
-          }));
+        // If we only have monster manager, try to get monsters from there
+        const database = this.monsterManager.loadDatabase();
+        monsters = Object.values(database.monsters || {}).map(monster => ({
+          id: monster.basic.name.toLowerCase().replace(/\s+/g, "_"),
+          name: monster.basic.name,
+          data: monster,
+          thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
+          cr: monster.basic.cr,
+          type: monster.basic.type,
+          size: monster.basic.size
+        }));
       }
-      
+
       // If we have no monsters, show empty state
       if (monsters.length === 0) {
-          bestiaryGrid.innerHTML = `
+        bestiaryGrid.innerHTML = `
               <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #666;">
                   <span class="material-icons" style="font-size: 32px; opacity: 0.5;">pets</span>
                   <p>No monsters available in bestiary</p>
               </div>`;
-          return;
+        return;
       }
-      
+
       // Filter and render monsters
       const renderMonsters = (filterText = '') => {
-          const filteredMonsters = filterText ? 
-              monsters.filter(m => m.name.toLowerCase().includes(filterText.toLowerCase())) : 
-              monsters;
-              
-          if (filteredMonsters.length === 0) {
-              bestiaryGrid.innerHTML = `
+        const filteredMonsters = filterText ?
+          monsters.filter(m => m.name.toLowerCase().includes(filterText.toLowerCase())) :
+          monsters;
+
+        if (filteredMonsters.length === 0) {
+          bestiaryGrid.innerHTML = `
                   <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #666;">
                       <span class="material-icons" style="font-size: 24px; opacity: 0.5;">search_off</span>
                       <p>No monsters match your search</p>
                   </div>`;
-              return;
-          }
-          
-          // Sort by name
-          filteredMonsters.sort((a, b) => a.name.localeCompare(b.name));
-          
-          // Create monster cards
-          bestiaryGrid.innerHTML = filteredMonsters.map(monster => {
-            const isTokenUrl = monster.data?.token?.url && !monster.data.token.data?.startsWith('data:');
-            return `
+          return;
+        }
+
+        // Sort by name
+        filteredMonsters.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Create monster cards
+        bestiaryGrid.innerHTML = filteredMonsters.map(monster => {
+          const isTokenUrl = monster.data?.token?.url && !monster.data.token.data?.startsWith('data:');
+          return `
                 <div class="mini-monster-card" data-monster-id="${monster.id}" style="
                     border: 1px solid #ddd;
                     border-radius: 4px;
@@ -5669,54 +5910,54 @@ async loadMiniBestiary(dialog, marker) {
                 </div>
             `;
         }).join('');
-          
-          // Add click handlers
-          bestiaryGrid.querySelectorAll('.mini-monster-card').forEach(card => {
-              card.addEventListener('click', async () => {
-                  const monsterId = card.dataset.monsterId;
-                  const selectedMonster = monsters.find(m => m.id === monsterId);
-                  if (selectedMonster) {
-                      // Ensure token is base64
-                      if (this.resourceManager && typeof this.resourceManager.ensureTokenIsBase64 === 'function') {
-                          selectedMonster.data = await this.resourceManager.ensureTokenIsBase64(selectedMonster.data);
-                      }
-                      
-                      // Assign monster to marker
-                      marker.data.monster = selectedMonster.data;
-                      this.updateMarkerAppearance(marker);
-                      dialog.hide();
-                  }
-              });
+
+        // Add click handlers
+        bestiaryGrid.querySelectorAll('.mini-monster-card').forEach(card => {
+          card.addEventListener('click', async () => {
+            const monsterId = card.dataset.monsterId;
+            const selectedMonster = monsters.find(m => m.id === monsterId);
+            if (selectedMonster) {
+              // Ensure token is base64
+              if (this.resourceManager && typeof this.resourceManager.ensureTokenIsBase64 === 'function') {
+                selectedMonster.data = await this.resourceManager.ensureTokenIsBase64(selectedMonster.data);
+              }
+
+              // Assign monster to marker
+              marker.data.monster = selectedMonster.data;
+              this.updateMarkerAppearance(marker);
+              dialog.hide();
+            }
           });
+        });
       };
-      
+
       // Set up search
       if (searchInput) {
-          searchInput.addEventListener('sl-input', (e) => {
-              renderMonsters(e.target.value);
-          });
+        searchInput.addEventListener('sl-input', (e) => {
+          renderMonsters(e.target.value);
+        });
       }
-      
+
       // Render initial state
       loadingIndicator.remove();
       renderMonsters();
-      
-  } catch (error) {
+
+    } catch (error) {
       console.error('Error loading mini bestiary:', error);
       bestiaryGrid.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #666;">
               <span class="material-icons" style="color: #f44336;">error</span>
               <p>Error loading monsters</p>
           </div>`;
+    }
   }
-}
 
-// Method to show mini bestiary in a standalone dialog
-async showMiniBestiaryDialog(marker) {
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = 'Choose Monster';
-  
-  dialog.innerHTML = `
+  // Method to show mini bestiary in a standalone dialog
+  async showMiniBestiaryDialog(marker) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Choose Monster';
+
+    dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
           <div class="bestiary-search" style="margin-bottom: 8px;">
               <sl-input placeholder="Search monsters..." size="small" id="dialog-monster-search" clearable></sl-input>
@@ -5748,73 +5989,73 @@ async showMiniBestiaryDialog(marker) {
           <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
       </div>
   `;
-  
-  document.body.appendChild(dialog);
-  dialog.show();
-  
-  // Set up paste HTML button
-  const pasteHtmlBtn = dialog.querySelector('#paste-html-btn');
-  if (pasteHtmlBtn) {
-      pasteHtmlBtn.addEventListener('click', () => {
-          dialog.hide();
-          // Show HTML paste dialog
-          if (this.resourceManager?.monsterManager) {
-              this.resourceManager.monsterManager.showMonsterSelector(marker);
-          } else if (this.monsterManager) {
-              this.monsterManager.showMonsterSelector(marker);
-          }
-      });
-  }
-  
-  // Set up cancel button
-  const cancelBtn = dialog.querySelector('.cancel-btn');
-  if (cancelBtn) {
-      cancelBtn.addEventListener('click', () => {
-          dialog.hide();
-      });
-  }
-  
-  // Load mini bestiary content
-  this.loadMiniBestiary(dialog, marker);
-  
-  dialog.addEventListener("sl-after-hide", () => {
-      dialog.remove();
-  });
-}
 
-// Helper method to generate monster thumbnail if needed
-generateMonsterThumbnail(monster) {
-  // Create a canvas for the thumbnail
-  const canvas = document.createElement('canvas');
-  const size = 64;
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  
-  // Generate color based on monster name
-  const hashCode = monster.basic.name.split('').reduce((a, b) => {
+    document.body.appendChild(dialog);
+    dialog.show();
+
+    // Set up paste HTML button
+    const pasteHtmlBtn = dialog.querySelector('#paste-html-btn');
+    if (pasteHtmlBtn) {
+      pasteHtmlBtn.addEventListener('click', () => {
+        dialog.hide();
+        // Show HTML paste dialog
+        if (this.resourceManager?.monsterManager) {
+          this.resourceManager.monsterManager.showMonsterSelector(marker);
+        } else if (this.monsterManager) {
+          this.monsterManager.showMonsterSelector(marker);
+        }
+      });
+    }
+
+    // Set up cancel button
+    const cancelBtn = dialog.querySelector('.cancel-btn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        dialog.hide();
+      });
+    }
+
+    // Load mini bestiary content
+    this.loadMiniBestiary(dialog, marker);
+
+    dialog.addEventListener("sl-after-hide", () => {
+      dialog.remove();
+    });
+  }
+
+  // Helper method to generate monster thumbnail if needed
+  generateMonsterThumbnail(monster) {
+    // Create a canvas for the thumbnail
+    const canvas = document.createElement('canvas');
+    const size = 64;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Generate color based on monster name
+    const hashCode = monster.basic.name.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
-  }, 0);
-  
-  const hue = Math.abs(hashCode) % 360;
-  ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
-  ctx.fillRect(0, 0, size, size);
-  
-  // Add border
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(2, 2, size-4, size-4);
-  
-  // Add initial
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 32px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(monster.basic.name.charAt(0).toUpperCase(), size/2, size/2);
-  
-  return canvas.toDataURL('image/webp');
-}
+    }, 0);
+
+    const hue = Math.abs(hashCode) % 360;
+    ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+    ctx.fillRect(0, 0, size, size);
+
+    // Add border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, size - 4, size - 4);
+
+    // Add initial
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(monster.basic.name.charAt(0).toUpperCase(), size / 2, size / 2);
+
+    return canvas.toDataURL('image/webp');
+  }
 
   finalizeRoom(room) {
     room.finalized = true;
@@ -5856,7 +6097,7 @@ generateMonsterThumbnail(monster) {
         gap: 12px;
         font-size: 14px;
     `;
-    
+
     toast.innerHTML = `
         <span class="material-icons" style="font-size: 24px;">warning</span>
         <div>
@@ -5867,25 +6108,25 @@ generateMonsterThumbnail(monster) {
             <span class="material-icons">close</span>
         </button>
     `;
-    
+
     document.body.appendChild(toast);
-    
+
     // Add close button handler
     toast.querySelector('.close-toast').addEventListener('click', () => {
-        toast.remove();
+      toast.remove();
     });
-    
+
     // Auto-remove after 8 seconds
     setTimeout(() => {
-        if (document.body.contains(toast)) {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => toast.remove(), 500);
-        }
+      if (document.body.contains(toast)) {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => toast.remove(), 500);
+      }
     }, 8000);
-    
+
     return toast;
-}
+  }
 
 
 }
