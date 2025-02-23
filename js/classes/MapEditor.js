@@ -35,13 +35,24 @@ class MapEditor {
     // Setup in correct order
     this.setupTitleHandlers();
     this.updateMapTitle();
+    // this.checkResourceManager(() => {
+    //   console.log('ResourceManager initialized:', !!this.resourceManager);
+    //   this.checkTextureManager(() => {
+    //     console.log('TextureManager initialized:', !!this.textureManager);
+    //     this.setupEventListeners();
+    //   });
+    // });
+
     this.checkResourceManager(() => {
       console.log('ResourceManager initialized:', !!this.resourceManager);
+      // Pass resourceManager to Scene3D
+      this.scene3D.resourceManager = this.resourceManager;
       this.checkTextureManager(() => {
-        console.log('TextureManager initialized:', !!this.textureManager);
-        this.setupEventListeners();
+          console.log('TextureManager initialized:', !!this.textureManager);
+          this.setupEventListeners();
       });
-    });
+  });
+
 
     this.setupCanvas();
     this.calculateLayersListHeight = this.calculateLayersListHeight.bind(this);

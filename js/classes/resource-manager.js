@@ -1,43 +1,45 @@
 
 window.ResourceManager = class {
     constructor() {
-        this.resources = {
-            textures: {
-                walls: new Map(),
-                doors: new Map(),
-                environmental: new Map(),
-                props: new Map()
-            },
-            sounds: {
-                ambient: new Map(),
-                effects: new Map()
-            },
-            splashArt: new Map(),
-            effects: {
-                particles: new Map(),
-                lighting: new Map()
-            },
-            bestiary: new Map()
-        };
-
-        this.loadedPacks = new Map();
-        this.activePackId = null;
-        this.mapResourceLinks = new Map();
-        this.activeResourcePack = null;
-        this.thumbnailSize = 100;
-
-        // Initialize textureAssignments map in constructor
-        this.textureAssignments = new Map();
-        this.defaultWallTextureId = null;
-
-            // Initialize MonsterManager
-    this.monsterManager = null;
-    }
-
-    initializeMonsterManager(mapEditor) {
-        this.monsterManager = new MonsterManager(mapEditor);
-        this.loadBestiaryFromDatabase();
-    }
+                this.resources = {
+                    textures: {
+                        walls: new Map(),
+                        doors: new Map(),
+                        environmental: new Map(),
+                        props: new Map()
+                    },
+                    sounds: {
+                        ambient: new Map(),
+                        effects: new Map()
+                    },
+                    splashArt: {
+                        title: new Map(),
+                        loading: new Map(),
+                        background: new Map()
+                    },
+                    effects: {
+                        particles: new Map(),
+                        lighting: new Map()
+                    },
+                    bestiary: new Map()
+                };
+        
+                this.loadedPacks = new Map();
+                this.activePackId = null;
+                this.mapResourceLinks = new Map();
+                this.activeResourcePack = null;
+                this.thumbnailSize = 100;
+        
+                // Initialize textureAssignments map
+                this.textureAssignments = new Map();
+                this.defaultWallTextureId = null;
+        
+                // Initialize sound management
+                this.activeAudio = new Map();
+        
+                // Initialize MonsterManager
+                this.monsterManager = null;
+            }
 
     // Resource pack methods
     async loadResourcePack(file) {
@@ -63,17 +65,19 @@ window.ResourceManager = class {
             version: '1.0',
             textures: this.serializeTextures(),
             sounds: this.serializeSounds(),
-            splashArt: this.serializeSplashArt()
+            splashArt: this.serializeSplashArt(),
+            effects: this.serializeEffects()
         };
-    
-        const blob = new Blob([JSON.stringify(packData, null, 2)],
-            { type: 'application/json' });
-    
+
+        const blob = new Blob([JSON.stringify(packData, null, 2)], {
+            type: 'application/json'
+        });
+
         // Use provided mapName or default to resource-pack
         const filename = mapName ? 
             `${mapName}.resource.json` : 
-            'resource-pack.json';  // New naming convention
-    
+            'resource-pack.json';
+
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = filename;
@@ -85,7 +89,86 @@ window.ResourceManager = class {
         return filename;
     }
 
+    // async saveResourcePack(mapName = null) {
+    //     const packData = {
+    //         name: this.activeResourcePack?.name || 'New Resource Pack',
+    //         version: '1.0',
+    //         textures: this.serializeTextures(),
+    //         sounds: this.serializeSounds(),
+    //         splashArt: this.serializeSplashArt()
+    //     };
+    
+    //     const blob = new Blob([JSON.stringify(packData, null, 2)],
+    //         { type: 'application/json' });
+    
+    //     // Use provided mapName or default to resource-pack
+    //     const filename = mapName ? 
+    //         `${mapName}.resource.json` : 
+    //         'resource-pack.json';  // New naming convention
+    
+    //     const a = document.createElement('a');
+    //     a.href = URL.createObjectURL(blob);
+    //     a.download = filename;
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     document.body.removeChild(a);
+    //     URL.revokeObjectURL(a.href);
+        
+    //     return filename;
+    // }
+
     // Add these methods to ResourceManager class
+    // serializeTextures() {
+    //     const serialized = {};
+    //     for (const [category, textures] of Object.entries(this.resources.textures)) {
+    //         serialized[category] = {};
+    //         textures.forEach((texture, id) => {
+    //             serialized[category][id] = {
+    //                 id: texture.id,
+    //                 name: texture.name,
+    //                 category: texture.category,
+    //                 subcategory: texture.subcategory,
+    //                 data: texture.data,
+    //                 thumbnail: texture.thumbnail,
+    //                 dateAdded: texture.dateAdded
+    //             };
+    //         });
+    //     }
+    //     return serialized;
+    // }
+
+    // serializeSounds() {
+    //     const serialized = {};
+    //     for (const [category, sounds] of Object.entries(this.resources.sounds)) {
+    //         serialized[category] = {};
+    //         sounds.forEach((sound, id) => {
+    //             serialized[category][id] = {
+    //                 id: sound.id,
+    //                 name: sound.name,
+    //                 data: sound.data,
+    //                 duration: sound.duration,
+    //                 dateAdded: sound.dateAdded
+    //             };
+    //         });
+    //     }
+    //     return serialized;
+    // }
+
+    // serializeSplashArt() {
+    //     const serialized = {};
+    //     this.resources.splashArt.forEach((art, id) => {
+    //         serialized[id] = {
+    //             id: art.id,
+    //             name: art.name,
+    //             data: art.data,
+    //             thumbnail: art.thumbnail,
+    //             description: art.description,
+    //             dateAdded: art.dateAdded
+    //         };
+    //     });
+    //     return serialized;
+    // }
+
     serializeTextures() {
         const serialized = {};
         for (const [category, textures] of Object.entries(this.resources.textures)) {
@@ -105,6 +188,7 @@ window.ResourceManager = class {
         return serialized;
     }
 
+    // Update serializeSounds method
     serializeSounds() {
         const serialized = {};
         for (const [category, sounds] of Object.entries(this.resources.sounds)) {
@@ -122,18 +206,39 @@ window.ResourceManager = class {
         return serialized;
     }
 
+    // Update serializeSplashArt method
     serializeSplashArt() {
         const serialized = {};
-        this.resources.splashArt.forEach((art, id) => {
-            serialized[id] = {
-                id: art.id,
-                name: art.name,
-                data: art.data,
-                thumbnail: art.thumbnail,
-                description: art.description,
-                dateAdded: art.dateAdded
-            };
-        });
+        for (const [category, artMap] of Object.entries(this.resources.splashArt)) {
+            serialized[category] = {};
+            artMap.forEach((art, id) => {
+                serialized[category][id] = {
+                    id: art.id,
+                    name: art.name,
+                    data: art.data,
+                    thumbnail: art.thumbnail,
+                    description: art.description,
+                    dateAdded: art.dateAdded
+                };
+            });
+        }
+        return serialized;
+    }
+
+    serializeEffects() {
+        const serialized = {};
+        for (const [category, effects] of Object.entries(this.resources.effects)) {
+            serialized[category] = {};
+            effects.forEach((effect, id) => {
+                serialized[category][id] = {
+                    id: effect.id,
+                    name: effect.name,
+                    data: effect.data,
+                    thumbnail: effect.thumbnail,
+                    dateAdded: effect.dateAdded
+                };
+            });
+        }
         return serialized;
     }
 
@@ -148,6 +253,43 @@ window.ResourceManager = class {
 
 
 
+    // deserializeResourcePack(packData) {
+    //     if (packData.textures) {
+    //         for (const [category, textures] of Object.entries(packData.textures)) {
+    //             if (!this.resources.textures[category]) {
+    //                 this.resources.textures[category] = new Map();
+    //             }
+    //             for (const [id, texture] of Object.entries(textures)) {
+    //                 this.resources.textures[category].set(id, texture);
+
+    //                 // Add this: Set first wall texture as default
+    //                 if (category === 'walls' && !this.defaultWallTextureId) {
+    //                     this.defaultWallTextureId = id;
+    //                     console.log('Set default wall texture:', id);
+    //                 }
+    //             }
+    //         }
+    //     }
+
+
+    //     if (packData.sounds) {
+    //         for (const [category, sounds] of Object.entries(packData.sounds)) {
+    //             if (!this.resources.sounds[category]) {
+    //                 this.resources.sounds[category] = new Map();
+    //             }
+    //             for (const [id, sound] of Object.entries(sounds)) {
+    //                 this.resources.sounds[category].set(id, sound);
+    //             }
+    //         }
+    //     }
+
+    //     if (packData.splashArt) {
+    //         for (const [id, art] of Object.entries(packData.splashArt)) {
+    //             this.resources.splashArt.set(id, art);
+    //         }
+    //     }
+    // }
+
     deserializeResourcePack(packData) {
         if (packData.textures) {
             for (const [category, textures] of Object.entries(packData.textures)) {
@@ -157,15 +299,13 @@ window.ResourceManager = class {
                 for (const [id, texture] of Object.entries(textures)) {
                     this.resources.textures[category].set(id, texture);
 
-                    // Add this: Set first wall texture as default
+                    // Set first wall texture as default
                     if (category === 'walls' && !this.defaultWallTextureId) {
                         this.defaultWallTextureId = id;
-                        console.log('Set default wall texture:', id);
                     }
                 }
             }
         }
-
 
         if (packData.sounds) {
             for (const [category, sounds] of Object.entries(packData.sounds)) {
@@ -179,11 +319,28 @@ window.ResourceManager = class {
         }
 
         if (packData.splashArt) {
-            for (const [id, art] of Object.entries(packData.splashArt)) {
-                this.resources.splashArt.set(id, art);
+            for (const [category, artItems] of Object.entries(packData.splashArt)) {
+                if (!this.resources.splashArt[category]) {
+                    this.resources.splashArt[category] = new Map();
+                }
+                for (const [id, art] of Object.entries(artItems)) {
+                    this.resources.splashArt[category].set(id, art);
+                }
+            }
+        }
+
+        if (packData.effects) {
+            for (const [category, effects] of Object.entries(packData.effects)) {
+                if (!this.resources.effects[category]) {
+                    this.resources.effects[category] = new Map();
+                }
+                for (const [id, effect] of Object.entries(effects)) {
+                    this.resources.effects[category].set(id, effect);
+                }
             }
         }
     }
+
 
     getDefaultWallTexture() {
         if (!this.defaultWallTextureId) return null;
@@ -519,6 +676,38 @@ getSpecificTexture(category, criteria) {
 
 
 
+    // async addSplashArt(file, description = '', category = 'title') {
+    //     if (!file) {
+    //         console.warn('No file provided for splash art');
+    //         return null;
+    //     }
+        
+    //     try {
+    //         // Create image data and thumbnail
+    //         const imageData = await this.createImageData(file);
+    //         const thumbnail = await this.createThumbnail(file);
+            
+    //         const splashArtData = {
+    //             id: `splashArt_${Date.now()}`,
+    //             name: file.name,
+    //             description: description,
+    //             category: category,
+    //             data: imageData,
+    //             thumbnail: thumbnail,
+    //             dateAdded: new Date().toISOString()
+    //         };
+            
+    //         // Store in splash art collection
+    //         this.resources.splashArt.set(splashArtData.id, splashArtData);
+    //         console.log('Added splash art:', splashArtData);
+            
+    //         return splashArtData.id;
+    //     } catch (error) {
+    //         console.error('Error adding splash art:', error);
+    //         return null;
+    //     }
+    // }
+
     async addSplashArt(file, description = '', category = 'title') {
         if (!file) {
             console.warn('No file provided for splash art');
@@ -540,8 +729,13 @@ getSpecificTexture(category, criteria) {
                 dateAdded: new Date().toISOString()
             };
             
-            // Store in splash art collection
-            this.resources.splashArt.set(splashArtData.id, splashArtData);
+            // Initialize category if it doesn't exist
+            if (!this.resources.splashArt[category]) {
+                this.resources.splashArt[category] = new Map();
+            }
+            
+            // Store in the correct category
+            this.resources.splashArt[category].set(splashArtData.id, splashArtData);
             console.log('Added splash art:', splashArtData);
             
             return splashArtData.id;
@@ -747,11 +941,13 @@ updateGallery(drawer, category, view = 'grid') {
     // Get resources based on category type
     let resources;
     if (['title', 'loading', 'background'].includes(category)) {
-        // Filter splash art by category
-        resources = new Map(
-            Array.from(this.resources.splashArt.entries())
-                .filter(([_, art]) => art.category === category)
-        );
+        // Get resources from the specific splash art category
+        resources = this.resources.splashArt[category];
+        if (!resources) {
+            // Initialize the category if it doesn't exist
+            this.resources.splashArt[category] = new Map();
+            resources = this.resources.splashArt[category];
+        }
     } else if (category === 'ambient' || category === 'effects') {
         resources = this.resources.sounds[category];
     } else {
@@ -2050,11 +2246,11 @@ setupSplashArtHandlers(drawer) {
         });
     });
 
-    // Set up upload button
+    // Set up upload handling
     const uploadBtn = drawer.querySelector('.splashart-upload-btn');
     if (uploadBtn) {
         uploadBtn.addEventListener('click', () => {
-            // Create a new file input each time
+            // Create a new file input each time to ensure it triggers
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.accept = 'image/*';
@@ -2062,6 +2258,7 @@ setupSplashArtHandlers(drawer) {
             fileInput.style.display = 'none';
             document.body.appendChild(fileInput);
 
+            // Set up the change handler before clicking
             fileInput.addEventListener('change', async (e) => {
                 const files = Array.from(e.target.files || []);
                 if (!files.length) return;
@@ -2086,7 +2283,7 @@ setupSplashArtHandlers(drawer) {
                 document.body.removeChild(fileInput);
             });
 
-            // Trigger file selection
+            // Now trigger the file input
             fileInput.click();
         });
     }
@@ -2137,6 +2334,11 @@ setupSplashArtHandlers(drawer) {
                 dialog.remove();
             });
         });
+    }
+
+    initializeMonsterManager(mapEditor) {
+        this.monsterManager = new MonsterManager(mapEditor);
+        this.loadBestiaryFromDatabase();
     }
 
 

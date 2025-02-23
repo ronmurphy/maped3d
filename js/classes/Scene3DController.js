@@ -13,6 +13,7 @@ class Scene3DController {
     this.teleporters = [];
     this.doors = []; 
     this.debugVisuals = false;
+    this.resourceManager = null;
     this.clear();
   }
 
@@ -2839,37 +2840,83 @@ processDoorMarkers() {
 }
 
 
-  async loadDoorSound() {
-    const listener = new THREE.AudioListener();
-    this.camera.add(listener);
+//   async loadDoorSound() {
+//     const listener = new THREE.AudioListener();
+//     this.camera.add(listener);
     
-    try {
-        const soundData = await this.resourceManager.getThreeJSSound('door.mp3', 'effects');
-        if (soundData) {
-            this.doorSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
-            if (this.doorSound) {
-                console.log('Door sound loaded successfully');
-            }
-        }
-    } catch (error) {
-        console.warn('Could not load door sound:', error);
-    }
+//     try {
+//         const soundData = await this.resourceManager.getThreeJSSound('door.mp3', 'effects');
+//         if (soundData) {
+//             this.doorSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
+//             if (this.doorSound) {
+//                 console.log('Door sound loaded successfully');
+//             }
+//         }
+//     } catch (error) {
+//         console.warn('Could not load door sound:', error);
+//     }
+// }
+
+
+async loadDoorSound() {
+  if (!this.resourceManager) {
+      console.warn('ResourceManager not available for door sound loading');
+      return;
+  }
+
+  const listener = new THREE.AudioListener();
+  this.camera.add(listener);
+  
+  try {
+      const soundData = await this.resourceManager.getThreeJSSound('door.mp3', 'effects');
+      if (soundData) {
+          this.doorSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
+          if (this.doorSound) {
+              console.log('Door sound loaded successfully');
+          }
+      }
+  } catch (error) {
+      console.warn('Could not load door sound:', error);
+  }
 }
 
+// async loadJumpSound() {
+//   const listener = new THREE.AudioListener();
+//   this.camera.add(listener);
+  
+//   try {
+//       const soundData = await this.resourceManager.getThreeJSSound('jump.mp3', 'effects');
+//       if (soundData) {
+//           this.jumpSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
+//           if (this.jumpSound) {
+//               console.log('Jump sound loaded successfully');
+//           }
+//       }
+//   } catch (error) {
+//       console.warn('Could not load jump sound:', error);
+//   }
+// }
+
+
 async loadJumpSound() {
+  if (!this.resourceManager) {
+      console.warn('ResourceManager not available for door sound loading');
+      return;
+  }
+
   const listener = new THREE.AudioListener();
   this.camera.add(listener);
   
   try {
       const soundData = await this.resourceManager.getThreeJSSound('jump.mp3', 'effects');
       if (soundData) {
-          this.jumpSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
-          if (this.jumpSound) {
-              console.log('Jump sound loaded successfully');
+          this.doorSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
+          if (this.doorSound) {
+              console.log('Door sound loaded successfully');
           }
       }
   } catch (error) {
-      console.warn('Could not load jump sound:', error);
+      console.warn('Could not load door sound:', error);
   }
 }
 
