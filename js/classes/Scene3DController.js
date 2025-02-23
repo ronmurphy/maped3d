@@ -2149,26 +2149,26 @@ animate = () => {
   this.renderer.render(this.scene, this.camera);
 };
 
-loadJumpSound() {
-  const listener = new THREE.AudioListener();
-  this.camera.add(listener);
+// loadJumpSound() {
+//   const listener = new THREE.AudioListener();
+//   this.camera.add(listener);
   
-  this.jumpSound = new THREE.Audio(listener);
-  const audioLoader = new THREE.AudioLoader();
+//   this.jumpSound = new THREE.Audio(listener);
+//   const audioLoader = new THREE.AudioLoader();
   
-  audioLoader.load('sounds/jump.mp3', (buffer) => {
-      this.jumpSound.setBuffer(buffer);
-      this.jumpSound.setVolume(0.5);
-  }, 
-  // Progress callback
-  (xhr) => {
-      console.log(`Jump sound: ${(xhr.loaded / xhr.total * 100)}% loaded`);
-  },
-  // Error callback
-  (error) => {
-      console.warn('Could not load jump sound:', error);
-  });
-}
+//   audioLoader.load('sounds/jump.mp3', (buffer) => {
+//       this.jumpSound.setBuffer(buffer);
+//       this.jumpSound.setVolume(0.5);
+//   }, 
+//   // Progress callback
+//   (xhr) => {
+//       console.log(`Jump sound: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+//   },
+//   // Error callback
+//   (error) => {
+//       console.warn('Could not load jump sound:', error);
+//   });
+// }
 
 // Optional: Add dust particle effect when landing
 createLandingEffect(position) {
@@ -2839,26 +2839,39 @@ processDoorMarkers() {
 }
 
 
-  loadDoorSound() {
+  async loadDoorSound() {
     const listener = new THREE.AudioListener();
     this.camera.add(listener);
     
-    this.doorSound = new THREE.Audio(listener);
-    const audioLoader = new THREE.AudioLoader();
-    
-    audioLoader.load('sounds/door.mp3', (buffer) => {
-        this.doorSound.setBuffer(buffer);
-        this.doorSound.setVolume(0.5);
-    },
-    // Progress callback
-    (xhr) => {
-        console.log(`Door sound: ${(xhr.loaded / xhr.total * 100)}% loaded`);
-    },
-    // Error callback
-    (error) => {
+    try {
+        const soundData = await this.resourceManager.getThreeJSSound('door.mp3', 'effects');
+        if (soundData) {
+            this.doorSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
+            if (this.doorSound) {
+                console.log('Door sound loaded successfully');
+            }
+        }
+    } catch (error) {
         console.warn('Could not load door sound:', error);
-    });
+    }
+}
+
+async loadJumpSound() {
+  const listener = new THREE.AudioListener();
+  this.camera.add(listener);
+  
+  try {
+      const soundData = await this.resourceManager.getThreeJSSound('jump.mp3', 'effects');
+      if (soundData) {
+          this.jumpSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
+          if (this.jumpSound) {
+              console.log('Jump sound loaded successfully');
+          }
+      }
+  } catch (error) {
+      console.warn('Could not load jump sound:', error);
   }
+}
 
   createProp(structure, assignment) {
     const prop = {

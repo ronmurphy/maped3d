@@ -1,10 +1,3 @@
-// Add comment near the splash art panel:
-/* TODO: Splash art upload functionality not fully implemented
-   Known issues:
-   - File upload not working
-   - Preview/gallery not updating
-   Consider hiding this tab until functionality is complete
-*/
 
 window.ResourceManager = class {
     constructor() {
@@ -143,6 +136,15 @@ window.ResourceManager = class {
         });
         return serialized;
     }
+
+    addSplashArtCategory(image, category = 'title') {
+        return {
+            ...image,
+            category: category
+        };
+    }
+
+
 
 
 
@@ -515,30 +517,33 @@ getSpecificTexture(category, criteria) {
         }
     }
 
-    async addSplashArt(file, description = '') {
+
+
+    async addSplashArt(file, description = '', category = 'title') {
         if (!file) {
             console.warn('No file provided for splash art');
             return null;
         }
-    
+        
         try {
             // Create image data and thumbnail
             const imageData = await this.createImageData(file);
             const thumbnail = await this.createThumbnail(file);
-    
+            
             const splashArtData = {
                 id: `splashArt_${Date.now()}`,
                 name: file.name,
                 description: description,
+                category: category,
                 data: imageData,
                 thumbnail: thumbnail,
                 dateAdded: new Date().toISOString()
             };
-    
+            
             // Store in splash art collection
             this.resources.splashArt.set(splashArtData.id, splashArtData);
             console.log('Added splash art:', splashArtData);
-    
+            
             return splashArtData.id;
         } catch (error) {
             console.error('Error adding splash art:', error);
@@ -692,56 +697,204 @@ getSpecificTexture(category, criteria) {
     }
 
 
-    updateGallery(drawer, category, view = 'grid') {
-        console.log('Updating gallery:', { category, view });
-        const container = drawer.querySelector(`#${category}Gallery`);
-        if (!container) {
-            console.warn(`Creating missing gallery container for ${category}`);
-            const tabPanel = drawer.querySelector(`sl-tab-panel[name="${category}"]`);
-            if (tabPanel) {
-                const newContainer = document.createElement('div');
-                newContainer.id = `${category}Gallery`;
-                newContainer.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
-                tabPanel.appendChild(newContainer);
-                return this.updateGallery(drawer, category, view);
-            }
-            console.warn(`Gallery container not found for ${category}`);
-            return;
-        }
+
+// Modify the updateGallery method in ResourceManager class
+updateGallery(drawer, category, view = 'grid') {
+    // Determine which tab panel to use
+    let tabPanelName;
+    if (['ambient', 'effects'].includes(category)) {
+        tabPanelName = 'sounds';
+    } else if (['walls', 'doors', 'environmental', 'props'].includes(category)) {
+        tabPanelName = 'textures';
+    } else if (['title', 'loading', 'background'].includes(category)) {
+        tabPanelName = 'splashArt';
+    } else {
+        tabPanelName = category;
+    }
     
-        // Update container class based on view
-        container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+    console.log(`Looking for gallery in tab panel: ${tabPanelName}`);
     
-        // Clear existing content
-        container.innerHTML = '';
-    
-        // Get resources based on category type
-        let resources;
-        if (category === 'splashArt') {
-            resources = this.resources.splashArt;
+    let container = drawer.querySelector(`#${category}Gallery`);
+    if (!container) {
+        console.log(`Creating new gallery container for ${category}`);
+        const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
+        
+        if (tabPanel) {
+            container = document.createElement('div');
+            container.id = `${category}Gallery`;
+            container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+            tabPanel.appendChild(container);
         } else {
-            resources = this.resources.textures[category];
-        }
-    
-        if (!resources || resources.size === 0) {
-            container.innerHTML = `
-                <sl-card class="empty-gallery">
-                    <div style="text-align: center; padding: 2rem;">
-                        <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">image_not_supported</span>
-                        <p>No ${category} added yet</p>
-                    </div>
-                </sl-card>
-            `;
+            console.error(`Tab panel ${tabPanelName} not found`);
             return;
         }
-    
-        // Create cards for each resource
-        resources.forEach((resource, id) => {
-            // console.log('Creating card for resource:', resource);
-            const card = document.createElement('sl-card');
-            card.className = 'resource-item';
-    
-            // Create content based on view type
+    }
+
+    // Hide all other galleries in the same tab panel and show this one
+    const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
+    if (tabPanel) {
+        tabPanel.querySelectorAll('.gallery-container').forEach(gallery => {
+            gallery.style.display = gallery.id === `${category}Gallery` ? '' : 'none';
+        });
+    }
+
+    // Update container class based on view
+    container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+
+    // Clear existing content
+    container.innerHTML = '';
+
+    // Get resources based on category type
+    let resources;
+    if (['title', 'loading', 'background'].includes(category)) {
+        // Filter splash art by category
+        resources = new Map(
+            Array.from(this.resources.splashArt.entries())
+                .filter(([_, art]) => art.category === category)
+        );
+    } else if (category === 'ambient' || category === 'effects') {
+        resources = this.resources.sounds[category];
+    } else {
+        resources = this.resources.textures[category];
+    }
+
+    if (!resources || resources.size === 0) {
+        container.innerHTML = `
+            <sl-card class="empty-gallery">
+                <div style="text-align: center; padding: 2rem;">
+                    ${category === 'ambient' || category === 'effects' ? 
+                        '<span class="material-icons" style="font-size: 3rem; opacity: 0.5;">volume_off</span>' :
+                        '<span class="material-icons" style="font-size: 3rem; opacity: 0.5;">image_not_supported</span>'
+                    }
+                    <p>No ${category} added yet</p>
+                </div>
+            </sl-card>
+        `;
+        return;
+    }
+
+    // Create cards for each resource
+    resources.forEach((resource, id) => {
+        const card = document.createElement('sl-card');
+        card.className = 'resource-item';
+
+        // Handle different resource types
+        if (category === 'ambient' || category === 'effects') {
+            // Sound resource
+            card.innerHTML = `
+                ${view === 'grid' ? `
+                    <div class="sound-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div class="sound-icon" style="font-size: 48px; color: #666;">
+                            <span class="material-icons">volume_up</span>
+                        </div>
+                        <div class="sound-info">
+                            <div class="sound-name" style="color: #666; font-weight: bold;">${resource.name}</div>
+                            <div class="sound-duration" style="color: #666; font-size: 0.9em;">
+                                ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="sound-icon" style="font-size: 24px; color: #666;">
+                            <span class="material-icons">volume_up</span>
+                        </div>
+                        <div class="sound-info">
+                            <div class="sound-name">${resource.name}</div>
+                            <div class="sound-duration" style="color: #666; font-size: 0.9em;">
+                                ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
+                            </div>
+                        </div>
+                    </div>
+                `}
+                <div slot="footer" class="resource-actions">
+                    <sl-button-group>
+                        <sl-button size="small" class="play-btn">
+                            <span class="material-icons">play_arrow</span>
+                        </sl-button>
+                        <sl-button size="small" class="delete-btn" variant="danger">
+                            <span class="material-icons">delete</span>
+                        </sl-button>
+                    </sl-button-group>
+                </div>
+            `;
+
+//             card.innerHTML = `
+//     ${view === 'grid' ? `
+//         <div class="sound-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+//             <div class="sound-icon" style="font-size: 48px; color: #666;">
+//                 <span class="material-icons">volume_up</span>
+//             </div>
+//             <div class="sound-info" style="text-align: center;">
+//                 <div class="sound-name" style="font-weight: bold;">${resource.name}</div>
+//                 <div class="sound-duration" style="color: #666; font-size: 0.9em;">
+//                     ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
+//                 </div>
+//             </div>
+//         </div>
+//         <div slot="footer" class="resource-actions" style="display: flex; flex-direction: column; gap: 8px;">
+//             <sl-button-group>
+//                 <sl-button size="small" class="play-btn">
+//                     <span class="material-icons">play_arrow</span>
+//                 </sl-button>
+//                 <sl-button size="small" class="delete-btn" variant="danger">
+//                     <span class="material-icons">delete</span>
+//                 </sl-button>
+//             </sl-button-group>
+//             <div class="sound-name" style="text-align: center; font-size: 0.9em;">${resource.name}</div>
+//         </div>
+//     ` : `
+//         <div style="display: flex; align-items: center; gap: 1rem;">
+//             <div class="sound-icon" style="font-size: 24px; color: #666;">
+//                 <span class="material-icons">volume_up</span>
+//             </div>
+//             <div class="sound-info">
+//                 <div class="sound-name">${resource.name}</div>
+//                 <div class="sound-duration" style="color: #666; font-size: 0.9em;">
+//                     ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
+//                 </div>
+//             </div>
+//         </div>
+//         <div slot="footer" class="resource-actions">
+//             <sl-button-group>
+//                 <sl-button size="small" class="play-btn">
+//                     <span class="material-icons">play_arrow</span>
+//                 </sl-button>
+//                 <sl-button size="small" class="delete-btn" variant="danger">
+//                     <span class="material-icons">delete</span>
+//                 </sl-button>
+//             </sl-button-group>
+//         </div>
+//     `}
+// `;
+            // Add sound-specific event listeners
+            
+            
+            const playBtn = card.querySelector('.play-btn');
+            playBtn.addEventListener('click', () => {
+                if (playBtn.getAttribute('aria-pressed') === 'true') {
+                    // Stop playback
+                    this.stopSound(id);
+                    playBtn.removeAttribute('aria-pressed');
+                    playBtn.querySelector('.material-icons').textContent = 'play_arrow';
+                } else {
+                    // Start playback
+                    const audio = this.playSound(id, category);
+                    if (audio) {
+                        playBtn.setAttribute('aria-pressed', 'true');
+                        playBtn.querySelector('.material-icons').textContent = 'stop';
+                        
+                        // Reset button when sound ends
+                        audio.addEventListener('ended', () => {
+                            playBtn.removeAttribute('aria-pressed');
+                            playBtn.querySelector('.material-icons').textContent = 'play_arrow';
+                        });
+                    }
+                }
+            });
+
+        } else {
+            // Handle existing texture/splashArt resources
             card.innerHTML = `
                 ${view === 'grid' ? `
                     <img 
@@ -782,24 +935,35 @@ getSpecificTexture(category, criteria) {
                     </sl-button-group>
                 </div>
             `;
-    
-            // Add event listeners
+
+            // Add preview button handler for non-sound resources
             card.querySelector('.preview-btn').addEventListener('click', () => {
                 this.showResourcePreview(resource);
             });
-    
-            card.querySelector('.delete-btn').addEventListener('click', () => {
-                if (category === 'splashArt') {
+        }
+
+        // Add delete button handler for all resource types
+        card.querySelector('.delete-btn').addEventListener('click', () => {
+            const confirmMessage = category === 'splashArt' ? 
+                `Delete "${resource.name}"?` :
+                `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
+
+            if (confirm(confirmMessage)) {
+                if (category === 'ambient' || category === 'effects') {
+                    this.deleteSound(id, category);
+                } else if (category === 'splashArt') {
                     this.resources.splashArt.delete(id);
                 } else {
                     this.deleteResource(category, id);
                 }
                 this.updateGallery(drawer, category, view);
-            });
-    
-            container.appendChild(card);
+            }
         });
-    }
+
+        container.appendChild(card);
+    });
+}
+
 
     formatDate(dateString) {
         const date = new Date(dateString);
@@ -1244,96 +1408,100 @@ getSpecificTexture(category, criteria) {
 
 
         drawer.innerHTML = `
-    ${styles.outerHTML}
-    <div class="resource-manager-content">
+        ${styles.outerHTML}
+        <div class="resource-manager-content">
+            <sl-tab-group>
+                <!-- Texture Panel -->
+                <sl-tab slot="nav" panel="textures">
+                    <span class="material-icons">image</span>
+                    Textures
+                </sl-tab>
+                <sl-tab slot="nav" panel="sounds">
+                    <span class="material-icons">volume_up</span>
+                    Sounds
+                </sl-tab>
+                <sl-tab slot="nav" panel="splashArt">
+                    <span class="material-icons">photo_library</span>
+                    Splash Art
+                </sl-tab>
+                <sl-tab slot="nav" panel="bestiary">
+                    <span class="material-icons">pets</span>
+                    Bestiary
+                </sl-tab>
+    
+                <!-- Texture Panel -->
+                <sl-tab-panel name="textures">
+                    <div class="panel-header">
+                        <sl-button-group class="texture-categories">
+                            <sl-button size="small" data-category="walls">Walls</sl-button>
+                            <sl-button size="small" data-category="doors">Doors</sl-button>
+                            <sl-button size="small" data-category="environmental">Environmental</sl-button>
+                            <sl-button size="small" data-category="props">Props</sl-button>
+                        </sl-button-group>
+                        
+                        <sl-button size="small" class="texture-upload-btn" variant="primary">
+                            <span class="material-icons">add_circle</span>
+                        </sl-button>
+                        <input type="file" hidden accept="image/*" multiple class="texture-file-input">
+                    </div>
+    
+                    <div class="view-controls">
+                        <sl-button-group>
+                            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                                <span class="material-icons">grid_view</span>
+                            </sl-button>
+                            <sl-button size="small" class="view-toggle" data-view="list">
+                                <span class="material-icons">view_list</span>
+                            </sl-button>
+                        </sl-button-group>
+                    </div>
+    
+                    <!-- Create containers for each texture category -->
+                    <div id="wallsGallery" class="gallery-container gallery-grid"></div>
+                    <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+                    <div id="environmentalGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+                    <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+                </sl-tab-panel>
+    
+                <!-- Sounds Panel -->
+                <sl-tab-panel name="sounds">
+                    <div class="panel-header">
+                        <sl-button-group class="sound-categories">
+                            <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
+                            <sl-button size="small" data-category="effects">Effects</sl-button>
+                        </sl-button-group>
+                        
+                        <sl-button size="small" class="sound-upload-btn" variant="primary">
+                            <span class="material-icons">add_circle</span>
+                        </sl-button>
+                        <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
+                    </div>
+    
+                    <div class="view-controls">
+                        <sl-button-group>
+                            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                                <span class="material-icons">grid_view</span>
+                            </sl-button>
+                            <sl-button size="small" class="view-toggle" data-view="list">
+                                <span class="material-icons">view_list</span>
+                            </sl-button>
+                        </sl-button-group>
+                    </div>
+    
+                    <!-- Create containers for each sound category -->
+                    <div id="ambientGallery" class="gallery-container gallery-grid"></div>
+                    <div id="effectsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+                </sl-tab-panel>
 
-
-        <sl-tab-group>
-            <sl-tab slot="nav" panel="textures">
-                <span class="material-icons">image</span>
-                Textures
-            </sl-tab>
-            <sl-tab slot="nav" panel="sounds">
-                <span class="material-icons">volume_up</span>
-                Sounds
-            </sl-tab>
-            <sl-tab slot="nav" panel="splashArt">
-                <span class="material-icons">photo_library</span>
-                Splash Art
-            </sl-tab>
-            <sl-tab slot="nav" panel="bestiary">
-                <span class="material-icons">pets</span>
-                Bestiary
-            </sl-tab>
-
-<!-- Texture Panel -->
-<sl-tab-panel name="textures">
+<sl-tab-panel name="splashArt">
     <div class="panel-header">
-<sl-button-group class="texture-categories">
-    <sl-button size="small" data-category="walls">Walls</sl-button>
-    <sl-button size="small" data-category="doors">Doors</sl-button>
-    <sl-button size="small" data-category="environmental">
-        Environmental
-    </sl-button>
-    <sl-button size="small" data-category="props">Props</sl-button>
-</sl-button-group>
-        
-        <sl-button size="small" class="texture-upload-btn" variant="primary">
-            <span class="material-icons">add_circle</span>
-        </sl-button>
-        <input type="file" hidden accept="image/*" multiple class="texture-file-input">
-    </div>
-
-    <div class="view-controls">
-        <sl-button-group>
-            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                <span class="material-icons">grid_view</span>
-            </sl-button>
-            <sl-button size="small" class="view-toggle" data-view="list">
-                <span class="material-icons">view_list</span>
-            </sl-button>
-        </sl-button-group>
-    </div>
-
-    <!-- Create separate containers for each texture category -->
-    <div id="wallsGallery" class="gallery-container gallery-grid"></div>
-    <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-    <div id="floorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-    <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-</sl-tab-panel>
-
-            <!-- Sounds Panel -->
-            <sl-tab-panel name="sounds">
-                <div class="panel-header">
-                    <sl-button-group class="sound-categories">
-                        <sl-button size="small" data-category="ambient">Ambient</sl-button>
-                        <sl-button size="small" data-category="effects">Effects</sl-button>
-                    </sl-button-group>
-                    
-                    <sl-button size="small" class="sound-upload-btn" variant="primary">
-                        <span class="material-icons">add_circle</span>
-                    </sl-button>
-                    <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
-                </div>
-
-                <div class="view-controls">
-                    <sl-button-group>
-                        <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                            <span class="material-icons">grid_view</span>
-                        </sl-button>
-                        <sl-button size="small" class="view-toggle" data-view="list">
-                            <span class="material-icons">view_list</span>
-                        </sl-button>
-                    </sl-button-group>
-                </div>
-
-                <div class="gallery-container" id="soundGallery"></div>
-            </sl-tab-panel>
-
-            <!-- Splash Art Panel -->
-    <sl-tab-panel name="splashArt">
-        <div class="panel-header">
-            <div class="flex-spacer"></div>
+        <div class="splash-art-controls" style="display: flex; align-items: center; gap: 16px;">
+            <sl-button-group>
+                <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
+                <sl-button size="small" data-category="loading">Loading</sl-button>
+                <sl-button size="small" data-category="background">Background</sl-button>
+            </sl-button-group>
+            
             <sl-button size="small" class="splashart-upload-btn" variant="primary">
                 <span class="material-icons">add_circle</span>
             </sl-button>
@@ -1350,9 +1518,13 @@ getSpecificTexture(category, criteria) {
                 </sl-button>
             </sl-button-group>
         </div>
+    </div>
 
-        <div id="splashArtGallery" class="gallery-container gallery-grid"></div>
-    </sl-tab-panel>
+    <!-- Splash art galleries -->
+    <div id="titleGallery" class="gallery-container gallery-grid"></div>
+    <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+    <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+</sl-tab-panel>
 
 
             <!-- Bestiary Panel -->
@@ -1656,7 +1828,7 @@ if (packNameInput) {
                 const category = btn.dataset.category;
 
                 // Hide all galleries first
-                ['walls', 'doors', 'floors', 'props'].forEach(cat => {
+                ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
                     const gallery = drawer.querySelector(`#${cat}Gallery`);
                     if (gallery) {
                         gallery.style.display = 'none';
@@ -1672,6 +1844,8 @@ if (packNameInput) {
                 }
             });
         });
+
+        this.setupSplashArtHandlers(drawer);
 
             // Handle tab changes to load bestiary when tab is activated
 
@@ -1714,7 +1888,11 @@ if (tabGroup) {
             this.updateBestiaryGallery(drawer, 'grid');
         }
     });
+
+
 }
+
+
 
         // Handle file uploads for each type
         const setupUploadHandler = (btnClass, inputClass, type) => {
@@ -1775,35 +1953,19 @@ if (tabGroup) {
         setupUploadHandler('sound-upload-btn', 'sound-file-input', 'sound');
         setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
 
+        const soundCategoryBtns = drawer.querySelectorAll('.sound-categories sl-button');
+soundCategoryBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Update button states
+        soundCategoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+        btn.setAttribute('variant', 'primary');
 
-        // const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-        // if (exportBestiaryBtn) {
-        //     exportBestiaryBtn.addEventListener('click', () => {
-        //         this.saveBestiaryToFile();
-        //     });
-        // }
-        
-        // const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-        // if (importBestiaryBtn) {
-        //     importBestiaryBtn.addEventListener('click', () => {
-        //         const input = document.createElement('input');
-        //         input.type = 'file';
-        //         input.accept = '.json';
-        //         input.onchange = async (e) => {
-        //             const file = e.target.files[0];
-        //             if (file) {
-        //                 const success = await this.loadBestiaryFromFile(file);
-        //                 if (success) {
-        //                     this.updateBestiaryGallery(drawer, 'grid');
-        //                     alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
-        //                 } else {
-        //                     alert('Failed to load bestiary file');
-        //                 }
-        //             }
-        //         };
-        //         input.click();
-        //     });
-        // }
+        const category = btn.dataset.category;
+        this.updateGallery(drawer, category, 
+            drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
+        );
+    });
+});
 
             // Setup Bestiary tab handlers
     const addMonsterBtn = drawer.querySelector('.add-monster-btn');
@@ -1818,6 +1980,129 @@ if (tabGroup) {
             // Optional: Clean up any resources if needed
         });
     }
+
+    // setupSplashArtHandlers(drawer) {
+    //     const categoryBtns = drawer.querySelectorAll('.splash-art-controls sl-button-group sl-button');
+    //     categoryBtns.forEach(btn => {
+    //         btn.addEventListener('click', () => {
+    //             // Update button states
+    //             categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+    //             btn.setAttribute('variant', 'primary');
+    
+    //             const category = btn.dataset.category;
+    //             this.updateGallery(drawer, category, 
+    //                 drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
+    //             );
+    //         });
+    //     });
+    
+    //     // Update file upload handler
+    //     const uploadBtn = drawer.querySelector('.splashart-upload-btn');
+    //     const fileInput = drawer.querySelector('.splashart-file-input');
+        
+    //     if (uploadBtn && fileInput) {
+    //         uploadBtn.addEventListener('click', () => {
+    //             fileInput.click();
+    //         });
+            
+    //         fileInput.addEventListener('change', async (e) => {
+    //             const files = Array.from(e.target.files || []);
+    //             if (!files.length) return;
+    
+    //             const activeCategory = drawer.querySelector('.splash-art-controls sl-button[variant="primary"]')?.dataset.category || 'title';
+                
+    //             for (const file of files) {
+    //                 try {
+    //                     const description = await this.promptForDescription(file.name);
+    //                     await this.addSplashArt(file, description, activeCategory);
+    //                 } catch (error) {
+    //                     console.error(`Error processing splash art file:`, error);
+    //                 }
+    //             }
+    
+    //             // Update gallery
+    //             this.updateGallery(drawer, activeCategory, 
+    //                 drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
+    //             );
+                
+    //             // Reset file input
+    //             fileInput.value = '';
+    //         });
+    //     }
+    // }
+
+// Add this method to ResourceManager class
+setupSplashArtHandlers(drawer) {
+    console.log('Setting up splash art handlers');
+    
+    // Set up category buttons
+    const categoryBtns = drawer.querySelectorAll('.splash-art-controls sl-button-group sl-button');
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update button states
+            categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+            btn.setAttribute('variant', 'primary');
+
+            // Update gallery with selected category
+            const category = btn.dataset.category;
+            const currentView = drawer.querySelector('.splash-art-controls .view-toggle[variant="primary"]')?.dataset.view || 'grid';
+            this.updateGallery(drawer, category, currentView);
+        });
+    });
+
+    // Set up upload button
+    const uploadBtn = drawer.querySelector('.splashart-upload-btn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', () => {
+            // Create a new file input each time
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.multiple = true;
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            fileInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (!files.length) return;
+
+                const activeCategory = drawer.querySelector('.splash-art-controls sl-button[variant="primary"]')?.dataset.category || 'title';
+                
+                for (const file of files) {
+                    try {
+                        const description = await this.promptForDescription(file.name);
+                        await this.addSplashArt(file, description, activeCategory);
+                    } catch (error) {
+                        console.error('Error processing splash art file:', error);
+                    }
+                }
+
+                // Update gallery
+                this.updateGallery(drawer, activeCategory, 
+                    drawer.querySelector('.splash-art-controls .view-toggle[variant="primary"]')?.dataset.view || 'grid'
+                );
+
+                // Clean up
+                document.body.removeChild(fileInput);
+            });
+
+            // Trigger file selection
+            fileInput.click();
+        });
+    }
+
+    // Set up view toggles
+    const viewToggles = drawer.querySelectorAll('.splash-art-controls .view-toggle');
+    viewToggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            viewToggles.forEach(t => t.setAttribute('variant', 'default'));
+            toggle.setAttribute('variant', 'primary');
+
+            const currentCategory = drawer.querySelector('.splash-art-controls sl-button[variant="primary"]')?.dataset.category || 'title';
+            this.updateGallery(drawer, currentCategory, toggle.dataset.view);
+        });
+    });
+}
 
     async promptForDescription(filename) {
         return new Promise((resolve) => {
@@ -2447,36 +2732,6 @@ updateBestiaryGallery(drawer, view = 'grid') {
             panelHeader.style.alignItems = 'flex-end';
             panelHeader.style.gap = '8px';
             
-            // Create compact search layout
-            // panelHeader.innerHTML = `
-            //     <sl-input placeholder="Search..." clearable id="monster-search" size="small" style="flex: 1; min-width: 120px;"></sl-input>
-                
-            //     <sl-select placeholder="CR" clearable id="cr-filter" size="small" style="width: 80px;">
-            //         ${Array.from(crValues).sort((a, b) => {
-            //             // Convert CR strings to numbers for proper sorting
-            //             const numA = a === '0' ? 0 : eval(String(a).replace('/','/')); 
-            //             const numB = b === '0' ? 0 : eval(String(b).replace('/','/')); 
-            //             return numA - numB;
-            //         }).map(cr => `<sl-option value="${cr}">CR ${cr}</sl-option>`).join('')}
-            //     </sl-select>
-                
-            //     <sl-select placeholder="Type" clearable id="type-filter" size="small" style="width: 100px;">
-            //         ${Array.from(typeValues).sort().map(type => 
-            //             `<sl-option value="${type}">${type}</sl-option>`
-            //         ).join('')}
-            //     </sl-select>
-                
-            //     <sl-select placeholder="Size" clearable id="size-filter" size="small" style="width: 90px;">
-            //         ${Array.from(sizeValues).map(size => 
-            //             `<sl-option value="${size}">${size}</sl-option>`
-            //         ).join('')}
-            //     </sl-select>
-                
-            //     <sl-button variant="text" id="clear-filters" size="small">
-            //         <span class="material-icons" style="font-size: 16px;">filter_alt_off</span>
-            //     </sl-button>
-            // `;
-
             panelHeader.innerHTML = `
     <!-- Native search input -->
     <div class="search-container" style="flex: 1; min-width: 120px; position: relative;">
@@ -3201,6 +3456,191 @@ getFilteredBestiary(drawer) {
     }
 
 
+    async addSound(file, category = 'ambient') {
+        if (!file) {
+            console.warn('No file provided for sound');
+            return null;
+        }
+    
+        try {
+            console.log('Processing sound file:', file.name);
+            
+            // Create unique ID for the sound
+            const soundId = `${category}_${Date.now()}`;
+            
+            // Convert file to base64
+            const soundData = await this.createSoundData(file);
+            
+            // Get duration if possible
+            let duration = await this.getSoundDuration(file);
+            
+            const soundInfo = {
+                id: soundId,
+                name: file.name,
+                category,
+                data: soundData,
+                duration: duration || 0,
+                dateAdded: new Date().toISOString()
+            };
+    
+            // Store in appropriate category
+            if (!this.resources.sounds[category]) {
+                this.resources.sounds[category] = new Map();
+            }
+            this.resources.sounds[category].set(soundId, soundInfo);
+            
+            console.log('Added sound:', {
+                id: soundId,
+                name: file.name,
+                category,
+                duration
+            });
+    
+            return soundId;
+        } catch (error) {
+            console.error('Error processing sound file:', error);
+            return null;
+        }
+    }
+    
+    async createSoundData(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    async getSoundDuration(file) {
+        return new Promise((resolve) => {
+            const audio = new Audio();
+            audio.addEventListener('loadedmetadata', () => {
+                resolve(audio.duration);
+            });
+            audio.addEventListener('error', () => {
+                console.warn('Could not get audio duration');
+                resolve(0);
+            });
+            audio.src = URL.createObjectURL(file);
+        });
+    }
+    
+    playSound(soundId, category) {
+        const sound = this.resources.sounds[category]?.get(soundId);
+        if (!sound?.data) {
+            console.warn('Sound not found:', soundId);
+            return;
+        }
+    
+        // Create and configure audio element
+        const audio = new Audio(sound.data);
+        audio.volume = 1.0;
+    
+        // Store reference to stop playback if needed
+        if (!this.activeAudio) {
+            this.activeAudio = new Map();
+        }
+        
+        // Stop any previous playback of this sound
+        if (this.activeAudio.has(soundId)) {
+            this.activeAudio.get(soundId).pause();
+        }
+        
+        this.activeAudio.set(soundId, audio);
+    
+        // Play the sound
+        audio.play().catch(error => {
+            console.error('Error playing sound:', error);
+        });
+    
+        // Remove reference when done
+        audio.addEventListener('ended', () => {
+            this.activeAudio.delete(soundId);
+        });
+    
+        return audio;
+    }
+    
+    stopSound(soundId) {
+        if (this.activeAudio?.has(soundId)) {
+            this.activeAudio.get(soundId).pause();
+            this.activeAudio.delete(soundId);
+        }
+    }
+    
+    deleteSound(soundId, category) {
+        // Stop playback if active
+        this.stopSound(soundId);
+        
+        // Remove from storage
+        const categoryMap = this.resources.sounds[category];
+        if (categoryMap) {
+            categoryMap.delete(soundId);
+            return true;
+        }
+        return false;
+    }
+    
+    async convertBase64ToAudioBuffer(base64Data, audioContext) {
+        // Remove data URL prefix if present
+        const base64String = base64Data.replace(/^data:audio\/[^;]+;base64,/, '');
+        
+        // Decode base64
+        const binaryString = window.atob(base64String);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+    
+        // Create audio buffer
+        return new Promise((resolve, reject) => {
+            audioContext.decodeAudioData(
+                bytes.buffer,
+                buffer => resolve(buffer),
+                error => reject(error)
+            );
+        });
+    }
+    
+    // Get sound for Three.js
+    async getThreeJSSound(soundName, category = 'effects') {
+        // Search through the category for a matching sound name
+        const soundEntry = Array.from(this.resources.sounds[category].values())
+            .find(sound => sound.name.toLowerCase() === soundName.toLowerCase());
+        
+        if (!soundEntry) {
+            console.warn(`Sound "${soundName}" not found in category "${category}"`);
+            return null;
+        }
+    
+        return {
+            data: soundEntry.data,
+            volume: 0.5 // Default volume, could be made configurable
+        };
+    }
+    
+    // Load sound for Three.js
+    async loadThreeJSSound(sound, listener) {
+        if (!sound || !sound.data) {
+            console.warn('Invalid sound data provided');
+            return null;
+        }
+    
+        const audioContext = listener.context;
+        const threeSound = new THREE.Audio(listener);
+    
+        try {
+            const buffer = await this.convertBase64ToAudioBuffer(sound.data, audioContext);
+            threeSound.setBuffer(buffer);
+            threeSound.setVolume(sound.volume);
+            return threeSound;
+        } catch (error) {
+            console.error('Error loading sound:', error);
+            return null;
+        }
+    }
 
 
 

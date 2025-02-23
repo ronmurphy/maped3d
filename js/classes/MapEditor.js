@@ -49,7 +49,7 @@ class MapEditor {
     setTimeout(() => this.calculateLayersListHeight(), 100);
     window.addEventListener("resize", this.calculateLayersListHeight);
 
-    this.fixZoomIssues();
+    // this.fixZoomIssues();
   }
 
   checkResourceManager(callback) {
@@ -3775,83 +3775,7 @@ if (saveProjectBtn) {
     });
   }
 
-  // handleWheel(e) {
-  //   e.preventDefault();
 
-  // // Adjust sensitivity - make the zoom effect more gradual
-  // const sensitivity = 0.0005; // Reduced from 0.001 for finer control
-  // const delta = e.deltaY * -sensitivity;
-
-  // // Clamp the delta to prevent too rapid changes
-  // const clampedDelta = Math.max(Math.min(delta, 0.1), -0.1);
-
-  // // Calculate new scale with smoother transition
-  // const newScale = Math.min(Math.max(0.1, this.scale + clampedDelta), 4);
-
-  // // Only proceed if the scale actually changed
-  // if (newScale === this.scale) return;
-
-  // // Get mouse position relative to canvas
-  // const rect = this.canvas.getBoundingClientRect();
-  // const mouseX = e.clientX - rect.left;
-  // const mouseY = e.clientY - rect.top;
-
-  // // Calculate the position under the mouse in image coordinates
-  // const imageX = (mouseX - this.offset.x) / this.scale;
-  // const imageY = (mouseY - this.offset.y) / this.scale;
-
-  // // Store previous scale for smooth transition
-  // const prevScale = this.scale;
-
-  // // Update the scale
-  // this.scale = newScale;
-
-  // // Calculate new offset to keep the same image position under the mouse
-  // // Add smoothing factor to prevent sudden jumps
-  // const smoothing = 0.95; // Adjust this value to control smoothness (0-1)
-  // this.offset.x = mouseX - imageX * this.scale;
-  // this.offset.y = mouseY - imageY * this.scale;
-  
-  // // Smooth the transition by blending with previous offset
-  // this.offset.x = this.offset.x * smoothing + (mouseX - imageX * prevScale) * (1 - smoothing);
-  // this.offset.y = this.offset.y * smoothing + (mouseY - imageY * prevScale) * (1 - smoothing);
-
-  //   // Update all room positions when zooming
-  //   this.rooms.forEach((room) => room.updateElement());
-
-  //   // Update all markers
-  //   this.markers.forEach((marker) => {
-  //     this.updateMarkerPosition(marker);
-  //     if (marker.type === "encounter" && marker.data.monster) {
-  //       // Additional zoom handling for encounter markers
-  //       const token = marker.element.querySelector(".monster-token");
-  //       if (token) {
-  //         token.style.transform = `scale(${this.scale})`;
-  //         token.style.transformOrigin = "center";
-  //       }
-  //     }
-
-  //     const propToken = marker.element.querySelector(".prop-visual");
-  //     if (propToken) {
-  //       propToken.style.transform = `scale(${this.scale})`;
-  //       propToken.style.transformOrigin = "center";
-  //     }
-  //   });
-
-  //   // Update player start marker if it exists
-  //   if (this.playerStart) {
-  //     this.updateMarkerPosition(this.playerStart);
-  //   }
-
-  //   // In handleWheel method, after updating markers
-  //   this.markers.forEach(marker => {
-  //     if (marker.type === 'teleport' && marker.data.isPointA && marker.data.pairedMarker) {
-  //       this.updateTeleportConnection(marker, marker.data.pairedMarker);
-  //     }
-  //   });
-
-  //   this.render();
-  // }
 
   handleWheel(e) {
     e.preventDefault();
@@ -4028,89 +3952,89 @@ if (saveProjectBtn) {
 
 
 
-  fixZoomIssues() {
-    console.log("Fixing zoom issues for overlapping elements");
+  // fixZoomIssues() {
+  //   console.log("Fixing zoom issues for overlapping elements");
     
-    // 1. Make the canvas wrapper capture all wheel events in its area
-    const wrapper = document.getElementById("canvasWrapper");
+  //   // 1. Make the canvas wrapper capture all wheel events in its area
+  //   const wrapper = document.getElementById("canvasWrapper");
     
-    // Use a capturing event listener that runs before regular listeners
-    wrapper.addEventListener("wheel", (e) => {
-      // Only handle wheel events if we're in the canvas area
-      const rect = wrapper.getBoundingClientRect();
-      if (e.clientX >= rect.left && e.clientX <= rect.right && 
-          e.clientY >= rect.top && e.clientY <= rect.bottom) {
+  //   // Use a capturing event listener that runs before regular listeners
+  //   wrapper.addEventListener("wheel", (e) => {
+  //     // Only handle wheel events if we're in the canvas area
+  //     const rect = wrapper.getBoundingClientRect();
+  //     if (e.clientX >= rect.left && e.clientX <= rect.right && 
+  //         e.clientY >= rect.top && e.clientY <= rect.bottom) {
         
-        // Stop propagation to prevent other elements from handling it
-        e.stopPropagation();
+  //       // Stop propagation to prevent other elements from handling it
+  //       e.stopPropagation();
         
-        // Call our zoom handler
-        this.handleWheel(e);
-      }
-    }, {capture: true}); // The capture: true is critical - it runs before other handlers
+  //       // Call our zoom handler
+  //       this.handleWheel(e);
+  //     }
+  //   }, {capture: true}); // The capture: true is critical - it runs before other handlers
     
-    // 2. Fix any existing room elements
-    const fixRoomElements = () => {
-      document.querySelectorAll('.room-block').forEach(element => {
-        // Disable pointer events on wheel to let it reach the wrapper
-        element.addEventListener('wheel', (e) => {
-          e.stopPropagation();
-          // Forward the event to the wrapper
-          const newEvent = new WheelEvent('wheel', e);
-          wrapper.dispatchEvent(newEvent);
-        });
-      });
-    };
+  //   // 2. Fix any existing room elements
+  //   const fixRoomElements = () => {
+  //     document.querySelectorAll('.room-block').forEach(element => {
+  //       // Disable pointer events on wheel to let it reach the wrapper
+  //       element.addEventListener('wheel', (e) => {
+  //         e.stopPropagation();
+  //         // Forward the event to the wrapper
+  //         const newEvent = new WheelEvent('wheel', e);
+  //         wrapper.dispatchEvent(newEvent);
+  //       });
+  //     });
+  //   };
     
-    // 3. Fix any existing marker elements
-    const fixMarkerElements = () => {
-      document.querySelectorAll('.map-marker').forEach(element => {
-        // Disable pointer events on wheel to let it reach the wrapper
-        element.addEventListener('wheel', (e) => {
-          e.stopPropagation();
-          // Forward the event to the wrapper
-          const newEvent = new WheelEvent('wheel', e);
-          wrapper.dispatchEvent(newEvent);
-        });
-      });
-    };
+  //   // 3. Fix any existing marker elements
+  //   const fixMarkerElements = () => {
+  //     document.querySelectorAll('.map-marker').forEach(element => {
+  //       // Disable pointer events on wheel to let it reach the wrapper
+  //       element.addEventListener('wheel', (e) => {
+  //         e.stopPropagation();
+  //         // Forward the event to the wrapper
+  //         const newEvent = new WheelEvent('wheel', e);
+  //         wrapper.dispatchEvent(newEvent);
+  //       });
+  //     });
+  //   };
     
-    // Run immediately
-    fixRoomElements();
-    fixMarkerElements();
+  //   // Run immediately
+  //   fixRoomElements();
+  //   fixMarkerElements();
     
-    // Create a mutation observer to fix new elements as they're added
-    const observer = new MutationObserver((mutations) => {
-      let needsFix = false;
+  //   // Create a mutation observer to fix new elements as they're added
+  //   const observer = new MutationObserver((mutations) => {
+  //     let needsFix = false;
       
-      mutations.forEach(mutation => {
-        if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach(node => {
-            if (node.classList) {
-              if (node.classList.contains('room-block') || 
-                  node.classList.contains('map-marker')) {
-                needsFix = true;
-              }
-            }
-          });
-        }
-      });
+  //     mutations.forEach(mutation => {
+  //       if (mutation.type === 'childList') {
+  //         mutation.addedNodes.forEach(node => {
+  //           if (node.classList) {
+  //             if (node.classList.contains('room-block') || 
+  //                 node.classList.contains('map-marker')) {
+  //               needsFix = true;
+  //             }
+  //           }
+  //         });
+  //       }
+  //     });
       
-      if (needsFix) {
-        fixRoomElements();
-        fixMarkerElements();
-      }
-    });
+  //     if (needsFix) {
+  //       fixRoomElements();
+  //       fixMarkerElements();
+  //     }
+  //   });
     
-    // Observe the canvas container for new elements
-    observer.observe(document.querySelector('.canvas-container'), {
-      childList: true,
-      subtree: true
-    });
+  //   // Observe the canvas container for new elements
+  //   observer.observe(document.querySelector('.canvas-container'), {
+  //     childList: true,
+  //     subtree: true
+  //   });
     
-    console.log("Zoom fix applied");
-    this.centerMap();
-  }
+  //   console.log("Zoom fix applied");
+  //   this.centerMap();
+  // }
 
   centerMap() {
     if (!this.baseImage) return;
@@ -4884,7 +4808,7 @@ if (saveProjectBtn) {
         }
       }
     }
-    this.fixZoomIssues();
+    // this.fixZoomIssues();
   }
 
   checkTokenElevation(marker) {
