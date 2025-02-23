@@ -1017,7 +1017,7 @@ async loadMap(file) {
       this.updateMarkerPositions();
       this.render();
     });
-  }, 2000);
+  }, 1000);
 
   this.centerMap();
 }
@@ -2480,53 +2480,6 @@ openMapBtn.addEventListener("click", () => {
   dialog.show();
 });
 
-// const saveProjectBtn = document.getElementById("saveProjectBtn");
-// if (saveProjectBtn) {
-//   saveProjectBtn.addEventListener("click", () => {
-//     const dialog = document.createElement("sl-dialog");
-//     dialog.label = "Save Options";
-//     dialog.innerHTML = `
-//       <div style="display: flex; flex-direction: column; gap: 16px;">
-//         <sl-button size="large" class="save-map-btn" style="justify-content: flex-start;">
-//           <span slot="prefix" class="material-icons">map</span>
-//           Save Map Only
-//           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//             Save only the map file (.map.json)
-//           </div>
-//         </sl-button>
-        
-//         <sl-button size="large" class="save-project-btn" style="justify-content: flex-start;">
-//           <span slot="prefix" class="material-icons">folder</span>
-//           Save Complete Project
-//           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//             Save map, resources, and project file
-//           </div>
-//         </sl-button>
-//       </div>
-//     `;
-    
-//     dialog.querySelector(".save-map-btn").addEventListener("click", async () => {
-//       await this.saveMap();
-//       dialog.hide();
-//     });
-    
-//     dialog.querySelector(".save-project-btn").addEventListener("click", async () => {
-//       await this.saveProjectFile();
-//       dialog.hide();
-//     });
-    
-//     dialog.addEventListener("sl-after-hide", () => {
-//       dialog.remove();
-//     });
-    
-//     document.body.appendChild(dialog);
-//     dialog.show();
-//   });
-// }
-    
-
-//  fixed version:
-
 const saveProjectBtn = document.getElementById("saveProjectBtn");
 if (saveProjectBtn) {
   saveProjectBtn.addEventListener("click", () => {
@@ -3822,61 +3775,212 @@ if (saveProjectBtn) {
     });
   }
 
+  // handleWheel(e) {
+  //   e.preventDefault();
+
+  // // Adjust sensitivity - make the zoom effect more gradual
+  // const sensitivity = 0.0005; // Reduced from 0.001 for finer control
+  // const delta = e.deltaY * -sensitivity;
+
+  // // Clamp the delta to prevent too rapid changes
+  // const clampedDelta = Math.max(Math.min(delta, 0.1), -0.1);
+
+  // // Calculate new scale with smoother transition
+  // const newScale = Math.min(Math.max(0.1, this.scale + clampedDelta), 4);
+
+  // // Only proceed if the scale actually changed
+  // if (newScale === this.scale) return;
+
+  // // Get mouse position relative to canvas
+  // const rect = this.canvas.getBoundingClientRect();
+  // const mouseX = e.clientX - rect.left;
+  // const mouseY = e.clientY - rect.top;
+
+  // // Calculate the position under the mouse in image coordinates
+  // const imageX = (mouseX - this.offset.x) / this.scale;
+  // const imageY = (mouseY - this.offset.y) / this.scale;
+
+  // // Store previous scale for smooth transition
+  // const prevScale = this.scale;
+
+  // // Update the scale
+  // this.scale = newScale;
+
+  // // Calculate new offset to keep the same image position under the mouse
+  // // Add smoothing factor to prevent sudden jumps
+  // const smoothing = 0.95; // Adjust this value to control smoothness (0-1)
+  // this.offset.x = mouseX - imageX * this.scale;
+  // this.offset.y = mouseY - imageY * this.scale;
+  
+  // // Smooth the transition by blending with previous offset
+  // this.offset.x = this.offset.x * smoothing + (mouseX - imageX * prevScale) * (1 - smoothing);
+  // this.offset.y = this.offset.y * smoothing + (mouseY - imageY * prevScale) * (1 - smoothing);
+
+  //   // Update all room positions when zooming
+  //   this.rooms.forEach((room) => room.updateElement());
+
+  //   // Update all markers
+  //   this.markers.forEach((marker) => {
+  //     this.updateMarkerPosition(marker);
+  //     if (marker.type === "encounter" && marker.data.monster) {
+  //       // Additional zoom handling for encounter markers
+  //       const token = marker.element.querySelector(".monster-token");
+  //       if (token) {
+  //         token.style.transform = `scale(${this.scale})`;
+  //         token.style.transformOrigin = "center";
+  //       }
+  //     }
+
+  //     const propToken = marker.element.querySelector(".prop-visual");
+  //     if (propToken) {
+  //       propToken.style.transform = `scale(${this.scale})`;
+  //       propToken.style.transformOrigin = "center";
+  //     }
+  //   });
+
+  //   // Update player start marker if it exists
+  //   if (this.playerStart) {
+  //     this.updateMarkerPosition(this.playerStart);
+  //   }
+
+  //   // In handleWheel method, after updating markers
+  //   this.markers.forEach(marker => {
+  //     if (marker.type === 'teleport' && marker.data.isPointA && marker.data.pairedMarker) {
+  //       this.updateTeleportConnection(marker, marker.data.pairedMarker);
+  //     }
+  //   });
+
+  //   this.render();
+  // }
+
   handleWheel(e) {
     e.preventDefault();
-    const delta = e.deltaY * -0.001;
-    const newScale = Math.min(Math.max(0.1, this.scale + delta), 4);
-
+    
+    // Adjust sensitivity - make the zoom effect more gradual
+    const sensitivity = 0.0005;
+    const delta = e.deltaY * -sensitivity;
+    
+    // Clamp the delta to prevent too rapid changes
+    const clampedDelta = Math.max(Math.min(delta, 0.1), -0.1);
+    
+    // Calculate new scale with smoother transition
+    const newScale = Math.min(Math.max(0.1, this.scale + clampedDelta), 4);
+    
+    // Only proceed if the scale actually changed
+    if (newScale === this.scale) return;
+    
     // Get mouse position relative to canvas
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-
+    
     // Calculate the position under the mouse in image coordinates
     const imageX = (mouseX - this.offset.x) / this.scale;
     const imageY = (mouseY - this.offset.y) / this.scale;
-
+    
+    // Store previous scale for smooth transition
+    const prevScale = this.scale;
+    
     // Update the scale
     this.scale = newScale;
-
+    
     // Calculate new offset to keep the same image position under the mouse
+    const smoothing = 0.95;
     this.offset.x = mouseX - imageX * this.scale;
     this.offset.y = mouseY - imageY * this.scale;
-
-    // Update all room positions when zooming
-    this.rooms.forEach((room) => room.updateElement());
-
-    // Update all markers
+    
+    // Smooth the transition
+    this.offset.x = this.offset.x * smoothing + (mouseX - imageX * prevScale) * (1 - smoothing);
+    this.offset.y = this.offset.y * smoothing + (mouseY - imageY * prevScale) * (1 - smoothing);
+  
+    // Update room positions and transformations
+    this.rooms.forEach(room => {
+      if (room.element) {
+        // Update position
+        room.element.style.left = `${room.bounds.x * this.scale + this.offset.x}px`;
+        room.element.style.top = `${room.bounds.y * this.scale + this.offset.y}px`;
+        
+        // Update size
+        room.element.style.width = `${room.bounds.width * this.scale}px`;
+        room.element.style.height = `${room.bounds.height * this.scale}px`;
+  
+        // If this is a polygon room, update the clip path
+        if (room.shape === 'polygon' && room.points) {
+          const clipPath = room.points
+            .map(p => `${p.x * this.scale}px ${p.y * this.scale}px`)
+            .join(', ');
+          room.element.style.clipPath = `polygon(${clipPath})`;
+        }
+      }
+    });
+  
+    // Update markers
     this.markers.forEach((marker) => {
       this.updateMarkerPosition(marker);
       if (marker.type === "encounter" && marker.data.monster) {
         // Additional zoom handling for encounter markers
         const token = marker.element.querySelector(".monster-token");
         if (token) {
-          token.style.transform = `scale(${this.scale})`;
-          token.style.transformOrigin = "center";
+          // Calculate monster size in squares (if available)
+          const monsterSize = marker.data.monster.basic && marker.data.monster.basic.size 
+            ? this.getMonsterSizeInSquares(marker.data.monster.basic.size) 
+            : 1;
+            
+          // Set a fixed pixel size that we maintain regardless of zoom
+          const baseSize = (this.cellSize || 32) * monsterSize;
+          
+          // Update token size to maintain apparent size
+          token.style.width = `${baseSize}px`;
+          token.style.height = `${baseSize}px`;
+          token.style.left = `-${baseSize / 2}px`;
+          token.style.top = `-${baseSize / 2}px`;
+          
+          // No scale transform needed - we're setting absolute size
+          token.style.transform = 'none';
         }
       }
-
-      const propToken = marker.element.querySelector(".prop-visual");
-      if (propToken) {
-        propToken.style.transform = `scale(${this.scale})`;
-        propToken.style.transformOrigin = "center";
+  
+      // Handle prop markers
+      const propVisual = marker.element.querySelector(".prop-visual");
+      if (propVisual) {
+        // For props, maintain apparent size regardless of zoom
+        // But keep any rotation
+        const currentTransform = propVisual.style.transform || "";
+        const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
+        const rotateVal = rotateMatch ? rotateMatch[1] : "0deg";
+        
+        // Calculate base size
+        const baseSize = 48; // Default base size
+        const scale = marker.data.prop?.scale || 1.0;
+        const width = baseSize * scale;
+        
+        // Get aspect ratio if available
+        let height = width;
+        if (marker.data.texture?.aspect) {
+          height = width / marker.data.texture.aspect;
+        }
+        
+        // Update sizes to maintain apparent size
+        propVisual.style.width = `${width}px`;
+        propVisual.style.height = `${height}px`;
+        propVisual.style.left = `-${width / 2}px`;
+        propVisual.style.top = `-${height / 2}px`;
+        
+        // Apply only rotation, not scaling
+        propVisual.style.transform = `rotate(${rotateVal})`;
       }
-    });
-
-    // Update player start marker if it exists
-    if (this.playerStart) {
-      this.updateMarkerPosition(this.playerStart);
-    }
-
-    // In handleWheel method, after updating markers
-    this.markers.forEach(marker => {
+  
+      // Handle teleport connections
       if (marker.type === 'teleport' && marker.data.isPointA && marker.data.pairedMarker) {
         this.updateTeleportConnection(marker, marker.data.pairedMarker);
       }
     });
-
+  
+    // Update player start marker if it exists
+    if (this.playerStart) {
+      this.updateMarkerPosition(this.playerStart);
+    }
+  
     this.render();
   }
 
@@ -4215,59 +4319,6 @@ if (saveProjectBtn) {
       }
     }
   }
-
-  // updateMarkerPositions() {
-  //   // Update regular markers
-  //   this.markers.forEach((marker) => {
-  //     if (marker.element) {
-  //       // Update position
-  //       marker.element.style.left = `${marker.x * this.scale + this.offset.x}px`;
-  //       marker.element.style.top = `${marker.y * this.scale + this.offset.y}px`;
-  
-  //       // Handle special marker types
-  //       if (marker.type === "encounter" && marker.data.monster) {
-  //         // Additional zoom handling for encounter markers
-  //         const token = marker.element.querySelector(".monster-token");
-  //         if (token) {
-  //           token.style.transform = `scale(${this.scale})`;
-  //           token.style.transformOrigin = "center";
-  //         }
-  //       }
-        
-  //       // Handle prop markers
-  //       const propVisual = marker.element.querySelector(".prop-visual");
-  //       if (propVisual) {
-  //         // For props, we want to preserve the rotation
-  //         const currentTransform = propVisual.style.transform || "";
-  //         const rotateMatch = currentTransform.match(/rotate\(([^)]+)\)/);
-  //         const rotateVal = rotateMatch ? rotateMatch[1] : "0deg";
-          
-  //         // Apply both scale and rotation
-  //         propVisual.style.transform = `scale(${this.scale}) rotate(${rotateVal})`;
-  //         propVisual.style.transformOrigin = "center";
-  //       }
-  
-  //       // Handle teleport connections
-  //       if (marker.type === "teleport" && marker.data.isPointA && marker.data.pairedMarker && marker.connection) {
-  //         this.updateTeleportConnection(marker, marker.data.pairedMarker);
-  //       }
-  //     }
-  //   });
-  
-  //   // Update player start marker if it exists
-  //   if (this.playerStart && this.playerStart.element) {
-  //     this.playerStart.element.style.left = `${this.playerStart.x * this.scale + this.offset.x}px`;
-  //     this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y}px`;
-      
-  //     // Apply scaling to player start marker visuals if needed
-  //     const playerIcon = this.playerStart.element.querySelector(".material-icons");
-  //     if (playerIcon) {
-  //       playerIcon.style.transform = `scale(${this.scale * 0.8})`;
-  //       playerIcon.style.transformOrigin = "center";
-  //     }
-  //   }
-  // }
-
 
   getElevationAtPoint(x, z) {
     let elevation = 0;
@@ -4758,51 +4809,6 @@ if (saveProjectBtn) {
       // Update position
       this.updateMarkerPosition(marker);
     }
-    // if (marker.data.monster?.token) {
-    //   const tokenSource = marker.data.monster.token.data || marker.data.monster.token.url;
-    //   const monsterSize = this.getMonsterSizeInSquares(marker.data.monster.basic.size);
-      
-    //   // Check if token is on elevated surface
-    //   const { elevation, insideWall } = this.checkTokenElevation(marker);
-      
-    //   // Store for 3D view
-    //   marker.data.elevation = elevation;
-    //   marker.data.insideWall = insideWall;
-      
-    //   // Use existing cellSize calculation
-    //   const cellSize = this.cellSize || 32;
-    //   const totalSize = cellSize * monsterSize;
-      
-    //   // Create token HTML with elevation indicators
-    //   marker.element.innerHTML = `
-    //     <div class="monster-token" style="
-    //         width: ${totalSize}px; 
-    //         height: ${totalSize}px; 
-    //         border-radius: 10%; 
-    //         border: 2px solid ${insideWall ? '#ff9800' : '#f44336'}; 
-    //         overflow: hidden;
-    //         display: flex;
-    //         align-items: center;
-    //         justify-content: center;
-    //         position: absolute;
-    //         left: -${totalSize / 2}px;
-    //         top: -${totalSize / 2}px;
-    //         transform-origin: center;
-    //         transform: scale(${this.scale});
-    //         ${elevation > 0 ? `box-shadow: 0 ${elevation * 2}px ${elevation * 3}px rgba(0,0,0,0.3);` : ''}
-    //     ">
-    //         <img src="${tokenSource}" 
-    //             style="width: 100%; height: 100%; object-fit: cover;"
-    //             onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-icons\\' style=\\'font-size: ${totalSize * 0.75}px;\\'>local_fire_department</span>';" />
-    //         ${elevation > 0 ? `
-    //           <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.6); color: white; padding: 2px 4px; border-radius: 2px; font-size: 10px;">+${elevation}</div>
-    //         ` : ''}
-    //     </div>
-    //   `;
-  
-    //   // Update position
-    //   this.updateMarkerPosition(marker);
-    // }  
     else if (marker.type === "prop" && marker.data.texture) {
       // Default prop settings
       const propSettings = marker.data.prop || {};
