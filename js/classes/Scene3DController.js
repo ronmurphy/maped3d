@@ -17,6 +17,12 @@ class Scene3DController {
     this.activeSplashArt = null;
     this.splashArtPrompt = null;
     this.nearestSplashArt = null;
+    this.inventory = new Map();
+    this.nearestProp = null;
+    this.pickupPrompt = null;
+    this.inventoryDrawer = null;
+    this.isInventoryShowing = false;
+    this.setupInventorySystem();
     this.clear();
   }
 
@@ -506,59 +512,80 @@ createPropMesh(propData) {
 
   handleKeyDown(event) {
     switch (event.code) {
-        case "ArrowUp":
-        case "KeyW":
-            this.moveState.forward = true;
-            break;
-        case "ArrowDown":
-        case "KeyS":
-            this.moveState.backward = true;
-            break;
-        case "ArrowLeft":
-        case "KeyA":
-            this.moveState.left = true;
-            break;
-        case "ArrowRight":
-        case "KeyD":
-            this.moveState.right = true;
-            break;
-        case "ShiftLeft":
-            this.moveState.shiftHeld = true;
-            this.moveState.sprint = true;
-            this.moveState.speed = 0.05;
-            break;
-        case "Space":
-            // Initiate jump if not already jumping
-            if (this.physics && !event.repeat) {
-                const jumpStarted = this.physics.startJump();
-                if (jumpStarted) {
-                    // Play jump sound if available
-                    if (this.jumpSound) {
-                        this.jumpSound.play();
-                    }
-                }
+      case "ArrowUp":
+      case "KeyW":
+        this.moveState.forward = true;
+        break;
+      case "ArrowDown":
+      case "KeyS":
+        this.moveState.backward = true;
+        break;
+      case "ArrowLeft":
+      case "KeyA":
+        this.moveState.left = true;
+        break;
+      case "ArrowRight":
+      case "KeyD":
+        this.moveState.right = true;
+        break;
+      case "ShiftLeft":
+        this.moveState.shiftHeld = true;
+        this.moveState.sprint = true;
+        this.moveState.speed = 0.05;
+        break;
+      case "Space":
+        // Initiate jump if not already jumping
+        if (this.physics && !event.repeat) {
+          const jumpStarted = this.physics.startJump();
+          if (jumpStarted) {
+            // Play jump sound if available
+            if (this.jumpSound) {
+              this.jumpSound.play();
             }
-            break;
-        case "KeyC":
-            if (!event.repeat) {
-                this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
-                this.updateWallClipping();
-            }
-            break;
-        case "KeyE":
-            // Handle interactions
-            if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
-                this.executeTeleport();
-            }
-            else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
-                this.executeDoorTeleport();
-            }
-            else if (this.nearestSplashArt && !this.activeSplashArt) {
-                this.showSplashArt(this.nearestSplashArt);
-            }
-            break;
+          }
+        }
+        break;
+      case "KeyC":
+        if (!event.repeat) {
+          this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
+          this.updateWallClipping();
+        }
+        break;
+      case "KeyI":
+        this.toggleInventory();
+        break;
+      case "KeyE":
+        // Handle interactions
+        if (this.nearestProp && !this.inventory.has(this.nearestProp.userData.id)) {
+          // Pick up the prop
+          const propData = {
+            id: this.nearestProp.userData.id,
+            name: this.nearestProp.userData.name || 'Prop',
+            image: this.nearestProp.material?.map?.image?.src
+          };
+
+          this.addToInventory(propData);
+
+          // Remove prop from scene
+          this.scene.remove(this.nearestProp);
+          this.nearestProp = null;
+
+          // Hide prompt
+          if (this.pickupPrompt) {
+            this.pickupPrompt.style.display = 'none';
+          }
+        } else if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
+          this.executeTeleport();
+        }
+        else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
+          this.executeDoorTeleport();
+        }
+        else if (this.nearestSplashArt && !this.activeSplashArt) {
+          this.showSplashArt(this.nearestSplashArt);
+        }
+        break;
     }
-}
+  }
 
   handleKeyUp(event) {
     switch (event.code) {
@@ -2108,6 +2135,162 @@ return {
 }
 
 
+setupInventorySystem() {
+  console.log('Setting up inventory system');
+  
+  // Create inventory drawer
+  this.inventoryDrawer = document.createElement('sl-drawer');
+  this.inventoryDrawer.label = "Inventory";
+  this.inventoryDrawer.placement = "bottom";
+  
+  // Add higher z-index to appear above 3D view
+  this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
+  
+  // Set drawer size to 50% of viewport width
+  const viewportWidth = window.innerWidth;
+  this.inventoryDrawer.style.setProperty('--size', '50%');
+  
+  // Create grid container for items
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'inventory-grid';
+  gridContainer.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 16px;
+      padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+  `;
+
+//     this.inventoryDrawer.addEventListener('sl-show', () => {
+//     this.isInventoryShowing = true;
+// });
+
+// this.inventoryDrawer.addEventListener('sl-hide', () => {
+//     this.isInventoryShowing = false;
+// });
+  
+  this.inventoryDrawer.appendChild(gridContainer);
+  document.body.appendChild(this.inventoryDrawer);
+
+  console.log('Inventory drawer created and added to DOM');
+  
+  // Update the drawer's container directly for higher z-index
+  const drawerContainer = this.inventoryDrawer.shadowRoot?.querySelector('.drawer');
+  if (drawerContainer) {
+      drawerContainer.style.zIndex = '3000';
+  }
+
+
+
+}
+
+
+// toggleInventory() {
+//   console.log('Toggling inventory');
+//   console.log('[start]IsInventoryShowing:', this.isInventoryShowing);
+//   if (this.inventoryDrawer) {
+//  // Update state first
+
+//       if (this.isInventoryShowing) {
+//           console.log('Showing inventory drawer');
+//           this.inventoryDrawer.show();
+//           this.pauseControls();
+//           this.isInventoryShowing = !this.isInventoryShowing;
+//           return; // Early exit after showing drawer
+//       } else {
+//           console.log('Hiding inventory drawer');
+//           this.inventoryDrawer.hide();
+//           this.resumeControls();
+//           this.isInventoryShowing = !this.isInventoryShowing;
+// return; // Early exit after hiding drawer
+//       }
+//   } else {
+//       console.warn('Inventory drawer not initialized');
+//   }
+//   console.log('[end]IsInventoryShowing:', this.isInventoryShowing);
+
+// }
+
+toggleInventory() {
+  if (this.inventoryDrawer) {
+
+          console.log('Showing inventory drawer');
+          this.inventoryDrawer.show();
+          this.scene.pauseControls();
+          this.pauseControls();
+          this.isInventoryShowing = !this.isInventoryShowing;
+  }
+}
+
+
+createPickupPrompt() {
+  if (!this.pickupPrompt) {
+      this.pickupPrompt = document.createElement('div');
+      this.pickupPrompt.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 15px 20px;
+          border-radius: 5px;
+          display: none;
+          font-family: Arial, sans-serif;
+          pointer-events: none;
+          z-index: 1000;
+      `;
+      document.body.appendChild(this.pickupPrompt);
+  }
+  return this.pickupPrompt;
+}
+
+addToInventory(prop) {
+  const itemId = `prop-${Date.now()}`;
+  
+  // Create inventory item element
+  const itemElement = document.createElement('div');
+  itemElement.className = 'inventory-item';
+  itemElement.style.cssText = `
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      background: #333;
+  `;
+  
+  // Add image if available
+  if (prop.image) {
+      const img = document.createElement('img');
+      img.src = prop.image;
+      img.style.cssText = `
+          width: 64px;
+          height: 64px;
+          object-fit: contain;
+          margin-bottom: 8px;
+      `;
+      itemElement.appendChild(img);
+  }
+  
+  // Add name/label
+  const label = document.createElement('div');
+  label.textContent = prop.name || 'Prop';
+  label.style.fontSize = '0.9em';
+  itemElement.appendChild(label);
+  
+  // Add to inventory map and grid
+  this.inventory.set(itemId, {
+      id: itemId,
+      prop: prop,
+      element: itemElement
+  });
+  
+  // Add to grid
+  const grid = this.inventoryDrawer.querySelector('.inventory-grid');
+  grid.appendChild(itemElement);
+}
+
 animate = () => {
   const currentSpeed = this.moveState.speed;
   let canMove = true;
@@ -2202,6 +2385,30 @@ animate = () => {
   } else if (!nearestSplashArt && this.splashArtPrompt) {
       this.splashArtPrompt.style.display = 'none';
       this.nearestSplashArt = null;
+  }
+
+  // const playerPosition = this.camera.position.clone();
+  let nearestProp = null;
+
+  this.scene.children.forEach(child => {
+      if (child.userData?.type === 'prop') {
+          const distance = playerPosition.distanceTo(child.position);
+          if (distance < 2 && distance < shortestDistance) {
+              shortestDistance = distance;
+              nearestProp = child;
+          }
+      }
+  });
+
+  // Show/hide pickup prompt
+  if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
+      const prompt = this.createPickupPrompt();
+      prompt.textContent = 'Press E to pick up';
+      prompt.style.display = 'block';
+      this.nearestProp = nearestProp;
+  } else if (this.pickupPrompt) {
+      this.pickupPrompt.style.display = 'none';
+      this.nearestProp = null;
   }
 
   // Update physics and camera height
