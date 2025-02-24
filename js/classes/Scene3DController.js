@@ -663,14 +663,59 @@ createPropMesh(propData) {
   }
 
   pauseControls() {
+    console.log("Pausing controls");
+    
+    // Save the current movement state
+    this._savedMoveState = {
+      forward: this.moveState.forward,
+      backward: this.moveState.backward,
+      left: this.moveState.left,
+      right: this.moveState.right,
+      sprint: this.moveState.sprint
+    };
+    
+    // Stop all movement
+    this.moveState.forward = false;
+    this.moveState.backward = false;
+    this.moveState.left = false;
+    this.moveState.right = false;
+    this.moveState.sprint = false;
+    
+    // Disable controls
     if (this.controls) {
       this.controls.enabled = false;
+      
+      // Unlock pointer if locked
+      if (this.controls.isLocked) {
+        this.controls.unlock();
+      }
     }
+    
+    // Set a flag to indicate controls are paused
+    this._controlsPaused = true;
   }
-
+  
   resumeControls() {
-    if (this.controls) {
-      this.controls.enabled = true;
+    console.log("Resuming controls");
+    
+    // Only re-enable if we previously paused
+    if (this._controlsPaused) {
+      // Restore movement state if we saved it
+      if (this._savedMoveState) {
+        this.moveState.forward = this._savedMoveState.forward;
+        this.moveState.backward = this._savedMoveState.backward;
+        this.moveState.left = this._savedMoveState.left;
+        this.moveState.right = this._savedMoveState.right;
+        this.moveState.sprint = this._savedMoveState.sprint;
+        this._savedMoveState = null;
+      }
+      
+      // Re-enable controls
+      if (this.controls) {
+        this.controls.enabled = true;
+      }
+      
+      this._controlsPaused = false;
     }
   }
 
@@ -2135,93 +2180,79 @@ return {
 }
 
 
-setupInventorySystem() {
-  console.log('Setting up inventory system');
+// setupInventorySystem() {
+//   console.log('Setting up inventory system');
   
-  // Create inventory drawer
-  this.inventoryDrawer = document.createElement('sl-drawer');
-  this.inventoryDrawer.label = "Inventory";
-  this.inventoryDrawer.placement = "bottom";
+//   // Create inventory drawer
+//   this.inventoryDrawer = document.createElement('sl-drawer');
+//   this.inventoryDrawer.label = "Inventory";
+//   this.inventoryDrawer.placement = "bottom";
   
-  // Add higher z-index to appear above 3D view
-  this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
+//   // Add higher z-index to appear above 3D view
+//   this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
   
-  // Set drawer size to 50% of viewport width
-  const viewportWidth = window.innerWidth;
-  this.inventoryDrawer.style.setProperty('--size', '50%');
+// // incase we ever do a right handinventory, get the sidebar size for no overlap.
+//   const sidebar = document.querySelector(".sidebar");
+//   const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+//   const availableWidth = window.innerWidth - sidebarWidth;
+//     // Set drawer size to 50% of viewport width
+//   const viewportWidth = window.innerWidth;
+//   this.inventoryDrawer.style.setProperty('--size', '50%');
   
-  // Create grid container for items
-  const gridContainer = document.createElement('div');
-  gridContainer.className = 'inventory-grid';
-  gridContainer.style.cssText = `
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 16px;
-      padding: 16px;
-      max-height: 400px;
-      overflow-y: auto;
-  `;
+//   // Create grid container for items
+//   const gridContainer = document.createElement('div');
+//   gridContainer.className = 'inventory-grid';
+//   gridContainer.style.cssText = `
+//       display: grid;
+//       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+//       gap: 16px;
+//       padding: 16px;
+//       max-height: 400px;
+//       overflow-y: auto;
+//   `;
 
-//     this.inventoryDrawer.addEventListener('sl-show', () => {
+//   this.inventoryDrawer.addEventListener('sl-show', () => {
+//     console.log('Inventory drawer shown');
 //     this.isInventoryShowing = true;
-// });
+//     this.pauseControls();
+//   });
 
-// this.inventoryDrawer.addEventListener('sl-hide', () => {
+//   this.inventoryDrawer.addEventListener('sl-hide', () => {
+//     console.log('Inventory drawer hidden');
 //     this.isInventoryShowing = false;
-// });
+//     this.resumeControls();
+//   });
   
-  this.inventoryDrawer.appendChild(gridContainer);
-  document.body.appendChild(this.inventoryDrawer);
+//   this.inventoryDrawer.appendChild(gridContainer);
+//   document.body.appendChild(this.inventoryDrawer);
 
-  console.log('Inventory drawer created and added to DOM');
+//   console.log('Inventory drawer created and added to DOM');
   
-  // Update the drawer's container directly for higher z-index
-  const drawerContainer = this.inventoryDrawer.shadowRoot?.querySelector('.drawer');
-  if (drawerContainer) {
-      drawerContainer.style.zIndex = '3000';
-  }
-
-
-
-}
-
-
-// toggleInventory() {
-//   console.log('Toggling inventory');
-//   console.log('[start]IsInventoryShowing:', this.isInventoryShowing);
-//   if (this.inventoryDrawer) {
-//  // Update state first
-
-//       if (this.isInventoryShowing) {
-//           console.log('Showing inventory drawer');
-//           this.inventoryDrawer.show();
-//           this.pauseControls();
-//           this.isInventoryShowing = !this.isInventoryShowing;
-//           return; // Early exit after showing drawer
-//       } else {
-//           console.log('Hiding inventory drawer');
-//           this.inventoryDrawer.hide();
-//           this.resumeControls();
-//           this.isInventoryShowing = !this.isInventoryShowing;
-// return; // Early exit after hiding drawer
-//       }
-//   } else {
-//       console.warn('Inventory drawer not initialized');
+//   // Update the drawer's container directly for higher z-index
+//   const drawerContainer = this.inventoryDrawer.shadowRoot?.querySelector('.drawer');
+//   if (drawerContainer) {
+//       drawerContainer.style.zIndex = '3000';
 //   }
-//   console.log('[end]IsInventoryShowing:', this.isInventoryShowing);
+
+
 
 // }
 
-toggleInventory() {
-  if (this.inventoryDrawer) {
 
-          console.log('Showing inventory drawer');
-          this.inventoryDrawer.show();
-          this.scene.pauseControls();
-          this.pauseControls();
-          this.isInventoryShowing = !this.isInventoryShowing;
-  }
-}
+// toggleInventory() {
+//   if (this.inventoryDrawer) {
+//     // Just show the drawer and pause controls
+//     // Don't toggle state here - let event listeners handle that
+//     console.log('Showing inventory drawer');
+//     this.inventoryDrawer.show();
+//     this.pauseControls();
+    
+//     // We don't need this line anymore as we'll rely on the sl-show/sl-hide events
+//     // this.isInventoryShowing = !this.isInventoryShowing;
+//   } else {
+//     console.warn('Inventory drawer not initialized');
+//   }
+// }
 
 
 createPickupPrompt() {
@@ -2246,52 +2277,706 @@ createPickupPrompt() {
   return this.pickupPrompt;
 }
 
+// addToInventory(prop) {
+//   const itemId = `prop-${Date.now()}`;
+  
+//   // Create inventory item element
+//   const itemElement = document.createElement('div');
+//   itemElement.className = 'inventory-item';
+//   itemElement.style.cssText = `
+//       border: 1px solid #444;
+//       border-radius: 4px;
+//       padding: 8px;
+//       text-align: center;
+//       background: #333;
+//   `;
+  
+//   // Add image if available
+//   if (prop.image) {
+//       const img = document.createElement('img');
+//       img.src = prop.image;
+//       img.style.cssText = `
+//           width: 64px;
+//           height: 64px;
+//           object-fit: contain;
+//           margin-bottom: 8px;
+//       `;
+//       itemElement.appendChild(img);
+//   }
+  
+//   // Add name/label
+//   const label = document.createElement('div');
+//   label.textContent = prop.name || 'Prop';
+//   label.style.fontSize = '0.9em';
+//   itemElement.appendChild(label);
+  
+//   // Add to inventory map and grid
+//   this.inventory.set(itemId, {
+//       id: itemId,
+//       prop: prop,
+//       element: itemElement
+//   });
+  
+//   // Add to grid
+//   const grid = this.inventoryDrawer.querySelector('.inventory-grid');
+//   grid.appendChild(itemElement);
+// }
+
+
+setupInventorySystem() {
+  console.log('Setting up inventory system');
+  
+  // Create inventory drawer
+  this.inventoryDrawer = document.createElement('sl-drawer');
+  this.inventoryDrawer.label = "Inventory";
+  this.inventoryDrawer.placement = "bottom";
+  this.inventoryDrawer.className = "inventory-drawer";
+  
+  // Add higher z-index to appear above 3D view
+  this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
+  
+  // Set drawer size to 50% of viewport height
+  this.inventoryDrawer.style.setProperty('--size', '50%');
+  
+  // Create inventory heading
+  // const heading = document.createElement('h2');
+  // heading.textContent = 'Your Items';
+  // heading.style.cssText = `
+  //   margin-top: 0;
+  //   color: #333;
+  //   font-family: Arial, sans-serif;
+  //   font-weight: 500;
+  //   padding-left: 16px;
+  // `;
+  // this.inventoryDrawer.appendChild(heading);
+  
+  // Create grid container for items
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'inventory-grid';
+  gridContainer.style.cssText = `
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
+    padding: 16px;
+    max-height: 70vh;
+    overflow-y: auto;
+  `;
+  
+  // Add empty inventory message
+  const emptyMessage = document.createElement('div');
+  emptyMessage.className = 'empty-inventory-message';
+  emptyMessage.textContent = 'Your inventory is empty. Explore the world to find items!';
+  emptyMessage.style.cssText = `
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-style: italic;
+  `;
+  gridContainer.appendChild(emptyMessage);
+  
+  // Add the grid to the drawer
+  this.inventoryDrawer.appendChild(gridContainer);
+  
+  // Add a close button in the footer
+  // const closeButton = document.createElement('sl-button');
+  // closeButton.setAttribute('variant', 'primary');
+  // closeButton.textContent = 'Close Inventory';
+  // closeButton.slot = 'footer';
+  // closeButton.style.cssText = `
+  //   margin: 0 auto;
+  //   display: block;
+  // `;
+  // this.inventoryDrawer.appendChild(closeButton);
+  
+  // Event listeners for the drawer
+  this.inventoryDrawer.addEventListener('sl-show', () => {
+    console.log('Inventory drawer shown');
+    this.isInventoryShowing = true;
+    this.pauseControls();
+    
+    // Update empty message visibility
+    const emptyMessage = this.inventoryDrawer.querySelector('.empty-inventory-message');
+    const hasItems = this.inventory.size > 0;
+    if (emptyMessage) {
+      emptyMessage.style.display = hasItems ? 'none' : 'block';
+    }
+  });
+
+  this.inventoryDrawer.addEventListener('sl-hide', () => {
+    console.log('Inventory drawer hidden');
+    this.isInventoryShowing = false;
+    this.resumeControls();
+  });
+  
+  // Prevent closing when clicking overlay
+  this.inventoryDrawer.addEventListener('sl-request-close', event => {
+    if (event.detail.source === 'overlay') {
+      event.preventDefault();
+    }
+  });
+  
+  // Close button handler
+  // closeButton.addEventListener('click', () => {
+  //   this.inventoryDrawer.hide();
+  // });
+  
+  // Add to the document
+  document.body.appendChild(this.inventoryDrawer);
+  
+  // Initialize inventory data structure if not already
+  if (!this.inventory) {
+    this.inventory = new Map();
+  }
+}
+
+toggleInventory() {
+  if (!this.inventoryDrawer) {
+    console.warn('Inventory drawer not initialized');
+    return;
+  }
+
+  console.log('Opening inventory');
+  
+  // Only show the drawer - closing is handled by the close button
+  if (!this.isInventoryShowing) {
+    this.inventoryDrawer.show();
+  }
+  // We intentionally don't handle closing here
+}
+
+// setupInventorySystem() {
+//   console.log('Setting up inventory system');
+  
+//   // Create inventory drawer
+//   this.inventoryDrawer = document.createElement('sl-drawer');
+//   this.inventoryDrawer.label = "Inventory";
+//   this.inventoryDrawer.placement = "bottom";
+  
+//   // Add higher z-index to appear above 3D view
+//   this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
+  
+//   // Set drawer size to 50% of viewport height
+//   this.inventoryDrawer.style.setProperty('--size', '40%');
+  
+//   // Create inventory heading
+//   const heading = document.createElement('h2');
+//   heading.textContent = 'Your Items';
+//   heading.style.cssText = `
+//     margin-top: 0;
+//     color: #333;
+//     font-family: Arial, sans-serif;
+//     font-weight: 500;
+//     padding-left: 16px;
+//   `;
+//   this.inventoryDrawer.appendChild(heading);
+  
+//   // Create grid container for items
+//   const gridContainer = document.createElement('div');
+//   gridContainer.className = 'inventory-grid';
+//   gridContainer.style.cssText = `
+//     display: grid;
+//     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+//     gap: 16px;
+//     padding: 16px;
+//     max-height: 70vh;
+//     overflow-y: auto;
+//   `;
+  
+//   // Add empty inventory message
+//   const emptyMessage = document.createElement('div');
+//   emptyMessage.className = 'empty-inventory-message';
+//   emptyMessage.textContent = 'Your inventory is empty. Explore the world to find items!';
+//   emptyMessage.style.cssText = `
+//     grid-column: 1 / -1;
+//     text-align: center;
+//     padding: 40px 20px;
+//     color: #666;
+//     font-style: italic;
+//   `;
+//   gridContainer.appendChild(emptyMessage);
+  
+//   // Add the grid to the drawer
+//   this.inventoryDrawer.appendChild(gridContainer);
+  
+//   // Add close instructions
+//   const closeInstructions = document.createElement('div');
+//   closeInstructions.textContent = 'Press I or click outside to close inventory';
+//   closeInstructions.style.cssText = `
+//     text-align: center;
+//     margin-top: 16px;
+//     color: #666;
+//     font-size: 14px;
+//   `;
+//   this.inventoryDrawer.appendChild(closeInstructions);
+  
+//   // Add event listeners
+//   this.inventoryDrawer.addEventListener('sl-show', () => {
+//     console.log('Inventory drawer shown');
+//     this.isInventoryShowing = true;
+//     this.pauseControls();
+    
+//     // Update empty message visibility
+//     const emptyMessage = this.inventoryDrawer.querySelector('.empty-inventory-message');
+//     const hasItems = this.inventory.size > 0;
+//     if (emptyMessage) {
+//       emptyMessage.style.display = hasItems ? 'none' : 'block';
+//     }
+//   });
+
+//   this.inventoryDrawer.addEventListener('sl-hide', () => {
+//     console.log('Inventory drawer hidden');
+//     this.isInventoryShowing = false;
+//     this.resumeControls();
+//   });
+  
+//   // Add to the document
+//   document.body.appendChild(this.inventoryDrawer);
+  
+//   // Initialize inventory data structure if not already
+//   if (!this.inventory) {
+//     this.inventory = new Map();
+//   }
+// }
+
+// toggleInventory() {
+//   if (!this.inventoryDrawer) {
+//     console.warn('Inventory drawer not initialized');
+//     return;
+//   }
+
+//   console.log('Toggling inventory');
+  
+//   // Just toggle the drawer's open state
+//   // The sl-show and sl-hide events will handle pausing/resuming
+//   if (this.inventoryDrawer.open) {
+//     this.inventoryDrawer.hide();
+//   }   else {
+//     this.inventoryDrawer.show();
+//   }
+// }
+
 addToInventory(prop) {
-  const itemId = `prop-${Date.now()}`;
+  if (!prop || !prop.id) {
+    console.warn('Invalid prop data for inventory', prop);
+    return;
+  }
+  
+  console.log('Adding item to inventory:', prop);
   
   // Create inventory item element
   const itemElement = document.createElement('div');
   itemElement.className = 'inventory-item';
   itemElement.style.cssText = `
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 8px;
-      text-align: center;
-      background: #333;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    position: relative;
   `;
+  
+  // Hover effect
+  itemElement.onmouseover = () => {
+    itemElement.style.transform = 'translateY(-3px)';
+    itemElement.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+  };
+  
+  itemElement.onmouseout = () => {
+    itemElement.style.transform = 'translateY(0)';
+    itemElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+  };
   
   // Add image if available
   if (prop.image) {
-      const img = document.createElement('img');
-      img.src = prop.image;
-      img.style.cssText = `
-          width: 64px;
-          height: 64px;
-          object-fit: contain;
-          margin-bottom: 8px;
-      `;
-      itemElement.appendChild(img);
+    const imgContainer = document.createElement('div');
+    imgContainer.style.cssText = `
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 4px;
+      padding: 4px;
+    `;
+    
+    const img = document.createElement('img');
+    img.src = prop.image;
+    img.style.cssText = `
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    `;
+    imgContainer.appendChild(img);
+    itemElement.appendChild(imgContainer);
+  } else {
+    // Default icon if no image
+    const defaultIcon = document.createElement('div');
+    defaultIcon.innerHTML = '📦';
+    defaultIcon.style.cssText = `
+      font-size: 40px;
+      margin-bottom: 8px;
+    `;
+    itemElement.appendChild(defaultIcon);
   }
   
   // Add name/label
   const label = document.createElement('div');
-  label.textContent = prop.name || 'Prop';
-  label.style.fontSize = '0.9em';
+  label.textContent = prop.name || 'Unknown Item';
+  label.style.cssText = `
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #333;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `;
   itemElement.appendChild(label);
   
+  // Add description if available
+  if (prop.description) {
+    const description = document.createElement('div');
+    description.textContent = prop.description;
+    description.style.cssText = `
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 4px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    `;
+    itemElement.appendChild(description);
+  }
+  
+  // Add use button
+  const useButton = document.createElement('button');
+  useButton.textContent = 'Use';
+  useButton.style.cssText = `
+    margin-top: 8px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 0.8em;
+  `;
+  useButton.onclick = (e) => {
+    e.stopPropagation();
+    this.useInventoryItem(prop.id);
+  };
+  itemElement.appendChild(useButton);
+  
+  // Click handler for item details
+  itemElement.onclick = () => {
+    this.showItemDetails(prop);
+  };
+  
   // Add to inventory map and grid
-  this.inventory.set(itemId, {
-      id: itemId,
-      prop: prop,
-      element: itemElement
+  this.inventory.set(prop.id, {
+    id: prop.id,
+    prop: prop,
+    element: itemElement
   });
   
-  // Add to grid
+  // Add to grid and hide empty message
   const grid = this.inventoryDrawer.querySelector('.inventory-grid');
+  const emptyMessage = grid.querySelector('.empty-inventory-message');
+  if (emptyMessage) {
+    emptyMessage.style.display = 'none';
+  }
   grid.appendChild(itemElement);
+  
+  // Play pickup sound if available
+  if (this.resourceManager) {
+    this.resourceManager.playSound('item_pickup', 'effects');
+  }
+  
+  // Show pickup notification
+  this.showPickupNotification(prop.name || 'Item');
 }
 
+removeFromInventory(itemId) {
+  if (!this.inventory.has(itemId)) {
+    console.warn('Item not found in inventory:', itemId);
+    return false;
+  }
+  
+  const item = this.inventory.get(itemId);
+  const element = item.element;
+  
+  // Animate removal
+  element.style.opacity = '0';
+  element.style.transform = 'scale(0.8)';
+  
+  setTimeout(() => {
+    // Remove from DOM
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
+    
+    // Remove from inventory map
+    this.inventory.delete(itemId);
+    
+    // Show empty message if inventory is now empty
+    if (this.inventory.size === 0) {
+      const grid = this.inventoryDrawer.querySelector('.inventory-grid');
+      const emptyMessage = grid.querySelector('.empty-inventory-message');
+      if (emptyMessage) {
+        emptyMessage.style.display = 'block';
+      }
+    }
+  }, 300);
+  
+  return true;
+}
+
+useInventoryItem(itemId) {
+  if (!this.inventory.has(itemId)) {
+    console.warn('Cannot use item, not found in inventory:', itemId);
+    return;
+  }
+  
+  const item = this.inventory.get(itemId);
+  console.log('Using inventory item:', item.prop);
+  
+  // Handle item use based on type
+  // For now, just remove it
+  this.removeFromInventory(itemId);
+  
+  // Show use notification
+  this.showNotification(`Used ${item.prop.name || 'Item'}`);
+}
+
+showItemDetails(prop) {
+  console.log('Showing details for item:', prop);
+  
+  // Create modal dialog for item details
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = prop.name || 'Item Details';
+  dialog.style.setProperty('--sl-z-index-dialog', '4000');
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  `;
+  
+  // Add image if available
+  if (prop.image) {
+    const img = document.createElement('img');
+    img.src = prop.image;
+    img.style.cssText = `
+      max-width: 200px;
+      max-height: 200px;
+      object-fit: contain;
+      margin-bottom: 16px;
+      border-radius: 8px;
+    `;
+    content.appendChild(img);
+  }
+  
+  // Add description
+  const description = document.createElement('p');
+  description.textContent = prop.description || 'No description available.';
+  description.style.cssText = `
+    text-align: center;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  `;
+  content.appendChild(description);
+  
+  // Add actions
+  const actions = document.createElement('div');
+  actions.style.cssText = `
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  `;
+  
+  const useButton = document.createElement('sl-button');
+  useButton.setAttribute('variant', 'primary');
+  useButton.textContent = 'Use Item';
+  useButton.addEventListener('click', () => {
+    dialog.hide();
+    this.useInventoryItem(prop.id);
+  });
+  actions.appendChild(useButton);
+  
+  const dropButton = document.createElement('sl-button');
+  dropButton.setAttribute('variant', 'danger');
+  dropButton.textContent = 'Drop Item';
+  dropButton.addEventListener('click', () => {
+    dialog.hide();
+    this.dropInventoryItem(prop.id);
+  });
+  actions.appendChild(dropButton);
+  
+  content.appendChild(actions);
+  dialog.appendChild(content);
+  
+  // Add to document and show
+  document.body.appendChild(dialog);
+  dialog.show();
+}
+
+dropInventoryItem(itemId) {
+  if (!this.inventory.has(itemId)) {
+    console.warn('Cannot drop item, not found in inventory:', itemId);
+    return;
+  }
+  
+  const item = this.inventory.get(itemId);
+  console.log('Dropping inventory item:', item.prop);
+  
+  // Create prop in the world at player's position
+  const playerPos = this.camera.position.clone();
+  
+  // Add a small offset in front of the player
+  const direction = new THREE.Vector3();
+  this.camera.getWorldDirection(direction);
+  direction.multiplyScalar(1); // 1 unit in front
+  playerPos.add(direction);
+  
+  // Convert back to grid coordinates
+  const gridX = Math.round((playerPos.x + this.boxWidth / 2) * 50);
+  const gridY = Math.round((playerPos.z + this.boxDepth / 2) * 50);
+  
+  // Create prop data
+  const propData = {
+    id: `dropped-${Date.now()}`,
+    x: gridX,
+    y: gridY,
+    image: item.prop.image,
+    name: item.prop.name,
+    description: item.prop.description,
+    scale: item.prop.scale || 1,
+    height: 1
+  };
+  
+  // Create and add prop mesh
+  this.createPropMesh(propData)
+    .then(mesh => {
+      this.scene.add(mesh);
+      console.log('Dropped item added to scene at:', {x: gridX, y: gridY});
+    })
+    .catch(error => {
+      console.error('Error creating dropped prop:', error);
+    });
+  
+  // Remove from inventory
+  this.removeFromInventory(itemId);
+  
+  // Show notification
+  this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
+}
+
+showPickupNotification(itemName) {
+  const notification = document.createElement('div');
+  notification.className = 'pickup-notification';
+  notification.style.cssText = `
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  `;
+  
+  notification.innerHTML = `
+    <span style="font-size: 24px;">📦</span>
+    <span>Picked up: <strong>${itemName}</strong></span>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateX(-50%) translateY(0)';
+  }, 10);
+  
+  // Animate out
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(-50%) translateY(-20px)';
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 3000);
+}
+
+showNotification(message) {
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+  `;
+  
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.style.opacity = '1';
+  }, 10);
+  
+  // Animate out
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 300);
+  }, 2000);
+}
+
+
 animate = () => {
+
+  if (this._controlsPaused) {
+    // Only render the scene, don't process movement
+    this.renderer.render(this.scene, this.camera);
+    return;
+  }
+
   const currentSpeed = this.moveState.speed;
   let canMove = true;
 
@@ -2599,6 +3284,8 @@ createLandingEffect(position) {
             WASD or Arrow Keys to move<br>
             Hold Shift to sprint<br>
             C to toggle wall clipping<br>
+            I for inventory<br>
+            E as the Action key<br>
             ESC to exit
         `;
       container.appendChild(instructions);
@@ -3333,21 +4020,34 @@ createSplashArtPrompt() {
 // Update the showSplashArt method in Scene3DController
 showSplashArt(marker) {
   // Add debug logging
-  console.log('Showing splash art for marker:', {
-      markerId: marker.id,
-      markerData: marker.data
-  });
+  // console.log('Showing splash art for marker:', {
+  //     markerId: marker.id,
+  //     markerData: marker.data
+  // });
 
-  // Validate marker data
+  // // Validate marker data
+  // if (!marker?.data?.splashArt?.category || !marker?.data?.splashArt?.id) {
+  //     console.warn('Invalid splash art data:', marker);
+  //     return;
+  // }
+
+  // // Get the actual splash art from the resource manager
+  // const category = marker.data.splashArt.category;
+  // const artId = marker.data.splashArt.id;
+  // const art = this.resourceManager?.resources.splashArt[category]?.get(artId);
+
   if (!marker?.data?.splashArt?.category || !marker?.data?.splashArt?.id) {
-      console.warn('Invalid splash art data:', marker);
-      return;
-  }
+    console.warn('Invalid splash art data:', marker);
+    return;
+}
 
-  // Get the actual splash art from the resource manager
-  const category = marker.data.splashArt.category;
-  const artId = marker.data.splashArt.id;
-  const art = this.resourceManager?.resources.splashArt[category]?.get(artId);
+// Pause controls
+this.pauseControls();
+
+// Get the actual splash art from the resource manager
+const category = marker.data.splashArt.category;
+const artId = marker.data.splashArt.id;
+const art = this.resourceManager?.resources.splashArt[category]?.get(artId);
 
   console.log('Found splash art:', {
       category,
@@ -3424,11 +4124,13 @@ showSplashArt(marker) {
 
   const handleEsc = (e) => {
     if (e.key === 'Escape') {
-        this.hideSplashArt();
-        document.removeEventListener('keydown', handleEsc);
+      e.preventDefault(); // Prevent other ESC handlers
+      e.stopPropagation();
+      this.hideSplashArt();
+      document.removeEventListener('keydown', handleEsc);
     }
-};
-document.addEventListener('keydown', handleEsc);
+  };
+  document.addEventListener('keydown', handleEsc);
 
   const closeButton = document.createElement('button');
   closeButton.innerHTML = '<span class="material-icons">close</span>';
@@ -3454,38 +4156,81 @@ document.addEventListener('keydown', handleEsc);
       this.resourceManager.playSound(marker.data.effects.inspectSound.id, 'effects');
   }
 
-  const close = () => {
-      overlay.style.opacity = '0';
-      artContainer.style.transform = 'scale(0.95)';
-      setTimeout(() => overlay.remove(), 300);
-      this.activeSplashArt = null;
-  };
+  const closeMessage = document.createElement('div');
+closeMessage.style.cssText = `
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+`;
+closeMessage.textContent = 'Click anywhere to close';
+overlay.appendChild(closeMessage);
 
-  closeButton.addEventListener('click', () => {
-    this.hideSplashArt();
-    document.removeEventListener('keydown', handleEsc);
+  // const close = () => {
+  //     overlay.style.opacity = '0';
+  //     artContainer.style.transform = 'scale(0.95)';
+  //     setTimeout(() => overlay.remove(), 300);
+  //     this.activeSplashArt = null;
+  // };
+
+//   const close = () => {
+//     overlay.style.opacity = '0';
+//     artContainer.style.transform = 'scale(0.95)';
+//     setTimeout(() => {
+//         overlay.remove();
+//         this.activeSplashArt = null;
+        
+//         // Resume controls when art is closed
+//         this.resumeControls();
+//     }, 300);
+// };
+
+//   closeButton.addEventListener('click', () => {
+//     this.hideSplashArt();
+//     document.removeEventListener('keydown', handleEsc);
+// });
+
+// overlay.addEventListener('click', (e) => {
+//     if (e.target === overlay) {
+//         this.hideSplashArt();
+//         document.removeEventListener('keydown', handleEsc);
+//     }
+// });
+
+// document.body.appendChild(overlay);
+// this.activeSplashArt = overlay;
+// }
+
+// const handleEsc = (e) => {
+//   if (e.key === 'Escape') {
+//     this.hideSplashArt();
+//     document.removeEventListener('keydown', handleEsc);
+//   }
+// };
+// document.addEventListener('keydown', handleEsc);
+
+// Continue with closeButton and click event handlers
+closeButton.addEventListener('click', () => {
+  this.hideSplashArt();
+  document.removeEventListener('keydown', handleEsc, true);
 });
 
 overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-        this.hideSplashArt();
-        document.removeEventListener('keydown', handleEsc);
-    }
+  if (e.target === overlay) {
+    this.hideSplashArt();
+    document.removeEventListener('keydown', handleEsc, true);
+  }
 });
 
 document.body.appendChild(overlay);
 this.activeSplashArt = overlay;
 }
-//   closeButton.addEventListener('click', close);
-//   overlay.addEventListener('click', (e) => {
-//       if (e.target === overlay) close();
-//   });
-//   document.addEventListener('keydown', (e) => {
-//       if (e.key === 'Escape') close();
-//   }, { once: true });
 
-//   this.activeSplashArt = overlay;
-// }
+
 
 hideSplashArt() {
   if (this.activeSplashArt) {
@@ -3493,10 +4238,10 @@ hideSplashArt() {
       setTimeout(() => {
           this.activeSplashArt.remove();
           this.activeSplashArt = null;
+          
+          // Resume controls when art is hidden
+          this.resumeControls();
       }, 300);
-      
-      // Resume controls when art is hidden
-      this.resumeControls();
   }
 }
 
