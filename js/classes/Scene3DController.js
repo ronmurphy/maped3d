@@ -129,6 +129,7 @@ class Scene3DController {
     this.clear();
   }
 
+
   initializeWithData(data) {
     if (!data) return;
 
@@ -632,6 +633,18 @@ createPropMesh(propData) {
     this.controls.addEventListener("unlock", () => {
       this.renderer.domElement.style.cursor = "auto";
     });
+  }
+
+  pauseControls() {
+    if (this.controls) {
+      this.controls.enabled = false;
+    }
+  }
+
+  resumeControls() {
+    if (this.controls) {
+      this.controls.enabled = true;
+    }
   }
 
   createRoomGeometry(room) {
@@ -3140,6 +3153,8 @@ showSplashArt(marker) {
       return;
   }
 
+  this.pauseControls();
+
   const overlay = document.createElement('div');
   overlay.className = 'splash-art-overlay';
   overlay.style.cssText = `
@@ -3200,6 +3215,14 @@ showSplashArt(marker) {
       });
   };
 
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+        this.hideSplashArt();
+        document.removeEventListener('keydown', handleEsc);
+    }
+};
+document.addEventListener('keydown', handleEsc);
+
   const closeButton = document.createElement('button');
   closeButton.innerHTML = '<span class="material-icons">close</span>';
   closeButton.style.cssText = `
@@ -3231,17 +3254,43 @@ showSplashArt(marker) {
       this.activeSplashArt = null;
   };
 
-  closeButton.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) close();
-  });
-  document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') close();
-  }, { once: true });
+  closeButton.addEventListener('click', () => {
+    this.hideSplashArt();
+    document.removeEventListener('keydown', handleEsc);
+});
 
-  this.activeSplashArt = overlay;
+overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+        this.hideSplashArt();
+        document.removeEventListener('keydown', handleEsc);
+    }
+});
+
+document.body.appendChild(overlay);
+this.activeSplashArt = overlay;
 }
+//   closeButton.addEventListener('click', close);
+//   overlay.addEventListener('click', (e) => {
+//       if (e.target === overlay) close();
+//   });
+//   document.addEventListener('keydown', (e) => {
+//       if (e.key === 'Escape') close();
+//   }, { once: true });
 
+//   this.activeSplashArt = overlay;
+// }
 
+hideSplashArt() {
+  if (this.activeSplashArt) {
+      this.activeSplashArt.style.opacity = '0';
+      setTimeout(() => {
+          this.activeSplashArt.remove();
+          this.activeSplashArt = null;
+      }, 300);
+      
+      // Resume controls when art is hidden
+      this.resumeControls();
+  }
+}
 
 }

@@ -5253,20 +5253,23 @@ class MapEditor {
     // Setup marker-specific event handlers
     switch (marker.type) {
       case 'prop':
-        this.setupPropEventHandlers(dialog, marker);
-        break;
+          this.setupPropEventHandlers(dialog, marker);
+          break;
       case 'encounter':
-        this.setupEncounterEventHandlers(dialog, marker);
-        break;
+          this.setupEncounterEventHandlers(dialog, marker);
+          break;
       case 'door':
-        this.setupDoorEventHandlers(dialog, marker);
-        break;
+          this.setupDoorEventHandlers(dialog, marker);
+          break;
       case 'teleport':
-        this.setupTeleportEventHandlers(dialog, marker);
-        break;
+          this.setupTeleportEventHandlers(dialog, marker);
+          break;
+      case 'splash-art':
+          this.setupSplashArtEventHandlers(dialog, marker);
+          break;
       default:
-        this.setupDefaultEventHandlers(dialog, marker);
-    }
+          this.setupDefaultEventHandlers(dialog, marker);
+  }
 
     // Setup common event handlers
     dialog.querySelector('.delete-btn')?.addEventListener('click', () => {
@@ -5776,6 +5779,7 @@ class MapEditor {
             id: artId,
             category: category
           };
+
 
           console.log('Updated marker data:', {
             markerData: marker.data,
