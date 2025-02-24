@@ -2920,6 +2920,23 @@ removeFromInventory(itemId) {
   return true;
 }
 
+// useInventoryItem(itemId) {
+//   if (!this.inventory.has(itemId)) {
+//     console.warn('Cannot use item, not found in inventory:', itemId);
+//     return;
+//   }
+  
+//   const item = this.inventory.get(itemId);
+//   console.log('Using inventory item:', item.prop);
+  
+//   // Handle item use based on type
+//   // For now, just remove it
+//   this.removeFromInventory(itemId);
+  
+//   // Show use notification
+//   this.showNotification(`Used ${item.prop.name || 'Item'}`);
+// }
+
 useInventoryItem(itemId) {
   if (!this.inventory.has(itemId)) {
     console.warn('Cannot use item, not found in inventory:', itemId);
@@ -2929,11 +2946,60 @@ useInventoryItem(itemId) {
   const item = this.inventory.get(itemId);
   console.log('Using inventory item:', item.prop);
   
-  // Handle item use based on type
-  // For now, just remove it
+  // Create prop in the world at player's position
+  const playerPos = this.camera.position.clone();
+  
+  // Add a small offset in front of the player
+  const direction = new THREE.Vector3();
+  this.camera.getWorldDirection(direction);
+  direction.multiplyScalar(1.5); // 1.5 units in front
+  playerPos.add(direction);
+  
+  // Convert back to grid coordinates
+  const gridX = Math.round((playerPos.x + this.boxWidth / 2) * 50);
+  const gridY = Math.round((playerPos.z + this.boxDepth / 2) * 50);
+  
+  // Create prop data
+  const propData = {
+    id: `used-${Date.now()}`, // Generate a new ID to prevent confusion
+    x: gridX,
+    y: gridY,
+    image: item.prop.image,
+    name: item.prop.name,
+    description: item.prop.description,
+    scale: item.prop.scale || 1,
+    height: 1,
+    // Add this to ensure it appears correctly
+    rotation: 0,
+    isHorizontal: false
+  };
+  
+  console.log('Creating prop from inventory item at:', {x: gridX, y: gridY});
+  
+  // Create and add prop mesh
+  this.createPropMesh(propData)
+    .then(mesh => {
+      if (mesh) {
+        // Add user data to make it interactable
+        mesh.userData = {
+          type: 'prop',
+          id: propData.id,
+          name: propData.name,
+          description: propData.description
+        };
+        
+        this.scene.add(mesh);
+        console.log('Item placed in world:', propData.id);
+      }
+    })
+    .catch(error => {
+      console.error('Error creating prop from inventory item:', error);
+    });
+  
+  // Remove from inventory
   this.removeFromInventory(itemId);
   
-  // Show use notification
+  // Show notification
   this.showNotification(`Used ${item.prop.name || 'Item'}`);
 }
 
