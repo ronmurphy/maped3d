@@ -4981,7 +4981,7 @@ class MapEditor {
         teleport: "swap_calls",
         door: "door_front",
         prop: "category",
-        "splash-art": "art_track"  // Add this line - 'art_track' or could use 'image' or 'photo_library'
+        "splash-art": "add_photo_alternate" 
       }[type] || "location_on";
 
       markerElement.innerHTML = `<span class="material-icons">${icon}</span>`;
@@ -5747,13 +5747,7 @@ class MapEditor {
     return content;
   }
 
-
-
-  // Add this method to MapEditor class
   setupSplashArtEventHandlers(dialog, marker) {
-    // Splash art selection
-    // Update the splash art selection part of setupSplashArtEventHandlers
-    // In setupSplashArtEventHandlers, update the selection handler:
     dialog.querySelectorAll('.splash-art-option').forEach(option => {
       option.addEventListener('click', () => {
         const artId = option.dataset.artId;
