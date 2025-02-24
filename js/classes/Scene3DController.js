@@ -191,14 +191,8 @@ class Scene3DController {
   }
 
 createPropMesh(propData) {
-  console.log("Creating prop mesh:", {
-    position: `${propData.x}, ${propData.y}`,
-    texture: !!propData.image,
-    rotation: propData.rotation || 0,
-    scale: propData.scale || 1.0,
-    height: propData.height || 1.0,
-    isHorizontal: propData.isHorizontal || false
-  });
+  console.log(`Creating prop mesh with ID: ${propData.id}`);
+
 
   return new Promise((resolve, reject) => {
     const textureLoader = new THREE.TextureLoader();
@@ -264,6 +258,9 @@ createPropMesh(propData) {
           id: propData.id,
           isHorizontal: propData.isHorizontal || false
         };
+
+        mesh.userData.debugId = Date.now(); // Add a unique timestamp
+        console.log(`Prop mesh created with debugId: ${mesh.userData.debugId}`);
         
         resolve(mesh);
       },
@@ -2099,22 +2096,23 @@ this.processDoorMarkers();
       console.log(`Added ${tokenMeshes.length} token meshes to scene`);
     }
 
+    // item duplication code, leave disabled.
 // Process prop markers
-this.markers.forEach(marker => {
-  if (marker.type === "prop" && marker.data?.texture) {
-    const propData = {
-      x: marker.x,
-      y: marker.y,
-      image: marker.data.texture.data,
-      type: "prop",
-      scale: marker.data.prop?.scale || 1,
-      aspect: marker.data.texture.aspect || 1,
-      rotation: marker.data.prop?.position?.rotation || 0,
-      height: marker.data.prop?.height || 1 // Use the height value from prop settings
-    };
-    this.tokens.push(propData);
-  }
-});
+// this.markers.forEach(marker => {
+//   if (marker.type === "prop" && marker.data?.texture) {
+//     const propData = {
+//       x: marker.x,
+//       y: marker.y,
+//       image: marker.data.texture.data,
+//       type: "prop",
+//       scale: marker.data.prop?.scale || 1,
+//       aspect: marker.data.texture.aspect || 1,
+//       rotation: marker.data.prop?.position?.rotation || 0,
+//       height: marker.data.prop?.height || 1 // Use the height value from prop settings
+//     };
+//     this.tokens.push(propData);
+//   }
+// });
 
 this.processDoorMarkers();
 
@@ -2976,6 +2974,18 @@ animate = () => {
     this.renderer.render(this.scene, this.camera);
     return;
   }
+
+  // In your animate method, check for duplicate meshes
+const propMeshes = this.scene.children.filter(child => 
+  child.userData && child.userData.type === 'prop'
+);
+
+const propIds = propMeshes.map(mesh => mesh.userData.id);
+const duplicateProps = propIds.filter((id, index) => propIds.indexOf(id) !== index);
+
+if (duplicateProps.length > 0) {
+  console.warn('[ANIMATE] Found duplicate prop meshes in scene:', duplicateProps);
+}
 
   const currentSpeed = this.moveState.speed;
   let canMove = true;
