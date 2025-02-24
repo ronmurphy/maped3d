@@ -1906,132 +1906,7 @@ createPropMesh(propData) {
 
     this.tokens = [];
 
-    // brad sync and edit test from downstairs
 
-    // Add encounter markers to tokens array
-//     console.log("Starting to process markers for tokens:", this.markers.length);
-//     this.markers.forEach((marker, index) => {
-//       console.log(`Processing marker ${index}:`, {
-//         type: marker.type,
-//         hasMonster: !!marker.data?.monster
-//       });
-
-//       if (marker.type === "encounter" && marker.data?.monster) {
-//         console.log("Processing encounter marker for 3D:", {
-//           name: marker.data.monster.basic?.name,
-//           hasToken: !!marker.data.monster.token
-//         });
-
-//         const tokenData = this.getMonsterTokenData(marker);
-//         if (tokenData) {
-//           this.tokens.push(tokenData);
-//           console.log("Successfully added token data:", {
-//             name: tokenData.name,
-//             position: `${tokenData.x}, ${tokenData.y}`,
-//             size: tokenData.size
-//           });
-//         } else {
-//           console.log("Failed to get token data for marker");
-//         }
-//       }
-//     });
-
-
-
-//     console.log("Finished processing Token markers, total tokens:", this.tokens.length);
-
-
-
-// // Process prop markers
-// console.log("Processing prop markers for 3D view");
-// const propMarkers = this.markers.filter(m => m.type === 'prop' && m.data?.texture);
-// const propPromises = [];
-
-// propMarkers.forEach(marker => {
-//   // Create prop data object
-//   const propData = {
-//     id: marker.id,
-//     x: marker.x,
-//     y: marker.y,
-//     image: marker.data.texture.data,
-//     rotation: marker.data.prop?.position?.rotation || 0,
-//     scale: marker.data.prop?.scale || 1,
-//     height: marker.data.prop?.height || 1,
-//     isHorizontal: marker.data.prop?.isHorizontal || false  // Add this line
-//   };
-  
-//   // Create and add prop mesh
-//   propPromises.push(
-//     this.createPropMesh(propData)
-//       .then(mesh => {
-//         this.scene.add(mesh);
-//         return mesh;
-//       })
-//       .catch(error => {
-//         console.error(`Error creating prop ${marker.id}:`, error);
-//         return null;
-//       })
-//   );
-// });
-
-// // Wait for all props to be created
-// if (propPromises.length > 0) {
-//   Promise.all(propPromises)
-//     .then(propMeshes => {
-//       console.log(`Added ${propMeshes.filter(m => m !== null).length} prop meshes to scene`);
-//     })
-//     .catch(error => {
-//       console.error("Error adding props to scene:", error);
-//     });
-// }
-
-// const teleportMarkers = this.markers.filter(m => m.type === 'teleport');
-// // In Scene3DController.js, modify the teleport marker processing:
-// teleportMarkers.forEach(marker => {
-//   const x = marker.x / 50 - this.boxWidth / 2;
-//   const z = marker.y / 50 - this.boxDepth / 2;
-//   const { elevation, insideWall } = this.getHighestElevationAtPoint(x, z);
-//   // const { elevation, insideWall } = this.getElevationAtPoint(x, z);
-  
-//   // Store elevation data with marker
-//   marker.data.elevation = elevation;
-//   marker.data.insideWall = insideWall;
-  
-//   // Create teleporter visual
-//   const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-//   const material = new THREE.MeshBasicMaterial({
-//     color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
-//     transparent: true,
-//     opacity: 0.5
-//   });
-  
-//   const mesh = new THREE.Mesh(geometry, material);
-  
-//   // Position at highest elevation
-//   const finalHeight = elevation + 0.05; // Slightly above surface
-//   mesh.position.set(x, finalHeight, z);
-  
-//   const teleporterInfo = {
-//     mesh,
-//     marker,
-//     pairedMarker: marker.data.pairedMarker,
-//     isPointA: marker.data.isPointA,
-//     position: new THREE.Vector3(x, finalHeight, z)
-//   };
-  
-//   this.teleporters.push(teleporterInfo);
-//   this.scene.add(mesh);
-  
-//   // Add particles at correct height
-//   const particles = this.createTeleporterParticles(x, finalHeight, z);
-//   this.scene.add(particles);
-// });
-
-// this.processDoorMarkers();
-
-
-
-//process markers
 // Process all markers (encounter tokens, props, teleporters, doors, etc.)
 await this.processAllMarkers();
 
@@ -2283,25 +2158,6 @@ await this.processAllMarkers();
       console.log(`Added ${tokenMeshes.length} token meshes to scene`);
     }
 
-    // item duplication code, leave disabled.
-// Process prop markers
-// this.markers.forEach(marker => {
-//   if (marker.type === "prop" && marker.data?.texture) {
-//     const propData = {
-//       x: marker.x,
-//       y: marker.y,
-//       image: marker.data.texture.data,
-//       type: "prop",
-//       scale: marker.data.prop?.scale || 1,
-//       aspect: marker.data.texture.aspect || 1,
-//       rotation: marker.data.prop?.position?.rotation || 0,
-//       height: marker.data.prop?.height || 1 // Use the height value from prop settings
-//     };
-//     this.tokens.push(propData);
-//   }
-// });
-
-// this.processDoorMarkers();
 
 // Try to load door sound
 this.loadDoorSound();
@@ -2364,82 +2220,6 @@ return {
 };
 }
 
-
-// setupInventorySystem() {
-//   console.log('Setting up inventory system');
-  
-//   // Create inventory drawer
-//   this.inventoryDrawer = document.createElement('sl-drawer');
-//   this.inventoryDrawer.label = "Inventory";
-//   this.inventoryDrawer.placement = "bottom";
-  
-//   // Add higher z-index to appear above 3D view
-//   this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
-  
-// // incase we ever do a right handinventory, get the sidebar size for no overlap.
-//   const sidebar = document.querySelector(".sidebar");
-//   const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
-//   const availableWidth = window.innerWidth - sidebarWidth;
-//     // Set drawer size to 50% of viewport width
-//   const viewportWidth = window.innerWidth;
-//   this.inventoryDrawer.style.setProperty('--size', '50%');
-  
-//   // Create grid container for items
-//   const gridContainer = document.createElement('div');
-//   gridContainer.className = 'inventory-grid';
-//   gridContainer.style.cssText = `
-//       display: grid;
-//       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-//       gap: 16px;
-//       padding: 16px;
-//       max-height: 400px;
-//       overflow-y: auto;
-//   `;
-
-//   this.inventoryDrawer.addEventListener('sl-show', () => {
-//     console.log('Inventory drawer shown');
-//     this.isInventoryShowing = true;
-//     this.pauseControls();
-//   });
-
-//   this.inventoryDrawer.addEventListener('sl-hide', () => {
-//     console.log('Inventory drawer hidden');
-//     this.isInventoryShowing = false;
-//     this.resumeControls();
-//   });
-  
-//   this.inventoryDrawer.appendChild(gridContainer);
-//   document.body.appendChild(this.inventoryDrawer);
-
-//   console.log('Inventory drawer created and added to DOM');
-  
-//   // Update the drawer's container directly for higher z-index
-//   const drawerContainer = this.inventoryDrawer.shadowRoot?.querySelector('.drawer');
-//   if (drawerContainer) {
-//       drawerContainer.style.zIndex = '3000';
-//   }
-
-
-
-// }
-
-
-// toggleInventory() {
-//   if (this.inventoryDrawer) {
-//     // Just show the drawer and pause controls
-//     // Don't toggle state here - let event listeners handle that
-//     console.log('Showing inventory drawer');
-//     this.inventoryDrawer.show();
-//     this.pauseControls();
-    
-//     // We don't need this line anymore as we'll rely on the sl-show/sl-hide events
-//     // this.isInventoryShowing = !this.isInventoryShowing;
-//   } else {
-//     console.warn('Inventory drawer not initialized');
-//   }
-// }
-
-
 createPickupPrompt() {
   if (!this.pickupPrompt) {
       this.pickupPrompt = document.createElement('div');
@@ -2461,52 +2241,6 @@ createPickupPrompt() {
   }
   return this.pickupPrompt;
 }
-
-// addToInventory(prop) {
-//   const itemId = `prop-${Date.now()}`;
-  
-//   // Create inventory item element
-//   const itemElement = document.createElement('div');
-//   itemElement.className = 'inventory-item';
-//   itemElement.style.cssText = `
-//       border: 1px solid #444;
-//       border-radius: 4px;
-//       padding: 8px;
-//       text-align: center;
-//       background: #333;
-//   `;
-  
-//   // Add image if available
-//   if (prop.image) {
-//       const img = document.createElement('img');
-//       img.src = prop.image;
-//       img.style.cssText = `
-//           width: 64px;
-//           height: 64px;
-//           object-fit: contain;
-//           margin-bottom: 8px;
-//       `;
-//       itemElement.appendChild(img);
-//   }
-  
-//   // Add name/label
-//   const label = document.createElement('div');
-//   label.textContent = prop.name || 'Prop';
-//   label.style.fontSize = '0.9em';
-//   itemElement.appendChild(label);
-  
-//   // Add to inventory map and grid
-//   this.inventory.set(itemId, {
-//       id: itemId,
-//       prop: prop,
-//       element: itemElement
-//   });
-  
-//   // Add to grid
-//   const grid = this.inventoryDrawer.querySelector('.inventory-grid');
-//   grid.appendChild(itemElement);
-// }
-
 
 setupInventorySystem() {
   console.log('Setting up inventory system');
@@ -2557,17 +2291,7 @@ setupInventorySystem() {
   // Add the grid to the drawer
   this.inventoryDrawer.appendChild(gridContainer);
   
-  // Add a close button in the footer
-  // const closeButton = document.createElement('sl-button');
-  // closeButton.setAttribute('variant', 'primary');
-  // closeButton.textContent = 'Close Inventory';
-  // closeButton.slot = 'footer';
-  // closeButton.style.cssText = `
-  //   margin: 0 auto;
-  //   display: block;
-  // `;
-  // this.inventoryDrawer.appendChild(closeButton);
-  
+ 
   // Event listeners for the drawer
   this.inventoryDrawer.addEventListener('sl-show', () => {
     console.log('Inventory drawer shown');
@@ -2624,116 +2348,6 @@ toggleInventory() {
   // We intentionally don't handle closing here
 }
 
-// setupInventorySystem() {
-//   console.log('Setting up inventory system');
-  
-//   // Create inventory drawer
-//   this.inventoryDrawer = document.createElement('sl-drawer');
-//   this.inventoryDrawer.label = "Inventory";
-//   this.inventoryDrawer.placement = "bottom";
-  
-//   // Add higher z-index to appear above 3D view
-//   this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
-  
-//   // Set drawer size to 50% of viewport height
-//   this.inventoryDrawer.style.setProperty('--size', '40%');
-  
-//   // Create inventory heading
-//   const heading = document.createElement('h2');
-//   heading.textContent = 'Your Items';
-//   heading.style.cssText = `
-//     margin-top: 0;
-//     color: #333;
-//     font-family: Arial, sans-serif;
-//     font-weight: 500;
-//     padding-left: 16px;
-//   `;
-//   this.inventoryDrawer.appendChild(heading);
-  
-//   // Create grid container for items
-//   const gridContainer = document.createElement('div');
-//   gridContainer.className = 'inventory-grid';
-//   gridContainer.style.cssText = `
-//     display: grid;
-//     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-//     gap: 16px;
-//     padding: 16px;
-//     max-height: 70vh;
-//     overflow-y: auto;
-//   `;
-  
-//   // Add empty inventory message
-//   const emptyMessage = document.createElement('div');
-//   emptyMessage.className = 'empty-inventory-message';
-//   emptyMessage.textContent = 'Your inventory is empty. Explore the world to find items!';
-//   emptyMessage.style.cssText = `
-//     grid-column: 1 / -1;
-//     text-align: center;
-//     padding: 40px 20px;
-//     color: #666;
-//     font-style: italic;
-//   `;
-//   gridContainer.appendChild(emptyMessage);
-  
-//   // Add the grid to the drawer
-//   this.inventoryDrawer.appendChild(gridContainer);
-  
-//   // Add close instructions
-//   const closeInstructions = document.createElement('div');
-//   closeInstructions.textContent = 'Press I or click outside to close inventory';
-//   closeInstructions.style.cssText = `
-//     text-align: center;
-//     margin-top: 16px;
-//     color: #666;
-//     font-size: 14px;
-//   `;
-//   this.inventoryDrawer.appendChild(closeInstructions);
-  
-//   // Add event listeners
-//   this.inventoryDrawer.addEventListener('sl-show', () => {
-//     console.log('Inventory drawer shown');
-//     this.isInventoryShowing = true;
-//     this.pauseControls();
-    
-//     // Update empty message visibility
-//     const emptyMessage = this.inventoryDrawer.querySelector('.empty-inventory-message');
-//     const hasItems = this.inventory.size > 0;
-//     if (emptyMessage) {
-//       emptyMessage.style.display = hasItems ? 'none' : 'block';
-//     }
-//   });
-
-//   this.inventoryDrawer.addEventListener('sl-hide', () => {
-//     console.log('Inventory drawer hidden');
-//     this.isInventoryShowing = false;
-//     this.resumeControls();
-//   });
-  
-//   // Add to the document
-//   document.body.appendChild(this.inventoryDrawer);
-  
-//   // Initialize inventory data structure if not already
-//   if (!this.inventory) {
-//     this.inventory = new Map();
-//   }
-// }
-
-// toggleInventory() {
-//   if (!this.inventoryDrawer) {
-//     console.warn('Inventory drawer not initialized');
-//     return;
-//   }
-
-//   console.log('Toggling inventory');
-  
-//   // Just toggle the drawer's open state
-//   // The sl-show and sl-hide events will handle pausing/resuming
-//   if (this.inventoryDrawer.open) {
-//     this.inventoryDrawer.hide();
-//   }   else {
-//     this.inventoryDrawer.show();
-//   }
-// }
 
 addToInventory(prop) {
   if (!prop || !prop.id) {
@@ -2920,22 +2534,6 @@ removeFromInventory(itemId) {
   return true;
 }
 
-// useInventoryItem(itemId) {
-//   if (!this.inventory.has(itemId)) {
-//     console.warn('Cannot use item, not found in inventory:', itemId);
-//     return;
-//   }
-  
-//   const item = this.inventory.get(itemId);
-//   console.log('Using inventory item:', item.prop);
-  
-//   // Handle item use based on type
-//   // For now, just remove it
-//   this.removeFromInventory(itemId);
-  
-//   // Show use notification
-//   this.showNotification(`Used ${item.prop.name || 'Item'}`);
-// }
 
 useInventoryItem(itemId) {
   if (!this.inventory.has(itemId)) {
