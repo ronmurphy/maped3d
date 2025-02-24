@@ -512,6 +512,24 @@ class MapEditor {
             }
           }
 
+          if (marker.type === "splash-art" && marker.data.splashArt) {
+            markerData.data = {
+              splashArt: {
+                id: marker.data.splashArt.id,
+                category: marker.data.splashArt.category,
+                name: marker.data.splashArt.name,
+                data: marker.data.splashArt.data,
+                thumbnail: marker.data.splashArt.thumbnail
+              },
+              effects: marker.data.effects,
+              orientation: marker.data.orientation,
+              position: marker.data.position,
+              scale: marker.data.scale,
+              height: marker.data.height,
+              inspectMessage: marker.data.inspectMessage
+            };
+          }
+
           // Special handling for different marker types
           if (marker.type === "encounter" && marker.data.monster) {
             markerData.data.monster = {
@@ -926,8 +944,19 @@ class MapEditor {
           markerData.data
         );
 
-        // Update appearance for special marker types
-        if (marker) {
+        if (marker.type === "splash-art" && markerData.data.splashArt) {
+          // Get the actual splash art data from the resource manager
+          const art = this.resourceManager.resources.splashArt[markerData.data.splashArt.category]?.get(markerData.data.splashArt.id);
+          if (art) {
+            marker.data.splashArt = {
+              ...art,
+              id: markerData.data.splashArt.id,
+              category: markerData.data.splashArt.category
+            };
+            this.updateMarkerAppearance(marker);
+          }
+        }
+        else if (marker) {
           if (marker.type === "encounter" && marker.data.monster) {
             this.updateMarkerAppearance(marker);
           }
@@ -2653,6 +2682,7 @@ class MapEditor {
       trapTool: "trap",
       teleportTool: "teleport",
       doorTool: "door",
+      splashArtTool: "splash-art",       
       propTool: "prop"
     };
 
@@ -4949,8 +4979,9 @@ class MapEditor {
         treasure: "workspace_premium",
         trap: "warning",
         teleport: "swap_calls",
-        door: "door_front",  // Add this line
-        prop: "category"
+        door: "door_front",
+        prop: "category",
+        "splash-art": "art_track"  // Add this line - 'art_track' or could use 'image' or 'photo_library'
       }[type] || "location_on";
 
       markerElement.innerHTML = `<span class="material-icons">${icon}</span>`;
@@ -5188,6 +5219,8 @@ class MapEditor {
         return marker.data.description || "Treasure";
       case "trap":
         return marker.data.description || "Trap";
+      case "splash-art":
+        return marker.data.splashArt?.name || "Splash Art Marker";  // Add this line
       default:
         return "Map Marker";
     }
@@ -5262,6 +5295,8 @@ class MapEditor {
         return this.generateDoorMarkerHTML(marker);
       case 'teleport':
         return this.generateTeleportMarkerHTML(marker);
+      case 'splash-art':
+        return this.generateSplashArtMarkerHTML(marker);
       default:
         return this.generateDefaultMarkerHTML(marker);
     }
@@ -5367,7 +5402,7 @@ class MapEditor {
             availableTextures.push(...Array.from(envTextures.entries()));
           }
 
-//style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">
+          //style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">
 
           return availableTextures.map(([id, texture]) => `
                           <div class="texture-option" data-texture-id="${id}" 
@@ -5401,16 +5436,11 @@ class MapEditor {
         <sl-switch id="prop-orientation" ${marker.data.prop?.isHorizontal ? 'checked' : ''}>
             <span style="margin-right: 8px;">Horizontal</span>
         </sl-switch>
-        <!-- Separated tooltip with hover event -->
-        <div style="display: inline-block;">
-            <sl-tooltip content="When enabled, prop will lie flat on surfaces" placement="right">
-                <span 
-                    class="help-icon material-icons" 
-                    style="font-size: 16px; color: #666; display: inline-flex; vertical-align: middle; cursor: help;"
-                >help_outline</span>
-            </sl-tooltip>
-        </div>
+        <span class="material-icons help-icon" 
+              style="font-size: 16px; color: #666; cursor: help;"
+              data-tooltip="prop-horizontal">help_outline</span>
     </div>
+</div>
 </div>
           </div>
           
@@ -5590,6 +5620,299 @@ class MapEditor {
   `;
   }
 
+  // Add this method to MapEditor class
+  generateSplashArtMarkerHTML(marker) {
+
+    // Add this at the start of generateSplashArtMarkerHTML
+    console.log('Resource Manager state:', {
+      hasResourceManager: !!this.resourceManager,
+      splashArtCategories: this.resourceManager ? Object.keys(this.resourceManager.resources.splashArt) : null,
+      availableSplashArt: this.resourceManager ? Object.entries(this.resourceManager.resources.splashArt).map(([category, artMap]) => ({
+        category,
+        count: artMap.size,
+        items: Array.from(artMap.entries()).map(([id, art]) => ({
+          id,
+          name: art.name
+        }))
+      })) : null
+    });
+
+    // Get splash art from all categories (title, loading, background)
+    let allSplashArt = [];
+    Object.entries(this.resourceManager?.resources.splashArt || {}).forEach(([category, artMap]) => {
+      Array.from(artMap.entries()).forEach(([id, art]) => {
+        allSplashArt.push([id, { ...art, category }]);
+      });
+    });
+
+    let content = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- Splash Art Selection -->
+          <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+              <label style="display: block; margin-bottom: 8px;">Select Splash Art:</label>
+              <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+                      ${allSplashArt.map(([id, art]) => `
+                          <div class="splash-art-option" data-art-id="${id}" data-category="${art.category}"
+                              style="cursor: pointer; border: 2px solid ${marker.data.splashArt?.id === id ? 'var(--sl-color-primary-600)' : 'transparent'
+      }; padding: 4px; border-radius: 4px; position: relative;">
+                              <img src="${art.thumbnail}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 2px;">
+                              <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">
+                                  ${art.name}
+                                  <span style="display: block; font-size: 0.9em; color: #666;">(${art.category})</span>
+                              </div>
+                              ${marker.data.splashArt?.id === id ? `
+                                  <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                      background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                      check_circle
+                                  </span>
+                              ` : ''}
+                          </div>
+                      `).join('')}
+                  </div>
+              </div>
+          </div>
+
+          <!-- Display Settings -->
+          <div class="splash-art-settings" style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+              <div style="margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                      <sl-switch id="art-orientation" ${marker.data.orientation?.isHorizontal ? 'checked' : ''}>
+                          <span style="margin-right: 8px;">Horizontal</span>
+                      </sl-switch>
+                      <span class="material-icons help-icon" 
+                            style="font-size: 16px; color: #666; cursor: help;"
+                            data-tooltip="art-horizontal">help_outline</span>
+                  </div>
+              </div>
+
+              <!-- Position Controls -->
+              <div class="position-controls">
+                  <div class="control-row" style="margin-bottom: 16px;">
+                      <label>Rotation:</label>
+                      <sl-range min="0" max="359" step="15" value="${marker.data.position?.rotation || 0}" id="art-rotation" 
+                               style="width: 100%;"></sl-range>
+                      <div style="min-width: 40px; text-align: right;">${marker.data.position?.rotation || 0}°</div>
+                  </div>
+
+                  <div class="control-row" style="margin-bottom: 16px;">
+                      <label>Scale:</label>
+                      <sl-range min="0.5" max="3" step="0.1" value="${marker.data.scale || 1.0}" id="art-scale" 
+                               style="width: 100%;"></sl-range>
+                      <div style="min-width: 40px; text-align: right;">${marker.data.scale || 1.0}x</div>
+                  </div>
+
+                  <div class="control-row">
+                      <label>Height:</label>
+                      <sl-range min="0" max="4" step="0.1" value="${marker.data.height || 1.0}" id="art-height" 
+                               style="width: 100%;"></sl-range>
+                      <div style="min-width: 40px; text-align: right;">${marker.data.height || 1.0}</div>
+                  </div>
+              </div>
+          </div>
+
+          <!-- Interaction Settings -->
+          <div class="interaction-settings" style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+              <sl-input 
+                  type="text" 
+                  label="Inspect Message" 
+                  value="${marker.data.inspectMessage || 'Press E to inspect'}"
+                  id="inspect-message">
+              </sl-input>
+
+              <!-- Add sound for inspection interaction -->
+              <div style="margin-top: 12px;">
+                  <label style="display: block; margin-bottom: 8px;">Inspection Sound:</label>
+                  <div class="sound-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+                      ${Array.from(this.resourceManager?.resources.sounds.effects.entries() || []).map(([id, sound]) => `
+                          <div class="sound-option" data-sound-id="${id}" 
+                               style="border: 1px solid #666; padding: 8px; border-radius: 4px; cursor: pointer;">
+                              <div style="text-align: center;">
+                                  <span class="material-icons" style="font-size: 32px; color: #666;">volume_up</span>
+                              </div>
+                              <div style="text-align: center; margin-top: 4px; font-size: 0.9em;">
+                                  ${sound.name}
+                              </div>
+                              <div style="text-align: center; color: #666; font-size: 0.8em;">
+                                  ${sound.duration ? sound.duration.toFixed(1) + 's' : 'Unknown duration'}
+                              </div>
+                          </div>
+                      `).join('')}
+                  </div>
+              </div>
+          </div>
+      </div>
+  `;
+
+    return content;
+  }
+
+
+
+  // Add this method to MapEditor class
+  setupSplashArtEventHandlers(dialog, marker) {
+    // Splash art selection
+    // Update the splash art selection part of setupSplashArtEventHandlers
+    // In setupSplashArtEventHandlers, update the selection handler:
+    dialog.querySelectorAll('.splash-art-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const artId = option.dataset.artId;
+        const category = option.dataset.category;
+
+        console.log('Splash art clicked:', {
+          artId,
+          category,
+          element: option
+        });
+
+        const art = this.resourceManager.resources.splashArt[category]?.get(artId);
+
+        console.log('Found art data:', {
+          found: !!art,
+          artData: art
+        });
+
+        if (art) {
+          // Initialize marker data structure if needed
+          if (!marker.data) marker.data = {};
+
+          // Store the complete art data
+          marker.data.splashArt = {
+            ...art,
+            id: artId,
+            category: category
+          };
+
+          console.log('Updated marker data:', {
+            markerData: marker.data,
+            splashArt: marker.data.splashArt
+          });
+
+          // Update visual feedback in dialog
+          dialog.querySelectorAll('.splash-art-option').forEach(opt => {
+            opt.style.cssText = opt === option ? `
+                  cursor: pointer;
+                  border: 2px solid var(--sl-color-primary-600);
+                  padding: 4px;
+                  border-radius: 4px;
+                  position: relative;
+                  background-color: rgba(var(--sl-color-primary-600-rgb), 0.1);
+              ` : `
+                  cursor: pointer;
+                  border: 2px solid transparent;
+                  padding: 4px;
+                  border-radius: 4px;
+                  position: relative;
+              `;
+          });
+
+          // Update marker visual if needed
+          const markerElement = marker.element;
+          if (markerElement) {
+            const icon = markerElement.querySelector('.material-icons');
+            if (icon) {
+              icon.style.color = 'var(--sl-color-primary-600)';
+            }
+          }
+        } else {
+          console.warn('Could not find art data for selection:', {
+            artId,
+            category,
+            availableCategories: Object.keys(this.resourceManager.resources.splashArt)
+          });
+        }
+      });
+    });
+
+    // Orientation switch
+    const orientationSwitch = dialog.querySelector('#art-orientation');
+    if (orientationSwitch) {
+      orientationSwitch.addEventListener('sl-change', (e) => {
+        if (!marker.data.orientation) marker.data.orientation = {};
+        marker.data.orientation.isHorizontal = e.target.checked;
+        this.updateMarkerAppearance(marker);
+      });
+    }
+
+    // Help icon
+    const helpIcon = dialog.querySelector('[data-tooltip="art-horizontal"]');
+    if (helpIcon) {
+      helpIcon.addEventListener('mouseenter', () => {
+        this.showShoelaceToast(
+          'When enabled, art marker will lie flat on surfaces',
+          'info-circle',
+          3000,
+          'info'
+        );
+      });
+    }
+
+    // Position controls
+    const rotationSlider = dialog.querySelector('#art-rotation');
+    if (rotationSlider) {
+      rotationSlider.addEventListener('sl-input', (e) => {
+        const rotation = parseInt(e.target.value);
+        if (!marker.data.position) marker.data.position = {};
+        marker.data.position.rotation = rotation;
+        rotationSlider.nextElementSibling.textContent = `${rotation}°`;
+        this.updateMarkerAppearance(marker);
+      });
+    }
+
+    const scaleSlider = dialog.querySelector('#art-scale');
+    if (scaleSlider) {
+      scaleSlider.addEventListener('sl-input', (e) => {
+        const scale = parseFloat(e.target.value);
+        marker.data.scale = scale;
+        scaleSlider.nextElementSibling.textContent = `${scale.toFixed(1)}x`;
+        this.updateMarkerAppearance(marker);
+      });
+    }
+
+    const heightSlider = dialog.querySelector('#art-height');
+    if (heightSlider) {
+      heightSlider.addEventListener('sl-input', (e) => {
+        const height = parseFloat(e.target.value);
+        marker.data.height = height;
+        heightSlider.nextElementSibling.textContent = height.toFixed(1);
+        this.updateMarkerAppearance(marker);
+      });
+    }
+
+    // Inspect message
+    const messageInput = dialog.querySelector('#inspect-message');
+    if (messageInput) {
+      messageInput.addEventListener('sl-change', (e) => {
+        marker.data.inspectMessage = e.target.value;
+      });
+    }
+
+    // Sound selection
+    dialog.querySelectorAll('.sound-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const soundId = option.dataset.soundId;
+        const sound = this.resourceManager.resources.sounds.effects.get(soundId);
+        if (sound) {
+          // Preview the sound
+          if (this.resourceManager.activeAudio) {
+            this.resourceManager.stopSound(soundId);
+          }
+          this.resourceManager.playSound(soundId, 'effects');
+
+          // Store the sound selection
+          if (!marker.data.effects) marker.data.effects = {};
+          marker.data.effects.inspectSound = sound;
+
+          // Update selection in dialog
+          dialog.querySelectorAll('.sound-option').forEach(opt =>
+            opt.style.border = opt.dataset.soundId === soundId ?
+              '2px solid var(--sl-color-primary-600)' : '1px solid #666'
+          );
+        }
+      });
+    });
+  }
+
   setupPropEventHandlers(dialog, marker) {
     // Setup texture selection
     dialog.querySelectorAll('.texture-option').forEach(option => {
@@ -5683,55 +6006,51 @@ class MapEditor {
       });
     }
 
-    const helpIcon = document.querySelector('.help-icon');
+    const helpIcon = dialog.querySelector('[data-tooltip="prop-horizontal"]');
+    if (helpIcon) {
+      helpIcon.addEventListener('mouseenter', () => {
+        this.showShoelaceToast(
+          'When enabled, prop will lie flat on surfaces',
+          'info-circle',
+          3000,
+          'info'
+        );
+      });
+    }
 
-        if (helpIcon) {
-            helpIcon.addEventListener('mouseenter', () => {
-                showShoelaceToast(
-                    "When enabled, prop will lie flat on surfaces.",
-                    "exclamation-triangle",
-                    3000,
-                    "warning"
-                );
-            });
-        }
-    
   }
 
-showShoelaceToast(message, icon, timeout, variant) {
-    // Ensure there's a valid container to append the alert to
-    const container = document.querySelector('.alert-toast');
-    if (!container) return;
+  showShoelaceToast(message, icon, timeout = 3000, variant = 'primary') {
+    // Create a container if it doesn't exist
+    let container = document.querySelector('.alert-toast');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'alert-toast';
+      container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000;';
+      document.body.appendChild(container);
+    }
 
-    // Create the alert element
     const alert = document.createElement('sl-alert');
     alert.setAttribute('variant', variant);
     alert.setAttribute('duration', timeout);
     alert.setAttribute('closable', '');
 
-    // Create the icon element if an icon is provided
     if (icon) {
-        const alertIcon = document.createElement('sl-icon');
-        alertIcon.setAttribute('slot', 'icon');
-        alertIcon.setAttribute('name', icon);
-        alert.appendChild(alertIcon);
+      const alertIcon = document.createElement('sl-icon');
+      alertIcon.setAttribute('slot', 'icon');
+      alertIcon.setAttribute('name', icon);
+      alert.appendChild(alertIcon);
     }
 
-    // Append the message text
     alert.appendChild(document.createTextNode(message));
-
-    // Append to the container
     container.appendChild(alert);
-
-    // Ensure it's in the DOM before triggering the toast
     requestAnimationFrame(() => alert.toast());
-
     return alert;
-}
+  }
 
-// Example Usage
-// showShoelaceAlert('This is a warning!', 'exclamation-triangle', 3000, 'warning');
-// showShoelaceAlert('Success!', 'check-circle', 4000, 'success');
+  // Example Usage
+  // showShoelaceAlert('This is a warning!', 'exclamation-triangle', 3000, 'warning');
+  // showShoelaceAlert('Success!', 'check-circle', 4000, 'success');
 
 
   setupEncounterEventHandlers(dialog, marker) {

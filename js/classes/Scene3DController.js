@@ -14,6 +14,9 @@ class Scene3DController {
     this.doors = []; 
     this.debugVisuals = false;
     this.resourceManager = null;
+    this.activeSplashArt = null;
+    this.splashArtPrompt = null;
+    this.nearestSplashArt = null;
     this.clear();
   }
 
@@ -539,6 +542,18 @@ createPropMesh(propData) {
             if (!event.repeat) {
                 this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
                 this.updateWallClipping();
+            }
+            break;
+        case "KeyE":
+            // Handle interactions
+            if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
+                this.executeTeleport();
+            }
+            else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
+                this.executeDoorTeleport();
+            }
+            else if (this.nearestSplashArt && !this.activeSplashArt) {
+                this.showSplashArt(this.nearestSplashArt);
             }
             break;
     }
@@ -2145,31 +2160,42 @@ animate = () => {
     }
   });
 
+  // const playerPosition = this.camera.position.clone();
+  let nearestSplashArt = null;
+  // let shortestDistance = Infinity;
+
+  this.markers.forEach(marker => {
+      if (marker.type === 'splash-art') {
+          const markerPos = new THREE.Vector3(
+              marker.x / 50 - this.boxWidth / 2,
+              marker.data.height || 1,
+              marker.y / 50 - this.boxDepth / 2
+          );
+          const distance = playerPosition.distanceTo(markerPos);
+
+          if (distance < 2 && distance < shortestDistance) {
+              shortestDistance = distance;
+              nearestSplashArt = marker;
+          }
+      }
+  });
+
+  // Show/hide splash art prompt
+  if (nearestSplashArt && !this.activeSplashArt) {
+      const prompt = this.createSplashArtPrompt();
+      prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press E to inspect';
+      prompt.style.display = 'block';
+      this.nearestSplashArt = nearestSplashArt;
+  } else if (!nearestSplashArt && this.splashArtPrompt) {
+      this.splashArtPrompt.style.display = 'none';
+      this.nearestSplashArt = null;
+  }
+
   // Update physics and camera height
   this.camera.position.y = this.physics.update();
   this.renderer.render(this.scene, this.camera);
 };
 
-// loadJumpSound() {
-//   const listener = new THREE.AudioListener();
-//   this.camera.add(listener);
-  
-//   this.jumpSound = new THREE.Audio(listener);
-//   const audioLoader = new THREE.AudioLoader();
-  
-//   audioLoader.load('sounds/jump.mp3', (buffer) => {
-//       this.jumpSound.setBuffer(buffer);
-//       this.jumpSound.setVolume(0.5);
-//   }, 
-//   // Progress callback
-//   (xhr) => {
-//       console.log(`Jump sound: ${(xhr.loaded / xhr.total * 100)}% loaded`);
-//   },
-//   // Error callback
-//   (error) => {
-//       console.warn('Could not load jump sound:', error);
-//   });
-// }
 
 // Optional: Add dust particle effect when landing
 createLandingEffect(position) {
@@ -2840,23 +2866,6 @@ processDoorMarkers() {
 }
 
 
-//   async loadDoorSound() {
-//     const listener = new THREE.AudioListener();
-//     this.camera.add(listener);
-    
-//     try {
-//         const soundData = await this.resourceManager.getThreeJSSound('door.mp3', 'effects');
-//         if (soundData) {
-//             this.doorSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
-//             if (this.doorSound) {
-//                 console.log('Door sound loaded successfully');
-//             }
-//         }
-//     } catch (error) {
-//         console.warn('Could not load door sound:', error);
-//     }
-// }
-
 
 async loadDoorSound() {
   if (!this.resourceManager) {
@@ -2879,23 +2888,6 @@ async loadDoorSound() {
       console.warn('Could not load door sound:', error);
   }
 }
-
-// async loadJumpSound() {
-//   const listener = new THREE.AudioListener();
-//   this.camera.add(listener);
-  
-//   try {
-//       const soundData = await this.resourceManager.getThreeJSSound('jump.mp3', 'effects');
-//       if (soundData) {
-//           this.jumpSound = await this.resourceManager.loadThreeJSSound(soundData, listener);
-//           if (this.jumpSound) {
-//               console.log('Jump sound loaded successfully');
-//           }
-//       }
-//   } catch (error) {
-//       console.warn('Could not load jump sound:', error);
-//   }
-// }
 
 
 async loadJumpSound() {
@@ -3094,6 +3086,162 @@ executeTeleport() {
     });
   }
 }
+
+
+createSplashArtPrompt() {
+  if (!this.splashArtPrompt) {
+      this.splashArtPrompt = document.createElement('div');
+      this.splashArtPrompt.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 15px 20px;
+          border-radius: 5px;
+          display: none;
+          font-family: Arial, sans-serif;
+          pointer-events: none;
+          z-index: 1000;
+      `;
+      document.body.appendChild(this.splashArtPrompt);
+  }
+  return this.splashArtPrompt;
+}
+
+// Update the showSplashArt method in Scene3DController
+showSplashArt(marker) {
+  // Add debug logging
+  console.log('Showing splash art for marker:', {
+      markerId: marker.id,
+      markerData: marker.data
+  });
+
+  // Validate marker data
+  if (!marker?.data?.splashArt?.category || !marker?.data?.splashArt?.id) {
+      console.warn('Invalid splash art data:', marker);
+      return;
+  }
+
+  // Get the actual splash art from the resource manager
+  const category = marker.data.splashArt.category;
+  const artId = marker.data.splashArt.id;
+  const art = this.resourceManager?.resources.splashArt[category]?.get(artId);
+
+  console.log('Found splash art:', {
+      category,
+      artId,
+      found: !!art
+  });
+
+  if (!art?.data) {
+      console.warn('Could not find splash art data in resource manager');
+      return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'splash-art-overlay';
+  overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+  `;
+
+  const artContainer = document.createElement('div');
+  artContainer.style.cssText = `
+      max-width: 90vw;
+      max-height: 90vh;
+      position: relative;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+  `;
+
+  const img = document.createElement('img');
+  img.src = art.data; // Use the art data from resource manager
+  img.style.cssText = `
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  `;
+
+  // Add loading indicator
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      text-align: center;
+  `;
+  loadingIndicator.innerHTML = `
+      <span class="material-icons" style="font-size: 48px;">hourglass_top</span>
+      <div>Loading...</div>
+  `;
+  artContainer.appendChild(loadingIndicator);
+
+  // Handle image load
+  img.onload = () => {
+      loadingIndicator.remove();
+      requestAnimationFrame(() => {
+          overlay.style.opacity = '1';
+          artContainer.style.transform = 'scale(1)';
+      });
+  };
+
+  const closeButton = document.createElement('button');
+  closeButton.innerHTML = '<span class="material-icons">close</span>';
+  closeButton.style.cssText = `
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 8px;
+      font-size: 24px;
+  `;
+
+  artContainer.appendChild(img);
+  artContainer.appendChild(closeButton);
+  overlay.appendChild(artContainer);
+  document.body.appendChild(overlay);
+
+  // Play sound if assigned
+  if (marker.data.effects?.inspectSound) {
+      this.resourceManager.playSound(marker.data.effects.inspectSound.id, 'effects');
+  }
+
+  const close = () => {
+      overlay.style.opacity = '0';
+      artContainer.style.transform = 'scale(0.95)';
+      setTimeout(() => overlay.remove(), 300);
+      this.activeSplashArt = null;
+  };
+
+  closeButton.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+  }, { once: true });
+
+  this.activeSplashArt = overlay;
+}
+
 
 
 }
