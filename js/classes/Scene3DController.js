@@ -1713,7 +1713,188 @@ createPropMesh(propData) {
   }
 
 
-
+  async processAllMarkers() {
+    if (!this.markers || this.markers.length === 0) {
+      console.log("No markers to process");
+      return;
+    }
+    
+    console.log(`Processing ${this.markers.length} markers...`);
+    
+    // 1. Process each marker type properly
+    const propPromises = [];
+    
+    for (const marker of this.markers) {
+      // Skip invalid markers
+      if (!marker || !marker.type) continue;
+      
+      // Process based on marker type
+      switch (marker.type) {
+        case "encounter":
+          if (marker.data?.monster) {
+            console.log(`Processing encounter marker: ${marker.data.monster.basic?.name || "Unknown"}`);
+            const tokenData = this.getMonsterTokenData(marker);
+            if (tokenData) {
+              const mesh = this.createTokenMesh(tokenData);
+              if (mesh) {
+                this.scene.add(mesh);
+                console.log(`Added monster token: ${tokenData.name}`);
+              }
+            }
+          }
+          break;
+          
+        case "prop":
+          if (marker.data?.texture) {
+            console.log(`Processing prop marker: ${marker.id}`);
+            const propData = {
+              id: marker.id,
+              x: marker.x,
+              y: marker.y,
+              image: marker.data.texture.data,
+              rotation: marker.data.prop?.position?.rotation || 0,
+              scale: marker.data.prop?.scale || 1,
+              height: marker.data.prop?.height || 1,
+              isHorizontal: marker.data.prop?.isHorizontal || false,
+              name: marker.data.prop?.name || "Prop",
+              description: marker.data.prop?.description || "A mysterious item."
+            };
+            
+            // Create prop mesh and add to scene
+            propPromises.push(
+              this.createPropMesh(propData)
+                .then(mesh => {
+                  if (mesh) {
+                    this.scene.add(mesh);
+                    console.log(`Added prop mesh: ${marker.id}`);
+                  }
+                  return mesh;
+                })
+                .catch(error => {
+                  console.error(`Error creating prop ${marker.id}:`, error);
+                  return null;
+                })
+            );
+          }
+          break;
+          
+        case "teleport":
+          console.log(`Processing teleport marker: ${marker.id}`);
+          const teleX = marker.x / 50 - this.boxWidth / 2;
+          const teleZ = marker.y / 50 - this.boxDepth / 2;
+          const { elevation } = this.getHighestElevationAtPoint(teleX, teleZ);
+          
+          // Store elevation data with marker
+          marker.data.elevation = elevation;
+          
+          // Create teleporter visual
+          const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
+          const material = new THREE.MeshBasicMaterial({
+            color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
+            transparent: true,
+            opacity: 0.5
+          });
+          
+          const mesh = new THREE.Mesh(geometry, material);
+          
+          // Position at correct elevation
+          const finalHeight = elevation + 0.05; // Slightly above surface
+          mesh.position.set(teleX, finalHeight, teleZ);
+          
+          const teleporterInfo = {
+            mesh,
+            marker,
+            pairedMarker: marker.data.pairedMarker,
+            isPointA: marker.data.isPointA,
+            position: new THREE.Vector3(teleX, finalHeight, teleZ)
+          };
+          
+          this.teleporters.push(teleporterInfo);
+          this.scene.add(mesh);
+          
+          // Add particles at correct height
+          const particles = this.createTeleporterParticles(teleX, finalHeight, teleZ);
+          this.scene.add(particles);
+          break;
+          
+        case "door":
+          console.log(`Processing door marker: ${marker.id}`);
+          if (marker.data?.texture) {
+            const doorMesh = this.textureManager.createDoorMesh(
+              marker,
+              this.boxWidth,
+              this.boxHeight,
+              this.boxDepth
+            );
+            if (doorMesh) {
+              this.scene.add(doorMesh);
+              console.log(`Added door mesh: ${marker.id}`);
+            }
+          }
+          break;
+          
+        case "splash-art":
+          console.log(`Processing splash-art marker: ${marker.id}`);
+          // Just register splash-art markers for interaction
+          // No mesh needed for these
+          break;
+          
+        default:
+          console.log(`Skipping unknown marker type: ${marker.type}`);
+          break;
+      }
+    }
+    
+    // 2. Process door interaction points
+    this.processDoorMarkers();
+    
+    // 3. Wait for all props to be created
+    if (propPromises.length > 0) {
+      try {
+        const propMeshes = await Promise.all(propPromises);
+        console.log(`Added ${propMeshes.filter(m => m !== null).length} prop meshes to scene`);
+      } catch (error) {
+        console.error("Error processing props:", error);
+      }
+    }
+    
+    // 4. Final check for duplicates
+    this.checkForDuplicateProps();
+  }
+  
+  checkForDuplicateProps() {
+    // Find all prop meshes
+    const propMeshes = this.scene.children.filter(child => 
+      child.userData && child.userData.type === 'prop'
+    );
+    
+    // Group by ID
+    const propsByID = {};
+    propMeshes.forEach(mesh => {
+      const id = mesh.userData.id;
+      if (!propsByID[id]) {
+        propsByID[id] = [];
+      }
+      propsByID[id].push(mesh);
+    });
+    
+    // Remove duplicates
+    let removedCount = 0;
+    Object.entries(propsByID).forEach(([id, meshes]) => {
+      if (meshes.length > 1) {
+        console.log(`Found ${meshes.length} meshes for prop ID ${id}, keeping only the first one`);
+        // Keep the first one, remove the rest
+        for (let i = 1; i < meshes.length; i++) {
+          this.scene.remove(meshes[i]);
+          removedCount++;
+        }
+      }
+    });
+    
+    if (removedCount > 0) {
+      console.log(`Removed ${removedCount} duplicate prop meshes`);
+    }
+  }
   
 
   async init3DScene(updateStatus) {
@@ -1728,125 +1909,131 @@ createPropMesh(propData) {
     // brad sync and edit test from downstairs
 
     // Add encounter markers to tokens array
-    console.log("Starting to process markers for tokens:", this.markers.length);
-    this.markers.forEach((marker, index) => {
-      console.log(`Processing marker ${index}:`, {
-        type: marker.type,
-        hasMonster: !!marker.data?.monster
-      });
+//     console.log("Starting to process markers for tokens:", this.markers.length);
+//     this.markers.forEach((marker, index) => {
+//       console.log(`Processing marker ${index}:`, {
+//         type: marker.type,
+//         hasMonster: !!marker.data?.monster
+//       });
 
-      if (marker.type === "encounter" && marker.data?.monster) {
-        console.log("Processing encounter marker for 3D:", {
-          name: marker.data.monster.basic?.name,
-          hasToken: !!marker.data.monster.token
-        });
+//       if (marker.type === "encounter" && marker.data?.monster) {
+//         console.log("Processing encounter marker for 3D:", {
+//           name: marker.data.monster.basic?.name,
+//           hasToken: !!marker.data.monster.token
+//         });
 
-        const tokenData = this.getMonsterTokenData(marker);
-        if (tokenData) {
-          this.tokens.push(tokenData);
-          console.log("Successfully added token data:", {
-            name: tokenData.name,
-            position: `${tokenData.x}, ${tokenData.y}`,
-            size: tokenData.size
-          });
-        } else {
-          console.log("Failed to get token data for marker");
-        }
-      }
-    });
-
-
-
-    console.log("Finished processing Token markers, total tokens:", this.tokens.length);
+//         const tokenData = this.getMonsterTokenData(marker);
+//         if (tokenData) {
+//           this.tokens.push(tokenData);
+//           console.log("Successfully added token data:", {
+//             name: tokenData.name,
+//             position: `${tokenData.x}, ${tokenData.y}`,
+//             size: tokenData.size
+//           });
+//         } else {
+//           console.log("Failed to get token data for marker");
+//         }
+//       }
+//     });
 
 
 
-// Process prop markers
-console.log("Processing prop markers for 3D view");
-const propMarkers = this.markers.filter(m => m.type === 'prop' && m.data?.texture);
-const propPromises = [];
+//     console.log("Finished processing Token markers, total tokens:", this.tokens.length);
 
-propMarkers.forEach(marker => {
-  // Create prop data object
-  const propData = {
-    id: marker.id,
-    x: marker.x,
-    y: marker.y,
-    image: marker.data.texture.data,
-    rotation: marker.data.prop?.position?.rotation || 0,
-    scale: marker.data.prop?.scale || 1,
-    height: marker.data.prop?.height || 1,
-    isHorizontal: marker.data.prop?.isHorizontal || false  // Add this line
-  };
+
+
+// // Process prop markers
+// console.log("Processing prop markers for 3D view");
+// const propMarkers = this.markers.filter(m => m.type === 'prop' && m.data?.texture);
+// const propPromises = [];
+
+// propMarkers.forEach(marker => {
+//   // Create prop data object
+//   const propData = {
+//     id: marker.id,
+//     x: marker.x,
+//     y: marker.y,
+//     image: marker.data.texture.data,
+//     rotation: marker.data.prop?.position?.rotation || 0,
+//     scale: marker.data.prop?.scale || 1,
+//     height: marker.data.prop?.height || 1,
+//     isHorizontal: marker.data.prop?.isHorizontal || false  // Add this line
+//   };
   
-  // Create and add prop mesh
-  propPromises.push(
-    this.createPropMesh(propData)
-      .then(mesh => {
-        this.scene.add(mesh);
-        return mesh;
-      })
-      .catch(error => {
-        console.error(`Error creating prop ${marker.id}:`, error);
-        return null;
-      })
-  );
-});
+//   // Create and add prop mesh
+//   propPromises.push(
+//     this.createPropMesh(propData)
+//       .then(mesh => {
+//         this.scene.add(mesh);
+//         return mesh;
+//       })
+//       .catch(error => {
+//         console.error(`Error creating prop ${marker.id}:`, error);
+//         return null;
+//       })
+//   );
+// });
 
-// Wait for all props to be created
-if (propPromises.length > 0) {
-  Promise.all(propPromises)
-    .then(propMeshes => {
-      console.log(`Added ${propMeshes.filter(m => m !== null).length} prop meshes to scene`);
-    })
-    .catch(error => {
-      console.error("Error adding props to scene:", error);
-    });
-}
+// // Wait for all props to be created
+// if (propPromises.length > 0) {
+//   Promise.all(propPromises)
+//     .then(propMeshes => {
+//       console.log(`Added ${propMeshes.filter(m => m !== null).length} prop meshes to scene`);
+//     })
+//     .catch(error => {
+//       console.error("Error adding props to scene:", error);
+//     });
+// }
 
-const teleportMarkers = this.markers.filter(m => m.type === 'teleport');
-// In Scene3DController.js, modify the teleport marker processing:
-teleportMarkers.forEach(marker => {
-  const x = marker.x / 50 - this.boxWidth / 2;
-  const z = marker.y / 50 - this.boxDepth / 2;
-  const { elevation, insideWall } = this.getHighestElevationAtPoint(x, z);
-  // const { elevation, insideWall } = this.getElevationAtPoint(x, z);
+// const teleportMarkers = this.markers.filter(m => m.type === 'teleport');
+// // In Scene3DController.js, modify the teleport marker processing:
+// teleportMarkers.forEach(marker => {
+//   const x = marker.x / 50 - this.boxWidth / 2;
+//   const z = marker.y / 50 - this.boxDepth / 2;
+//   const { elevation, insideWall } = this.getHighestElevationAtPoint(x, z);
+//   // const { elevation, insideWall } = this.getElevationAtPoint(x, z);
   
-  // Store elevation data with marker
-  marker.data.elevation = elevation;
-  marker.data.insideWall = insideWall;
+//   // Store elevation data with marker
+//   marker.data.elevation = elevation;
+//   marker.data.insideWall = insideWall;
   
-  // Create teleporter visual
-  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-  const material = new THREE.MeshBasicMaterial({
-    color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
-    transparent: true,
-    opacity: 0.5
-  });
+//   // Create teleporter visual
+//   const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
+//   const material = new THREE.MeshBasicMaterial({
+//     color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
+//     transparent: true,
+//     opacity: 0.5
+//   });
   
-  const mesh = new THREE.Mesh(geometry, material);
+//   const mesh = new THREE.Mesh(geometry, material);
   
-  // Position at highest elevation
-  const finalHeight = elevation + 0.05; // Slightly above surface
-  mesh.position.set(x, finalHeight, z);
+//   // Position at highest elevation
+//   const finalHeight = elevation + 0.05; // Slightly above surface
+//   mesh.position.set(x, finalHeight, z);
   
-  const teleporterInfo = {
-    mesh,
-    marker,
-    pairedMarker: marker.data.pairedMarker,
-    isPointA: marker.data.isPointA,
-    position: new THREE.Vector3(x, finalHeight, z)
-  };
+//   const teleporterInfo = {
+//     mesh,
+//     marker,
+//     pairedMarker: marker.data.pairedMarker,
+//     isPointA: marker.data.isPointA,
+//     position: new THREE.Vector3(x, finalHeight, z)
+//   };
   
-  this.teleporters.push(teleporterInfo);
-  this.scene.add(mesh);
+//   this.teleporters.push(teleporterInfo);
+//   this.scene.add(mesh);
   
-  // Add particles at correct height
-  const particles = this.createTeleporterParticles(x, finalHeight, z);
-  this.scene.add(particles);
-});
+//   // Add particles at correct height
+//   const particles = this.createTeleporterParticles(x, finalHeight, z);
+//   this.scene.add(particles);
+// });
 
-this.processDoorMarkers();
+// this.processDoorMarkers();
+
+
+
+//process markers
+// Process all markers (encounter tokens, props, teleporters, doors, etc.)
+await this.processAllMarkers();
 
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
@@ -2114,7 +2301,7 @@ this.processDoorMarkers();
 //   }
 // });
 
-this.processDoorMarkers();
+// this.processDoorMarkers();
 
 // Try to load door sound
 this.loadDoorSound();
@@ -2327,26 +2514,20 @@ setupInventorySystem() {
   // Create inventory drawer
   this.inventoryDrawer = document.createElement('sl-drawer');
   this.inventoryDrawer.label = "Inventory";
-  this.inventoryDrawer.placement = "bottom";
+  this.inventoryDrawer.placement = "end"; // Change to end for right side
   this.inventoryDrawer.className = "inventory-drawer";
   
   // Add higher z-index to appear above 3D view
   this.inventoryDrawer.style.setProperty('--sl-z-index-drawer', '3000');
   
-  // Set drawer size to 50% of viewport height
-  this.inventoryDrawer.style.setProperty('--size', '50%');
-  
-  // Create inventory heading
-  // const heading = document.createElement('h2');
-  // heading.textContent = 'Your Items';
-  // heading.style.cssText = `
-  //   margin-top: 0;
-  //   color: #333;
-  //   font-family: Arial, sans-serif;
-  //   font-weight: 500;
-  //   padding-left: 16px;
-  // `;
-  // this.inventoryDrawer.appendChild(heading);
+  // Calculate width based on viewport and sidebar
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+  const availableWidth = window.innerWidth - sidebarWidth;
+  const drawerWidth = `${Math.floor(availableWidth)}px`; // Use pixels instead of vw
+
+  // Set drawer width
+  this.inventoryDrawer.style.setProperty('--size', drawerWidth);
   
   // Create grid container for items
   const gridContainer = document.createElement('div');
