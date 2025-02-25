@@ -150,6 +150,11 @@ this.renderer.setClearColor(0x222222);
       this.stats.dom.parentNode.removeChild(this.stats.dom);
       this.stats = null;
     }
+      // Remove quality indicator if it exists
+  if (this.qualityIndicator && this.qualityIndicator.parentNode) {
+    this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
+    this.qualityIndicator = null;
+  }
   
     this.clear();
   }
@@ -283,8 +288,46 @@ createSimpleFPSCounter() {
 }
 
 // Toggle stats visibility
+// toggleStats() {
+//   // Debounce toggling (prevent multiple toggles within 500ms)
+//   const now = Date.now();
+//   if (now - this.lastStatsToggle < 500) {
+//     return;
+//   }
+//   this.lastStatsToggle = now;
+  
+//   // Initialize if needed
+//   if (!this.stats && !this.isInitializingStats) {
+//     // Set initial state to visible since we're explicitly toggling
+//     this.showStats = true;
+//     this.initStats();
+
+//     // Save preference if we have preferences
+//     if (this.preferences) {
+//       this.preferences.showFps = this.showStats;
+//       localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+//     }
+
+//     return;
+//   }
+  
+//   // Only toggle if initialization is complete
+//   if (this.stats && !this.isInitializingStats) {
+//     this.showStats = !this.showStats;
+//     if (this.stats.dom) {
+//       this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+//         // Save preference if we have preferences
+//   if (this.preferences) {
+//     this.preferences.showFps = this.showStats;
+//     localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+//   }
+//       console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'}`);
+//     }
+//   }
+// }
+
 toggleStats() {
-  // Debounce toggling (prevent multiple toggles within 500ms)
+  // Debounce toggling
   const now = Date.now();
   if (now - this.lastStatsToggle < 500) {
     return;
@@ -293,45 +336,160 @@ toggleStats() {
   
   // Initialize if needed
   if (!this.stats && !this.isInitializingStats) {
-    // Set initial state to visible since we're explicitly toggling
-    this.showStats = true;
+    // Toggle visibility
+    this.showStats = !this.showStats;
+    
+    // Initialize stats
     this.initStats();
+    
+    // Save preference if we have preferences
+    if (this.preferences) {
+      this.preferences.showFps = this.showStats;
+      localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+    }
+    
     return;
   }
   
-  // Only toggle if initialization is complete
-  if (this.stats && !this.isInitializingStats) {
-    this.showStats = !this.showStats;
-    if (this.stats.dom) {
-      this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-      console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'}`);
-    }
+  // Toggle visibility
+  this.showStats = !this.showStats;
+  
+  // Update both the stats panel and quality indicator
+  if (this.stats && this.stats.dom) {
+    this.stats.dom.style.display = this.showStats ? 'block' : 'none';
   }
+  
+  if (this.qualityIndicator) {
+    this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+  }
+  
+  // Save preference if we have preferences
+  if (this.preferences) {
+    this.preferences.showFps = this.showStats;
+    localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+  }
+  
+  console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
 }
   
-  createStatsPanel() {
-    this.stats = new Stats();
+  // createStatsPanel() {
+  //   this.stats = new Stats();
     
-    // Configure stats panel
-    this.stats.dom.style.position = 'absolute';
-    this.stats.dom.style.top = '10px';
-    this.stats.dom.style.left = '10px';
-    this.stats.dom.style.zIndex = '1000';
-    this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+  //   // Configure stats panel
+  //   this.stats.dom.style.position = 'absolute';
+  //   this.stats.dom.style.top = '10px';
+  //   this.stats.dom.style.left = '10px';
+  //   this.stats.dom.style.zIndex = '1000';
+  //   this.stats.dom.style.display = this.showStats ? 'block' : 'none';
     
-    // Add panel to DOM (preferably to the 3D container)
-    const container = document.querySelector('.drawer-3d-view');
-    if (container) {
-      container.appendChild(this.stats.dom);
-    } else {
-      document.body.appendChild(this.stats.dom);
-    }
+
+  //   const qualityLevel = this.qualityLevel || 
+  //   (this.preferences?.detectedQuality) || 
+  //   (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : null);
+  
+  //   // Add quality indicator
+  //   if (this.qualityLevel) {
+  //     const qualityIndicator = document.createElement('div');
+  //     qualityIndicator.className = 'quality-level';
+  //     qualityIndicator.style.cssText = `
+  //       position: absolute;
+  //       top: 48;
+  //       right: 0;
+  //       background: rgba(0,0,0,0.5);
+  //       color: white;
+  //       padding: 2px 5px;
+  //       font-size: 10px;
+  //       border-radius: 0 0 0 3px;
+  //     `;
+      
+  //     // Set color based on quality level
+  //     const levelColors = {
+  //       high: '#4CAF50',
+  //       medium: '#2196F3',
+  //       low: '#FF9800'
+  //     };
+      
+  //     qualityIndicator.textContent = this.qualityLevel.toUpperCase();
+  //     qualityIndicator.style.color = levelColors[this.qualityLevel] || 'white';
+      
+  //     this.stats.dom.appendChild(qualityIndicator);
+  //   }
     
-    console.log('FPS counter initialized');
+  //   // Add panel to DOM (preferably to the 3D container)
+  //   const container = document.querySelector('.drawer-3d-view');
+  //   if (container) {
+  //     container.appendChild(this.stats.dom);
+  //   } else {
+  //     document.body.appendChild(this.stats.dom);
+  //   }
+    
+  //   console.log('FPS counter initialized');
+  //   console.log('FPS counter initialized with quality level:', qualityLevel);
+  // }
+
+// Update the createStatsPanel/initStats method
+
+createStatsPanel() {
+  this.stats = new Stats();
+  
+  // Configure stats panel
+  this.stats.dom.style.position = 'absolute';
+  this.stats.dom.style.top = '10px';
+  this.stats.dom.style.left = '10px';
+  this.stats.dom.style.zIndex = '1000';
+  
+  // Get quality level from preferences if not set directly
+  const qualityLevel = this.qualityLevel || 
+    (this.preferences?.detectedQuality) || 
+    (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : 'medium');
+  
+  // Always add quality indicator as a separate element
+  const qualityIndicator = document.createElement('div');
+  qualityIndicator.className = 'quality-level-indicator';
+  qualityIndicator.style.cssText = `
+    position: absolute;
+    top: 48px; /* Position below the FPS counter */
+    left: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px 10px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 1000;
+    border-radius: 3px;
+    width: 60px;
+    text-align: center;
+  `;
+  
+  // Set color based on quality level
+  const levelColors = {
+    high: '#4CAF50',
+    medium: '#2196F3',
+    low: '#FF9800'
+  };
+  
+  qualityIndicator.textContent = qualityLevel.toUpperCase();
+  qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
+  
+  // Store reference to quality indicator
+  this.qualityIndicator = qualityIndicator;
+  
+  // Set initial visibility based on preferences
+  this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+  qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+  
+  // Add panels to DOM
+  const container = document.querySelector('.drawer-3d-view');
+  if (container) {
+    container.appendChild(this.stats.dom);
+    container.appendChild(qualityIndicator);
+  } else {
+    document.body.appendChild(this.stats.dom);
+    document.body.appendChild(qualityIndicator);
   }
-
-
-
+  
+  console.log('FPS counter initialized with quality level:', qualityLevel);
+}
 
   initializeWithData(data) {
     if (!data) return;
@@ -3438,6 +3596,44 @@ createLandingEffect(position) {
   animateParticles();
 }
 
+
+// Add this method to Scene3DController
+loadPreferences() {
+  try {
+    // Load preferences from localStorage
+    const savedPrefs = localStorage.getItem('appPreferences');
+    if (savedPrefs) {
+      this.preferences = JSON.parse(savedPrefs);
+      
+      // Apply quality level
+      const qualityLevel = this.preferences.qualityPreset === 'auto' ? 
+        this.preferences.detectedQuality || 'medium' : this.preferences.qualityPreset;
+        
+      // Set quality level
+      this.qualityLevel = qualityLevel;
+      
+      // Apply settings
+      this.setQualityLevel(qualityLevel, {
+        shadows: this.preferences.shadowsEnabled,
+        antialias: this.preferences.antialiasEnabled,
+        highQualityTextures: this.preferences.hqTextures,
+        ambientOcclusion: this.preferences.ambientOcclusion
+      });
+      
+      // Apply movement speed
+      if (this.moveState) {
+        this.moveState.baseSpeed = 0.025 * (this.preferences.movementSpeed || 1.0);
+        this.moveState.speed = this.moveState.sprint ? 
+          this.moveState.baseSpeed * 2 : this.moveState.baseSpeed;
+      }
+      
+      console.log(`Loaded preferences with quality level: ${qualityLevel}`);
+    }
+  } catch (error) {
+    console.error("Error loading preferences:", error);
+  }
+}
+
   async show3DView() {
     const { drawer, container, progress } = this.setupDrawer();
 
@@ -3502,16 +3698,43 @@ createLandingEffect(position) {
       const availableWidth = window.innerWidth - sidebarWidth;
 
       // Create renderer
-      this.renderer = new THREE.WebGLRenderer({ antialias: true });
-      this.renderer.setSize(availableWidth, window.innerHeight);
-      this.renderer.shadowMap.enabled = true;
- this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+//       this.renderer = new THREE.WebGLRenderer({ antialias: true });
+//       this.renderer.setSize(availableWidth, window.innerHeight);
+//       this.renderer.shadowMap.enabled = true;
+//  this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
- this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Try alternatives like THREE.ReinhardToneMapping
-this.renderer.toneMappingExposure = 1.2; // Increase this value for brighter colors (try 1.0-1.5)
+//  this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Try alternatives like THREE.ReinhardToneMapping
+// this.renderer.toneMappingExposure = 1.2; // Increase this value for brighter colors (try 1.0-1.5)
 
-// Make sure the clear color is set correctly (if needed)
+// // Make sure the clear color is set correctly (if needed)
+// this.renderer.setClearColor(0x222222);
+
+// this.loadPreferences();
+    
+// // Initialize stats with quality indicator
+// if (this.preferences && this.preferences.showFps) {
+//   this.showStats = true;
+//   this.initStats();
+// }
+
+// Create the renderer
+this.renderer = new THREE.WebGLRenderer({ antialias: true });
+this.renderer.setSize(availableWidth, window.innerHeight);
+
+// Load preferences first (this should apply quality settings)
+this.loadPreferences();
+
+// Then apply any mandatory settings that should override preferences
+this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+this.renderer.toneMappingExposure = 1.2;
 this.renderer.setClearColor(0x222222);
+
+// Initialize stats with quality indicator
+if (this.preferences && this.preferences.showFps) {
+  this.showStats = true;
+  this.initStats();
+}
 
       // Create camera
       this.camera = new THREE.PerspectiveCamera(
@@ -4452,6 +4675,226 @@ hideSplashArt() {
           this.resumeControls();
       }, 300);
   }
+}
+
+// Add these methods to Scene3DController
+detectHardwareCapabilities(callback) {
+  console.log("Starting hardware capability detection");
+  
+  // Store initial state to restore later
+  const originalShowStats = this.showStats;
+  
+  // Create test objects for benchmark
+  const boxCount = 200;
+  const testObjects = [];
+  
+  // Create a complex scene to test rendering performance
+  const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const testMaterial = new THREE.MeshStandardMaterial({
+    color: 0x3366ff,
+    roughness: 0.7,
+    metalness: 0.2
+  });
+  
+  // Add many objects to stress the system
+  for (let i = 0; i < boxCount; i++) {
+    const box = new THREE.Mesh(testGeometry, testMaterial);
+    
+    // Position in random locations
+    box.position.set(
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20
+    );
+    
+    // Random rotation
+    box.rotation.set(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI
+    );
+    
+    // Add to scene
+    this.scene.add(box);
+    testObjects.push(box);
+  }
+  
+  // Add a point light to test lighting performance
+  const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+  pointLight.position.set(0, 10, 0);
+  this.scene.add(pointLight);
+  testObjects.push(pointLight);
+  
+  // Enable shadows for testing
+  this.renderer.shadowMap.enabled = true;
+  this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  pointLight.castShadow = true;
+  
+  // Measure FPS
+  let frames = 0;
+  let lastTime = performance.now();
+  let totalTime = 0;
+  let frameRates = [];
+  
+  // Animate test scene
+  const animateTest = () => {
+    // Rotate camera around scene
+    const time = performance.now() * 0.001;
+    this.camera.position.x = Math.sin(time * 0.5) * 15;
+    this.camera.position.z = Math.cos(time * 0.5) * 15;
+    this.camera.position.y = Math.sin(time * 0.3) * 5 + 7;
+    this.camera.lookAt(0, 0, 0);
+    
+    // Render
+    this.renderer.render(this.scene, this.camera);
+    
+    // Calculate FPS
+    frames++;
+    const now = performance.now();
+    const elapsed = now - lastTime;
+    
+    // Record FPS every 100ms
+    if (elapsed >= 100) {
+      const currentFPS = (frames * 1000) / elapsed;
+      frameRates.push(currentFPS);
+      
+      frames = 0;
+      lastTime = now;
+      totalTime += elapsed;
+      
+      // Update test objects
+      testObjects.forEach((obj, i) => {
+        if (obj.isMesh) {
+          obj.rotation.x += 0.01;
+          obj.rotation.y += 0.01;
+        }
+      });
+    }
+    
+    // Run for 3 seconds total
+    if (totalTime < 3000) {
+      requestAnimationFrame(animateTest);
+    } else {
+      // Clean up test objects
+      testObjects.forEach(obj => this.scene.remove(obj));
+      
+      // Calculate median FPS - more reliable than average
+      frameRates.sort((a, b) => a - b);
+      const medianFPS = frameRates[Math.floor(frameRates.length / 2)];
+      
+      console.log(`Hardware test completed: ${medianFPS.toFixed(1)} FPS`);
+      
+      // Determine quality level
+      let qualityLevel = 'medium'; // Default
+      
+      if (medianFPS >= 55) {
+        qualityLevel = 'high';
+      } else if (medianFPS >= 30) {
+        qualityLevel = 'medium';
+      } else {
+        qualityLevel = 'low';
+      }
+      
+      // Store quality level
+      this.qualityLevel = qualityLevel;
+      
+      // Restore original state
+      this.showStats = originalShowStats;
+      
+      const result = {
+        fps: medianFPS,
+        qualityLevel: qualityLevel,
+        devicePixelRatio: window.devicePixelRatio,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Clean up and restore normal rendering
+      this.renderer.shadowMap.enabled = false;
+      
+      // Call callback with results
+      if (callback) callback(result);
+      
+      return result;
+    }
+  };
+  
+  // Start test animation
+  animateTest();
+  
+  // Return placeholder result - actual result comes through callback
+  return {
+    fps: 0,
+    qualityLevel: 'medium',
+    devicePixelRatio: window.devicePixelRatio,
+    timestamp: new Date().toISOString()
+  };
+}
+
+// Method to set quality level
+setQualityLevel(level, options = {}) {
+  const settings = {
+    shadows: options.shadows !== undefined ? options.shadows : true,
+    antialias: options.antialias !== undefined ? options.antialias : true,
+    highQualityTextures: options.highQualityTextures !== undefined ? options.highQualityTextures : true,
+    ambientOcclusion: options.ambientOcclusion !== undefined ? options.ambientOcclusion : false
+  };
+  
+  this.qualityLevel = level;
+  
+  // Apply quality settings
+  switch(level) {
+    case 'high':
+      this.renderer.shadowMap.enabled = settings.shadows;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+      break;
+      
+    case 'medium':
+      this.renderer.shadowMap.enabled = settings.shadows;
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      break;
+      
+    case 'low':
+      this.renderer.shadowMap.enabled = settings.shadows && this.renderer.capabilities.maxShadowMapSize > 1024;
+      this.renderer.shadowMap.type = THREE.BasicShadowMap;
+      this.renderer.setPixelRatio(1);
+      break;
+  }
+  
+  // Update FPS counter to show quality level
+  if (this.stats && this.stats.dom) {
+    // Add or update quality indicator
+    let qualityIndicator = this.stats.dom.querySelector('.quality-level');
+    if (!qualityIndicator) {
+      qualityIndicator = document.createElement('div');
+      qualityIndicator.className = 'quality-level';
+      qualityIndicator.style.cssText = `
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        padding: 2px 5px;
+        font-size: 10px;
+        border-radius: 0 0 0 3px;
+      `;
+      this.stats.dom.appendChild(qualityIndicator);
+    }
+    
+    // Set color based on quality level
+    const levelColors = {
+      high: '#4CAF50',
+      medium: '#2196F3',
+      low: '#FF9800'
+    };
+    
+    qualityIndicator.textContent = level.toUpperCase();
+    qualityIndicator.style.color = levelColors[level] || 'white';
+  }
+  
+  console.log(`Quality level set to: ${level}`);
+  return level;
 }
 
 }

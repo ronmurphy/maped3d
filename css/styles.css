@@ -1075,6 +1075,17 @@ sl-input::part(form-control-label) {
     gap: 4px;
 }
 
+/* Make header buttons more compact if needed */
+.header sl-button-group sl-button::part(base) {
+    padding: 0.3rem;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .header sl-button-group sl-button .material-icons {
+    font-size: 24px;
+  }
+
 .header-title:hover {
     color: var(--sl-color-primary-500);
 }

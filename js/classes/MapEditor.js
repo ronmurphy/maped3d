@@ -2136,8 +2136,23 @@ class MapEditor {
         });
       }
 
+
+
+
+
     }
 
+// Add preferences button handler
+const preferencesBtn = document.getElementById("preferencesBtn");
+if (preferencesBtn) {
+  preferencesBtn.addEventListener("click", () => {
+    this.showPreferencesDialog();
+  });
+}
+
+// preferencesBtn.addEventListener("click", () => {
+//   this.showPreferencesDialog();
+// });
 
     // In MapEditor's event listener for create3d button
     const create3dBtn = document.getElementById("create3d");
@@ -5944,6 +5959,342 @@ class MapEditor {
     return toast;
   }
 
+// Add this method to the MapEditor class
+showPreferencesDialog() {
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'Application Preferences';
+  dialog.style.setProperty('--width', '500px');
+  
+  // Create content for the dialog
+  const content = document.createElement('div');
+  content.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 8px;
+  `;
+  
+  // 1. Graphics Performance Section
+  const graphicsSection = document.createElement('div');
+  graphicsSection.innerHTML = `
+    <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Graphics Performance</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px;">
+      <div>
+        <p style="margin-bottom: 8px;">Detected Quality Level: 
+          <span id="qualityLevel" style="font-weight: bold; color: #4CAF50;">Not Tested</span>
+        </p>
+        
+        <sl-button id="detectHardwareBtn" variant="primary">
+          <span slot="prefix" class="material-icons">speed</span>
+          Run Hardware Test
+        </sl-button>
+        
+        <div id="hardwareTestProgress" style="margin-top: 8px; display: none;">
+          <sl-progress-bar indeterminate></sl-progress-bar>
+          <div style="text-align: center; margin-top: 4px; font-size: 0.9em; color: #666;">
+            Running performance test...
+          </div>
+        </div>
+        
+        <div style="margin-top: 8px; padding: 8px; background: #fff8e1; border-left: 3px solid #FFC107; color: #795548; font-size: 0.9em;">
+          <strong>Note:</strong> For best results, run this test in 3D view mode. Changes will be applied when you enter 3D view.
+        </div>
+      </div>
+      
+      <sl-divider></sl-divider>
+      
+      <div>
+        <sl-select id="qualityPreset" label="Quality Preset" value="auto">
+          <sl-option value="auto">Automatic (Based on Test)</sl-option>
+          <sl-option value="low">Low</sl-option>
+          <sl-option value="medium">Medium</sl-option>
+          <sl-option value="high">High</sl-option>
+        </sl-select>
+      </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <sl-switch id="shadowsEnabled" checked>Shadows</sl-switch>
+      <sl-switch id="antialiasEnabled" checked>Anti-Aliasing</sl-switch>
+      <sl-switch id="hqTextures" checked>High Quality Textures</sl-switch>
+      <sl-switch id="ambientOcclusion">Ambient Occlusion</sl-switch>
+    </div>
+  `;
+  
+  // 2. Display Settings
+  const displaySection = document.createElement('div');
+  displaySection.innerHTML = `
+    <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Display Settings</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <sl-switch id="showFps">Show FPS Counter</sl-switch>
+      <sl-switch id="showStats">Show Stats</sl-switch>
+    </div>
+    
+    <div style="margin-top: 16px;">
+      <sl-range id="movementSpeed" min="0.5" max="2" step="0.1" value="1" label="Movement Speed"></sl-range>
+      <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666;">
+        <span>Slow</span>
+        <span>Default</span>
+        <span>Fast</span>
+      </div>
+    </div>
+  `;
+  
+  // Add sections to content
+  content.appendChild(graphicsSection);
+  content.appendChild(displaySection);
+  
+  // Add content to dialog
+  dialog.appendChild(content);
+  
+  // Footer with save/cancel buttons
+  const footer = document.createElement('div');
+  footer.slot = 'footer';
+  footer.innerHTML = `
+    <sl-button id="resetDefaults" variant="text">Reset to Defaults</sl-button>
+    <sl-button id="cancelPrefs" variant="neutral">Cancel</sl-button>
+    <sl-button id="savePrefs" variant="primary">Save Changes</sl-button>
+  `;
+  dialog.appendChild(footer);
+  
+  // Add to document body
+  document.body.appendChild(dialog);
+  
+  // Load current settings
+  this.loadPreferencesIntoDialog(dialog);
+  
+  // Hardware detection button handler
+  const detectHardwareBtn = dialog.querySelector('#detectHardwareBtn');
+  const hardwareTestProgress = dialog.querySelector('#hardwareTestProgress');
+  const qualityLevelSpan = dialog.querySelector('#qualityLevel');
+  
+  detectHardwareBtn.addEventListener('click', async () => {
+    detectHardwareBtn.disabled = true;
+    hardwareTestProgress.style.display = 'block';
+    qualityLevelSpan.textContent = 'Testing...';
+    
+    try {
+      // Run hardware detection
+      const result = await this.runHardwareTest();
+      
+      // Update UI with result
+      qualityLevelSpan.textContent = result.qualityLevel.charAt(0).toUpperCase() + result.qualityLevel.slice(1);
+      qualityLevelSpan.style.color = {
+        low: '#FF9800',
+        medium: '#2196F3',
+        high: '#4CAF50'
+      }[result.qualityLevel] || '#4CAF50';
+      
+      // Update quality preset dropdown
+      dialog.querySelector('#qualityPreset').value = 'auto';
+    } catch (error) {
+      console.error('Hardware test failed:', error);
+      qualityLevelSpan.textContent = 'Test Failed';
+      qualityLevelSpan.style.color = '#F44336';
+    } finally {
+      detectHardwareBtn.disabled = false;
+      hardwareTestProgress.style.display = 'none';
+    }
+  });
+  
+  // Button handlers
+  dialog.querySelector('#resetDefaults').addEventListener('click', () => {
+    this.resetPreferencesToDefaults(dialog);
+  });
+  
+  dialog.querySelector('#cancelPrefs').addEventListener('click', () => {
+    dialog.hide();
+  });
+  
+  dialog.querySelector('#savePrefs').addEventListener('click', () => {
+    this.savePreferencesFromDialog(dialog);
+    dialog.hide();
+    
+    // Apply settings
+    this.applyPreferences();
+  });
+  
+  // Show dialog
+  dialog.show();
+}
 
+// Helper method to load current preferences into dialog
+loadPreferencesIntoDialog(dialog) {
+  // Load preferences from localStorage, with defaults
+  const prefs = this.getPreferences();
+  
+  // Set form values based on preferences
+  dialog.querySelector('#qualityPreset').value = prefs.qualityPreset;
+  dialog.querySelector('#shadowsEnabled').checked = prefs.shadowsEnabled;
+  dialog.querySelector('#antialiasEnabled').checked = prefs.antialiasEnabled;
+  dialog.querySelector('#hqTextures').checked = prefs.hqTextures;
+  dialog.querySelector('#ambientOcclusion').checked = prefs.ambientOcclusion;
+  dialog.querySelector('#showFps').checked = prefs.showFps;
+  dialog.querySelector('#showStats').checked = prefs.showStats;
+  dialog.querySelector('#movementSpeed').value = prefs.movementSpeed;
+  
+  // Set quality level display if previously tested
+  if (prefs.detectedQuality) {
+    const qualityLevelSpan = dialog.querySelector('#qualityLevel');
+    qualityLevelSpan.textContent = prefs.detectedQuality.charAt(0).toUpperCase() + prefs.detectedQuality.slice(1);
+    qualityLevelSpan.style.color = {
+      low: '#FF9800',
+      medium: '#2196F3',
+      high: '#4CAF50'
+    }[prefs.detectedQuality] || '#4CAF50';
+  }
+}
+
+// Helper method to save preferences from dialog
+savePreferencesFromDialog(dialog) {
+  const prefs = {
+    qualityPreset: dialog.querySelector('#qualityPreset').value,
+    shadowsEnabled: dialog.querySelector('#shadowsEnabled').checked,
+    antialiasEnabled: dialog.querySelector('#antialiasEnabled').checked,
+    hqTextures: dialog.querySelector('#hqTextures').checked,
+    ambientOcclusion: dialog.querySelector('#ambientOcclusion').checked,
+    showFps: dialog.querySelector('#showFps').checked,
+    showStats: dialog.querySelector('#showStats').checked,
+    movementSpeed: parseFloat(dialog.querySelector('#movementSpeed').value),
+    detectedQuality: this.preferences?.detectedQuality || null
+  };
+  
+  // Save to localStorage
+  localStorage.setItem('appPreferences', JSON.stringify(prefs));
+  this.preferences = prefs;
+}
+
+// Reset preferences to defaults
+resetPreferencesToDefaults(dialog) {
+  const defaults = {
+    qualityPreset: 'auto',
+    shadowsEnabled: true,
+    antialiasEnabled: true,
+    hqTextures: true,
+    ambientOcclusion: false,
+    showFps: false,
+    showStats: false,
+    movementSpeed: 1.0,
+    detectedQuality: null
+  };
+  
+  // Update form
+  dialog.querySelector('#qualityPreset').value = defaults.qualityPreset;
+  dialog.querySelector('#shadowsEnabled').checked = defaults.shadowsEnabled;
+  dialog.querySelector('#antialiasEnabled').checked = defaults.antialiasEnabled;
+  dialog.querySelector('#hqTextures').checked = defaults.hqTextures;
+  dialog.querySelector('#ambientOcclusion').checked = defaults.ambientOcclusion;
+  dialog.querySelector('#showFps').checked = defaults.showFps;
+  dialog.querySelector('#showStats').checked = defaults.showStats;
+  dialog.querySelector('#movementSpeed').value = defaults.movementSpeed;
+}
+
+// Get current preferences
+getPreferences() {
+  // Initialize if not already done
+  if (!this.preferences) {
+    const savedPrefs = localStorage.getItem('appPreferences');
+    this.preferences = savedPrefs ? JSON.parse(savedPrefs) : {
+      qualityPreset: 'auto',
+      shadowsEnabled: true,
+      antialiasEnabled: true,
+      hqTextures: true,
+      ambientOcclusion: false,
+      showFps: false,
+      showStats: false,
+      movementSpeed: 1.0,
+      detectedQuality: null
+    };
+  }
+  return this.preferences;
+}
+
+// Apply current preferences to the application
+applyPreferences() {
+  const prefs = this.getPreferences();
+  
+  // Apply to 3D view if it exists
+  if (this.scene3D) {
+    // Apply quality settings
+    const qualityLevel = prefs.qualityPreset === 'auto' ? 
+      prefs.detectedQuality || 'medium' : prefs.qualityPreset;
+      
+    this.scene3D.setQualityLevel(qualityLevel, {
+      shadows: prefs.shadowsEnabled,
+      antialias: prefs.antialiasEnabled,
+      highQualityTextures: prefs.hqTextures,
+      ambientOcclusion: prefs.ambientOcclusion
+    });
+    
+    // Apply FPS counter visibility
+    if (prefs.showFps && !this.scene3D.showStats) {
+      this.scene3D.toggleStats();
+    } else if (!prefs.showFps && this.scene3D.showStats) {
+      this.scene3D.toggleStats();
+    }
+    
+    // Apply movement speed
+    this.scene3D.moveState.baseSpeed = 0.025 * prefs.movementSpeed;
+    this.scene3D.moveState.speed = this.scene3D.moveState.sprint ? 
+      this.scene3D.moveState.baseSpeed * 2 : this.scene3D.moveState.baseSpeed;
+  }
+}
+
+// Run hardware detection test
+async runHardwareTest() {
+  return new Promise((resolve, reject) => {
+    // If no 3D view exists yet, create a temporary one for testing
+    if (!this.scene3D || !this.scene3D.renderer) {
+      try {
+        // Create dialog to test in
+        const testContainer = document.createElement('div');
+        testContainer.style.cssText = `
+          position: fixed;
+          top: -9999px;
+          left: -9999px;
+          width: 512px;
+          height: 512px;
+          opacity: 0;
+          pointer-events: none;
+        `;
+        document.body.appendChild(testContainer);
+        
+        // Create temporary scene
+        const testScene3D = new Scene3DController();
+        testScene3D.initialize(testContainer, 512, 512);
+        
+        // Run test
+        const result = testScene3D.detectHardwareCapabilities(() => {
+          // Clean up
+          testContainer.remove();
+          testScene3D.cleanup();
+          
+          // Store result
+          this.preferences.detectedQuality = result.qualityLevel;
+          localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+          
+          resolve(result);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    } else {
+      // Use existing 3D view
+      try {
+        const result = this.scene3D.detectHardwareCapabilities(() => {
+          // Store result
+          this.preferences.detectedQuality = result.qualityLevel;
+          localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+          
+          resolve(result);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    }
+  });
+}
 
 }
