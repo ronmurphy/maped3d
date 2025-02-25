@@ -64,6 +64,16 @@ class Scene3DController {
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Try alternatives like THREE.ReinhardToneMapping
+this.renderer.toneMappingExposure = 1.2; // Increase this value for brighter colors (try 1.0-1.5)
+
+// Make sure the clear color is set correctly (if needed)
+this.renderer.setClearColor(0x222222);
+
+
     container.appendChild(this.renderer.domElement);
 
     // Controls
@@ -377,89 +387,6 @@ toggleStats() {
     return true;
   }
 
-// createPropMesh(propData) {
-//   console.log(`Creating prop mesh with ID: ${propData.id}`);
-
-
-//   return new Promise((resolve, reject) => {
-//     const textureLoader = new THREE.TextureLoader();
-    
-//     textureLoader.load(
-//       propData.image,
-//       (texture) => {
-//         // Calculate dimensions based on texture aspect ratio
-//         let width, height;
-        
-//         if (texture.image) {
-//           const aspectRatio = texture.image.width / texture.image.height;
-//           width = propData.scale || 1;
-//           height = width / aspectRatio;
-//         } else {
-//           // Fallback if image dimensions aren't available
-//           width = propData.scale || 1;
-//           height = propData.scale || 1;
-//         }
-        
-//         const geometry = new THREE.PlaneGeometry(width, height);
-//         const material = new THREE.MeshBasicMaterial({
-//           map: texture,
-//           transparent: true,
-//           side: THREE.DoubleSide,
-//           alphaTest: 0.1 // Help with transparency sorting
-//         });
-        
-//         const mesh = new THREE.Mesh(geometry, material);
-        
-//         // Position in world space
-//         const x = propData.x / 50 - this.boxWidth / 2;
-//         const z = propData.y / 50 - this.boxDepth / 2;
-        
-//         // Get elevation at this point
-//         const { elevation } = this.getElevationAtPoint(x, z);
-        
-//         // Handle horizontal vs vertical orientation
-//         if (propData.isHorizontal) {
-//           // Horizontal prop - lie flat on surface
-//           // Rotate 90 degrees on X axis to make it horizontal
-//           mesh.rotation.x = -Math.PI / 2;
-          
-//           // Set position slightly above surface to prevent z-fighting
-//           // Add 0.01 units above the surface
-//           const y = elevation + 0.02; // <-- Add this small offset for horizontal props
-//           mesh.position.set(x, y, z);
-          
-//           // Apply rotation around Y axis (which is now the up vector)
-//           mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
-//         } else {
-//           // Vertical prop (original behavior)
-//           const y = propData.height + elevation;
-//           mesh.position.set(x, y, z);
-          
-//           // Standard rotation around Y axis
-//           mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
-//         }
-        
-//         // Add metadata
-//         mesh.userData = {
-//           type: 'prop',
-//           id: propData.id,
-//           name: propData.name || 'Prop',
-//           isHorizontal: propData.isHorizontal || false
-//         };
-
-//         mesh.userData.debugId = Date.now(); // Add a unique timestamp
-//         console.log(`Prop mesh created with debugId: ${mesh.userData.debugId}`);
-        
-//         resolve(mesh);
-//       },
-//       undefined,
-//       (error) => {
-//         console.error("Error loading prop texture:", error);
-//         reject(error);
-//       }
-//     );
-//   });
-// }
 
 createPropMesh(propData) {
   console.log(`Creating prop mesh with ID: ${propData.id}`);
@@ -2145,6 +2072,8 @@ createPropMesh(propData) {
       }
     }
     
+    this.updateTexturesColorSpace();
+
     // 4. Final check for duplicates
     this.checkForDuplicateProps();
   }
@@ -2894,85 +2823,6 @@ useInventoryItem(itemId) {
   this.showNotification(`Used ${item.prop.name || 'Item'}`);
 }
 
-
-
-// showItemDetails(prop) {
-//   console.log('Showing details for item:', prop);
-  
-//   // Create modal dialog for item details
-//   const dialog = document.createElement('sl-dialog');
-//   dialog.label = prop.name || 'Item Details';
-//   dialog.style.setProperty('--sl-z-index-dialog', '4000');
-  
-//   const content = document.createElement('div');
-//   content.style.cssText = `
-//     display: flex;
-//     flex-direction: column;
-//     align-items: center;
-//     padding: 16px;
-//   `;
-  
-//   // Add image if available
-//   if (prop.image) {
-//     const img = document.createElement('img');
-//     img.src = prop.image;
-//     img.style.cssText = `
-//       max-width: 200px;
-//       max-height: 200px;
-//       object-fit: contain;
-//       margin-bottom: 16px;
-//       border-radius: 8px;
-//     `;
-//     content.appendChild(img);
-//   }
-  
-//   // Add description
-//   const description = document.createElement('p');
-//   description.textContent = prop.description || 'No description available.';
-//   description.style.cssText = `
-//     text-align: center;
-//     margin-bottom: 16px;
-//     line-height: 1.5;
-//   `;
-//   content.appendChild(description);
-  
-//   // Add actions
-//   const actions = document.createElement('div');
-//   actions.style.cssText = `
-//     display: flex;
-//     gap: 8px;
-//     justify-content: center;
-//   `;
-  
-//   const useButton = document.createElement('sl-button');
-//   useButton.setAttribute('variant', 'primary');
-//   useButton.textContent = 'Use Item';
-//   useButton.addEventListener('click', () => {
-//     dialog.hide();
-//     this.useInventoryItem(prop.id);
-//   });
-//   actions.appendChild(useButton);
-  
-//   const dropButton = document.createElement('sl-button');
-//   dropButton.setAttribute('variant', 'danger');
-//   dropButton.textContent = 'Drop Item';
-//   dropButton.addEventListener('click', () => {
-//     dialog.hide();
-//     this.dropInventoryItem(prop.id);
-//   });
-//   actions.appendChild(dropButton);
-  
-//   content.appendChild(actions);
-//   dialog.appendChild(content);
-  
-//   // Add to document and show
-//   document.body.appendChild(dialog);
-//   dialog.show();
-// }
-
-
-// modified code
-// Add this method to Scene3DController class
 showItemDetails(prop) {
   console.log('Showing details for item:', prop);
   
@@ -3120,62 +2970,6 @@ getWallRotation(normal) {
   return Math.atan2(normal.x, normal.z) * (180/Math.PI);
 }
 
-// dropInventoryItem(itemId) {
-//   if (!this.inventory.has(itemId)) {
-//     console.warn('Cannot drop item, not found in inventory:', itemId);
-//     return;
-//   }
-  
-//   const item = this.inventory.get(itemId);
-//   console.log('Dropping inventory item:', item.prop);
-  
-//   // Create prop in the world at player's position
-//   const playerPos = this.camera.position.clone();
-  
-//   // Add a small offset in front of the player
-//   const direction = new THREE.Vector3();
-//   this.camera.getWorldDirection(direction);
-//   direction.multiplyScalar(1); // 1 unit in front
-//   playerPos.add(direction);
-  
-//   // Convert back to grid coordinates
-//   const gridX = Math.round((playerPos.x + this.boxWidth / 2) * 50);
-//   const gridY = Math.round((playerPos.z + this.boxDepth / 2) * 50);
-  
-//   // Create prop data
-//   const propData = {
-//     id: `dropped-${Date.now()}`,
-//     x: gridX,
-//     y: gridY,
-//     image: item.prop.image,
-//     name: item.prop.name,
-//     description: item.prop.description,
-//     scale: item.prop.scale || 1,
-//     height: 1
-//   };
-  
-//   // Create and add prop mesh
-//   this.createPropMesh(propData)
-//     .then(mesh => {
-//       this.scene.add(mesh);
-//       console.log('Dropped item added to scene at:', {x: gridX, y: gridY});
-//     })
-//     .catch(error => {
-//       console.error('Error creating dropped prop:', error);
-//     });
-  
-//   // Remove from inventory
-//   this.removeFromInventory(itemId);
-  
-//   // Show notification
-//   this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
-// }
-
-
-
-// horiz or vert drop code
-// Add to dropInventoryItem method in Scene3DController
-// Add to dropInventoryItem method in Scene3DController
 dropInventoryItem(itemId, placementType = 'vertical') {
   if (!this.inventory.has(itemId)) {
     console.warn('Cannot drop item, not found in inventory:', itemId);
@@ -3391,6 +3185,30 @@ showNotification(message) {
       notification.remove();
     }, 300);
   }, 2000);
+}
+
+// Add this method to Scene3DController
+updateTexturesColorSpace() {
+  // Apply to all materials in the scene
+  this.scene.traverse((object) => {
+    if (object.material) {
+      // Handle single material
+      if (object.material.map) {
+        object.material.map.colorSpace = THREE.SRGBColorSpace;
+        object.material.map.needsUpdate = true;
+      }
+      
+      // Handle material array
+      if (Array.isArray(object.material)) {
+        object.material.forEach(mat => {
+          if (mat.map) {
+            mat.map.colorSpace = THREE.SRGBColorSpace;
+            mat.map.needsUpdate = true;
+          }
+        });
+      }
+    }
+  });
 }
 
 
@@ -3685,9 +3503,15 @@ createLandingEffect(position) {
 
       // Create renderer
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
-      // this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.setSize(availableWidth, window.innerHeight);
       this.renderer.shadowMap.enabled = true;
+ this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+ this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Try alternatives like THREE.ReinhardToneMapping
+this.renderer.toneMappingExposure = 1.2; // Increase this value for brighter colors (try 1.0-1.5)
+
+// Make sure the clear color is set correctly (if needed)
+this.renderer.setClearColor(0x222222);
 
       // Create camera
       this.camera = new THREE.PerspectiveCamera(
@@ -3704,7 +3528,6 @@ createLandingEffect(position) {
       // Add renderer to container
       container.appendChild(this.renderer.domElement);
 
-            this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 
       const { cleanup } = this.init3DScene(updateStatus);
@@ -4473,28 +4296,6 @@ createSplashArtPrompt() {
 
 // Update the showSplashArt method in Scene3DController
 showSplashArt(marker) {
-  // Add debug logging
-  // console.log('Showing splash art for marker:', {
-  //     markerId: marker.id,
-  //     markerData: marker.data
-  // });
-
-  // // Validate marker data
-  // if (!marker?.data?.splashArt?.category || !marker?.data?.splashArt?.id) {
-  //     console.warn('Invalid splash art data:', marker);
-  //     return;
-  // }
-
-  // // Get the actual splash art from the resource manager
-  // const category = marker.data.splashArt.category;
-  // const artId = marker.data.splashArt.id;
-  // const art = this.resourceManager?.resources.splashArt[category]?.get(artId);
-
-  if (!marker?.data?.splashArt?.category || !marker?.data?.splashArt?.id) {
-    console.warn('Invalid splash art data:', marker);
-    return;
-}
-
 // Pause controls
 this.pauseControls();
 
@@ -4624,50 +4425,6 @@ closeMessage.style.cssText = `
 closeMessage.textContent = 'Click anywhere to close';
 overlay.appendChild(closeMessage);
 
-  // const close = () => {
-  //     overlay.style.opacity = '0';
-  //     artContainer.style.transform = 'scale(0.95)';
-  //     setTimeout(() => overlay.remove(), 300);
-  //     this.activeSplashArt = null;
-  // };
-
-//   const close = () => {
-//     overlay.style.opacity = '0';
-//     artContainer.style.transform = 'scale(0.95)';
-//     setTimeout(() => {
-//         overlay.remove();
-//         this.activeSplashArt = null;
-        
-//         // Resume controls when art is closed
-//         this.resumeControls();
-//     }, 300);
-// };
-
-//   closeButton.addEventListener('click', () => {
-//     this.hideSplashArt();
-//     document.removeEventListener('keydown', handleEsc);
-// });
-
-// overlay.addEventListener('click', (e) => {
-//     if (e.target === overlay) {
-//         this.hideSplashArt();
-//         document.removeEventListener('keydown', handleEsc);
-//     }
-// });
-
-// document.body.appendChild(overlay);
-// this.activeSplashArt = overlay;
-// }
-
-// const handleEsc = (e) => {
-//   if (e.key === 'Escape') {
-//     this.hideSplashArt();
-//     document.removeEventListener('keydown', handleEsc);
-//   }
-// };
-// document.addEventListener('keydown', handleEsc);
-
-// Continue with closeButton and click event handlers
 closeButton.addEventListener('click', () => {
   this.hideSplashArt();
   document.removeEventListener('keydown', handleEsc, true);
@@ -4683,8 +4440,6 @@ overlay.addEventListener('click', (e) => {
 document.body.appendChild(overlay);
 this.activeSplashArt = overlay;
 }
-
-
 
 hideSplashArt() {
   if (this.activeSplashArt) {

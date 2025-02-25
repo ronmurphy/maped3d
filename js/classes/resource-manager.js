@@ -89,86 +89,6 @@ window.ResourceManager = class {
         return filename;
     }
 
-    // async saveResourcePack(mapName = null) {
-    //     const packData = {
-    //         name: this.activeResourcePack?.name || 'New Resource Pack',
-    //         version: '1.0',
-    //         textures: this.serializeTextures(),
-    //         sounds: this.serializeSounds(),
-    //         splashArt: this.serializeSplashArt()
-    //     };
-    
-    //     const blob = new Blob([JSON.stringify(packData, null, 2)],
-    //         { type: 'application/json' });
-    
-    //     // Use provided mapName or default to resource-pack
-    //     const filename = mapName ? 
-    //         `${mapName}.resource.json` : 
-    //         'resource-pack.json';  // New naming convention
-    
-    //     const a = document.createElement('a');
-    //     a.href = URL.createObjectURL(blob);
-    //     a.download = filename;
-    //     document.body.appendChild(a);
-    //     a.click();
-    //     document.body.removeChild(a);
-    //     URL.revokeObjectURL(a.href);
-        
-    //     return filename;
-    // }
-
-    // Add these methods to ResourceManager class
-    // serializeTextures() {
-    //     const serialized = {};
-    //     for (const [category, textures] of Object.entries(this.resources.textures)) {
-    //         serialized[category] = {};
-    //         textures.forEach((texture, id) => {
-    //             serialized[category][id] = {
-    //                 id: texture.id,
-    //                 name: texture.name,
-    //                 category: texture.category,
-    //                 subcategory: texture.subcategory,
-    //                 data: texture.data,
-    //                 thumbnail: texture.thumbnail,
-    //                 dateAdded: texture.dateAdded
-    //             };
-    //         });
-    //     }
-    //     return serialized;
-    // }
-
-    // serializeSounds() {
-    //     const serialized = {};
-    //     for (const [category, sounds] of Object.entries(this.resources.sounds)) {
-    //         serialized[category] = {};
-    //         sounds.forEach((sound, id) => {
-    //             serialized[category][id] = {
-    //                 id: sound.id,
-    //                 name: sound.name,
-    //                 data: sound.data,
-    //                 duration: sound.duration,
-    //                 dateAdded: sound.dateAdded
-    //             };
-    //         });
-    //     }
-    //     return serialized;
-    // }
-
-    // serializeSplashArt() {
-    //     const serialized = {};
-    //     this.resources.splashArt.forEach((art, id) => {
-    //         serialized[id] = {
-    //             id: art.id,
-    //             name: art.name,
-    //             data: art.data,
-    //             thumbnail: art.thumbnail,
-    //             description: art.description,
-    //             dateAdded: art.dateAdded
-    //         };
-    //     });
-    //     return serialized;
-    // }
-
     serializeTextures() {
         const serialized = {};
         for (const [category, textures] of Object.entries(this.resources.textures)) {
@@ -636,46 +556,6 @@ getSpecificTexture(category, criteria) {
     return null;
   }
 
-
-    // async addTexture(file, category, subcategory) {
-    //     if (!file || !category) {
-    //         console.warn('Missing required parameters:', { file, category });
-    //         return null;
-    //     }
-
-    //     try {
-    //         console.log('Creating texture from file:', file);
-    //         // Create thumbnail and base64 data
-    //         const imageData = await this.createImageData(file);
-    //         const thumbnail = await this.createThumbnail(file);
-
-    //         const textureData = {
-    //             id: `${category}_${Date.now()}`,
-    //             name: file.name,
-    //             category,
-    //             subcategory,
-    //             data: imageData,
-    //             thumbnail,
-    //             dateAdded: new Date().toISOString()
-    //         };
-
-    //         console.log('Created texture data:', textureData);
-
-    //         // Store in appropriate category
-    //         if (!this.resources.textures[category]) {
-    //             this.resources.textures[category] = new Map();
-    //         }
-    //         this.resources.textures[category].set(textureData.id, textureData);
-
-    //         return textureData.id;
-    //     } catch (error) {
-    //         console.error('Error adding texture:', error);
-    //         return null;
-    //     }
-    // }
-
-
-
     async addTexture(file, category, subcategory) {
         if (!file || !category) {
             console.warn('Missing required parameters:', { file, category });
@@ -1058,48 +938,6 @@ updateGallery(drawer, category, view = 'grid') {
             });
 
         } else {
-            // Handle existing texture/splashArt resources
-            // card.innerHTML = `
-            //     ${view === 'grid' ? `
-            //         <img 
-            //             src="${resource.thumbnail}" 
-            //             alt="${resource.name}"
-            //             class="resource-thumbnail"
-            //         />
-            //         <div class="resource-info">
-            //             <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
-            //             <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
-            //             ${category === 'splashArt' && resource.description ? 
-            //                 `<div class="resource-description">${resource.description}</div>` : ''}
-            //         </div>
-            //     ` : `
-            //         <div style="display: flex; align-items: center; gap: 1rem;">
-            //             <img 
-            //                 src="${resource.thumbnail}" 
-            //                 alt="${resource.name}"
-            //                 class="resource-thumbnail"
-            //                 style="width: 50px; height: 50px;"
-            //             />
-            //             <div class="resource-info">
-            //             <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
-            //                 <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
-            //                 ${category === 'splashArt' && resource.description ? 
-            //                     `<div class="resource-description">${resource.description}</div>` : ''}
-            //             </div>
-            //         </div>
-            //     `}
-            //     <div slot="footer" class="resource-actions">
-            //         <sl-button-group>
-            //             <sl-button size="small" class="preview-btn">
-            //                 <span class="material-icons">visibility</span>
-            //             </sl-button>
-            //             <sl-button size="small" class="delete-btn" variant="danger">
-            //                 <span class="material-icons">delete</span>
-            //             </sl-button>
-            //         </sl-button-group>
-            //     </div>
-            // `;
-
             card.innerHTML = `
     ${view === 'grid' ? `
         <img 
@@ -2279,57 +2117,8 @@ soundCategoryBtns.forEach(btn => {
         });
     }
 
-    // setupSplashArtHandlers(drawer) {
-    //     const categoryBtns = drawer.querySelectorAll('.splash-art-controls sl-button-group sl-button');
-    //     categoryBtns.forEach(btn => {
-    //         btn.addEventListener('click', () => {
-    //             // Update button states
-    //             categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
-    //             btn.setAttribute('variant', 'primary');
-    
-    //             const category = btn.dataset.category;
-    //             this.updateGallery(drawer, category, 
-    //                 drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
-    //             );
-    //         });
-    //     });
-    
-    //     // Update file upload handler
-    //     const uploadBtn = drawer.querySelector('.splashart-upload-btn');
-    //     const fileInput = drawer.querySelector('.splashart-file-input');
-        
-    //     if (uploadBtn && fileInput) {
-    //         uploadBtn.addEventListener('click', () => {
-    //             fileInput.click();
-    //         });
-            
-    //         fileInput.addEventListener('change', async (e) => {
-    //             const files = Array.from(e.target.files || []);
-    //             if (!files.length) return;
-    
-    //             const activeCategory = drawer.querySelector('.splash-art-controls sl-button[variant="primary"]')?.dataset.category || 'title';
-                
-    //             for (const file of files) {
-    //                 try {
-    //                     const description = await this.promptForDescription(file.name);
-    //                     await this.addSplashArt(file, description, activeCategory);
-    //                 } catch (error) {
-    //                     console.error(`Error processing splash art file:`, error);
-    //                 }
-    //             }
-    
-    //             // Update gallery
-    //             this.updateGallery(drawer, activeCategory, 
-    //                 drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
-    //             );
-                
-    //             // Reset file input
-    //             fileInput.value = '';
-    //         });
-    //     }
-    // }
 
-// Add this method to ResourceManager class
+
 setupSplashArtHandlers(drawer) {
     console.log('Setting up splash art handlers');
     
