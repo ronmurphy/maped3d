@@ -26,6 +26,13 @@ class Scene3DController {
     this.showStats = false;
     this.isInitializingStats = false; // Add this flag
     this.lastStatsToggle = 0; // For debouncing
+    this.renderDistance = 100; // Default render distance
+this.textureMultiplier = 1.0; // Default texture resolution multiplier
+this.physics = { 
+  simulationDetail: 2,
+  maxSimulationSteps: 10
+};
+this.visualEffects = null;
     this.setupInventorySystem();
     this.clear();
   }
@@ -62,17 +69,26 @@ class Scene3DController {
     this.camera.position.set(0, 6, 50); // Adjusted starting position
 
     // Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(width, height);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Try alternatives like THREE.ReinhardToneMapping
-this.renderer.toneMappingExposure = 1.2; // Increase this value for brighter colors (try 1.0-1.5)
-
-// Make sure the clear color is set correctly (if needed)
+this.renderer = new THREE.WebGLRenderer({ antialias: true });
+this.renderer.setSize(availableWidth, window.innerHeight);
+this.renderer.shadowMap.enabled = true;
+this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+this.renderer.toneMappingExposure = 1.2;
 this.renderer.setClearColor(0x222222);
 
+this.loadPreferences();
+if (this.preferences && this.preferences.showFps) {
+  this.showStats = true;
+  this.initStats();
+}
+
+// Initialize visual effects
+if (!this.visualEffects) {
+  this.visualEffects = new VisualEffectsManager(this);
+  this.visualEffects.initPostProcessing();
+  this.createDemoEffects();
+}
 
     container.appendChild(this.renderer.domElement);
 
@@ -145,6 +161,12 @@ this.renderer.setClearColor(0x222222);
         }
       });
     }
+
+      // Dispose visual effects
+      if (this.visualEffects) {
+        this.visualEffects.dispose();
+        this.visualEffects = null;
+      }
 
     if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
       this.stats.dom.parentNode.removeChild(this.stats.dom);
@@ -3382,17 +3404,6 @@ animate = () => {
     this.stats.begin();
   }
 
-//   // In your animate method, check for duplicate meshes
-// const propMeshes = this.scene.children.filter(child => 
-//   child.userData && child.userData.type === 'prop'
-// );
-
-// const propIds = propMeshes.map(mesh => mesh.userData.id);
-// const duplicateProps = propIds.filter((id, index) => propIds.indexOf(id) !== index);
-
-// if (duplicateProps.length > 0) {
-//   console.warn('[ANIMATE] Found duplicate prop meshes in scene:', duplicateProps);
-// }
 
   const currentSpeed = this.moveState.speed;
   let canMove = true;
@@ -3515,7 +3526,21 @@ animate = () => {
 
   // Update physics and camera height
   this.camera.position.y = this.physics.update();
-  this.renderer.render(this.scene, this.camera);
+  // original renderer code
+  // this.renderer.render(this.scene, this.camera);
+
+
+  if (this.visualEffects) {
+    const time = performance.now() * 0.001;
+    const deltaTime = time - (this.lastTime || time);
+    this.lastTime = time;
+    
+    this.visualEffects.update(deltaTime);
+  } //else {
+    // Fallback to standard rendering
+    this.renderer.render(this.scene, this.camera);
+//  }
+
 
   if (this.stats && this.showStats) {
     this.stats.end();
@@ -3697,43 +3722,27 @@ loadPreferences() {
       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
       const availableWidth = window.innerWidth - sidebarWidth;
 
-      // Create renderer
-//       this.renderer = new THREE.WebGLRenderer({ antialias: true });
-//       this.renderer.setSize(availableWidth, window.innerHeight);
-//       this.renderer.shadowMap.enabled = true;
-//  this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-//  this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Try alternatives like THREE.ReinhardToneMapping
-// this.renderer.toneMappingExposure = 1.2; // Increase this value for brighter colors (try 1.0-1.5)
-
-// // Make sure the clear color is set correctly (if needed)
-// this.renderer.setClearColor(0x222222);
-
-// this.loadPreferences();
-    
-// // Initialize stats with quality indicator
-// if (this.preferences && this.preferences.showFps) {
-//   this.showStats = true;
-//   this.initStats();
-// }
 
 // Create the renderer
 this.renderer = new THREE.WebGLRenderer({ antialias: true });
 this.renderer.setSize(availableWidth, window.innerHeight);
-
-// Load preferences first (this should apply quality settings)
-this.loadPreferences();
-
-// Then apply any mandatory settings that should override preferences
+this.renderer.shadowMap.enabled = true;
 this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-this.renderer.toneMapping =  THREE.ACESFilmicToneMapping;  //THREE.ACESFilmicToneMapping;
+this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 this.renderer.toneMappingExposure = 1.2;
 this.renderer.setClearColor(0x222222);
 
-// Initialize stats with quality indicator
+this.loadPreferences();
 if (this.preferences && this.preferences.showFps) {
   this.showStats = true;
   this.initStats();
+}
+
+// Initialize visual effects
+if (!this.visualEffects) {
+  this.visualEffects = new VisualEffectsManager(this);
+  this.visualEffects.initPostProcessing();
+  this.createDemoEffects();
 }
 
       // Create camera
@@ -4677,7 +4686,159 @@ hideSplashArt() {
   }
 }
 
-// Add these methods to Scene3DController
+// old, working code
+// detectHardwareCapabilities(callback) {
+//   console.log("Starting hardware capability detection");
+  
+//   // Store initial state to restore later
+//   const originalShowStats = this.showStats;
+  
+//   // Create test objects for benchmark
+//   const boxCount = 200;
+//   const testObjects = [];
+  
+//   // Create a complex scene to test rendering performance
+//   const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+//   const testMaterial = new THREE.MeshStandardMaterial({
+//     color: 0x3366ff,
+//     roughness: 0.7,
+//     metalness: 0.2
+//   });
+  
+//   // Add many objects to stress the system
+//   for (let i = 0; i < boxCount; i++) {
+//     const box = new THREE.Mesh(testGeometry, testMaterial);
+    
+//     // Position in random locations
+//     box.position.set(
+//       (Math.random() - 0.5) * 20,
+//       (Math.random() - 0.5) * 20,
+//       (Math.random() - 0.5) * 20
+//     );
+    
+//     // Random rotation
+//     box.rotation.set(
+//       Math.random() * Math.PI,
+//       Math.random() * Math.PI,
+//       Math.random() * Math.PI
+//     );
+    
+//     // Add to scene
+//     this.scene.add(box);
+//     testObjects.push(box);
+//   }
+  
+//   // Add a point light to test lighting performance
+//   const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+//   pointLight.position.set(0, 10, 0);
+//   this.scene.add(pointLight);
+//   testObjects.push(pointLight);
+  
+//   // Enable shadows for testing
+//   this.renderer.shadowMap.enabled = true;
+//   this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+//   pointLight.castShadow = true;
+  
+//   // Measure FPS
+//   let frames = 0;
+//   let lastTime = performance.now();
+//   let totalTime = 0;
+//   let frameRates = [];
+  
+//   // Animate test scene
+//   const animateTest = () => {
+//     // Rotate camera around scene
+//     const time = performance.now() * 0.001;
+//     this.camera.position.x = Math.sin(time * 0.5) * 15;
+//     this.camera.position.z = Math.cos(time * 0.5) * 15;
+//     this.camera.position.y = Math.sin(time * 0.3) * 5 + 7;
+//     this.camera.lookAt(0, 0, 0);
+    
+//     // Render
+//     this.renderer.render(this.scene, this.camera);
+    
+//     // Calculate FPS
+//     frames++;
+//     const now = performance.now();
+//     const elapsed = now - lastTime;
+    
+//     // Record FPS every 100ms
+//     if (elapsed >= 100) {
+//       const currentFPS = (frames * 1000) / elapsed;
+//       frameRates.push(currentFPS);
+      
+//       frames = 0;
+//       lastTime = now;
+//       totalTime += elapsed;
+      
+//       // Update test objects
+//       testObjects.forEach((obj, i) => {
+//         if (obj.isMesh) {
+//           obj.rotation.x += 0.01;
+//           obj.rotation.y += 0.01;
+//         }
+//       });
+//     }
+    
+//     // Run for 3 seconds total
+//     if (totalTime < 3000) {
+//       requestAnimationFrame(animateTest);
+//     } else {
+//       // Clean up test objects
+//       testObjects.forEach(obj => this.scene.remove(obj));
+      
+//       // Calculate median FPS - more reliable than average
+//       frameRates.sort((a, b) => a - b);
+//       const medianFPS = frameRates[Math.floor(frameRates.length / 2)];
+      
+//       console.log(`Hardware test completed: ${medianFPS.toFixed(1)} FPS`);
+      
+//       // Determine quality level
+//       let qualityLevel = 'medium'; // Default
+      
+//       if (medianFPS >= 55) {
+//         qualityLevel = 'high';
+//       } else if (medianFPS >= 30) {
+//         qualityLevel = 'medium';
+//       } else {
+//         qualityLevel = 'low';
+//       }
+      
+//       // Store quality level
+//       this.qualityLevel = qualityLevel;
+      
+//       // Restore original state
+//       this.showStats = originalShowStats;
+      
+//       const result = {
+//         fps: medianFPS,
+//         qualityLevel: qualityLevel,
+//         devicePixelRatio: window.devicePixelRatio,
+//         timestamp: new Date().toISOString()
+//       };
+      
+//       // Clean up and restore normal rendering
+//       this.renderer.shadowMap.enabled = false;
+      
+//       // Call callback with results
+//       if (callback) callback(result);
+      
+//       return result;
+//     }
+//   };
+  
+//   // Start test animation
+//   animateTest();
+  
+//   // Return placeholder result - actual result comes through callback
+//   return {
+//     fps: 0,
+//     qualityLevel: 'medium',
+//     devicePixelRatio: window.devicePixelRatio,
+//     timestamp: new Date().toISOString()
+//   };
+// }
+
 detectHardwareCapabilities(callback) {
   console.log("Starting hardware capability detection");
   
@@ -4735,6 +4896,14 @@ detectHardwareCapabilities(callback) {
   let lastTime = performance.now();
   let totalTime = 0;
   let frameRates = [];
+  
+  // Create a placeholder result object
+  const testResultObj = {
+    fps: 0,
+    qualityLevel: 'medium',
+    devicePixelRatio: window.devicePixelRatio,
+    timestamp: new Date().toISOString()
+  };
   
   // Animate test scene
   const animateTest = () => {
@@ -4801,36 +4970,32 @@ detectHardwareCapabilities(callback) {
       // Restore original state
       this.showStats = originalShowStats;
       
-      const result = {
-        fps: medianFPS,
-        qualityLevel: qualityLevel,
-        devicePixelRatio: window.devicePixelRatio,
-        timestamp: new Date().toISOString()
-      };
+      // Update testResultObj with final values
+      testResultObj.fps = medianFPS;
+      testResultObj.qualityLevel = qualityLevel;
       
       // Clean up and restore normal rendering
       this.renderer.shadowMap.enabled = false;
       
       // Call callback with results
-      if (callback) callback(result);
-      
-      return result;
+      if (callback) callback(testResultObj);
     }
   };
   
   // Start test animation
   animateTest();
   
-  // Return placeholder result - actual result comes through callback
-  return {
-    fps: 0,
-    qualityLevel: 'medium',
-    devicePixelRatio: window.devicePixelRatio,
-    timestamp: new Date().toISOString()
+  // Return a copy of the initial placeholder result
+  // The actual values will be updated in the callback
+  return { 
+    fps: testResultObj.fps,
+    qualityLevel: testResultObj.qualityLevel,
+    devicePixelRatio: testResultObj.devicePixelRatio,
+    timestamp: testResultObj.timestamp
   };
 }
 
-// Method to set quality level
+
 setQualityLevel(level, options = {}) {
   const settings = {
     shadows: options.shadows !== undefined ? options.shadows : true,
@@ -4840,27 +5005,288 @@ setQualityLevel(level, options = {}) {
   };
   
   this.qualityLevel = level;
+
+  if (this.visualEffects) {
+    this.visualEffects.applyQualityLevel(level);
+  }
   
   // Apply quality settings
   switch(level) {
     case 'high':
+      // Renderer settings
       this.renderer.shadowMap.enabled = settings.shadows;
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      this.renderer.setPixelRatio(window.devicePixelRatio);
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Highest quality shadows
+      this.renderer.setPixelRatio(window.devicePixelRatio); // Full device pixel ratio
+      
+      // Texture settings
+      this.textureMultiplier = 1.0; // Full resolution textures
+      
+      // View distance settings
+      this.renderDistance = 100; // Long view distance
+      
+      // Materials quality
+      this.scene.traverse(obj => {
+        if (obj.material) {
+          // Enable all material features
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => {
+              if (mat.isMeshStandardMaterial) {
+                mat.envMapIntensity = 1.0;
+                mat.roughness = mat.userData?.originalRoughness || mat.roughness;
+                mat.metalness = mat.userData?.originalMetalness || mat.metalness;
+              }
+            });
+          } else if (obj.material.isMeshStandardMaterial) {
+            obj.material.envMapIntensity = 1.0;
+            obj.material.roughness = obj.material.userData?.originalRoughness || obj.material.roughness;
+            obj.material.metalness = obj.material.userData?.originalMetalness || obj.material.metalness;
+          }
+        }
+      });
+      
+      // Lighting quality
+      this.scene.traverse(obj => {
+        if (obj.isLight) {
+          obj.castShadow = settings.shadows;
+          if (obj.shadow) {
+            obj.shadow.mapSize.width = 2048;
+            obj.shadow.mapSize.height = 2048;
+            obj.shadow.bias = -0.0001;
+          }
+        }
+      });
+      
+      // Set maximum anisotropy for textures (reduces blur at angles)
+      const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      this.scene.traverse(obj => {
+        if (obj.material) {
+          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+          materials.forEach(mat => {
+            if (mat.map) {
+              mat.map.anisotropy = maxAnisotropy;
+              mat.map.needsUpdate = true;
+            }
+          });
+        }
+      });
+      
+      // Enable bloom if available
+      // if (this.bloomPass) {
+      //   this.bloomPass.enabled = true;
+      //   this.bloomPass.strength = 0.8;
+      //   this.bloomPass.radius = 0.5;
+      //   this.bloomPass.threshold = 0.85;
+      // }
+      
+      if (this.visualEffects) {
+        this.visualEffects.applyQualityLevel(level);
+      }
+
+
+      // Physics quality
+      this.physics.simulationDetail = 2; // Higher detail physics
+      this.physics.maxSimulationSteps = 10; // More physics steps
+      
       break;
       
     case 'medium':
+      // Renderer settings
       this.renderer.shadowMap.enabled = settings.shadows;
-      this.renderer.shadowMap.type = THREE.PCFShadowMap;
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      this.renderer.shadowMap.type = THREE.PCFShadowMap; // Medium quality shadows
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped device pixel ratio
+      
+      // Texture settings
+      this.textureMultiplier = 0.75; // 75% resolution textures
+      
+      // View distance settings
+      this.renderDistance = 60; // Medium view distance
+      
+      // Materials quality
+      this.scene.traverse(obj => {
+        if (obj.material) {
+          // Medium material features
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => {
+              if (mat.isMeshStandardMaterial) {
+                // Store original values if first time
+                if (!mat.userData) mat.userData = {};
+                if (mat.userData.originalRoughness === undefined) 
+                  mat.userData.originalRoughness = mat.roughness;
+                if (mat.userData.originalMetalness === undefined) 
+                  mat.userData.originalMetalness = mat.metalness;
+                
+                mat.envMapIntensity = 0.7;
+                mat.roughness = Math.min(0.95, mat.userData.originalRoughness * 1.2); // Increase roughness
+                mat.metalness = mat.userData.originalMetalness * 0.9; // Decrease metalness
+              }
+            });
+          } else if (obj.material.isMeshStandardMaterial) {
+            // Store original values if first time
+            if (!obj.material.userData) obj.material.userData = {};
+            if (obj.material.userData.originalRoughness === undefined) 
+              obj.material.userData.originalRoughness = obj.material.roughness;
+            if (obj.material.userData.originalMetalness === undefined) 
+              obj.material.userData.originalMetalness = obj.material.metalness;
+              
+            obj.material.envMapIntensity = 0.7;
+            obj.material.roughness = Math.min(0.95, obj.material.userData.originalRoughness * 1.2);
+            obj.material.metalness = obj.material.userData.originalMetalness * 0.9;
+          }
+        }
+      });
+      
+      // Lighting quality
+      this.scene.traverse(obj => {
+        if (obj.isLight) {
+          obj.castShadow = settings.shadows;
+          if (obj.shadow) {
+            obj.shadow.mapSize.width = 1024;
+            obj.shadow.mapSize.height = 1024;
+            obj.shadow.bias = -0.0005;
+          }
+        }
+      });
+      
+      // Medium anisotropy for textures
+      const medAnisotropy = Math.max(4, Math.floor(this.renderer.capabilities.getMaxAnisotropy() / 2));
+      this.scene.traverse(obj => {
+        if (obj.material) {
+          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+          materials.forEach(mat => {
+            if (mat.map) {
+              mat.map.anisotropy = medAnisotropy;
+              mat.map.needsUpdate = true;
+            }
+          });
+        }
+      });
+      
+      // Medium bloom if available
+      // if (this.bloomPass) {
+      //   this.bloomPass.enabled = true;
+      //   this.bloomPass.strength = 0.5;
+      //   this.bloomPass.radius = 0.35;
+      //   this.bloomPass.threshold = 0.9;
+      // }
+      
+      if (this.visualEffects) {
+        this.visualEffects.applyQualityLevel(level);
+      }
+
+      // Physics quality
+      this.physics.simulationDetail = 1; // Medium detail physics
+      this.physics.maxSimulationSteps = 6; // Fewer physics steps
+      
       break;
       
     case 'low':
+      // Renderer settings
       this.renderer.shadowMap.enabled = settings.shadows && this.renderer.capabilities.maxShadowMapSize > 1024;
-      this.renderer.shadowMap.type = THREE.BasicShadowMap;
-      this.renderer.setPixelRatio(1);
+      this.renderer.shadowMap.type = THREE.BasicShadowMap; // Simple shadows
+      this.renderer.setPixelRatio(1); // Minimum pixel ratio
+      
+      // Texture settings
+      this.textureMultiplier = 0.5; // 50% resolution textures
+      
+      // View distance settings
+      this.renderDistance = 40; // Short view distance
+      
+      // Materials quality
+      this.scene.traverse(obj => {
+        if (obj.material) {
+          // Simplify materials
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => {
+              if (mat.isMeshStandardMaterial) {
+                // Store original values if first time
+                if (!mat.userData) mat.userData = {};
+                if (mat.userData.originalRoughness === undefined) 
+                  mat.userData.originalRoughness = mat.roughness;
+                if (mat.userData.originalMetalness === undefined) 
+                  mat.userData.originalMetalness = mat.metalness;
+                
+                mat.envMapIntensity = 0.3;
+                mat.roughness = Math.min(1.0, mat.userData.originalRoughness * 1.5); // Max roughness
+                mat.metalness = mat.userData.originalMetalness * 0.7; // Minimal metalness
+              }
+            });
+          } else if (obj.material.isMeshStandardMaterial) {
+            // Store original values if first time
+            if (!obj.material.userData) obj.material.userData = {};
+            if (obj.material.userData.originalRoughness === undefined) 
+              obj.material.userData.originalRoughness = obj.material.roughness;
+            if (obj.material.userData.originalMetalness === undefined) 
+              obj.material.userData.originalMetalness = obj.material.metalness;
+              
+            obj.material.envMapIntensity = 0.3;
+            obj.material.roughness = Math.min(1.0, obj.material.userData.originalRoughness * 1.5);
+            obj.material.metalness = obj.material.userData.originalMetalness * 0.7;
+          }
+          
+          // Disable normal maps on low quality
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(mat => {
+              if (mat.normalMap) {
+                mat.normalScale.set(0, 0); // Disable normal map effect
+              }
+            });
+          } else if (obj.material.normalMap) {
+            obj.material.normalScale.set(0, 0);
+          }
+        }
+      });
+      
+      // Lighting quality
+      this.scene.traverse(obj => {
+        if (obj.isLight) {
+          obj.castShadow = settings.shadows;
+          if (obj.shadow) {
+            obj.shadow.mapSize.width = 512;
+            obj.shadow.mapSize.height = 512;
+            obj.shadow.bias = -0.001;
+          }
+          
+          // Reduce light intensity for point and spot lights
+          if (obj.isPointLight || obj.isSpotLight) {
+            if (!obj.userData) obj.userData = {};
+            if (obj.userData.originalIntensity === undefined) 
+              obj.userData.originalIntensity = obj.intensity;
+            obj.intensity = obj.userData.originalIntensity * 0.8;
+          }
+        }
+      });
+      
+      // Low anisotropy for textures
+      this.scene.traverse(obj => {
+        if (obj.material) {
+          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+          materials.forEach(mat => {
+            if (mat.map) {
+              mat.map.anisotropy = 1; // Lowest possible value
+              mat.map.needsUpdate = true;
+            }
+          });
+        }
+      });
+      
+      // Disable bloom for performance
+      // if (this.bloomPass) {
+      //   this.bloomPass.enabled = false;
+      // }
+      
+      if (this.visualEffects) {
+        this.visualEffects.applyQualityLevel(level);
+      }
+
+      // Physics quality
+      this.physics.simulationDetail = 0; // Lowest detail physics
+      this.physics.maxSimulationSteps = 3; // Minimal physics steps
+      
       break;
   }
+  
+  // Update render distance
+  this.updateRenderDistance();
   
   // Update FPS counter to show quality level
   if (this.stats && this.stats.dom) {
@@ -4895,6 +5321,90 @@ setQualityLevel(level, options = {}) {
   
   console.log(`Quality level set to: ${level}`);
   return level;
+}
+
+// Add this helper method to implement render distance
+updateRenderDistance() {
+  const distance = this.renderDistance || 50;
+  
+  // Create or update the fog effect
+  if (!this.scene.fog) {
+    this.scene.fog = new THREE.Fog(0x222222, distance * 0.5, distance);
+  } else {
+    this.scene.fog.near = distance * 0.5;
+    this.scene.fog.far = distance;
+  }
+  
+  // Optionally disable rendering of distant objects
+  this.scene.traverse(object => {
+    if (object.isMesh && object.userData.optimizable) {
+      // Store original visibility state if not already stored
+      if (object.userData.originalVisible === undefined) {
+        object.userData.originalVisible = object.visible;
+      }
+      
+      // Update visibility based on distance in next frame
+      if (this.camera) {
+        const distanceToCamera = this.camera.position.distanceTo(object.position);
+        object.visible = distanceToCamera < distance && object.userData.originalVisible;
+      }
+    }
+  });
+}
+
+// Example: Adding torches to your scene
+initializeTorches() {
+  if (this.visualEffects) {
+    // Position the torch on a wall
+    const torch = this.visualEffects.createTorch({
+      x: wallX, 
+      y: wallY + 2, // Mount height
+      z: wallZ
+    });
+  }
+}
+
+
+// Add this method to Scene3DController to create some test torches
+createDemoEffects() {
+  if (!this.visualEffects || !this.scene || !this.renderer) {
+    console.warn("Can't create visual effects - required components not initialized");
+    return;
+  }
+  
+  console.log("Creating demo visual effects");
+  
+  // Create torches at key locations
+  // Try to position these near walls or in corners of your map
+  
+  // Example positions - adjust these to fit your actual map layout
+  const torchPositions = [
+    { x: 5, y: 2, z: 5 },
+    { x: -5, y: 2, z: 5 },
+    { x: 5, y: 2, z: -5 },
+    { x: -5, y: 2, z: -5 }
+  ];
+  
+  torchPositions.forEach(pos => {
+    this.visualEffects.createTorch(pos, {
+      color: 0xff9900,
+      intensity: 1.2,
+      distance: 10
+    });
+  });
+  
+  // Create a glowing prop or item as demonstration
+  const glowGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+  const glowMaterial = this.visualEffects.createGlowMaterial({
+    color: 0x00aaff,  // Blue glow
+    emissiveIntensity: 1.2
+  });
+  
+  const glowOrb = new THREE.Mesh(glowGeometry, glowMaterial);
+  glowOrb.position.set(0, 1.5, 0);  // Center of the map, floating
+  this.scene.add(glowOrb);
+  
+  console.log("Demo effects created");
 }
 
 }

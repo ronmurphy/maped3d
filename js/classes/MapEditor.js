@@ -6243,6 +6243,61 @@ applyPreferences() {
 }
 
 // Run hardware detection test
+// async runHardwareTest() {
+//   return new Promise((resolve, reject) => {
+//     // If no 3D view exists yet, create a temporary one for testing
+//     if (!this.scene3D || !this.scene3D.renderer) {
+//       try {
+//         // Create dialog to test in
+//         const testContainer = document.createElement('div');
+//         testContainer.style.cssText = `
+//           position: fixed;
+//           top: -9999px;
+//           left: -9999px;
+//           width: 512px;
+//           height: 512px;
+//           opacity: 0;
+//           pointer-events: none;
+//         `;
+//         document.body.appendChild(testContainer);
+        
+//         // Create temporary scene
+//         const testScene3D = new Scene3DController();
+//         testScene3D.initialize(testContainer, 512, 512);
+        
+//         // Run test
+//         const result = testScene3D.detectHardwareCapabilities(() => {
+//           // Clean up
+//           testContainer.remove();
+//           testScene3D.cleanup();
+          
+//           // Store result
+//           this.preferences.detectedQuality = result.qualityLevel;
+//           localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+          
+//           resolve(result);
+//         });
+//       } catch (error) {
+//         reject(error);
+//       }
+//     } else {
+//       // Use existing 3D view
+//       try {
+//         const result = this.scene3D.detectHardwareCapabilities(() => {
+//           // Store result
+//           this.preferences.detectedQuality = result.qualityLevel;
+//           localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+          
+//           resolve(result);
+//         });
+//       } catch (error) {
+//         reject(error);
+//       }
+//     }
+//   });
+// }
+
+// In MapEditor.js - Update this method if needed
 async runHardwareTest() {
   return new Promise((resolve, reject) => {
     // If no 3D view exists yet, create a temporary one for testing
@@ -6265,8 +6320,8 @@ async runHardwareTest() {
         const testScene3D = new Scene3DController();
         testScene3D.initialize(testContainer, 512, 512);
         
-        // Run test
-        const result = testScene3D.detectHardwareCapabilities(() => {
+        // Run test with a callback to handle results
+        testScene3D.detectHardwareCapabilities((result) => {
           // Clean up
           testContainer.remove();
           testScene3D.cleanup();
@@ -6283,7 +6338,8 @@ async runHardwareTest() {
     } else {
       // Use existing 3D view
       try {
-        const result = this.scene3D.detectHardwareCapabilities(() => {
+        // Run test with a callback to handle results
+        this.scene3D.detectHardwareCapabilities((result) => {
           // Store result
           this.preferences.detectedQuality = result.qualityLevel;
           localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
