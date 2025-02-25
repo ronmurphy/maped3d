@@ -33,6 +33,7 @@ this.physics = {
   maxSimulationSteps: 10
 };
 this.visualEffects = null;
+this.showDemoEffects = false;
     this.setupInventorySystem();
     this.clear();
   }
@@ -87,7 +88,7 @@ if (this.preferences && this.preferences.showFps) {
 if (!this.visualEffects) {
   this.visualEffects = new VisualEffectsManager(this);
   this.visualEffects.initPostProcessing();
-  this.createDemoEffects();
+  // this.createDemoEffects();
 }
 
     container.appendChild(this.renderer.domElement);
@@ -940,6 +941,15 @@ createPropMesh(propData) {
         if (!event.repeat) {
           this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
           this.updateWallClipping();
+        }
+        break;
+      case "KeyG":
+        if (!this.showDemoEffects) {
+          this.visualEffects.createDemoEffects();
+          this.showDemoEffects = true;
+        } else {
+          this.visualEffects.disposeDemoEffects();
+          this.showDemoEffects = false;
         }
         break;
       case "KeyI":
@@ -3742,7 +3752,7 @@ if (this.preferences && this.preferences.showFps) {
 if (!this.visualEffects) {
   this.visualEffects = new VisualEffectsManager(this);
   this.visualEffects.initPostProcessing();
-  this.createDemoEffects();
+  // this.createDemoEffects();
 }
 
       // Create camera
