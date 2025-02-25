@@ -3726,7 +3726,7 @@ this.loadPreferences();
 
 // Then apply any mandatory settings that should override preferences
 this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+this.renderer.toneMapping =  THREE.ACESFilmicToneMapping;  //THREE.ACESFilmicToneMapping;
 this.renderer.toneMappingExposure = 1.2;
 this.renderer.setClearColor(0x222222);
 
