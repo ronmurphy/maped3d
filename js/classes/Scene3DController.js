@@ -3685,6 +3685,7 @@ createLandingEffect(position) {
 
       // Create renderer
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      // this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.setSize(availableWidth, window.innerHeight);
       this.renderer.shadowMap.enabled = true;
 
@@ -3703,6 +3704,9 @@ createLandingEffect(position) {
       // Add renderer to container
       container.appendChild(this.renderer.domElement);
 
+            this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+
       const { cleanup } = this.init3DScene(updateStatus);
 
       // Initialize scene with components
@@ -3710,8 +3714,8 @@ createLandingEffect(position) {
       const { animate, controls } = this.init3DScene(updateStatus);
 
       // Initialize stats (but keep hidden by default)
-this.showStats = false;
-this.initStats();
+      this.showStats = false;
+      this.initStats();
 
       // Instructions overlay
       const instructions = document.createElement("div");
