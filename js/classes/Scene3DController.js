@@ -190,6 +190,90 @@ class Scene3DController {
     return true;
   }
 
+// createPropMesh(propData) {
+//   console.log(`Creating prop mesh with ID: ${propData.id}`);
+
+
+//   return new Promise((resolve, reject) => {
+//     const textureLoader = new THREE.TextureLoader();
+    
+//     textureLoader.load(
+//       propData.image,
+//       (texture) => {
+//         // Calculate dimensions based on texture aspect ratio
+//         let width, height;
+        
+//         if (texture.image) {
+//           const aspectRatio = texture.image.width / texture.image.height;
+//           width = propData.scale || 1;
+//           height = width / aspectRatio;
+//         } else {
+//           // Fallback if image dimensions aren't available
+//           width = propData.scale || 1;
+//           height = propData.scale || 1;
+//         }
+        
+//         const geometry = new THREE.PlaneGeometry(width, height);
+//         const material = new THREE.MeshBasicMaterial({
+//           map: texture,
+//           transparent: true,
+//           side: THREE.DoubleSide,
+//           alphaTest: 0.1 // Help with transparency sorting
+//         });
+        
+//         const mesh = new THREE.Mesh(geometry, material);
+        
+//         // Position in world space
+//         const x = propData.x / 50 - this.boxWidth / 2;
+//         const z = propData.y / 50 - this.boxDepth / 2;
+        
+//         // Get elevation at this point
+//         const { elevation } = this.getElevationAtPoint(x, z);
+        
+//         // Handle horizontal vs vertical orientation
+//         if (propData.isHorizontal) {
+//           // Horizontal prop - lie flat on surface
+//           // Rotate 90 degrees on X axis to make it horizontal
+//           mesh.rotation.x = -Math.PI / 2;
+          
+//           // Set position slightly above surface to prevent z-fighting
+//           // Add 0.01 units above the surface
+//           const y = elevation + 0.02; // <-- Add this small offset for horizontal props
+//           mesh.position.set(x, y, z);
+          
+//           // Apply rotation around Y axis (which is now the up vector)
+//           mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
+//         } else {
+//           // Vertical prop (original behavior)
+//           const y = propData.height + elevation;
+//           mesh.position.set(x, y, z);
+          
+//           // Standard rotation around Y axis
+//           mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
+//         }
+        
+//         // Add metadata
+//         mesh.userData = {
+//           type: 'prop',
+//           id: propData.id,
+//           name: propData.name || 'Prop',
+//           isHorizontal: propData.isHorizontal || false
+//         };
+
+//         mesh.userData.debugId = Date.now(); // Add a unique timestamp
+//         console.log(`Prop mesh created with debugId: ${mesh.userData.debugId}`);
+        
+//         resolve(mesh);
+//       },
+//       undefined,
+//       (error) => {
+//         console.error("Error loading prop texture:", error);
+//         reject(error);
+//       }
+//     );
+//   });
+// }
+
 createPropMesh(propData) {
   console.log(`Creating prop mesh with ID: ${propData.id}`);
 
@@ -233,17 +317,24 @@ createPropMesh(propData) {
         // Handle horizontal vs vertical orientation
         if (propData.isHorizontal) {
           // Horizontal prop - lie flat on surface
-          // Rotate 90 degrees on X axis to make it horizontal
           mesh.rotation.x = -Math.PI / 2;
           
-          // Set position slightly above surface to prevent z-fighting
-          // Add 0.01 units above the surface
-          const y = elevation + 0.02; // <-- Add this small offset for horizontal props
+          // Set position slightly above surface
+          const y = elevation + 0.02;
           mesh.position.set(x, y, z);
           
           // Apply rotation around Y axis (which is now the up vector)
           mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
-        } else {
+        } 
+        else if (propData.isWallMounted) {
+          // Wall-mounted prop
+          const y = propData.height;
+          mesh.position.set(x, y, z);
+          
+          // Rotate to face away from wall
+          mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
+        }
+        else {
           // Vertical prop (original behavior)
           const y = propData.height + elevation;
           mesh.position.set(x, y, z);
@@ -257,7 +348,8 @@ createPropMesh(propData) {
           type: 'prop',
           id: propData.id,
           name: propData.name || 'Prop',
-          isHorizontal: propData.isHorizontal || false
+          isHorizontal: propData.isHorizontal || false,
+          isWallMounted: propData.isWallMounted || false
         };
 
         mesh.userData.debugId = Date.now(); // Add a unique timestamp
@@ -2602,6 +2694,82 @@ useInventoryItem(itemId) {
   this.showNotification(`Used ${item.prop.name || 'Item'}`);
 }
 
+// showItemDetails(prop) {
+//   console.log('Showing details for item:', prop);
+  
+//   // Create modal dialog for item details
+//   const dialog = document.createElement('sl-dialog');
+//   dialog.label = prop.name || 'Item Details';
+//   dialog.style.setProperty('--sl-z-index-dialog', '4000');
+  
+//   const content = document.createElement('div');
+//   content.style.cssText = `
+//     display: flex;
+//     flex-direction: column;
+//     align-items: center;
+//     padding: 16px;
+//   `;
+  
+//   // Add image if available
+//   if (prop.image) {
+//     const img = document.createElement('img');
+//     img.src = prop.image;
+//     img.style.cssText = `
+//       max-width: 200px;
+//       max-height: 200px;
+//       object-fit: contain;
+//       margin-bottom: 16px;
+//       border-radius: 8px;
+//     `;
+//     content.appendChild(img);
+//   }
+  
+//   // Add description
+//   const description = document.createElement('p');
+//   description.textContent = prop.description || 'No description available.';
+//   description.style.cssText = `
+//     text-align: center;
+//     margin-bottom: 16px;
+//     line-height: 1.5;
+//   `;
+//   content.appendChild(description);
+  
+//   // Add actions
+//   const actions = document.createElement('div');
+//   actions.style.cssText = `
+//     display: flex;
+//     gap: 8px;
+//     justify-content: center;
+//   `;
+  
+//   const useButton = document.createElement('sl-button');
+//   useButton.setAttribute('variant', 'primary');
+//   useButton.textContent = 'Use Item';
+//   useButton.addEventListener('click', () => {
+//     dialog.hide();
+//     this.useInventoryItem(prop.id);
+//   });
+//   actions.appendChild(useButton);
+  
+//   const dropButton = document.createElement('sl-button');
+//   dropButton.setAttribute('variant', 'danger');
+//   dropButton.textContent = 'Drop Item';
+//   dropButton.addEventListener('click', () => {
+//     dialog.hide();
+//     this.dropInventoryItem(prop.id);
+//   });
+//   actions.appendChild(dropButton);
+  
+//   content.appendChild(actions);
+//   dialog.appendChild(content);
+  
+//   // Add to document and show
+//   document.body.appendChild(dialog);
+//   dialog.show();
+// }
+
+
+// modified code
 showItemDetails(prop) {
   console.log('Showing details for item:', prop);
   
@@ -2648,8 +2816,10 @@ showItemDetails(prop) {
     display: flex;
     gap: 8px;
     justify-content: center;
+    flex-wrap: wrap;
   `;
   
+  // Use item button (regular)
   const useButton = document.createElement('sl-button');
   useButton.setAttribute('variant', 'primary');
   useButton.textContent = 'Use Item';
@@ -2659,14 +2829,38 @@ showItemDetails(prop) {
   });
   actions.appendChild(useButton);
   
+  // Drop vertically
   const dropButton = document.createElement('sl-button');
-  dropButton.setAttribute('variant', 'danger');
-  dropButton.textContent = 'Drop Item';
+  dropButton.setAttribute('variant', 'neutral');
+  dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
   dropButton.addEventListener('click', () => {
     dialog.hide();
-    this.dropInventoryItem(prop.id);
+    this.dropInventoryItem(prop.id, 'vertical');
   });
   actions.appendChild(dropButton);
+  
+  // Drop horizontally 
+  const dropHorizontalButton = document.createElement('sl-button');
+  dropHorizontalButton.setAttribute('variant', 'neutral');
+  dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
+  dropHorizontalButton.addEventListener('click', () => {
+    dialog.hide();
+    this.dropInventoryItem(prop.id, 'horizontal');
+  });
+  actions.appendChild(dropHorizontalButton);
+  
+  // Place on wall (only show if wall is detected)
+  const wallInfo = this.checkWallInFront();
+  if (wallInfo.hit) {
+    const placeWallButton = document.createElement('sl-button');
+    placeWallButton.setAttribute('variant', 'neutral');
+    placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
+    placeWallButton.addEventListener('click', () => {
+      dialog.hide();
+      this.placeItemOnWall(prop.id, wallInfo);
+    });
+    actions.appendChild(placeWallButton);
+  }
   
   content.appendChild(actions);
   dialog.appendChild(content);
@@ -2676,7 +2870,109 @@ showItemDetails(prop) {
   dialog.show();
 }
 
-dropInventoryItem(itemId) {
+placeItemOnWall(itemId, wallInfo) {
+  if (!this.inventory.has(itemId) || !wallInfo.hit) {
+    return;
+  }
+  
+  const item = this.inventory.get(itemId);
+  
+  // Create prop data for wall placement
+  const propData = {
+    id: `wall-${Date.now()}`,
+    x: wallInfo.point.x * 50 + this.boxWidth * 25, // Convert to grid coordinates
+    y: wallInfo.point.z * 50 + this.boxDepth * 25,
+    image: item.prop.image,
+    name: item.prop.name,
+    description: item.prop.description,
+    scale: item.prop.scale || 1,
+    height: wallInfo.point.y, // Place at hit point height
+    rotation: this.getWallRotation(wallInfo.normal), // Align with wall
+    isWallMounted: true, // New flag
+    wallNormal: wallInfo.normal.clone() // Store for future reference
+  };
+  
+  this.createPropMesh(propData)
+    .then(mesh => {
+      // Position slightly away from wall to prevent z-fighting
+      const normalOffset = wallInfo.normal.clone().multiplyScalar(0.05);
+      mesh.position.add(normalOffset);
+      
+      this.scene.add(mesh);
+      console.log('Placed item on wall:', propData);
+    })
+    .catch(error => {
+      console.error('Error creating wall prop:', error);
+    });
+  
+  this.removeFromInventory(itemId);
+  this.showNotification(`Placed ${item.prop.name} on wall`);
+}
+
+// Helper to get rotation from wall normal
+getWallRotation(normal) {
+  // Calculate rotation to face away from wall
+  // For a normal pointing in -Z, we want 0 degrees
+  // For a normal pointing in +X, we want 90 degrees, etc.
+  return Math.atan2(normal.x, normal.z) * (180/Math.PI);
+}
+
+// dropInventoryItem(itemId) {
+//   if (!this.inventory.has(itemId)) {
+//     console.warn('Cannot drop item, not found in inventory:', itemId);
+//     return;
+//   }
+  
+//   const item = this.inventory.get(itemId);
+//   console.log('Dropping inventory item:', item.prop);
+  
+//   // Create prop in the world at player's position
+//   const playerPos = this.camera.position.clone();
+  
+//   // Add a small offset in front of the player
+//   const direction = new THREE.Vector3();
+//   this.camera.getWorldDirection(direction);
+//   direction.multiplyScalar(1); // 1 unit in front
+//   playerPos.add(direction);
+  
+//   // Convert back to grid coordinates
+//   const gridX = Math.round((playerPos.x + this.boxWidth / 2) * 50);
+//   const gridY = Math.round((playerPos.z + this.boxDepth / 2) * 50);
+  
+//   // Create prop data
+//   const propData = {
+//     id: `dropped-${Date.now()}`,
+//     x: gridX,
+//     y: gridY,
+//     image: item.prop.image,
+//     name: item.prop.name,
+//     description: item.prop.description,
+//     scale: item.prop.scale || 1,
+//     height: 1
+//   };
+  
+//   // Create and add prop mesh
+//   this.createPropMesh(propData)
+//     .then(mesh => {
+//       this.scene.add(mesh);
+//       console.log('Dropped item added to scene at:', {x: gridX, y: gridY});
+//     })
+//     .catch(error => {
+//       console.error('Error creating dropped prop:', error);
+//     });
+  
+//   // Remove from inventory
+//   this.removeFromInventory(itemId);
+  
+//   // Show notification
+//   this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
+// }
+
+
+
+// horiz or vert drop code
+// Add to dropInventoryItem method in Scene3DController
+dropInventoryItem(itemId, placementType = 'vertical') {
   if (!this.inventory.has(itemId)) {
     console.warn('Cannot drop item, not found in inventory:', itemId);
     return;
@@ -2707,14 +3003,16 @@ dropInventoryItem(itemId) {
     name: item.prop.name,
     description: item.prop.description,
     scale: item.prop.scale || 1,
-    height: 1
+    height: placementType === 'horizontal' ? 0.05 : 1, // Lower height for horizontal items
+    isHorizontal: placementType === 'horizontal', // New flag for horizontal placement
+    rotation: 0
   };
   
   // Create and add prop mesh
   this.createPropMesh(propData)
     .then(mesh => {
       this.scene.add(mesh);
-      console.log('Dropped item added to scene at:', {x: gridX, y: gridY});
+      console.log('Dropped item added to scene at:', {x: gridX, y: gridY, placementType});
     })
     .catch(error => {
       console.error('Error creating dropped prop:', error);
@@ -2725,6 +3023,36 @@ dropInventoryItem(itemId) {
   
   // Show notification
   this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
+}
+
+// Add this method to Scene3DController
+checkWallInFront() {
+  const playerPos = this.camera.position;
+  const lookDirection = new THREE.Vector3();
+  this.camera.getWorldDirection(lookDirection);
+  
+  // Cast ray forward
+  const raycaster = new THREE.Raycaster(
+    playerPos,
+    lookDirection,
+    0,
+    2 // Check up to 2 units in front
+  );
+  
+  const walls = this.scene.children.filter(obj => obj.userData?.isWall);
+  const hits = raycaster.intersectObjects(walls);
+  
+  if (hits.length > 0) {
+    return {
+      hit: true,
+      wall: hits[0].object,
+      distance: hits[0].distance,
+      point: hits[0].point,
+      normal: hits[0].face?.normal || new THREE.Vector3(0, 0, -1)
+    };
+  }
+  
+  return { hit: false };
 }
 
 showPickupNotification(itemName) {
