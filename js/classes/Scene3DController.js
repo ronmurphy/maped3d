@@ -256,6 +256,7 @@ createPropMesh(propData) {
         mesh.userData = {
           type: 'prop',
           id: propData.id,
+          name: propData.name || 'Prop',
           isHorizontal: propData.isHorizontal || false
         };
 
@@ -1744,39 +1745,39 @@ createPropMesh(propData) {
           }
           break;
           
-        case "prop":
-          if (marker.data?.texture) {
-            console.log(`Processing prop marker: ${marker.id}`);
-            const propData = {
-              id: marker.id,
-              x: marker.x,
-              y: marker.y,
-              image: marker.data.texture.data,
-              rotation: marker.data.prop?.position?.rotation || 0,
-              scale: marker.data.prop?.scale || 1,
-              height: marker.data.prop?.height || 1,
-              isHorizontal: marker.data.prop?.isHorizontal || false,
-              name: marker.data.prop?.name || "Prop",
-              description: marker.data.prop?.description || "A mysterious item."
-            };
-            
-            // Create prop mesh and add to scene
-            propPromises.push(
-              this.createPropMesh(propData)
-                .then(mesh => {
-                  if (mesh) {
-                    this.scene.add(mesh);
-                    console.log(`Added prop mesh: ${marker.id}`);
-                  }
-                  return mesh;
-                })
-                .catch(error => {
-                  console.error(`Error creating prop ${marker.id}:`, error);
-                  return null;
-                })
-            );
-          }
-          break;
+          case "prop":
+            if (marker.data?.texture) {
+                console.log(`Processing prop marker: ${marker.id}`);
+                const propData = {
+                    id: marker.id,
+                    x: marker.x,
+                    y: marker.y,
+                    image: marker.data.texture.data,
+                    rotation: marker.data.prop?.position?.rotation || 0,
+                    scale: marker.data.prop?.scale || 1,
+                    height: marker.data.prop?.height || 1,
+                    isHorizontal: marker.data.prop?.isHorizontal || false,
+                    name: marker.data.texture.name || "Prop", // Include the name from the texture data
+                    description: marker.data.prop?.description || "A mysterious item."
+                };
+                
+                // Create prop mesh and add to scene
+                propPromises.push(
+                    this.createPropMesh(propData)
+                        .then(mesh => {
+                            if (mesh) {
+                                this.scene.add(mesh);
+                                console.log(`Added prop mesh: ${marker.id}`);
+                            }
+                            return mesh;
+                        })
+                        .catch(error => {
+                            console.error(`Error creating prop ${marker.id}:`, error);
+                            return null;
+                        })
+                );
+            }
+            break;
           
         case "teleport":
           console.log(`Processing teleport marker: ${marker.id}`);

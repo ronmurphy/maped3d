@@ -637,76 +637,94 @@ getSpecificTexture(category, criteria) {
   }
 
 
+    // async addTexture(file, category, subcategory) {
+    //     if (!file || !category) {
+    //         console.warn('Missing required parameters:', { file, category });
+    //         return null;
+    //     }
+
+    //     try {
+    //         console.log('Creating texture from file:', file);
+    //         // Create thumbnail and base64 data
+    //         const imageData = await this.createImageData(file);
+    //         const thumbnail = await this.createThumbnail(file);
+
+    //         const textureData = {
+    //             id: `${category}_${Date.now()}`,
+    //             name: file.name,
+    //             category,
+    //             subcategory,
+    //             data: imageData,
+    //             thumbnail,
+    //             dateAdded: new Date().toISOString()
+    //         };
+
+    //         console.log('Created texture data:', textureData);
+
+    //         // Store in appropriate category
+    //         if (!this.resources.textures[category]) {
+    //             this.resources.textures[category] = new Map();
+    //         }
+    //         this.resources.textures[category].set(textureData.id, textureData);
+
+    //         return textureData.id;
+    //     } catch (error) {
+    //         console.error('Error adding texture:', error);
+    //         return null;
+    //     }
+    // }
+
+
+
     async addTexture(file, category, subcategory) {
         if (!file || !category) {
             console.warn('Missing required parameters:', { file, category });
             return null;
         }
-
+    
         try {
             console.log('Creating texture from file:', file);
             // Create thumbnail and base64 data
             const imageData = await this.createImageData(file);
             const thumbnail = await this.createThumbnail(file);
-
-            const textureData = {
-                id: `${category}_${Date.now()}`,
-                name: file.name,
-                category,
-                subcategory,
-                data: imageData,
-                thumbnail,
-                dateAdded: new Date().toISOString()
-            };
-
+    
+            // Extract a clean name from the filename for props
+            let name = file.name;
+            if (category === 'props') {
+                // Remove file extension
+                name = name.replace(/\.[^.]+$/, '');
+                // Remove numbers and parentheses like (1), (2)
+                name = name.replace(/\s*\(\d+\)\s*$/, '');
+                // Convert to proper case (first letter capitalized)
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+            }
+    
+// In the addTexture method, add this line:
+const textureData = {
+    id: `${category}_${Date.now()}`,
+    name: name, // The cleaned name
+    originalFilename: file.name, // Always store the original filename
+    category,
+    subcategory,
+    data: imageData,
+    thumbnail,
+    dateAdded: new Date().toISOString()
+};
+    
             console.log('Created texture data:', textureData);
-
+    
             // Store in appropriate category
             if (!this.resources.textures[category]) {
                 this.resources.textures[category] = new Map();
             }
             this.resources.textures[category].set(textureData.id, textureData);
-
+    
             return textureData.id;
         } catch (error) {
             console.error('Error adding texture:', error);
             return null;
         }
     }
-
-
-
-    // async addSplashArt(file, description = '', category = 'title') {
-    //     if (!file) {
-    //         console.warn('No file provided for splash art');
-    //         return null;
-    //     }
-        
-    //     try {
-    //         // Create image data and thumbnail
-    //         const imageData = await this.createImageData(file);
-    //         const thumbnail = await this.createThumbnail(file);
-            
-    //         const splashArtData = {
-    //             id: `splashArt_${Date.now()}`,
-    //             name: file.name,
-    //             description: description,
-    //             category: category,
-    //             data: imageData,
-    //             thumbnail: thumbnail,
-    //             dateAdded: new Date().toISOString()
-    //         };
-            
-    //         // Store in splash art collection
-    //         this.resources.splashArt.set(splashArtData.id, splashArtData);
-    //         console.log('Added splash art:', splashArtData);
-            
-    //         return splashArtData.id;
-    //     } catch (error) {
-    //         console.error('Error adding splash art:', error);
-    //         return null;
-    //     }
-    // }
 
     async addSplashArt(file, description = '', category = 'title') {
         if (!file) {
@@ -1014,57 +1032,7 @@ updateGallery(drawer, category, view = 'grid') {
                     </sl-button-group>
                 </div>
             `;
-
-//             card.innerHTML = `
-//     ${view === 'grid' ? `
-//         <div class="sound-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-//             <div class="sound-icon" style="font-size: 48px; color: #666;">
-//                 <span class="material-icons">volume_up</span>
-//             </div>
-//             <div class="sound-info" style="text-align: center;">
-//                 <div class="sound-name" style="font-weight: bold;">${resource.name}</div>
-//                 <div class="sound-duration" style="color: #666; font-size: 0.9em;">
-//                     ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
-//                 </div>
-//             </div>
-//         </div>
-//         <div slot="footer" class="resource-actions" style="display: flex; flex-direction: column; gap: 8px;">
-//             <sl-button-group>
-//                 <sl-button size="small" class="play-btn">
-//                     <span class="material-icons">play_arrow</span>
-//                 </sl-button>
-//                 <sl-button size="small" class="delete-btn" variant="danger">
-//                     <span class="material-icons">delete</span>
-//                 </sl-button>
-//             </sl-button-group>
-//             <div class="sound-name" style="text-align: center; font-size: 0.9em;">${resource.name}</div>
-//         </div>
-//     ` : `
-//         <div style="display: flex; align-items: center; gap: 1rem;">
-//             <div class="sound-icon" style="font-size: 24px; color: #666;">
-//                 <span class="material-icons">volume_up</span>
-//             </div>
-//             <div class="sound-info">
-//                 <div class="sound-name">${resource.name}</div>
-//                 <div class="sound-duration" style="color: #666; font-size: 0.9em;">
-//                     ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
-//                 </div>
-//             </div>
-//         </div>
-//         <div slot="footer" class="resource-actions">
-//             <sl-button-group>
-//                 <sl-button size="small" class="play-btn">
-//                     <span class="material-icons">play_arrow</span>
-//                 </sl-button>
-//                 <sl-button size="small" class="delete-btn" variant="danger">
-//                     <span class="material-icons">delete</span>
-//                 </sl-button>
-//             </sl-button-group>
-//         </div>
-//     `}
-// `;
-            // Add sound-specific event listeners
-            
+        
             
             const playBtn = card.querySelector('.play-btn');
             playBtn.addEventListener('click', () => {
@@ -1091,52 +1059,109 @@ updateGallery(drawer, category, view = 'grid') {
 
         } else {
             // Handle existing texture/splashArt resources
+            // card.innerHTML = `
+            //     ${view === 'grid' ? `
+            //         <img 
+            //             src="${resource.thumbnail}" 
+            //             alt="${resource.name}"
+            //             class="resource-thumbnail"
+            //         />
+            //         <div class="resource-info">
+            //             <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+            //             <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
+            //             ${category === 'splashArt' && resource.description ? 
+            //                 `<div class="resource-description">${resource.description}</div>` : ''}
+            //         </div>
+            //     ` : `
+            //         <div style="display: flex; align-items: center; gap: 1rem;">
+            //             <img 
+            //                 src="${resource.thumbnail}" 
+            //                 alt="${resource.name}"
+            //                 class="resource-thumbnail"
+            //                 style="width: 50px; height: 50px;"
+            //             />
+            //             <div class="resource-info">
+            //             <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+            //                 <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
+            //                 ${category === 'splashArt' && resource.description ? 
+            //                     `<div class="resource-description">${resource.description}</div>` : ''}
+            //             </div>
+            //         </div>
+            //     `}
+            //     <div slot="footer" class="resource-actions">
+            //         <sl-button-group>
+            //             <sl-button size="small" class="preview-btn">
+            //                 <span class="material-icons">visibility</span>
+            //             </sl-button>
+            //             <sl-button size="small" class="delete-btn" variant="danger">
+            //                 <span class="material-icons">delete</span>
+            //             </sl-button>
+            //         </sl-button-group>
+            //     </div>
+            // `;
+
             card.innerHTML = `
-                ${view === 'grid' ? `
-                    <img 
-                        src="${resource.thumbnail}" 
-                        alt="${resource.name}"
-                        class="resource-thumbnail"
-                    />
-                    <div class="resource-info">
-                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
-                        <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
-                        ${category === 'splashArt' && resource.description ? 
-                            `<div class="resource-description">${resource.description}</div>` : ''}
-                    </div>
-                ` : `
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <img 
-                            src="${resource.thumbnail}" 
-                            alt="${resource.name}"
-                            class="resource-thumbnail"
-                            style="width: 50px; height: 50px;"
-                        />
-                        <div class="resource-info">
-                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
-                            <div class="resource-meta">${this.formatDate(resource.dateAdded)}</div>
-                            ${category === 'splashArt' && resource.description ? 
-                                `<div class="resource-description">${resource.description}</div>` : ''}
-                        </div>
-                    </div>
-                `}
-                <div slot="footer" class="resource-actions">
-                    <sl-button-group>
-                        <sl-button size="small" class="preview-btn">
-                            <span class="material-icons">visibility</span>
-                        </sl-button>
-                        <sl-button size="small" class="delete-btn" variant="danger">
-                            <span class="material-icons">delete</span>
-                        </sl-button>
-                    </sl-button-group>
-                </div>
-            `;
+    ${view === 'grid' ? `
+        <img 
+            src="${resource.thumbnail}" 
+            alt="${resource.name}"
+            class="resource-thumbnail"
+        />
+        <div class="resource-info">
+            <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+            <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+            ${resource.originalFilename ? 
+                `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+            ${category === 'splashArt' && resource.description ? 
+                `<div class="resource-description">${resource.description}</div>` : ''}
+        </div>
+    ` : `
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <img 
+                src="${resource.thumbnail}" 
+                alt="${resource.name}"
+                class="resource-thumbnail"
+                style="width: 50px; height: 50px;"
+            />
+            <div class="resource-info">
+                <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+                <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+                ${resource.originalFilename ? 
+                    `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+                ${category === 'splashArt' && resource.description ? 
+                    `<div class="resource-description">${resource.description}</div>` : ''}
+            </div>
+        </div>
+    `}
+    <div slot="footer" class="resource-actions">
+        <sl-button-group>
+            <sl-button size="small" class="preview-btn">
+                <span class="material-icons">visibility</span>
+            </sl-button>
+            ${category === 'props' ? `
+            <sl-button size="small" class="edit-name-btn">
+                <span class="material-icons">edit</span>
+            </sl-button>
+            ` : ''}
+            <sl-button size="small" class="delete-btn" variant="danger">
+                <span class="material-icons">delete</span>
+            </sl-button>
+        </sl-button-group>
+    </div>
+`;
 
             // Add preview button handler for non-sound resources
             card.querySelector('.preview-btn').addEventListener('click', () => {
                 this.showResourcePreview(resource);
             });
         }
+
+        if (category === 'props') {
+            card.querySelector('.edit-name-btn').addEventListener('click', () => {
+                this.showNameEditor(resource, category, id, card);
+            });
+        }
+        
 
         // Add delete button handler for all resource types
         card.querySelector('.delete-btn').addEventListener('click', () => {
@@ -1160,6 +1185,83 @@ updateGallery(drawer, category, view = 'grid') {
     });
 }
 
+showNameEditor(resource, category, id, cardElement) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Edit Prop Name';
+    
+    dialog.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <img src="${resource.thumbnail}" alt="${resource.name}" 
+                     style="width: 64px; height: 64px; object-fit: contain; border-radius: 4px;">
+                <div>
+                    <div style="font-weight: bold; margin-bottom: 4px;">Original Filename:</div>
+                    <div style="color: #666; font-style: italic;">${resource.originalFilename || resource.name}</div>
+                </div>
+            </div>
+            
+            <sl-input label="Prop Name" id="propName" value="${resource.name}"></sl-input>
+            
+            <div>
+                <div style="margin-bottom: 8px; color: #666;">
+                    <small>Enter a descriptive name for this prop. This name will be used throughout the application.</small>
+                </div>
+            </div>
+        </div>
+        
+        <div slot="footer">
+            <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+            <sl-button variant="primary" class="save-btn">Save Changes</sl-button>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.show();
+    
+    const nameInput = dialog.querySelector('#propName');
+    
+    // Focus the input when the dialog opens
+    dialog.addEventListener('sl-after-show', () => {
+        nameInput.focus();
+        // Select the text for easy editing
+        nameInput.select();
+    });
+    
+    // Handle save
+    dialog.querySelector('.save-btn').addEventListener('click', () => {
+        const newName = nameInput.value.trim();
+        
+        if (newName && newName !== resource.name) {
+            // Update the resource name
+            resource.name = newName;
+            
+            // Update UI
+            const nameElement = cardElement.querySelector('.resource-name');
+            if (nameElement) {
+                nameElement.textContent = newName;
+            }
+            
+            // If there's no originalFilename stored, store the current one
+            if (!resource.originalFilename) {
+                resource.originalFilename = resource.name;
+            }
+            
+            console.log(`Updated prop name: ${id} -> "${newName}"`);
+        }
+        
+        dialog.hide();
+    });
+    
+    // Handle cancel
+    dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+        dialog.hide();
+    });
+    
+    // Cleanup
+    dialog.addEventListener('sl-after-hide', () => {
+        dialog.remove();
+    });
+}
 
     formatDate(dateString) {
         const date = new Date(dateString);
