@@ -22,6 +22,10 @@ class Scene3DController {
     this.pickupPrompt = null;
     this.inventoryDrawer = null;
     this.isInventoryShowing = false;
+    this.stats = null; // FPS Counter
+    this.showStats = false;
+    this.isInitializingStats = false; // Add this flag
+    this.lastStatsToggle = 0; // For debouncing
     this.setupInventorySystem();
     this.clear();
   }
@@ -131,9 +135,192 @@ class Scene3DController {
         }
       });
     }
+
+    if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
+      this.stats.dom.parentNode.removeChild(this.stats.dom);
+      this.stats = null;
+    }
   
     this.clear();
   }
+
+// Method to initialize Stats
+initStats() {
+  // Skip if already initialized or initialization in progress
+  if (this.stats || this.isInitializingStats) return;
+  
+  // Set flag to prevent multiple initializations
+  this.isInitializingStats = true;
+  
+  try {
+    // Create a script element to load the local Stats.js
+    const script = document.createElement('script');
+    script.src = '/js/libs/stats.min.js'; // Adjust path if needed
+    
+    script.onload = () => {
+      try {
+        this.stats = new Stats();
+        this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+        
+        // Style the stats panel
+        this.stats.dom.style.position = 'absolute';
+        this.stats.dom.style.top = '56px';
+        this.stats.dom.style.left = '10px';
+        this.stats.dom.style.zIndex = '1000';
+        
+        // Important: Set display AFTER creating dom element
+        this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+        
+        // Add to DOM
+        const container = document.querySelector('.drawer-3d-view');
+        if (container) {
+          container.appendChild(this.stats.dom);
+        } else {
+          document.body.appendChild(this.stats.dom);
+        }
+        
+        console.log('FPS counter initialized (using Stats.js)');
+      } catch (err) {
+        console.error('Error initializing Stats panel:', err);
+        this.createSimpleFPSCounter(); // Fallback to simple counter
+      } finally {
+        this.isInitializingStats = false; // Reset flag when done
+      }
+    };
+    
+    script.onerror = () => {
+      console.error('Failed to load Stats.js from local path');
+      this.createSimpleFPSCounter(); // Fallback to simple counter
+      this.isInitializingStats = false; // Reset flag on error
+    };
+    
+    document.head.appendChild(script);
+  } catch (err) {
+    console.error('Error loading Stats.js:', err);
+    this.createSimpleFPSCounter(); // Fallback to simple counter
+    this.isInitializingStats = false; // Reset flag on error
+  }
+}
+
+// Fallback method to create a simple FPS counter
+createSimpleFPSCounter() {
+  console.log('Creating simple FPS counter as fallback');
+  
+  // Create a simple FPS counter as a DOM element
+  this.stats = {
+    dom: document.createElement('div'),
+    lastTime: performance.now(),
+    frames: 0,
+    fps: 0,
+    
+    begin: function() {
+      this.startTime = performance.now();
+    },
+    
+    end: function() {
+      const time = performance.now();
+      this.frames++;
+      
+      // Update FPS every second
+      if (time >= this.lastTime + 1000) {
+        this.fps = Math.round((this.frames * 1000) / (time - this.lastTime));
+        this.lastTime = time;
+        this.frames = 0;
+        this.fpsText.textContent = `${this.fps} FPS`;
+      }
+      
+      // Update MS counter every frame
+      const frameTime = time - this.startTime;
+      this.msText.textContent = `${frameTime.toFixed(1)} ms`;
+    }
+  };
+  
+  // Style the counter
+  this.stats.dom.style.cssText = `
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #0ff;
+    padding: 5px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 1000;
+    border-radius: 3px;
+    width: 80px;
+    text-align: center;
+  `;
+  
+  // Create the text elements
+  this.stats.fpsText = document.createElement('div');
+  this.stats.fpsText.textContent = '0 FPS';
+  this.stats.dom.appendChild(this.stats.fpsText);
+  
+  this.stats.msText = document.createElement('div');
+  this.stats.msText.textContent = '0 ms';
+  this.stats.dom.appendChild(this.stats.msText);
+  
+  // Initially hide or show based on the setting
+  this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+  
+  // Add to DOM
+  const container = document.querySelector('.drawer-3d-view');
+  if (container) {
+    container.appendChild(this.stats.dom);
+  } else {
+    document.body.appendChild(this.stats.dom);
+  }
+}
+
+// Toggle stats visibility
+toggleStats() {
+  // Debounce toggling (prevent multiple toggles within 500ms)
+  const now = Date.now();
+  if (now - this.lastStatsToggle < 500) {
+    return;
+  }
+  this.lastStatsToggle = now;
+  
+  // Initialize if needed
+  if (!this.stats && !this.isInitializingStats) {
+    // Set initial state to visible since we're explicitly toggling
+    this.showStats = true;
+    this.initStats();
+    return;
+  }
+  
+  // Only toggle if initialization is complete
+  if (this.stats && !this.isInitializingStats) {
+    this.showStats = !this.showStats;
+    if (this.stats.dom) {
+      this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+      console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'}`);
+    }
+  }
+}
+  
+  createStatsPanel() {
+    this.stats = new Stats();
+    
+    // Configure stats panel
+    this.stats.dom.style.position = 'absolute';
+    this.stats.dom.style.top = '10px';
+    this.stats.dom.style.left = '10px';
+    this.stats.dom.style.zIndex = '1000';
+    this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+    
+    // Add panel to DOM (preferably to the 3D container)
+    const container = document.querySelector('.drawer-3d-view');
+    if (container) {
+      container.appendChild(this.stats.dom);
+    } else {
+      document.body.appendChild(this.stats.dom);
+    }
+    
+    console.log('FPS counter initialized');
+  }
+
+
 
 
   initializeWithData(data) {
@@ -276,7 +463,6 @@ class Scene3DController {
 
 createPropMesh(propData) {
   console.log(`Creating prop mesh with ID: ${propData.id}`);
-
 
   return new Promise((resolve, reject) => {
     const textureLoader = new THREE.TextureLoader();
@@ -618,6 +804,14 @@ createPropMesh(propData) {
       case "KeyD":
         this.moveState.right = true;
         break;
+      case "KeyP": // P for FPS toggle
+        if (!event.repeat &&
+          !(document.activeElement instanceof HTMLInputElement) &&
+          !(document.activeElement instanceof HTMLTextAreaElement)) {
+          event.preventDefault(); // Prevent any default behavior
+          this.toggleStats();
+        }
+    break;
       case "ShiftLeft":
         this.moveState.shiftHeld = true;
         this.moveState.sprint = true;
@@ -2557,10 +2751,16 @@ addToInventory(prop) {
     cursor: pointer;
     font-size: 0.8em;
   `;
+  // useButton.onclick = (e) => {
+  //   e.stopPropagation();
+  //   this.useInventoryItem(prop.id);
+  // };
+
   useButton.onclick = (e) => {
     e.stopPropagation();
-    this.useInventoryItem(prop.id);
+    this.showItemDetails(prop);  // Call showItemDetails instead of useInventoryItem
   };
+
   itemElement.appendChild(useButton);
   
   // Click handler for item details
@@ -2694,6 +2894,8 @@ useInventoryItem(itemId) {
   this.showNotification(`Used ${item.prop.name || 'Item'}`);
 }
 
+
+
 // showItemDetails(prop) {
 //   console.log('Showing details for item:', prop);
   
@@ -2770,6 +2972,7 @@ useInventoryItem(itemId) {
 
 
 // modified code
+// Add this method to Scene3DController class
 showItemDetails(prop) {
   console.log('Showing details for item:', prop);
   
@@ -2972,6 +3175,7 @@ getWallRotation(normal) {
 
 // horiz or vert drop code
 // Add to dropInventoryItem method in Scene3DController
+// Add to dropInventoryItem method in Scene3DController
 dropInventoryItem(itemId, placementType = 'vertical') {
   if (!this.inventory.has(itemId)) {
     console.warn('Cannot drop item, not found in inventory:', itemId);
@@ -3025,6 +3229,55 @@ dropInventoryItem(itemId, placementType = 'vertical') {
   this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
 }
 
+// Add this new method for wall placement
+placeItemOnWall(itemId, wallInfo) {
+  if (!this.inventory.has(itemId) || !wallInfo.hit) {
+    return;
+  }
+  
+  const item = this.inventory.get(itemId);
+  
+  // Create prop data for wall placement
+  const propData = {
+    id: `wall-${Date.now()}`,
+    x: wallInfo.point.x * 50 + this.boxWidth * 25, // Convert to grid coordinates
+    y: wallInfo.point.z * 50 + this.boxDepth * 25,
+    image: item.prop.image,
+    name: item.prop.name,
+    description: item.prop.description,
+    scale: item.prop.scale || 1,
+    height: wallInfo.point.y, // Place at hit point height
+    rotation: this.getWallRotation(wallInfo.normal), // Align with wall
+    isWallMounted: true, // New flag
+    wallNormal: wallInfo.normal.clone() // Store for future reference
+  };
+  
+  this.createPropMesh(propData)
+    .then(mesh => {
+      // Position slightly away from wall to prevent z-fighting
+      const normalOffset = wallInfo.normal.clone().multiplyScalar(0.05);
+      mesh.position.add(normalOffset);
+      
+      this.scene.add(mesh);
+      console.log('Placed item on wall:', propData);
+    })
+    .catch(error => {
+      console.error('Error creating wall prop:', error);
+    });
+  
+  this.removeFromInventory(itemId);
+  this.showNotification(`Placed ${item.prop.name} on wall`);
+}
+
+// Helper to get rotation from wall normal
+getWallRotation(normal) {
+  // Calculate rotation to face away from wall
+  // For a normal pointing in -Z, we want 0 degrees
+  // For a normal pointing in +X, we want 90 degrees, etc.
+  return Math.atan2(normal.x, normal.z) * (180/Math.PI);
+}
+
+// Add this method to Scene3DController
 // Add this method to Scene3DController
 checkWallInFront() {
   const playerPos = this.camera.position;
@@ -3148,18 +3401,22 @@ animate = () => {
     this.renderer.render(this.scene, this.camera);
     return;
   }
+  // fps counter
+  if (this.stats && this.showStats) {
+    this.stats.begin();
+  }
 
-  // In your animate method, check for duplicate meshes
-const propMeshes = this.scene.children.filter(child => 
-  child.userData && child.userData.type === 'prop'
-);
+//   // In your animate method, check for duplicate meshes
+// const propMeshes = this.scene.children.filter(child => 
+//   child.userData && child.userData.type === 'prop'
+// );
 
-const propIds = propMeshes.map(mesh => mesh.userData.id);
-const duplicateProps = propIds.filter((id, index) => propIds.indexOf(id) !== index);
+// const propIds = propMeshes.map(mesh => mesh.userData.id);
+// const duplicateProps = propIds.filter((id, index) => propIds.indexOf(id) !== index);
 
-if (duplicateProps.length > 0) {
-  console.warn('[ANIMATE] Found duplicate prop meshes in scene:', duplicateProps);
-}
+// if (duplicateProps.length > 0) {
+//   console.warn('[ANIMATE] Found duplicate prop meshes in scene:', duplicateProps);
+// }
 
   const currentSpeed = this.moveState.speed;
   let canMove = true;
@@ -3283,6 +3540,10 @@ if (duplicateProps.length > 0) {
   // Update physics and camera height
   this.camera.position.y = this.physics.update();
   this.renderer.render(this.scene, this.camera);
+
+  if (this.stats && this.showStats) {
+    this.stats.end();
+  }
 };
 
 
@@ -3448,6 +3709,10 @@ createLandingEffect(position) {
       // const { animate, controls, cleanup } = this.init3DScene(updateStatus);
       const { animate, controls } = this.init3DScene(updateStatus);
 
+      // Initialize stats (but keep hidden by default)
+this.showStats = false;
+this.initStats();
+
       // Instructions overlay
       const instructions = document.createElement("div");
       instructions.style.cssText = `
@@ -3470,6 +3735,7 @@ createLandingEffect(position) {
             C to toggle wall clipping<br>
             I for inventory<br>
             E as the Action key<br>
+            P for FPS stats<br>
             ESC to exit
         `;
       container.appendChild(instructions);
