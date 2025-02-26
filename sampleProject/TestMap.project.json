@@ -1,0 +1,19 @@
+{
+  "name": "TestMap",
+  "version": "1.0",
+  "timestamp": "2025-02-25T03:18:54.825Z",
+  "resources": {
+    "filename": "TestMap.resource.json",
+    "relativePath": "./",
+    "lastModified": "2025-02-25T03:18:54.825Z"
+  },
+  "map": {
+    "filename": "TestMap.map.json",
+    "relativePath": "./",
+    "lastModified": "2025-02-25T03:18:54.825Z"
+  },
+  "settings": {
+    "defaultView": "2D",
+    "autoSave": false
+  }
+}
