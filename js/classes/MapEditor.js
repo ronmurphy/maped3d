@@ -6111,65 +6111,34 @@ environmentSection.innerHTML = `
   const hardwareTestProgress = dialog.querySelector('#hardwareTestProgress');
   const qualityLevelSpan = dialog.querySelector('#qualityLevel');
   
-  // detectHardwareBtn.addEventListener('click', async () => {
-  //   detectHardwareBtn.disabled = true;
-  //   hardwareTestProgress.style.display = 'block';
-  //   qualityLevelSpan.textContent = 'Testing...';
-    
-  //   try {
-  //     // Run hardware detection
-  //     const result = await this.runHardwareTest();
-      
-  //     // Update UI with result
-  //     qualityLevelSpan.textContent = result.qualityLevel.charAt(0).toUpperCase() + result.qualityLevel.slice(1);
-  //     qualityLevelSpan.style.color = {
-  //       low: '#FF9800',
-  //       medium: '#2196F3',
-  //       high: '#4CAF50'
-  //     }[result.qualityLevel] || '#4CAF50';
-      
-  //     // Update quality preset dropdown
-  //     dialog.querySelector('#qualityPreset').value = 'auto';
-  //   } catch (error) {
-  //     console.error('Hardware test failed:', error);
-  //     qualityLevelSpan.textContent = 'Test Failed';
-  //     qualityLevelSpan.style.color = '#F44336';
-  //   } finally {
-  //     detectHardwareBtn.disabled = false;
-  //     hardwareTestProgress.style.display = 'none';
-  //   }
-  // });
-
   detectHardwareBtn.addEventListener('click', async () => {
-    hardwareTestProgress.style.display = 'block';
     detectHardwareBtn.disabled = true;
+    hardwareTestProgress.style.display = 'block';
     qualityLevelSpan.textContent = 'Testing...';
-
+    
     try {
-        // Delegate to Scene3DController
-        const result = await this.scene3D.detectHardwareCapabilities();
-        
-        qualityLevelSpan.textContent = result.quality;
-        qualityLevelSpan.style.color = {
-            high: '#4CAF50',
-            medium: '#FF9800',
-            low: '#f44336'
-        }[result.quality];
-
-        // Update detected quality in preferences
-        const prefs = this.getPreferences();
-        prefs.detectedQuality = result.quality;
-        localStorage.setItem('appPreferences', JSON.stringify(prefs));
-
+      // Run hardware detection
+      const result = await this.runHardwareTest();
+      
+      // Update UI with result
+      qualityLevelSpan.textContent = result.qualityLevel.charAt(0).toUpperCase() + result.qualityLevel.slice(1);
+      qualityLevelSpan.style.color = {
+        low: '#FF9800',
+        medium: '#2196F3',
+        high: '#4CAF50'
+      }[result.qualityLevel] || '#4CAF50';
+      
+      // Update quality preset dropdown
+      dialog.querySelector('#qualityPreset').value = 'auto';
     } catch (error) {
-        console.error('Hardware test failed:', error);
-        qualityLevelSpan.textContent = 'Test Failed';
-        qualityLevelSpan.style.color = '#f44336';
+      console.error('Hardware test failed:', error);
+      qualityLevelSpan.textContent = 'Test Failed';
+      qualityLevelSpan.style.color = '#F44336';
     } finally {
-        hardwareTestProgress.style.display = 'none';
-        detectHardwareBtn.disabled = false;
+      detectHardwareBtn.disabled = false;
+      hardwareTestProgress.style.display = 'none';
     }
-});
+  });
   
   // Button handlers
   dialog.querySelector('#resetDefaults').addEventListener('click', () => {
