@@ -27,6 +27,7 @@ class Scene3DController {
     this.showStats = false;
     this.isInitializingStats = false; // Add this flag
     this.lastStatsToggle = 0; // For debouncing
+    this.lastKeyPresses = {}; // For debouncing key presses
     this.renderDistance = 100; // Default render distance
 this.textureMultiplier = 1.0; // Default texture resolution multiplier
 this.physics = { 
@@ -943,6 +944,13 @@ createPropMesh(propData) {
       case "KeyD":
         this.moveState.right = true;
         break;
+      case "KeyL": // L for Light toggle
+        const nowL = Date.now();
+        if (!event.repeat && (!this.lastKeyPresses.h || nowL - this.lastKeyPresses.h > 500)) {
+          this.lastKeyPresses.h = now;
+          this.addPlayerLight(!this.playerLight);
+        }
+        break;
       case "KeyP": // P for FPS toggle
         if (!event.repeat &&
           !(document.activeElement instanceof HTMLInputElement) &&
@@ -950,7 +958,23 @@ createPropMesh(propData) {
           event.preventDefault(); // Prevent any default behavior
           this.toggleStats();
         }
-    break;
+        break;
+        case "KeyH": // H for Toggle lighting
+        // Debounce key press (500ms cooldown)
+        const now = Date.now();
+        if (!event.repeat && (!this.lastKeyPresses.h || now - this.lastKeyPresses.h > 500)) {
+          this.lastKeyPresses.h = now;
+          this.setLightingEnabled(!this.lightingEnabled);
+          this.showNotification(`Advanced lighting ${this.lightingEnabled ? 'enabled' : 'disabled'}`);
+        }
+        break;
+        case "KeyG":
+          const nowG = Date.now();
+          if (!event.repeat && (!this.lastKeyPresses.h || nowG - this.lastKeyPresses.h > 500)) {
+            this.lastKeyPresses.h = now;
+            this.showPreferencesDialog(); // this.showPreferencesDialog();
+          }
+        break;
       case "ShiftLeft":
         this.moveState.shiftHeld = true;
         this.moveState.sprint = true;
@@ -974,15 +998,15 @@ createPropMesh(propData) {
           this.updateWallClipping();
         }
         break;
-      case "KeyG":
-        if (!this.showDemoEffects) {
-          this.visualEffects.createDemoEffects();
-          this.showDemoEffects = true;
-        } else {
-          this.visualEffects.disposeDemoEffects();
-          this.showDemoEffects = false;
-        }
-        break;
+      // case "KeyG":
+      //   if (!this.showDemoEffects) {
+      //     this.visualEffects.createDemoEffects();
+      //     this.showDemoEffects = true;
+      //   } else {
+      //     this.visualEffects.disposeDemoEffects();
+      //     this.showDemoEffects = false;
+      //   }
+      //   break;
       case "KeyI":
         this.toggleInventory();
         break;
@@ -3650,6 +3674,10 @@ animate = () => {
   // this.renderer.render(this.scene, this.camera);
 
 
+  if (this.playerLight) {
+    this.playerLight.position.copy(this.camera.position);
+  }
+
   if (this.visualEffects) {
     const time = performance.now() * 0.001;
     const deltaTime = time - (this.lastTime || time);
@@ -3743,6 +3771,7 @@ createLandingEffect(position) {
 
 
 // Add this method to Scene3DController
+// In loadPreferences method
 loadPreferences() {
   try {
     // Load preferences from localStorage
@@ -3765,6 +3794,10 @@ loadPreferences() {
         ambientOcclusion: this.preferences.ambientOcclusion
       });
       
+      // Apply lighting toggle
+      const lightingEnabled = this.preferences.disableLighting !== true;
+      this.setLightingEnabled(lightingEnabled);
+      
       // Apply movement speed
       if (this.moveState) {
         this.moveState.baseSpeed = 0.025 * (this.preferences.movementSpeed || 1.0);
@@ -3772,7 +3805,7 @@ loadPreferences() {
           this.moveState.baseSpeed * 2 : this.moveState.baseSpeed;
       }
       
-      console.log(`Loaded preferences with quality level: ${qualityLevel}`);
+      console.log(`Loaded preferences with quality level: ${qualityLevel}, lighting: ${lightingEnabled ? 'enabled' : 'disabled'}`);
     }
   } catch (error) {
     console.error("Error loading preferences:", error);
@@ -5401,6 +5434,120 @@ initializeTorches() {
   }
 }
 
+addPlayerLight(enabled = true) {
+  // Remove any existing player light
+  if (this.playerLight) {
+    this.scene.remove(this.playerLight);
+    this.playerLight = null;
+  }
+  
+  if (!enabled) return;
+  
+  // Create a point light that follows the player
+  const light = new THREE.PointLight(0xffffff, 0.7, 10); // Color, intensity, distance
+  light.position.copy(this.camera.position);
+  
+  // Optional shadow settings
+  if (this.renderer.shadowMap.enabled) {
+    light.castShadow = true;
+    light.shadow.mapSize.width = 512;
+    light.shadow.mapSize.height = 512;
+    light.shadow.bias = -0.002;
+  }
+  
+  this.playerLight = light;
+  this.scene.add(light);
+  console.log("Player light added");
+  
+  // Update helper text to show light is enabled
+  this.showNotification("Player light enabled");
+}
+
+setLightingEnabled(enabled) {
+  // Flip the boolean since we're using "disable lighting" in the UI
+  const disableLighting = !enabled;
+  
+  console.log(`${disableLighting ? 'Disabling' : 'Enabling'} advanced lighting effects`);
+  
+  // 1. Adjust ambient light intensity
+  this.scene.traverse(obj => {
+    if (obj.isAmbientLight) {
+      obj.intensity = disableLighting ? 1.2 : 0.5; // Brighter when disabled
+      obj.castShadow = false; // Ambient lights can't cast shadows
+    }
+    
+    // Make point lights less intense when simple lighting is enabled
+    if ((obj.isPointLight || obj.isSpotLight) && obj !== this.playerLight) {
+      obj.intensity = disableLighting ? 0.3 : 1.0;
+    }
+  });
+  
+  // 2. Adjust material properties for better visibility
+  this.scene.traverse(obj => {
+    if (obj.material) {
+      const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+      
+      materials.forEach(mat => {
+        // Only affect standard materials, not basic ones
+        if (mat.isMeshStandardMaterial) {
+          // Make materials brighter when lighting is disabled
+          if (disableLighting) {
+            // Store original values if not already stored
+            if (!mat.userData) mat.userData = {};
+            if (mat.userData.originalEmissive === undefined && mat.emissive) {
+              mat.userData.originalEmissive = mat.emissive.clone();
+            }
+            if (mat.userData.originalEmissiveIntensity === undefined) {
+              mat.userData.originalEmissiveIntensity = mat.emissiveIntensity || 0;
+            }
+            
+            // Brighten materials by adding emissive component
+            if (mat.color) {
+              // Add slight emissive glow based on color
+              mat.emissive = mat.color.clone().multiplyScalar(0.3);
+              mat.emissiveIntensity = 0.5;
+            }
+          } 
+          else if (mat.userData && mat.userData.originalEmissive) {
+            // Restore original values
+            mat.emissive = mat.userData.originalEmissive;
+            mat.emissiveIntensity = mat.userData.originalEmissiveIntensity;
+          }
+        }
+      });
+    }
+  });
+  
+  // 3. Disable visual effects if applicable
+  if (this.visualEffects) {
+    this.visualEffects.effectsEnabled = enabled;
+  }
+  
+  // 4. Disable fog when lighting is disabled
+  if (this.scene.fog) {
+    if (disableLighting) {
+      // Store original fog settings
+      if (!this.savedFog) {
+        this.savedFog = {
+          near: this.scene.fog.near,
+          far: this.scene.fog.far,
+          color: this.scene.fog.color.clone()
+        };
+      }
+      // Reduce fog drastically
+      this.scene.fog.near = this.renderDistance * 0.8;
+      this.scene.fog.far = this.renderDistance * 1.2;
+    } else if (this.savedFog) {
+      // Restore fog settings
+      this.scene.fog.near = this.savedFog.near;
+      this.scene.fog.far = this.savedFog.far;
+      this.scene.fog.color.copy(this.savedFog.color);
+    }
+  }
+  
+  // Store the setting
+  this.lightingEnabled = enabled;
+}
 
 // Add this method to Scene3DController to create some test torches
 createDemoEffects() {

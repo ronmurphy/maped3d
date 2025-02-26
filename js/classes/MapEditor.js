@@ -6021,6 +6021,21 @@ showPreferencesDialog() {
       <sl-switch id="ambientOcclusion">Ambient Occlusion</sl-switch>
     </div>
   `;
+  // In the graphicsSection of showPreferencesDialog method, add this after quality preset
+const lightingControls = document.createElement('div');
+lightingControls.innerHTML = `
+  <sl-divider></sl-divider>
+  
+  <div style="margin-top: 16px;">
+    <h4 style="margin-top: 0; margin-bottom: 8px;">Lighting Options</h4>
+    
+    <sl-switch id="disableLighting">Disable Advanced Lighting</sl-switch>
+    <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+      Use simple lighting for better visibility (but less atmosphere)
+    </div>
+  </div>
+`;
+graphicsSection.appendChild(lightingControls);
   
   // 2. Display Settings
   const displaySection = document.createElement('div');
@@ -6131,6 +6146,7 @@ loadPreferencesIntoDialog(dialog) {
   dialog.querySelector('#antialiasEnabled').checked = prefs.antialiasEnabled;
   dialog.querySelector('#hqTextures').checked = prefs.hqTextures;
   dialog.querySelector('#ambientOcclusion').checked = prefs.ambientOcclusion;
+  dialog.querySelector('#disableLighting').checked = prefs.disableLighting || false;
   dialog.querySelector('#showFps').checked = prefs.showFps;
   dialog.querySelector('#showStats').checked = prefs.showStats;
   dialog.querySelector('#movementSpeed').value = prefs.movementSpeed;
@@ -6155,6 +6171,7 @@ savePreferencesFromDialog(dialog) {
     antialiasEnabled: dialog.querySelector('#antialiasEnabled').checked,
     hqTextures: dialog.querySelector('#hqTextures').checked,
     ambientOcclusion: dialog.querySelector('#ambientOcclusion').checked,
+    disableLighting: dialog.querySelector('#disableLighting').checked,
     showFps: dialog.querySelector('#showFps').checked,
     showStats: dialog.querySelector('#showStats').checked,
     movementSpeed: parseFloat(dialog.querySelector('#movementSpeed').value),
@@ -6174,6 +6191,7 @@ resetPreferencesToDefaults(dialog) {
     antialiasEnabled: true,
     hqTextures: true,
     ambientOcclusion: false,
+    disableLighting: false,
     showFps: false,
     showStats: false,
     movementSpeed: 1.0,
@@ -6186,6 +6204,7 @@ resetPreferencesToDefaults(dialog) {
   dialog.querySelector('#antialiasEnabled').checked = defaults.antialiasEnabled;
   dialog.querySelector('#hqTextures').checked = defaults.hqTextures;
   dialog.querySelector('#ambientOcclusion').checked = defaults.ambientOcclusion;
+  dialog.querySelector('#disableLighting').checked = defaults.disableLighting;
   dialog.querySelector('#showFps').checked = defaults.showFps;
   dialog.querySelector('#showStats').checked = defaults.showStats;
   dialog.querySelector('#movementSpeed').value = defaults.movementSpeed;
