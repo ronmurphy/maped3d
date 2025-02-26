@@ -1007,7 +1007,7 @@ createPropMesh(propData) {
       //     this.showDemoEffects = false;
       //   }
       //   break;
-      case "KeyI":
+      case "Backslash":
         this.toggleInventory();
         break;
       case "KeyE":
@@ -3962,11 +3962,11 @@ if (!this.visualEffects) {
             pointer-events: none;
         `;
       instructions.innerHTML = `
-            Click to start<br>
+            Click to Start<br>
             WASD or Arrow Keys to move<br>
-            Hold Shift to sprint<br>
-            C to toggle wall clipping<br>
-            I for inventory<br>
+            Hold Shift or Right Mouse Button to sprint<br>
+            ~ to open Config<br>
+            | for inventory<br>
             E as the Action key<br>
             P for FPS stats<br>
             ESC to exit
@@ -5444,7 +5444,7 @@ addPlayerLight(enabled = true) {
   if (!enabled) return;
   
   // Create a point light that follows the player
-  const light = new THREE.PointLight(0xffffff, 0.9, 3); // Color, intensity, distance
+  const light = new THREE.PointLight(0xffffff, 0.9, 2); // Color, intensity, distance
   light.position.copy(this.camera.position);
   
   // Optional shadow settings
