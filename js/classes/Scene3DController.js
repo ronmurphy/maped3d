@@ -124,87 +124,352 @@ this.addPlayerLight();
     }
   }
 
+  // cleanup() {
+  //   this.isActive = false;
+  
+  //   if (this.animationFrameId) {
+  //     cancelAnimationFrame(this.animationFrameId);
+  //   }
+  
+  //   // Clean up teleport prompt
+  //   if (this.teleportPrompt) {
+  //     this.teleportPrompt.remove();
+  //     this.teleportPrompt = null;
+  //   }
+  //   this.activeTeleporter = null;
+
+  //     // Clean up door prompt
+  // if (this.doorPrompt) {
+  //   this.doorPrompt.remove();
+  //   this.doorPrompt = null;
+  // }
+  // this.activeDoor = null;
+  
+  //   if (this.renderer) {
+  //     this.renderer.dispose();
+  //     if (this.renderer.domElement?.parentNode) {
+  //       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+  //     }
+  //   }
+  
+  //   if (this.controls) {
+  //     this.controls.dispose();
+  //   }
+  
+  //   if (this.keyHandlers.keydown) {
+  //     document.removeEventListener("keydown", this.keyHandlers.keydown);
+  //   }
+  //   if (this.keyHandlers.keyup) {
+  //     document.removeEventListener("keyup", this.keyHandlers.keyup);
+  //   }
+  
+  //   // Clean up all scene objects
+  //   if (this.scene) {
+  //     this.scene.traverse((object) => {
+  //       if (object.geometry) {
+  //         object.geometry.dispose();
+  //       }
+  //       if (object.material) {
+  //         if (Array.isArray(object.material)) {
+  //           object.material.forEach(material => material.dispose());
+  //         } else {
+  //           object.material.dispose();
+  //         }
+  //       }
+  //     });
+  //   }
+
+  //   if (this.dayNightCycle) {
+  //     this.dayNightCycle.dispose();
+  //     this.dayNightCycle = null;
+  //   }
+
+  //     // Dispose visual effects
+  //     if (this.visualEffects) {
+  //       this.visualEffects.dispose();
+  //       this.visualEffects = null;
+  //     }
+
+  //   if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
+  //     this.stats.dom.parentNode.removeChild(this.stats.dom);
+  //     this.stats = null;
+  //   }
+  //     // Remove quality indicator if it exists
+  // if (this.qualityIndicator && this.qualityIndicator.parentNode) {
+  //   this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
+  //   this.qualityIndicator = null;
+  // }
+  
+  //   this.clear();
+  // }
+
+  // Add this helper method to your class
+
   cleanup() {
     this.isActive = false;
-  
+    
+    // Cancel animation frame first
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
     }
-  
+    
     // Clean up teleport prompt
     if (this.teleportPrompt) {
       this.teleportPrompt.remove();
       this.teleportPrompt = null;
     }
     this.activeTeleporter = null;
-
-      // Clean up door prompt
-  if (this.doorPrompt) {
-    this.doorPrompt.remove();
-    this.doorPrompt = null;
-  }
-  this.activeDoor = null;
   
+    // Clean up door prompt
+    if (this.doorPrompt) {
+      this.doorPrompt.remove();
+      this.doorPrompt = null;
+    }
+    this.activeDoor = null;
+    
+    // Clean up FPS monitor if active
+    if (this._fpsMonitor && this._fpsMonitor.parentNode) {
+      this._fpsMonitor.parentNode.removeChild(this._fpsMonitor);
+      this._fpsMonitor = null;
+    }
+    this._fpsMonitorActive = false;
+    
+    // Reset FPS limiter
+    this.fpsLimit = 0;
+    this.fpsInterval = 0;
+    this.lastFrameTime = 0;
+    if (this._originalAnimate) {
+      // Restore original animate function
+      this.animate = this._originalAnimate;
+      this._originalAnimate = null;
+    }
+    
+    // Clean up any UI elements
+    document.querySelectorAll('.time-control-button, .flashlight-button').forEach(el => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+    
+    // Clean up day/night cycle
+    if (this.dayNightCycle) {
+      this.dayNightCycle.dispose();
+      this.dayNightCycle = null;
+    }
+    
+    // Dispose of player light
+    if (this.playerLight) {
+      if (this.camera) this.camera.remove(this.playerLight);
+      this.playerLight.dispose();
+      this.playerLight = null;
+    }
+    
+    // Clean up renderer
     if (this.renderer) {
       this.renderer.dispose();
-      if (this.renderer.domElement?.parentNode) {
+      
+      // Also explicitly dispose of renderer's internal caches
+      if (this.renderer.info) {
+        console.log('Renderer memory before cleanup:', JSON.stringify(this.renderer.info.memory));
+      }
+      
+      // Force texture disposal
+      THREE.Cache.clear();
+      
+      if (this.renderer.domElement && this.renderer.domElement.parentNode) {
         this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
       }
+      this.renderer = null;
     }
-  
+    
+    // Clean up controls
     if (this.controls) {
       this.controls.dispose();
+      this.controls = null;
     }
-  
+    
+    // Remove event listeners
     if (this.keyHandlers.keydown) {
       document.removeEventListener("keydown", this.keyHandlers.keydown);
     }
     if (this.keyHandlers.keyup) {
       document.removeEventListener("keyup", this.keyHandlers.keyup);
     }
-  
+    
     // Clean up all scene objects
     if (this.scene) {
+      // Log scene object count before cleanup
+      let objectCount = 0;
+      this.scene.traverse(() => objectCount++);
+      console.log(`Cleaning up scene with ${objectCount} objects`);
+      
+      // Dispose of all objects with geometries and materials
       this.scene.traverse((object) => {
+        // Skip already disposed objects
+        if (!object.visible && object.userData && object.userData.__disposed) return;
+        
         if (object.geometry) {
           object.geometry.dispose();
         }
+        
         if (object.material) {
           if (Array.isArray(object.material)) {
-            object.material.forEach(material => material.dispose());
+            object.material.forEach(material => this.disposeMaterial(material));
           } else {
-            object.material.dispose();
+            this.disposeMaterial(object.material);
           }
         }
+        
+        // Mark as disposed
+        if (object.userData) object.userData.__disposed = true;
       });
-    }
-
-    if (this.dayNightCycle) {
-      this.dayNightCycle.dispose();
-      this.dayNightCycle = null;
-    }
-
-      // Dispose visual effects
-      if (this.visualEffects) {
-        this.visualEffects.dispose();
-        this.visualEffects = null;
+      
+      // Clear all objects from scene
+      while(this.scene.children.length > 0) { 
+        this.scene.remove(this.scene.children[0]); 
       }
-
+      
+      this.scene = null;
+    }
+    
+    // Clean up visual effects
+    if (this.visualEffects) {
+      this.visualEffects.dispose();
+      this.visualEffects = null;
+    }
+    
+    // Clean up stats
     if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
       this.stats.dom.parentNode.removeChild(this.stats.dom);
       this.stats = null;
     }
-      // Remove quality indicator if it exists
-  if (this.qualityIndicator && this.qualityIndicator.parentNode) {
-    this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
-    this.qualityIndicator = null;
-  }
-  
+    
+    // Remove quality indicator if it exists
+    if (this.qualityIndicator && this.qualityIndicator.parentNode) {
+      this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
+      this.qualityIndicator = null;
+    }
+    
+    // Clear arrays
+    this.teleporters = [];
+    this.doors = [];
+    this.markers = [];
+    
+    // Force garbage collection hint (not guaranteed but can help)
+    setTimeout(() => {
+      // This setTimeout helps ensure the cleanup has completed
+      // before potentially re-initializing the scene
+      console.log('Cleanup completed');
+      
+      // In modern browsers, this can help suggest garbage collection
+      if (window.gc) window.gc();
+    }, 100);
+    
+    // Call clear to reset all properties
     this.clear();
   }
+  
+  // Helper method to dispose of materials
+  disposeMaterial(material) {
+    if (!material) return;
+    
+    // Dispose of material
+    Object.keys(material).forEach(prop => {
+      if (!material[prop]) return;
+      if (material[prop]?.isTexture) {
+        material[prop].dispose();
+      }
+    });
+    
+    if (material.map) material.map.dispose();
+    if (material.lightMap) material.lightMap.dispose();
+    if (material.bumpMap) material.bumpMap.dispose();
+    if (material.normalMap) material.normalMap.dispose();
+    if (material.specularMap) material.specularMap.dispose();
+    if (material.envMap) material.envMap.dispose();
+    
+    material.dispose();
+  }
 
-  // Add this helper method to your class
-safeUpdateTexture(texture, source = 'unknown') {
+// Add this to your Scene3DController class
+monitorMemory() {
+  if (window.performance && window.performance.memory) {
+    const memStats = document.createElement('div');
+    memStats.style.cssText = `
+      position: fixed;
+      top: 40px;
+      left: 48px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      z-index: 10000;
+    `;
+    document.body.appendChild(memStats);
+    
+    const updateMemStats = () => {
+      if (!memStats.parentNode) return;
+      
+      const memory = window.performance.memory;
+      const usedHeapSize = (memory.usedJSHeapSize / 1048576).toFixed(2);
+      const totalHeapSize = (memory.totalJSHeapSize / 1048576).toFixed(2);
+      
+      memStats.textContent = `Mem: ${usedHeapSize}MB / ${totalHeapSize}MB`;
+      
+      setTimeout(updateMemStats, 1000);
+    };
+    
+    updateMemStats();
+    
+    return memStats;
+  }
+  
+  return null;
+}
+
+// addDebugControls() {
+//   const debugPanel = document.createElement('div');
+//   debugPanel.style.cssText = `
+//     position: fixed;
+//     top: 10px;
+//     right: 10px;
+//     background: rgba(0, 0, 0, 0.7);
+//     color: white;
+//     padding: 5px;
+//     border-radius: 4px;
+//     z-index: 10000;
+//     display: flex;
+//     flex-direction: column;
+//     gap: 5px;
+//   `;
+  
+//   const forceCleanupBtn = document.createElement('button');
+//   forceCleanupBtn.textContent = 'Force Cleanup';
+//   forceCleanupBtn.style.cssText = `
+//     padding: 5px 10px;
+//     cursor: pointer;
+//   `;
+  
+//   forceCleanupBtn.addEventListener('click', () => {
+//     console.log('Performing force cleanup...');
+    
+//     // Force texture cleanup
+//     THREE.Cache.clear();
+    
+//     // Suggest garbage collection
+//     if (window.gc) window.gc();
+    
+//     // Log memory if available
+//     if (window.performance && window.performance.memory) {
+//       console.log('Memory after cleanup:', window.performance.memory);
+//     }
+//   });
+  
+//   debugPanel.appendChild(forceCleanupBtn);
+//   document.body.appendChild(debugPanel);
+// }
+
+  safeUpdateTexture(texture, source = 'unknown') {
   if (!texture) {
     console.warn(`Null texture in ${source}`);
     return false;
@@ -581,7 +846,7 @@ createStatsPanel() {
       console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
       this.setFPSLimit(prefs.fpsLimit);
     }
-    
+
     return true;
   }
 
@@ -942,6 +1207,7 @@ createPropMesh(propData) {
           !(document.activeElement instanceof HTMLTextAreaElement)) {
           event.preventDefault(); // Prevent any default behavior
           this.toggleStats();
+          this.monitorMemory();
         }
         break;
         case "KeyH": // H for Toggle lighting
