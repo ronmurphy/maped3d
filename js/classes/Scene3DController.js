@@ -3491,6 +3491,23 @@ updateTexturesColorSpace() {
   });
 }
 
+setFPSLimit(limit) {
+  if (limit === 0 || limit === null || limit === undefined) {
+    // No limit (default)
+    this.fpsLimit = 0;
+    this.fpsInterval = 0;
+    console.log('FPS limit disabled');
+  } else {
+    // Set the limit
+    this.fpsLimit = limit;
+    this.fpsInterval = 1000 / limit;
+    console.log(`FPS limited to ${limit}`);
+  }
+  
+  // Reset last frame time
+  this.lastFrameTime = 0;
+}
+
 
 animate = () => {
 
@@ -3518,6 +3535,19 @@ animate = () => {
     this.stats.begin();
   }
 
+  // if (this.fpsLimit > 0) {
+  //   const now = performance.now();
+  //   const elapsed = now - this.lastFrameTime;
+    
+  //   // Skip frames to maintain desired FPS
+  //   if (elapsed < this.fpsInterval) {
+  //     requestAnimationFrame(this.animate);
+  //     return;
+  //   }
+    
+  //   // Update last frame time, accounting for any excess time
+  //   this.lastFrameTime = now - (elapsed % this.fpsInterval);
+  // }
 
   const currentSpeed = this.moveState.speed;
   let canMove = true;
@@ -3668,6 +3698,9 @@ animate = () => {
   if (this.stats && this.showStats) {
     this.stats.end();
   }
+
+  // this.animationFrameId = requestAnimationFrame(this.animate);
+
 };
 
 
