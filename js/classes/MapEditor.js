@@ -6020,6 +6020,18 @@ showPreferencesDialog() {
       <sl-switch id="hqTextures" checked>High Quality Textures</sl-switch>
       <sl-switch id="ambientOcclusion">Ambient Occlusion</sl-switch>
     </div>
+
+        <div style="margin-bottom: 16px;">
+      <sl-select id="fpsLimit" label="FPS Limit" value="${this.fpsLimit || 0}">
+        <sl-option value="0">No Limit</sl-option>
+        <sl-option value="60">60 FPS</sl-option>
+        <sl-option value="30">30 FPS</sl-option>
+        <sl-option value="15">15 FPS</sl-option>
+      </sl-select>
+      <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+        Limiting FPS can improve performance on lower-end devices
+      </div>
+    </div>
   `;
   // In the graphicsSection of showPreferencesDialog method, add this after quality preset
 const lightingControls = document.createElement('div');
@@ -6201,11 +6213,9 @@ savePreferencesFromDialog(dialog) {
     showFps: dialog.querySelector('#showFps').checked,
     showStats: dialog.querySelector('#showStats').checked,
     movementSpeed: parseFloat(dialog.querySelector('#movementSpeed').value),
+    fpsLimit: parseInt(dialog.querySelector('#fpsLimit').value),
     detectedQuality: this.preferences?.detectedQuality || null
   };
-  prefs.timeOfDay = parseInt(dialog.querySelector('#timeOfDay').value);
-prefs.autoPlayDayNight = dialog.querySelector('#autoPlayDayNight').checked;
-
   
   // Save to localStorage
   localStorage.setItem('appPreferences', JSON.stringify(prefs));
@@ -6224,6 +6234,7 @@ resetPreferencesToDefaults(dialog) {
     showFps: false,
     showStats: false,
     movementSpeed: 1.0,
+    fpsLimit: 0,  // No limit by default
     detectedQuality: null
   };
   
@@ -6237,6 +6248,7 @@ resetPreferencesToDefaults(dialog) {
   dialog.querySelector('#showFps').checked = defaults.showFps;
   dialog.querySelector('#showStats').checked = defaults.showStats;
   dialog.querySelector('#movementSpeed').value = defaults.movementSpeed;
+  dialog.querySelector('#fpsLimit').value = defaults.fpsLimit;
 }
 
 // Get current preferences
@@ -6250,9 +6262,11 @@ getPreferences() {
       antialiasEnabled: true,
       hqTextures: true,
       ambientOcclusion: false,
+      disableLighting: false,
       showFps: false,
       showStats: false,
       movementSpeed: 1.0,
+      fpsLimit: 0,  // Default to no FPS limit
       detectedQuality: null
     };
   }
@@ -6263,46 +6277,45 @@ getPreferences() {
 applyPreferences() {
   const prefs = this.getPreferences();
   
-  // Apply to 3D view if it exists
-  if (this.scene3D) {
-    // Apply quality settings
-    const qualityLevel = prefs.qualityPreset === 'auto' ? 
-      prefs.detectedQuality || 'medium' : prefs.qualityPreset;
-      
-    this.scene3D.setQualityLevel(qualityLevel, {
-      shadows: prefs.shadowsEnabled,
-      antialias: prefs.antialiasEnabled,
-      highQualityTextures: prefs.hqTextures,
-      ambientOcclusion: prefs.ambientOcclusion
-    });
-    
-    // Apply FPS counter visibility
-    if (prefs.showFps && !this.scene3D.showStats) {
-      this.scene3D.toggleStats();
-    } else if (!prefs.showFps && this.scene3D.showStats) {
-      this.scene3D.toggleStats();
-    }
-    
-    // Apply movement speed
-    this.scene3D.moveState.baseSpeed = 0.025 * prefs.movementSpeed;
-    this.scene3D.moveState.speed = this.scene3D.moveState.sprint ? 
-    this.scene3D.moveState.baseSpeed * 2 : this.scene3D.moveState.baseSpeed;
+  // Apply quality level
+  const qualityLevel = prefs.qualityPreset === 'auto' ? 
+    prefs.detectedQuality || 'medium' : prefs.qualityPreset;
   
-    if (this.dayNightCycle) {
-      // Update time of day if it changed
-      const newTime = prefs.timeOfDay || 12;
-      if (Math.abs(this.dayNightCycle.currentTime - newTime) > 0.1) {
-        this.dayNightCycle.setTime(newTime);
-      }
-      
-      // Update auto-play state
-      if (prefs.autoPlayDayNight && !this.dayNightCycle.isActive) {
-        this.dayNightCycle.start();
-      } else if (!prefs.autoPlayDayNight && this.dayNightCycle.isActive) {
-        this.dayNightCycle.pause();
-      }
-    }
+  this.setQualityLevel(qualityLevel, {
+    shadows: prefs.shadowsEnabled,
+    antialias: prefs.antialiasEnabled, 
+    highQualityTextures: prefs.hqTextures,
+    ambientOcclusion: prefs.ambientOcclusion
+  });
   
+  // Apply lighting toggle
+  this.setLightingEnabled(!prefs.disableLighting);
+  
+  // Apply FPS counter visibility
+  if (prefs.showFps && !this.showStats) {
+    this.toggleStats();
+  } else if (!prefs.showFps && this.showStats) {
+    this.toggleStats();
+  }
+  
+  // Apply FPS limit
+  this.setFPSLimit(prefs.fpsLimit);
+  
+  // Apply movement speed
+  if (this.moveState) {
+    this.moveState.baseSpeed = 0.025 * (prefs.movementSpeed || 1.0);
+    this.moveState.speed = this.moveState.sprint ? 
+      this.moveState.baseSpeed * 2 : this.moveState.baseSpeed;
+  }
+  
+  // Apply day/night cycle settings if applicable
+  if (this.dayNightCycle && prefs.timeOfDay !== undefined) {
+    this.dayNightCycle.setTime(prefs.timeOfDay);
+    if (prefs.autoPlayDayNight) {
+      this.dayNightCycle.start();
+    } else {
+      this.dayNightCycle.pause();
+    }
   }
 }
 

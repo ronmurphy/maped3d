@@ -115,6 +115,13 @@ this.addPlayerLight();
     document.addEventListener("keyup", this.keyHandlers.keyup);
 
     this.isActive = true;
+
+    // this.monitorActualFPS();
+    const prefs = this.getPreferences();
+    if (prefs.fpsLimit) {
+      console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
+      this.setFPSLimit(prefs.fpsLimit);
+    }
   }
 
   cleanup() {
@@ -224,6 +231,58 @@ safeUpdateTexture(texture, source = 'unknown') {
   
   console.warn(`Texture missing image data in ${source}`);
   return false;
+}
+
+// Add this method to Scene3DController
+getPreferences() {
+  // Initialize preferences if not already done
+  if (!this.preferences) {
+    try {
+      // Try to load from localStorage
+      const savedPrefs = localStorage.getItem('appPreferences');
+      if (savedPrefs) {
+        this.preferences = JSON.parse(savedPrefs);
+        console.log('Loaded preferences from localStorage:', this.preferences);
+      } else {
+        // Set defaults if nothing in localStorage
+        this.preferences = {
+          qualityPreset: 'auto',
+          shadowsEnabled: false,
+          antialiasEnabled: true,
+          hqTextures: false,
+          ambientOcclusion: false,
+          disableLighting: false,
+          showFps: false,
+          showStats: false,
+          movementSpeed: 1.0,
+          fpsLimit: 0,  // Default to no FPS limit
+          detectedQuality: null,
+          // Add day/night related settings if needed
+          timeOfDay: 12,
+          autoPlayDayNight: false
+        };
+        console.log('Using default preferences');
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      // Fallback to defaults on error
+      this.preferences = {
+        qualityPreset: 'auto',
+        shadowsEnabled: false,
+        antialiasEnabled: true,
+        hqTextures: false,
+        ambientOcclusion: false,
+        disableLighting: false,
+        showFps: false,
+        showStats: false,
+        movementSpeed: 1.0,
+        fpsLimit: 0,
+        detectedQuality: null
+      };
+    }
+  }
+  
+  return this.preferences;
 }
 
 // Method to initialize Stats
@@ -354,44 +413,6 @@ createSimpleFPSCounter() {
   }
 }
 
-// Toggle stats visibility
-// toggleStats() {
-//   // Debounce toggling (prevent multiple toggles within 500ms)
-//   const now = Date.now();
-//   if (now - this.lastStatsToggle < 500) {
-//     return;
-//   }
-//   this.lastStatsToggle = now;
-  
-//   // Initialize if needed
-//   if (!this.stats && !this.isInitializingStats) {
-//     // Set initial state to visible since we're explicitly toggling
-//     this.showStats = true;
-//     this.initStats();
-
-//     // Save preference if we have preferences
-//     if (this.preferences) {
-//       this.preferences.showFps = this.showStats;
-//       localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-//     }
-
-//     return;
-//   }
-  
-//   // Only toggle if initialization is complete
-//   if (this.stats && !this.isInitializingStats) {
-//     this.showStats = !this.showStats;
-//     if (this.stats.dom) {
-//       this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-//         // Save preference if we have preferences
-//   if (this.preferences) {
-//     this.preferences.showFps = this.showStats;
-//     localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-//   }
-//       console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'}`);
-//     }
-//   }
-// }
 
 toggleStats() {
   // Debounce toggling
@@ -553,6 +574,14 @@ createStatsPanel() {
       shiftHeld: false
     };
 
+
+    // this.monitorActualFPS();
+    const prefs = this.getPreferences();
+    if (prefs.fpsLimit) {
+      console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
+      this.setFPSLimit(prefs.fpsLimit);
+    }
+    
     return true;
   }
 
@@ -954,15 +983,6 @@ createPropMesh(propData) {
           this.updateWallClipping();
         }
         break;
-      // case "KeyG":
-      //   if (!this.showDemoEffects) {
-      //     this.visualEffects.createDemoEffects();
-      //     this.showDemoEffects = true;
-      //   } else {
-      //     this.visualEffects.disposeDemoEffects();
-      //     this.showDemoEffects = false;
-      //   }
-      //   break;
       case "Backslash":
         this.toggleInventory();
         break;
@@ -2502,12 +2522,6 @@ case "teleport":
 
       if (roomMesh) {
         if (roomMesh.userData.isWall) {
-          // console.log("Creating wall mesh:", {
-          //     roomName: room.name,
-          //     hasTexture: !!roomMesh.material.map,
-          //     isTransparent: roomMesh.material.transparent,
-          //     opacity: roomMesh.material.opacity
-          // });
         }
         this.scene.add(roomMesh);
       }
@@ -3491,25 +3505,138 @@ updateTexturesColorSpace() {
   });
 }
 
+// Add as a method in Scene3DController
 setFPSLimit(limit) {
+  console.log(`setFPSLimit called with limit: ${limit}`);
+  
   if (limit === 0 || limit === null || limit === undefined) {
     // No limit (default)
     this.fpsLimit = 0;
     this.fpsInterval = 0;
     console.log('FPS limit disabled');
+    
+    // Remove wrapper if it exists
+    if (this._originalAnimate) {
+      console.log('Restoring original animate function');
+      this.animate = this._originalAnimate;
+      this._originalAnimate = null;
+    }
   } else {
     // Set the limit
     this.fpsLimit = limit;
     this.fpsInterval = 1000 / limit;
     console.log(`FPS limited to ${limit}`);
+    
+    // Save original animate function if not already saved
+    if (!this._originalAnimate) {
+      console.log('Saving original animate function');
+      this._originalAnimate = this.animate;
+    }
+    
+    // Create a new wrapper function that applies the FPS limit
+    console.log('Creating FPS limited animate wrapper');
+    this.animate = this._createFPSLimitedAnimate();
   }
   
   // Reset last frame time
   this.lastFrameTime = 0;
 }
 
+// Helper method to create the FPS-limited animation function
+_createFPSLimitedAnimate() {
+  // Store a reference to the original animate method and this
+  const originalAnimate = this._originalAnimate;
+  const self = this;
+  
+  // Return a new function that wraps the original
+  return function limitedAnimateWrapper() {
+    const now = performance.now();
+    
+    // Initialize lastFrameTime if needed
+    if (!self.lastFrameTime) {
+      self.lastFrameTime = now;
+    }
+    
+    const elapsed = now - self.lastFrameTime;
+    
+    // If enough time has elapsed, run the animation
+    if (elapsed >= self.fpsInterval) {
+      // Adjust lastFrameTime, accounting for any excess time
+      self.lastFrameTime = now - (elapsed % self.fpsInterval);
+      
+      // Call the original animation function
+      originalAnimate.call(self);
+    } else {
+      // Skip this frame but schedule the next one
+      self.animationFrameId = requestAnimationFrame(self.animate);
+    }
+  };
+}
+
+monitorActualFPS() {
+  console.log('monitorActualFPS called');
+  
+  if (this._fpsMonitorActive) {
+    console.log('FPS monitor already active, skipping');
+    return;
+  }
+  
+  this._fpsMonitorActive = true;
+  this._frameCount = 0;
+  this._fpsStartTime = performance.now();
+  
+  // Create a simple display
+  const fpsMonitor = document.createElement('div');
+  fpsMonitor.style.cssText = `
+    position: fixed;
+    top: 64px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    z-index: 10000;
+  `;
+  document.body.appendChild(fpsMonitor);
+  this._fpsMonitor = fpsMonitor;
+  
+  // Update every second
+  const updateFPS = () => {
+    if (!this._fpsMonitorActive) return;
+    
+    const now = performance.now();
+    const elapsed = now - this._fpsStartTime;
+    
+    if (elapsed >= 1000) {
+      const fps = Math.round((this._frameCount * 1000) / elapsed);
+      fpsMonitor.textContent = `Actual FPS: ${fps} ${this.fpsLimit ? `(Limit: ${this.fpsLimit})` : ''}`;
+      
+      this._frameCount = 0;
+      this._fpsStartTime = now;
+    }
+    
+    setTimeout(updateFPS, 500);
+  };
+  
+  // Start monitoring
+  updateFPS();
+  
+  // Count each frame
+  const originalAnimate = this.animate;
+  this.animate = () => {
+    this._frameCount++;
+    originalAnimate.call(this);
+  };
+}
+
 
 animate = () => {
+  // Debugging to check if this is the wrapped version or not
+  if (!this._animateDebugChecked) {
+    this._animateDebugChecked = true;
+    console.log('Animate function running, wrapped:', !!this._originalAnimate);
+  }
 
   if (!this._dayNightDebugLogged && this.dayNightCycle) {
     console.log('Day/Night cycle exists in animate:', this.dayNightCycle);
@@ -3535,19 +3662,6 @@ animate = () => {
     this.stats.begin();
   }
 
-  // if (this.fpsLimit > 0) {
-  //   const now = performance.now();
-  //   const elapsed = now - this.lastFrameTime;
-    
-  //   // Skip frames to maintain desired FPS
-  //   if (elapsed < this.fpsInterval) {
-  //     requestAnimationFrame(this.animate);
-  //     return;
-  //   }
-    
-  //   // Update last frame time, accounting for any excess time
-  //   this.lastFrameTime = now - (elapsed % this.fpsInterval);
-  // }
 
   const currentSpeed = this.moveState.speed;
   let canMove = true;
@@ -5148,13 +5262,6 @@ setQualityLevel(level, options = {}) {
         }
       });
       
-      // Enable bloom if available
-      // if (this.bloomPass) {
-      //   this.bloomPass.enabled = true;
-      //   this.bloomPass.strength = 0.8;
-      //   this.bloomPass.radius = 0.5;
-      //   this.bloomPass.threshold = 0.85;
-      // }
       
       if (this.visualEffects) {
         this.visualEffects.applyQualityLevel(level);
@@ -5441,35 +5548,6 @@ initializeTorches() {
     });
   }
 }
-
-// addPlayerLight(enabled = true) {
-//   // Remove any existing player light
-//   if (this.playerLight) {
-//     this.scene.remove(this.playerLight);
-//     this.playerLight = null;
-//   }
-  
-//   if (!enabled) return;
-  
-//   // Create a point light that follows the player
-//   const light = new THREE.PointLight(0xffffff, 0.9, 2); // Color, intensity, distance
-//   light.position.copy(this.camera.position);
-  
-//   // Optional shadow settings
-//   if (this.renderer.shadowMap.enabled) {
-//     light.castShadow = true;
-//     light.shadow.mapSize.width = 512;
-//     light.shadow.mapSize.height = 512;
-//     light.shadow.bias = -0.002;
-//   }
-  
-//   this.playerLight = light;
-//   this.scene.add(light);
-//   console.log("Player light added");
-  
-//   // Update helper text to show light is enabled
-//   this.showNotification("Player light enabled");
-// }
 
 addPlayerLight() {
   if (this.playerLight) return;
