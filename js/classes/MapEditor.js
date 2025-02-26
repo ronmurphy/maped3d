@@ -123,18 +123,42 @@ class MapEditor {
 
 
 
+  // snapToGrid(value, gridSize, snapThreshold = 0.25) {
+  //   if (!gridSize) return value;
+
+  //   const gridPosition = Math.round(value / gridSize) * gridSize;
+  //   const offset = value - gridPosition;
+
+  //   // Only snap if within threshold (25% of grid size by default)
+  //   if (Math.abs(offset) < gridSize * snapThreshold) {
+  //     return gridPosition;
+  //   }
+
+  //   return value;
+  // }
+
   snapToGrid(value, gridSize, snapThreshold = 0.25) {
     if (!gridSize) return value;
-
+    
+    // Check grid snapping preference
+    const snappingMode = this.editorPreferences?.gridSnapping || 'soft';
+    
+    // If snapping is disabled, return original value
+    if (snappingMode === 'none') return value;
+    
     const gridPosition = Math.round(value / gridSize) * gridSize;
-    const offset = value - gridPosition;
-
-    // Only snap if within threshold (25% of grid size by default)
-    if (Math.abs(offset) < gridSize * snapThreshold) {
-      return gridPosition;
+    
+    // For soft snapping (allow some deviation)
+    if (snappingMode === 'soft') {
+      const offset = value - gridPosition;
+      if (Math.abs(offset) < gridSize * snapThreshold) {
+        return gridPosition;
+      }
+      return value;
     }
-
-    return value;
+    
+    // For strict snapping, always snap to grid
+    return gridPosition;
   }
 
   calculateDockOffset(mainRoom, dockingRoom, position) {
@@ -6273,6 +6297,81 @@ getPreferences() {
   return this.preferences;
 }
 
+// Add to MapEditor class
+applyEditorPreferences(prefs) {
+  if (!prefs) {
+    // Load preferences if not provided
+    try {
+      const savedPrefs = localStorage.getItem('editorPreferences');
+      if (savedPrefs) {
+        prefs = JSON.parse(savedPrefs);
+      } else {
+        return; // No preferences to apply
+      }
+    } catch (e) {
+      console.error('Error loading editor preferences:', e);
+      return;
+    }
+  }
+  
+  // Store for access by other methods (for snapToGrid, etc.)
+  this.editorPreferences = prefs;
+  
+  // Apply grid settings
+  if (prefs.showGrid !== undefined) {
+    // Update grid visibility
+    this.showGrid = prefs.showGrid;
+    this.render(); // Re-render to show/hide grid
+  }
+  
+  if (prefs.gridOpacity !== undefined) {
+    // Update grid opacity
+    this.gridOpacity = prefs.gridOpacity;
+    this.render(); // Re-render to update grid
+  }
+  
+  // Setup auto-save if enabled
+  if (prefs.autoSaveInterval > 0) {
+    // Clear any existing auto-save interval
+    if (this._autoSaveInterval) {
+      clearInterval(this._autoSaveInterval);
+    }
+    
+    // Set up new auto-save
+    this._autoSaveInterval = setInterval(() => {
+      // Only auto-save if map has been modified
+      if (this.mapModified) {
+        console.log('Auto-saving map...');
+        this.saveMap()
+          .then(() => {
+            console.log('Auto-save complete');
+            // Show a subtle notification
+            this.showToast('Map auto-saved', 'info', 2000);
+          })
+          .catch(err => {
+            console.error('Auto-save failed:', err);
+          });
+      }
+    }, prefs.autoSaveInterval * 1000);
+    
+    console.log(`Auto-save enabled at ${prefs.autoSaveInterval} second intervals`);
+  } else if (this._autoSaveInterval) {
+    // Disable auto-save if it was previously enabled
+    clearInterval(this._autoSaveInterval);
+    this._autoSaveInterval = null;
+    console.log('Auto-save disabled');
+  }
+  
+  // Update UI based on thumbnail preference
+  if (prefs.showThumbnails !== undefined) {
+    document.querySelectorAll('.room-thumbnail').forEach(thumb => {
+      thumb.style.display = prefs.showThumbnails ? 'block' : 'none';
+    });
+  }
+  
+  console.log('Editor preferences applied:', prefs);
+}
+
 // Apply current preferences to the application
 applyPreferences() {
   const prefs = this.getPreferences();
@@ -6376,3 +6475,5 @@ async runHardwareTest() {
 }
 
 }
+
+window.applyEditorPreferences = this.applyEditorPreferences.bind(this);

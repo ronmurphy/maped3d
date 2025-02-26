@@ -258,6 +258,149 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.appendChild(dialog);
       dialog.show();
     }
+
+    const editorPrefsBtn = document.getElementById('editorPrefsBtn');
+    if (editorPrefsBtn) {
+      editorPrefsBtn.addEventListener('click', showEditorPreferencesDialog);
+    }
+  
+    function showEditorPreferencesDialog() {
+      const dialog = document.createElement('sl-dialog');
+      dialog.label = 'Map Editor Settings';
+      dialog.style.setProperty('--width', '500px');
+      
+      // Get current settings from localStorage or use defaults
+      const editorPrefs = JSON.parse(localStorage.getItem('editorPreferences') || '{}');
+      const gridSnapping = editorPrefs.gridSnapping || 'soft';
+      const showGrid = editorPrefs.showGrid !== undefined ? editorPrefs.showGrid : true;
+      const gridOpacity = editorPrefs.gridOpacity !== undefined ? editorPrefs.gridOpacity : 0.1;
+      const autoSaveInterval = editorPrefs.autoSaveInterval || 0; // 0 means disabled
+      
+      dialog.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Grid Settings Section -->
+          <div>
+            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Grid Settings</h3>
+            
+            <div style="margin-bottom: 16px;">
+              <sl-switch id="showGrid" ${showGrid ? 'checked' : ''}>
+                Show Grid
+              </sl-switch>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+              <sl-select id="gridSnapping" label="Grid Snapping" value="${gridSnapping}">
+                <sl-option value="soft">Soft Snap (Default)</sl-option>
+                <sl-option value="strict">Strict Snap</sl-option>
+                <sl-option value="none">No Snap</sl-option>
+              </sl-select>
+              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                Controls how rooms and objects align to the grid
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+              <sl-range id="gridOpacity" 
+                       label="Grid Opacity" 
+                       min="0.05" 
+                       max="0.5" 
+                       step="0.05" 
+                       value="${gridOpacity}"
+                       tooltip="top">
+              </sl-range>
+            </div>
+          </div>
+          
+          <!-- Auto-Save Section -->
+          <div>
+            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Auto-Save</h3>
+            
+            <div style="margin-bottom: 16px;">
+              <sl-select id="autoSaveInterval" label="Auto-Save Interval" value="${autoSaveInterval}">
+                <sl-option value="0">Disabled</sl-option>
+                <sl-option value="60">Every 1 minute</sl-option>
+                <sl-option value="300">Every 5 minutes</sl-option>
+                <sl-option value="600">Every 10 minutes</sl-option>
+                <sl-option value="1800">Every 30 minutes</sl-option>
+              </sl-select>
+              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                Automatically save your work at regular intervals
+              </div>
+            </div>
+          </div>
+          
+          <!-- UI Settings Section -->
+          <div>
+            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">UI Settings</h3>
+            
+            <div style="margin-bottom: 16px;">
+              <sl-switch id="showThumbnails" checked>
+                Show Room Thumbnails
+              </sl-switch>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+              <sl-switch id="confirmLayerDeletion" checked>
+                Confirm Layer Deletion
+              </sl-switch>
+            </div>
+          </div>
+        </div>
+        
+        <div slot="footer">
+          <sl-button id="resetEditorDefaults" variant="text">Reset to Defaults</sl-button>
+          <sl-button id="cancelEditorPrefs" variant="neutral">Cancel</sl-button>
+          <sl-button id="saveEditorPrefs" variant="primary">Save Changes</sl-button>
+        </div>
+      `;
+      
+      // Add to document body
+      document.body.appendChild(dialog);
+      
+      // Button handlers
+      dialog.querySelector('#resetEditorDefaults').addEventListener('click', () => {
+        dialog.querySelector('#gridSnapping').value = 'soft';
+        dialog.querySelector('#showGrid').checked = true;
+        dialog.querySelector('#gridOpacity').value = 0.1;
+        dialog.querySelector('#autoSaveInterval').value = '0';
+        dialog.querySelector('#showThumbnails').checked = true;
+        dialog.querySelector('#confirmLayerDeletion').checked = true;
+      });
+      
+      dialog.querySelector('#cancelEditorPrefs').addEventListener('click', () => {
+        dialog.hide();
+      });
+      
+      dialog.querySelector('#saveEditorPrefs').addEventListener('click', () => {
+        // Get values from the form
+        const prefs = {
+          gridSnapping: dialog.querySelector('#gridSnapping').value,
+          showGrid: dialog.querySelector('#showGrid').checked,
+          gridOpacity: parseFloat(dialog.querySelector('#gridOpacity').value),
+          autoSaveInterval: parseInt(dialog.querySelector('#autoSaveInterval').value),
+          showThumbnails: dialog.querySelector('#showThumbnails').checked,
+          confirmLayerDeletion: dialog.querySelector('#confirmLayerDeletion').checked
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('editorPreferences', JSON.stringify(prefs));
+        
+        // Apply settings immediately
+        window.applyEditorPreferences?.(prefs);
+        
+        dialog.hide();
+      });
+      
+      dialog.show();
+    }
+    
+    // Also set up the help button if it exists
+    // const helpBtn = document.getElementById('helpBtn');
+    // if (helpBtn) {
+    //   helpBtn.addEventListener('click', showHelpDialog);
+    // }
+
+
   });
 
 
