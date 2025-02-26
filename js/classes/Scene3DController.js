@@ -54,6 +54,7 @@ class Scene3DController {
     };
 
     this.setupInventorySystem();
+    // this.loadPreferences();
     this.clear();
   }
 
@@ -678,7 +679,7 @@ async runHardwareTest() {
       // Use existing 3D view
       try {
         // Run test with a callback to handle results
-        this.scene3D.detectHardwareCapabilities((result) => {
+        this.detectHardwareCapabilities((result) => {
           // Store result
           this.preferences.detectedQuality = result.qualityLevel;
           localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
@@ -4281,9 +4282,40 @@ loadPreferences() {
       }
       
       console.log(`Loaded preferences with quality level: ${qualityLevel}, lighting: ${lightingEnabled ? 'enabled' : 'disabled'}`);
+    }else {
+      // Set defaults if no saved preferences
+      this.preferences = {
+        qualityPreset: 'auto',
+        shadowsEnabled: false,
+        antialiasEnabled: true,
+        hqTextures: false,
+        ambientOcclusion: false,
+        showFps: false,
+        showStats: false,
+        movementSpeed: 1.0,
+        timeOfDay: 12,
+        autoPlayDayNight: true,
+        fpsLimit: 0,
+        detectedQuality: null
+      };
     }
   } catch (error) {
     console.error("Error loading preferences:", error);
+  }
+}
+
+savePreferences() {
+  try {
+    if (!this.preferences) {
+      this.loadPreferences(); // Initialize if needed
+    }
+    
+    localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+    console.log("Preferences saved");
+    return true;
+  } catch (error) {
+    console.error("Error saving preferences:", error);
+    return false;
   }
 }
 
@@ -4360,11 +4392,7 @@ this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 this.renderer.toneMappingExposure = 1.2;
 this.renderer.setClearColor(0x222222);
 
-this.loadPreferences();
-if (this.preferences && this.preferences.showFps) {
-  this.showStats = true;
-  this.initStats();
-}
+
 
 // Initialize visual effects
 if (!this.visualEffects) {
@@ -4373,7 +4401,11 @@ if (!this.visualEffects) {
   // this.createDemoEffects();
 }
 
-
+this.loadPreferences();
+if (this.preferences && this.preferences.showFps) {
+  this.showStats = true;
+  this.initStats();
+}
 
       // Create camera
       this.camera = new THREE.PerspectiveCamera(
@@ -5384,57 +5416,208 @@ hideSplashArt() {
   }
 }
 
+// detectHardwareCapabilities(callback) {
+//   console.log("Starting hardware capability detection");
+  
+//   // Store initial state to restore later
+//   const originalShowStats = this.showStats;
+  
+//   // Create test objects for benchmark
+//   const boxCount = 200;
+//   const testObjects = [];
+  
+//   // Create a complex scene to test rendering performance
+//   const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+//   const testMaterial = new THREE.MeshStandardMaterial({
+//     color: 0x3366ff,
+//     roughness: 0.7,
+//     metalness: 0.2
+//   });
+  
+//   // Add many objects to stress the system
+//   for (let i = 0; i < boxCount; i++) {
+//     const box = new THREE.Mesh(testGeometry, testMaterial);
+    
+//     // Position in random locations
+//     box.position.set(
+//       (Math.random() - 0.5) * 20,
+//       (Math.random() - 0.5) * 20,
+//       (Math.random() - 0.5) * 20
+//     );
+    
+//     // Random rotation
+//     box.rotation.set(
+//       Math.random() * Math.PI,
+//       Math.random() * Math.PI,
+//       Math.random() * Math.PI
+//     );
+    
+//     // Add to scene
+//     this.scene.add(box);
+//     testObjects.push(box);
+//   }
+  
+//   // Add a point light to test lighting performance
+//   const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+//   pointLight.position.set(0, 10, 0);
+//   this.scene.add(pointLight);
+//   testObjects.push(pointLight);
+  
+//   // Enable shadows for testing
+//   this.renderer.shadowMap.enabled = true;
+//   this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+//   pointLight.castShadow = true;
+  
+//   // Measure FPS
+//   let frames = 0;
+//   let lastTime = performance.now();
+//   let totalTime = 0;
+//   let frameRates = [];
+  
+//   // Create a placeholder result object
+//   const testResultObj = {
+//     fps: 0,
+//     qualityLevel: 'medium',
+//     devicePixelRatio: window.devicePixelRatio,
+//     timestamp: new Date().toISOString()
+//   };
+  
+//   // Animate test scene
+//   const animateTest = () => {
+//     // Rotate camera around scene
+//     const time = performance.now() * 0.001;
+//     this.camera.position.x = Math.sin(time * 0.5) * 15;
+//     this.camera.position.z = Math.cos(time * 0.5) * 15;
+//     this.camera.position.y = Math.sin(time * 0.3) * 5 + 7;
+//     this.camera.lookAt(0, 0, 0);
+    
+//     // Render
+//     this.renderer.render(this.scene, this.camera);
+    
+//     // Calculate FPS
+//     frames++;
+//     const now = performance.now();
+//     const elapsed = now - lastTime;
+    
+//     // Record FPS every 100ms
+//     if (elapsed >= 100) {
+//       const currentFPS = (frames * 1000) / elapsed;
+//       frameRates.push(currentFPS);
+      
+//       frames = 0;
+//       lastTime = now;
+//       totalTime += elapsed;
+      
+//       // Update test objects
+//       testObjects.forEach((obj, i) => {
+//         if (obj.isMesh) {
+//           obj.rotation.x += 0.01;
+//           obj.rotation.y += 0.01;
+//         }
+//       });
+//     }
+    
+//     // Run for 3 seconds total
+//     if (totalTime < 3000) {
+//       requestAnimationFrame(animateTest);
+//     } else {
+//       // Clean up test objects
+//       testObjects.forEach(obj => this.scene.remove(obj));
+      
+//       // Calculate median FPS - more reliable than average
+//       frameRates.sort((a, b) => a - b);
+//       const medianFPS = frameRates[Math.floor(frameRates.length / 2)];
+      
+//       console.log(`Hardware test completed: ${medianFPS.toFixed(1)} FPS`);
+      
+//       // Determine quality level
+//       let qualityLevel = 'medium'; // Default
+      
+//       if (medianFPS >= 55) {
+//         qualityLevel = 'high';
+//       } else if (medianFPS >= 30) {
+//         qualityLevel = 'medium';
+//       } else {
+//         qualityLevel = 'low';
+//       }
+      
+//       // Store quality level
+//       this.qualityLevel = qualityLevel;
+      
+//       // Restore original state
+//       this.showStats = originalShowStats;
+      
+//       // Update testResultObj with final values
+//       testResultObj.fps = medianFPS;
+//       testResultObj.qualityLevel = qualityLevel;
+      
+//       // Clean up and restore normal rendering
+//       this.renderer.shadowMap.enabled = false;
+      
+//       // Call callback with results
+//       if (callback) callback(testResultObj);
+//     }
+//   };
+  
+//   // Start test animation
+//   animateTest();
+  
+//   // Return a copy of the initial placeholder result
+//   // The actual values will be updated in the callback
+//   return { 
+//     fps: testResultObj.fps,
+//     qualityLevel: testResultObj.qualityLevel,
+//     devicePixelRatio: testResultObj.devicePixelRatio,
+//     timestamp: testResultObj.timestamp
+//   };
+// }
+
 detectHardwareCapabilities(callback) {
   console.log("Starting hardware capability detection");
   
   // Store initial state to restore later
   const originalShowStats = this.showStats;
+  let usingExistingScene = false;
+  let testObjects = [];
   
-  // Create test objects for benchmark
-  const boxCount = 200;
-  const testObjects = [];
-  
-  // Create a complex scene to test rendering performance
-  const testGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const testMaterial = new THREE.MeshStandardMaterial({
-    color: 0x3366ff,
-    roughness: 0.7,
-    metalness: 0.2
-  });
-  
-  // Add many objects to stress the system
-  for (let i = 0; i < boxCount; i++) {
-    const box = new THREE.Mesh(testGeometry, testMaterial);
+  // Check if we have an active scene with content
+  if (this.scene && this.scene.children.length > 0) {
+    console.log("Using existing scene for hardware test");
+    usingExistingScene = true;
+  } else {
+    console.log("Creating test scene for hardware detection");
+    // Create test objects for benchmark
+    const boxCount = 200;
+    const testGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const testMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3366ff,
+      roughness: 0.7,
+      metalness: 0.2
+    });
     
-    // Position in random locations
-    box.position.set(
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20
-    );
+    // Add many objects to stress the system
+    for (let i = 0; i < boxCount; i++) {
+      const box = new THREE.Mesh(testGeometry, testMaterial);
+      box.position.set(
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20
+      );
+      box.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI
+      );
+      this.scene.add(box);
+      testObjects.push(box);
+    }
     
-    // Random rotation
-    box.rotation.set(
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-      Math.random() * Math.PI
-    );
-    
-    // Add to scene
-    this.scene.add(box);
-    testObjects.push(box);
+    // Add a point light to test lighting performance
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(0, 10, 0);
+    this.scene.add(pointLight);
+    testObjects.push(pointLight);
   }
-  
-  // Add a point light to test lighting performance
-  const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-  pointLight.position.set(0, 10, 0);
-  this.scene.add(pointLight);
-  testObjects.push(pointLight);
-  
-  // Enable shadows for testing
-  this.renderer.shadowMap.enabled = true;
-  this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  pointLight.castShadow = true;
   
   // Measure FPS
   let frames = 0;
@@ -5442,28 +5625,57 @@ detectHardwareCapabilities(callback) {
   let totalTime = 0;
   let frameRates = [];
   
+  // Store original camera position if using existing scene
+  const originalCameraPos = usingExistingScene ? {
+    position: this.camera.position.clone(),
+    rotation: this.camera.rotation.clone()
+  } : null;
+  
   // Create a placeholder result object
   const testResultObj = {
     fps: 0,
     qualityLevel: 'medium',
     devicePixelRatio: window.devicePixelRatio,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    usingExistingScene
   };
   
   // Animate test scene
   const animateTest = () => {
-    // Rotate camera around scene
-    const time = performance.now() * 0.001;
-    this.camera.position.x = Math.sin(time * 0.5) * 15;
-    this.camera.position.z = Math.cos(time * 0.5) * 15;
-    this.camera.position.y = Math.sin(time * 0.3) * 5 + 7;
-    this.camera.lookAt(0, 0, 0);
+    // If using existing scene, orbit camera around current center
+    if (usingExistingScene) {
+      const time = performance.now() * 0.0005; // Slower rotation for existing scene
+      const radius = 15;
+      const center = new THREE.Vector3();
+      
+      // Calculate scene center
+      const bbox = new THREE.Box3().setFromObject(this.scene);
+      bbox.getCenter(center);
+      
+      this.camera.position.x = center.x + Math.sin(time) * radius;
+      this.camera.position.z = center.z + Math.cos(time) * radius;
+      this.camera.lookAt(center);
+    } else {
+      // Simple rotation for test scene
+      const time = performance.now() * 0.001;
+      this.camera.position.x = Math.sin(time * 0.5) * 15;
+      this.camera.position.z = Math.cos(time * 0.5) * 15;
+      this.camera.position.y = Math.sin(time * 0.3) * 5 + 7;
+      this.camera.lookAt(0, 0, 0);
+      
+      // Animate test objects
+      testObjects.forEach(obj => {
+        if (obj.isMesh) {
+          obj.rotation.x += 0.01;
+          obj.rotation.y += 0.01;
+        }
+      });
+    }
     
-    // Render
+    // Render and calculate FPS
     this.renderer.render(this.scene, this.camera);
-    
-    // Calculate FPS
     frames++;
+    
     const now = performance.now();
     const elapsed = now - lastTime;
     
@@ -5475,37 +5687,32 @@ detectHardwareCapabilities(callback) {
       frames = 0;
       lastTime = now;
       totalTime += elapsed;
-      
-      // Update test objects
-      testObjects.forEach((obj, i) => {
-        if (obj.isMesh) {
-          obj.rotation.x += 0.01;
-          obj.rotation.y += 0.01;
-        }
-      });
     }
     
     // Run for 3 seconds total
     if (totalTime < 3000) {
       requestAnimationFrame(animateTest);
     } else {
-      // Clean up test objects
-      testObjects.forEach(obj => this.scene.remove(obj));
+      // Clean up
+      if (!usingExistingScene) {
+        testObjects.forEach(obj => this.scene.remove(obj));
+      } else if (originalCameraPos) {
+        // Restore original camera position
+        this.camera.position.copy(originalCameraPos.position);
+        this.camera.rotation.copy(originalCameraPos.rotation);
+      }
       
-      // Calculate median FPS - more reliable than average
+      // Calculate median FPS
       frameRates.sort((a, b) => a - b);
       const medianFPS = frameRates[Math.floor(frameRates.length / 2)];
       
-      console.log(`Hardware test completed: ${medianFPS.toFixed(1)} FPS`);
+      console.log(`Hardware test completed: ${medianFPS.toFixed(1)} FPS (${usingExistingScene ? 'existing' : 'test'} scene)`);
       
       // Determine quality level
-      let qualityLevel = 'medium'; // Default
-      
+      let qualityLevel = 'medium';
       if (medianFPS >= 55) {
         qualityLevel = 'high';
-      } else if (medianFPS >= 30) {
-        qualityLevel = 'medium';
-      } else {
+      } else if (medianFPS < 30) {
         qualityLevel = 'low';
       }
       
@@ -5515,14 +5722,10 @@ detectHardwareCapabilities(callback) {
       // Restore original state
       this.showStats = originalShowStats;
       
-      // Update testResultObj with final values
+      // Update result object
       testResultObj.fps = medianFPS;
       testResultObj.qualityLevel = qualityLevel;
       
-      // Clean up and restore normal rendering
-      this.renderer.shadowMap.enabled = false;
-      
-      // Call callback with results
       if (callback) callback(testResultObj);
     }
   };
@@ -5530,16 +5733,8 @@ detectHardwareCapabilities(callback) {
   // Start test animation
   animateTest();
   
-  // Return a copy of the initial placeholder result
-  // The actual values will be updated in the callback
-  return { 
-    fps: testResultObj.fps,
-    qualityLevel: testResultObj.qualityLevel,
-    devicePixelRatio: testResultObj.devicePixelRatio,
-    timestamp: testResultObj.timestamp
-  };
+  return testResultObj;
 }
-
 
 setQualityLevel(level, options = {}) {
   const settings = {
