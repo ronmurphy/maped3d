@@ -12,6 +12,7 @@ class Scene3DController {
     this.PLAYER_EYE_HEIGHT = 1.7;
     this.teleporters = [];
     this.doors = []; 
+    this.insideWallRoom = false;
     this.debugVisuals = false;
     this.resourceManager = null;
     this.activeSplashArt = null;
@@ -181,6 +182,36 @@ if (!this.visualEffects) {
   
     this.clear();
   }
+
+  // Add this helper method to your class
+safeUpdateTexture(texture, source = 'unknown') {
+  if (!texture) {
+    console.warn(`Null texture in ${source}`);
+    return false;
+  }
+  
+  // Different checks based on Three.js version
+  if (texture.image) {
+    // Standard case - check if image exists
+    if (texture.image.width > 0 && texture.image.height > 0) {
+      texture.needsUpdate = true;
+      return true;
+    }
+  } 
+  else if (texture.source && texture.source.data) {
+    // In newer Three.js versions
+    texture.needsUpdate = true;
+    return true;
+  }
+  else if (texture.source && texture.source.width > 0) {
+    // Alternative check for newer Three.js
+    texture.needsUpdate = true;
+    return true;
+  }
+  
+  console.warn(`Texture missing image data in ${source}`);
+  return false;
+}
 
 // Method to initialize Stats
 initStats() {
@@ -643,7 +674,9 @@ createPropMesh(propData) {
           id: propData.id,
           name: propData.name || 'Prop',
           isHorizontal: propData.isHorizontal || false,
-          isWallMounted: propData.isWallMounted || false
+          isWallMounted: propData.isWallMounted || false,
+          gridX: propData.x,
+          gridY: propData.y
         };
 
         mesh.userData.debugId = Date.now(); // Add a unique timestamp
@@ -718,7 +751,10 @@ createPropMesh(propData) {
     );
 
     texture.repeat.set(horizontalRepeats, verticalRepeats);
-    texture.needsUpdate = true;
+    if (canvas.width > 0 && canvas.height > 0) {
+      // texture.needsUpdate = true;
+      this.safeUpdateTexture(texture, 'createTextureFromRoom');
+    }
 
     return texture;
   }
@@ -856,11 +892,6 @@ createPropMesh(propData) {
     return mesh;
   }
 
-  // create room geometry
-
-
-
-  //  createRaisedBlockGeometry 
 
 
   setupDrawer() {
@@ -1661,8 +1692,12 @@ createPropMesh(propData) {
     const topTexture = this.createTextureFromArea(room);
     topTexture.center.set(0.5, 0.5); // Set rotation center to middle
     // Remove the rotation line
-    topTexture.repeat.set(1, 1); // Ensure 1:1 mapping
-    topTexture.needsUpdate = true;
+    // topTexture.repeat.set(1, 1); // Ensure 1:1 mapping
+    if (topTexture.image && topTexture.image.width > 0) {
+      topTexture.repeat.set(1, 1); // Ensure 1:1 mapping
+      this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-topTexture');
+      // topTexture.needsUpdate = true;
+    }
 
     // Create top material with the configured texture
     const topMaterial = new THREE.MeshStandardMaterial({
@@ -1680,18 +1715,22 @@ createPropMesh(propData) {
     switch (room.shape) {
 
 
-      case "circle": {
-        topTexture.rotation = Math.PI / 2;
-        topTexture.needsUpdate = true;
-        
-        const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
-        geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
-        geometry.rotateZ(0);  // Keep it horizontal
-        
-        // Move up by half the block height
-        geometry.translate(0, room.blockHeight / 2, 0);
-        break;
-    }
+    case "circle": {
+      // Only update the texture if it has valid data
+      if (topTexture && topTexture.image) {
+          topTexture.rotation = Math.PI / 2;
+          this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-circle-topTexture');
+          // topTexture.needsUpdate = true;
+      }
+      
+      const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
+      geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
+      geometry.rotateZ(0);  // Keep it horizontal
+      
+      // Move up by half the block height
+      geometry.translate(0, room.blockHeight / 2, 0);
+      break;
+  }
 
       case "polygon": {
         if (!room.points || room.points.length < 3) return null;
@@ -1776,8 +1815,14 @@ createPropMesh(propData) {
         const height = room.blockHeight;
 
         // Create and configure top texture
-        topTexture.repeat.set(1, -1);  // Flip vertically by setting Y to negative
-        topTexture.needsUpdate = true;
+        // topTexture.repeat.set(1, -1);  // Flip vertically by setting Y to negative
+
+        topTexture.repeat.set(1, -1);
+        // if (canvas.width > 0 && canvas.height > 0) {
+        //   topTexture.needsUpdate = true;
+        // }
+        // topTexture.needsUpdate = true;
+        this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-default-topTexture');
 
         // All vertices remain the same
         positions.push(
@@ -2122,16 +2167,16 @@ createPropMesh(propData) {
       console.log("No markers to process");
       return;
     }
-    
+
     console.log(`Processing ${this.markers.length} markers...`);
-    
+
     // 1. Process each marker type properly
     const propPromises = [];
-    
+
     for (const marker of this.markers) {
       // Skip invalid markers
       if (!marker || !marker.type) continue;
-      
+
       // Process based on marker type
       switch (marker.type) {
         case "encounter":
@@ -2147,80 +2192,86 @@ createPropMesh(propData) {
             }
           }
           break;
-          
-          case "prop":
-            if (marker.data?.texture) {
-                console.log(`Processing prop marker: ${marker.id}`);
-                const propData = {
-                    id: marker.id,
-                    x: marker.x,
-                    y: marker.y,
-                    image: marker.data.texture.data,
-                    rotation: marker.data.prop?.position?.rotation || 0,
-                    scale: marker.data.prop?.scale || 1,
-                    height: marker.data.prop?.height || 1,
-                    isHorizontal: marker.data.prop?.isHorizontal || false,
-                    name: marker.data.texture.name || "Prop", // Include the name from the texture data
-                    description: marker.data.prop?.description || "A mysterious item."
-                };
-                
-                // Create prop mesh and add to scene
-                propPromises.push(
-                    this.createPropMesh(propData)
-                        .then(mesh => {
-                            if (mesh) {
-                                this.scene.add(mesh);
-                                console.log(`Added prop mesh: ${marker.id}`);
-                            }
-                            return mesh;
-                        })
-                        .catch(error => {
-                            console.error(`Error creating prop ${marker.id}:`, error);
-                            return null;
-                        })
-                );
-            }
-            break;
-          
-        case "teleport":
-          console.log(`Processing teleport marker: ${marker.id}`);
-          const teleX = marker.x / 50 - this.boxWidth / 2;
-          const teleZ = marker.y / 50 - this.boxDepth / 2;
-          const { elevation } = this.getHighestElevationAtPoint(teleX, teleZ);
-          
-          // Store elevation data with marker
-          marker.data.elevation = elevation;
-          
-          // Create teleporter visual
-          const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-          const material = new THREE.MeshBasicMaterial({
-            color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
-            transparent: true,
-            opacity: 0.5
-          });
-          
-          const mesh = new THREE.Mesh(geometry, material);
-          
-          // Position at correct elevation
-          const finalHeight = elevation + 0.05; // Slightly above surface
-          mesh.position.set(teleX, finalHeight, teleZ);
-          
-          const teleporterInfo = {
-            mesh,
-            marker,
-            pairedMarker: marker.data.pairedMarker,
-            isPointA: marker.data.isPointA,
-            position: new THREE.Vector3(teleX, finalHeight, teleZ)
-          };
-          
-          this.teleporters.push(teleporterInfo);
-          this.scene.add(mesh);
-          
-          // Add particles at correct height
-          const particles = this.createTeleporterParticles(teleX, finalHeight, teleZ);
-          this.scene.add(particles);
+
+        case "prop":
+          if (marker.data?.texture) {
+            console.log(`Processing prop marker: ${marker.id}`);
+            const propData = {
+              id: marker.id,
+              x: marker.x,
+              y: marker.y,
+              image: marker.data.texture.data,
+              rotation: marker.data.prop?.position?.rotation || 0,
+              scale: marker.data.prop?.scale || 1,
+              height: marker.data.prop?.height || 1,
+              isHorizontal: marker.data.prop?.isHorizontal || false,
+              name: marker.data.texture.name || "Prop", // Include the name from the texture data
+              description: marker.data.prop?.description || "A mysterious item."
+            };
+
+            // Create prop mesh and add to scene
+            propPromises.push(
+              this.createPropMesh(propData)
+                .then(mesh => {
+                  if (mesh) {
+                    this.scene.add(mesh);
+                    console.log(`Added prop mesh: ${marker.id}`);
+                  }
+                  return mesh;
+                })
+                .catch(error => {
+                  console.error(`Error creating prop ${marker.id}:`, error);
+                  return null;
+                })
+            );
+          }
           break;
-          
+
+
+        // First, improve teleporter creation in processAllMarkers
+case "teleport":
+  console.log(`Processing teleport marker: ${marker.id}`);
+  const teleX = marker.x / 50 - this.boxWidth / 2;
+  const teleZ = marker.y / 50 - this.boxDepth / 2;
+  const { elevation } = this.getElevationAtPoint(teleX, teleZ);
+  
+  // Store elevation data with marker
+  marker.data.elevation = elevation;
+  
+  // Store the paired marker ID explicitly
+  const pairedMarkerId = marker.data.pairedMarker?.id;
+  console.log(`Teleporter ${marker.id} paired with ${pairedMarkerId || 'none'}`);
+  
+  // Create teleporter visual
+  const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color: marker.data.isPointA ? 0x4CAF50 : 0x2196F3,
+    transparent: true,
+    opacity: 0.5
+  });
+  
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Position at correct elevation
+  const finalHeight = elevation + 0.05; // Slightly above surface
+  mesh.position.set(teleX, finalHeight, teleZ);
+  
+  const teleporterInfo = {
+    mesh,
+    marker,
+    pairedMarkerId: pairedMarkerId,  // Store ID instead of reference
+    isPointA: marker.data.isPointA,
+    position: new THREE.Vector3(teleX, finalHeight, teleZ)
+  };
+  
+  this.teleporters.push(teleporterInfo);
+  this.scene.add(mesh);
+  
+  // Add particles at correct height
+  const particles = this.createTeleporterParticles(teleX, finalHeight, teleZ);
+  this.scene.add(particles);
+  break;
+
         case "door":
           console.log(`Processing door marker: ${marker.id}`);
           if (marker.data?.texture) {
@@ -2236,36 +2287,72 @@ createPropMesh(propData) {
             }
           }
           break;
-          
+
         case "splash-art":
           console.log(`Processing splash-art marker: ${marker.id}`);
           // Just register splash-art markers for interaction
           // No mesh needed for these
           break;
-          
+
         default:
           console.log(`Skipping unknown marker type: ${marker.type}`);
           break;
       }
     }
-    
+
     // 2. Process door interaction points
     this.processDoorMarkers();
-    
-    // 3. Wait for all props to be created
+
+
     if (propPromises.length > 0) {
       try {
         const propMeshes = await Promise.all(propPromises);
         console.log(`Added ${propMeshes.filter(m => m !== null).length} prop meshes to scene`);
+        
+        // Add position validation after all props are created
+        setTimeout(() => {
+          this.validatePropPositions();
+        }, 100); // Small delay to ensure scene is stable
       } catch (error) {
         console.error("Error processing props:", error);
       }
     }
-    
+
     this.updateTexturesColorSpace();
 
     // 4. Final check for duplicates
     this.checkForDuplicateProps();
+  }
+
+  validatePropPositions() {
+    // Find all prop meshes
+    const props = this.scene.children.filter(obj => 
+      obj.userData && obj.userData.type === 'prop'
+    );
+    
+    console.log(`Validating positions for ${props.length} props`);
+    
+    props.forEach(prop => {
+      const userData = prop.userData;
+      
+      // Calculate expected world position from grid coordinates
+      const expectedX = userData.gridX / 50 - this.boxWidth / 2;
+      const expectedZ = userData.gridY / 50 - this.boxDepth / 2;
+      
+      // Check if position is significantly off
+      const positionDiffX = Math.abs(prop.position.x - expectedX);
+      const positionDiffZ = Math.abs(prop.position.z - expectedZ);
+      
+      if (positionDiffX > 0.1 || positionDiffZ > 0.1) {
+        console.log(`Fixing position for prop ${userData.id}: 
+                    Current (${prop.position.x.toFixed(2)}, ${prop.position.z.toFixed(2)}) → 
+                    Expected (${expectedX.toFixed(2)}, ${expectedZ.toFixed(2)})`);
+        
+        // Fix the position (keeping the Y value)
+        const currentY = prop.position.y;
+        prop.position.set(expectedX, currentY, expectedZ);
+      }
+    });
   }
   
   checkForDuplicateProps() {
@@ -2313,8 +2400,8 @@ createPropMesh(propData) {
     this.tokens = [];
 
 
-// Process all markers (encounter tokens, props, teleporters, doors, etc.)
-await this.processAllMarkers();
+    // Process all markers (encounter tokens, props, teleporters, doors, etc.)
+    await this.processAllMarkers();
 
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
@@ -2339,7 +2426,10 @@ await this.processAllMarkers();
 
     // Create floor texture
     const texture = new THREE.Texture(this.baseImage);
-    texture.needsUpdate = true;
+    if (this.baseImage && this.baseImage.complete && this.baseImage.width > 0) {
+      // texture.needsUpdate = true;
+      this.safeUpdateTexture(texture, 'init3DScene-floor texture');
+    }
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
 
@@ -2366,36 +2456,36 @@ await this.processAllMarkers();
     });
 
 
-  this.rooms.forEach((room) => {
-    if (room.name === "WallTexture" || room.name === "RoomTexture") {
+    this.rooms.forEach((room) => {
+      if (room.name === "WallTexture" || room.name === "RoomTexture") {
         return;
-    }
-   
-    let roomMesh;
-    if (room.isRaisedBlock && room.blockHeight) {
+      }
+
+      let roomMesh;
+      if (room.isRaisedBlock && room.blockHeight) {
         roomMesh = this.createRaisedBlockGeometry(room);
         if (roomMesh) {
-            roomMesh.userData = {
-                isWall: true,
-                blockHeight: room.blockHeight,
-                isRaisedBlock: true
-            };
+          roomMesh.userData = {
+            isWall: true,
+            blockHeight: room.blockHeight,
+            isRaisedBlock: true
+          };
         }
-    } else {
+      } else {
         roomMesh = this.createRoomGeometry(room);
         if (roomMesh) {
-            roomMesh.userData = {
-                isWall: room.type === "wall",
-                isRegularWall: room.isRegularWall || false,  // Add the regular wall flag
-                type: room.type
-            };
+          roomMesh.userData = {
+            isWall: room.type === "wall",
+            isRegularWall: room.isRegularWall || false,  // Add the regular wall flag
+            type: room.type
+          };
         }
-    }
-    
-    if (roomMesh) {
+      }
+
+      if (roomMesh) {
         this.scene.add(roomMesh);
-    }
-});
+      }
+    });
 
 
     const materials = [
@@ -2454,6 +2544,7 @@ await this.processAllMarkers();
 
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+    ambientLight.castShadow = false; // Explicitly disable shadow casting
     this.scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -2463,7 +2554,7 @@ await this.processAllMarkers();
 
     // Position this.camera at player start if available
     if (this.playerStart) {
-        this.camera.position.set(
+      this.camera.position.set(
         this.playerStart.x / 50 - this.boxWidth / 2,
         1.7, // Eye level
         this.playerStart.y / 50 - this.boxDepth / 2
@@ -2516,10 +2607,10 @@ await this.processAllMarkers();
       });
     };
 
-// token mesh processing
+    // token mesh processing
     if (this.tokens && this.tokens.length > 0) {
       console.log("Processing tokens for 3D view:", this.tokens.length);
-      
+
       // Debug first token
       if (this.tokens[0]) {
         console.log("Example token data:", {
@@ -2528,28 +2619,28 @@ await this.processAllMarkers();
           size: this.tokens[0].size
         });
       }
-    
+
       const tokenMeshes = [];
-      
+
       // Process tokens one by one
       for (let i = 0; i < this.tokens.length; i++) {
         const token = this.tokens[i];
-        
+
         try {
           // Look for elevation data from the marker
-          const matchingMarker = this.markers?.find(m => 
-            m.type === 'encounter' && 
+          const matchingMarker = this.markers?.find(m =>
+            m.type === 'encounter' &&
             m.data?.monster?.basic?.name === token.name &&
-            m.x === token.x && 
+            m.x === token.x &&
             m.y === token.y
           );
-          
+
           if (matchingMarker?.data?.elevation > 0 && !matchingMarker.data.insideWall) {
             console.log(`Token ${token.name} at elevation ${matchingMarker.data.elevation}`);
             // Add elevation to token height
             token.height = (token.size || 1) + matchingMarker.data.elevation;
           }
-          
+
           // Create and add token mesh
           const mesh = this.createTokenMesh(token);
           if (mesh) {
@@ -2560,13 +2651,13 @@ await this.processAllMarkers();
           console.error(`Error creating token ${i}:`, err);
         }
       }
-      
+
       console.log(`Added ${tokenMeshes.length} token meshes to scene`);
     }
 
 
-// Try to load door sound
-this.loadDoorSound();
+    // Try to load door sound
+    this.loadDoorSound();
 
     this.controls = new THREE.PointerLockControls(
       this.camera,
@@ -2593,38 +2684,38 @@ this.loadDoorSound();
 
 
 
-  this.cleanup = () => {
-    document.removeEventListener("keydown", this.handleKeyDown);
-    document.removeEventListener("keyup", this.handleKeyUp);
+    this.cleanup = () => {
+      document.removeEventListener("keydown", this.handleKeyDown);
+      document.removeEventListener("keyup", this.handleKeyUp);
 
-    // Dispose of renderer
-    this.renderer.dispose();
+      // Dispose of renderer
+      this.renderer.dispose();
 
-    // Dispose of geometries and materials
-    this.scene.traverse((object) => {
+      // Dispose of geometries and materials
+      this.scene.traverse((object) => {
         if (object.geometry) {
-            object.geometry.dispose();
+          object.geometry.dispose();
         }
         if (object.material) {
-            if (Array.isArray(object.material)) {
-                object.material.forEach((material) => material.dispose());
-            } else {
-                object.material.dispose();
-            }
+          if (Array.isArray(object.material)) {
+            object.material.forEach((material) => material.dispose());
+          } else {
+            object.material.dispose();
+          }
         }
-    });
-};
+      });
+    };
 
-// Return with all class method references
-return {
-    scene: this.scene,
-    camera: this.camera,
-    renderer: this.renderer,
-    animate: this.animate.bind(this),  // Ensure 'this' binding
-    controls: this.controls,
-    cleanup: this.cleanup.bind(this)   // Ensure 'this' binding
-};
-}
+    // Return with all class method references
+    return {
+      scene: this.scene,
+      camera: this.camera,
+      renderer: this.renderer,
+      animate: this.animate.bind(this),  // Ensure 'this' binding
+      controls: this.controls,
+      cleanup: this.cleanup.bind(this)   // Ensure 'this' binding
+    };
+  }
 
 createPickupPrompt() {
   if (!this.pickupPrompt) {
@@ -3131,14 +3222,16 @@ placeItemOnWall(itemId, wallInfo) {
     scale: item.prop.scale || 1,
     height: wallInfo.point.y, // Place at hit point height
     rotation: this.getWallRotation(wallInfo.normal), // Align with wall
-    isWallMounted: true, // New flag
-    wallNormal: wallInfo.normal.clone() // Store for future reference
+    isWallMounted: true,
+    insideWallRoom: wallInfo.insideWallRoom
   };
   
   this.createPropMesh(propData)
     .then(mesh => {
       // Position slightly away from wall to prevent z-fighting
-      const normalOffset = wallInfo.normal.clone().multiplyScalar(0.05);
+      // Adjust offset direction based on inside/outside status
+      const offsetScale = wallInfo.insideWallRoom ? -0.05 : 0.05;
+      const normalOffset = wallInfo.normal.clone().multiplyScalar(offsetScale);
       mesh.position.add(normalOffset);
       
       this.scene.add(mesh);
@@ -3261,8 +3354,6 @@ getWallRotation(normal) {
   return Math.atan2(normal.x, normal.z) * (180/Math.PI);
 }
 
-// Add this method to Scene3DController
-// Add this method to Scene3DController
 checkWallInFront() {
   const playerPos = this.camera.position;
   const lookDirection = new THREE.Vector3();
@@ -3280,12 +3371,21 @@ checkWallInFront() {
   const hits = raycaster.intersectObjects(walls);
   
   if (hits.length > 0) {
+    // Get normal - but we need to adjust it if inside a wall room
+    let normal = hits[0].face?.normal.clone() || new THREE.Vector3(0, 0, -1);
+    
+    // If inside a wall room, invert the normal to ensure it points inward
+    if (this.insideWallRoom) {
+      normal.negate();
+    }
+    
     return {
       hit: true,
       wall: hits[0].object,
       distance: hits[0].distance,
       point: hits[0].point,
-      normal: hits[0].face?.normal || new THREE.Vector3(0, 0, -1)
+      normal: normal,
+      insideWallRoom: this.insideWallRoom
     };
   }
   
@@ -3377,23 +3477,33 @@ showNotification(message) {
   }, 2000);
 }
 
-// Add this method to Scene3DController
+// Replace or modify your updateTexturesColorSpace method
 updateTexturesColorSpace() {
   // Apply to all materials in the scene
   this.scene.traverse((object) => {
     if (object.material) {
       // Handle single material
       if (object.material.map) {
-        object.material.map.colorSpace = THREE.SRGBColorSpace;
-        object.material.map.needsUpdate = true;
+        // Add safety check before updating
+        if (object.material.map.image && 
+           (object.material.map.image.width > 0 || 
+            object.material.map.image instanceof HTMLCanvasElement)) {
+          object.material.map.colorSpace = THREE.SRGBColorSpace;
+          object.material.map.needsUpdate = true;
+        }
       }
       
       // Handle material array
       if (Array.isArray(object.material)) {
         object.material.forEach(mat => {
           if (mat.map) {
-            mat.map.colorSpace = THREE.SRGBColorSpace;
-            mat.map.needsUpdate = true;
+            // Same safety check for array materials
+            if (mat.map.image && 
+               (mat.map.image.width > 0 || 
+                mat.map.image instanceof HTMLCanvasElement)) {
+              mat.map.colorSpace = THREE.SRGBColorSpace;
+              mat.map.needsUpdate = true;
+            }
           }
         });
       }
@@ -3755,6 +3865,8 @@ if (!this.visualEffects) {
   // this.createDemoEffects();
 }
 
+
+
       // Create camera
       this.camera = new THREE.PerspectiveCamera(
         75,
@@ -3781,6 +3893,25 @@ if (!this.visualEffects) {
       // Initialize stats (but keep hidden by default)
       this.showStats = false;
       this.initStats();
+
+      [100, 500, 1000].forEach(delay => {
+        setTimeout(() => this.updateTexturesColorSpace(), delay);
+      });
+
+      // global error catch debuggin 
+// const originalSet = Object.getOwnPropertyDescriptor(THREE.Texture.prototype, 'needsUpdate').set;
+
+// Object.defineProperty(THREE.Texture.prototype, 'needsUpdate', {
+//   set: function(value) {
+//     if (value === true) {
+//       const hasData = this.image && (this.image.width > 0 || this.image instanceof HTMLCanvasElement);
+//       if (!hasData) {
+//         console.warn('Texture marked for update but no image data found', new Error().stack);
+//       }
+//     }
+//     originalSet.call(this, value);
+//   }
+// });
 
       // Instructions overlay
       const instructions = document.createElement("div");
@@ -3817,6 +3948,8 @@ if (!this.visualEffects) {
       this.controls.addEventListener("unlock", () => {
         instructions.style.display = "block";
       });
+
+      this.updateInsideWallRoomState()
 
       // Animation loop
       let animationFrameId;
@@ -4188,8 +4321,44 @@ executeDoorTeleport() {
       setTimeout(() => flash.remove(), 200);
     }, 100);
   });
+  setTimeout(() => {
+    this.updateInsideWallRoomState();
+  }, 100); 
 }
 
+
+updateInsideWallRoomState() {
+  // Cast rays in 6 directions (up, down, forward, backward, left, right)
+  const directions = [
+    new THREE.Vector3(0, 1, 0),   // Up
+    new THREE.Vector3(0, -1, 0),  // Down
+    new THREE.Vector3(0, 0, 1),   // Forward
+    new THREE.Vector3(0, 0, -1),  // Backward
+    new THREE.Vector3(1, 0, 0),   // Right
+    new THREE.Vector3(-1, 0, 0)   // Left
+  ];
+  
+  let wallCount = 0;
+  directions.forEach(dir => {
+    const raycaster = new THREE.Raycaster(
+      this.camera.position,
+      dir,
+      0,
+      5 // Check up to 5 units away
+    );
+    
+    const walls = this.scene.children.filter(obj => obj.userData?.isWall);
+    const hits = raycaster.intersectObjects(walls);
+    
+    if (hits.length > 0) {
+      wallCount++;
+    }
+  });
+  
+  // If surrounded by walls in at least 4 directions, we're inside a wall room
+  this.insideWallRoom = wallCount >= 4;
+  console.log(`Player is ${this.insideWallRoom ? 'inside' : 'outside'} a wall room. Wall count: ${wallCount}`);
+}
 
 processDoorMarkers() {
   const doorMarkers = this.markers.filter(m => m.type === 'door');
@@ -4432,85 +4601,96 @@ async loadJumpSound() {
       this.activeTeleporter = null;
     }
   }
-  
+
+
 executeTeleport() {
-  if (!this.activeTeleporter || !this.activeTeleporter.pairedMarker) return;
+  if (!this.activeTeleporter) return;
   
-  // Find the paired teleporter
+  console.log(`Executing teleport from marker ${this.activeTeleporter.marker.id}`);
+  
+  // Find the paired teleporter by ID rather than object reference
+  const pairedMarkerId = this.activeTeleporter.pairedMarkerId;
+  console.log(`Looking for paired marker with ID ${pairedMarkerId}`);
+  
+  if (!pairedMarkerId) {
+    console.error("No paired marker ID found for teleporter");
+    return;
+  }
+  
+  // Find the destination teleporter
   const destination = this.teleporters.find(t => 
-    t.marker.id === this.activeTeleporter.pairedMarker.id
+    t.marker.id === pairedMarkerId
   );
   
-  if (destination) {
-    // Get destination coordinates from teleporter
-    const destX = destination.position.x;
-    const destZ = destination.position.z;
-    
-    // The teleporter circle is already at the correct height
-    // Get its Y position which accounts for elevation
-    const destY = destination.position.y;
-    
-    console.log("Teleport destination:", {
-      x: destX,
-      y: destY,
-      z: destZ,
-      teleporterPosition: destination.position
-    });
-    
-    // Create flash effect
-    const flash = document.createElement('div');
-    flash.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: white;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      z-index: 9999;
-    `;
-    document.body.appendChild(flash);
-    
-    // Animate teleportation
-    requestAnimationFrame(() => {
-      flash.style.opacity = '1';
-      setTimeout(() => {
-        // Update the physics controller's ground height directly
-        if (this.physics) {
-          // Update the physics ground height to match destination elevation
-          // Subtract the small offset that's added to teleporter position (0.05)
-          this.physics.currentGroundHeight = destY - 0.05;
-          console.log("Setting physics ground height:", this.physics.currentGroundHeight);
-          
-          // Reset any jumping or falling state
-          this.physics.isJumping = false;
-          this.physics.isFalling = false;
-        }
-        
-        // Move the player - position + physics-controlled player height
-        const playerHeight = this.physics ? this.physics.playerHeight : 1.7;
-        this.camera.position.set(
-          destX,
-          destY - 0.05 + playerHeight, // Adjust to player eye level
-          destZ
-        );
-        
-        console.log("Final position:", {
-          x: this.camera.position.x,
-          y: this.camera.position.y,
-          z: this.camera.position.z,
-          groundHeight: this.physics ? this.physics.currentGroundHeight : "No physics",
-          playerHeight: playerHeight
-        });
-        
-        // Fade out
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 300);
-      }, 150);
-    });
+  if (!destination) {
+    console.error(`Could not find destination teleporter with ID ${pairedMarkerId}`);
+    return;
   }
+  
+  console.log(`Found destination teleporter: ${destination.marker.id}`);
+  
+  // Get destination coordinates from teleporter
+  const destX = destination.position.x;
+  const destZ = destination.position.z;
+  const destY = destination.position.y;
+  
+  console.log("Teleport destination:", {
+    x: destX.toFixed(2),
+    y: destY.toFixed(2),
+    z: destZ.toFixed(2)
+  });
+  
+  // Create flash effect
+  const flash = document.createElement('div');
+  flash.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+  `;
+  document.body.appendChild(flash);
+  
+  // Animate teleportation
+  requestAnimationFrame(() => {
+    flash.style.opacity = '1';
+    setTimeout(() => {
+      // Update the physics controller's ground height directly
+      if (this.physics) {
+        // Update the physics ground height to match destination elevation
+        // Subtract the small offset that's added to teleporter position (0.05)
+        this.physics.currentGroundHeight = destY - 0.05;
+        console.log("Setting physics ground height:", this.physics.currentGroundHeight);
+        
+        // Reset any jumping or falling state
+        this.physics.isJumping = false;
+        this.physics.isFalling = false;
+      }
+      
+      // Move the player - position + physics-controlled player height
+      const playerHeight = this.physics ? this.physics.playerHeight : 1.7;
+      this.camera.position.set(
+        destX,
+        destY - 0.05 + playerHeight, // Adjust to player eye level
+        destZ
+      );
+      
+      console.log("Final position:", {
+        x: this.camera.position.x.toFixed(2),
+        y: this.camera.position.y.toFixed(2),
+        z: this.camera.position.z.toFixed(2)
+      });
+      
+      // Fade out
+      flash.style.opacity = '0';
+      setTimeout(() => flash.remove(), 300);
+    }, 150);
+  });
 }
 
 
@@ -4695,159 +4875,6 @@ hideSplashArt() {
       }, 300);
   }
 }
-
-// old, working code
-// detectHardwareCapabilities(callback) {
-//   console.log("Starting hardware capability detection");
-  
-//   // Store initial state to restore later
-//   const originalShowStats = this.showStats;
-  
-//   // Create test objects for benchmark
-//   const boxCount = 200;
-//   const testObjects = [];
-  
-//   // Create a complex scene to test rendering performance
-//   const testGeometry = new THREE.BoxGeometry(1, 1, 1);
-//   const testMaterial = new THREE.MeshStandardMaterial({
-//     color: 0x3366ff,
-//     roughness: 0.7,
-//     metalness: 0.2
-//   });
-  
-//   // Add many objects to stress the system
-//   for (let i = 0; i < boxCount; i++) {
-//     const box = new THREE.Mesh(testGeometry, testMaterial);
-    
-//     // Position in random locations
-//     box.position.set(
-//       (Math.random() - 0.5) * 20,
-//       (Math.random() - 0.5) * 20,
-//       (Math.random() - 0.5) * 20
-//     );
-    
-//     // Random rotation
-//     box.rotation.set(
-//       Math.random() * Math.PI,
-//       Math.random() * Math.PI,
-//       Math.random() * Math.PI
-//     );
-    
-//     // Add to scene
-//     this.scene.add(box);
-//     testObjects.push(box);
-//   }
-  
-//   // Add a point light to test lighting performance
-//   const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-//   pointLight.position.set(0, 10, 0);
-//   this.scene.add(pointLight);
-//   testObjects.push(pointLight);
-  
-//   // Enable shadows for testing
-//   this.renderer.shadowMap.enabled = true;
-//   this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-//   pointLight.castShadow = true;
-  
-//   // Measure FPS
-//   let frames = 0;
-//   let lastTime = performance.now();
-//   let totalTime = 0;
-//   let frameRates = [];
-  
-//   // Animate test scene
-//   const animateTest = () => {
-//     // Rotate camera around scene
-//     const time = performance.now() * 0.001;
-//     this.camera.position.x = Math.sin(time * 0.5) * 15;
-//     this.camera.position.z = Math.cos(time * 0.5) * 15;
-//     this.camera.position.y = Math.sin(time * 0.3) * 5 + 7;
-//     this.camera.lookAt(0, 0, 0);
-    
-//     // Render
-//     this.renderer.render(this.scene, this.camera);
-    
-//     // Calculate FPS
-//     frames++;
-//     const now = performance.now();
-//     const elapsed = now - lastTime;
-    
-//     // Record FPS every 100ms
-//     if (elapsed >= 100) {
-//       const currentFPS = (frames * 1000) / elapsed;
-//       frameRates.push(currentFPS);
-      
-//       frames = 0;
-//       lastTime = now;
-//       totalTime += elapsed;
-      
-//       // Update test objects
-//       testObjects.forEach((obj, i) => {
-//         if (obj.isMesh) {
-//           obj.rotation.x += 0.01;
-//           obj.rotation.y += 0.01;
-//         }
-//       });
-//     }
-    
-//     // Run for 3 seconds total
-//     if (totalTime < 3000) {
-//       requestAnimationFrame(animateTest);
-//     } else {
-//       // Clean up test objects
-//       testObjects.forEach(obj => this.scene.remove(obj));
-      
-//       // Calculate median FPS - more reliable than average
-//       frameRates.sort((a, b) => a - b);
-//       const medianFPS = frameRates[Math.floor(frameRates.length / 2)];
-      
-//       console.log(`Hardware test completed: ${medianFPS.toFixed(1)} FPS`);
-      
-//       // Determine quality level
-//       let qualityLevel = 'medium'; // Default
-      
-//       if (medianFPS >= 55) {
-//         qualityLevel = 'high';
-//       } else if (medianFPS >= 30) {
-//         qualityLevel = 'medium';
-//       } else {
-//         qualityLevel = 'low';
-//       }
-      
-//       // Store quality level
-//       this.qualityLevel = qualityLevel;
-      
-//       // Restore original state
-//       this.showStats = originalShowStats;
-      
-//       const result = {
-//         fps: medianFPS,
-//         qualityLevel: qualityLevel,
-//         devicePixelRatio: window.devicePixelRatio,
-//         timestamp: new Date().toISOString()
-//       };
-      
-//       // Clean up and restore normal rendering
-//       this.renderer.shadowMap.enabled = false;
-      
-//       // Call callback with results
-//       if (callback) callback(result);
-      
-//       return result;
-//     }
-//   };
-  
-//   // Start test animation
-//   animateTest();
-  
-//   // Return placeholder result - actual result comes through callback
-//   return {
-//     fps: 0,
-//     qualityLevel: 'medium',
-//     devicePixelRatio: window.devicePixelRatio,
-//     timestamp: new Date().toISOString()
-//   };
-// }
 
 detectHardwareCapabilities(callback) {
   console.log("Starting hardware capability detection");
