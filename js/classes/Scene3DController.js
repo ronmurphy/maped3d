@@ -947,7 +947,7 @@ createPropMesh(propData) {
       case "KeyL": // L for Light toggle
         const nowL = Date.now();
         if (!event.repeat && (!this.lastKeyPresses.h || nowL - this.lastKeyPresses.h > 500)) {
-          this.lastKeyPresses.h = now;
+          this.lastKeyPresses.h = nowL;
           this.addPlayerLight(!this.playerLight);
         }
         break;
@@ -968,10 +968,10 @@ createPropMesh(propData) {
           this.showNotification(`Advanced lighting ${this.lightingEnabled ? 'enabled' : 'disabled'}`);
         }
         break;
-        case "KeyG":
+        case "Backquote": // ` for Preferences
           const nowG = Date.now();
           if (!event.repeat && (!this.lastKeyPresses.h || nowG - this.lastKeyPresses.h > 500)) {
-            this.lastKeyPresses.h = now;
+            this.lastKeyPresses.h = nowG;
             this.showPreferencesDialog(); // this.showPreferencesDialog();
           }
         break;
@@ -5444,7 +5444,7 @@ addPlayerLight(enabled = true) {
   if (!enabled) return;
   
   // Create a point light that follows the player
-  const light = new THREE.PointLight(0xffffff, 0.7, 10); // Color, intensity, distance
+  const light = new THREE.PointLight(0xffffff, 0.9, 3); // Color, intensity, distance
   light.position.copy(this.camera.position);
   
   // Optional shadow settings
