@@ -36,6 +36,7 @@ this.physics = {
 };
 this.visualEffects = null;
 this.showDemoEffects = false;
+this.dayNightCycle = null;
     this.setupInventorySystem();
     this.clear();
   }
@@ -92,6 +93,12 @@ if (!this.visualEffects) {
   this.visualEffects.initPostProcessing();
   // this.createDemoEffects();
 }
+
+if (!this.dayNightCycle) {
+  this.initializeDayNightCycle();
+}
+
+this.addPlayerLight();
 
     container.appendChild(this.renderer.domElement);
 
@@ -163,6 +170,11 @@ if (!this.visualEffects) {
           }
         }
       });
+    }
+
+    if (this.dayNightCycle) {
+      this.dayNightCycle.dispose();
+      this.dayNightCycle = null;
     }
 
       // Dispose visual effects
@@ -426,63 +438,7 @@ toggleStats() {
   
   console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
 }
-  
-  // createStatsPanel() {
-  //   this.stats = new Stats();
-    
-  //   // Configure stats panel
-  //   this.stats.dom.style.position = 'absolute';
-  //   this.stats.dom.style.top = '10px';
-  //   this.stats.dom.style.left = '10px';
-  //   this.stats.dom.style.zIndex = '1000';
-  //   this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-    
 
-  //   const qualityLevel = this.qualityLevel || 
-  //   (this.preferences?.detectedQuality) || 
-  //   (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : null);
-  
-  //   // Add quality indicator
-  //   if (this.qualityLevel) {
-  //     const qualityIndicator = document.createElement('div');
-  //     qualityIndicator.className = 'quality-level';
-  //     qualityIndicator.style.cssText = `
-  //       position: absolute;
-  //       top: 48;
-  //       right: 0;
-  //       background: rgba(0,0,0,0.5);
-  //       color: white;
-  //       padding: 2px 5px;
-  //       font-size: 10px;
-  //       border-radius: 0 0 0 3px;
-  //     `;
-      
-  //     // Set color based on quality level
-  //     const levelColors = {
-  //       high: '#4CAF50',
-  //       medium: '#2196F3',
-  //       low: '#FF9800'
-  //     };
-      
-  //     qualityIndicator.textContent = this.qualityLevel.toUpperCase();
-  //     qualityIndicator.style.color = levelColors[this.qualityLevel] || 'white';
-      
-  //     this.stats.dom.appendChild(qualityIndicator);
-  //   }
-    
-  //   // Add panel to DOM (preferably to the 3D container)
-  //   const container = document.querySelector('.drawer-3d-view');
-  //   if (container) {
-  //     container.appendChild(this.stats.dom);
-  //   } else {
-  //     document.body.appendChild(this.stats.dom);
-  //   }
-    
-  //   console.log('FPS counter initialized');
-  //   console.log('FPS counter initialized with quality level:', qualityLevel);
-  // }
-
-// Update the createStatsPanel/initStats method
 
 createStatsPanel() {
   this.stats = new Stats();
@@ -3538,8 +3494,22 @@ updateTexturesColorSpace() {
 
 animate = () => {
 
+  if (!this._dayNightDebugLogged && this.dayNightCycle) {
+    console.log('Day/Night cycle exists in animate:', this.dayNightCycle);
+    this._dayNightDebugLogged = true;
+  } else if (!this._dayNightMissingLogged && !this.dayNightCycle) {
+    console.log('Day/Night cycle missing in animate. Adding it now.');
+    this.initializeDayNightCycle();
+    this._dayNightMissingLogged = true;
+  }
+
   if (this._controlsPaused) {
     // Only render the scene, don't process movement
+
+    if (this.dayNightCycle) {
+      this.dayNightCycle.update();
+    }
+
     this.renderer.render(this.scene, this.camera);
     return;
   }
@@ -3686,6 +3656,11 @@ animate = () => {
     this.visualEffects.update(deltaTime);
   } //else {
     // Fallback to standard rendering
+
+    if (this.dayNightCycle) {
+      this.dayNightCycle.update();
+    }
+
     this.renderer.render(this.scene, this.camera);
 //  }
 
@@ -5434,33 +5409,81 @@ initializeTorches() {
   }
 }
 
-addPlayerLight(enabled = true) {
-  // Remove any existing player light
-  if (this.playerLight) {
-    this.scene.remove(this.playerLight);
-    this.playerLight = null;
-  }
+// addPlayerLight(enabled = true) {
+//   // Remove any existing player light
+//   if (this.playerLight) {
+//     this.scene.remove(this.playerLight);
+//     this.playerLight = null;
+//   }
   
-  if (!enabled) return;
+//   if (!enabled) return;
+  
+//   // Create a point light that follows the player
+//   const light = new THREE.PointLight(0xffffff, 0.9, 2); // Color, intensity, distance
+//   light.position.copy(this.camera.position);
+  
+//   // Optional shadow settings
+//   if (this.renderer.shadowMap.enabled) {
+//     light.castShadow = true;
+//     light.shadow.mapSize.width = 512;
+//     light.shadow.mapSize.height = 512;
+//     light.shadow.bias = -0.002;
+//   }
+  
+//   this.playerLight = light;
+//   this.scene.add(light);
+//   console.log("Player light added");
+  
+//   // Update helper text to show light is enabled
+//   this.showNotification("Player light enabled");
+// }
+
+addPlayerLight() {
+  if (this.playerLight) return;
   
   // Create a point light that follows the player
-  const light = new THREE.PointLight(0xffffff, 0.9, 2); // Color, intensity, distance
-  light.position.copy(this.camera.position);
+  this.playerLight = new THREE.PointLight(0xffffcc, 0.6, 10);
+  this.playerLight.position.set(0, 1.0, 0); // Slightly below eye level
   
-  // Optional shadow settings
-  if (this.renderer.shadowMap.enabled) {
-    light.castShadow = true;
-    light.shadow.mapSize.width = 512;
-    light.shadow.mapSize.height = 512;
-    light.shadow.bias = -0.002;
+  // Add the light to the camera so it moves with the player
+  this.camera.add(this.playerLight);
+  
+  // Add a switch to UI to toggle the light
+  const flashlightBtn = document.createElement('div');
+  flashlightBtn.className = 'flashlight-button';
+  flashlightBtn.setAttribute('data-tooltip', 'Toggle Flashlight');
+  flashlightBtn.innerHTML = `<span class="material-icons">flashlight_on</span>`;
+  flashlightBtn.style.cssText = `
+    position: absolute;
+    top: 150px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+  `;
+  
+  // Add click handler to toggle the flashlight
+  let isFlashlightOn = true;
+  flashlightBtn.addEventListener('click', () => {
+    isFlashlightOn = !isFlashlightOn;
+    this.playerLight.intensity = isFlashlightOn ? 0.6 : 0;
+    flashlightBtn.innerHTML = `<span class="material-icons">${isFlashlightOn ? 'flashlight_on' : 'flashlight_off'}</span>`;
+  });
+  
+  // Add to 3D view
+  const container = document.querySelector('.drawer-3d-view');
+  if (container) {
+    container.appendChild(flashlightBtn);
   }
   
-  this.playerLight = light;
-  this.scene.add(light);
-  console.log("Player light added");
-  
-  // Update helper text to show light is enabled
-  this.showNotification("Player light enabled");
+  return this.playerLight;
 }
 
 setLightingEnabled(enabled) {
@@ -5549,46 +5572,76 @@ setLightingEnabled(enabled) {
   this.lightingEnabled = enabled;
 }
 
-// Add this method to Scene3DController to create some test torches
-createDemoEffects() {
-  if (!this.visualEffects || !this.scene || !this.renderer) {
-    console.warn("Can't create visual effects - required components not initialized");
-    return;
+initializeDayNightCycle() {
+  // Load the DayNightCycle script dynamically if not already loaded
+  if (typeof DayNightCycle === 'undefined') {
+    // Create script element
+    const script = document.createElement('script');
+    script.src = 'js/classes/day-night-cycle.js';
+    
+    script.onload = () => {
+      // Create the cycle when script is loaded
+      this.createDayNightCycle();
+    };
+    
+    script.onerror = (err) => {
+      console.error('Could not load day-night cycle script', err);
+    };
+    
+    document.head.appendChild(script);
+  } else {
+    // Script is already loaded, create directly
+    this.createDayNightCycle();
+  }
+}
+
+// Helper method to create the cycle
+createDayNightCycle() {
+  // Create the cycle
+  this.dayNightCycle = new DayNightCycle(this);
+  
+  // Start with appropriate time based on preference or default to noon
+  const startTime = this.preferences?.timeOfDay || 12;
+  this.dayNightCycle.setTime(startTime);
+  
+  // Start cycle if auto-play is enabled in preferences
+  if (this.preferences?.autoPlayDayNight) {
+    this.dayNightCycle.start();
   }
   
-  console.log("Creating demo visual effects");
+  // Create lighting controls in UI
+  const dayNightButton = document.createElement('div');
+  dayNightButton.className = 'time-control-button';
+  dayNightButton.setAttribute('data-tooltip', 'Day/Night Cycle');
+  dayNightButton.innerHTML = `<span class="material-icons">brightness_4</span>`;
+  dayNightButton.style.cssText = `
+    position: absolute;
+    top: 100px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+  `;
   
-  // Create torches at key locations
-  // Try to position these near walls or in corners of your map
-  
-  // Example positions - adjust these to fit your actual map layout
-  const torchPositions = [
-    { x: 5, y: 2, z: 5 },
-    { x: -5, y: 2, z: 5 },
-    { x: 5, y: 2, z: -5 },
-    { x: -5, y: 2, z: -5 }
-  ];
-  
-  torchPositions.forEach(pos => {
-    this.visualEffects.createTorch(pos, {
-      color: 0xff9900,
-      intensity: 1.2,
-      distance: 10
-    });
+  // Add click handler to show controls
+  dayNightButton.addEventListener('click', () => {
+    this.dayNightCycle.showControls();
   });
   
-  // Create a glowing prop or item as demonstration
-  const glowGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-  const glowMaterial = this.visualEffects.createGlowMaterial({
-    color: 0x00aaff,  // Blue glow
-    emissiveIntensity: 1.2
-  });
+  // Add to 3D view
+  const container = document.querySelector('.drawer-3d-view');
+  if (container) {
+    container.appendChild(dayNightButton);
+  }
   
-  const glowOrb = new THREE.Mesh(glowGeometry, glowMaterial);
-  glowOrb.position.set(0, 1.5, 0);  // Center of the map, floating
-  this.scene.add(glowOrb);
-  
-  console.log("Demo effects created");
+  console.log('Day/Night cycle initialized');
 }
 
 }

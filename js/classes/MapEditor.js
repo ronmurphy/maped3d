@@ -6056,10 +6056,36 @@ graphicsSection.appendChild(lightingControls);
       </div>
     </div>
   `;
+
+  const environmentSection = document.createElement('div');
+environmentSection.innerHTML = `
+  <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Environment</h3>
+  
+  <div style="margin-bottom: 16px;">
+    <sl-select id="timeOfDay" label="Default Time" value="${this.preferences?.timeOfDay || 12}">
+      <sl-option value="0">Midnight (12 AM)</sl-option>
+      <sl-option value="6">Dawn (6 AM)</sl-option>
+      <sl-option value="9">Morning (9 AM)</sl-option>
+      <sl-option value="12">Noon (12 PM)</sl-option>
+      <sl-option value="15">Afternoon (3 PM)</sl-option>
+      <sl-option value="18">Dusk (6 PM)</sl-option>
+      <sl-option value="21">Night (9 PM)</sl-option>
+    </sl-select>
+  </div>
+  
+  <div>
+    <sl-switch id="autoPlayDayNight" ${this.preferences?.autoPlayDayNight ? 'checked' : ''}>
+      Auto-play Day/Night cycle
+    </sl-switch>
+  </div>
+`;
+
+
   
   // Add sections to content
   content.appendChild(graphicsSection);
   content.appendChild(displaySection);
+  content.appendChild(environmentSection);
   
   // Add content to dialog
   dialog.appendChild(content);
@@ -6177,6 +6203,9 @@ savePreferencesFromDialog(dialog) {
     movementSpeed: parseFloat(dialog.querySelector('#movementSpeed').value),
     detectedQuality: this.preferences?.detectedQuality || null
   };
+  prefs.timeOfDay = parseInt(dialog.querySelector('#timeOfDay').value);
+prefs.autoPlayDayNight = dialog.querySelector('#autoPlayDayNight').checked;
+
   
   // Save to localStorage
   localStorage.setItem('appPreferences', JSON.stringify(prefs));
@@ -6257,66 +6286,27 @@ applyPreferences() {
     // Apply movement speed
     this.scene3D.moveState.baseSpeed = 0.025 * prefs.movementSpeed;
     this.scene3D.moveState.speed = this.scene3D.moveState.sprint ? 
-      this.scene3D.moveState.baseSpeed * 2 : this.scene3D.moveState.baseSpeed;
+    this.scene3D.moveState.baseSpeed * 2 : this.scene3D.moveState.baseSpeed;
+  
+    if (this.dayNightCycle) {
+      // Update time of day if it changed
+      const newTime = prefs.timeOfDay || 12;
+      if (Math.abs(this.dayNightCycle.currentTime - newTime) > 0.1) {
+        this.dayNightCycle.setTime(newTime);
+      }
+      
+      // Update auto-play state
+      if (prefs.autoPlayDayNight && !this.dayNightCycle.isActive) {
+        this.dayNightCycle.start();
+      } else if (!prefs.autoPlayDayNight && this.dayNightCycle.isActive) {
+        this.dayNightCycle.pause();
+      }
+    }
+  
   }
 }
 
-// Run hardware detection test
-// async runHardwareTest() {
-//   return new Promise((resolve, reject) => {
-//     // If no 3D view exists yet, create a temporary one for testing
-//     if (!this.scene3D || !this.scene3D.renderer) {
-//       try {
-//         // Create dialog to test in
-//         const testContainer = document.createElement('div');
-//         testContainer.style.cssText = `
-//           position: fixed;
-//           top: -9999px;
-//           left: -9999px;
-//           width: 512px;
-//           height: 512px;
-//           opacity: 0;
-//           pointer-events: none;
-//         `;
-//         document.body.appendChild(testContainer);
-        
-//         // Create temporary scene
-//         const testScene3D = new Scene3DController();
-//         testScene3D.initialize(testContainer, 512, 512);
-        
-//         // Run test
-//         const result = testScene3D.detectHardwareCapabilities(() => {
-//           // Clean up
-//           testContainer.remove();
-//           testScene3D.cleanup();
-          
-//           // Store result
-//           this.preferences.detectedQuality = result.qualityLevel;
-//           localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-          
-//           resolve(result);
-//         });
-//       } catch (error) {
-//         reject(error);
-//       }
-//     } else {
-//       // Use existing 3D view
-//       try {
-//         const result = this.scene3D.detectHardwareCapabilities(() => {
-//           // Store result
-//           this.preferences.detectedQuality = result.qualityLevel;
-//           localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-          
-//           resolve(result);
-//         });
-//       } catch (error) {
-//         reject(error);
-//       }
-//     }
-//   });
-// }
 
-// In MapEditor.js - Update this method if needed
 async runHardwareTest() {
   return new Promise((resolve, reject) => {
     // If no 3D view exists yet, create a temporary one for testing
