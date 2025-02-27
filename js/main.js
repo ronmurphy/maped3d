@@ -34,6 +34,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize map editor
     window.mapEditor = new MapEditor();
 
+    const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
+  
+    // Initialize party and combat systems
+    if (resourceManager) {
+      // Create managers
+      const partyManager = new PartyManager(resourceManager);
+      const combatSystem = new CombatSystem(partyManager, resourceManager);
+      
+      // Make these available globally for easy access
+      window.partyManager = partyManager;
+      window.combatSystem = combatSystem;
+      
+      console.log('Party and Combat systems initialized');
+    } else {
+      console.warn('Resource manager not found, party and combat systems not initialized');
+    }
+
 
     // help info
     const helpBtn = document.getElementById('helpBtn');

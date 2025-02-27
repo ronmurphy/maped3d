@@ -1,0 +1,1348 @@
+/**
+ * CombatSystem.js
+ * Handles turn-based combat using monsters from the party system
+ */
+class CombatSystem {
+  constructor(partyManager, resourceManager) {
+    // Store references to managers
+    this.partyManager = partyManager;
+    this.resourceManager = resourceManager;
+    
+    // Combat state
+    this.inCombat = false;
+    this.initiativeOrder = [];
+    this.currentTurn = 0;
+    this.roundNumber = 0;
+    
+    // Combat participants
+    this.playerParty = [];
+    this.enemyParty = [];
+    
+    // UI elements
+    this.combatOverlay = null;
+    this.dialogContainer = null;
+    
+    console.log('Combat System initialized');
+  }
+  
+  /**
+   * Combat Initialization Methods
+   */
+  
+  // Initialize combat with enemy monsters
+  initiateCombat(enemies) {
+    // Check if we're already in combat
+    if (this.inCombat) {
+      console.warn('Already in combat');
+      return false;
+    }
+    
+    // Check if player has active monsters
+    if (!this.partyManager.party.active.length) {
+      this.showNeedMonstersDialog();
+      return false;
+    }
+    
+    // Set combat state
+    this.inCombat = true;
+    
+    // Process enemy data (ensure they're in the right format)
+    const processedEnemies = enemies.map(enemy => {
+      // If enemy is bestiary reference, convert to combat monster
+      if (enemy.data && !enemy.monsterAbilities) {
+        return this.partyManager.prepareMonster(enemy);
+      }
+      return enemy;
+    });
+    
+    // Setup combat participants
+    this.playerParty = [...this.partyManager.party.active];
+    this.enemyParty = processedEnemies;
+    
+    // Roll initiative
+    this.rollInitiative();
+    
+    // Show combat UI
+    this.showCombatInterface();
+    
+    return true;
+  }
+  
+  // Roll initiative for all participants
+  rollInitiative() {
+    const allParticipants = [];
+    
+    // Add player monsters with initiative rolls
+    this.playerParty.forEach(monster => {
+      // Base initiative on DEX
+      const dexMod = monster.abilities?.dex?.modifier || 0;
+      const initiativeRoll = this.rollDice(20) + dexMod;
+      
+      allParticipants.push({
+        monster,
+        initiative: initiativeRoll,
+        side: 'player'
+      });
+    });
+    
+    // Add enemy monsters with initiative rolls
+    this.enemyParty.forEach(monster => {
+      // Base initiative on DEX
+      const dexMod = monster.abilities?.dex?.modifier || 0;
+      const initiativeRoll = this.rollDice(20) + dexMod;
+      
+      allParticipants.push({
+        monster,
+        initiative: initiativeRoll,
+        side: 'enemy'
+      });
+    });
+    
+    // Sort by initiative (highest first)
+    this.initiativeOrder = allParticipants.sort((a, b) => b.initiative - a.initiative);
+    
+    // Reset turn counter
+    this.currentTurn = 0;
+    this.roundNumber = 1;
+    
+    console.log('Initiative order:', this.initiativeOrder);
+  }
+  
+  /**
+   * Combat UI Methods
+   */
+  
+  // Show main combat interface
+  showCombatInterface() {
+    // Use splash art approach for fullscreen overlay
+    this.combatOverlay = document.createElement('div');
+    this.combatOverlay.className = 'combat-overlay';
+    this.combatOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+    
+    // Create main combat container
+    this.dialogContainer = document.createElement('div');
+    this.dialogContainer.className = 'combat-container';
+    this.dialogContainer.style.cssText = `
+      width: 90%;
+      max-width: 1000px;
+      height: 90vh;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+      overflow: hidden;
+    `;
+    
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'combat-header';
+    header.style.cssText = `
+      padding: 12px 16px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    `;
+    
+    header.innerHTML = `
+      <h2 style="margin: 0;">Combat</h2>
+      <div class="combat-round">Round ${this.roundNumber}</div>
+    `;
+    
+    // Create main combat area
+    const combatArea = document.createElement('div');
+    combatArea.className = 'combat-area';
+    combatArea.style.cssText = `
+      flex: 1;
+      display: flex;
+      background: #f9f9f9;
+      position: relative;
+      min-height: 0;
+    `;
+    
+    // Create main content section with battle scene
+    const battleScene = document.createElement('div');
+    battleScene.className = 'battle-scene';
+    battleScene.style.cssText = `
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%);
+    `;
+    
+    // Create enemy area at top
+    const enemyArea = document.createElement('div');
+    enemyArea.className = 'enemy-area';
+    enemyArea.style.cssText = `
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      padding: 16px;
+    `;
+    
+    // Add enemy monsters
+    enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, 'enemy');
+    
+    // Create player area at bottom
+    const playerArea = document.createElement('div');
+    playerArea.className = 'player-area';
+    playerArea.style.cssText = `
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      padding: 16px;
+      border-top: 2px dashed rgba(0,0,0,0.1);
+    `;
+    
+    // Add player monsters
+    playerArea.innerHTML = this.renderMonsterGroup(this.playerParty, 'player');
+    
+    // Create combat log area
+    const combatLog = document.createElement('div');
+    combatLog.className = 'combat-log';
+    combatLog.style.cssText = `
+      flex: 0 0 250px;
+      border-left: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    `;
+    
+    combatLog.innerHTML = `
+      <div class="combat-log-header" style="padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #ddd;">
+        <h3 style="margin: 0; font-size: 1rem;">Combat Log</h3>
+      </div>
+      <div class="log-entries" style="flex: 1; overflow-y: auto; padding: 8px 12px;">
+        <div class="log-entry" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+          <div style="color: #666; font-size: 0.8em;">Round ${this.roundNumber}</div>
+          <div>Combat has begun!</div>
+        </div>
+        <div class="log-entry" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+          <div style="color: #666; font-size: 0.8em;">Initiative</div>
+          <div>Initiative order determined</div>
+        </div>
+      </div>
+    `;
+    
+    // Create initiative tracker
+    const initiativeTracker = document.createElement('div');
+    initiativeTracker.className = 'initiative-tracker';
+    initiativeTracker.style.cssText = `
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+      width: 200px;
+    `;
+    
+    initiativeTracker.innerHTML = `
+      <h3 style="margin: 0; font-size: 0.9rem; text-align: center; padding-bottom: 4px; border-bottom: 1px solid #ddd;">Initiative Order</h3>
+      <div class="initiative-list" style="max-height: 200px; overflow-y: auto;">
+        ${this.renderInitiativeList()}
+      </div>
+    `;
+    
+    // Create action bar
+    const actionBar = document.createElement('div');
+    actionBar.className = 'action-bar';
+    actionBar.style.cssText = `
+      padding: 16px;
+      background: #f5f5f5;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+    `;
+    
+    // Only show action buttons if it's player's turn
+    const currentCombatant = this.initiativeOrder[this.currentTurn];
+    if (currentCombatant && currentCombatant.side === 'player') {
+      const currentMonster = currentCombatant.monster;
+      actionBar.innerHTML = this.renderActionBar(currentMonster);
+    } else {
+      actionBar.innerHTML = `
+        <div style="text-align: center; color: #666;">
+          <em>Enemy's turn...</em>
+        </div>
+      `;
+    }
+    
+    // Assemble the UI
+    battleScene.appendChild(enemyArea);
+    battleScene.appendChild(playerArea);
+    battleScene.appendChild(initiativeTracker);
+    
+    combatArea.appendChild(battleScene);
+    combatArea.appendChild(combatLog);
+    
+    this.dialogContainer.appendChild(header);
+    this.dialogContainer.appendChild(combatArea);
+    this.dialogContainer.appendChild(actionBar);
+    
+    // Add to overlay
+    this.combatOverlay.appendChild(this.dialogContainer);
+    document.body.appendChild(this.combatOverlay);
+    
+    // Add event listeners
+    this.setupCombatEventListeners();
+    
+    // Animate in
+    setTimeout(() => {
+      this.combatOverlay.style.opacity = '1';
+      this.dialogContainer.style.transform = 'scale(1)';
+      
+      // If it's enemy's turn, start AI processing
+      if (currentCombatant && currentCombatant.side === 'enemy') {
+        setTimeout(() => this.processEnemyTurn(), 1000);
+      }
+    }, 10);
+  }
+  
+  // Render a group of monsters (player or enemy)
+  renderMonsterGroup(monsters, side) {
+    if (!monsters || monsters.length === 0) {
+      return `<div class="empty-party-message">No ${side} monsters</div>`;
+    }
+    
+    let html = '';
+    
+    monsters.forEach(monster => {
+      // Determine if this monster is active
+      const isActive = this.isMonsterActive(monster);
+      const isDefeated = monster.currentHP <= 0;
+      
+      // Calculate HP percentage
+      const hpPercent = (monster.currentHP / monster.maxHP) * 100;
+      let hpBarColor = '#4CAF50';  // Green
+      if (hpPercent < 30) {
+        hpBarColor = '#F44336';  // Red
+      } else if (hpPercent < 70) {
+        hpBarColor = '#FF9800';  // Orange
+      }
+      
+      // Apply styling based on status
+      let cardStyle = `
+        position: relative;
+        width: 150px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+      `;
+      
+      if (isActive) {
+        cardStyle += `
+          box-shadow: 0 0 15px rgba(33, 150, 243, 0.8);
+          transform: translateY(-10px) scale(1.05);
+          z-index: 10;
+          border-color: #2196F3;
+        `;
+      }
+      
+      if (isDefeated) {
+        cardStyle += `
+          opacity: 0.6;
+          filter: grayscale(100%);
+        `;
+      }
+      
+      html += `
+        <div class="combat-monster ${side}" data-monster-id="${monster.id}" style="${cardStyle}">
+          <div class="monster-header" style="display: flex; align-items: center; margin-bottom: 8px;">
+            <div class="monster-image" style="width: 40px; height: 40px; margin-right: 8px;">
+              <img src="${monster.thumbnail}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+            </div>
+            <div class="monster-info" style="flex: 1; overflow: hidden;">
+              <div class="monster-name" style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${monster.name}</div>
+              <div class="monster-level" style="font-size: 0.8em;">Lvl ${monster.level}</div>
+            </div>
+          </div>
+          
+          <div class="monster-hp" style="margin-bottom: 8px;">
+            <div class="hp-label" style="display: flex; justify-content: space-between; font-size: 0.8em;">
+              <span>HP</span>
+              <span>${monster.currentHP}/${monster.maxHP}</span>
+            </div>
+            <div class="hp-bar-bg" style="height: 8px; background: #e0e0e0; border-radius: 4px;">
+              <div class="hp-bar-fill" style="height: 100%; width: ${hpPercent}%; background: ${hpBarColor}; border-radius: 4px;"></div>
+            </div>
+          </div>
+          
+          ${isActive ? `
+            <div class="active-indicator" style="position: absolute; top: -10px; left: calc(50% - 12px); background: #2196F3; color: white; border-radius: 12px; padding: 2px 6px; font-size: 0.7em; font-weight: bold;">
+              ACTIVE
+            </div>
+          ` : ''}
+          
+          ${isDefeated ? `
+            <div class="defeated-indicator" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; pointer-events: none;">
+              <span class="material-icons" style="font-size: 48px; color: rgba(200, 0, 0, 0.7);">close</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    });
+    
+    return html;
+  }
+  
+  // Render initiative list
+  renderInitiativeList() {
+    if (!this.initiativeOrder || this.initiativeOrder.length === 0) {
+      return '<div style="padding: 8px; text-align: center;">No combatants</div>';
+    }
+    
+    let html = '';
+    
+    this.initiativeOrder.forEach((combatant, index) => {
+      const { monster, initiative, side } = combatant;
+      const isCurrentTurn = index === this.currentTurn;
+      const isDefeated = monster.currentHP <= 0;
+      
+      // Determine styling based on status
+      let itemStyle = `
+        display: flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-bottom: 1px solid #eee;
+        font-size: 0.9em;
+      `;
+      
+      if (isCurrentTurn) {
+        itemStyle += `
+          background-color: rgba(33, 150, 243, 0.1);
+          border-left: 3px solid #2196F3;
+        `;
+      }
+      
+      if (isDefeated) {
+        itemStyle += `
+          opacity: 0.5;
+          text-decoration: line-through;
+        `;
+      }
+      
+      html += `
+        <div class="initiative-item" style="${itemStyle}">
+          <div class="initiative-number" style="flex: 0 0 30px; font-weight: bold;">${initiative}</div>
+          <div class="initiative-icon" style="flex: 0 0 20px; margin-right: 4px;">
+            <span class="material-icons" style="font-size: 16px; color: ${side === 'player' ? '#4CAF50' : '#F44336'};">
+              ${side === 'player' ? 'person' : 'dangerous'}
+            </span>
+          </div>
+          <div class="initiative-name" style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${monster.name}
+          </div>
+        </div>
+      `;
+    });
+    
+    return html;
+  }
+  
+  // Render action bar with monster abilities
+  renderActionBar(monster) {
+    if (!monster || monster.currentHP <= 0) {
+      return '<div style="text-align: center; color: #666;"><em>This monster is defeated</em></div>';
+    }
+    
+    if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
+      return '<div style="text-align: center; color: #666;"><em>No abilities available</em></div>';
+    }
+    
+    let html = `<div class="abilities-container" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">`;
+    
+    // Add basic abilities
+    monster.monsterAbilities.forEach(ability => {
+      // Determine icon based on ability type
+      let icon = 'sports_martial_arts'; // Default for attack
+      let color = '#607D8B'; // Default color
+      
+      switch (ability.type) {
+        case 'attack': icon = 'sports_martial_arts'; color = '#F44336'; break;
+        case 'area': icon = 'blur_circular'; color = '#FF9800'; break;
+        case 'buff': icon = 'upgrade'; color = '#4CAF50'; break;
+        case 'debuff': icon = 'threat'; color = '#9C27B0'; break;
+        case 'defense': icon = 'shield'; color = '#2196F3'; break;
+        case 'healing': icon = 'healing'; color = '#00BCD4'; break;
+        case 'reaction': icon = 'autorenew'; color = '#795548'; break;
+        case 'support': icon = 'group'; color = '#607D8B'; break;
+      }
+      
+      html += `
+        <button class="ability-btn" data-ability="${ability.name.replace(/\s+/g, '_')}" 
+                style="padding: 8px 12px; border: 1px solid ${color}; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons" style="color: ${color};">${icon}</span>
+          <span>${ability.name}</span>
+          ${ability.damage ? `<span style="color: #d32f2f; font-size: 0.9em;">${ability.damage}</span>` : ''}
+        </button>
+      `;
+    });
+    
+    // Add items button
+    html += `
+      <button class="use-item-btn" style="padding: 8px 12px; border: 1px solid #9E9E9E; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <span class="material-icons" style="color: #9E9E9E;">inventory_2</span>
+        <span>Use Item</span>
+      </button>
+    `;
+    
+    // Add skip turn button
+    html += `
+      <button class="skip-turn-btn" style="padding: 8px 12px; border: 1px solid #9E9E9E; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <span class="material-icons" style="color: #9E9E9E;">skip_next</span>
+        <span>Skip Turn</span>
+      </button>
+    `;
+    
+    html += `</div>`;
+    return html;
+  }
+  
+  // Setup event listeners for combat UI
+  setupCombatEventListeners() {
+    // Skip button
+    const skipBtn = this.dialogContainer.querySelector('.skip-turn-btn');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        this.addLogEntry(`${this.getCurrentMonster().name} skips their turn.`);
+        this.nextTurn();
+      });
+    }
+    
+    // Ability buttons
+    const abilityBtns = this.dialogContainer.querySelectorAll('.ability-btn');
+    abilityBtns.forEach(btn => {
+      btn.addEventListener('click', e => {
+        const abilityName = e.currentTarget.getAttribute('data-ability').replace(/_/g, ' ');
+        this.useMonsterAbility(abilityName);
+      });
+    });
+    
+    // Use item button
+    const itemBtn = this.dialogContainer.querySelector('.use-item-btn');
+    if (itemBtn) {
+      itemBtn.addEventListener('click', () => {
+        alert('Item usage not implemented yet');
+      });
+    }
+  }
+  
+  // Show dialog when player has no monsters in party
+  showNeedMonstersDialog() {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'No Active Monsters';
+    
+    dialog.innerHTML = `
+      <div style="text-align: center; padding: 20px;">
+        <span class="material-icons" style="font-size: 48px; color: #F44336; margin-bottom: 16px;">pets</span>
+        <p>You don't have any monsters in your active party.</p>
+        <p>You need at least one monster to participate in combat.</p>
+      </div>
+      
+      <div slot="footer">
+        <sl-button variant="primary" class="manage-party-btn">Manage Party</sl-button>
+        <sl-button variant="neutral" class="close-btn">Close</sl-button>
+      </div>
+    `;
+    
+    // Add event listeners
+    dialog.addEventListener('sl-after-show', () => {
+      dialog.querySelector('.manage-party-btn').addEventListener('click', () => {
+        dialog.hide();
+        this.partyManager.showPartyManager();
+      });
+      
+      dialog.querySelector('.close-btn').addEventListener('click', () => {
+        dialog.hide();
+      });
+    });
+    
+    document.body.appendChild(dialog);
+    dialog.show();
+  }
+  
+  /**
+   * Combat Logic Methods
+   */
+  
+  // Process current turn
+  processTurn() {
+    // Get current combatant
+    const currentCombatant = this.initiativeOrder[this.currentTurn];
+    if (!currentCombatant) return false;
+    
+    const { monster, side } = currentCombatant;
+    
+    // Check if monster is defeated
+    if (monster.currentHP <= 0) {
+      this.addLogEntry(`${monster.name} is defeated and cannot act.`);
+      this.nextTurn();
+      return true;
+    }
+    
+    // If it's player's turn, wait for player input
+    if (side === 'player') {
+      // Update UI to show it's player's turn
+      this.updateActionBar(monster);
+      return true;
+    }
+    
+    // If it's enemy's turn, process AI
+    if (side === 'enemy') {
+      this.processEnemyTurn();
+      return true;
+    }
+    
+    return false;
+  }
+  
+  // Process enemy's turn with AI
+  processEnemyTurn() {
+    // Small delay for better UX
+    setTimeout(() => {
+      const currentCombatant = this.initiativeOrder[this.currentTurn];
+      if (!currentCombatant || currentCombatant.side !== 'enemy') return;
+      
+      const monster = currentCombatant.monster;
+      
+      // Simple AI: select random ability and random target
+      if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
+        // Choose random ability
+        const randomAbilityIndex = Math.floor(Math.random() * monster.monsterAbilities.length);
+        const ability = monster.monsterAbilities[randomAbilityIndex];
+        
+        // Find valid targets (non-defeated player monsters)
+        const validTargets = this.playerParty.filter(m => m.currentHP > 0);
+        
+        if (validTargets.length > 0) {
+          // Select random target
+          const randomTargetIndex = Math.floor(Math.random() * validTargets.length);
+          const target = validTargets[randomTargetIndex];
+          
+          // Use ability
+          this.resolveAbility(monster, ability, target);
+        } else {
+          this.addLogEntry(`${monster.name} has no valid targets.`);
+        }
+      } else {
+        this.addLogEntry(`${monster.name} has no abilities and skips their turn.`);
+      }
+      
+      // Move to next turn
+      this.nextTurn();
+    }, 1000);
+  }
+  
+  // Move to next turn
+  nextTurn() {
+    // Move to next combatant
+    this.currentTurn++;
+    
+    // If we've gone through all combatants, start a new round
+    if (this.currentTurn >= this.initiativeOrder.length) {
+      this.currentTurn = 0;
+      this.roundNumber++;
+      this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
+      
+      // Update round number in UI
+      const roundDisplay = this.dialogContainer.querySelector('.combat-round');
+      if (roundDisplay) {
+        roundDisplay.textContent = `Round ${this.roundNumber}`;
+      }
+    }
+    
+    // Update initiative UI
+    this.updateInitiativeTracker();
+    
+    // Check for combat end conditions
+    if (this.checkCombatEnd()) {
+      return;
+    }
+    
+    // Process the new turn
+    const currentCombatant = this.initiativeOrder[this.currentTurn];
+    if (currentCombatant) {
+      this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
+      
+      // Update action bar for player turn
+      if (currentCombatant.side === 'player') {
+        this.updateActionBar(currentCombatant.monster);
+      } else {
+        // For enemy turn, clear action bar
+        this.updateActionBar(null);
+        // Process enemy turn with a slight delay
+        setTimeout(() => this.processEnemyTurn(), 1000);
+      }
+    }
+  }
+  
+  // Check if combat has ended
+  checkCombatEnd() {
+    // Check if all player monsters are defeated
+    const allPlayerDefeated = this.playerParty.every(monster => monster.currentHP <= 0);
+    if (allPlayerDefeated) {
+      this.endCombat('defeat');
+      return true;
+    }
+    
+    // Check if all enemy monsters are defeated
+    const allEnemiesDefeated = this.enemyParty.every(monster => monster.currentHP <= 0);
+    if (allEnemiesDefeated) {
+      this.endCombat('victory');
+      return true;
+    }
+    
+    return false;
+  }
+  
+  // End combat and show results
+  endCombat(result) {
+    // Set combat state
+    this.inCombat = false;
+    
+    // Create result overlay
+    const resultOverlay = document.createElement('div');
+    resultOverlay.className = 'combat-result-overlay';
+    resultOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    `;
+    
+    // Create result card
+    const resultCard = document.createElement('div');
+    resultCard.className = 'combat-result-card';
+    resultCard.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    `;
+    
+    // Set content based on result
+    if (result === 'victory') {
+      resultCard.innerHTML = `
+        <span class="material-icons" style="font-size: 64px; color: #FFD700; margin-bottom: 16px;">emoji_events</span>
+        <h2 style="margin: 0 0 16px 0; color: #4CAF50;">Victory!</h2>
+        <p style="margin-bottom: 24px;">Your party has defeated all enemies.</p>
+        
+        <div class="rewards" style="margin-bottom: 24px; background: #f5f5f5; padding: 16px; border-radius: 8px;">
+          <h3 style="margin-top: 0;">Rewards</h3>
+          <div class="experience-reward" style="margin-bottom: 8px;">
+            <span style="font-weight: bold;">Experience:</span> 100 XP
+          </div>
+          <div class="item-rewards">
+            <span style="font-weight: bold;">Items:</span> None
+          </div>
+        </div>
+        
+        <sl-button class="continue-btn" variant="primary">Continue</sl-button>
+      `;
+      
+      // Award XP to all player monsters
+      this.playerParty.forEach(monster => {
+        if (monster.currentHP > 0) { // Only award XP to surviving monsters
+          this.partyManager.awardExperience(monster.id, 100);
+        }
+      });
+    } else if (result === 'defeat') {
+      resultCard.innerHTML = `
+        <span class="material-icons" style="font-size: 64px; color: #F44336; margin-bottom: 16px;">sentiment_very_dissatisfied</span>
+        <h2 style="margin: 0 0 16px 0; color: #F44336;">Defeat</h2>
+        <p style="margin-bottom: 24px;">Your party has been defeated.</p>
+        
+        <sl-button class="continue-btn" variant="primary">Continue</sl-button>
+      `;
+    }
+    
+    resultOverlay.appendChild(resultCard);
+    this.dialogContainer.appendChild(resultOverlay);
+    
+    // Add event listener to close combat
+    resultCard.querySelector('.continue-btn').addEventListener('click', () => {
+      this.closeCombat();
+    });
+  }
+  
+  // Close combat screen
+  closeCombat() {
+    // Animate out
+    this.combatOverlay.style.opacity = '0';
+    this.dialogContainer.style.transform = 'scale(0.95)';
+    
+    // Remove after animation
+    setTimeout(() => {
+      this.combatOverlay.remove();
+      this.combatOverlay = null;
+      this.dialogContainer = null;
+      
+      // Reset combat state
+      this.inCombat = false;
+      this.initiativeOrder = [];
+      this.currentTurn = 0;
+      this.roundNumber = 0;
+      this.playerParty = [];
+      this.enemyParty = [];
+      
+      // Restore all player monsters' HP
+      this.partyManager.party.active.forEach(monster => {
+        monster.currentHP = monster.maxHP;
+      });
+      
+      // Save party state
+      this.partyManager.saveParty();
+      
+      console.log('Combat ended and state reset');
+    }, 300);
+  }
+  
+  /**
+   * Combat Action Methods
+   */
+  
+  // Use a monster's ability
+  useMonsterAbility(abilityName) {
+    const currentMonster = this.getCurrentMonster();
+    if (!currentMonster) return false;
+    
+    // Find the ability
+    const ability = currentMonster.monsterAbilities.find(a => a.name === abilityName);
+    if (!ability) {
+      console.error(`Ability ${abilityName} not found for ${currentMonster.name}`);
+      return false;
+    }
+    
+    // Show target selection for attack abilities
+    if (ability.type === 'attack' || ability.type === 'debuff') {
+      this.showTargetSelection(currentMonster, ability);
+    } 
+    // For self-buff abilities, apply directly
+    else if (ability.type === 'buff' || ability.type === 'defense') {
+      this.resolveAbility(currentMonster, ability, currentMonster);
+      this.nextTurn();
+    }
+    // For area abilities, apply to all valid targets
+    else if (ability.type === 'area') {
+      // Get all valid enemy targets
+      const targets = this.enemyParty.filter(monster => monster.currentHP > 0);
+      if (targets.length > 0) {
+        let totalDamage = 0;
+        
+        // Process each target
+        targets.forEach(target => {
+          const damage = this.calculateAbilityDamage(ability);
+          this.applyDamage(target, damage);
+          totalDamage += damage;
+        });
+        
+        // Log the area attack
+        this.addLogEntry(`${currentMonster.name} uses ${ability.name}, dealing ${totalDamage} total damage to ${targets.length} targets.`);
+        
+        // Move to next turn
+        this.nextTurn();
+      } else {
+        this.addLogEntry(`${currentMonster.name} has no valid targets for ${ability.name}.`);
+      }
+    }
+    // For healing abilities, show friendly target selection
+    else if (ability.type === 'healing') {
+      this.showFriendlyTargetSelection(currentMonster, ability);
+    }
+    else {
+      // For other ability types
+      this.addLogEntry(`${currentMonster.name} uses ${ability.name}.`);
+      this.nextTurn();
+    }
+    
+    return true;
+  }
+  
+  // Show target selection overlay
+  showTargetSelection(monster, ability) {
+    // Get valid targets (non-defeated enemies)
+    const validTargets = this.enemyParty.filter(enemy => enemy.currentHP > 0);
+    
+    if (validTargets.length === 0) {
+      this.addLogEntry(`${monster.name} has no valid targets for ${ability.name}.`);
+      return;
+    }
+    
+    // Create targeting overlay
+    const targetingOverlay = document.createElement('div');
+    targetingOverlay.className = 'targeting-overlay';
+    targetingOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    `;
+    
+    // Add targeting instructions
+    const instructions = document.createElement('div');
+    instructions.className = 'targeting-instructions';
+    instructions.style.cssText = `
+      color: white;
+      font-size: 1.2em;
+      margin-bottom: 16px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 16px;
+      border-radius: 4px;
+    `;
+    instructions.innerHTML = `Select a target for <strong>${ability.name}</strong>`;
+    
+    targetingOverlay.appendChild(instructions);
+    
+    // Add overlay to dialog
+    const battleScene = this.dialogContainer.querySelector('.battle-scene');
+    battleScene.appendChild(targetingOverlay);
+    
+    // Highlight enemy monsters as targetable
+    const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+    enemyCards.forEach(card => {
+      const enemyId = card.getAttribute('data-monster-id');
+      const enemy = this.enemyParty.find(e => e.id === enemyId);
+      
+      if (enemy && enemy.currentHP > 0) {
+        card.style.cursor = 'pointer';
+        card.style.boxShadow = '0 0 10px rgba(244, 67, 54, 0.7)';
+        card.style.transform = 'scale(1.05)';
+        
+        // Add click handler
+        card.addEventListener('click', () => {
+          // Remove overlay
+          targetingOverlay.remove();
+          
+          // Reset styling
+          enemyCards.forEach(c => {
+            c.style.cursor = '';
+            c.style.boxShadow = '';
+            c.style.transform = '';
+          });
+          
+          // Resolve the ability
+          this.resolveAbility(monster, ability, enemy);
+          
+          // Move to next turn
+          this.nextTurn();
+        });
+      }
+    });
+    
+    // Add cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-targeting-btn';
+    cancelBtn.style.cssText = `
+      background: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      margin-top: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `;
+    cancelBtn.innerHTML = `
+      <span class="material-icons">cancel</span>
+      <span>Cancel</span>
+    `;
+    
+    cancelBtn.addEventListener('click', () => {
+      // Remove overlay
+      targetingOverlay.remove();
+      
+      // Reset styling
+      enemyCards.forEach(card => {
+        card.style.cursor = '';
+        card.style.boxShadow = '';
+        card.style.transform = '';
+      });
+    });
+    
+    targetingOverlay.appendChild(cancelBtn);
+  }
+  
+  // Show friendly target selection overlay
+  showFriendlyTargetSelection(monster, ability) {
+    // Get valid targets (non-defeated player monsters)
+    const validTargets = this.playerParty.filter(m => m.currentHP > 0);
+    
+    if (validTargets.length === 0) {
+      this.addLogEntry(`${monster.name} has no valid targets for ${ability.name}.`);
+      return;
+    }
+    
+    // Create targeting overlay
+    const targetingOverlay = document.createElement('div');
+    targetingOverlay.className = 'targeting-overlay';
+    targetingOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    `;
+    
+    // Add targeting instructions
+    const instructions = document.createElement('div');
+    instructions.className = 'targeting-instructions';
+    instructions.style.cssText = `
+      color: white;
+      font-size: 1.2em;
+      margin-bottom: 16px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 16px;
+      border-radius: 4px;
+    `;
+    instructions.innerHTML = `Select a friendly target for <strong>${ability.name}</strong>`;
+    
+    targetingOverlay.appendChild(instructions);
+    
+    // Add overlay to dialog
+    const battleScene = this.dialogContainer.querySelector('.battle-scene');
+    battleScene.appendChild(targetingOverlay);
+    
+    // Highlight player monsters as targetable
+    const playerCards = this.dialogContainer.querySelectorAll('.combat-monster.player');
+    playerCards.forEach(card => {
+      const playerId = card.getAttribute('data-monster-id');
+      const playerMonster = this.playerParty.find(p => p.id === playerId);
+      
+      if (playerMonster && playerMonster.currentHP > 0) {
+        card.style.cursor = 'pointer';
+        card.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.7)';
+        card.style.transform = 'scale(1.05)';
+        
+        // Add click handler
+        card.addEventListener('click', () => {
+          // Remove overlay
+          targetingOverlay.remove();
+          
+          // Reset styling
+          playerCards.forEach(c => {
+            c.style.cursor = '';
+            c.style.boxShadow = '';
+            c.style.transform = '';
+          });
+          
+          // Resolve the ability
+          this.resolveHealingAbility(monster, ability, playerMonster);
+          
+          // Move to next turn
+          this.nextTurn();
+        });
+      }
+    });
+    
+    // Add cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-targeting-btn';
+    cancelBtn.style.cssText = `
+      background: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      margin-top: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `;
+    cancelBtn.innerHTML = `
+      <span class="material-icons">cancel</span>
+      <span>Cancel</span>
+    `;
+    
+    cancelBtn.addEventListener('click', () => {
+      // Remove overlay
+      targetingOverlay.remove();
+      
+      // Reset styling
+      playerCards.forEach(card => {
+        card.style.cursor = '';
+        card.style.boxShadow = '';
+        card.style.transform = '';
+      });
+    });
+    
+    targetingOverlay.appendChild(cancelBtn);
+  }
+  
+  // Resolve an ability's effects
+  resolveAbility(monster, ability, target) {
+    // Log the ability use
+    this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
+    
+    // Process based on ability type
+    switch(ability.type) {
+      case 'attack':
+        // Calculate and apply damage
+        const damage = this.calculateAbilityDamage(ability);
+        this.applyDamage(target, damage);
+        break;
+        
+      case 'buff':
+        // Apply buff to monster
+        this.addLogEntry(`${monster.name} gains a beneficial effect.`);
+        break;
+        
+      case 'debuff':
+        // Apply debuff to target
+        this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
+        break;
+        
+      default:
+        this.addLogEntry(`${ability.name} is used.`);
+        break;
+    }
+    
+    // Update UI to reflect changes
+    this.updateCombatDisplay();
+  }
+  
+  // Resolve healing ability
+  resolveHealingAbility(monster, ability, target) {
+    // Calculate healing amount
+    const healing = this.calculateHealingAmount(ability);
+    
+    // Apply healing
+    const originalHP = target.currentHP;
+    target.currentHP = Math.min(target.maxHP, target.currentHP + healing);
+    const actualHealing = target.currentHP - originalHP;
+    
+    // Log the healing
+    this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}, healing for ${actualHealing} HP.`);
+    
+    // Update UI
+    this.updateCombatDisplay();
+  }
+  
+  // Calculate damage for an ability
+  calculateAbilityDamage(ability) {
+    if (!ability.damage) return 0;
+    
+    // Parse damage formula (e.g., "2d6+3")
+    const damageFormula = ability.damage;
+    let damage = 0;
+    
+    // Check if it has dice notation
+    if (damageFormula.includes('d')) {
+      const [dice, modifier] = damageFormula.split('+');
+      const [numDice, dieSize] = dice.split('d').map(n => parseInt(n));
+      
+      // Roll the dice
+      for (let i = 0; i < numDice; i++) {
+        damage += this.rollDice(dieSize);
+      }
+      
+      // Add modifier if present
+      if (modifier) {
+        damage += parseInt(modifier);
+      }
+    } 
+    // Otherwise treat as fixed damage
+    else {
+      damage = parseInt(damageFormula);
+    }
+    
+    return damage;
+  }
+  
+  // Calculate healing amount
+  calculateHealingAmount(ability) {
+    // Similar to damage calculation
+    if (!ability.healing && !ability.damage) return 0;
+    
+    // Use damage field if healing field not specified
+    const healingFormula = ability.healing || ability.damage;
+    let healing = 0;
+    
+    // Check if it has dice notation
+    if (healingFormula.includes('d')) {
+      const [dice, modifier] = healingFormula.split('+');
+      const [numDice, dieSize] = dice.split('d').map(n => parseInt(n));
+      
+      // Roll the dice
+      for (let i = 0; i < numDice; i++) {
+        healing += this.rollDice(dieSize);
+      }
+      
+      // Add modifier if present
+      if (modifier) {
+        healing += parseInt(modifier);
+      }
+    } 
+    // Otherwise treat as fixed healing
+    else {
+      healing = parseInt(healingFormula);
+    }
+    
+    return healing;
+  }
+  
+// Apply damage to a target
+applyDamage(target, damage) {
+  // Apply damage
+  target.currentHP = Math.max(0, target.currentHP - damage);
+  
+  // Log the damage
+  this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
+  
+  // Update UI to reflect changes
+  this.updateCombatDisplay();
+  
+  // Check if combat should end
+  this.checkCombatEnd();
+}
+
+/**
+ * UI Update Methods
+ */
+
+// Update action bar based on current monster
+updateActionBar(monster) {
+  const actionBar = this.dialogContainer.querySelector('.action-bar');
+  if (!actionBar) return;
+  
+  if (monster && monster.currentHP > 0) {
+    actionBar.innerHTML = this.renderActionBar(monster);
+    this.setupCombatEventListeners();
+  } else {
+    actionBar.innerHTML = `
+      <div style="text-align: center; color: #666;">
+        <em>Enemy's turn...</em>
+      </div>
+    `;
+  }
+}
+
+// Update initiative tracker UI
+updateInitiativeTracker() {
+  const initiativeList = this.dialogContainer.querySelector('.initiative-list');
+  if (!initiativeList) return;
+  
+  initiativeList.innerHTML = this.renderInitiativeList();
+}
+
+// Update all combat displays
+updateCombatDisplay() {
+  // Update enemy display
+  const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+  if (enemyArea) {
+    enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, 'enemy');
+  }
+  
+  // Update player display
+  const playerArea = this.dialogContainer.querySelector('.player-area');
+  if (playerArea) {
+    playerArea.innerHTML = this.renderMonsterGroup(this.playerParty, 'player');
+  }
+  
+  // Update initiative display
+  this.updateInitiativeTracker();
+}
+
+// Add entry to combat log
+addLogEntry(message, isRoundHeader = false) {
+  // Get log container
+  const logEntries = this.dialogContainer.querySelector('.log-entries');
+  if (!logEntries) return;
+  
+  // Create new entry
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.style.cssText = `
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    ${isRoundHeader ? 'font-weight: bold; background-color: #f5f5f5; padding: 4px;' : ''}
+  `;
+  
+  if (isRoundHeader) {
+    entry.innerHTML = `
+      <div style="color: #666; font-size: 0.8em;">Round ${this.roundNumber}</div>
+      <div>${message}</div>
+    `;
+  } else {
+    entry.innerHTML = `<div>${message}</div>`;
+  }
+  
+  // Add to log
+  logEntries.appendChild(entry);
+  
+  // Scroll to bottom
+  logEntries.scrollTop = logEntries.scrollHeight;
+}
+
+/**
+ * Helper Methods
+ */
+
+// Roll dice of specified size
+rollDice(sides) {
+  return Math.floor(Math.random() * sides) + 1;
+}
+
+// Get current monster
+getCurrentMonster() {
+  const currentCombatant = this.initiativeOrder[this.currentTurn];
+  return currentCombatant ? currentCombatant.monster : null;
+}
+
+// Check if a monster is the active one
+isMonsterActive(monster) {
+  const currentCombatant = this.initiativeOrder[this.currentTurn];
+  return currentCombatant && currentCombatant.monster.id === monster.id;
+}
+}

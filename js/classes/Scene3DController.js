@@ -37,7 +37,10 @@ class Scene3DController {
     this.visualEffects = null;
     this.showDemoEffects = false;
     this.dayNightCycle = null;
+    this.encounterPrompt = null;
+    this.nearestEncounter = null;
     this.setupInventorySystem();
+    this.initializePartyAndCombatSystems();
     this.clear();
   }
 
@@ -1281,6 +1284,9 @@ class Scene3DController {
         else if (this.nearestSplashArt && !this.activeSplashArt) {
           this.showSplashArt(this.nearestSplashArt);
         }
+        else if (this.nearestEncounter) {
+          this.handleEncounter(this.nearestEncounter);
+        }
         break;
     }
   }
@@ -2452,8 +2458,13 @@ class Scene3DController {
             if (tokenData) {
               const mesh = this.createTokenMesh(tokenData);
               if (mesh) {
+                // Add encounter type to userData
+                mesh.userData = {
+                  type: 'encounter',
+                  monster: marker.data.monster
+                };
                 this.scene.add(mesh);
-                console.log(`Added monster token: ${tokenData.name}`);
+                console.log('Added encounter mesh to scene');
               }
             }
           }
@@ -3896,6 +3907,30 @@ class Scene3DController {
     };
   }
 
+  handleEncounter(marker) {
+    // Hide the prompt
+    if (this.encounterPrompt) {
+      this.encounterPrompt.style.display = 'none';
+    }
+    
+    console.log('Handling encounter:', marker);
+    
+    // Check if we have monster data
+    if (marker.userData && marker.userData.monster) {
+      console.log('Monster data found:', marker.userData.monster);
+      
+      // If we have a party manager, show recruitment dialog
+      if (window.partyManager) {
+        console.log('Showing recruitment dialog');
+        window.partyManager.showRecruitmentDialog(marker.userData.monster);
+      } else {
+        console.warn('Party manager not found, cannot handle encounter');
+      }
+    } else {
+      console.warn('No monster data found for encounter marker:', marker);
+    }
+  }
+
 
   animate = () => {
     // Debugging to check if this is the wrapped version or not
@@ -4047,6 +4082,34 @@ class Scene3DController {
       this.pickupPrompt.style.display = 'none';
       this.nearestProp = null;
     }
+
+// // Find nearest encounter marker
+
+let nearestEncounter = null;
+let minEncounterDist = 3; // Detection range
+
+// Loop through scene objects to find encounter markers
+this.scene.children.forEach(object => {
+  if (object.userData && object.userData.type === 'encounter') {
+    const dist = playerPosition.distanceTo(object.position);
+    if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
+      nearestEncounter = object;
+      minEncounterDist = dist;
+    }
+  }
+});
+
+// Show or hide encounter prompt
+if (nearestEncounter && !this.activeSplashArt) {
+  const prompt = this.createEncounterPrompt();
+  prompt.textContent = 'Press E to approach monster';
+  prompt.style.display = 'block';
+  this.nearestEncounter = nearestEncounter;
+} else if (!nearestEncounter && this.encounterPrompt) {
+  this.encounterPrompt.style.display = 'none';
+  this.nearestEncounter = null;
+}
+
 
     // Update physics and camera height
     this.camera.position.y = this.physics.update();
@@ -5114,6 +5177,56 @@ class Scene3DController {
     });
   }
 
+  // createEncounterPrompt() {
+  //   if (!this.encounterPrompt) {
+  //     this.encounterPrompt = document.createElement('div');
+  //     this.encounterPrompt.style.cssText = `
+  //         position: fixed;
+  //         top: 50%;
+  //         left: 50%;
+  //         transform: translate(-50%, -50%);
+  //         background: rgba(0, 0, 0, 0.8);
+  //         color: white;
+  //         padding: 15px 20px;
+  //         border-radius: 5px;
+  //         display: none;
+  //         font-family: Arial, sans-serif;
+  //         pointer-events: none;
+  //         z-index: 1000;
+  //     `;
+  //     document.body.appendChild(this.encounterPrompt);
+  //   }
+  //   return this.encounterPrompt;
+  // }
+
+  createEncounterPrompt() {
+    if (!this.encounterPrompt) {
+      this.encounterPrompt = document.createElement('div');
+      this.encounterPrompt.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        display: none;
+        font-family: Arial, sans-serif;
+        pointer-events: none;
+        z-index: 1000;
+      `;
+      document.body.appendChild(this.encounterPrompt);
+  
+      // Add keypress listener for encounter interaction
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyE' && this.nearestEncounter) {
+          this.handleEncounter(this.nearestEncounter);
+        }
+      });
+    }
+    return this.encounterPrompt;
+  }
 
   createSplashArtPrompt() {
     if (!this.splashArtPrompt) {
@@ -6020,5 +6133,87 @@ class Scene3DController {
 
     console.log('Day/Night cycle initialized');
   }
+
+  // Add this method to Scene3DController
+initializePartyAndCombatSystems() {
+  console.log('Initializing party and combat systems');
+  
+  // Step 1: Load PartyManager first
+  const loadPartyManager = () => {
+    if (typeof PartyManager === 'undefined') {
+      // Create script element for PartyManager
+      const script = document.createElement('script');
+      script.src = 'js/classes/PartyManager.js';
+      
+      script.onload = () => {
+        console.log('PartyManager script loaded');
+        // Once PartyManager is loaded, load CombatSystem
+        loadCombatSystem();
+      };
+      
+      script.onerror = (err) => {
+        console.error('Could not load PartyManager script', err);
+      };
+      
+      document.head.appendChild(script);
+    } else {
+      // PartyManager already loaded, proceed to CombatSystem
+      loadCombatSystem();
+    }
+  };
+  
+  // Step 2: Load CombatSystem after PartyManager
+  const loadCombatSystem = () => {
+    if (typeof CombatSystem === 'undefined') {
+      // Create script element for CombatSystem
+      const script = document.createElement('script');
+      script.src = 'js/classes/CombatSystem.js';
+      
+      script.onload = () => {
+        console.log('CombatSystem script loaded');
+        // Once both scripts are loaded, initialize the systems
+        this.createPartyAndCombatSystems();
+      };
+      
+      script.onerror = (err) => {
+        console.error('Could not load CombatSystem script', err);
+      };
+      
+      document.head.appendChild(script);
+    } else {
+      // CombatSystem already loaded, initialize systems
+      this.createPartyAndCombatSystems();
+    }
+  };
+  
+  // Start the loading process
+  loadPartyManager();
+}
+
+// Add this method to create the systems once scripts are loaded
+createPartyAndCombatSystems() {
+  // If systems already exist globally, don't recreate them
+  if (window.partyManager && window.combatSystem) {
+    console.log('Party and combat systems already exist');
+    return;
+  }
+  
+  console.log('Creating party and combat systems');
+  
+  // Create party manager
+  const partyManager = new PartyManager(this.resourceManager);
+  window.partyManager = partyManager;
+  
+  // Create combat system
+  const combatSystem = new CombatSystem(partyManager, this.resourceManager);
+  window.combatSystem = combatSystem;
+  
+  console.log('Party and combat systems created and available globally');
+  
+  // Load any saved party data
+  if (typeof partyManager.loadParty === 'function') {
+    partyManager.loadParty();
+  }
+}
 
 }
