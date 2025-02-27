@@ -26,185 +26,834 @@ class CombatSystem {
   }
 
   // Add this method to CombatSystem class
+// createCombatStyles() {
+//   const styleElement = document.createElement('style');
+//   styleElement.textContent = `
+//     .combat-overlay {
+//       position: fixed;
+//       top: 0;
+//       left: 0;
+//       right: 0;
+//       bottom: 0;
+//       background: var(--sl-overlay-background-color);
+//       display: flex;
+//       justify-content: center;
+//       align-items: center;
+//       z-index: 2000;
+//       opacity: 0;
+//       transition: opacity 0.3s ease;
+//     }
+
+//     .combat-container {
+//       width: 90%;
+//       max-width: 1000px;
+//       height: 90vh;
+//       background: var(--sl-panel-background-color);
+//       border-radius: var(--sl-border-radius-large);
+//       box-shadow: var(--sl-shadow-x-large);
+//       display: flex;
+//       flex-direction: column;
+//       transform: scale(0.95);
+//       transition: transform 0.3s ease;
+//       overflow: hidden;
+//     }
+
+//     .combat-header {
+//       padding: 12px 16px;
+//       background: var(--sl-color-neutral-100);
+//       border-bottom: 1px solid var(--sl-color-neutral-200);
+//       display: flex;
+//       align-items: center;
+//       justify-content: space-between;
+//     }
+
+//     .battle-scene {
+//       flex: 1;
+//       display: flex;
+//       flex-direction: column;
+//       justify-content: space-between;
+//       padding: 16px;
+//       position: relative;
+//       overflow: hidden;
+//       background: var(--sl-color-neutral-50);
+//     }
+
+//     .combat-monster {
+//       position: relative;
+//       width: 150px;
+//       background: var(--sl-color-neutral-0);
+//       border-radius: var(--sl-border-radius-medium);
+//       border: 1px solid var(--sl-color-neutral-200);
+//       padding: 8px;
+//       transition: all 0.3s ease;
+//     }
+
+//     .combat-monster.active {
+//       box-shadow: 0 0 15px var(--sl-color-primary-500);
+//       transform: translateY(-10px) scale(1.05);
+//       z-index: 10;
+//       border-color: var(--sl-color-primary-500);
+//     }
+
+//     .combat-monster.defeated {
+//       opacity: 0.6;
+//       filter: grayscale(100%);
+//     }
+
+//     .hp-bar-bg {
+//       height: 8px;
+//       background: var(--sl-color-neutral-200);
+//       border-radius: var(--sl-border-radius-pill);
+//     }
+
+//     .hp-bar-fill {
+//       height: 100%;
+//       border-radius: var(--sl-border-radius-pill);
+//       transition: width 0.3s ease;
+//     }
+
+//     .hp-bar-fill.high {
+//       background: var(--sl-color-success-500);
+//     }
+
+//     .hp-bar-fill.medium {
+//       background: var(--sl-color-warning-500);
+//     }
+
+//     .hp-bar-fill.low {
+//       background: var(--sl-color-danger-500);
+//     }
+
+//     .initiative-tracker {
+//       position: absolute;
+//       top: 10px;
+//       left: 10px;
+//       background: var(--sl-color-neutral-0);
+//       border-radius: var(--sl-border-radius-medium);
+//       box-shadow: var(--sl-shadow-medium);
+//       padding: 8px;
+//       width: 200px;
+//     }
+
+//     .initiative-item {
+//       display: flex;
+//       align-items: center;
+//       padding: 4px 8px;
+//       border-bottom: 1px solid var(--sl-color-neutral-200);
+//       font-size: 0.9em;
+//     }
+
+//     .initiative-item.active {
+//       background: var(--sl-color-primary-50);
+//       border-left: 3px solid var(--sl-color-primary-500);
+//     }
+
+//     .combat-log {
+//       flex: 0 0 250px;
+//       border-left: 1px solid var(--sl-color-neutral-200);
+//       background: var(--sl-color-neutral-0);
+//       display: flex;
+//       flex-direction: column;
+//     }
+
+//     .action-bar {
+//       padding: 16px;
+//       background: var(--sl-color-neutral-50);
+//       border-top: 1px solid var(--sl-color-neutral-200);
+//     }
+
+//     .ability-btn {
+//       padding: 8px 12px;
+//       border: 1px solid var(--sl-color-neutral-300);
+//       background: var(--sl-color-neutral-0);
+//       border-radius: var(--sl-border-radius-medium);
+//       cursor: pointer;
+//       display: flex;
+//       align-items: center;
+//       gap: 6px;
+//       transition: all 0.2s ease;
+//     }
+
+//     .ability-btn:hover {
+//       background: var(--sl-color-neutral-100);
+//       border-color: var(--sl-color-primary-500);
+//     }
+
+//     .targeting-overlay {
+//       position: absolute;
+//       top: 0;
+//       left: 0;
+//       right: 0;
+//       bottom: 0;
+//       background: var(--sl-overlay-background-color);
+//       display: flex;
+//       flex-direction: column;
+//       justify-content: center;
+//       align-items: center;
+//       z-index: 50;
+//     }
+
+//     .targeting-instructions {
+//       color: var(--sl-color-neutral-0);
+//       font-size: 1.2em;
+//       margin-bottom: 16px;
+//       background: var(--sl-color-neutral-950);
+//       padding: 8px 16px;
+//       border-radius: var(--sl-border-radius-medium);
+//     }
+//   `;
+
+//   return styleElement;
+// }
+
+// Add this method to your CombatSystem class to create the styled CSS
 createCombatStyles() {
-  const styleElement = document.createElement('style');
-  styleElement.textContent = `
-    .combat-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: var(--sl-overlay-background-color);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .combat-container {
-      width: 90%;
-      max-width: 1000px;
-      height: 90vh;
-      background: var(--sl-panel-background-color);
-      border-radius: var(--sl-border-radius-large);
-      box-shadow: var(--sl-shadow-x-large);
-      display: flex;
-      flex-direction: column;
-      transform: scale(0.95);
-      transition: transform 0.3s ease;
-      overflow: hidden;
-    }
-
-    .combat-header {
-      padding: 12px 16px;
-      background: var(--sl-color-neutral-100);
-      border-bottom: 1px solid var(--sl-color-neutral-200);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .battle-scene {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 16px;
-      position: relative;
-      overflow: hidden;
-      background: var(--sl-color-neutral-50);
-    }
-
-    .combat-monster {
-      position: relative;
-      width: 150px;
-      background: var(--sl-color-neutral-0);
-      border-radius: var(--sl-border-radius-medium);
-      border: 1px solid var(--sl-color-neutral-200);
-      padding: 8px;
-      transition: all 0.3s ease;
-    }
-
-    .combat-monster.active {
-      box-shadow: 0 0 15px var(--sl-color-primary-500);
-      transform: translateY(-10px) scale(1.05);
-      z-index: 10;
-      border-color: var(--sl-color-primary-500);
-    }
-
-    .combat-monster.defeated {
-      opacity: 0.6;
-      filter: grayscale(100%);
-    }
-
-    .hp-bar-bg {
-      height: 8px;
-      background: var(--sl-color-neutral-200);
-      border-radius: var(--sl-border-radius-pill);
-    }
-
-    .hp-bar-fill {
-      height: 100%;
-      border-radius: var(--sl-border-radius-pill);
-      transition: width 0.3s ease;
-    }
-
-    .hp-bar-fill.high {
-      background: var(--sl-color-success-500);
-    }
-
-    .hp-bar-fill.medium {
-      background: var(--sl-color-warning-500);
-    }
-
-    .hp-bar-fill.low {
-      background: var(--sl-color-danger-500);
-    }
-
-    .initiative-tracker {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: var(--sl-color-neutral-0);
-      border-radius: var(--sl-border-radius-medium);
-      box-shadow: var(--sl-shadow-medium);
-      padding: 8px;
-      width: 200px;
-    }
-
-    .initiative-item {
-      display: flex;
-      align-items: center;
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--sl-color-neutral-200);
-      font-size: 0.9em;
-    }
-
-    .initiative-item.active {
-      background: var(--sl-color-primary-50);
-      border-left: 3px solid var(--sl-color-primary-500);
-    }
-
-    .combat-log {
-      flex: 0 0 250px;
-      border-left: 1px solid var(--sl-color-neutral-200);
-      background: var(--sl-color-neutral-0);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .action-bar {
-      padding: 16px;
-      background: var(--sl-color-neutral-50);
-      border-top: 1px solid var(--sl-color-neutral-200);
-    }
-
-    .ability-btn {
-      padding: 8px 12px;
-      border: 1px solid var(--sl-color-neutral-300);
-      background: var(--sl-color-neutral-0);
-      border-radius: var(--sl-border-radius-medium);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-
-    .ability-btn:hover {
-      background: var(--sl-color-neutral-100);
-      border-color: var(--sl-color-primary-500);
-    }
-
-    .targeting-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: var(--sl-overlay-background-color);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 50;
-    }
-
-    .targeting-instructions {
-      color: var(--sl-color-neutral-0);
-      font-size: 1.2em;
-      margin-bottom: 16px;
-      background: var(--sl-color-neutral-950);
-      padding: 8px 16px;
-      border-radius: var(--sl-border-radius-medium);
-    }
-  `;
-
-  return styleElement;
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+.combat-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black instead of solid purple */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
+  
+.combat-container {
+  width: 90%;
+  max-width: 1000px;
+  height: 90vh;
+  background: linear-gradient(to bottom, #2e1065, #4c1d95, #581c87); /* Move gradient here */
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+}
+  
+      .combat-header {
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: white;
+      }
+  
+      .battle-scene {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+  
+      .enemy-area {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 32px;
+        padding-top: 32px;
+        transform: rotate(1deg) translateX(16px);
+      }
+  
+      .player-area {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 32px;
+        transform: rotate(-1deg) translateX(-16px);
+      }
+  
+      .combat-monster {
+        position: relative;
+        width: 180px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        padding: 0;
+        transition: all 0.3s ease;
+        color: #333;
+        margin: 4px;
+      }
+  
+      .combat-monster.enemy {
+        transform: rotate(4deg);
+      }
+  
+      .combat-monster.player {
+        transform: rotate(-4deg);
+      }
+  
+      .combat-monster.active {
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+        transform: translateY(-10px) scale(1.05);
+        z-index: 10;
+        border: 2px solid #3b82f6;
+      }
+  
+      .combat-monster.defeated {
+        opacity: 0.6;
+        filter: grayscale(100%);
+      }
+  
+      .monster-header {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+      }
+  
+      .monster-image {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 20px;
+        overflow: hidden;
+      }
+  
+      .player .monster-image {
+        background-color: #3b82f6;
+      }
+  
+      .enemy .monster-image {
+        background-color: #ef4444;
+      }
+  
+      .monster-info {
+        flex: 1;
+        overflow: hidden;
+      }
+  
+      .monster-name {
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+  
+      .monster-type {
+        font-size: 0.8em;
+        color: #666;
+      }
+  
+      .monster-stats {
+        padding: 8px;
+        background: #f9fafb;
+        border-radius: 0 0 8px 8px;
+      }
+  
+      .hp-bar-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8em;
+        margin-bottom: 4px;
+      }
+  
+      .hp-bar-bg {
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 4px;
+        margin-bottom: 8px;
+        overflow: hidden;
+      }
+  
+      .hp-bar-fill {
+        height: 100%;
+        width: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+  
+      .hp-bar-fill.high {
+        background: #10b981;
+      }
+  
+      .hp-bar-fill.medium {
+        background: #f59e0b;
+      }
+  
+      .hp-bar-fill.low {
+        background: #ef4444;
+      }
+  
+      .stat-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8em;
+        margin-bottom: 4px;
+      }
+  
+      .active-indicator {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #3b82f6;
+        color: white;
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 0.7em;
+        font-weight: bold;
+      }
+  
+      .defeated-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        color: white;
+        font-size: 48px;
+      }
+  
+      .initiative-tracker {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        border-radius: 8px;
+        width: 200px;
+        color: white;
+        overflow: hidden;
+      }
+  
+      .initiative-header {
+        padding: 8px;
+        text-align: center;
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.4);
+        font-size: 0.9em;
+      }
+  
+      .initiative-list {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+  
+      .initiative-item {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.85em;
+      }
+  
+      .initiative-item:nth-child(even) {
+        background: rgba(0, 0, 0, 0.2);
+      }
+  
+      .initiative-item.active {
+        background: rgba(59, 130, 246, 0.5);
+      }
+  
+      .initiative-item.defeated {
+        text-decoration: line-through;
+        opacity: 0.6;
+      }
+  
+      .initiative-marker {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+  
+      .initiative-marker.player {
+        background: #3b82f6;
+      }
+  
+      .initiative-marker.enemy {
+        background: #ef4444;
+      }
+  
+      .combat-log {
+        flex: 0 0 250px;
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        color: white;
+      }
+  
+      .log-header {
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.4);
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+      }
+  
+      .log-entries {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+      }
+  
+      .log-entry {
+        margin-bottom: 8px;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        border-left: 4px solid;
+      }
+  
+      .log-entry.system {
+        background: rgba(59, 130, 246, 0.2);
+        border-left-color: #3b82f6;
+      }
+  
+      .log-entry.action {
+        background: rgba(168, 85, 247, 0.2);
+        border-left-color: #a855f7;
+      }
+  
+      .log-entry.turn {
+        background: rgba(107, 114, 128, 0.2);
+        border-left-color: #6b7280;
+      }
+  
+      .action-bar {
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.4);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+  
+      .abilities-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+      }
+  
+      .ability-btn {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 1px solid;
+        transition: all 0.2s ease;
+        font-weight: 500;
+      }
+  
+      .ability-btn.attack {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+      }
+  
+      .ability-btn.attack:hover {
+        background: rgba(239, 68, 68, 0.2);
+      }
+  
+      .ability-btn.buff {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: #10b981;
+      }
+  
+      .ability-btn.buff:hover {
+        background: rgba(16, 185, 129, 0.2);
+      }
+  
+      .ability-btn.debuff {
+        background: rgba(168, 85, 247, 0.1);
+        border-color: rgba(168, 85, 247, 0.3);
+        color: #a855f7;
+      }
+  
+      .ability-btn.debuff:hover {
+        background: rgba(168, 85, 247, 0.2);
+      }
+  
+      .ability-btn.area {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.3);
+        color: #f59e0b;
+      }
+  
+      .ability-btn.area:hover {
+        background: rgba(245, 158, 11, 0.2);
+      }
+  
+      .utility-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+  
+      .utility-btn {
+        padding: 6px 12px;
+        background: rgba(107, 114, 128, 0.7);
+        color: white;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: background 0.2s ease;
+      }
+  
+      .utility-btn:hover {
+        background: rgba(107, 114, 128, 0.9);
+      }
+  
+      .targeting-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 50;
+      }
+  
+      .targeting-instructions {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+        color: white;
+        font-size: 1.2em;
+        margin-bottom: 16px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-align: center;
+      }
+  
+      .cancel-targeting-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: background 0.2s ease;
+      }
+  
+      .cancel-targeting-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+  
+      .battle-notification {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 1.2em;
+        font-weight: bold;
+      }
+  
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+  
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+  
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+  
+      .fade-in {
+        animation: fadeIn 0.3s ease forwards;
+      }
+  
+      .slide-up {
+        animation: slideUp 0.3s ease forwards;
+      }
+  
+      .pulse {
+        animation: pulse 1s infinite;
+      }
+    `;
+
+styleElement.textContent += `
+@keyframes targetPulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.targetable {
+  cursor: pointer;
+  animation: targetPulse 1.5s infinite;
+  position: relative;
+}
+
+.targeting-hint {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.targetable:hover .targeting-hint {
+  opacity: 1;
+}
+`;
+  
+    return styleElement;
+  }
+
+  // New method to set combat background
+// setCombatBackground() {
+//     // Check if we have splash art available
+//     if (this.resourceManager && this.resourceManager.resources.splashArt.background) {
+//       // Try to get a random background art
+//       const backgrounds = this.resourceManager.resources.splashArt.background;
+//       if (backgrounds.size > 0) {
+//         // Get random splash art
+//         const randomIndex = Math.floor(Math.random() * backgrounds.size);
+//         const backgroundArt = Array.from(backgrounds.values())[randomIndex];
+        
+//         if (backgroundArt && backgroundArt.data) {
+//           // Apply as background
+//           this.dialogContainer.style.backgroundImage = `url(${backgroundArt.data})`;
+//           this.dialogContainer.style.backgroundSize = 'cover';
+//           this.dialogContainer.style.backgroundPosition = 'center';
+          
+//           // Add overlay to ensure text remains readable
+//           this.dialogContainer.style.backgroundColor = 'rgba(46, 16, 101, 0.8)'; // Semi-transparent purple
+          
+//           return true;
+//         }
+//       }
+//     }
+    
+//     // Fallback to gradient if no splash art found or error occurs
+//     return false;
+//   }
+
+// Enhanced method to set combat background with random styling
+setCombatBackground() {
+    // Check if we have splash art available
+    if (this.resourceManager && this.resourceManager.resources.splashArt.background) {
+      // Try to get a random background art
+      const backgrounds = this.resourceManager.resources.splashArt.background;
+      if (backgrounds.size > 0) {
+        // Get random splash art
+        const randomIndex = Math.floor(Math.random() * backgrounds.size);
+        const backgroundArt = Array.from(backgrounds.values())[randomIndex];
+        
+        if (backgroundArt && backgroundArt.data) {
+          // Apply as background
+          this.dialogContainer.style.backgroundImage = `url(${backgroundArt.data})`;
+          
+          // Randomly choose styling approach
+          const stylingOption = Math.floor(Math.random() * 5);
+          
+          switch (stylingOption) {
+            case 0: 
+              // Full cover (default)
+              this.dialogContainer.style.backgroundSize = 'cover';
+              this.dialogContainer.style.backgroundPosition = 'center';
+              break;
+              
+            case 1: 
+              // Contained with possible repetition
+              this.dialogContainer.style.backgroundSize = 'contain';
+              this.dialogContainer.style.backgroundPosition = 'center';
+              this.dialogContainer.style.backgroundRepeat = 'repeat';
+              break;
+              
+            case 2: 
+              // Zoomed in on a section
+              this.dialogContainer.style.backgroundSize = '150%';
+              
+              // Pick a random focus point
+              const positions = ['top left', 'top center', 'top right', 
+                                 'center left', 'center', 'center right',
+                                 'bottom left', 'bottom center', 'bottom right'];
+              const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+              this.dialogContainer.style.backgroundPosition = randomPosition;
+              break;
+              
+            case 3: 
+              // Slightly tilted background (adds distinctive look)
+              this.dialogContainer.style.backgroundSize = 'cover';
+              this.dialogContainer.style.backgroundPosition = 'center';
+              
+              // Add a subtle rotation to the background with transform
+              const currentTransform = this.dialogContainer.style.transform || '';
+              const rotation = Math.random() > 0.5 ? '1deg' : '-1deg';
+              this.dialogContainer.style.transform = `${currentTransform} rotate(${rotation})`;
+              break;
+              
+            case 4:
+              // Panoramic-style with fixed width
+              this.dialogContainer.style.backgroundSize = 'auto 100%';
+              this.dialogContainer.style.backgroundPosition = `${Math.floor(Math.random() * 100)}% center`;
+              break;
+          }
+          
+          // Add overlay to ensure text remains readable regardless of background
+          const overlayColor = 'rgba(46, 16, 101, 0.75)'; // Semi-transparent purple
+          
+          // Use a background blend mode for more interesting effects
+          const blendModes = ['normal', 'multiply', 'overlay', 'darken'];
+          const randomBlend = blendModes[Math.floor(Math.random() * blendModes.length)];
+          
+          this.dialogContainer.style.backgroundColor = overlayColor;
+          this.dialogContainer.style.backgroundBlendMode = randomBlend;
+          
+          return true;
+        }
+      }
+    }
+    
+    // Fallback to gradient if no splash art found or error occurs
+    return false;
+  }
   
   /**
    * Combat Initialization Methods
@@ -294,174 +943,315 @@ createCombatStyles() {
    */
   
   // Show main combat interface
-  showCombatInterface() {
+//   showCombatInterface() {
 
+//     document.head.appendChild(this.createCombatStyles());
+
+//     // Use splash art approach for fullscreen overlay
+//     this.combatOverlay = document.createElement('div');
+//     this.combatOverlay.className = 'combat-overlay';
+//     this.combatOverlay.style.cssText = `
+//       position: fixed;
+//       top: 0;
+//       left: 0;
+//       right: 0;
+//       bottom: 0;
+//       background: rgba(0, 0, 0, 0.85);
+//       display: flex;
+//       justify-content: center;
+//       align-items: center;
+//       z-index: 2000;
+//       opacity: 0;
+//       transition: opacity 0.3s ease;
+//     `;
+    
+//     // Create main combat container
+//     this.dialogContainer = document.createElement('div');
+//     this.dialogContainer.className = 'combat-container';
+//     this.dialogContainer.style.cssText = `
+//       width: 90%;
+//       max-width: 1000px;
+//       height: 90vh;
+//       background: white;
+//       border-radius: 8px;
+//       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+//       display: flex;
+//       flex-direction: column;
+//       transform: scale(0.95);
+//       transition: transform 0.3s ease;
+//       overflow: hidden;
+//     `;
+    
+//     // Create header
+//     const header = document.createElement('div');
+//     header.className = 'combat-header';
+//     header.style.cssText = `
+//       padding: 12px 16px;
+//       background: #f5f5f5;
+//       border-bottom: 1px solid #ddd;
+//       display: flex;
+//       align-items: center;
+//       justify-content: space-between;
+//     `;
+    
+//     header.innerHTML = `
+//       <h2 style="margin: 0;">Combat</h2>
+//       <div class="combat-round">Round ${this.roundNumber}</div>
+//     `;
+    
+//     // Create main combat area
+//     const combatArea = document.createElement('div');
+//     combatArea.className = 'combat-area';
+//     combatArea.style.cssText = `
+//       flex: 1;
+//       display: flex;
+//       background: #f9f9f9;
+//       position: relative;
+//       min-height: 0;
+//     `;
+    
+//     // Create main content section with battle scene
+//     const battleScene = document.createElement('div');
+//     battleScene.className = 'battle-scene';
+//     battleScene.style.cssText = `
+//       flex: 1;
+//       display: flex;
+//       flex-direction: column;
+//       justify-content: space-between;
+//       padding: 16px;
+//       position: relative;
+//       overflow: hidden;
+//       background: linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%);
+//     `;
+    
+//     // Create enemy area at top
+//     const enemyArea = document.createElement('div');
+//     enemyArea.className = 'enemy-area';
+//     enemyArea.style.cssText = `
+//       display: flex;
+//       justify-content: center;
+//       gap: 32px;
+//       padding: 16px;
+//     `;
+    
+//     // Add enemy monsters
+//     enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, 'enemy');
+    
+//     // Create player area at bottom
+//     const playerArea = document.createElement('div');
+//     playerArea.className = 'player-area';
+//     playerArea.style.cssText = `
+//       display: flex;
+//       justify-content: center;
+//       gap: 32px;
+//       padding: 16px;
+//       border-top: 2px dashed rgba(0,0,0,0.1);
+//     `;
+    
+//     // Add player monsters
+//     playerArea.innerHTML = this.renderMonsterGroup(this.playerParty, 'player');
+    
+//     // Create combat log area
+//     const combatLog = document.createElement('div');
+//     combatLog.className = 'combat-log';
+//     combatLog.style.cssText = `
+//       flex: 0 0 250px;
+//       border-left: 1px solid #ddd;
+//       display: flex;
+//       flex-direction: column;
+//       overflow: hidden;
+//     `;
+    
+//     combatLog.innerHTML = `
+//       <div class="combat-log-header" style="padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #ddd;">
+//         <h3 style="margin: 0; font-size: 1rem;">Combat Log</h3>
+//       </div>
+//       <div class="log-entries" style="flex: 1; overflow-y: auto; padding: 8px 12px;">
+//         <div class="log-entry" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+//           <div style="color: #666; font-size: 0.8em;">Round ${this.roundNumber}</div>
+//           <div>Combat has begun!</div>
+//         </div>
+//         <div class="log-entry" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+//           <div style="color: #666; font-size: 0.8em;">Initiative</div>
+//           <div>Initiative order determined</div>
+//         </div>
+//       </div>
+//     `;
+    
+//     // Create initiative tracker
+//     const initiativeTracker = document.createElement('div');
+//     initiativeTracker.className = 'initiative-tracker';
+//     initiativeTracker.style.cssText = `
+//       position: absolute;
+//       top: 10px;
+//       left: 10px;
+//       background: rgba(255, 255, 255, 0.9);
+//       border-radius: 8px;
+//       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+//       padding: 8px;
+//       width: 200px;
+//     `;
+    
+//     initiativeTracker.innerHTML = `
+//       <h3 style="margin: 0; font-size: 0.9rem; text-align: center; padding-bottom: 4px; border-bottom: 1px solid #ddd;">Initiative Order</h3>
+//       <div class="initiative-list" style="max-height: 200px; overflow-y: auto;">
+//         ${this.renderInitiativeList()}
+//       </div>
+//     `;
+    
+//     // Create action bar
+//     const actionBar = document.createElement('div');
+//     actionBar.className = 'action-bar';
+//     actionBar.style.cssText = `
+//       padding: 16px;
+//       background: #f5f5f5;
+//       border-top: 1px solid #ddd;
+//       display: flex;
+//       justify-content: center;
+//       align-items: center;
+//       gap: 16px;
+//     `;
+    
+//     // Only show action buttons if it's player's turn
+//     const currentCombatant = this.initiativeOrder[this.currentTurn];
+//     if (currentCombatant && currentCombatant.side === 'player') {
+//       const currentMonster = currentCombatant.monster;
+//       actionBar.innerHTML = this.renderActionBar(currentMonster);
+//     } else {
+//       actionBar.innerHTML = `
+//         <div style="text-align: center; color: #666;">
+//           <em>Enemy's turn...</em>
+//         </div>
+//       `;
+//     }
+    
+//     // Assemble the UI
+//     battleScene.appendChild(enemyArea);
+//     battleScene.appendChild(playerArea);
+//     battleScene.appendChild(initiativeTracker);
+    
+//     combatArea.appendChild(battleScene);
+//     combatArea.appendChild(combatLog);
+    
+//     this.dialogContainer.appendChild(header);
+//     this.dialogContainer.appendChild(combatArea);
+//     this.dialogContainer.appendChild(actionBar);
+    
+//     // Add to overlay
+//     this.combatOverlay.appendChild(this.dialogContainer);
+//     document.body.appendChild(this.combatOverlay);
+    
+//     // Add event listeners
+//     this.setupCombatEventListeners();
+    
+//     // Animate in
+//     setTimeout(() => {
+//       this.combatOverlay.style.opacity = '1';
+//       this.dialogContainer.style.transform = 'scale(1)';
+      
+//       // If it's enemy's turn, start AI processing
+//       if (currentCombatant && currentCombatant.side === 'enemy') {
+//         setTimeout(() => this.processEnemyTurn(), 1000);
+//       }
+//     }, 10);
+//   }
+
+showCombatInterface() {
+    // Add our custom styles to the document
     document.head.appendChild(this.createCombatStyles());
-
-    // Use splash art approach for fullscreen overlay
+  
+    // Create overlay
     this.combatOverlay = document.createElement('div');
     this.combatOverlay.className = 'combat-overlay';
-    this.combatOverlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    `;
     
     // Create main combat container
     this.dialogContainer = document.createElement('div');
     this.dialogContainer.className = 'combat-container';
-    this.dialogContainer.style.cssText = `
-      width: 90%;
-      max-width: 1000px;
-      height: 90vh;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      transform: scale(0.95);
-      transition: transform 0.3s ease;
-      overflow: hidden;
-    `;
+
+    // Try to set background from splash art, fallback to gradient is already in CSS
+this.setCombatBackground();
     
     // Create header
     const header = document.createElement('div');
     header.className = 'combat-header';
-    header.style.cssText = `
-      padding: 12px 16px;
-      background: #f5f5f5;
-      border-bottom: 1px solid #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    `;
-    
     header.innerHTML = `
-      <h2 style="margin: 0;">Combat</h2>
-      <div class="combat-round">Round ${this.roundNumber}</div>
+      <div style="display: flex; align-items: center;">
+        <span class="material-icons" style="margin-right: 8px;">swords</span>
+        <h2 style="margin: 0; font-size: 1.25rem;">Combat</h2>
+        <span style="margin-left: 16px; padding: 4px 8px; background: rgba(0,0,0,0.3); border-radius: 4px; font-size: 0.9rem;">
+          Round ${this.roundNumber}
+        </span>
+      </div>
     `;
     
     // Create main combat area
     const combatArea = document.createElement('div');
-    combatArea.className = 'combat-area';
-    combatArea.style.cssText = `
-      flex: 1;
-      display: flex;
-      background: #f9f9f9;
-      position: relative;
-      min-height: 0;
-    `;
-    
-    // Create main content section with battle scene
-    const battleScene = document.createElement('div');
-    battleScene.className = 'battle-scene';
-    battleScene.style.cssText = `
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 16px;
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%);
-    `;
+    combatArea.className = 'battle-scene';
     
     // Create enemy area at top
     const enemyArea = document.createElement('div');
     enemyArea.className = 'enemy-area';
-    enemyArea.style.cssText = `
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      padding: 16px;
-    `;
-    
-    // Add enemy monsters
-    enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, 'enemy');
     
     // Create player area at bottom
     const playerArea = document.createElement('div');
     playerArea.className = 'player-area';
-    playerArea.style.cssText = `
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      padding: 16px;
-      border-top: 2px dashed rgba(0,0,0,0.1);
-    `;
+    
+    // Add enemy monsters
+    this.enemyParty.forEach((monster, index) => {
+      const monsterCard = this.createMonsterCard(monster, 'enemy', index);
+      // Position each monster card with a slight offset
+      monsterCard.style.transform = `translateY(-${index * 15}px) translateX(-${index * 20}px)`;
+      enemyArea.appendChild(monsterCard);
+    });
     
     // Add player monsters
-    playerArea.innerHTML = this.renderMonsterGroup(this.playerParty, 'player');
-    
-    // Create combat log area
-    const combatLog = document.createElement('div');
-    combatLog.className = 'combat-log';
-    combatLog.style.cssText = `
-      flex: 0 0 250px;
-      border-left: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    `;
-    
-    combatLog.innerHTML = `
-      <div class="combat-log-header" style="padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #ddd;">
-        <h3 style="margin: 0; font-size: 1rem;">Combat Log</h3>
-      </div>
-      <div class="log-entries" style="flex: 1; overflow-y: auto; padding: 8px 12px;">
-        <div class="log-entry" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-          <div style="color: #666; font-size: 0.8em;">Round ${this.roundNumber}</div>
-          <div>Combat has begun!</div>
-        </div>
-        <div class="log-entry" style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-          <div style="color: #666; font-size: 0.8em;">Initiative</div>
-          <div>Initiative order determined</div>
-        </div>
-      </div>
-    `;
+    this.playerParty.forEach((monster, index) => {
+      const monsterCard = this.createMonsterCard(monster, 'player', index);
+      // Position each monster card with a slight offset
+      monsterCard.style.transform = `translateY(${index * 15}px) translateX(${index * 20}px)`;
+      playerArea.appendChild(monsterCard);
+    });
     
     // Create initiative tracker
     const initiativeTracker = document.createElement('div');
     initiativeTracker.className = 'initiative-tracker';
-    initiativeTracker.style.cssText = `
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 8px;
-      width: 200px;
+    initiativeTracker.innerHTML = `
+      <div class="initiative-header">Initiative Order</div>
+      <div class="initiative-list">
+        ${this.renderInitiativeList()}
+      </div>
     `;
     
-    initiativeTracker.innerHTML = `
-      <h3 style="margin: 0; font-size: 0.9rem; text-align: center; padding-bottom: 4px; border-bottom: 1px solid #ddd;">Initiative Order</h3>
-      <div class="initiative-list" style="max-height: 200px; overflow-y: auto;">
-        ${this.renderInitiativeList()}
+    // Create battle notification (current turn)
+    const battleNotification = document.createElement('div');
+    battleNotification.className = 'battle-notification fade-in';
+    const currentMonster = this.getCurrentMonster();
+    if (currentMonster) {
+      battleNotification.textContent = `${currentMonster.name}'s Turn`;
+    }
+    
+    // Create combat log
+    const combatLog = document.createElement('div');
+    combatLog.className = 'combat-log';
+    combatLog.innerHTML = `
+      <div class="log-header">
+        <span class="material-icons" style="font-size: 16px; margin-right: 8px;">history</span>
+        Combat Log
+      </div>
+      <div class="log-entries">
+        <div class="log-entry system">
+          <div style="color: rgba(255, 255, 255, 0.6); font-size: 0.8em;">Round ${this.roundNumber}</div>
+          <div>Combat has begun!</div>
+        </div>
+        <div class="log-entry turn">
+          <div>Initiative order determined</div>
+        </div>
       </div>
     `;
     
     // Create action bar
     const actionBar = document.createElement('div');
     actionBar.className = 'action-bar';
-    actionBar.style.cssText = `
-      padding: 16px;
-      background: #f5f5f5;
-      border-top: 1px solid #ddd;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-    `;
     
     // Only show action buttons if it's player's turn
     const currentCombatant = this.initiativeOrder[this.currentTurn];
@@ -470,23 +1260,32 @@ createCombatStyles() {
       actionBar.innerHTML = this.renderActionBar(currentMonster);
     } else {
       actionBar.innerHTML = `
-        <div style="text-align: center; color: #666;">
+        <div style="text-align: center; color: rgba(255, 255, 255, 0.7);">
           <em>Enemy's turn...</em>
         </div>
       `;
     }
     
     // Assemble the UI
-    battleScene.appendChild(enemyArea);
-    battleScene.appendChild(playerArea);
-    battleScene.appendChild(initiativeTracker);
-    
-    combatArea.appendChild(battleScene);
-    combatArea.appendChild(combatLog);
+    combatArea.appendChild(enemyArea);
+    combatArea.appendChild(battleNotification);
+    combatArea.appendChild(playerArea);
+    combatArea.appendChild(initiativeTracker);
     
     this.dialogContainer.appendChild(header);
     this.dialogContainer.appendChild(combatArea);
     this.dialogContainer.appendChild(actionBar);
+    
+    // Add log to the right
+    const mainContent = document.createElement('div');
+    mainContent.style.display = 'flex';
+    mainContent.style.flex = '1';
+    mainContent.style.overflow = 'hidden';
+    
+    mainContent.appendChild(combatArea);
+    mainContent.appendChild(combatLog);
+    
+    this.dialogContainer.insertBefore(mainContent, actionBar);
     
     // Add to overlay
     this.combatOverlay.appendChild(this.dialogContainer);
@@ -505,6 +1304,84 @@ createCombatStyles() {
         setTimeout(() => this.processEnemyTurn(), 1000);
       }
     }, 10);
+  }
+  
+  // New method to create styled monster cards
+  createMonsterCard(monster, side, index) {
+    const isPlayer = side === 'player';
+    const isActive = this.isMonsterActive(monster);
+    const isDefeated = monster.currentHP <= 0;
+    
+    // Calculate HP percentage
+    const hpPercent = (monster.currentHP / monster.maxHP) * 100;
+    let hpBarColorClass = 'high';
+    if (hpPercent < 30) {
+      hpBarColorClass = 'low';
+    } else if (hpPercent < 70) {
+      hpBarColorClass = 'medium';
+    }
+    
+    // Create card wrapper
+    const card = document.createElement('div');
+    card.className = `combat-monster ${side}`;
+    if (isActive) card.classList.add('active');
+    if (isDefeated) card.classList.add('defeated');
+    card.setAttribute('data-monster-id', monster.id);
+    
+    // Generate token or placeholder
+    const tokenSource = monster.token?.data || monster.token?.url || null;
+    
+    // Create card content
+    card.innerHTML = `
+      <div class="monster-header">
+        <div class="monster-image">
+          ${tokenSource ? 
+            `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
+            `<span>${monster.name.charAt(0)}</span>`
+          }
+        </div>
+        <div class="monster-info">
+          <div class="monster-name">${monster.name}</div>
+          <div class="monster-type">
+            ${monster.size} ${monster.type} ${isPlayer ? `• Lvl ${monster.level || 1}` : ''}
+          </div>
+        </div>
+      </div>
+      
+      <div class="monster-stats">
+        <div class="hp-bar-label">
+          <span>HP</span>
+          <span>${monster.currentHP}/${monster.maxHP}</span>
+        </div>
+        <div class="hp-bar-bg">
+          <div class="hp-bar-fill ${hpBarColorClass}" style="width: ${hpPercent}%;"></div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+          <div class="stat-row">
+            <span>AC</span>
+            <span>${monster.armorClass || monster.stats.ac || 10}</span>
+          </div>
+          <div class="stat-row">
+            <span>${isPlayer ? 'EXP' : 'CR'}</span>
+            <span>${isPlayer ? 
+              (monster.experience ? `${monster.experience}/${monster.experienceToNext}` : '0/100') : 
+              (monster.cr || monster.basic?.cr || '?')
+            }</span>
+          </div>
+        </div>
+      </div>
+      
+      ${isActive ? `
+        <div class="active-indicator">ACTIVE</div>
+      ` : ''}
+      
+      ${isDefeated ? `
+        <div class="defeated-indicator">✕</div>
+      ` : ''}
+    `;
+    
+    return card;
   }
   
   // Render a group of monsters (player or enemy)
@@ -641,7 +1518,60 @@ generateDefaultTokenImage(monster) {
   }
   
   // Render initiative list
-  renderInitiativeList() {
+//   renderInitiativeList() {
+//     if (!this.initiativeOrder || this.initiativeOrder.length === 0) {
+//       return '<div style="padding: 8px; text-align: center;">No combatants</div>';
+//     }
+    
+//     let html = '';
+    
+//     this.initiativeOrder.forEach((combatant, index) => {
+//       const { monster, initiative, side } = combatant;
+//       const isCurrentTurn = index === this.currentTurn;
+//       const isDefeated = monster.currentHP <= 0;
+      
+//       // Determine styling based on status
+//       let itemStyle = `
+//         display: flex;
+//         align-items: center;
+//         padding: 4px 8px;
+//         border-bottom: 1px solid #eee;
+//         font-size: 0.9em;
+//       `;
+      
+//       if (isCurrentTurn) {
+//         itemStyle += `
+//           background-color: rgba(33, 150, 243, 0.1);
+//           border-left: 3px solid #2196F3;
+//         `;
+//       }
+      
+//       if (isDefeated) {
+//         itemStyle += `
+//           opacity: 0.5;
+//           text-decoration: line-through;
+//         `;
+//       }
+      
+//       html += `
+//         <div class="initiative-item" style="${itemStyle}">
+//           <div class="initiative-number" style="flex: 0 0 30px; font-weight: bold;">${initiative}</div>
+//           <div class="initiative-icon" style="flex: 0 0 20px; margin-right: 4px;">
+//             <span class="material-icons" style="font-size: 16px; color: ${side === 'player' ? '#4CAF50' : '#F44336'};">
+//               ${side === 'player' ? 'person' : 'dangerous'}
+//             </span>
+//           </div>
+//           <div class="initiative-name" style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+//             ${monster.name}
+//           </div>
+//         </div>
+//       `;
+//     });
+    
+//     return html;
+//   }
+  
+renderInitiativeList() {
     if (!this.initiativeOrder || this.initiativeOrder.length === 0) {
       return '<div style="padding: 8px; text-align: center;">No combatants</div>';
     }
@@ -653,107 +1583,142 @@ generateDefaultTokenImage(monster) {
       const isCurrentTurn = index === this.currentTurn;
       const isDefeated = monster.currentHP <= 0;
       
-      // Determine styling based on status
-      let itemStyle = `
-        display: flex;
-        align-items: center;
-        padding: 4px 8px;
-        border-bottom: 1px solid #eee;
-        font-size: 0.9em;
-      `;
-      
-      if (isCurrentTurn) {
-        itemStyle += `
-          background-color: rgba(33, 150, 243, 0.1);
-          border-left: 3px solid #2196F3;
-        `;
-      }
-      
-      if (isDefeated) {
-        itemStyle += `
-          opacity: 0.5;
-          text-decoration: line-through;
-        `;
-      }
+      const classes = ['initiative-item'];
+      if (isCurrentTurn) classes.push('active');
+      if (isDefeated) classes.push('defeated');
       
       html += `
-        <div class="initiative-item" style="${itemStyle}">
-          <div class="initiative-number" style="flex: 0 0 30px; font-weight: bold;">${initiative}</div>
-          <div class="initiative-icon" style="flex: 0 0 20px; margin-right: 4px;">
-            <span class="material-icons" style="font-size: 16px; color: ${side === 'player' ? '#4CAF50' : '#F44336'};">
-              ${side === 'player' ? 'person' : 'dangerous'}
-            </span>
-          </div>
-          <div class="initiative-name" style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            ${monster.name}
-          </div>
+        <div class="${classes.join(' ')}">
+          ${isCurrentTurn ? 
+            `<span class="material-icons" style="margin-right: 8px; font-size: 16px; color: #fcd34d;">play_arrow</span>` : 
+            `<span style="width: 24px; display: inline-block;"></span>`
+          }
+          <div class="initiative-marker ${side}"></div>
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${monster.name}</span>
+          <span style="margin-left: 4px; font-weight: bold;">${initiative}</span>
         </div>
       `;
     });
     
     return html;
   }
-  
+
+
   // Render action bar with monster abilities
+//   renderActionBar(monster) {
+//     if (!monster || monster.currentHP <= 0) {
+//       return '<div style="text-align: center; color: #666;"><em>This monster is defeated</em></div>';
+//     }
+    
+//     if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
+//       return '<div style="text-align: center; color: #666;"><em>No abilities available</em></div>';
+//     }
+    
+//     let html = `<div class="abilities-container" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">`;
+    
+//     // Add basic abilities
+//     monster.monsterAbilities.forEach(ability => {
+//       // Determine icon based on ability type
+//       let icon = 'sports_martial_arts'; // Default for attack
+//       let color = '#607D8B'; // Default color
+      
+//       switch (ability.type) {
+//         case 'attack': icon = 'sports_martial_arts'; color = '#F44336'; break;
+//         case 'area': icon = 'blur_circular'; color = '#FF9800'; break;
+//         case 'buff': icon = 'upgrade'; color = '#4CAF50'; break;
+//         case 'debuff': icon = 'threat'; color = '#9C27B0'; break;
+//         case 'defense': icon = 'shield'; color = '#2196F3'; break;
+//         case 'healing': icon = 'healing'; color = '#00BCD4'; break;
+//         case 'reaction': icon = 'autorenew'; color = '#795548'; break;
+//         case 'support': icon = 'group'; color = '#607D8B'; break;
+//       }
+      
+//       html += `
+//         <button class="ability-btn" data-ability="${ability.name.replace(/\s+/g, '_')}" 
+//                 style="padding: 8px 12px; border: 1px solid ${color}; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+//           <span class="material-icons" style="color: ${color};">${icon}</span>
+//           <span>${ability.name}</span>
+//           ${ability.damage ? `<span style="color: #d32f2f; font-size: 0.9em;">${ability.damage}</span>` : ''}
+//         </button>
+//       `;
+//     });
+    
+//     // Add items button
+//     html += `
+//       <button class="use-item-btn" style="padding: 8px 12px; border: 1px solid #9E9E9E; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+//         <span class="material-icons" style="color: #9E9E9E;">inventory_2</span>
+//         <span>Use Item</span>
+//       </button>
+//     `;
+    
+//     // Add skip turn button
+//     html += `
+//       <button class="skip-turn-btn" style="padding: 8px 12px; border: 1px solid #9E9E9E; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+//         <span class="material-icons" style="color: #9E9E9E;">skip_next</span>
+//         <span>Skip Turn</span>
+//       </button>
+//     `;
+    
+//     html += `</div>`;
+//     return html;
+//   }
+  
+  // Setup event listeners for combat UI
+  
   renderActionBar(monster) {
     if (!monster || monster.currentHP <= 0) {
-      return '<div style="text-align: center; color: #666;"><em>This monster is defeated</em></div>';
+      return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>This monster is defeated</em></div>';
     }
     
     if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
-      return '<div style="text-align: center; color: #666;"><em>No abilities available</em></div>';
+      return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>No abilities available</em></div>';
     }
     
-    let html = `<div class="abilities-container" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">`;
+    let html = `<div class="abilities-container">`;
     
-    // Add basic abilities
+    // Add abilities with icons
     monster.monsterAbilities.forEach(ability => {
       // Determine icon based on ability type
       let icon = 'sports_martial_arts'; // Default for attack
-      let color = '#607D8B'; // Default color
       
       switch (ability.type) {
-        case 'attack': icon = 'sports_martial_arts'; color = '#F44336'; break;
-        case 'area': icon = 'blur_circular'; color = '#FF9800'; break;
-        case 'buff': icon = 'upgrade'; color = '#4CAF50'; break;
-        case 'debuff': icon = 'threat'; color = '#9C27B0'; break;
-        case 'defense': icon = 'shield'; color = '#2196F3'; break;
-        case 'healing': icon = 'healing'; color = '#00BCD4'; break;
-        case 'reaction': icon = 'autorenew'; color = '#795548'; break;
-        case 'support': icon = 'group'; color = '#607D8B'; break;
+        case 'attack': icon = 'sports_martial_arts'; break;
+        case 'area': icon = 'blur_circular'; break;
+        case 'buff': icon = 'upgrade'; break;
+        case 'debuff': icon = 'threat'; break;
+        case 'defense': icon = 'shield'; break;
+        case 'healing': icon = 'healing'; break;
+        case 'reaction': icon = 'autorenew'; break;
+        case 'support': icon = 'group'; break;
       }
       
       html += `
-        <button class="ability-btn" data-ability="${ability.name.replace(/\s+/g, '_')}" 
-                style="padding: 8px 12px; border: 1px solid ${color}; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-          <span class="material-icons" style="color: ${color};">${icon}</span>
+        <button class="ability-btn ${ability.type}" data-ability="${ability.name.replace(/\s+/g, '_')}">
+          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
           <span>${ability.name}</span>
-          ${ability.damage ? `<span style="color: #d32f2f; font-size: 0.9em;">${ability.damage}</span>` : ''}
+          ${ability.damage ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>` : ''}
         </button>
       `;
     });
     
-    // Add items button
+    // Add utility buttons
     html += `
-      <button class="use-item-btn" style="padding: 8px 12px; border: 1px solid #9E9E9E; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-        <span class="material-icons" style="color: #9E9E9E;">inventory_2</span>
-        <span>Use Item</span>
-      </button>
+      </div>
+      <div class="utility-buttons">
+        <button class="utility-btn use-item-btn">
+          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">inventory_2</span>
+          Use Item
+        </button>
+        <button class="utility-btn skip-turn-btn">
+          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">skip_next</span>
+          Skip Turn
+        </button>
+      </div>
     `;
     
-    // Add skip turn button
-    html += `
-      <button class="skip-turn-btn" style="padding: 8px 12px; border: 1px solid #9E9E9E; background: white; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-        <span class="material-icons" style="color: #9E9E9E;">skip_next</span>
-        <span>Skip Turn</span>
-      </button>
-    `;
-    
-    html += `</div>`;
     return html;
   }
   
-  // Setup event listeners for combat UI
   setupCombatEventListeners() {
     // Skip button
     const skipBtn = this.dialogContainer.querySelector('.skip-turn-btn');
@@ -1083,6 +2048,7 @@ if (combatStyles) {
     
     // Show target selection for attack abilities
     if (ability.type === 'attack' || ability.type === 'debuff') {
+        this.markTargetableEnemies(currentMonster, ability);
       this.showTargetSelection(currentMonster, ability);
     } 
     // For self-buff abilities, apply directly
@@ -1124,6 +2090,46 @@ if (combatStyles) {
     }
     
     return true;
+  }
+
+  // New method to mark targets
+markTargetableEnemies(monster, ability) {
+    // Find all enemy cards
+    const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+    
+    enemyCards.forEach(card => {
+      const enemyId = card.getAttribute('data-monster-id');
+      const enemy = this.enemyParty.find(e => e.id === enemyId);
+      
+      if (enemy && enemy.currentHP > 0) {
+        // Add targetable class and hint
+        card.classList.add('targetable');
+        
+        // Add targeting hint
+        const hint = document.createElement('div');
+        hint.className = 'targeting-hint';
+        hint.textContent = `Click to target with ${ability.name}`;
+        card.appendChild(hint);
+      }
+    });
+    
+    // Add a floating indicator in the center of the screen
+    const battleScene = this.dialogContainer.querySelector('.battle-scene');
+    const indicator = document.createElement('div');
+    indicator.className = 'battle-notification fade-in';
+    indicator.textContent = 'Select an enemy to target';
+    indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+    
+    battleScene.appendChild(indicator);
+    
+    // Remove after a few seconds to avoid clutter
+    setTimeout(() => {
+      if (indicator.parentNode) {
+        indicator.classList.remove('fade-in');
+        indicator.style.opacity = 0;
+        setTimeout(() => indicator.remove(), 300);
+      }
+    }, 3000);
   }
   
   // Show target selection overlay

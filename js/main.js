@@ -26,6 +26,8 @@ function updateLayersListHeight() {
     }
 }
 
+
+
 // Initialize everything when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
     // Initialize layers list height

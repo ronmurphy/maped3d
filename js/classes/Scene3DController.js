@@ -61,179 +61,397 @@ class Scene3DController {
     this.activeDoor = null;
   }
 
-  initialize(container, width, height) {
-    // Scene
+  // initialize(container, width, height) {
+  //   // Scene
+  //   this.scene = new THREE.Scene();
+  //   this.scene.background = new THREE.Color(0x222222);
+
+  //   // Camera
+  //   this.camera = new THREE.PerspectiveCamera(
+  //     75,
+  //     width / height,
+  //     0.1,
+  //     1000
+  //   );
+  //   this.camera.position.set(0, 6, 50); // Adjusted starting position
+
+  //   // Renderer
+  //   this.renderer = new THREE.WebGLRenderer({ antialias: true });
+  //   this.renderer.setSize(availableWidth, window.innerHeight);
+  //   this.renderer.shadowMap.enabled = true;
+  //   this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  //   this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  //   this.renderer.toneMappingExposure = 1.2;
+  //   this.renderer.setClearColor(0x222222);
+
+  //   this.loadPreferences();
+  //   if (this.preferences && this.preferences.showFps) {
+  //     this.showStats = true;
+  //     this.initStats();
+  //   }
+
+  //   // Initialize visual effects
+  //   if (!this.visualEffects) {
+  //     this.visualEffects = new VisualEffectsManager(this);
+  //     this.visualEffects.initPostProcessing();
+  //     // this.createDemoEffects();
+  //   }
+
+  //   if (!this.dayNightCycle) {
+  //     this.initializeDayNightCycle();
+  //   }
+  //   this.createPartyButton();
+
+  //   this.addPlayerLight();
+
+  //   container.appendChild(this.renderer.domElement);
+
+  //   // Controls
+  //   this.controls = new THREE.PointerLockControls(this.camera, container);
+
+  //   // Setup key handlers
+  //   this.keyHandlers.keydown = (e) =>
+  //     (this.keys[e.key.toLowerCase()] = true);
+  //   this.keyHandlers.keyup = (e) =>
+  //     (this.keys[e.key.toLowerCase()] = false);
+
+  //   document.addEventListener("keydown", this.keyHandlers.keydown);
+  //   document.addEventListener("keyup", this.keyHandlers.keyup);
+
+  //   this.isActive = true;
+
+  //   // this.monitorActualFPS();
+  //   const prefs = this.getPreferences();
+  //   if (prefs.fpsLimit) {
+  //     console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
+  //     this.setFPSLimit(prefs.fpsLimit);
+  //   }
+  // }
+
+    initialize(container, width, height) {
+    // Initialize core Three.js components
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x222222);
-
-    // Camera
+  
+    // Create the renderer with proper width/height
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setSize(width, height);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.setClearColor(0x222222);
+  
+    // Create camera with correct aspect ratio
     this.camera = new THREE.PerspectiveCamera(
       75,
       width / height,
       0.1,
       1000
     );
-    this.camera.position.set(0, 6, 50); // Adjusted starting position
-
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(availableWidth, window.innerHeight);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
-    this.renderer.setClearColor(0x222222);
-
+    this.camera.position.set(0, 2, 5);
+  
+    // Create controls
+    this.controls = new THREE.PointerLockControls(this.camera, container);
+  
+    // Add renderer to container
+    container.appendChild(this.renderer.domElement);
+  
+    // Load preferences and initialize stats if needed
     this.loadPreferences();
     if (this.preferences && this.preferences.showFps) {
       this.showStats = true;
       this.initStats();
     }
-
+  
     // Initialize visual effects
     if (!this.visualEffects) {
       this.visualEffects = new VisualEffectsManager(this);
       this.visualEffects.initPostProcessing();
-      // this.createDemoEffects();
     }
-
+  
+    // Initialize day/night cycle if not exists
     if (!this.dayNightCycle) {
       this.initializeDayNightCycle();
     }
-    this.createPartyButton();
-
+  
+    // Add player light
     this.addPlayerLight();
-
-    container.appendChild(this.renderer.domElement);
-
-    // Controls
-    this.controls = new THREE.PointerLockControls(this.camera, container);
-
+  
     // Setup key handlers
-    this.keyHandlers.keydown = (e) =>
-      (this.keys[e.key.toLowerCase()] = true);
-    this.keyHandlers.keyup = (e) =>
-      (this.keys[e.key.toLowerCase()] = false);
-
+    this.keyHandlers.keydown = (e) => (this.keys[e.key.toLowerCase()] = true);
+    this.keyHandlers.keyup = (e) => (this.keys[e.key.toLowerCase()] = false);
+  
     document.addEventListener("keydown", this.keyHandlers.keydown);
     document.addEventListener("keyup", this.keyHandlers.keyup);
-
+  
     this.isActive = true;
-
-    // this.monitorActualFPS();
+  
+    // Apply FPS limit if set in preferences
     const prefs = this.getPreferences();
     if (prefs.fpsLimit) {
       console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
       this.setFPSLimit(prefs.fpsLimit);
     }
+  
+    // Schedule texture updates
+    [100, 500, 1000].forEach(delay => {
+      setTimeout(() => this.updateTexturesColorSpace(), delay);
+    });
+  
+    return true;
   }
 
-  cleanup() {
-    this.isActive = false;
+  // cleanup() {
+  //   this.isActive = false;
 
-    // Cancel animation frame first
+  //   // Cancel animation frame first
+  //   if (this.animationFrameId) {
+  //     cancelAnimationFrame(this.animationFrameId);
+  //     this.animationFrameId = null;
+  //   }
+
+  //   // Clean up teleport prompt
+  //   if (this.teleportPrompt) {
+  //     this.teleportPrompt.remove();
+  //     this.teleportPrompt = null;
+  //   }
+  //   this.activeTeleporter = null;
+
+  //   // Clean up door prompt
+  //   if (this.doorPrompt) {
+  //     this.doorPrompt.remove();
+  //     this.doorPrompt = null;
+  //   }
+  //   this.activeDoor = null;
+
+  //   // Clean up FPS monitor if active
+  //   if (this._fpsMonitor && this._fpsMonitor.parentNode) {
+  //     this._fpsMonitor.parentNode.removeChild(this._fpsMonitor);
+  //     this._fpsMonitor = null;
+  //   }
+  //   this._fpsMonitorActive = false;
+
+  //   // Reset FPS limiter
+  //   this.fpsLimit = 0;
+  //   this.fpsInterval = 0;
+  //   this.lastFrameTime = 0;
+  //   if (this._originalAnimate) {
+  //     // Restore original animate function
+  //     this.animate = this._originalAnimate;
+  //     this._originalAnimate = null;
+  //   }
+
+  //   // Clean up any UI elements
+  //   document.querySelectorAll('.time-control-button, .flashlight-button').forEach(el => {
+  //     if (el.parentNode) el.parentNode.removeChild(el);
+  //   });
+
+  //   // Clean up day/night cycle
+  //   if (this.dayNightCycle) {
+  //     this.dayNightCycle.dispose();
+  //     this.dayNightCycle = null;
+  //   }
+
+  //   // Dispose of player light
+  //   if (this.playerLight) {
+  //     if (this.camera) this.camera.remove(this.playerLight);
+  //     this.playerLight.dispose();
+  //     this.playerLight = null;
+  //   }
+
+  //   // Clean up renderer
+  //   if (this.renderer) {
+  //     this.renderer.dispose();
+
+  //     // Also explicitly dispose of renderer's internal caches
+  //     if (this.renderer.info) {
+  //       console.log('Renderer memory before cleanup:', JSON.stringify(this.renderer.info.memory));
+  //     }
+
+  //     // Force texture disposal
+  //     THREE.Cache.clear();
+
+  //     if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+  //       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+  //     }
+  //     this.renderer = null;
+  //   }
+
+  //   // Clean up controls
+  //   if (this.controls) {
+  //     this.controls.dispose();
+  //     this.controls = null;
+  //   }
+
+  //   // Remove event listeners
+  //   if (this.keyHandlers.keydown) {
+  //     document.removeEventListener("keydown", this.keyHandlers.keydown);
+  //   }
+  //   if (this.keyHandlers.keyup) {
+  //     document.removeEventListener("keyup", this.keyHandlers.keyup);
+  //   }
+
+  //   // Clean up all scene objects
+  //   if (this.scene) {
+  //     // Log scene object count before cleanup
+  //     let objectCount = 0;
+  //     this.scene.traverse(() => objectCount++);
+  //     console.log(`Cleaning up scene with ${objectCount} objects`);
+
+  //     // Dispose of all objects with geometries and materials
+  //     this.scene.traverse((object) => {
+  //       // Skip already disposed objects
+  //       if (!object.visible && object.userData && object.userData.__disposed) return;
+
+  //       if (object.geometry) {
+  //         object.geometry.dispose();
+  //       }
+
+  //       if (object.material) {
+  //         if (Array.isArray(object.material)) {
+  //           object.material.forEach(material => this.disposeMaterial(material));
+  //         } else {
+  //           this.disposeMaterial(object.material);
+  //         }
+  //       }
+
+  //       // Mark as disposed
+  //       if (object.userData) object.userData.__disposed = true;
+  //     });
+
+  //     // Clear all objects from scene
+  //     while (this.scene.children.length > 0) {
+  //       this.scene.remove(this.scene.children[0]);
+  //     }
+
+  //     this.scene = null;
+  //   }
+
+  //   // Clean up visual effects
+  //   if (this.visualEffects) {
+  //     this.visualEffects.dispose();
+  //     this.visualEffects = null;
+  //   }
+
+  //   // Clean up stats
+  //   if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
+  //     this.stats.dom.parentNode.removeChild(this.stats.dom);
+  //     this.stats = null;
+  //   }
+
+  //   // Remove quality indicator if it exists
+  //   if (this.qualityIndicator && this.qualityIndicator.parentNode) {
+  //     this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
+  //     this.qualityIndicator = null;
+  //   }
+
+  //   // Clear arrays
+  //   this.teleporters = [];
+  //   this.doors = [];
+  //   this.markers = [];
+
+  //   // Force garbage collection hint (not guaranteed but can help)
+  //   setTimeout(() => {
+  //     // This setTimeout helps ensure the cleanup has completed
+  //     // before potentially re-initializing the scene
+  //     console.log('Cleanup completed');
+
+  //     // In modern browsers, this can help suggest garbage collection
+  //     if (window.gc) window.gc();
+  //   }, 100);
+
+  //   // Call clear to reset all properties
+  //   this.clear();
+  // }
+
+  // Helper method to dispose of materials
+  
+    cleanup() {
+    console.log('Starting Scene3D cleanup...');
+    this.isActive = false;
+  
+    // Cancel any pending animation frames first
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
-
-    // Clean up teleport prompt
-    if (this.teleportPrompt) {
-      this.teleportPrompt.remove();
-      this.teleportPrompt = null;
-    }
-    this.activeTeleporter = null;
-
-    // Clean up door prompt
-    if (this.doorPrompt) {
-      this.doorPrompt.remove();
-      this.doorPrompt = null;
-    }
-    this.activeDoor = null;
-
-    // Clean up FPS monitor if active
-    if (this._fpsMonitor && this._fpsMonitor.parentNode) {
-      this._fpsMonitor.parentNode.removeChild(this._fpsMonitor);
-      this._fpsMonitor = null;
-    }
-    this._fpsMonitorActive = false;
-
-    // Reset FPS limiter
-    this.fpsLimit = 0;
-    this.fpsInterval = 0;
-    this.lastFrameTime = 0;
-    if (this._originalAnimate) {
-      // Restore original animate function
-      this.animate = this._originalAnimate;
-      this._originalAnimate = null;
-    }
-
-    // Clean up any UI elements
-    document.querySelectorAll('.time-control-button, .flashlight-button').forEach(el => {
-      if (el.parentNode) el.parentNode.removeChild(el);
+  
+    // Clean up UI elements
+    [
+      'teleportPrompt',
+      'doorPrompt',
+      'encounterPrompt',
+      'pickupPrompt',
+      'splashArtPrompt',
+      'inventoryDrawer'
+    ].forEach(element => {
+      if (this[element]) {
+        if (this[element].remove) this[element].remove();
+        this[element] = null;
+      }
     });
-
+  
+    // Remove all event listeners
+    document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("keyup", this.handleKeyUp);
+    window.removeEventListener('resize', this.handleResize);
+  
+    // Clean up audio
+    if (this.camera) {
+      const listener = this.camera.children.find(child => child instanceof THREE.AudioListener);
+      if (listener) {
+        this.camera.remove(listener);
+        listener.context.close();
+      }
+    }
+  
+    // Clean up physics
+    if (this.physics) {
+      this.physics.cleanup();
+      this.physics = null;
+    }
+  
+    // Clean up visual effects
+    if (this.visualEffects) {
+      this.visualEffects.dispose();
+      this.visualEffects = null;
+    }
+  
     // Clean up day/night cycle
     if (this.dayNightCycle) {
       this.dayNightCycle.dispose();
       this.dayNightCycle = null;
     }
-
-    // Dispose of player light
-    if (this.playerLight) {
-      if (this.camera) this.camera.remove(this.playerLight);
-      this.playerLight.dispose();
-      this.playerLight = null;
+  
+    // Clean up stats
+    if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
+      this.stats.dom.parentNode.removeChild(this.stats.dom);
+      this.stats = null;
     }
-
+  
+    // Clean up controls
+    if (this.controls) {
+      this.controls.disconnect();
+      this.controls.dispose();
+      this.controls = null;
+    }
+  
     // Clean up renderer
     if (this.renderer) {
       this.renderer.dispose();
-
-      // Also explicitly dispose of renderer's internal caches
-      if (this.renderer.info) {
-        console.log('Renderer memory before cleanup:', JSON.stringify(this.renderer.info.memory));
-      }
-
-      // Force texture disposal
-      THREE.Cache.clear();
-
       if (this.renderer.domElement && this.renderer.domElement.parentNode) {
         this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
       }
       this.renderer = null;
     }
-
-    // Clean up controls
-    if (this.controls) {
-      this.controls.dispose();
-      this.controls = null;
-    }
-
-    // Remove event listeners
-    if (this.keyHandlers.keydown) {
-      document.removeEventListener("keydown", this.keyHandlers.keydown);
-    }
-    if (this.keyHandlers.keyup) {
-      document.removeEventListener("keyup", this.keyHandlers.keyup);
-    }
-
-    // Clean up all scene objects
+  
+    // Clean up scene
     if (this.scene) {
-      // Log scene object count before cleanup
-      let objectCount = 0;
-      this.scene.traverse(() => objectCount++);
-      console.log(`Cleaning up scene with ${objectCount} objects`);
-
-      // Dispose of all objects with geometries and materials
       this.scene.traverse((object) => {
-        // Skip already disposed objects
-        if (!object.visible && object.userData && object.userData.__disposed) return;
-
         if (object.geometry) {
           object.geometry.dispose();
         }
-
         if (object.material) {
           if (Array.isArray(object.material)) {
             object.material.forEach(material => this.disposeMaterial(material));
@@ -241,57 +459,30 @@ class Scene3DController {
             this.disposeMaterial(object.material);
           }
         }
-
-        // Mark as disposed
-        if (object.userData) object.userData.__disposed = true;
       });
-
-      // Clear all objects from scene
-      while (this.scene.children.length > 0) {
-        this.scene.remove(this.scene.children[0]);
-      }
-
       this.scene = null;
     }
-
-    // Clean up visual effects
-    if (this.visualEffects) {
-      this.visualEffects.dispose();
-      this.visualEffects = null;
-    }
-
-    // Clean up stats
-    if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
-      this.stats.dom.parentNode.removeChild(this.stats.dom);
-      this.stats = null;
-    }
-
-    // Remove quality indicator if it exists
-    if (this.qualityIndicator && this.qualityIndicator.parentNode) {
-      this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
-      this.qualityIndicator = null;
-    }
-
-    // Clear arrays
+  
+    // Clear arrays and maps
     this.teleporters = [];
     this.doors = [];
     this.markers = [];
-
-    // Force garbage collection hint (not guaranteed but can help)
+    this.inventory = new Map();
+  
+    // Force texture cleanup
+    THREE.Cache.clear();
+  
+    // Suggest garbage collection
     setTimeout(() => {
-      // This setTimeout helps ensure the cleanup has completed
-      // before potentially re-initializing the scene
       console.log('Cleanup completed');
-
-      // In modern browsers, this can help suggest garbage collection
       if (window.gc) window.gc();
     }, 100);
-
-    // Call clear to reset all properties
+  
+    // Clear all remaining properties
     this.clear();
+    console.log('Scene3D cleanup finished');
   }
-
-  // Helper method to dispose of materials
+  
   disposeMaterial(material) {
     if (!material) return;
 
@@ -3770,6 +3961,53 @@ class Scene3DController {
     };
   }
 
+// _createFPSLimitedAnimate() {
+//   // Store references
+//   const originalAnimate = this._originalAnimate;
+//   const self = this;
+
+//   return function limitedAnimateWrapper() {
+//     const now = performance.now();
+
+//     // Initialize lastFrameTime if needed
+//     if (!self.lastFrameTime) {
+//       self.lastFrameTime = now;
+//     }
+
+//     const elapsed = now - self.lastFrameTime;
+
+//     // Calculate FPS for speed adjustment
+//     const currentFPS = 1000 / elapsed;
+    
+//     // Calculate speed multiplier based on FPS
+//     // At 30 FPS, multiplier is 1.0
+//     // At 15 FPS, multiplier is 2.0
+//     // Cap at 2.0 to prevent extreme speeds
+//     const speedMultiplier = Math.min(30 / Math.max(currentFPS, 15), 2.0);
+    
+//     // Apply speed multiplier to movement
+//     const currentSpeed = self.moveState.speed * speedMultiplier;
+
+//     // Handle movement with adjusted speed
+//     if (self.moveState.forward) self.controls.moveForward(currentSpeed);
+//     if (self.moveState.backward) self.controls.moveForward(-currentSpeed);
+//     if (self.moveState.left) self.controls.moveRight(-currentSpeed);
+//     if (self.moveState.right) self.controls.moveRight(currentSpeed);
+
+//     // If enough time has elapsed, run the animation
+//     if (elapsed >= self.fpsInterval) {
+//       // Adjust lastFrameTime, accounting for any excess time
+//       self.lastFrameTime = now - (elapsed % self.fpsInterval);
+
+//       // Call the original animation function for rendering
+//       originalAnimate.call(self);
+//     }
+
+//     // Always schedule next frame
+//     self.animationFrameId = requestAnimationFrame(self.animate);
+//   };
+// }
+
   monitorActualFPS() {
     console.log('monitorActualFPS called');
 
@@ -3871,6 +4109,9 @@ class Scene3DController {
       
       // If we have a party manager, show recruitment dialog
       if (window.partyManager) {
+
+        this.pauseControls();
+
         window.partyManager.showRecruitmentDialog(marker.userData.monster);
 
         // Add dialog close handler
@@ -3889,6 +4130,7 @@ class Scene3DController {
           if (!dialog) {
             clearInterval(checkDialog);
             cleanup();
+            this.resumeControls();
           }
         }, 100);
       }
@@ -4254,218 +4496,376 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
     }
   }
 
-  async show3DView() {
-    const { drawer, container, progress } = this.setupDrawer();
+  // async show3DView() {
 
+  //     // Create Scene3DController if it doesn't exist
+  // if (!this.scene3D) {
+  //   this.scene3D = new Scene3DController();
+  // }
+
+  //   const { drawer, container, progress } = this.setupDrawer();
+
+  //   progress.style.display = "block";
+  //   progress.value = 0;
+
+  //   const updateStatus = (percent) => {
+  //     progress.value = percent;
+  //     progress.innerHTML = `Processing... ${Math.round(percent)}%`;
+  //   };
+
+
+  //   const hasUrlTokens = this.markers.some(marker =>
+  //     marker.type === "encounter" &&
+  //     marker.data?.monster?.token?.url &&
+  //     !marker.data.monster.token.data?.startsWith('data:')
+  //   );
+
+  //   if (hasUrlTokens) {
+  //     // Show warning toast before proceeding
+  //     const toast = document.createElement('div');
+  //     toast.className = 'token-warning-toast';
+  //     toast.style.cssText = `
+  //         position: fixed;
+  //         top: 20px;
+  //         left: 50%;
+  //         transform: translateX(-50%);
+  //         background: rgba(244, 67, 54, 0.9);
+  //         color: white;
+  //         padding: 16px;
+  //         border-radius: 4px;
+  //         z-index: 10000;
+  //         max-width: 400px;
+  //         text-align: center;
+  //     `;
+
+  //     toast.innerHTML = `
+  //         <span class="material-icons" style="font-size: 24px; display: block; margin: 0 auto 8px auto;">warning</span>
+  //         <div>
+  //             <div style="font-weight: bold; margin-bottom: 8px;">3D Token Warning</div>
+  //             <div>Some monsters use URL-based tokens which won't display correctly in 3D view.</div>
+  //             <div style="margin-top: 8px;">Please update monsters in the Resource Manager first.</div>
+  //         </div>
+  //     `;
+
+  //     document.body.appendChild(toast);
+
+  //     // Auto-remove after showing for a bit
+  //     setTimeout(() => toast.remove(), 5000);
+  //   }
+
+  //   try {
+  //     drawer.show();
+
+  //     // Initialize core Three.js components
+  //     this.scene = new THREE.Scene();
+  //     this.scene.background = new THREE.Color(0x222222);
+
+  //     // Calculate dimensions
+  //     const sidebar = document.querySelector(".sidebar");
+  //     const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+  //     const availableWidth = window.innerWidth - sidebarWidth;
+
+
+  //     // Create the renderer
+  //     this.renderer = new THREE.WebGLRenderer({ antialias: true });
+  //     this.renderer.setSize(availableWidth, window.innerHeight);
+  //     this.renderer.shadowMap.enabled = true;
+  //     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  //     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  //     this.renderer.toneMappingExposure = 1.2;
+  //     this.renderer.setClearColor(0x222222);
+
+  //     this.loadPreferences();
+  //     if (this.preferences && this.preferences.showFps) {
+  //       this.showStats = true;
+  //       this.initStats();
+  //     }
+
+  //     // Initialize visual effects
+  //     if (!this.visualEffects) {
+  //       this.visualEffects = new VisualEffectsManager(this);
+  //       this.visualEffects.initPostProcessing();
+  //       // this.createDemoEffects();
+  //     }
+
+
+
+  //     // Create camera
+  //     this.camera = new THREE.PerspectiveCamera(
+  //       75,
+  //       availableWidth / window.innerHeight,
+  //       0.1,
+  //       1000
+  //     );
+  //     this.camera.position.set(0, 2, 5);
+
+  //     // Create controls
+  //     this.controls = new THREE.PointerLockControls(this.camera, this.renderer.domElement);
+
+  //     // Add renderer to container
+  //     container.appendChild(this.renderer.domElement);
+
+
+
+  //     const { cleanup } = this.init3DScene(updateStatus);
+
+  //     // Initialize scene with components
+  //     // const { animate, controls, cleanup } = this.init3DScene(updateStatus);
+  //     const { animate, controls } = this.init3DScene(updateStatus);
+
+  //     // Initialize stats (but keep hidden by default)
+  //     this.showStats = false;
+  //     this.initStats();
+
+  //     [100, 500, 1000].forEach(delay => {
+  //       setTimeout(() => this.updateTexturesColorSpace(), delay);
+  //     });
+
+  //     // global error catch debuggin 
+  //     // const originalSet = Object.getOwnPropertyDescriptor(THREE.Texture.prototype, 'needsUpdate').set;
+
+  //     // Object.defineProperty(THREE.Texture.prototype, 'needsUpdate', {
+  //     //   set: function(value) {
+  //     //     if (value === true) {
+  //     //       const hasData = this.image && (this.image.width > 0 || this.image instanceof HTMLCanvasElement);
+  //     //       if (!hasData) {
+  //     //         console.warn('Texture marked for update but no image data found', new Error().stack);
+  //     //       }
+  //     //     }
+  //     //     originalSet.call(this, value);
+  //     //   }
+  //     // });
+
+  //     // Instructions overlay
+  //     const instructions = document.createElement("div");
+  //     instructions.style.cssText = `
+  //           position: absolute;
+  //           top: 50%;
+  //           left: 50%;
+  //           transform: translate(-50%, -50%);
+  //           background: rgba(0, 0, 0, 0.7);
+  //           color: white;
+  //           padding: 20px;
+  //           width: 75vw;
+  //           border-radius: 5px;
+  //           text-align: center;
+  //           pointer-events: none;
+  //       `;
+  //     instructions.innerHTML = `
+  //           Click to Start<br>
+  //           WASD or Arrow Keys to move<br>
+  //           Hold Shift or Right Mouse Button to sprint<br>
+  //           ~ to open Config<br>
+  //           | for inventory<br>
+  //           E as the Action key<br>
+  //           P for FPS stats<br>
+  //           ESC to exit
+  //       `;
+  //     container.appendChild(instructions);
+
+  //     this.createPartyButton();
+
+  //     // Controls event listeners
+  //     this.controls.addEventListener("lock", () => {
+  //       instructions.style.display = "none";
+  //     });
+
+  //     this.controls.addEventListener("unlock", () => {
+  //       instructions.style.display = "block";
+  //     });
+
+  //     this.updateInsideWallRoomState()
+
+  //     // Animation loop
+  //     let animationFrameId;
+  //     const animationLoop = () => {
+  //       if (drawer.open) {
+  //         animationFrameId = requestAnimationFrame(animationLoop);
+  //         this.animate();
+  //       }
+  //     };
+  //     animationLoop();
+
+  //     // Window resize handler
+  //     const handleResize = () => {
+  //       const sidebar = document.querySelector(".sidebar");
+  //       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+  //       const availableWidth = window.innerWidth - sidebarWidth;
+
+  //       this.renderer.setSize(availableWidth, window.innerHeight);
+  //       this.camera.aspect = availableWidth / window.innerHeight;
+  //       this.camera.updateProjectionMatrix();
+  //     };
+
+  //     window.addEventListener('resize', handleResize);
+
+  //     // Cleanup on drawer close
+  //     drawer.addEventListener("sl-after-hide", () => {
+  //       cancelAnimationFrame(animationFrameId);
+  //       window.removeEventListener('resize', handleResize);
+  //       this.cleanup();
+  //       container.innerHTML = "";
+  //     }, { once: true });
+
+  //   } catch (error) {
+  //     console.error("Error creating 3D view:", error);
+  //     container.innerHTML = `
+  //           <div style="color: red; padding: 20px;">
+  //               Error creating 3D view: ${error.message}
+  //           </div>
+  //       `;
+  //   } finally {
+  //     progress.style.display = "none";
+  //   }
+  // }
+
+    async show3DView() {
+    const { drawer, container, progress } = this.setupDrawer();
+  
     progress.style.display = "block";
     progress.value = 0;
-
+  
     const updateStatus = (percent) => {
       progress.value = percent;
       progress.innerHTML = `Processing... ${Math.round(percent)}%`;
     };
-
-
+  
+    // Check for URL-based tokens
     const hasUrlTokens = this.markers.some(marker =>
       marker.type === "encounter" &&
       marker.data?.monster?.token?.url &&
       !marker.data.monster.token.data?.startsWith('data:')
     );
-
+  
     if (hasUrlTokens) {
-      // Show warning toast before proceeding
+      // Show warning toast
       const toast = document.createElement('div');
       toast.className = 'token-warning-toast';
       toast.style.cssText = `
-          position: fixed;
-          top: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(244, 67, 54, 0.9);
-          color: white;
-          padding: 16px;
-          border-radius: 4px;
-          z-index: 10000;
-          max-width: 400px;
-          text-align: center;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(244, 67, 54, 0.9);
+        color: white;
+        padding: 16px;
+        border-radius: 4px;
+        z-index: 10000;
+        max-width: 400px;
+        text-align: center;
       `;
-
+  
       toast.innerHTML = `
-          <span class="material-icons" style="font-size: 24px; display: block; margin: 0 auto 8px auto;">warning</span>
-          <div>
-              <div style="font-weight: bold; margin-bottom: 8px;">3D Token Warning</div>
-              <div>Some monsters use URL-based tokens which won't display correctly in 3D view.</div>
-              <div style="margin-top: 8px;">Please update monsters in the Resource Manager first.</div>
-          </div>
+        <span class="material-icons" style="font-size: 24px; display: block; margin: 0 auto 8px auto;">warning</span>
+        <div>
+          <div style="font-weight: bold; margin-bottom: 8px;">3D Token Warning</div>
+          <div>Some monsters use URL-based tokens which won't display correctly in 3D view.</div>
+          <div style="margin-top: 8px;">Please update monsters in the Resource Manager first.</div>
+        </div>
       `;
-
+  
       document.body.appendChild(toast);
-
-      // Auto-remove after showing for a bit
       setTimeout(() => toast.remove(), 5000);
     }
-
+  
     try {
       drawer.show();
-
-      // Initialize core Three.js components
-      this.scene = new THREE.Scene();
-      this.scene.background = new THREE.Color(0x222222);
-
+  
       // Calculate dimensions
       const sidebar = document.querySelector(".sidebar");
       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
       const availableWidth = window.innerWidth - sidebarWidth;
-
-
-      // Create the renderer
-      this.renderer = new THREE.WebGLRenderer({ antialias: true });
-      this.renderer.setSize(availableWidth, window.innerHeight);
-      this.renderer.shadowMap.enabled = true;
-      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.2;
-      this.renderer.setClearColor(0x222222);
-
-      this.loadPreferences();
-      if (this.preferences && this.preferences.showFps) {
-        this.showStats = true;
-        this.initStats();
-      }
-
-      // Initialize visual effects
-      if (!this.visualEffects) {
-        this.visualEffects = new VisualEffectsManager(this);
-        this.visualEffects.initPostProcessing();
-        // this.createDemoEffects();
-      }
-
-
-
-      // Create camera
-      this.camera = new THREE.PerspectiveCamera(
-        75,
-        availableWidth / window.innerHeight,
-        0.1,
-        1000
-      );
-      this.camera.position.set(0, 2, 5);
-
-      // Create controls
-      this.controls = new THREE.PointerLockControls(this.camera, this.renderer.domElement);
-
-      // Add renderer to container
-      container.appendChild(this.renderer.domElement);
-
-
-
-      const { cleanup } = this.init3DScene(updateStatus);
-
-      // Initialize scene with components
-      // const { animate, controls, cleanup } = this.init3DScene(updateStatus);
-      const { animate, controls } = this.init3DScene(updateStatus);
-
-      // Initialize stats (but keep hidden by default)
-      this.showStats = false;
-      this.initStats();
-
-      [100, 500, 1000].forEach(delay => {
-        setTimeout(() => this.updateTexturesColorSpace(), delay);
+  
+      // Initialize the scene
+      await this.initialize(container, availableWidth, window.innerHeight);
+  
+      // Initialize with map data
+      await this.initializeWithData({
+        rooms: this.rooms,
+        textures: this.textures,
+        tokens: this.tokens,
+        cellSize: this.cellSize,
+        playerStart: this.playerStart,
+        baseImage: this.baseImage,
+        markers: this.markers,
+        textureManager: this.textureManager,
+        props: this.props
       });
-
-      // global error catch debuggin 
-      // const originalSet = Object.getOwnPropertyDescriptor(THREE.Texture.prototype, 'needsUpdate').set;
-
-      // Object.defineProperty(THREE.Texture.prototype, 'needsUpdate', {
-      //   set: function(value) {
-      //     if (value === true) {
-      //       const hasData = this.image && (this.image.width > 0 || this.image instanceof HTMLCanvasElement);
-      //       if (!hasData) {
-      //         console.warn('Texture marked for update but no image data found', new Error().stack);
-      //       }
-      //     }
-      //     originalSet.call(this, value);
-      //   }
-      // });
-
+  
+      // Process the scene
+      await this.init3DScene(updateStatus);
+  
       // Instructions overlay
       const instructions = document.createElement("div");
       instructions.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 20px;
-            width: 75vw;
-            border-radius: 5px;
-            text-align: center;
-            pointer-events: none;
-        `;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 20px;
+        width: 75vw;
+        border-radius: 5px;
+        text-align: center;
+        pointer-events: none;
+      `;
       instructions.innerHTML = `
-            Click to Start<br>
-            WASD or Arrow Keys to move<br>
-            Hold Shift or Right Mouse Button to sprint<br>
-            ~ to open Config<br>
-            | for inventory<br>
-            E as the Action key<br>
-            P for FPS stats<br>
-            ESC to exit
-        `;
+        Click to Start<br>
+        WASD or Arrow Keys to move<br>
+        Hold Shift or Right Mouse Button to sprint<br>
+        ~ to open Config<br>
+        | for inventory<br>
+        E as the Action key<br>
+        P for FPS stats<br>
+        ESC to exit
+      `;
       container.appendChild(instructions);
-
-      this.createPartyButton();
-
+  
       // Controls event listeners
       this.controls.addEventListener("lock", () => {
         instructions.style.display = "none";
       });
-
+  
       this.controls.addEventListener("unlock", () => {
         instructions.style.display = "block";
       });
-
-      this.updateInsideWallRoomState()
-
-      // Animation loop
-      let animationFrameId;
-      const animationLoop = () => {
+  
+      // Start animation loop
+      const animate = () => {
         if (drawer.open) {
-          animationFrameId = requestAnimationFrame(animationLoop);
+          requestAnimationFrame(animate);
           this.animate();
         }
       };
-      animationLoop();
-
+      animate();
+  
       // Window resize handler
       const handleResize = () => {
         const sidebar = document.querySelector(".sidebar");
         const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
         const availableWidth = window.innerWidth - sidebarWidth;
-
+        
         this.renderer.setSize(availableWidth, window.innerHeight);
         this.camera.aspect = availableWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
       };
-
       window.addEventListener('resize', handleResize);
-
+  
       // Cleanup on drawer close
       drawer.addEventListener("sl-after-hide", () => {
-        cancelAnimationFrame(animationFrameId);
         window.removeEventListener('resize', handleResize);
         this.cleanup();
         container.innerHTML = "";
       }, { once: true });
-
+  
     } catch (error) {
       console.error("Error creating 3D view:", error);
       container.innerHTML = `
-            <div style="color: red; padding: 20px;">
-                Error creating 3D view: ${error.message}
-            </div>
-        `;
+        <div style="color: red; padding: 20px;">
+          Error creating 3D view: ${error.message}
+        </div>
+      `;
     } finally {
       progress.style.display = "none";
     }

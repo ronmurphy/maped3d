@@ -1438,7 +1438,7 @@ class MapEditor {
       const recentProjects = JSON.parse(localStorage.getItem('recentProjects') || '[]');
 
       if (recentProjects.length === 0) {
-        this.showShoelaceToast('No recent projects found', 'warning');
+        this.showCustomToast('No recent projects found', 'warning');
         // alert('No recent projects found');
         return;
       }
@@ -1536,7 +1536,7 @@ class MapEditor {
 
     } catch (e) {
       console.error('Error showing recent projects:', e);
-      this.showShoelaceToast('Could not load recent projects', 'error');
+      this.showCustomToast('Could not load recent projects', 'error');
       // alert('Could not load recent projects');
     }
   }
@@ -2046,9 +2046,11 @@ class MapEditor {
               const success = await this.resourceManager.loadResourcePack(file);
               if (success) {
                 // alert("Resource pack loaded successfully");
-                this.showShoelaceToast("Resource pack loaded successfully", "success", 3000);
+                // this.showCustomToast("Resource pack loaded successfully", "success", 3000);
+                this.showCustomToast("Resource pack loaded successfully", "success", 3000,"#333");
               } else {
-                this.showShoelaceToast("Failed to load resource pack", "error", 3000);
+                this.showCustomToast("Failed to load resource pack", "error", 3000);
+                // this.showCustomToast("Failed to load resource pack", "error", 3000);
               }
             }
             // dialog.hide();
@@ -2386,7 +2388,7 @@ if (preferencesBtn) {
           setTimeout(() => loadingToast.remove(), 2000);
         });
       } else {
-        this.showShoelaceToast('Screenshot library not loaded, need html2canvas.', 'error', 3000);
+        this.showCustomToast('Screenshot library not loaded, need html2canvas.', 'error', 3000);
         // alert('Screenshot library not loaded. Please add html2canvas to your project.');
         loadingToast.remove();
       }
@@ -2404,7 +2406,7 @@ if (preferencesBtn) {
       const canvas = this.scene3D.renderer.domElement;
       this.processScreenshot(canvas, '3D_View');
     } else {
-      this.showShoelaceToast('3D view not initialized or renderer not available', 'error', 3000);
+      this.showCustomToast('3D view not initialized or renderer not available', 'error', 3000);
       // alert('3D view not initialized or renderer not available');
     }
   }
@@ -2445,7 +2447,7 @@ if (preferencesBtn) {
       }, 'image/png');
     } catch (err) {
       console.error('Error processing screenshot:', err);
-      this.showShoelaceToast('Error saving screenshot: ' + err.message, 'error', 3000);
+      this.showCustomToast('Error saving screenshot: ' + err.message, 'error', 3000);
       // alert('Error saving screenshot: ' + err.message);
     }
   }
@@ -2533,7 +2535,7 @@ if (preferencesBtn) {
 
   startWallCreation() {
     if (!this.baseImage) {
-      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      this.showCustomToast("Please load a map first", "warning", 3000);
       // alert("Please load a map first");
       return;
     }
@@ -2814,7 +2816,7 @@ if (preferencesBtn) {
 
   startCircleRoom() {
     if (!this.baseImage) {
-      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      this.showCustomToast("Please load a map first", "warning", 3000);
       // alert("Please load a map first");
       return;
     }
@@ -2849,7 +2851,7 @@ if (preferencesBtn) {
 
   startRoomCreation() {
     if (!this.baseImage) {
-      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      this.showCustomToast("Please load a map first", "warning", 3000);
       // alert("Please load a map first");
       return;
     }
@@ -2967,7 +2969,7 @@ if (preferencesBtn) {
 
   startPolygonRoom(e) {
     if (!this.baseImage) {
-      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      this.showCustomToast("Please load a map first", "warning", 3000);
       // alert("Please load a map first");
       return;
     }
@@ -3908,7 +3910,7 @@ if (preferencesBtn) {
   addMarker(type, x, y, data = {}) {
     // Check if map is loaded
     if (!this.baseImage) {
-      this.showShoelaceToast("Please load a map before placing markers");
+      this.showCustomToast("Please load a map before placing markers");
       // alert("Please load a map before placing markers");
       return null;
     }
@@ -3933,7 +3935,7 @@ if (preferencesBtn) {
 
         if (!texture) {
           // console.warn('No door texture available');
-          this.showShoelaceToast('No door textures available. Please add some in the Resource Manager.');
+          this.showCustomToast('No door textures available. Please add some in the Resource Manager.');
           // alert('No door textures available. Please add some in the Resource Manager.');
           return null;
         }
@@ -3951,7 +3953,7 @@ if (preferencesBtn) {
         return marker;
       } else {
         // console.warn('No nearby structure found for door placement');
-        this.showShoelaceToast('No nearby structure found for door placement. Please place it on a wall or room.');
+        this.showCustomToast('No nearby structure found for door placement. Please place it on a wall or room.');
         // alert("Doors must be placed on a wall or room");
         return null;
       }
@@ -5312,7 +5314,7 @@ if (preferencesBtn) {
     const helpIcon = dialog.querySelector('[data-tooltip="art-horizontal"]');
     if (helpIcon) {
       helpIcon.addEventListener('mouseenter', () => {
-        this.showShoelaceToast(
+        this.showCustomToast(
           'When enabled, art marker will lie flat on surfaces',
           'info-circle',
           3000,
@@ -5483,7 +5485,7 @@ if (preferencesBtn) {
     const helpIcon = dialog.querySelector('[data-tooltip="prop-horizontal"]');
     if (helpIcon) {
       helpIcon.addEventListener('mouseenter', () => {
-        this.showShoelaceToast(
+        this.showCustomToast(
           'When enabled, prop will lie flat on surfaces',
           'info-circle',
           3000,
@@ -5494,186 +5496,78 @@ if (preferencesBtn) {
 
   }
 
-  // showShoelaceToast(message, icon, timeout = 3000, variant = 'primary') {
-  //   // Create a container if it doesn't exist
-  //   let container = document.querySelector('.alert-toast');
-  //   if (!container) {
-  //     container = document.createElement('div');
-  //     container.className = 'alert-toast';
-  //     container.style.cssText = 'position: fixed; bottom:20px; right: 20px; z-index: 10000;';
-  //     document.body.appendChild(container);
-  //   }
 
-  //   const alert = document.createElement('sl-alert');
-  //   alert.setAttribute('variant', variant);
-  //   alert.setAttribute('duration', timeout);
-  //   alert.setAttribute('closable', '');
 
-  //   if (icon) {
-  //     const alertIcon = document.createElement('sl-icon');
-  //     alertIcon.setAttribute('slot', 'icon');
-  //     alertIcon.setAttribute('name', icon);
-  //     alert.appendChild(alertIcon);
-  //   }
+showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", iconColor = "black") {
+    // Create a container if it doesn't exist
+    let container = document.querySelector('.custom-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'custom-toast-container';
+        container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;';
+        document.body.appendChild(container);
+    }
 
-  //   alert.appendChild(document.createTextNode(message));
-  //   container.appendChild(alert);
-  //   requestAnimationFrame(() => alert.toast());
-  //   return alert;
-  // }
-
-  // Example Usage
-  // showShoelaceAlert('This is a warning!', 'exclamation-triangle', 3000, 'warning');
-  // showShoelaceAlert('Success!', 'check-circle', 4000, 'success');
-
-  showShoelaceToast(message, icon = 'info-circle', timeout = 3000, variant = 'primary') {
-    // Create a dedicated portal element for toasts if it doesn't exist
-    let toastPortal = document.getElementById('global-toast-portal');
-    if (!toastPortal) {
-      toastPortal = document.createElement('div');
-      toastPortal.id = 'global-toast-portal';
-      toastPortal.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
+    // Create the toast element
+    const toast = document.createElement("div");
+    toast.style.cssText = `
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        z-index: 100000; /* Extremely high z-index */
-        pointer-events: none;
-      `;
-      // Append directly to body to avoid dialog stacking context issues
-      document.body.appendChild(toastPortal);
-    }
-  
-    // Create the alert element
-    const alert = document.createElement('sl-alert');
-    alert.variant = variant;
-    alert.closable = true;
-    alert.duration = timeout;
-    
-    // Add icon if specified
-    if (icon) {
-      const iconElement = document.createElement('sl-icon');
-      iconElement.name = icon;
-      iconElement.slot = 'icon';
-      alert.appendChild(iconElement);
-    }
-    
-    // Add the message
-    alert.textContent = message;
-    
-    // Set styles to ensure visibility
-    alert.style.cssText = `
-      pointer-events: auto;
-      margin: 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      max-width: 400px;
+        align-items: center;
+        gap: 10px;
+        padding: 24px 16px;
+        background-color: ${bgColor};
+        color: white;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.3s, transform 0.3s;
     `;
-  
-    // Add to portal outside of any dialog stacking contexts
-    toastPortal.appendChild(alert);
-    
-    // Use a small delay to ensure the element is in the DOM
-    setTimeout(() => {
-      try {
-        alert.toast();
-      } catch (e) {
-        console.error('Failed to show toast:', e);
-      }
-    }, 10);
-    
-    // Remove when done
-    alert.addEventListener('sl-after-hide', () => {
-      if (toastPortal.contains(alert)) {
-        toastPortal.removeChild(alert);
-      }
-      
-      // Remove portal if empty
-      if (toastPortal.children.length === 0) {
-        toastPortal.remove();
-      }
+
+    // Icon
+    const iconElement = document.createElement("span");
+    iconElement.className = "material-icons";
+    iconElement.textContent = icon;
+    iconElement.style.color = iconColor;
+    toast.appendChild(iconElement);
+
+    // Message
+    const messageElement = document.createElement("span");
+    messageElement.textContent = message;
+    toast.appendChild(messageElement);
+
+    // Close button
+    const closeButton = document.createElement("span");
+    closeButton.className = "material-icons";
+    closeButton.textContent = "close";
+    closeButton.style.cssText = "cursor: pointer; margin-left: auto; color: white;";
+    closeButton.onclick = () => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(10px)";
+        setTimeout(() => container.removeChild(toast), 300);
+    };
+    toast.appendChild(closeButton);
+
+    container.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
     });
-    
-    return alert;
-  }
 
+    // Auto-remove after timeout
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(10px)";
+        setTimeout(() => container.removeChild(toast), 300);
+    }, timeout);
+}
 
-  // showShoelaceToast(message, icon = 'info-circle', timeout = 3000, variant = 'primary', position = 'bottom') {
-  //   // Ensure there's a container for stacking alerts
-  //   const containerId = `alert-toast-${position}`;
-  //   let container = document.getElementById(containerId);
-    
-  //   if (!container) {
-  //     container = document.createElement('div');
-  //     container.id = containerId;
-  //     container.className = `alert-toast alert-toast-${position}`;
-      
-  //     // Position differently based on position parameter
-  //     const positionStyles = position === 'top' 
-  //       ? 'top: 80px; flex-direction: column-reverse;' // Positioned below header
-  //       : 'bottom: 20px; flex-direction: column;';
-      
-  //     container.style.cssText = `
-  //       position: fixed;
-  //       ${positionStyles}
-  //       right: 20px;
-  //       z-index: 9999999; /* Extremely high z-index */
-  //       display: flex;
-  //       gap: 8px;
-  //       align-items: flex-end;
-  //       pointer-events: none; /* Allow clicking through container */
-  //       max-width: 400px;
-  //     `;
-  //     document.body.appendChild(container);
-  //   }
-  
-  //   // Escape HTML for safety
-  //   function escapeHtml(html) {
-  //     const div = document.createElement('div');
-  //     div.textContent = html;
-  //     return div.innerHTML;
-  //   }
-  
-  //   // Create the toast alert
-  //   const alert = Object.assign(document.createElement('sl-alert'), {
-  //     variant,
-  //     closable: true,
-  //     duration: timeout,
-  //     innerHTML: `
-  //       ${icon ? `<sl-icon name="${icon}" slot="icon"></sl-icon>` : ''}
-  //       ${escapeHtml(message)}
-  //     `
-  //   });
-    
-  //   // Add styles to ensure alerts are visible and interactive
-  //   alert.style.cssText = `
-  //     pointer-events: auto; /* Make alert itself clickable */
-  //     margin: 0;
-  //     z-index: 9999999;
-  //     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  //     width: 100%;
-  //   `;
-  
-  //   // Append the toast to the container
-  //   container.appendChild(alert);
-  
-  //   // Ensure alert is properly positioned and displayed
-  //   requestAnimationFrame(() => {
-  //     alert.toast();
-  //   });
-  
-  //   // Remove alert from container when it closes
-  //   alert.addEventListener('sl-after-hide', () => {
-  //     alert.remove();
-  //     // Remove container if empty
-  //     if (container.children.length === 0) {
-  //       container.remove();
-  //     }
-  //   });
-  
-  //   return alert;
-  // }
+// Example usage
+//showCustomToast("Map loaded successfully!", "check_circle", 3000, "#4CAF50", "white");
+
 
   setupEncounterEventHandlers(dialog, marker) {
     if (!marker.data.monster) {
@@ -6520,47 +6414,96 @@ applyEditorPreferences(prefs) {
 }
 
 // Apply current preferences to the application
+// applyPreferences() {
+//   const prefs = this.getPreferences();
+  
+//   // Apply quality level
+//   const qualityLevel = prefs.qualityPreset === 'auto' ? 
+//     prefs.detectedQuality || 'medium' : prefs.qualityPreset;
+  
+//   this.setQualityLevel(qualityLevel, {
+//     shadows: prefs.shadowsEnabled,
+//     antialias: prefs.antialiasEnabled, 
+//     highQualityTextures: prefs.hqTextures,
+//     ambientOcclusion: prefs.ambientOcclusion
+//   });
+  
+//   // Apply lighting toggle
+//   this.setLightingEnabled(!prefs.disableLighting);
+  
+//   // Apply FPS counter visibility
+//   if (prefs.showFps && !this.showStats) {
+//     this.toggleStats();
+//   } else if (!prefs.showFps && this.showStats) {
+//     this.toggleStats();
+//   }
+  
+//   // Apply FPS limit
+//   this.setFPSLimit(prefs.fpsLimit);
+  
+//   // Apply movement speed
+//   if (this.moveState) {
+//     this.moveState.baseSpeed = 0.025 * (prefs.movementSpeed || 1.0);
+//     this.moveState.speed = this.moveState.sprint ? 
+//       this.moveState.baseSpeed * 2 : this.moveState.baseSpeed;
+//   }
+  
+//   // Apply day/night cycle settings if applicable
+//   if (this.dayNightCycle && prefs.timeOfDay !== undefined) {
+//     this.dayNightCycle.setTime(prefs.timeOfDay);
+//     if (prefs.autoPlayDayNight) {
+//       this.dayNightCycle.start();
+//     } else {
+//       this.dayNightCycle.pause();
+//     }
+//   }
+// }
+
+// Modify the applyPreferences method
 applyPreferences() {
   const prefs = this.getPreferences();
   
-  // Apply quality level
-  const qualityLevel = prefs.qualityPreset === 'auto' ? 
-    prefs.detectedQuality || 'medium' : prefs.qualityPreset;
-  
-  this.setQualityLevel(qualityLevel, {
-    shadows: prefs.shadowsEnabled,
-    antialias: prefs.antialiasEnabled, 
-    highQualityTextures: prefs.hqTextures,
-    ambientOcclusion: prefs.ambientOcclusion
-  });
-  
-  // Apply lighting toggle
-  this.setLightingEnabled(!prefs.disableLighting);
-  
-  // Apply FPS counter visibility
-  if (prefs.showFps && !this.showStats) {
-    this.toggleStats();
-  } else if (!prefs.showFps && this.showStats) {
-    this.toggleStats();
-  }
-  
-  // Apply FPS limit
-  this.setFPSLimit(prefs.fpsLimit);
-  
-  // Apply movement speed
-  if (this.moveState) {
-    this.moveState.baseSpeed = 0.025 * (prefs.movementSpeed || 1.0);
-    this.moveState.speed = this.moveState.sprint ? 
-      this.moveState.baseSpeed * 2 : this.moveState.baseSpeed;
-  }
-  
-  // Apply day/night cycle settings if applicable
-  if (this.dayNightCycle && prefs.timeOfDay !== undefined) {
-    this.dayNightCycle.setTime(prefs.timeOfDay);
-    if (prefs.autoPlayDayNight) {
-      this.dayNightCycle.start();
-    } else {
-      this.dayNightCycle.pause();
+  // Check if we have an active Scene3D instance
+  if (this.scene3D) {
+    // Apply quality level through Scene3DController
+    const qualityLevel = prefs.qualityPreset === 'auto' ? 
+      prefs.detectedQuality || 'medium' : prefs.qualityPreset;
+    
+    this.scene3D.setQualityLevel(qualityLevel, {
+      shadows: prefs.shadowsEnabled,
+      antialias: prefs.antialiasEnabled, 
+      highQualityTextures: prefs.hqTextures,
+      ambientOcclusion: prefs.ambientOcclusion
+    });
+    
+    // Apply lighting toggle
+    this.scene3D.setLightingEnabled(!prefs.disableLighting);
+    
+    // Apply FPS counter visibility
+    if (prefs.showFps && !this.scene3D.showStats) {
+      this.scene3D.toggleStats();
+    } else if (!prefs.showFps && this.scene3D.showStats) {
+      this.scene3D.toggleStats();
+    }
+    
+    // Apply FPS limit
+    this.scene3D.setFPSLimit(prefs.fpsLimit);
+    
+    // Apply movement speed
+    if (this.scene3D.moveState) {
+      this.scene3D.moveState.baseSpeed = 0.025 * (prefs.movementSpeed || 1.0);
+      this.scene3D.moveState.speed = this.scene3D.moveState.sprint ? 
+        this.scene3D.moveState.baseSpeed * 2 : this.scene3D.moveState.baseSpeed;
+    }
+    
+    // Apply day/night cycle settings if applicable
+    if (this.scene3D.dayNightCycle && prefs.timeOfDay !== undefined) {
+      this.scene3D.dayNightCycle.setTime(prefs.timeOfDay);
+      if (prefs.autoPlayDayNight) {
+        this.scene3D.dayNightCycle.start();
+      } else {
+        this.scene3D.dayNightCycle.pause();
+      }
     }
   }
 }
