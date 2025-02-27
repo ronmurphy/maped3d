@@ -3,9 +3,27 @@
  * Handles monster recruitment, party management, and monster progression
  */
 class PartyManager {
-  constructor(resourceManager) {
-    // Store reference to resource manager
-    this.resourceManager = resourceManager;
+    constructor(resourceManager, monsterManager) {
+        console.log("PartyManager constructor called");
+        
+        // Store direct references
+        this.resourceManager = resourceManager;
+        
+        // Try multiple paths to get MonsterManager
+        this.monsterManager = new MonsterManager(this) || 
+                             (resourceManager ? resourceManager.monsterManager : null) ||
+                             window.monsterManager;
+        
+        console.log("Initial connections:", {
+          hasResourceManager: !!this.resourceManager,
+          hasMonsterManager: !!this.monsterManager
+        });
+        
+        // Direct access to database if possible
+        if (this.monsterManager) {
+          this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
+          console.log("Access to monster database:", !!this.monsterDatabase);
+        }
     
     // Initialize player party data
     this.party = {
@@ -28,6 +46,19 @@ class PartyManager {
     this.starterCheckPerformed = false;
     
     console.log('Party Manager initialized');
+  }
+
+  // New method to establish connections after page load
+establishConnections() {
+    if (!this.monsterManager) {
+      this.monsterManager = window.monsterManager || 
+                           (this.resourceManager ? this.resourceManager.monsterManager : null);
+      
+      if (this.monsterManager) {
+        console.log("Established delayed connection to MonsterManager");
+        this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
+      }
+    }
   }
 
   createPartyManagerStyles() {
@@ -1211,12 +1242,12 @@ prepareMonster(monster) {
    * UI Methods
    */
   showPartyManager() {
-    // Check if we need to offer a starter monster first, but only once
-    if (!this.starterCheckPerformed && this.party.active.length === 0 && this.party.reserve.length === 0) {
-      this.starterCheckPerformed = true; // Set flag to prevent multiple checks
-      this.checkForStarterMonster();
-      return; // Exit so we don't show party manager yet
-    }
+  // Check for starter monster if party is empty
+  if (this.party.active.length === 0 && this.party.reserve.length === 0) {
+    this.checkForStarterMonster().catch(error => 
+      console.error('Error checking for starter monster:', error)
+    );
+  }
     // Add our custom styles to the document
     document.head.appendChild(this.createPartyManagerStyles());
     
@@ -1365,6 +1396,7 @@ prepareMonster(monster) {
   }
 
   // Create a monster card for the party UI
+// Create a monster card for the party UI
 createMonsterCard(monster, type, isAlt = false) {
   // Calculate HP percentage
   const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
@@ -1395,12 +1427,15 @@ createMonsterCard(monster, type, isAlt = false) {
   if (isAlt) card.classList.add('alt');
   card.setAttribute('data-monster-id', monster.id);
   
+  // Get token source - properly check for token data structure
+  const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+  
   // Monster card content
   card.innerHTML = `
     <div class="monster-header">
       <div class="monster-avatar" style="background-color: ${bgColor};">
-        ${monster.token ? 
-          `<img src="${monster.token}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+        ${tokenSource ? 
+          `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
           monster.name.charAt(0)
         }
       </div>
@@ -1449,48 +1484,52 @@ createMonsterCard(monster, type, isAlt = false) {
   return card;
 }
 
+
 // Create a detailed view for a selected monster
 createMonsterDetailView(monster) {
-  // Calculate percentages
-  const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
-  const expPercent = Math.floor((monster.experience / monster.experienceToNext) * 100);
-  
-  // Get color for monster type
-  const typeColors = {
-    Beast: '#4f46e5',
-    Dragon: '#c026d3',
-    Elemental: '#ef4444',
-    Monstrosity: '#65a30d',
-    Construct: '#a16207',
-    Undead: '#6b7280',
-    Fey: '#06b6d4',
-    Giant: '#b45309'
-  };
-  
-  const bgColor = typeColors[monster.type] || '#6b7280';
-  
-  // Create the details view
-  const detailsView = document.createElement('div');
-  detailsView.className = 'monster-details';
-  
-  // Header
-  const header = document.createElement('div');
-  header.className = 'details-header';
-  header.innerHTML = `
-    <div class="details-avatar" style="background-color: ${bgColor};">
-      ${monster.token ? 
-        `<img src="${monster.token}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-        monster.name.charAt(0)
-      }
-    </div>
-    <div class="details-title">
-      <div class="details-name">${monster.name}</div>
-      <div class="details-type">
-        ${monster.size} ${monster.type} • Level ${monster.level || 1}
-        <span class="details-cr-badge">CR ${monster.cr || '?'}</span>
+    // Calculate percentages
+    const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+    const expPercent = Math.floor((monster.experience / monster.experienceToNext) * 100);
+    
+    // Get color for monster type
+    const typeColors = {
+      Beast: '#4f46e5',
+      Dragon: '#c026d3',
+      Elemental: '#ef4444',
+      Monstrosity: '#65a30d',
+      Construct: '#a16207',
+      Undead: '#6b7280',
+      Fey: '#06b6d4',
+      Giant: '#b45309'
+    };
+    
+    const bgColor = typeColors[monster.type] || '#6b7280';
+    
+    // Get token source
+    const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+    
+    // Create the details view
+    const detailsView = document.createElement('div');
+    detailsView.className = 'monster-details';
+    
+    // Header
+    const header = document.createElement('div');
+    header.className = 'details-header';
+    header.innerHTML = `
+      <div class="details-avatar" style="background-color: ${bgColor};">
+        ${tokenSource ? 
+          `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+          monster.name.charAt(0)
+        }
       </div>
-    </div>
-  `;
+      <div class="details-title">
+        <div class="details-name">${monster.name}</div>
+        <div class="details-type">
+          ${monster.size} ${monster.type} • Level ${monster.level || 1}
+          <span class="details-cr-badge">CR ${monster.cr || '?'}</span>
+        </div>
+      </div>
+    `;
   
   // Content
   const content = document.createElement('div');
@@ -1894,106 +1933,6 @@ createMonsterDetailView(monster) {
     return canvas.toDataURL('image/webp');
   }
   
-  // Setup event listeners for party dialog
-  // setupPartyDialogEvents(dialog) {
-  // // Pause controls when dialog opens
-  //   if (window.scene3D) {
-  //       window.scene3D.pauseControls();
-  //     }
-
-  //     const previouslyFocused = document.activeElement;
-
-  // // Close button
-  // dialog.querySelector('.close-btn').addEventListener('click', () => {
-  //   dialog.hide();
-  //   // Resume controls after dialog closes
-  //   setTimeout(() => {
-  //       // Try to find the main canvas or use document.body
-  //       const canvas = document.querySelector('canvas') || document.body;
-  //       canvas.focus();
-        
-  //       // Resume controls after dialog closes
-  //       if (window.scene3D) {
-  //         window.scene3D.resumeControls();
-  //       }
-  //     }, 100); // Small delay to ensure dialog is fully hidden
-  //   });
-
-  // // Handle dialog hide event
-  // dialog.addEventListener('sl-after-hide', () => {
-  //   // Remove dialog from DOM after it's hidden
-  //   dialog.remove();
-    
-  //   // Force the document body to have focus
-  //   setTimeout(() => {
-  //     // Try to find the main canvas or use document.body
-  //     const canvas = document.querySelector('canvas') || document.body;
-  //     canvas.focus();
-      
-  //     // Also dispatch a dummy keyup event to reset key states
-  //     document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
-      
-  //     // Make sure controls are resumed
-  //     if (window.scene3D) {
-  //       window.scene3D.resumeControls();
-  //     }
-  //   }, 100);
-  // });
-    
-  //   // Move to reserve buttons
-  //   dialog.querySelectorAll('.move-to-reserve').forEach(btn => {
-  //     btn.addEventListener('click', e => {
-  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
-  //       if (this.moveMonster(monsterId, 'reserve')) {
-  //         this.refreshPartyDialog();
-  //       }
-  //     });
-  //   });
-    
-  //   // Move to active buttons
-  //   dialog.querySelectorAll('.move-to-active').forEach(btn => {
-  //     btn.addEventListener('click', e => {
-  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
-  //       if (this.moveMonster(monsterId, 'active')) {
-  //         this.refreshPartyDialog();
-  //       }
-  //     });
-  //   });
-    
-  //   // View details buttons
-  //   dialog.querySelectorAll('.view-details').forEach(btn => {
-  //     btn.addEventListener('click', e => {
-  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
-  //       const monster = this.findMonster(monsterId);
-  //       if (monster) {
-  //         this.showMonsterDetails(monster);
-  //       }
-  //     });
-  //   });
-    
-  //   // Equipment slot clicks
-  //   dialog.querySelectorAll('.equipment-slot').forEach(slot => {
-  //     slot.addEventListener('click', e => {
-  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
-  //       const slotType = e.currentTarget.getAttribute('data-slot');
-  //       const monster = this.findMonster(monsterId);
-  //       if (monster) {
-  //         this.showEquipmentDialog(monster, slotType);
-  //       }
-  //     });
-  //   });
-    
-  //   // Equip monster buttons
-  //   dialog.querySelectorAll('.equip-monster').forEach(btn => {
-  //     btn.addEventListener('click', e => {
-  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
-  //       const monster = this.findMonster(monsterId);
-  //       if (monster) {
-  //         this.showEquipmentDialog(monster);
-  //       }
-  //     });
-  //   });
-  // }
 
   // Setup event handlers for party manager
 setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel) {
@@ -2589,203 +2528,6 @@ setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel
     return html;
   }
   
-  /**
-   * Monster Recruitment Methods
-   */
-  
-  // Show recruitment dialog when player encounters a monster
-  // showRecruitmentDialog(monster) {
-  //   // Need to create monster from bestiary data
-  //   const recruitMonster = monster.data ? monster : { data: monster };
-    
-  //   // Create overlay and dialog
-  //   const overlay = document.createElement('div');
-  //   overlay.className = 'recruitment-overlay';
-  //   overlay.style.cssText = `
-  //     position: fixed;
-  //     top: 0;
-  //     left: 0;
-  //     right: 0;
-  //     bottom: 0;
-  //     background: rgba(0, 0, 0, 0.85);
-  //     display: flex;
-  //     justify-content: center;
-  //     align-items: center;
-  //     z-index: 2000;
-  //     opacity: 0;
-  //     transition: opacity 0.3s ease;
-  //   `;
-
-  //   const dialogContainer = document.createElement('div');
-  //   dialogContainer.className = 'recruitment-dialog';
-  //   dialogContainer.style.cssText = `
-  //     background: white;
-  //     border-radius: 8px;
-  //     width: 90%;
-  //     max-width: 600px;
-  //     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  //     transform: scale(0.95);
-  //     transition: transform 0.3s ease;
-  //   `;
-
-  //   // Create header
-  //   const header = document.createElement('div');
-  //   header.className = 'recruitment-header';
-  //   header.style.cssText = `
-  //     padding: 16px;
-  //     background: #f5f5f5;
-  //     border-radius: 8px 8px 0 0;
-  //     text-align: center;
-  //     position: relative;
-  //   `;
-
-  //   header.innerHTML = `
-  //     <h2 style="margin: 0;">Monster Encounter</h2>
-  //     <button class="close-dialog-btn" style="position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer;">
-  //       <span class="material-icons">close</span>
-  //     </button>
-  //   `;
-
-  //   // Create content
-  //   const content = document.createElement('div');
-  //   content.className = 'recruitment-content';
-  //   content.style.cssText = `
-  //     padding: 24px;
-  //     display: flex;
-  //     flex-direction: column;
-  //     gap: 20px;
-  //   `;
-
-  //   // Monster info section
-  //   const monsterInfo = document.createElement('div');
-  //   monsterInfo.className = 'monster-info-section';
-  //   monsterInfo.style.cssText = `
-  //     display: flex;
-  //     gap: 16px;
-  //     align-items: center;
-  //   `;
-    
-  //   const name = recruitMonster.data.basic?.name || 'Unknown Monster';
-  //   const size = recruitMonster.data.basic?.size || 'Medium';
-  //   const type = recruitMonster.data.basic?.type || 'Unknown';
-  //   const cr = recruitMonster.data.basic?.cr || '?';
-    
-  //   monsterInfo.innerHTML = `
-  //     <div class="monster-image" style="flex: 0 0 100px;">
-  //       <img src="${recruitMonster.thumbnail || recruitMonster.data.token?.data}" alt="${name}" style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px; border: 2px solid #ddd;">
-  //     </div>
-  //     <div class="monster-details" style="flex: 1;">
-  //       <h3 style="margin: 0 0 8px 0;">${name}</h3>
-  //       <div style="color: #666; font-style: italic; margin-bottom: 4px;">${size} ${type}</div>
-  //       <div style="display: inline-block; background: #f5f5f5; padding: 2px 8px; border-radius: 12px; font-size: 0.9em;">CR ${cr}</div>
-  //     </div>
-  //   `;
-
-  //   // Approach options
-  //   const approachSection = document.createElement('div');
-  //   approachSection.className = 'approach-section';
-  //   approachSection.style.cssText = `
-  //     margin-top: 16px;
-  //   `;
-
-  //   approachSection.innerHTML = `
-  //     <h3 style="margin: 0 0 16px 0;">Approach</h3>
-  //     <div class="approach-options" style="display: flex; flex-direction: column; gap: 12px;">
-  //       <button class="approach-btn negotiate" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
-  //         <span class="material-icons" style="margin-right: 12px; color: #2196F3;">chat</span>
-  //         <div style="flex: 1;">
-  //           <div style="font-weight: bold;">Negotiate</div>
-  //           <div style="color: #666; font-size: 0.9em;">Try to convince the monster to join your party</div>
-  //         </div>
-  //       </button>
-        
-  //       <button class="approach-btn impress" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
-  //         <span class="material-icons" style="margin-right: 12px; color: #FF9800;">fitness_center</span>
-  //         <div style="flex: 1;">
-  //           <div style="font-weight: bold;">Impress</div>
-  //           <div style="color: #666; font-size: 0.9em;">Demonstrate your strength to gain respect</div>
-  //         </div>
-  //       </button>
-        
-  //       <button class="approach-btn gift" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
-  //         <span class="material-icons" style="margin-right: 12px; color: #9C27B0;">card_giftcard</span>
-  //         <div style="flex: 1;">
-  //           <div style="font-weight: bold;">Offer Gift</div>
-  //           <div style="color: #666; font-size: 0.9em;">Give the monster a gift as a token of friendship</div>
-  //         </div>
-  //       </button>
-  //     </div>
-      
-  //     <div class="approach-separator" style="margin: 20px 0; border-bottom: 1px solid #ddd;"></div>
-      
-  //     <div class="alternative-options" style="display: flex; gap: 12px;">
-  //       <button class="approach-btn fight" style="flex: 1; padding: 12px; text-align: center; border: 1px solid #F44336; border-radius: 8px; background: white; color: #F44336; cursor: pointer;">
-  //         <span class="material-icons" style="margin-right: 8px;">swords</span>
-  //         Fight
-  //       </button>
-        
-  //       <button class="approach-btn flee" style="flex: 1; padding: 12px; text-align: center; border: 1px solid #607D8B; border-radius: 8px; background: white; color: #607D8B; cursor: pointer;">
-  //         <span class="material-icons" style="margin-right: 8px;">directions_run</span>
-  //         Flee
-  //       </button>
-  //     </div>
-  //   `;
-
-  //   // Assemble dialog
-  //   content.appendChild(monsterInfo);
-  //   content.appendChild(approachSection);
-  //   dialogContainer.appendChild(header);
-  //   dialogContainer.appendChild(content);
-  //   overlay.appendChild(dialogContainer);
-
-  //   // Add event listeners
-  //   const closeDialog = () => {
-  //     overlay.style.opacity = '0';
-  //     dialogContainer.style.transform = 'scale(0.95)';
-      
-  //     setTimeout(() => {
-  //       overlay.remove();
-  //     }, 300);
-  //   };
-
-  //   // Close button
-  //   header.querySelector('.close-dialog-btn').addEventListener('click', closeDialog);
-
-  //   // Approach buttons
-  //   approachSection.querySelector('.negotiate').addEventListener('click', () => {
-  //     this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
-  //   });
-
-  //   approachSection.querySelector('.impress').addEventListener('click', () => {
-  //     this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
-  //   });
-
-  //   approachSection.querySelector('.gift').addEventListener('click', () => {
-  //     this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
-  //   });
-
-  //   approachSection.querySelector('.fight').addEventListener('click', () => {
-  //     closeDialog();
-  //     // Trigger combat with this monster
-  //     if (window.combatSystem) {
-  //       window.combatSystem.initiateCombat([recruitMonster]);
-  //     } else {
-  //       console.warn('Combat system not available');
-  //     }
-  //   });
-
-  //   approachSection.querySelector('.flee').addEventListener('click', closeDialog);
-
-  //   // Add to body and animate
-  //   document.body.appendChild(overlay);
-    
-  //   // Force browser to process before animating
-  //   setTimeout(() => {
-  //     overlay.style.opacity = '1';
-  //     dialogContainer.style.transform = 'scale(1)';
-  //   }, 10);
-  // }
-  
 // Updated showRecruitmentDialog method
 showRecruitmentDialog(monster) {
   // Create monster from bestiary data if needed
@@ -3378,65 +3120,279 @@ getAvailableEquipment(type) {
 /**
  * Starter Monsters
  */
-// Add these methods to your PartyManager class
-
-// Check for starter monster when opening party manager
-// checkForStarterMonster() {
-//   // Only offer a starter if party is completely empty
-//   if (this.party.active.length === 0 && this.party.reserve.length === 0) {
-//     this.offerStarterMonster();
-//   }
-// }
-
-// Updated checkForStarterMonster method
-checkForStarterMonster() {
-  const eligibleMonsters = this.getEligibleStarterMonsters();
-  
-  if (eligibleMonsters.length === 0) {
-    console.warn('No eligible starter monsters found in bestiary');
-    return;
+// New method to ensure we can access bestiary data
+ensureBestiaryAccess() {
+    // If ResourceManager doesn't have bestiary data but has MonsterManager, load it
+    if (this.resourceManager && 
+        this.resourceManager.resources && 
+        this.resourceManager.resources.bestiary.size === 0 && 
+        this.resourceManager.monsterManager) {
+      
+      console.log('PartyManager: Loading bestiary from database');
+      this.resourceManager.loadBestiaryFromDatabase();
+    }
+    
+    // If we have direct access to MonsterManager but ResourceManager doesn't, set it up
+    if (this.monsterManager && !this.resourceManager?.monsterManager) {
+      console.log('PartyManager: Setting up MonsterManager connection');
+      if (this.resourceManager) {
+        this.resourceManager.monsterManager = this.monsterManager;
+        this.resourceManager.loadBestiaryFromDatabase();
+      }
+    }
   }
   
-  // Pick 3 random monsters from eligible list
-  const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
-  
-  // Show starter selection dialog
-  this.showStarterMonsterDialog(starterChoices);
+// Make checkForStarterMonster async
+async checkForStarterMonster() {
+  try {
+    // Await the result from getEligibleStarterMonsters
+    const eligibleMonsters = await this.getEligibleStarterMonsters();
+    
+    // If we don't have any eligible monsters, just exit
+    if (!eligibleMonsters || eligibleMonsters.length === 0) {
+      console.warn('No eligible starter monsters found in bestiary');
+      return;
+    }
+    
+    // Pick 3 random monsters from eligible list
+    const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
+    
+    // Show starter selection dialog
+    this.showStarterMonsterDialog(starterChoices);
+  } catch (error) {
+    console.error('Error getting starter monsters:', error);
+    // Fallback to defaults as a last resort
+    const defaultMonsters = this.createDefaultStarterMonsters();
+    const starterChoices = this.getRandomStarters(defaultMonsters, 3);
+    this.showStarterMonsterDialog(starterChoices);
+  }
 }
 
 // Find eligible starter monsters from bestiary
-// Updated getEligibleStarterMonsters method
 getEligibleStarterMonsters() {
-  const eligibleMonsters = [];
-  
-  console.log("ResourceManager available:", !!this.resourceManager);
-  
-  // Check if we have access to the bestiary via resourceManager
-  if (this.resourceManager && this.resourceManager.resources.bestiary) {
-    console.log("Bestiary Map size:", this.resourceManager.resources.bestiary.size);
+    console.log("PartyManager looking for starter monsters");
     
-    // Log all monsters in bestiary for debugging
-    this.resourceManager.resources.bestiary.forEach((monster, key) => {
-      console.log(`Monster: ${monster.name || monster.data?.basic?.name}, CR: ${monster.cr || monster.data?.basic?.cr}`);
+    // Get direct access to database if possible
+    const monsterDatabase = this.monsterDatabase || 
+                           (this.monsterManager ? this.monsterManager.loadDatabase() : null);
+    
+    console.log("Direct database access:", !!monsterDatabase);
+    
+    // Create a list of eligible monsters
+    const eligibleMonsters = [];
+    
+    // If we have direct access to the database, use it
+    if (monsterDatabase && monsterDatabase.monsters) {
+      console.log(`Found ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
       
-      // Look for CR 1/4 or 1/2 monsters
-      const cr = monster.cr || monster.data?.basic?.cr;
-      if (cr === '1/4' || cr === '1/2') {
-        eligibleMonsters.push(monster);
+      // Process all monsters in the database
+      Object.values(monsterDatabase.monsters).forEach(monster => {
+        try {
+          // Check CR value for eligibility
+          const cr = monster.basic?.cr || '0';
+          const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
+          
+          if (isEligible) {
+            console.log(`Found eligible starter: ${monster.basic.name} (CR ${cr})`);
+            eligibleMonsters.push(this.formatMonsterForParty(monster));
+          }
+        } catch (error) {
+          console.error("Error processing monster:", error);
+        }
+      });
+    } else {
+      console.warn("No direct database access available");
+    }
+    
+    console.log(`Found ${eligibleMonsters.length} eligible starter monsters`);
+    
+    // If no eligible monsters found, create default starter monsters
+    if (eligibleMonsters.length === 0) {
+      console.log("No eligible monsters found, creating defaults");
+      return this.createDefaultStarterMonsters();
+    }
+    
+    return eligibleMonsters;
+  }
+
+  // Helper method to retry getting monsters with increasing delays
+retryGetMonsters(resourceManager, monsterDatabase, attempt = 0, maxAttempts = 3) {
+    const eligibleMonsters = [];
+    const MAX_STARTER_XP = 100;
+    
+    // First try ResourceManager's bestiary
+    if (resourceManager?.resources?.bestiary?.size > 0) {
+      console.log(`Checking ${resourceManager.resources.bestiary.size} monsters in ResourceManager`);
+      
+      resourceManager.resources.bestiary.forEach(monster => {
+        try {
+          // Calculate XP from CR if needed
+          const xp = this.getMonsterXP(monster);
+          if (xp <= MAX_STARTER_XP && xp > 0) {
+            console.log(`Found eligible starter: ${monster.name} (XP: ${xp})`);
+            eligibleMonsters.push(this.formatMonsterForParty(monster));
+          }
+        } catch (error) {
+          console.error("Error processing monster:", error);
+        }
+      });
+    }
+    // Then try direct database access as fallback
+    else if (monsterDatabase?.monsters) {
+      console.log(`Checking ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
+      
+      Object.values(monsterDatabase.monsters).forEach(monster => {
+        try {
+          // Get XP from CR
+          const cr = monster.basic?.cr || "0";
+          let xp = 0;
+          
+          if (cr === "1/4") xp = 50;
+          else if (cr === "1/2") xp = 100;
+          else if (cr === "0") xp = 10;
+          else if (cr === "1/8") xp = 25;
+          
+          if (xp <= MAX_STARTER_XP && xp > 0) {
+            console.log(`Found eligible starter: ${monster.basic.name} (CR: ${cr}, XP: ${xp})`);
+            eligibleMonsters.push(this.formatMonsterForParty(monster));
+          }
+        } catch (error) {
+          console.error("Error processing monster from database:", error);
+        }
+      });
+    }
+    
+    console.log(`Found ${eligibleMonsters.length} eligible starter monsters on attempt ${attempt + 1}`);
+    
+    // If no monsters found and we have retries left, try again with delay
+    if (eligibleMonsters.length === 0 && attempt < maxAttempts - 1) {
+      const delay = (attempt + 1) * 500; // Increasing delays: 500ms, 1000ms, etc.
+      console.log(`No monsters found yet, retrying in ${delay}ms...`);
+      
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(this.retryGetMonsters(resourceManager, monsterDatabase, attempt + 1, maxAttempts));
+        }, delay);
+      });
+    }
+    
+    // If we still don't have monsters or we're out of retries, create defaults
+    if (eligibleMonsters.length === 0) {
+      console.log("No eligible monsters found, creating defaults");
+      return this.createDefaultStarterMonsters();
+    }
+    
+    return eligibleMonsters;
+  }
+
+// Add these helper methods if they don't exist
+// Helper to format monster for party
+formatMonsterForParty(monster) {
+    try {
+      // Create token if needed
+      let tokenData = null;
+      
+      if (monster.token?.data) {
+        tokenData = monster.token.data;
+      } else if (monster.token?.url) {
+        tokenData = monster.token.url;
+      } else {
+        // Generate a default token
+        tokenData = this.monsterManager?.generateDefaultMonsterToken(monster.basic.name, monster.basic.size) || null;
       }
-    });
+      
+      return {
+        id: `monster_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        name: monster.basic.name,
+        type: monster.basic.type,
+        size: monster.basic.size,
+        level: 1,
+        cr: monster.basic.cr,
+        currentHP: monster.stats.hp.average,
+        maxHP: monster.stats.hp.average,
+        armorClass: monster.stats.ac,
+        experience: 0,
+        experienceToNext: 100,
+        token: {
+          data: tokenData
+        },
+        data: monster,
+        abilities: monster.abilities,
+        monsterAbilities: [],
+        equipment: { weapon: null, armor: null }
+      };
+    } catch (error) {
+      console.error("Error formatting monster for party:", error);
+      return null;
+    }
+  }
+
+getMonsterXP(monster) {
+  // XP might be in different locations based on data structure
+  if (monster.data?.basic?.xp) return parseInt(monster.data.basic.xp);
+  if (monster.data?.xp) return parseInt(monster.data.xp);
+  if (monster.basic?.xp) return parseInt(monster.basic.xp);
+  if (monster.xp) return parseInt(monster.xp);
+  
+  // If no XP found, try to determine from CR
+  const cr = monster.data?.basic?.cr || monster.basic?.cr;
+  if (cr) {
+    const crToXP = {
+      '0': 10,
+      '1/8': 25,
+      '1/4': 50,
+      '1/2': 100,
+      '1': 200
+    };
+    return crToXP[cr] || 0;
   }
   
-  // If no eligible monsters found, create default starter monsters
-  if (eligibleMonsters.length === 0) {
-    console.log("No eligible monsters found in bestiary, creating defaults");
-    return this.createDefaultStarterMonsters();
-  }
-  
-  return eligibleMonsters;
+  return 0;
 }
 
-// Create default starter monsters when bestiary isn't available
+getMonsterName(monster) {
+  return monster.data?.basic?.name || monster.basic?.name || monster.name || "Unknown Monster";
+}
+
+generateMonsterThumbnail(monster) {
+  const canvas = document.createElement('canvas');
+  const size = 64;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  
+  // Generate color based on monster type
+  const colors = {
+    dragon: '#ff4444',
+    undead: '#663366',
+    beast: '#44aa44',
+    humanoid: '#4444ff',
+    fiend: '#aa4444'
+  };
+  
+  const type = monster.basic?.type || 'unknown';
+  const color = colors[type.toLowerCase()] || '#888888';
+  
+  // Draw circle background
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Add border
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Add monster initial
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 32px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText((monster.basic?.name || 'M').charAt(0).toUpperCase(), size/2, size/2);
+  
+  return canvas.toDataURL('image/webp');
+}
 // Updated createDefaultStarterMonsters with tokens
 createDefaultStarterMonsters() {
   // Create simple SVG-based tokens
