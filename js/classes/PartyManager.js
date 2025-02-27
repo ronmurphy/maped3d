@@ -771,24 +771,44 @@ prepareMonster(monster) {
         window.scene3D.pauseControls();
       }
 
+      const previouslyFocused = document.activeElement;
+
   // Close button
   dialog.querySelector('.close-btn').addEventListener('click', () => {
     dialog.hide();
     // Resume controls after dialog closes
-    if (window.scene3D) {
-      window.scene3D.resumeControls();
-    }
-  });
-
-    // Handle dialog hide event
-    dialog.addEventListener('sl-after-hide', () => {
-        // Remove dialog from DOM after it's hidden
-        dialog.remove();
-        // Make sure controls are resumed
+    setTimeout(() => {
+        // Try to find the main canvas or use document.body
+        const canvas = document.querySelector('canvas') || document.body;
+        canvas.focus();
+        
+        // Resume controls after dialog closes
         if (window.scene3D) {
           window.scene3D.resumeControls();
         }
-      });
+      }, 100); // Small delay to ensure dialog is fully hidden
+    });
+
+  // Handle dialog hide event
+  dialog.addEventListener('sl-after-hide', () => {
+    // Remove dialog from DOM after it's hidden
+    dialog.remove();
+    
+    // Force the document body to have focus
+    setTimeout(() => {
+      // Try to find the main canvas or use document.body
+      const canvas = document.querySelector('canvas') || document.body;
+      canvas.focus();
+      
+      // Also dispatch a dummy keyup event to reset key states
+      document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+      
+      // Make sure controls are resumed
+      if (window.scene3D) {
+        window.scene3D.resumeControls();
+      }
+    }, 100);
+  });
     
     // Move to reserve buttons
     dialog.querySelectorAll('.move-to-reserve').forEach(btn => {
