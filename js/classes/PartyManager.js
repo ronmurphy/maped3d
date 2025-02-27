@@ -772,43 +772,6 @@ establishConnections() {
   }
   
   // Prepare a monster for party by adding additional properties needed for game
-//   prepareMonster(monster) {
-//     // Clone base monster data
-//     const base = JSON.parse(JSON.stringify(monster.data || monster));
-    
-//     // Add gameplay properties
-//     const partyMonster = {
-//       id: base.id || `monster_${Date.now()}`,
-//       name: base.basic?.name || monster.name || 'Unknown Monster',
-//       type: base.basic?.type || 'Unknown',
-//       size: base.basic?.size || 'Medium',
-//       cr: base.basic?.cr || '0',
-//       abilities: base.abilities || {},
-//       stats: base.stats || {},
-//       traits: base.traits || {},
-//       thumbnail: monster.thumbnail || monster.token?.data || null,
-      
-//       // Game-specific properties
-//       level: 1,
-//       experience: 0,
-//       experienceToNext: 100,
-//       inventory: [],
-//       equipment: {
-//         weapon: null,
-//         armor: null
-//       },
-//       // Calculate HP based on monster data
-//       currentHP: base.stats?.hp?.average || 10,
-//       maxHP: base.stats?.hp?.average || 10,
-//       // Use AC from monster data
-//       armorClass: base.stats?.ac || 10,
-//       // Monster abilities
-//       monsterAbilities: this.generateAbilities(base)
-//     };
-    
-//     return partyMonster;
-//   }
-
 prepareMonster(monster) {
     // Clone base monster data
     const base = JSON.parse(JSON.stringify(monster.data || monster));
