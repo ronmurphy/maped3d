@@ -34,21 +34,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize map editor
     window.mapEditor = new MapEditor();
 
-    const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
+    // const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
   
-    // Initialize party and combat systems
-    if (resourceManager) {
-      // Create managers
+    // // Initialize party and combat systems
+    // if (resourceManager) {
+    //   // Create managers
+    //   const partyManager = new PartyManager(resourceManager);
+    //   const combatSystem = new CombatSystem(partyManager, resourceManager);
+      
+    //   // Make these available globally for easy access
+    //   window.partyManager = partyManager;
+    //   window.combatSystem = combatSystem;
+      
+    //   console.log('Party and Combat systems initialized');
+    // } else {
+    //   console.warn('Resource manager not found, party and combat systems not initialized');
+    // }
+
+    const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
+
+    // Initialize party and combat systems only if they don't exist
+    if (resourceManager && !window.partyManager) {
       const partyManager = new PartyManager(resourceManager);
       const combatSystem = new CombatSystem(partyManager, resourceManager);
       
-      // Make these available globally for easy access
       window.partyManager = partyManager;
       window.combatSystem = combatSystem;
       
       console.log('Party and Combat systems initialized');
-    } else {
-      console.warn('Resource manager not found, party and combat systems not initialized');
     }
 
 

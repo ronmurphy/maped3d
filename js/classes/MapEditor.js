@@ -59,6 +59,7 @@ class MapEditor {
     this.setupLayersObserver();
     setTimeout(() => this.calculateLayersListHeight(), 100);
     window.addEventListener("resize", this.calculateLayersListHeight);
+    window.applyEditorPreferences = (prefs) => this.applyEditorPreferences(prefs);
 
     // this.fixZoomIssues();
   }
@@ -6476,4 +6477,3 @@ async runHardwareTest() {
 
 }
 
-window.applyEditorPreferences = this.applyEditorPreferences.bind(this);

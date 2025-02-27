@@ -24,6 +24,187 @@ class CombatSystem {
     
     console.log('Combat System initialized');
   }
+
+  // Add this method to CombatSystem class
+createCombatStyles() {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `
+    .combat-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--sl-overlay-background-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .combat-container {
+      width: 90%;
+      max-width: 1000px;
+      height: 90vh;
+      background: var(--sl-panel-background-color);
+      border-radius: var(--sl-border-radius-large);
+      box-shadow: var(--sl-shadow-x-large);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+      overflow: hidden;
+    }
+
+    .combat-header {
+      padding: 12px 16px;
+      background: var(--sl-color-neutral-100);
+      border-bottom: 1px solid var(--sl-color-neutral-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .battle-scene {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      background: var(--sl-color-neutral-50);
+    }
+
+    .combat-monster {
+      position: relative;
+      width: 150px;
+      background: var(--sl-color-neutral-0);
+      border-radius: var(--sl-border-radius-medium);
+      border: 1px solid var(--sl-color-neutral-200);
+      padding: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .combat-monster.active {
+      box-shadow: 0 0 15px var(--sl-color-primary-500);
+      transform: translateY(-10px) scale(1.05);
+      z-index: 10;
+      border-color: var(--sl-color-primary-500);
+    }
+
+    .combat-monster.defeated {
+      opacity: 0.6;
+      filter: grayscale(100%);
+    }
+
+    .hp-bar-bg {
+      height: 8px;
+      background: var(--sl-color-neutral-200);
+      border-radius: var(--sl-border-radius-pill);
+    }
+
+    .hp-bar-fill {
+      height: 100%;
+      border-radius: var(--sl-border-radius-pill);
+      transition: width 0.3s ease;
+    }
+
+    .hp-bar-fill.high {
+      background: var(--sl-color-success-500);
+    }
+
+    .hp-bar-fill.medium {
+      background: var(--sl-color-warning-500);
+    }
+
+    .hp-bar-fill.low {
+      background: var(--sl-color-danger-500);
+    }
+
+    .initiative-tracker {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--sl-color-neutral-0);
+      border-radius: var(--sl-border-radius-medium);
+      box-shadow: var(--sl-shadow-medium);
+      padding: 8px;
+      width: 200px;
+    }
+
+    .initiative-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--sl-color-neutral-200);
+      font-size: 0.9em;
+    }
+
+    .initiative-item.active {
+      background: var(--sl-color-primary-50);
+      border-left: 3px solid var(--sl-color-primary-500);
+    }
+
+    .combat-log {
+      flex: 0 0 250px;
+      border-left: 1px solid var(--sl-color-neutral-200);
+      background: var(--sl-color-neutral-0);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .action-bar {
+      padding: 16px;
+      background: var(--sl-color-neutral-50);
+      border-top: 1px solid var(--sl-color-neutral-200);
+    }
+
+    .ability-btn {
+      padding: 8px 12px;
+      border: 1px solid var(--sl-color-neutral-300);
+      background: var(--sl-color-neutral-0);
+      border-radius: var(--sl-border-radius-medium);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .ability-btn:hover {
+      background: var(--sl-color-neutral-100);
+      border-color: var(--sl-color-primary-500);
+    }
+
+    .targeting-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--sl-overlay-background-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+
+    .targeting-instructions {
+      color: var(--sl-color-neutral-0);
+      font-size: 1.2em;
+      margin-bottom: 16px;
+      background: var(--sl-color-neutral-950);
+      padding: 8px 16px;
+      border-radius: var(--sl-border-radius-medium);
+    }
+  `;
+
+  return styleElement;
+}
   
   /**
    * Combat Initialization Methods
@@ -114,6 +295,9 @@ class CombatSystem {
   
   // Show main combat interface
   showCombatInterface() {
+
+    document.head.appendChild(this.createCombatStyles());
+
     // Use splash art approach for fullscreen overlay
     this.combatOverlay = document.createElement('div');
     this.combatOverlay.className = 'combat-overlay';
@@ -335,6 +519,7 @@ class CombatSystem {
       // Determine if this monster is active
       const isActive = this.isMonsterActive(monster);
       const isDefeated = monster.currentHP <= 0;
+
       
       // Calculate HP percentage
       const hpPercent = (monster.currentHP / monster.maxHP) * 100;
@@ -374,11 +559,13 @@ class CombatSystem {
         `;
       }
       
+      const tokenSource = monster.token?.data || monster.token?.url || this.generateDefaultTokenImage(monster);
+
       html += `
         <div class="combat-monster ${side}" data-monster-id="${monster.id}" style="${cardStyle}">
           <div class="monster-header" style="display: flex; align-items: center; margin-bottom: 8px;">
             <div class="monster-image" style="width: 40px; height: 40px; margin-right: 8px;">
-              <img src="${monster.thumbnail}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+              <img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
             </div>
             <div class="monster-info" style="flex: 1; overflow: hidden;">
               <div class="monster-name" style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${monster.name}</div>
@@ -412,6 +599,45 @@ class CombatSystem {
     });
     
     return html;
+  }
+
+  // Add helper method to generate default token image
+generateDefaultTokenImage(monster) {
+    const canvas = document.createElement('canvas');
+    const size = 64;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    // Generate color based on monster type
+    const colors = {
+      dragon: '#ff4444',
+      undead: '#663366',
+      beast: '#44aa44',
+      humanoid: '#4444ff',
+      fiend: '#aa4444'
+    };
+    const color = colors[monster.basic.type.toLowerCase()] || '#888888';
+    
+    // Draw circle background
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Add monster initial
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(monster.name.charAt(0).toUpperCase(), size/2, size/2);
+    
+    return canvas.toDataURL('image/webp');
   }
   
   // Render initiative list
@@ -807,6 +1033,11 @@ class CombatSystem {
     // Animate out
     this.combatOverlay.style.opacity = '0';
     this.dialogContainer.style.transform = 'scale(0.95)';
+
+    const combatStyles = document.querySelector('style');
+if (combatStyles) {
+  combatStyles.remove();
+}
     
     // Remove after animation
     setTimeout(() => {

@@ -58,7 +58,44 @@ class PartyManager {
   }
   
   // Prepare a monster for party by adding additional properties needed for game
-  prepareMonster(monster) {
+//   prepareMonster(monster) {
+//     // Clone base monster data
+//     const base = JSON.parse(JSON.stringify(monster.data || monster));
+    
+//     // Add gameplay properties
+//     const partyMonster = {
+//       id: base.id || `monster_${Date.now()}`,
+//       name: base.basic?.name || monster.name || 'Unknown Monster',
+//       type: base.basic?.type || 'Unknown',
+//       size: base.basic?.size || 'Medium',
+//       cr: base.basic?.cr || '0',
+//       abilities: base.abilities || {},
+//       stats: base.stats || {},
+//       traits: base.traits || {},
+//       thumbnail: monster.thumbnail || monster.token?.data || null,
+      
+//       // Game-specific properties
+//       level: 1,
+//       experience: 0,
+//       experienceToNext: 100,
+//       inventory: [],
+//       equipment: {
+//         weapon: null,
+//         armor: null
+//       },
+//       // Calculate HP based on monster data
+//       currentHP: base.stats?.hp?.average || 10,
+//       maxHP: base.stats?.hp?.average || 10,
+//       // Use AC from monster data
+//       armorClass: base.stats?.ac || 10,
+//       // Monster abilities
+//       monsterAbilities: this.generateAbilities(base)
+//     };
+    
+//     return partyMonster;
+//   }
+
+prepareMonster(monster) {
     // Clone base monster data
     const base = JSON.parse(JSON.stringify(monster.data || monster));
     
@@ -72,7 +109,11 @@ class PartyManager {
       abilities: base.abilities || {},
       stats: base.stats || {},
       traits: base.traits || {},
-      thumbnail: monster.thumbnail || monster.token?.data || null,
+      // Use token data instead of thumbnail
+      token: base.token || {
+        data: monster.token?.data || null,
+        url: monster.token?.url || null
+      },
       
       // Game-specific properties
       level: 1,
@@ -83,12 +124,9 @@ class PartyManager {
         weapon: null,
         armor: null
       },
-      // Calculate HP based on monster data
       currentHP: base.stats?.hp?.average || 10,
       maxHP: base.stats?.hp?.average || 10,
-      // Use AC from monster data
       armorClass: base.stats?.ac || 10,
-      // Monster abilities
       monsterAbilities: this.generateAbilities(base)
     };
     
@@ -497,6 +535,13 @@ class PartyManager {
     dialog.label = 'Monster Party';
     dialog.style.setProperty('--width', '800px');
     
+    // Add event listener for when dialog is cancelled (Esc key)
+    dialog.addEventListener('sl-request-close', (e) => {
+      if (window.scene3D) {
+        window.scene3D.resumeControls();
+      }
+    });
+    
     // Create content with tabs
     dialog.innerHTML = `
       <sl-tab-group>
@@ -594,6 +639,9 @@ class PartyManager {
     } else if (hpPercent < 70) {
       hpBarColor = '#FF9800';  // Orange
     }
+
+    const tokenSource = monster.token?.data || monster.token?.url || null;
+
     
     // Equipment icons
     const weaponIcon = monster.equipment.weapon ? 
@@ -604,12 +652,13 @@ class PartyManager {
       `<img src="${monster.equipment.armor.icon}" alt="${monster.equipment.armor.name}" title="${monster.equipment.armor.name}" style="width: 24px; height: 24px;">` : 
       `<span class="material-icons" style="opacity: 0.3;">add</span>`;
     
-    return `
-      <div class="monster-card" data-monster-id="${monster.id}" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; position: relative;">
-        <!-- Monster header with image and basic info -->
-        <div class="monster-header" style="display: flex; background: #f5f5f5; padding: 10px;">
+      return `
+      <div class="monster-card" data-monster-id="${monster.id}" style="...">
+        <div class="monster-header" style="...">
           <div class="monster-image" style="width: 64px; height: 64px; margin-right: 10px;">
-            <img src="${monster.thumbnail}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+            <img src="${tokenSource || this.generateDefaultTokenImage(monster)}" 
+                 alt="${monster.name}" 
+                 style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
           </div>
           <div class="monster-info" style="flex: 1;">
             <div class="monster-name" style="font-weight: bold; font-size: 1.1em;">${monster.name}</div>
@@ -676,13 +725,70 @@ class PartyManager {
       </div>
     `;
   }
+
+  generateDefaultTokenImage(monster) {
+    const canvas = document.createElement('canvas');
+    const size = 64;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    // Generate color based on monster type
+    const colors = {
+      dragon: '#ff4444',
+      undead: '#663366',
+      beast: '#44aa44',
+      humanoid: '#4444ff',
+      fiend: '#aa4444'
+    };
+    const color = colors[monster.type.toLowerCase()] || '#888888';
+    
+    // Draw circle background
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Add monster initial
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(monster.name.charAt(0).toUpperCase(), size/2, size/2);
+    
+    return canvas.toDataURL('image/webp');
+  }
   
   // Setup event listeners for party dialog
   setupPartyDialogEvents(dialog) {
-    // Close button
-    dialog.querySelector('.close-btn').addEventListener('click', () => {
-      dialog.hide();
-    });
+  // Pause controls when dialog opens
+    if (window.scene3D) {
+        window.scene3D.pauseControls();
+      }
+
+  // Close button
+  dialog.querySelector('.close-btn').addEventListener('click', () => {
+    dialog.hide();
+    // Resume controls after dialog closes
+    if (window.scene3D) {
+      window.scene3D.resumeControls();
+    }
+  });
+
+    // Handle dialog hide event
+    dialog.addEventListener('sl-after-hide', () => {
+        // Remove dialog from DOM after it's hidden
+        dialog.remove();
+        // Make sure controls are resumed
+        if (window.scene3D) {
+          window.scene3D.resumeControls();
+        }
+      });
     
     // Move to reserve buttons
     dialog.querySelectorAll('.move-to-reserve').forEach(btn => {

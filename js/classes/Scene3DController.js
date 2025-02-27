@@ -40,7 +40,7 @@ class Scene3DController {
     this.encounterPrompt = null;
     this.nearestEncounter = null;
     this.setupInventorySystem();
-    this.initializePartyAndCombatSystems();
+    // this.initializePartyAndCombatSystems();
     this.clear();
   }
 
@@ -100,6 +100,7 @@ class Scene3DController {
     if (!this.dayNightCycle) {
       this.initializeDayNightCycle();
     }
+    this.createPartyButton();
 
     this.addPlayerLight();
 
@@ -126,87 +127,6 @@ class Scene3DController {
       this.setFPSLimit(prefs.fpsLimit);
     }
   }
-
-  // cleanup() {
-  //   this.isActive = false;
-
-  //   if (this.animationFrameId) {
-  //     cancelAnimationFrame(this.animationFrameId);
-  //   }
-
-  //   // Clean up teleport prompt
-  //   if (this.teleportPrompt) {
-  //     this.teleportPrompt.remove();
-  //     this.teleportPrompt = null;
-  //   }
-  //   this.activeTeleporter = null;
-
-  //     // Clean up door prompt
-  // if (this.doorPrompt) {
-  //   this.doorPrompt.remove();
-  //   this.doorPrompt = null;
-  // }
-  // this.activeDoor = null;
-
-  //   if (this.renderer) {
-  //     this.renderer.dispose();
-  //     if (this.renderer.domElement?.parentNode) {
-  //       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-  //     }
-  //   }
-
-  //   if (this.controls) {
-  //     this.controls.dispose();
-  //   }
-
-  //   if (this.keyHandlers.keydown) {
-  //     document.removeEventListener("keydown", this.keyHandlers.keydown);
-  //   }
-  //   if (this.keyHandlers.keyup) {
-  //     document.removeEventListener("keyup", this.keyHandlers.keyup);
-  //   }
-
-  //   // Clean up all scene objects
-  //   if (this.scene) {
-  //     this.scene.traverse((object) => {
-  //       if (object.geometry) {
-  //         object.geometry.dispose();
-  //       }
-  //       if (object.material) {
-  //         if (Array.isArray(object.material)) {
-  //           object.material.forEach(material => material.dispose());
-  //         } else {
-  //           object.material.dispose();
-  //         }
-  //       }
-  //     });
-  //   }
-
-  //   if (this.dayNightCycle) {
-  //     this.dayNightCycle.dispose();
-  //     this.dayNightCycle = null;
-  //   }
-
-  //     // Dispose visual effects
-  //     if (this.visualEffects) {
-  //       this.visualEffects.dispose();
-  //       this.visualEffects = null;
-  //     }
-
-  //   if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
-  //     this.stats.dom.parentNode.removeChild(this.stats.dom);
-  //     this.stats = null;
-  //   }
-  //     // Remove quality indicator if it exists
-  // if (this.qualityIndicator && this.qualityIndicator.parentNode) {
-  //   this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
-  //   this.qualityIndicator = null;
-  // }
-
-  //   this.clear();
-  // }
-
-  // Add this helper method to your class
 
   cleanup() {
     this.isActive = false;
@@ -4424,6 +4344,8 @@ if (nearestEncounter && !this.activeSplashArt) {
         `;
       container.appendChild(instructions);
 
+      this.createPartyButton();
+
       // Controls event listeners
       this.controls.addEventListener("lock", () => {
         instructions.style.display = "none";
@@ -6134,85 +6056,160 @@ if (nearestEncounter && !this.activeSplashArt) {
     console.log('Day/Night cycle initialized');
   }
 
+    // Add after createDayNightCycle() in Scene3DController.js
+  createPartyButton() {
+    // Create party management button
+    const partyButton = document.createElement('div');
+    partyButton.className = 'party-control-button';
+    partyButton.setAttribute('data-tooltip', 'Party Manager');
+    partyButton.innerHTML = `<span class="material-icons">group</span>`;
+    partyButton.style.cssText = `
+      position: absolute;
+      top: 150px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1000;
+    `;
+  
+    // Add click handler to show party manager
+    partyButton.addEventListener('click', () => {
+      if (window.partyManager) {
+        // Pause 3D controls while party manager is open
+        this.pauseControls();
+        
+        // Show party manager
+        window.partyManager.showPartyManager();
+        
+        // Resume controls when party manager closes
+        const checkForDialog = setInterval(() => {
+          const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+          if (!dialog) {
+            this.resumeControls();
+            clearInterval(checkForDialog);
+          }
+        }, 100);
+      } else {
+        console.warn('Party Manager not available');
+      }
+    });
+  
+    // Add to 3D view
+    const container = document.querySelector('.drawer-3d-view');
+    if (container) {
+      container.appendChild(partyButton);
+    }
+  }
+
   // Add this method to Scene3DController
-initializePartyAndCombatSystems() {
-  console.log('Initializing party and combat systems');
+// initializePartyAndCombatSystems() {
+//   console.log('Initializing party and combat systems');
   
-  // Step 1: Load PartyManager first
-  const loadPartyManager = () => {
-    if (typeof PartyManager === 'undefined') {
-      // Create script element for PartyManager
-      const script = document.createElement('script');
-      script.src = 'js/classes/PartyManager.js';
+//   // Step 1: Load PartyManager first
+//   const loadPartyManager = () => {
+//     if (typeof PartyManager === 'undefined') {
+//       // Create script element for PartyManager
+//       const script = document.createElement('script');
+//       script.src = 'js/classes/PartyManager.js';
       
-      script.onload = () => {
-        console.log('PartyManager script loaded');
-        // Once PartyManager is loaded, load CombatSystem
-        loadCombatSystem();
-      };
+//       script.onload = () => {
+//         console.log('PartyManager script loaded');
+//         // Once PartyManager is loaded, load CombatSystem
+//         loadCombatSystem();
+//       };
       
-      script.onerror = (err) => {
-        console.error('Could not load PartyManager script', err);
-      };
+//       script.onerror = (err) => {
+//         console.error('Could not load PartyManager script', err);
+//       };
       
-      document.head.appendChild(script);
-    } else {
-      // PartyManager already loaded, proceed to CombatSystem
-      loadCombatSystem();
-    }
-  };
+//       document.head.appendChild(script);
+//     } else {
+//       // PartyManager already loaded, proceed to CombatSystem
+//       loadCombatSystem();
+//     }
+//   };
   
-  // Step 2: Load CombatSystem after PartyManager
-  const loadCombatSystem = () => {
-    if (typeof CombatSystem === 'undefined') {
-      // Create script element for CombatSystem
-      const script = document.createElement('script');
-      script.src = 'js/classes/CombatSystem.js';
+//   // Step 2: Load CombatSystem after PartyManager
+//   const loadCombatSystem = () => {
+//     if (typeof CombatSystem === 'undefined') {
+//       // Create script element for CombatSystem
+//       const script = document.createElement('script');
+//       script.src = 'js/classes/CombatSystem.js';
       
-      script.onload = () => {
-        console.log('CombatSystem script loaded');
-        // Once both scripts are loaded, initialize the systems
-        this.createPartyAndCombatSystems();
-      };
+//       script.onload = () => {
+//         console.log('CombatSystem script loaded');
+//         // Once both scripts are loaded, initialize the systems
+//         this.createPartyAndCombatSystems();
+//       };
       
-      script.onerror = (err) => {
-        console.error('Could not load CombatSystem script', err);
-      };
+//       script.onerror = (err) => {
+//         console.error('Could not load CombatSystem script', err);
+//       };
       
-      document.head.appendChild(script);
-    } else {
-      // CombatSystem already loaded, initialize systems
-      this.createPartyAndCombatSystems();
-    }
-  };
+//       document.head.appendChild(script);
+//     } else {
+//       // CombatSystem already loaded, initialize systems
+//       this.createPartyAndCombatSystems();
+//     }
+//   };
   
-  // Start the loading process
-  loadPartyManager();
-}
+//   // Start the loading process
+//   loadPartyManager();
+// }
 
 // Add this method to create the systems once scripts are loaded
-createPartyAndCombatSystems() {
-  // If systems already exist globally, don't recreate them
-  if (window.partyManager && window.combatSystem) {
-    console.log('Party and combat systems already exist');
-    return;
+// createPartyAndCombatSystems() {
+//   // If systems already exist globally, don't recreate them
+//   if (window.partyManager && window.combatSystem) {
+//     console.log('Party and combat systems already exist');
+//     return;
+//   }
+  
+//   console.log('Creating party and combat systems');
+  
+//   // Create party manager
+//   const partyManager = new PartyManager(this.resourceManager);
+//   window.partyManager = partyManager;
+  
+//   // Create combat system
+//   const combatSystem = new CombatSystem(partyManager, this.resourceManager);
+//   window.combatSystem = combatSystem;
+  
+//   console.log('Party and combat systems created and available globally');
+  
+//   // Load any saved party data
+//   if (typeof partyManager.loadParty === 'function') {
+//     partyManager.loadParty();
+//   }
+// }
+
+initializePartyAndCombatSystems() {
+  console.log('Initializing party and combat systems');
+  if (!window.partyManager) { // Add check to prevent double initialization
+    this.createPartyAndCombatSystems();
   }
-  
+}
+
+createPartyAndCombatSystems() {
   console.log('Creating party and combat systems');
-  
-  // Create party manager
-  const partyManager = new PartyManager(this.resourceManager);
-  window.partyManager = partyManager;
-  
-  // Create combat system
-  const combatSystem = new CombatSystem(partyManager, this.resourceManager);
-  window.combatSystem = combatSystem;
-  
-  console.log('Party and combat systems created and available globally');
-  
-  // Load any saved party data
-  if (typeof partyManager.loadParty === 'function') {
-    partyManager.loadParty();
+  if (!window.partyManager) { // Add check to prevent double initialization
+    const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
+    if (resourceManager) {
+      const partyManager = new PartyManager(resourceManager);
+      const combatSystem = new CombatSystem(partyManager, resourceManager);
+      
+      window.partyManager = partyManager;
+      window.combatSystem = combatSystem;
+      
+      console.log('Party and combat systems created and available globally');
+    }
   }
 }
 
