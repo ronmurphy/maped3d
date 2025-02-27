@@ -5,6 +5,13 @@ this is a work in progress, the 2D simple map outlining works, the 3D is not in 
 
 this is a kind of a fork of some earlier code that was wrote in a horrible lazy method, and i am splitting the code in to seperate, manageable class files.  never cut corners.
 
+javascript bookmarklet version 2, downloads the webp token along with copying essential data, a slight time saver.  version 1 without the webp download is below.
+
+``
+javascript:!function(){let e=document.getElementById("wrp-pagecontent");if(!e){alert("Content div not found!");return}let t=e.outerHTML,o=e.querySelector(".stats__h-name")?.textContent||"Unknown",n=e.querySelector("i")?.textContent||"",i=e.querySelector('strong[title="Armor Class"]')?.nextSibling?.textContent||"",r=e.querySelector('strong[title="Hit Points"]')?.nextSibling?.textContent||"",l=e.querySelector(".stats__token")?.src||"";if(l){let a=o.toLowerCase().replace(/\s+/g,"_")+".webp",p=document.createElement("a");p.href=l,p.download=a,document.body.appendChild(p),p.click(),setTimeout(()=>document.body.removeChild(p),100)}let d=document.createElement("div");if(d.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:20px;border:2px solid #ccc;border-radius:5px;z-index:10000;max-width:400px;box-shadow:0 0 10px rgba(0,0,0,0.5);",d.innerHTML=`<div style="display:flex;align-items:start;gap:10px;margin-bottom:10px;">${l?`<img src="${l}"style="width:100px;height:100px;object-fit:contain;">`:""}
+<div><h3 style="margin:0;color:#822000;font-size:20px;">${o}</h3><p style="margin:5px 0;font-style:italic;">${n}</p><p style="margin:5px 0;">AC:${i.trim()}</p><p style="margin:5px 0;">HP:${r.trim()}</p></div></div><div style="text-align:center;"><p style="color:green;margin:5px 0;">✓ Monster data copied to clipboard!</p>${l?'<p style="color:green;margin:5px 0;">✓ Token image downloaded!</p>':""}<button onclick="this.parentElement.parentElement.remove()"style="padding:5px 10px;margin-top:10px;cursor:pointer;">Close</button></div>`,document.body.appendChild(d),navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).catch(e=>{let o=document.createElement("textarea");o.value=t,document.body.appendChild(o),o.select();try{document.execCommand("copy")}catch(n){alert("Unable to copy: "+n.message)}finally{document.body.removeChild(o)}});else{let c=document.createElement("textarea");c.value=t,document.body.appendChild(c),c.select();try{document.execCommand("copy")}catch(s){alert("Unable to copy: "+s.message)}finally{document.body.removeChild(c)}}}();
+``
+
 javascript bookmarklet to make the extraction of the monsterdata easier
 
 ``

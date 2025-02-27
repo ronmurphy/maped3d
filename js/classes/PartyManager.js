@@ -25,8 +25,691 @@ class PartyManager {
     // Variables for UI elements
     this.partyDialog = null;
     this.activeTab = 'active';
+    this.starterCheckPerformed = false;
     
     console.log('Party Manager initialized');
+  }
+
+  createPartyManagerStyles() {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      .party-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+  
+      .party-container {
+        width: 90%;
+        max-width: 1200px;
+        height: 90vh;
+        background: linear-gradient(to bottom, #4338ca, #6d28d9, #7e22ce);
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+        overflow: hidden;
+      }
+  
+      .party-header {
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(4px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: white;
+      }
+  
+      .party-content {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+  
+      .party-sidebar {
+        width: 280px;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(4px);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+      }
+  
+      .party-tab-buttons {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+  
+      .party-tab {
+        flex: 1;
+        padding: 12px 8px;
+        text-align: center;
+        color: white;
+        background: transparent;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+  
+      .party-tab:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+  
+      .party-tab.active {
+        background: rgba(255, 255, 255, 0.15);
+        border-bottom: 2px solid white;
+      }
+  
+      .party-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+  
+      .active-monster-list {
+        display: flex;
+        flex-direction: column;
+        padding: 0 8px;
+      }
+  
+      .reserve-monster-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+  
+      .monster-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+  
+      .monster-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+  
+      .monster-card.active-party {
+        width: 200px;
+        transform-origin: bottom left;
+        transform: rotate(-3deg);
+      }
+  
+      .monster-card.active-party.alt {
+        transform-origin: bottom right;
+        transform: rotate(3deg);
+      }
+  
+      .monster-card.selected {
+        box-shadow: 0 0 0 2px #4f46e5, 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: scale(1.02);
+        z-index: 10;
+      }
+  
+      .monster-header {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+  
+      .monster-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 8px;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+  
+      .monster-info {
+        flex: 1;
+        overflow: hidden;
+      }
+  
+      .monster-name {
+        font-weight: bold;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+      }
+  
+      .monster-type {
+        color: #666;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+      }
+  
+      .monster-level-badge {
+        background: #e0e7ff;
+        color: #4338ca;
+        font-size: 0.7rem;
+        padding: 1px 4px;
+        border-radius: 4px;
+        margin-left: 4px;
+      }
+  
+      .monster-stats {
+        padding: 8px;
+        background: #f9fafb;
+      }
+  
+      .hp-bar-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        margin-bottom: 4px;
+        color: #666;
+      }
+  
+      .hp-bar-bg {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+  
+      .hp-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+  
+      .hp-bar-fill.high {
+        background: #10b981;
+      }
+  
+      .hp-bar-fill.medium {
+        background: #f59e0b;
+      }
+  
+      .hp-bar-fill.low {
+        background: #ef4444;
+      }
+  
+      .monster-footer {
+        display: flex;
+        font-size: 0.75rem;
+        color: #666;
+        justify-content: space-between;
+        align-items: center;
+      }
+  
+      .ac-display {
+        display: flex;
+        align-items: center;
+      }
+  
+      .equipment-icons {
+        display: flex;
+        gap: 4px;
+      }
+  
+      .equipment-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+  
+      .weapon-icon {
+        background: #fee2e2;
+        color: #ef4444;
+      }
+  
+      .armor-icon {
+        background: #dbeafe;
+        color: #3b82f6;
+      }
+  
+      .empty-party-slot {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 8px;
+      }
+  
+      .party-details {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+  
+      .empty-details-message {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+  
+      .monster-details {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: white;
+        color: #333;
+      }
+  
+      .details-header {
+        padding: 16px;
+        background: linear-gradient(to right, #4f46e5, #7e22ce);
+        color: white;
+        display: flex;
+        align-items: center;
+      }
+  
+      .details-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        margin-right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+  
+      .details-title {
+        flex: 1;
+      }
+  
+      .details-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+  
+      .details-type {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+  
+      .details-cr-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+      }
+  
+      .details-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+  
+      .details-section {
+        margin-bottom: 24px;
+      }
+  
+      .details-section-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #4338ca;
+        margin-bottom: 12px;
+      }
+  
+      .stat-bars {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+  
+      .stat-bar {
+        background: #f3f4f6;
+        padding: 12px;
+        border-radius: 8px;
+      }
+  
+      .stat-bar-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+      }
+  
+      .exp-bar-bg {
+        height: 6px;
+        background: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+  
+      .exp-bar-fill {
+        height: 100%;
+        background: #8b5cf6;
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+  
+      .stat-grid {
+        display: flex;
+        background: #f3f4f6;
+        border-radius: 8px;
+      }
+  
+      .stat-cell {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+        border-right: 1px solid #e5e7eb;
+      }
+  
+      .stat-cell:last-child {
+        border-right: none;
+      }
+  
+      .stat-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+  
+      .stat-value {
+        font-weight: bold;
+      }
+  
+      .ability-scores {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+      }
+  
+      .ability-score {
+        background: #eef2ff;
+        border-radius: 8px;
+        padding: 8px 4px;
+        text-align: center;
+      }
+  
+      .ability-name {
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #4338ca;
+        text-transform: uppercase;
+      }
+  
+      .ability-value {
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+  
+      .ability-mod {
+        font-size: 0.75rem;
+        color: #6b7280;
+      }
+  
+      .monster-abilities {
+        display: grid;
+        gap: 8px;
+      }
+  
+      .ability-card {
+        border-radius: 8px;
+        padding: 8px;
+      }
+  
+      .ability-card.attack {
+        background: #fee2e2;
+      }
+  
+      .ability-card.buff {
+        background: #d1fae5;
+      }
+  
+      .ability-card.debuff {
+        background: #ede9fe;
+      }
+  
+      .ability-card.area {
+        background: #ffedd5;
+      }
+  
+      .ability-card.control {
+        background: #dbeafe;
+      }
+  
+      .ability-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+  
+      .ability-icon {
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+  
+      .ability-title {
+        flex: 1;
+        font-weight: 500;
+      }
+  
+      .ability-damage {
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+  
+      .ability-description {
+        font-size: 0.8rem;
+        color: #4b5563;
+        padding-left: 28px;
+      }
+  
+      .equipment-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+  
+      .equipment-slot {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+      }
+  
+      .equipment-slot.weapon.equipped {
+        background: #fee2e2;
+        border-color: #fca5a5;
+      }
+  
+      .equipment-slot.armor.equipped {
+        background: #dbeafe;
+        border-color: #93c5fd;
+      }
+  
+      .equipment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+  
+      .equipment-type {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+      }
+  
+      .equipment-icon {
+        margin-right: 8px;
+      }
+  
+      .equipment-action {
+        font-size: 0.75rem;
+        color: #4f46e5;
+        cursor: pointer;
+      }
+  
+      .equipment-details {
+        font-size: 0.9rem;
+      }
+  
+      .equipment-name {
+        font-weight: 500;
+      }
+  
+      .equipment-bonus {
+        font-size: 0.75rem;
+      }
+  
+      .equipment-bonus.weapon {
+        color: #dc2626;
+      }
+  
+      .equipment-bonus.armor {
+        color: #2563eb;
+      }
+  
+      .empty-equipment {
+        color: #9ca3af;
+        font-size: 0.9rem;
+      }
+  
+      .relationships {
+        display: grid;
+        gap: 8px;
+      }
+  
+      .relationship-card {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+  
+      .relationship-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+      }
+  
+      .relationship-info {
+        flex: 1;
+        min-width: 0;
+      }
+  
+      .relationship-name {
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+  
+      .relationship-details {
+        display: flex;
+        align-items: center;
+        font-size: 0.75rem;
+      }
+  
+      .affinity-badge {
+        padding: 2px 6px;
+        border-radius: 9999px;
+        margin-right: 4px;
+        font-size: 0.7rem;
+        font-weight: 500;
+      }
+  
+      .affinity-badge.high {
+        background: #d1fae5;
+        color: #065f46;
+      }
+  
+      .affinity-badge.medium {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+  
+      .affinity-badge.low {
+        background: #f3f4f6;
+        color: #4b5563;
+      }
+  
+      .relationship-benefit {
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+  
+      /* Utility classes */
+      .material-icons.small {
+        font-size: 16px;
+      }
+  
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+  
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+  
+      .fade-in {
+        animation: fadeIn 0.3s ease forwards;
+      }
+  
+      .slide-up {
+        animation: slideUp 0.3s ease forwards;
+      }
+    `;
+  
+    return styleElement;
   }
   
   /**
@@ -527,51 +1210,498 @@ prepareMonster(monster) {
   /**
    * UI Methods
    */
-  
-  // Show party management dialog
   showPartyManager() {
-    // Create dialog for party management
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = 'Monster Party';
-    dialog.style.setProperty('--width', '800px');
+    // Check if we need to offer a starter monster first, but only once
+    if (!this.starterCheckPerformed && this.party.active.length === 0 && this.party.reserve.length === 0) {
+      this.starterCheckPerformed = true; // Set flag to prevent multiple checks
+      this.checkForStarterMonster();
+      return; // Exit so we don't show party manager yet
+    }
+    // Add our custom styles to the document
+    document.head.appendChild(this.createPartyManagerStyles());
     
-    // Add event listener for when dialog is cancelled (Esc key)
-    dialog.addEventListener('sl-request-close', (e) => {
-      if (window.scene3D) {
-        window.scene3D.resumeControls();
-      }
-    });
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'party-overlay';
     
-    // Create content with tabs
-    dialog.innerHTML = `
-      <sl-tab-group>
-        <sl-tab slot="nav" panel="active-party">Active Party (${this.party.active.length}/${this.party.maxActive})</sl-tab>
-        <sl-tab slot="nav" panel="reserve-party">Reserve Monsters (${this.party.reserve.length})</sl-tab>
-        
-        <sl-tab-panel name="active-party">
-          ${this.renderActiveParty()}
-        </sl-tab-panel>
-        
-        <sl-tab-panel name="reserve-party">
-          ${this.renderReserveParty()}
-        </sl-tab-panel>
-      </sl-tab-group>
+    // Create main container
+    const container = document.createElement('div');
+    container.className = 'party-container';
+    
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'party-header';
+    header.innerHTML = `
+      <div style="display: flex; align-items: center;">
+        <span class="material-icons" style="margin-right: 8px;">pets</span>
+        <h1 style="margin: 0; font-size: 1.25rem;">Monster Party</h1>
+      </div>
+      <button class="close-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s;">
+        <span class="material-icons">close</span>
+      </button>
+    `;
+    
+    // Create content area (sidebar + details)
+    const content = document.createElement('div');
+    content.className = 'party-content';
+    
+    // Create sidebar with tabs
+    const sidebar = document.createElement('div');
+    sidebar.className = 'party-sidebar';
+    
+    // Create tab buttons
+    const tabButtons = document.createElement('div');
+    tabButtons.className = 'party-tab-buttons';
+    tabButtons.innerHTML = `
+      <button class="party-tab active" data-tab="active">
+        Active (${this.party.active.length}/${this.party.maxActive})
+      </button>
+      <button class="party-tab" data-tab="reserve">
+        Reserve (${this.party.reserve.length})
+      </button>
+    `;
+    
+    // Create party list container
+    const partyList = document.createElement('div');
+    partyList.className = 'party-list';
+    
+    // Create active party list (default view)
+    const activeList = document.createElement('div');
+    activeList.className = 'active-monster-list';
+    
+    // Add active monsters
+    if (this.party.active.length > 0) {
+      this.party.active.forEach((monster, index) => {
+        const card = this.createMonsterCard(monster, 'active', index % 2 !== 0);
+        activeList.appendChild(card);
+      });
       
-      <div slot="footer">
-        <sl-button variant="neutral" class="close-btn">Close</sl-button>
+      // Add empty slots
+      for (let i = this.party.active.length; i < this.party.maxActive; i++) {
+        const emptySlot = document.createElement('div');
+        emptySlot.className = 'empty-party-slot';
+        emptySlot.innerHTML = `
+          <span class="material-icons" style="margin-right: 8px;">add_circle_outline</span>
+          Empty Slot
+        `;
+        activeList.appendChild(emptySlot);
+      }
+    } else {
+      // Empty active party message
+      activeList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.8);">
+          <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">sentiment_dissatisfied</span>
+          <p style="margin: 0 0 8px 0; font-size: 1.1rem;">Your active party is empty</p>
+          <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">You need monsters in your party to participate in combat</p>
+        </div>
+      `;
+    }
+    
+    // Create reserve party list (hidden initially)
+    const reserveList = document.createElement('div');
+    reserveList.className = 'reserve-monster-list';
+    reserveList.style.display = 'none';
+    
+    // Add reserve monsters
+    if (this.party.reserve.length > 0) {
+      this.party.reserve.forEach(monster => {
+        const card = this.createMonsterCard(monster, 'reserve');
+        reserveList.appendChild(card);
+      });
+    } else {
+      // Empty reserve message
+      reserveList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.8);">
+          <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">inventory_2</span>
+          <p style="margin: 0 0 8px 0; font-size: 1.1rem;">Your reserve is empty</p>
+          <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">Monsters will be stored here when your active party is full</p>
+        </div>
+      `;
+    }
+    
+    // Add lists to container
+    partyList.appendChild(activeList);
+    partyList.appendChild(reserveList);
+    
+    // Create details panel (right side)
+    const detailsPanel = document.createElement('div');
+    detailsPanel.className = 'party-details';
+    
+    // Initial empty state for details
+    detailsPanel.innerHTML = `
+      <div class="empty-details-message">
+        <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">touch_app</span>
+        <h2 style="margin: 0 0 8px 0; font-size: 1.5rem;">Select a Monster</h2>
+        <p style="margin: 0; max-width: 400px; opacity: 0.8;">
+          Click on any monster card to view detailed information, abilities, and relationship data
+        </p>
       </div>
     `;
     
-    // Add event listeners
-    dialog.addEventListener('sl-after-show', () => {
-      this.setupPartyDialogEvents(dialog);
-    });
+    // Assemble the UI
+    sidebar.appendChild(tabButtons);
+    sidebar.appendChild(partyList);
     
-    // Store reference and show dialog
-    this.partyDialog = dialog;
-    document.body.appendChild(dialog);
-    dialog.show();
+    content.appendChild(sidebar);
+    content.appendChild(detailsPanel);
+    
+    container.appendChild(header);
+    container.appendChild(content);
+    
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+    
+    // Reference to the dialog for event handlers
+    this.partyDialog = overlay;
+    
+    // Add event listeners
+    this.setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel);
+    
+    // Animate in
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      container.style.transform = 'scale(1)';
+    }, 10);
   }
+
+  // Create a monster card for the party UI
+createMonsterCard(monster, type, isAlt = false) {
+  // Calculate HP percentage
+  const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+  let hpColorClass = 'high';
+  if (hpPercent < 30) {
+    hpColorClass = 'low';
+  } else if (hpPercent < 70) {
+    hpColorClass = 'medium';
+  }
+  
+  // Get color for monster type
+  const typeColors = {
+    Beast: '#4f46e5',
+    Dragon: '#c026d3',
+    Elemental: '#ef4444',
+    Monstrosity: '#65a30d',
+    Construct: '#a16207',
+    Undead: '#6b7280',
+    Fey: '#06b6d4',
+    Giant: '#b45309'
+  };
+  
+  const bgColor = typeColors[monster.type] || '#6b7280';
+  
+  // Create the card
+  const card = document.createElement('div');
+  card.className = `monster-card ${type}-party`;
+  if (isAlt) card.classList.add('alt');
+  card.setAttribute('data-monster-id', monster.id);
+  
+  // Monster card content
+  card.innerHTML = `
+    <div class="monster-header">
+      <div class="monster-avatar" style="background-color: ${bgColor};">
+        ${monster.token ? 
+          `<img src="${monster.token}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+          monster.name.charAt(0)
+        }
+      </div>
+      <div class="monster-info">
+        <div class="monster-name">${monster.name}</div>
+        <div class="monster-type">
+          ${monster.size} ${monster.type}
+          <span class="monster-level-badge">${monster.level || 1}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="monster-stats">
+      <!-- HP Bar -->
+      <div class="hp-bar-label">
+        <span>HP</span>
+        <span>${monster.currentHP}/${monster.maxHP}</span>
+      </div>
+      <div class="hp-bar-bg">
+        <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
+      </div>
+      
+      <!-- Footer with AC and equipment -->
+      <div class="monster-footer">
+        <div class="ac-display">
+          <span class="material-icons small" style="margin-right: 4px;">shield</span>
+          <span>${monster.armorClass}</span>
+        </div>
+        
+        <div class="equipment-icons">
+          ${monster.equipment?.weapon ? 
+            `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
+              <span class="material-icons small">sports_martial_arts</span>
+            </div>` : ''
+          }
+          ${monster.equipment?.armor ? 
+            `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
+              <span class="material-icons small">security</span>
+            </div>` : ''
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  
+  return card;
+}
+
+// Create a detailed view for a selected monster
+createMonsterDetailView(monster) {
+  // Calculate percentages
+  const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+  const expPercent = Math.floor((monster.experience / monster.experienceToNext) * 100);
+  
+  // Get color for monster type
+  const typeColors = {
+    Beast: '#4f46e5',
+    Dragon: '#c026d3',
+    Elemental: '#ef4444',
+    Monstrosity: '#65a30d',
+    Construct: '#a16207',
+    Undead: '#6b7280',
+    Fey: '#06b6d4',
+    Giant: '#b45309'
+  };
+  
+  const bgColor = typeColors[monster.type] || '#6b7280';
+  
+  // Create the details view
+  const detailsView = document.createElement('div');
+  detailsView.className = 'monster-details';
+  
+  // Header
+  const header = document.createElement('div');
+  header.className = 'details-header';
+  header.innerHTML = `
+    <div class="details-avatar" style="background-color: ${bgColor};">
+      ${monster.token ? 
+        `<img src="${monster.token}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+        monster.name.charAt(0)
+      }
+    </div>
+    <div class="details-title">
+      <div class="details-name">${monster.name}</div>
+      <div class="details-type">
+        ${monster.size} ${monster.type} • Level ${monster.level || 1}
+        <span class="details-cr-badge">CR ${monster.cr || '?'}</span>
+      </div>
+    </div>
+  `;
+  
+  // Content
+  const content = document.createElement('div');
+  content.className = 'details-content';
+  
+  // Basic stats section
+  let contentHtml = `
+    <div class="details-section">
+      <div class="stat-bars">
+        <!-- HP Bar -->
+        <div class="stat-bar">
+          <div class="stat-bar-header">
+            <div>Hit Points</div>
+            <div>${monster.currentHP}/${monster.maxHP}</div>
+          </div>
+          <div class="hp-bar-bg">
+            <div class="hp-bar-fill ${hpPercent < 30 ? 'low' : hpPercent < 70 ? 'medium' : 'high'}" style="width: ${hpPercent}%;"></div>
+          </div>
+        </div>
+        
+        <!-- Experience Bar -->
+        <div class="stat-bar">
+          <div class="stat-bar-header">
+            <div>Experience</div>
+            <div>${monster.experience || 0}/${monster.experienceToNext || 100}</div>
+          </div>
+          <div class="exp-bar-bg">
+            <div class="exp-bar-fill" style="width: ${expPercent}%;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Core stats -->
+      <div class="stat-grid">
+        <div class="stat-cell">
+          <div class="stat-label">Armor Class</div>
+          <div class="stat-value">${monster.armorClass}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Initiative</div>
+          <div class="stat-value">+${monster.abilities?.dex?.modifier || 0}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Speed</div>
+          <div class="stat-value">30 ft</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Ability scores section
+  if (monster.abilities) {
+    contentHtml += `
+      <div class="details-section">
+        <div class="details-section-title">Ability Scores</div>
+        <div class="ability-scores">
+          ${Object.entries(monster.abilities).map(([abilityName, data]) => `
+            <div class="ability-score">
+              <div class="ability-name">${abilityName}</div>
+              <div class="ability-value">${data.score}</div>
+              <div class="ability-mod">${data.modifier >= 0 ? `+${data.modifier}` : data.modifier}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // Monster abilities section
+  if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
+    contentHtml += `
+      <div class="details-section">
+        <div class="details-section-title">Abilities</div>
+        <div class="monster-abilities">
+          ${monster.monsterAbilities.map(ability => {
+            // Determine icon based on ability type
+            let icon = 'star';
+            switch (ability.type) {
+              case 'attack': icon = 'sports_martial_arts'; break;
+              case 'area': icon = 'blur_circular'; break;
+              case 'buff': icon = 'upgrade'; break;
+              case 'debuff': icon = 'threat'; break;
+              case 'control': icon = 'touch_app'; break;
+            }
+            
+            return `
+              <div class="ability-card ${ability.type}">
+                <div class="ability-header">
+                  <div class="ability-icon">
+                    <span class="material-icons small">${icon}</span>
+                  </div>
+                  <div class="ability-title">${ability.name}</div>
+                  ${ability.damage ? 
+                    `<div class="ability-damage">${ability.damage}</div>` : 
+                    ''
+                  }
+                </div>
+                <div class="ability-description">${ability.description}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // Equipment section
+  contentHtml += `
+    <div class="details-section">
+      <div class="details-section-title">Equipment</div>
+      <div class="equipment-section">
+        <!-- Weapon slot -->
+        <div class="equipment-slot weapon ${monster.equipment?.weapon ? 'equipped' : ''}">
+          <div class="equipment-header">
+            <div class="equipment-type">
+              <span class="material-icons equipment-icon">sports_martial_arts</span>
+              Weapon
+            </div>
+            <div class="equipment-action">${monster.equipment?.weapon ? 'Change' : 'Equip'}</div>
+          </div>
+          
+          ${monster.equipment?.weapon ? 
+            `<div class="equipment-details">
+              <div class="equipment-name">${monster.equipment.weapon.name}</div>
+              ${monster.equipment.weapon.damageBonus ? 
+                `<div class="equipment-bonus weapon">+${monster.equipment.weapon.damageBonus} damage</div>` : 
+                ''
+              }
+            </div>` : 
+            `<div class="empty-equipment">No weapon equipped</div>`
+          }
+        </div>
+        
+        <!-- Armor slot -->
+        <div class="equipment-slot armor ${monster.equipment?.armor ? 'equipped' : ''}">
+          <div class="equipment-header">
+            <div class="equipment-type">
+              <span class="material-icons equipment-icon">shield</span>
+              Armor
+            </div>
+            <div class="equipment-action">${monster.equipment?.armor ? 'Change' : 'Equip'}</div>
+          </div>
+          
+          ${monster.equipment?.armor ? 
+            `<div class="equipment-details">
+              <div class="equipment-name">${monster.equipment.armor.name}</div>
+              ${monster.equipment.armor.acBonus ? 
+                `<div class="equipment-bonus armor">+${monster.equipment.armor.acBonus} AC</div>` : 
+                ''
+              }
+            </div>` : 
+            `<div class="empty-equipment">No armor equipped</div>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Relationships section
+  if (monster.relationships && monster.relationships.length > 0) {
+    contentHtml += `
+      <div class="details-section">
+        <div class="details-section-title">Relationships</div>
+        <div class="relationships">
+          ${monster.relationships.map(relation => {
+            // Find the related monster
+            const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === relation.monsterId);
+            if (!relatedMonster) return '';
+            
+            // Get color for monster type
+            const relatedColor = typeColors[relatedMonster.type] || '#6b7280';
+            
+            // Determine affinity class
+            let affinityClass = 'low';
+            if (relation.level === 'High') affinityClass = 'high';
+            else if (relation.level === 'Medium') affinityClass = 'medium';
+            
+            return `
+              <div class="relationship-card">
+                <div class="relationship-avatar" style="background-color: ${relatedColor};">
+                  ${relatedMonster.token ? 
+                    `<img src="${relatedMonster.token}" alt="${relatedMonster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+                    relatedMonster.name.charAt(0)
+                  }
+                </div>
+                <div class="relationship-info">
+                  <div class="relationship-name">${relatedMonster.name}</div>
+                  <div class="relationship-details">
+                    <span class="affinity-badge ${affinityClass}">${relation.level}</span>
+                    ${relation.benefit && relation.benefit !== 'None' ? 
+                      `<span class="relationship-benefit">${relation.benefit}</span>` : 
+                      ''
+                    }
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  content.innerHTML = contentHtml;
+  
+  // Assemble the view
+  detailsView.appendChild(header);
+  detailsView.appendChild(content);
+  
+  return detailsView;
+}
   
   // Render active party display
   renderActiveParty() {
@@ -765,105 +1895,239 @@ prepareMonster(monster) {
   }
   
   // Setup event listeners for party dialog
-  setupPartyDialogEvents(dialog) {
-  // Pause controls when dialog opens
-    if (window.scene3D) {
-        window.scene3D.pauseControls();
-      }
+  // setupPartyDialogEvents(dialog) {
+  // // Pause controls when dialog opens
+  //   if (window.scene3D) {
+  //       window.scene3D.pauseControls();
+  //     }
 
-      const previouslyFocused = document.activeElement;
+  //     const previouslyFocused = document.activeElement;
 
-  // Close button
-  dialog.querySelector('.close-btn').addEventListener('click', () => {
-    dialog.hide();
-    // Resume controls after dialog closes
-    setTimeout(() => {
-        // Try to find the main canvas or use document.body
-        const canvas = document.querySelector('canvas') || document.body;
-        canvas.focus();
+  // // Close button
+  // dialog.querySelector('.close-btn').addEventListener('click', () => {
+  //   dialog.hide();
+  //   // Resume controls after dialog closes
+  //   setTimeout(() => {
+  //       // Try to find the main canvas or use document.body
+  //       const canvas = document.querySelector('canvas') || document.body;
+  //       canvas.focus();
         
-        // Resume controls after dialog closes
-        if (window.scene3D) {
-          window.scene3D.resumeControls();
-        }
-      }, 100); // Small delay to ensure dialog is fully hidden
-    });
+  //       // Resume controls after dialog closes
+  //       if (window.scene3D) {
+  //         window.scene3D.resumeControls();
+  //       }
+  //     }, 100); // Small delay to ensure dialog is fully hidden
+  //   });
 
-  // Handle dialog hide event
-  dialog.addEventListener('sl-after-hide', () => {
-    // Remove dialog from DOM after it's hidden
-    dialog.remove();
+  // // Handle dialog hide event
+  // dialog.addEventListener('sl-after-hide', () => {
+  //   // Remove dialog from DOM after it's hidden
+  //   dialog.remove();
     
-    // Force the document body to have focus
+  //   // Force the document body to have focus
+  //   setTimeout(() => {
+  //     // Try to find the main canvas or use document.body
+  //     const canvas = document.querySelector('canvas') || document.body;
+  //     canvas.focus();
+      
+  //     // Also dispatch a dummy keyup event to reset key states
+  //     document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+      
+  //     // Make sure controls are resumed
+  //     if (window.scene3D) {
+  //       window.scene3D.resumeControls();
+  //     }
+  //   }, 100);
+  // });
+    
+  //   // Move to reserve buttons
+  //   dialog.querySelectorAll('.move-to-reserve').forEach(btn => {
+  //     btn.addEventListener('click', e => {
+  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
+  //       if (this.moveMonster(monsterId, 'reserve')) {
+  //         this.refreshPartyDialog();
+  //       }
+  //     });
+  //   });
+    
+  //   // Move to active buttons
+  //   dialog.querySelectorAll('.move-to-active').forEach(btn => {
+  //     btn.addEventListener('click', e => {
+  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
+  //       if (this.moveMonster(monsterId, 'active')) {
+  //         this.refreshPartyDialog();
+  //       }
+  //     });
+  //   });
+    
+  //   // View details buttons
+  //   dialog.querySelectorAll('.view-details').forEach(btn => {
+  //     btn.addEventListener('click', e => {
+  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
+  //       const monster = this.findMonster(monsterId);
+  //       if (monster) {
+  //         this.showMonsterDetails(monster);
+  //       }
+  //     });
+  //   });
+    
+  //   // Equipment slot clicks
+  //   dialog.querySelectorAll('.equipment-slot').forEach(slot => {
+  //     slot.addEventListener('click', e => {
+  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
+  //       const slotType = e.currentTarget.getAttribute('data-slot');
+  //       const monster = this.findMonster(monsterId);
+  //       if (monster) {
+  //         this.showEquipmentDialog(monster, slotType);
+  //       }
+  //     });
+  //   });
+    
+  //   // Equip monster buttons
+  //   dialog.querySelectorAll('.equip-monster').forEach(btn => {
+  //     btn.addEventListener('click', e => {
+  //       const monsterId = e.currentTarget.getAttribute('data-monster-id');
+  //       const monster = this.findMonster(monsterId);
+  //       if (monster) {
+  //         this.showEquipmentDialog(monster);
+  //       }
+  //     });
+  //   });
+  // }
+
+  // Setup event handlers for party manager
+setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel) {
+  // Track the currently selected monster
+  let selectedMonster = null;
+  
+  // Pause 3D controls
+  if (window.scene3D) {
+    window.scene3D.pauseControls();
+  }
+  
+  // Store the currently focused element before opening the dialog
+  const previouslyFocused = document.activeElement;
+  
+  // Close button handler
+  const closeButton = container.querySelector('.close-btn');
+  closeButton.addEventListener('click', () => {
+    // Animate out
+    overlay.style.opacity = '0';
+    container.style.transform = 'scale(0.95)';
+    
+    // Remove after animation
     setTimeout(() => {
-      // Try to find the main canvas or use document.body
+      overlay.remove();
+      
+      // Focus back on the document body
       const canvas = document.querySelector('canvas') || document.body;
       canvas.focus();
       
-      // Also dispatch a dummy keyup event to reset key states
-      document.body.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+      // Reset key states
+      document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
       
-      // Make sure controls are resumed
+      // Resume controls
       if (window.scene3D) {
         window.scene3D.resumeControls();
       }
-    }, 100);
+    }, 300);
   });
-    
-    // Move to reserve buttons
-    dialog.querySelectorAll('.move-to-reserve').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const monsterId = e.currentTarget.getAttribute('data-monster-id');
-        if (this.moveMonster(monsterId, 'reserve')) {
-          this.refreshPartyDialog();
-        }
-      });
+  
+  // Tab switching
+  const tabButtons = container.querySelectorAll('.party-tab');
+  tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      // Update button states
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+      
+      // Show the corresponding list
+      const tabName = button.getAttribute('data-tab');
+      if (tabName === 'active') {
+        activeList.style.display = '';
+        reserveList.style.display = 'none';
+      } else {
+        activeList.style.display = 'none';
+        reserveList.style.display = '';
+      }
+    });
+  });
+  
+  // Monster selection handler
+  const handleMonsterSelection = (monsterId) => {
+    // Remove selection from all cards
+    overlay.querySelectorAll('.monster-card').forEach(card => {
+      card.classList.remove('selected');
     });
     
-    // Move to active buttons
-    dialog.querySelectorAll('.move-to-active').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const monsterId = e.currentTarget.getAttribute('data-monster-id');
-        if (this.moveMonster(monsterId, 'active')) {
-          this.refreshPartyDialog();
-        }
-      });
-    });
-    
-    // View details buttons
-    dialog.querySelectorAll('.view-details').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const monsterId = e.currentTarget.getAttribute('data-monster-id');
-        const monster = this.findMonster(monsterId);
-        if (monster) {
-          this.showMonsterDetails(monster);
-        }
-      });
-    });
-    
-    // Equipment slot clicks
-    dialog.querySelectorAll('.equipment-slot').forEach(slot => {
-      slot.addEventListener('click', e => {
-        const monsterId = e.currentTarget.getAttribute('data-monster-id');
-        const slotType = e.currentTarget.getAttribute('data-slot');
-        const monster = this.findMonster(monsterId);
-        if (monster) {
+    if (monsterId === selectedMonster) {
+      // Deselect if clicking the same monster
+      selectedMonster = null;
+      
+      // Show empty details message
+      detailsPanel.innerHTML = `
+        <div class="empty-details-message">
+          <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">touch_app</span>
+          <h2 style="margin: 0 0 8px 0; font-size: 1.5rem;">Select a Monster</h2>
+          <p style="margin: 0; max-width: 400px; opacity: 0.8;">
+            Click on any monster card to view detailed information, abilities, and relationship data
+          </p>
+        </div>
+      `;
+    } else {
+      // Find the monster
+      const monster = this.findMonster(monsterId);
+      if (!monster) return;
+      
+      // Update selection
+      selectedMonster = monsterId;
+      
+      // Highlight selected card
+      const selectedCard = overlay.querySelector(`.monster-card[data-monster-id="${monsterId}"]`);
+      if (selectedCard) {
+        selectedCard.classList.add('selected');
+      }
+      
+      // Show monster details
+      detailsPanel.innerHTML = '';
+      const detailView = this.createMonsterDetailView(monster);
+      detailsPanel.appendChild(detailView);
+      
+      // Add event listeners to equipment buttons
+      const equipmentActions = detailsPanel.querySelectorAll('.equipment-action');
+      equipmentActions.forEach(button => {
+        button.addEventListener('click', (e) => {
+          const slot = e.target.closest('.equipment-slot');
+          const slotType = slot.classList.contains('weapon') ? 'weapon' : 'armor';
           this.showEquipmentDialog(monster, slotType);
-        }
+        });
+      });
+    }
+  };
+  
+  // Monster card click handlers
+  const addCardClickHandlers = () => {
+    const monsterCards = overlay.querySelectorAll('.monster-card');
+    monsterCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        const monsterId = card.getAttribute('data-monster-id');
+        handleMonsterSelection(monsterId);
       });
     });
-    
-    // Equip monster buttons
-    dialog.querySelectorAll('.equip-monster').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const monsterId = e.currentTarget.getAttribute('data-monster-id');
-        const monster = this.findMonster(monsterId);
-        if (monster) {
-          this.showEquipmentDialog(monster);
-        }
-      });
-    });
-  }
+  };
+  
+  // Add initial handlers
+  addCardClickHandlers();
+  
+  // Handle Escape key to close dialog
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      closeButton.click();
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+  };
+  document.addEventListener('keydown', handleKeyDown);
+}
   
   // Refresh party dialog when data changes
   refreshPartyDialog() {
@@ -1330,198 +2594,504 @@ prepareMonster(monster) {
    */
   
   // Show recruitment dialog when player encounters a monster
-  showRecruitmentDialog(monster) {
-    // Need to create monster from bestiary data
-    const recruitMonster = monster.data ? monster : { data: monster };
+  // showRecruitmentDialog(monster) {
+  //   // Need to create monster from bestiary data
+  //   const recruitMonster = monster.data ? monster : { data: monster };
     
-    // Create overlay and dialog
-    const overlay = document.createElement('div');
-    overlay.className = 'recruitment-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    `;
+  //   // Create overlay and dialog
+  //   const overlay = document.createElement('div');
+  //   overlay.className = 'recruitment-overlay';
+  //   overlay.style.cssText = `
+  //     position: fixed;
+  //     top: 0;
+  //     left: 0;
+  //     right: 0;
+  //     bottom: 0;
+  //     background: rgba(0, 0, 0, 0.85);
+  //     display: flex;
+  //     justify-content: center;
+  //     align-items: center;
+  //     z-index: 2000;
+  //     opacity: 0;
+  //     transition: opacity 0.3s ease;
+  //   `;
 
-    const dialogContainer = document.createElement('div');
-    dialogContainer.className = 'recruitment-dialog';
-    dialogContainer.style.cssText = `
-      background: white;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      transform: scale(0.95);
-      transition: transform 0.3s ease;
-    `;
+  //   const dialogContainer = document.createElement('div');
+  //   dialogContainer.className = 'recruitment-dialog';
+  //   dialogContainer.style.cssText = `
+  //     background: white;
+  //     border-radius: 8px;
+  //     width: 90%;
+  //     max-width: 600px;
+  //     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  //     transform: scale(0.95);
+  //     transition: transform 0.3s ease;
+  //   `;
 
-    // Create header
-    const header = document.createElement('div');
-    header.className = 'recruitment-header';
-    header.style.cssText = `
-      padding: 16px;
-      background: #f5f5f5;
-      border-radius: 8px 8px 0 0;
-      text-align: center;
-      position: relative;
-    `;
+  //   // Create header
+  //   const header = document.createElement('div');
+  //   header.className = 'recruitment-header';
+  //   header.style.cssText = `
+  //     padding: 16px;
+  //     background: #f5f5f5;
+  //     border-radius: 8px 8px 0 0;
+  //     text-align: center;
+  //     position: relative;
+  //   `;
 
-    header.innerHTML = `
-      <h2 style="margin: 0;">Monster Encounter</h2>
-      <button class="close-dialog-btn" style="position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer;">
-        <span class="material-icons">close</span>
+  //   header.innerHTML = `
+  //     <h2 style="margin: 0;">Monster Encounter</h2>
+  //     <button class="close-dialog-btn" style="position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer;">
+  //       <span class="material-icons">close</span>
+  //     </button>
+  //   `;
+
+  //   // Create content
+  //   const content = document.createElement('div');
+  //   content.className = 'recruitment-content';
+  //   content.style.cssText = `
+  //     padding: 24px;
+  //     display: flex;
+  //     flex-direction: column;
+  //     gap: 20px;
+  //   `;
+
+  //   // Monster info section
+  //   const monsterInfo = document.createElement('div');
+  //   monsterInfo.className = 'monster-info-section';
+  //   monsterInfo.style.cssText = `
+  //     display: flex;
+  //     gap: 16px;
+  //     align-items: center;
+  //   `;
+    
+  //   const name = recruitMonster.data.basic?.name || 'Unknown Monster';
+  //   const size = recruitMonster.data.basic?.size || 'Medium';
+  //   const type = recruitMonster.data.basic?.type || 'Unknown';
+  //   const cr = recruitMonster.data.basic?.cr || '?';
+    
+  //   monsterInfo.innerHTML = `
+  //     <div class="monster-image" style="flex: 0 0 100px;">
+  //       <img src="${recruitMonster.thumbnail || recruitMonster.data.token?.data}" alt="${name}" style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px; border: 2px solid #ddd;">
+  //     </div>
+  //     <div class="monster-details" style="flex: 1;">
+  //       <h3 style="margin: 0 0 8px 0;">${name}</h3>
+  //       <div style="color: #666; font-style: italic; margin-bottom: 4px;">${size} ${type}</div>
+  //       <div style="display: inline-block; background: #f5f5f5; padding: 2px 8px; border-radius: 12px; font-size: 0.9em;">CR ${cr}</div>
+  //     </div>
+  //   `;
+
+  //   // Approach options
+  //   const approachSection = document.createElement('div');
+  //   approachSection.className = 'approach-section';
+  //   approachSection.style.cssText = `
+  //     margin-top: 16px;
+  //   `;
+
+  //   approachSection.innerHTML = `
+  //     <h3 style="margin: 0 0 16px 0;">Approach</h3>
+  //     <div class="approach-options" style="display: flex; flex-direction: column; gap: 12px;">
+  //       <button class="approach-btn negotiate" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
+  //         <span class="material-icons" style="margin-right: 12px; color: #2196F3;">chat</span>
+  //         <div style="flex: 1;">
+  //           <div style="font-weight: bold;">Negotiate</div>
+  //           <div style="color: #666; font-size: 0.9em;">Try to convince the monster to join your party</div>
+  //         </div>
+  //       </button>
+        
+  //       <button class="approach-btn impress" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
+  //         <span class="material-icons" style="margin-right: 12px; color: #FF9800;">fitness_center</span>
+  //         <div style="flex: 1;">
+  //           <div style="font-weight: bold;">Impress</div>
+  //           <div style="color: #666; font-size: 0.9em;">Demonstrate your strength to gain respect</div>
+  //         </div>
+  //       </button>
+        
+  //       <button class="approach-btn gift" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
+  //         <span class="material-icons" style="margin-right: 12px; color: #9C27B0;">card_giftcard</span>
+  //         <div style="flex: 1;">
+  //           <div style="font-weight: bold;">Offer Gift</div>
+  //           <div style="color: #666; font-size: 0.9em;">Give the monster a gift as a token of friendship</div>
+  //         </div>
+  //       </button>
+  //     </div>
+      
+  //     <div class="approach-separator" style="margin: 20px 0; border-bottom: 1px solid #ddd;"></div>
+      
+  //     <div class="alternative-options" style="display: flex; gap: 12px;">
+  //       <button class="approach-btn fight" style="flex: 1; padding: 12px; text-align: center; border: 1px solid #F44336; border-radius: 8px; background: white; color: #F44336; cursor: pointer;">
+  //         <span class="material-icons" style="margin-right: 8px;">swords</span>
+  //         Fight
+  //       </button>
+        
+  //       <button class="approach-btn flee" style="flex: 1; padding: 12px; text-align: center; border: 1px solid #607D8B; border-radius: 8px; background: white; color: #607D8B; cursor: pointer;">
+  //         <span class="material-icons" style="margin-right: 8px;">directions_run</span>
+  //         Flee
+  //       </button>
+  //     </div>
+  //   `;
+
+  //   // Assemble dialog
+  //   content.appendChild(monsterInfo);
+  //   content.appendChild(approachSection);
+  //   dialogContainer.appendChild(header);
+  //   dialogContainer.appendChild(content);
+  //   overlay.appendChild(dialogContainer);
+
+  //   // Add event listeners
+  //   const closeDialog = () => {
+  //     overlay.style.opacity = '0';
+  //     dialogContainer.style.transform = 'scale(0.95)';
+      
+  //     setTimeout(() => {
+  //       overlay.remove();
+  //     }, 300);
+  //   };
+
+  //   // Close button
+  //   header.querySelector('.close-dialog-btn').addEventListener('click', closeDialog);
+
+  //   // Approach buttons
+  //   approachSection.querySelector('.negotiate').addEventListener('click', () => {
+  //     this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
+  //   });
+
+  //   approachSection.querySelector('.impress').addEventListener('click', () => {
+  //     this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
+  //   });
+
+  //   approachSection.querySelector('.gift').addEventListener('click', () => {
+  //     this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
+  //   });
+
+  //   approachSection.querySelector('.fight').addEventListener('click', () => {
+  //     closeDialog();
+  //     // Trigger combat with this monster
+  //     if (window.combatSystem) {
+  //       window.combatSystem.initiateCombat([recruitMonster]);
+  //     } else {
+  //       console.warn('Combat system not available');
+  //     }
+  //   });
+
+  //   approachSection.querySelector('.flee').addEventListener('click', closeDialog);
+
+  //   // Add to body and animate
+  //   document.body.appendChild(overlay);
+    
+  //   // Force browser to process before animating
+  //   setTimeout(() => {
+  //     overlay.style.opacity = '1';
+  //     dialogContainer.style.transform = 'scale(1)';
+  //   }, 10);
+  // }
+  
+// Updated showRecruitmentDialog method
+showRecruitmentDialog(monster) {
+  // Create monster from bestiary data if needed
+  const recruitMonster = monster.data ? monster : { data: monster };
+  
+  // Create overlay and dialog
+  const overlay = document.createElement('div');
+  overlay.className = 'party-overlay';
+  overlay.style.opacity = '0';
+
+  const dialogContainer = document.createElement('div');
+  dialogContainer.className = 'party-container';
+  dialogContainer.style.maxWidth = '700px';
+  dialogContainer.style.transform = 'scale(0.95)';
+
+  // Create header
+  const header = document.createElement('div');
+  header.className = 'party-header';
+  header.innerHTML = `
+    <div style="text-align: center; width: 100%;">
+      <h1 style="margin: 0; font-size: 1.5rem;">Monster Encounter</h1>
+    </div>
+    <button class="close-dialog-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%;">
+      <span class="material-icons">close</span>
+    </button>
+  `;
+
+  // Get monster info
+  const name = recruitMonster.data.basic?.name || 'Unknown Monster';
+  const size = recruitMonster.data.basic?.size || 'Medium';
+  const type = recruitMonster.data.basic?.type || 'Unknown';
+  const cr = recruitMonster.data.basic?.cr || '?';
+  
+  // Get color for monster type
+  const typeColors = {
+    Beast: '#4f46e5',
+    Dragon: '#c026d3',
+    Elemental: '#ef4444',
+    Monstrosity: '#65a30d',
+    Construct: '#a16207',
+    Undead: '#6b7280',
+    Fey: '#06b6d4',
+    Giant: '#b45309'
+  };
+  
+  const bgColor = typeColors[type] || '#6b7280';
+  
+  // Create content
+  const content = document.createElement('div');
+  content.className = 'recruitment-content';
+  content.style.padding = '24px';
+  content.style.color = 'white';
+  
+  content.innerHTML = `
+    <!-- Monster presentation section -->
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 32px;">
+      <!-- Tilted monster card -->
+      <div class="monster-card" style="
+        width: 220px;
+        background: white;
+        color: #333;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: rotate(-5deg);
+        margin-right: 24px;
+      ">
+        <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0;">
+          <div style="
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: ${bgColor};
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+          ">
+            ${recruitMonster.data.token?.data ? 
+              `<img src="${recruitMonster.data.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+              name.charAt(0)
+            }
+          </div>
+          <div>
+            <div style="font-weight: bold; font-size: 1.1rem;">${name}</div>
+            <div style="font-size: 0.8rem; color: #666;">
+              ${size} ${type}
+              <span style="
+                background: #e0e7ff;
+                color: #4338ca;
+                font-size: 0.7rem;
+                padding: 1px 4px;
+                border-radius: 4px;
+                margin-left: 4px;
+              ">CR ${cr}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div style="padding: 12px;">
+          <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>HP</span>
+            <span>${recruitMonster.data.stats?.hp?.average || '?'}</span>
+          </div>
+          
+          <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>AC</span>
+            <span>${recruitMonster.data.stats?.ac || '?'}</span>
+          </div>
+          
+          ${recruitMonster.data.abilities ? `
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; font-size: 0.8rem;">
+              <div>
+                <div style="font-weight: bold;">STR</div>
+                <div>${recruitMonster.data.abilities.str?.score || '?'}</div>
+              </div>
+              <div>
+                <div style="font-weight: bold;">DEX</div>
+                <div>${recruitMonster.data.abilities.dex?.score || '?'}</div>
+              </div>
+              <div>
+                <div style="font-weight: bold;">CON</div>
+                <div>${recruitMonster.data.abilities.con?.score || '?'}</div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      
+      <!-- Encounter description -->
+      <div style="max-width: 350px;">
+        <h2 style="margin: 0 0 16px 0; font-size: 1.3rem;">You've encountered a ${name}!</h2>
+        <p style="margin-bottom: 16px; opacity: 0.9;">This creature appears to be watching you cautiously. Different approaches might work better depending on the monster's nature.</p>
+        <p style="font-style: italic; opacity: 0.8;">How will you approach this ${type.toLowerCase()}?</p>
+      </div>
+    </div>
+    
+    <!-- Approach options -->
+    <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; text-align: center;">Choose Your Approach</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+      <button class="approach-btn negotiate" style="
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 16px;
+        border-radius: 8px;
+        color: white;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      ">
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+          <span class="material-icons" style="font-size: 36px; color: #3b82f6; margin-bottom: 8px;">chat</span>
+          <span style="font-weight: bold; font-size: 1.1rem;">Negotiate</span>
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.9;">
+          Try to convince the monster to join your party through conversation and diplomacy.
+        </div>
       </button>
-    `;
-
-    // Create content
-    const content = document.createElement('div');
-    content.className = 'recruitment-content';
-    content.style.cssText = `
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    `;
-
-    // Monster info section
-    const monsterInfo = document.createElement('div');
-    monsterInfo.className = 'monster-info-section';
-    monsterInfo.style.cssText = `
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    `;
+      
+      <button class="approach-btn impress" style="
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        padding: 16px;
+        border-radius: 8px;
+        color: white;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      ">
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+          <span class="material-icons" style="font-size: 36px; color: #f59e0b; margin-bottom: 8px;">fitness_center</span>
+          <span style="font-weight: bold; font-size: 1.1rem;">Impress</span>
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.9;">
+          Demonstrate your strength and capabilities to gain the monster's respect.
+        </div>
+      </button>
+      
+      <button class="approach-btn gift" style="
+        background: rgba(168, 85, 247, 0.15);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        padding: 16px;
+        border-radius: 8px;
+        color: white;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      ">
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+          <span class="material-icons" style="font-size: 36px; color: #a855f7; margin-bottom: 8px;">card_giftcard</span>
+          <span style="font-weight: bold; font-size: 1.1rem;">Offer Gift</span>
+        </div>
+        <div style="font-size: 0.9rem; opacity: 0.9;">
+          Give the monster a gift as a token of friendship and goodwill.
+        </div>
+      </button>
+    </div>
     
-    const name = recruitMonster.data.basic?.name || 'Unknown Monster';
-    const size = recruitMonster.data.basic?.size || 'Medium';
-    const type = recruitMonster.data.basic?.type || 'Unknown';
-    const cr = recruitMonster.data.basic?.cr || '?';
+    <!-- Alternative options -->
+    <div style="display: flex; justify-content: center; gap: 16px;">
+      <button class="approach-btn fight" style="
+        background: rgba(239, 68, 68, 0.2);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+      ">
+        <span class="material-icons" style="margin-right: 8px;">swords</span>
+        Fight
+      </button>
+      
+      <button class="approach-btn flee" style="
+        background: rgba(107, 114, 128, 0.2);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+      ">
+        <span class="material-icons" style="margin-right: 8px;">directions_run</span>
+        Flee
+      </button>
+    </div>
+  `;
+  
+  // Assemble dialog
+  dialogContainer.appendChild(header);
+  dialogContainer.appendChild(content);
+  overlay.appendChild(dialogContainer);
+  document.body.appendChild(overlay);
+  
+  // Add hover effects to approach buttons
+  const approachButtons = overlay.querySelectorAll('.approach-btn');
+  approachButtons.forEach(button => {
+    // Get current background
+    const computedStyle = window.getComputedStyle(button);
+    const bgColor = computedStyle.backgroundColor;
     
-    monsterInfo.innerHTML = `
-      <div class="monster-image" style="flex: 0 0 100px;">
-        <img src="${recruitMonster.thumbnail || recruitMonster.data.token?.data}" alt="${name}" style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px; border: 2px solid #ddd;">
-      </div>
-      <div class="monster-details" style="flex: 1;">
-        <h3 style="margin: 0 0 8px 0;">${name}</h3>
-        <div style="color: #666; font-style: italic; margin-bottom: 4px;">${size} ${type}</div>
-        <div style="display: inline-block; background: #f5f5f5; padding: 2px 8px; border-radius: 12px; font-size: 0.9em;">CR ${cr}</div>
-      </div>
-    `;
-
-    // Approach options
-    const approachSection = document.createElement('div');
-    approachSection.className = 'approach-section';
-    approachSection.style.cssText = `
-      margin-top: 16px;
-    `;
-
-    approachSection.innerHTML = `
-      <h3 style="margin: 0 0 16px 0;">Approach</h3>
-      <div class="approach-options" style="display: flex; flex-direction: column; gap: 12px;">
-        <button class="approach-btn negotiate" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
-          <span class="material-icons" style="margin-right: 12px; color: #2196F3;">chat</span>
-          <div style="flex: 1;">
-            <div style="font-weight: bold;">Negotiate</div>
-            <div style="color: #666; font-size: 0.9em;">Try to convince the monster to join your party</div>
-          </div>
-        </button>
-        
-        <button class="approach-btn impress" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
-          <span class="material-icons" style="margin-right: 12px; color: #FF9800;">fitness_center</span>
-          <div style="flex: 1;">
-            <div style="font-weight: bold;">Impress</div>
-            <div style="color: #666; font-size: 0.9em;">Demonstrate your strength to gain respect</div>
-          </div>
-        </button>
-        
-        <button class="approach-btn gift" style="padding: 12px; text-align: left; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display: flex; align-items: center;">
-          <span class="material-icons" style="margin-right: 12px; color: #9C27B0;">card_giftcard</span>
-          <div style="flex: 1;">
-            <div style="font-weight: bold;">Offer Gift</div>
-            <div style="color: #666; font-size: 0.9em;">Give the monster a gift as a token of friendship</div>
-          </div>
-        </button>
-      </div>
-      
-      <div class="approach-separator" style="margin: 20px 0; border-bottom: 1px solid #ddd;"></div>
-      
-      <div class="alternative-options" style="display: flex; gap: 12px;">
-        <button class="approach-btn fight" style="flex: 1; padding: 12px; text-align: center; border: 1px solid #F44336; border-radius: 8px; background: white; color: #F44336; cursor: pointer;">
-          <span class="material-icons" style="margin-right: 8px;">swords</span>
-          Fight
-        </button>
-        
-        <button class="approach-btn flee" style="flex: 1; padding: 12px; text-align: center; border: 1px solid #607D8B; border-radius: 8px; background: white; color: #607D8B; cursor: pointer;">
-          <span class="material-icons" style="margin-right: 8px;">directions_run</span>
-          Flee
-        </button>
-      </div>
-    `;
-
-    // Assemble dialog
-    content.appendChild(monsterInfo);
-    content.appendChild(approachSection);
-    dialogContainer.appendChild(header);
-    dialogContainer.appendChild(content);
-    overlay.appendChild(dialogContainer);
-
-    // Add event listeners
-    const closeDialog = () => {
-      overlay.style.opacity = '0';
-      dialogContainer.style.transform = 'scale(0.95)';
-      
-      setTimeout(() => {
-        overlay.remove();
-      }, 300);
-    };
-
-    // Close button
-    header.querySelector('.close-dialog-btn').addEventListener('click', closeDialog);
-
-    // Approach buttons
-    approachSection.querySelector('.negotiate').addEventListener('click', () => {
-      this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
+    // Create hover color (more opaque)
+    const color = bgColor.replace('0.15', '0.25').replace('0.2', '0.3');
+    
+    // Add hover effect
+    button.addEventListener('mouseenter', () => {
+      button.style.backgroundColor = color;
+      button.style.transform = 'translateY(-2px)';
     });
-
-    approachSection.querySelector('.impress').addEventListener('click', () => {
-      this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
+    
+    button.addEventListener('mouseleave', () => {
+      button.style.backgroundColor = bgColor;
+      button.style.transform = '';
     });
-
-    approachSection.querySelector('.gift').addEventListener('click', () => {
-      this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
-    });
-
-    approachSection.querySelector('.fight').addEventListener('click', () => {
-      closeDialog();
-      // Trigger combat with this monster
+  });
+  
+  // Add event listeners for buttons
+  overlay.querySelector('.close-dialog-btn').addEventListener('click', () => {
+    overlay.style.opacity = '0';
+    dialogContainer.style.transform = 'scale(0.95)';
+    setTimeout(() => overlay.remove(), 300);
+  });
+  
+  overlay.querySelector('.negotiate').addEventListener('click', () => {
+    this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
+  });
+  
+  overlay.querySelector('.impress').addEventListener('click', () => {
+    this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
+  });
+  
+  overlay.querySelector('.gift').addEventListener('click', () => {
+    this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
+  });
+  
+  overlay.querySelector('.fight').addEventListener('click', () => {
+    overlay.style.opacity = '0';
+    dialogContainer.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      overlay.remove();
       if (window.combatSystem) {
         window.combatSystem.initiateCombat([recruitMonster]);
-      } else {
-        console.warn('Combat system not available');
       }
-    });
-
-    approachSection.querySelector('.flee').addEventListener('click', closeDialog);
-
-    // Add to body and animate
-    document.body.appendChild(overlay);
-    
-    // Force browser to process before animating
-    setTimeout(() => {
-      overlay.style.opacity = '1';
-      dialogContainer.style.transform = 'scale(1)';
-    }, 10);
-  }
+    }, 300);
+  });
   
+  overlay.querySelector('.flee').addEventListener('click', () => {
+    overlay.style.opacity = '0';
+    dialogContainer.style.transform = 'scale(0.95)';
+    setTimeout(() => overlay.remove(), 300);
+  });
+  
+  // Animate in
+  setTimeout(() => {
+    overlay.style.opacity = '1';
+    dialogContainer.style.transform = 'scale(1)';
+  }, 10);
+}
+
+
 // Handle recruitment attempt
 handleRecruitmentAttempt(monster, approach, overlay) {
   // Determine success chance based on monster type and approach
@@ -1803,6 +3373,492 @@ getAvailableEquipment(type) {
   
   return [];
 }
+
+
+/**
+ * Starter Monsters
+ */
+// Add these methods to your PartyManager class
+
+// Check for starter monster when opening party manager
+// checkForStarterMonster() {
+//   // Only offer a starter if party is completely empty
+//   if (this.party.active.length === 0 && this.party.reserve.length === 0) {
+//     this.offerStarterMonster();
+//   }
+// }
+
+// Updated checkForStarterMonster method
+checkForStarterMonster() {
+  const eligibleMonsters = this.getEligibleStarterMonsters();
+  
+  if (eligibleMonsters.length === 0) {
+    console.warn('No eligible starter monsters found in bestiary');
+    return;
+  }
+  
+  // Pick 3 random monsters from eligible list
+  const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
+  
+  // Show starter selection dialog
+  this.showStarterMonsterDialog(starterChoices);
+}
+
+// Find eligible starter monsters from bestiary
+// Updated getEligibleStarterMonsters method
+getEligibleStarterMonsters() {
+  const eligibleMonsters = [];
+  
+  console.log("ResourceManager available:", !!this.resourceManager);
+  
+  // Check if we have access to the bestiary via resourceManager
+  if (this.resourceManager && this.resourceManager.resources.bestiary) {
+    console.log("Bestiary Map size:", this.resourceManager.resources.bestiary.size);
+    
+    // Log all monsters in bestiary for debugging
+    this.resourceManager.resources.bestiary.forEach((monster, key) => {
+      console.log(`Monster: ${monster.name || monster.data?.basic?.name}, CR: ${monster.cr || monster.data?.basic?.cr}`);
+      
+      // Look for CR 1/4 or 1/2 monsters
+      const cr = monster.cr || monster.data?.basic?.cr;
+      if (cr === '1/4' || cr === '1/2') {
+        eligibleMonsters.push(monster);
+      }
+    });
+  }
+  
+  // If no eligible monsters found, create default starter monsters
+  if (eligibleMonsters.length === 0) {
+    console.log("No eligible monsters found in bestiary, creating defaults");
+    return this.createDefaultStarterMonsters();
+  }
+  
+  return eligibleMonsters;
+}
+
+// Create default starter monsters when bestiary isn't available
+// Updated createDefaultStarterMonsters with tokens
+createDefaultStarterMonsters() {
+  // Create simple SVG-based tokens
+  const wolfToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%234f46e5" stroke="white" stroke-width="2"/><path d="M30,40 L42,55 L35,70 L50,60 L65,70 L58,55 L70,40 L55,45 L50,30 L45,45 Z" fill="white"/></svg>`;
+  
+  const fireToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="white" stroke-width="2"/><path d="M50,20 C60,40 80,40 70,60 C65,70 60,75 50,80 C40,75 35,70 30,60 C20,40 40,40 50,20 Z" fill="white"/></svg>`;
+  
+  const feyToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2306b6d4" stroke="white" stroke-width="2"/><path d="M30,60 C25,40 50,20 75,40 C65,45 70,65 50,70 C30,65 35,45 30,60 Z M35,35 C40,30 60,30 65,35 C55,45 45,45 35,35 Z" fill="white"/></svg>`;
+
+  return [
+    {
+      id: 'starter_wolf',
+      name: 'Young Wolf',
+      type: 'Beast',
+      size: 'Medium',
+      level: 1,
+      cr: '1/4',
+      currentHP: 11,
+      maxHP: 11,
+      armorClass: 13,
+      experience: 0,
+      experienceToNext: 100,
+      token: {
+        data: wolfToken
+      },
+      data: {
+        basic: {
+          name: 'Young Wolf',
+          type: 'Beast',
+          size: 'Medium',
+          cr: '1/4',
+          alignment: 'Unaligned'
+        },
+        stats: {
+          ac: 13,
+          hp: { average: 11, roll: '2d8+2', max: 18 },
+          speed: '40 ft.'
+        },
+        abilities: {
+          str: { score: 12, modifier: 1 },
+          dex: { score: 15, modifier: 2 },
+          con: { score: 12, modifier: 1 },
+          int: { score: 3, modifier: -4 },
+          wis: { score: 12, modifier: 1 },
+          cha: { score: 6, modifier: -2 }
+        },
+        token: {
+          data: wolfToken
+        }
+      },
+      abilities: {
+        str: { score: 12, modifier: 1 },
+        dex: { score: 15, modifier: 2 },
+        con: { score: 12, modifier: 1 },
+        int: { score: 3, modifier: -4 },
+        wis: { score: 12, modifier: 1 },
+        cha: { score: 6, modifier: -2 }
+      },
+      monsterAbilities: [
+        { name: 'Bite', type: 'attack', damage: '1d4+1', description: 'Melee attack that deals piercing damage.' },
+        { name: 'Pack Tactics', type: 'buff', description: 'Advantage on attack rolls when allies are nearby.' }
+      ]
+    },
+    {
+      id: 'starter_elemental',
+      name: 'Minor Fire Elemental',
+      type: 'Elemental',
+      size: 'Small',
+      level: 1,
+      cr: '1/2',
+      currentHP: 15,
+      maxHP: 15,
+      armorClass: 13,
+      experience: 0,
+      experienceToNext: 100,
+      token: {
+        data: fireToken
+      },
+      data: {
+        basic: {
+          name: 'Minor Fire Elemental',
+          type: 'Elemental',
+          size: 'Small',
+          cr: '1/2',
+          alignment: 'Neutral'
+        },
+        stats: {
+          ac: 13,
+          hp: { average: 15, roll: '3d6+6', max: 24 },
+          speed: '30 ft.'
+        },
+        abilities: {
+          str: { score: 10, modifier: 0 },
+          dex: { score: 16, modifier: 3 },
+          con: { score: 14, modifier: 2 },
+          int: { score: 6, modifier: -2 },
+          wis: { score: 10, modifier: 0 },
+          cha: { score: 6, modifier: -2 }
+        },
+        token: {
+          data: fireToken
+        }
+      },
+      abilities: {
+        str: { score: 10, modifier: 0 },
+        dex: { score: 16, modifier: 3 },
+        con: { score: 14, modifier: 2 },
+        int: { score: 6, modifier: -2 },
+        wis: { score: 10, modifier: 0 },
+        cha: { score: 6, modifier: -2 }
+      },
+      monsterAbilities: [
+        { name: 'Fire Touch', type: 'attack', damage: '1d6+3', description: 'Melee attack that deals fire damage.' },
+        { name: 'Heat Aura', type: 'area', damage: '1d4', description: 'Damages enemies in close proximity.' }
+      ]
+    },
+    {
+      id: 'starter_sprite',
+      name: 'Forest Sprite',
+      type: 'Fey',
+      size: 'Tiny',
+      level: 1,
+      cr: '1/4',
+      currentHP: 10,
+      maxHP: 10,
+      armorClass: 15,
+      experience: 0,
+      experienceToNext: 100,
+      token: {
+        data: feyToken
+      },
+      data: {
+        basic: {
+          name: 'Forest Sprite',
+          type: 'Fey',
+          size: 'Tiny',
+          cr: '1/4',
+          alignment: 'Neutral Good'
+        },
+        stats: {
+          ac: 15,
+          hp: { average: 10, roll: '4d4', max: 16 },
+          speed: '20 ft., fly 40 ft.'
+        },
+        abilities: {
+          str: { score: 4, modifier: -3 },
+          dex: { score: 18, modifier: 4 },
+          con: { score: 10, modifier: 0 },
+          int: { score: 14, modifier: 2 },
+          wis: { score: 13, modifier: 1 },
+          cha: { score: 15, modifier: 2 }
+        },
+        token: {
+          data: feyToken
+        }
+      },
+      abilities: {
+        str: { score: 4, modifier: -3 },
+        dex: { score: 18, modifier: 4 },
+        con: { score: 10, modifier: 0 },
+        int: { score: 14, modifier: 2 },
+        wis: { score: 13, modifier: 1 },
+        cha: { score: 15, modifier: 2 }
+      },
+      monsterAbilities: [
+        { name: 'Magical Touch', type: 'attack', damage: '1d4+4', description: 'Ranged attack that deals magical damage.' },
+        { name: 'Invisibility', type: 'buff', description: 'Can become invisible until next attack.' }
+      ]
+    }
+  ];
+}
+
+// Choose random starter choices
+getRandomStarters(monsters, count) {
+  const shuffled = [...monsters].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+// Offer starter monster selection
+offerStarterMonster() {
+  const eligibleMonsters = this.getEligibleStarterMonsters();
+  
+  if (eligibleMonsters.length === 0) {
+    console.warn('No eligible starter monsters found in bestiary');
+    return;
+  }
+  
+  // Pick 3 random monsters from eligible list
+  const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
+  
+  // Show starter selection dialog
+  this.showStarterMonsterDialog(starterChoices);
+}
+
+// Show starter monster selection dialog with our styled UI
+showStarterMonsterDialog(starterChoices) {
+  // Create dialog
+  const overlay = document.createElement('div');
+  overlay.className = 'party-overlay';
+  overlay.style.opacity = '0';
+  
+  const container = document.createElement('div');
+  container.className = 'party-container';
+  container.style.transform = 'scale(0.95)';
+  container.style.maxWidth = '800px';
+  
+  // Create header
+  const header = document.createElement('div');
+  header.className = 'party-header';
+  header.innerHTML = `
+    <div style="text-align: center; width: 100%;">
+      <h1 style="margin: 0; font-size: 1.5rem;">Choose Your Starter Monster</h1>
+    </div>
+  `;
+  
+  // Create content
+  const content = document.createElement('div');
+  content.style.padding = '24px';
+  content.style.color = 'white';
+  
+  // Introduction text
+  content.innerHTML = `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
+      <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
+    </div>
+    
+    <div class="starter-choices" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 32px;">
+      ${starterChoices.map((monster, index) => {
+        // Get monster data
+        const monsterData = monster.data || monster;
+        const name = monsterData.name || monsterData.basic?.name || 'Unknown Monster';
+        const type = monsterData.type || monsterData.basic?.type || 'Unknown';
+        const size = monsterData.size || monsterData.basic?.size || 'Medium';
+        const cr = monsterData.cr || monsterData.basic?.cr || '?';
+        
+        // Determine color based on type
+        const typeColors = {
+          Beast: '#4f46e5',
+          Dragon: '#c026d3',
+          Elemental: '#ef4444',
+          Monstrosity: '#65a30d',
+          Construct: '#a16207',
+          Undead: '#6b7280',
+          Fey: '#06b6d4',
+          Giant: '#b45309'
+        };
+        
+        const bgColor = typeColors[type] || '#6b7280';
+        
+        return `
+          <div class="monster-card starter-card" data-monster-index="${index}" style="
+            width: 200px;
+            background: white;
+            color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transform: rotate(${index % 2 === 0 ? -5 : 5}deg);
+            transition: all 0.2s ease;
+          ">
+            <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0;">
+              <div style="
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background-color: ${bgColor};
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                margin-right: 12px;
+              ">
+                ${monster.token?.data ? 
+                  `<img src="${monster.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+                  name.charAt(0)
+                }
+              </div>
+              <div>
+                <div style="font-weight: bold;">${name}</div>
+                <div style="font-size: 0.8rem; color: #666;">
+                  ${size} ${type}
+                  <span style="
+                    background: #e0e7ff;
+                    color: #4338ca;
+                    font-size: 0.7rem;
+                    padding: 1px 4px;
+                    border-radius: 4px;
+                    margin-left: 4px;
+                  ">CR ${cr}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="padding: 12px;">
+              <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Characteristics</div>
+              
+              <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span>HP</span>
+                <span>${monsterData.stats?.hp?.average || '?'}</span>
+              </div>
+              
+              <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span>AC</span>
+                <span>${monsterData.stats?.ac || '?'}</span>
+              </div>
+              
+              ${monsterData.abilities ? `
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; font-size: 0.8rem;">
+                  <div>
+                    <div style="font-weight: bold;">STR</div>
+                    <div>${monsterData.abilities.str?.score || '?'}</div>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold;">DEX</div>
+                    <div>${monsterData.abilities.dex?.score || '?'}</div>
+                  </div>
+                  <div>
+                    <div style="font-weight: bold;">CON</div>
+                    <div>${monsterData.abilities.con?.score || '?'}</div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div style="padding: 12px; background: rgba(0,0,0,0.05); text-align: center;">
+              <button class="select-starter-btn" style="
+                padding: 8px 16px;
+                background: #4f46e5;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+              ">
+                Choose
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+    // Add a close/cancel button
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-dialog-btn';
+    closeButton.style.position = 'absolute';
+    closeButton.style.top = '16px';
+    closeButton.style.right = '16px';
+    closeButton.style.background = 'none';
+    closeButton.style.border = 'none';
+    closeButton.style.color = 'white';
+    closeButton.style.cursor = 'pointer';
+    closeButton.innerHTML = '<span class="material-icons">close</span>';
+    
+    closeButton.addEventListener('click', () => {
+      // Reset the check flag so we can show the party manager
+      this.starterCheckPerformed = false;
+      
+      // Close the dialog
+      overlay.style.opacity = '0';
+      container.style.transform = 'scale(0.95)';
+      setTimeout(() => overlay.remove(), 300);
+    });
+    
+    container.appendChild(closeButton);
+  
+  // Assemble dialog
+  container.appendChild(header);
+  container.appendChild(content);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+  
+  // Add event listeners for card selection
+  const starterCards = overlay.querySelectorAll('.starter-card');
+  starterCards.forEach(card => {
+    // Add hover effect
+    card.addEventListener('mouseenter', () => {
+      card.style.transform = `rotate(0deg) scale(1.05)`;
+      card.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.4)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      const index = parseInt(card.getAttribute('data-monster-index'));
+      card.style.transform = `rotate(${index % 2 === 0 ? -5 : 5}deg)`;
+      card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+    });
+    
+    // Selection handler
+    card.addEventListener('click', () => {
+      const index = parseInt(card.getAttribute('data-monster-index'));
+      const selectedMonster = starterChoices[index];
+      
+      // Add the monster to party
+      this.addMonster(selectedMonster);
+      
+      // Save party
+      this.saveParty();
+      
+      // Close dialog
+      overlay.style.opacity = '0';
+      container.style.transform = 'scale(0.95)';
+      
+      setTimeout(() => {
+        overlay.remove();
+        
+        // Show confirmation
+        this.showToast('Starter monster added to your party!', 'success');
+      }, 300);
+    });
+  });
+  
+  // Animate in
+  setTimeout(() => {
+    overlay.style.opacity = '1';
+    container.style.transform = 'scale(1)';
+  }, 10);
+}
+
+
 
 /**
  * Helper UI Methods

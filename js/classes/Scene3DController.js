@@ -6465,6 +6465,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
       script.onload = () => {
         // Create the cycle when script is loaded
         this.createDayNightCycle();
+        this.createPartyButton();
       };
 
       script.onerror = (err) => {
@@ -6475,6 +6476,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
     } else {
       // Script is already loaded, create directly
       this.createDayNightCycle();
+      this.createPartyButton();
     }
   }
 
@@ -6536,7 +6538,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
     partyButton.innerHTML = `<span class="material-icons">group</span>`;
     partyButton.style.cssText = `
       position: absolute;
-      top: 150px;
+      top: 200px;
       right: 10px;
       background: rgba(0, 0, 0, 0.5);
       color: white;
