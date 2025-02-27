@@ -7,7 +7,7 @@ class PhysicsController {
         this.stepHeight = 0.5;
         this.halfBlockSize = 0.5;
         this.debug = false; // Set to true to enable debug logs
-        this.fallSpeed = 0.03; // Speed of falling
+        this.fallSpeed = 0.05; // Speed of falling
         this.isFalling = false;
         this.insideRoomWall = false;
         this.onTopOfWall = false;        // Flag for walking on top of a wall
