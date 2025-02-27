@@ -1,0 +1,19 @@
+{
+  "name": "EncounterMapTest",
+  "version": "1.0",
+  "timestamp": "2025-02-27T03:37:21.004Z",
+  "resources": {
+    "filename": "EncounterMapTest.resource.json",
+    "relativePath": "./",
+    "lastModified": "2025-02-27T03:37:21.004Z"
+  },
+  "map": {
+    "filename": "EncounterMapTest.map.json",
+    "relativePath": "./",
+    "lastModified": "2025-02-27T03:37:21.004Z"
+  },
+  "settings": {
+    "defaultView": "2D",
+    "autoSave": false
+  }
+}
