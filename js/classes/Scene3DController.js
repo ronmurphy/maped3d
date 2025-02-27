@@ -3827,7 +3827,34 @@ class Scene3DController {
     };
   }
 
+  // handleEncounter(marker) {
+  //   // Hide the prompt
+  //   if (this.encounterPrompt) {
+  //     this.encounterPrompt.style.display = 'none';
+  //   }
+    
+  //   console.log('Handling encounter:', marker);
+    
+  //   // Check if we have monster data
+  //   if (marker.userData && marker.userData.monster) {
+  //     console.log('Monster data found:', marker.userData.monster);
+      
+  //     // If we have a party manager, show recruitment dialog
+  //     if (window.partyManager) {
+  //       console.log('Showing recruitment dialog');
+  //       window.partyManager.showRecruitmentDialog(marker.userData.monster);
+  //     } else {
+  //       console.warn('Party manager not found, cannot handle encounter');
+  //     }
+  //   } else {
+  //     console.warn('No monster data found for encounter marker:', marker);
+  //   }
+  // }
+
   handleEncounter(marker) {
+    // Prevent multiple encounters
+    if (this.activeEncounter || this.encounterCooldown) return;
+
     // Hide the prompt
     if (this.encounterPrompt) {
       this.encounterPrompt.style.display = 'none';
@@ -3835,19 +3862,36 @@ class Scene3DController {
     
     console.log('Handling encounter:', marker);
     
+    // Set active encounter
+    this.activeEncounter = marker;
+    
     // Check if we have monster data
     if (marker.userData && marker.userData.monster) {
       console.log('Monster data found:', marker.userData.monster);
       
       // If we have a party manager, show recruitment dialog
       if (window.partyManager) {
-        console.log('Showing recruitment dialog');
         window.partyManager.showRecruitmentDialog(marker.userData.monster);
-      } else {
-        console.warn('Party manager not found, cannot handle encounter');
+
+        // Add dialog close handler
+        const cleanup = () => {
+          this.activeEncounter = null;
+          // Set cooldown to prevent immediate re-trigger
+          this.encounterCooldown = true;
+          setTimeout(() => {
+            this.encounterCooldown = false;
+          }, 1000); // 1 second cooldown
+        };
+
+        // Find and monitor the recruitment dialog
+        const checkDialog = setInterval(() => {
+          const dialog = document.querySelector('.recruitment-overlay');
+          if (!dialog) {
+            clearInterval(checkDialog);
+            cleanup();
+          }
+        }, 100);
       }
-    } else {
-      console.warn('No monster data found for encounter marker:', marker);
     }
   }
 
@@ -4005,22 +4049,49 @@ class Scene3DController {
 
 // // Find nearest encounter marker
 
+// let nearestEncounter = null;
+// let minEncounterDist = 3; // Detection range
+
+// // Loop through scene objects to find encounter markers
+// this.scene.children.forEach(object => {
+//   if (object.userData && object.userData.type === 'encounter') {
+//     const dist = playerPosition.distanceTo(object.position);
+//     if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
+//       nearestEncounter = object;
+//       minEncounterDist = dist;
+//     }
+//   }
+// });
+
+// // Show or hide encounter prompt
+// if (nearestEncounter && !this.activeSplashArt) {
+//   const prompt = this.createEncounterPrompt();
+//   prompt.textContent = 'Press E to approach monster';
+//   prompt.style.display = 'block';
+//   this.nearestEncounter = nearestEncounter;
+// } else if (!nearestEncounter && this.encounterPrompt) {
+//   this.encounterPrompt.style.display = 'none';
+//   this.nearestEncounter = null;
+// }
+
 let nearestEncounter = null;
 let minEncounterDist = 3; // Detection range
 
-// Loop through scene objects to find encounter markers
-this.scene.children.forEach(object => {
-  if (object.userData && object.userData.type === 'encounter') {
-    const dist = playerPosition.distanceTo(object.position);
-    if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
-      nearestEncounter = object;
-      minEncounterDist = dist;
+// Only check for encounters if we're not in cooldown and don't have an active encounter
+if (!this.encounterCooldown && !this.activeEncounter) {
+  // Loop through scene objects to find encounter markers
+  this.scene.children.forEach(object => {
+    if (object.userData && object.userData.type === 'encounter') {
+      const dist = playerPosition.distanceTo(object.position);
+      if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
+        nearestEncounter = object;
+      }
     }
-  }
-});
+  });
+}
 
 // Show or hide encounter prompt
-if (nearestEncounter && !this.activeSplashArt) {
+if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
   const prompt = this.createEncounterPrompt();
   prompt.textContent = 'Press E to approach monster';
   prompt.style.display = 'block';

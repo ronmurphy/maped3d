@@ -123,21 +123,6 @@ class MapEditor {
   }
 
 
-
-  // snapToGrid(value, gridSize, snapThreshold = 0.25) {
-  //   if (!gridSize) return value;
-
-  //   const gridPosition = Math.round(value / gridSize) * gridSize;
-  //   const offset = value - gridPosition;
-
-  //   // Only snap if within threshold (25% of grid size by default)
-  //   if (Math.abs(offset) < gridSize * snapThreshold) {
-  //     return gridPosition;
-  //   }
-
-  //   return value;
-  // }
-
   snapToGrid(value, gridSize, snapThreshold = 0.25) {
     if (!gridSize) return value;
     
@@ -1453,7 +1438,8 @@ class MapEditor {
       const recentProjects = JSON.parse(localStorage.getItem('recentProjects') || '[]');
 
       if (recentProjects.length === 0) {
-        alert('No recent projects found');
+        this.showShoelaceToast('No recent projects found', 'warning');
+        // alert('No recent projects found');
         return;
       }
 
@@ -1550,7 +1536,8 @@ class MapEditor {
 
     } catch (e) {
       console.error('Error showing recent projects:', e);
-      alert('Could not load recent projects');
+      this.showShoelaceToast('Could not load recent projects', 'error');
+      // alert('Could not load recent projects');
     }
   }
 
@@ -2058,12 +2045,13 @@ class MapEditor {
             if (this.resourceManager) {
               const success = await this.resourceManager.loadResourcePack(file);
               if (success) {
-                alert("Resource pack loaded successfully");
+                // alert("Resource pack loaded successfully");
+                this.showShoelaceToast("Resource pack loaded successfully", "success", 3000);
               } else {
-                alert("Failed to load resource pack");
+                this.showShoelaceToast("Failed to load resource pack", "error", 3000);
               }
             }
-            dialog.hide();
+            // dialog.hide();
           }
         });
 
@@ -2398,7 +2386,8 @@ if (preferencesBtn) {
           setTimeout(() => loadingToast.remove(), 2000);
         });
       } else {
-        alert('Screenshot library not loaded. Please add html2canvas to your project.');
+        this.showShoelaceToast('Screenshot library not loaded, need html2canvas.', 'error', 3000);
+        // alert('Screenshot library not loaded. Please add html2canvas to your project.');
         loadingToast.remove();
       }
     }
@@ -2415,7 +2404,8 @@ if (preferencesBtn) {
       const canvas = this.scene3D.renderer.domElement;
       this.processScreenshot(canvas, '3D_View');
     } else {
-      alert('3D view not initialized or renderer not available');
+      this.showShoelaceToast('3D view not initialized or renderer not available', 'error', 3000);
+      // alert('3D view not initialized or renderer not available');
     }
   }
 
@@ -2455,7 +2445,8 @@ if (preferencesBtn) {
       }, 'image/png');
     } catch (err) {
       console.error('Error processing screenshot:', err);
-      alert('Error saving screenshot: ' + err.message);
+      this.showShoelaceToast('Error saving screenshot: ' + err.message, 'error', 3000);
+      // alert('Error saving screenshot: ' + err.message);
     }
   }
 
@@ -2542,7 +2533,8 @@ if (preferencesBtn) {
 
   startWallCreation() {
     if (!this.baseImage) {
-      alert("Please load a map first");
+      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      // alert("Please load a map first");
       return;
     }
 
@@ -2822,7 +2814,8 @@ if (preferencesBtn) {
 
   startCircleRoom() {
     if (!this.baseImage) {
-      alert("Please load a map first");
+      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      // alert("Please load a map first");
       return;
     }
 
@@ -2856,7 +2849,8 @@ if (preferencesBtn) {
 
   startRoomCreation() {
     if (!this.baseImage) {
-      alert("Please load a map first");
+      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      // alert("Please load a map first");
       return;
     }
 
@@ -2973,7 +2967,8 @@ if (preferencesBtn) {
 
   startPolygonRoom(e) {
     if (!this.baseImage) {
-      alert("Please load a map first");
+      this.showShoelaceToast("Please load a map first", "warning", 3000);
+      // alert("Please load a map first");
       return;
     }
 
@@ -3913,7 +3908,8 @@ if (preferencesBtn) {
   addMarker(type, x, y, data = {}) {
     // Check if map is loaded
     if (!this.baseImage) {
-      alert("Please load a map before placing markers");
+      this.showShoelaceToast("Please load a map before placing markers");
+      // alert("Please load a map before placing markers");
       return null;
     }
 
@@ -3937,7 +3933,8 @@ if (preferencesBtn) {
 
         if (!texture) {
           // console.warn('No door texture available');
-          alert('No door textures available. Please add some in the Resource Manager.');
+          this.showShoelaceToast('No door textures available. Please add some in the Resource Manager.');
+          // alert('No door textures available. Please add some in the Resource Manager.');
           return null;
         }
 
@@ -3954,7 +3951,8 @@ if (preferencesBtn) {
         return marker;
       } else {
         // console.warn('No nearby structure found for door placement');
-        alert("Doors must be placed on a wall or room");
+        this.showShoelaceToast('No nearby structure found for door placement. Please place it on a wall or room.');
+        // alert("Doors must be placed on a wall or room");
         return null;
       }
     }
@@ -5496,38 +5494,186 @@ if (preferencesBtn) {
 
   }
 
-  showShoelaceToast(message, icon, timeout = 3000, variant = 'primary') {
-    // Create a container if it doesn't exist
-    let container = document.querySelector('.alert-toast');
-    if (!container) {
-      container = document.createElement('div');
-      container.className = 'alert-toast';
-      container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000;';
-      document.body.appendChild(container);
-    }
+  // showShoelaceToast(message, icon, timeout = 3000, variant = 'primary') {
+  //   // Create a container if it doesn't exist
+  //   let container = document.querySelector('.alert-toast');
+  //   if (!container) {
+  //     container = document.createElement('div');
+  //     container.className = 'alert-toast';
+  //     container.style.cssText = 'position: fixed; bottom:20px; right: 20px; z-index: 10000;';
+  //     document.body.appendChild(container);
+  //   }
 
-    const alert = document.createElement('sl-alert');
-    alert.setAttribute('variant', variant);
-    alert.setAttribute('duration', timeout);
-    alert.setAttribute('closable', '');
+  //   const alert = document.createElement('sl-alert');
+  //   alert.setAttribute('variant', variant);
+  //   alert.setAttribute('duration', timeout);
+  //   alert.setAttribute('closable', '');
 
-    if (icon) {
-      const alertIcon = document.createElement('sl-icon');
-      alertIcon.setAttribute('slot', 'icon');
-      alertIcon.setAttribute('name', icon);
-      alert.appendChild(alertIcon);
-    }
+  //   if (icon) {
+  //     const alertIcon = document.createElement('sl-icon');
+  //     alertIcon.setAttribute('slot', 'icon');
+  //     alertIcon.setAttribute('name', icon);
+  //     alert.appendChild(alertIcon);
+  //   }
 
-    alert.appendChild(document.createTextNode(message));
-    container.appendChild(alert);
-    requestAnimationFrame(() => alert.toast());
-    return alert;
-  }
+  //   alert.appendChild(document.createTextNode(message));
+  //   container.appendChild(alert);
+  //   requestAnimationFrame(() => alert.toast());
+  //   return alert;
+  // }
 
   // Example Usage
   // showShoelaceAlert('This is a warning!', 'exclamation-triangle', 3000, 'warning');
   // showShoelaceAlert('Success!', 'check-circle', 4000, 'success');
 
+  showShoelaceToast(message, icon = 'info-circle', timeout = 3000, variant = 'primary') {
+    // Create a dedicated portal element for toasts if it doesn't exist
+    let toastPortal = document.getElementById('global-toast-portal');
+    if (!toastPortal) {
+      toastPortal = document.createElement('div');
+      toastPortal.id = 'global-toast-portal';
+      toastPortal.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 100000; /* Extremely high z-index */
+        pointer-events: none;
+      `;
+      // Append directly to body to avoid dialog stacking context issues
+      document.body.appendChild(toastPortal);
+    }
+  
+    // Create the alert element
+    const alert = document.createElement('sl-alert');
+    alert.variant = variant;
+    alert.closable = true;
+    alert.duration = timeout;
+    
+    // Add icon if specified
+    if (icon) {
+      const iconElement = document.createElement('sl-icon');
+      iconElement.name = icon;
+      iconElement.slot = 'icon';
+      alert.appendChild(iconElement);
+    }
+    
+    // Add the message
+    alert.textContent = message;
+    
+    // Set styles to ensure visibility
+    alert.style.cssText = `
+      pointer-events: auto;
+      margin: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+    `;
+  
+    // Add to portal outside of any dialog stacking contexts
+    toastPortal.appendChild(alert);
+    
+    // Use a small delay to ensure the element is in the DOM
+    setTimeout(() => {
+      try {
+        alert.toast();
+      } catch (e) {
+        console.error('Failed to show toast:', e);
+      }
+    }, 10);
+    
+    // Remove when done
+    alert.addEventListener('sl-after-hide', () => {
+      if (toastPortal.contains(alert)) {
+        toastPortal.removeChild(alert);
+      }
+      
+      // Remove portal if empty
+      if (toastPortal.children.length === 0) {
+        toastPortal.remove();
+      }
+    });
+    
+    return alert;
+  }
+
+
+  // showShoelaceToast(message, icon = 'info-circle', timeout = 3000, variant = 'primary', position = 'bottom') {
+  //   // Ensure there's a container for stacking alerts
+  //   const containerId = `alert-toast-${position}`;
+  //   let container = document.getElementById(containerId);
+    
+  //   if (!container) {
+  //     container = document.createElement('div');
+  //     container.id = containerId;
+  //     container.className = `alert-toast alert-toast-${position}`;
+      
+  //     // Position differently based on position parameter
+  //     const positionStyles = position === 'top' 
+  //       ? 'top: 80px; flex-direction: column-reverse;' // Positioned below header
+  //       : 'bottom: 20px; flex-direction: column;';
+      
+  //     container.style.cssText = `
+  //       position: fixed;
+  //       ${positionStyles}
+  //       right: 20px;
+  //       z-index: 9999999; /* Extremely high z-index */
+  //       display: flex;
+  //       gap: 8px;
+  //       align-items: flex-end;
+  //       pointer-events: none; /* Allow clicking through container */
+  //       max-width: 400px;
+  //     `;
+  //     document.body.appendChild(container);
+  //   }
+  
+  //   // Escape HTML for safety
+  //   function escapeHtml(html) {
+  //     const div = document.createElement('div');
+  //     div.textContent = html;
+  //     return div.innerHTML;
+  //   }
+  
+  //   // Create the toast alert
+  //   const alert = Object.assign(document.createElement('sl-alert'), {
+  //     variant,
+  //     closable: true,
+  //     duration: timeout,
+  //     innerHTML: `
+  //       ${icon ? `<sl-icon name="${icon}" slot="icon"></sl-icon>` : ''}
+  //       ${escapeHtml(message)}
+  //     `
+  //   });
+    
+  //   // Add styles to ensure alerts are visible and interactive
+  //   alert.style.cssText = `
+  //     pointer-events: auto; /* Make alert itself clickable */
+  //     margin: 0;
+  //     z-index: 9999999;
+  //     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  //     width: 100%;
+  //   `;
+  
+  //   // Append the toast to the container
+  //   container.appendChild(alert);
+  
+  //   // Ensure alert is properly positioned and displayed
+  //   requestAnimationFrame(() => {
+  //     alert.toast();
+  //   });
+  
+  //   // Remove alert from container when it closes
+  //   alert.addEventListener('sl-after-hide', () => {
+  //     alert.remove();
+  //     // Remove container if empty
+  //     if (container.children.length === 0) {
+  //       container.remove();
+  //     }
+  //   });
+  
+  //   return alert;
+  // }
 
   setupEncounterEventHandlers(dialog, marker) {
     if (!marker.data.monster) {
