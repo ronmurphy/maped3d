@@ -44,6 +44,7 @@ class PartyManager {
     this.partyDialog = null;
     this.activeTab = 'active';
     this.starterCheckPerformed = false;
+    this.initializeRelationshipSystem();
     
     console.log('Party Manager initialized');
   }
@@ -738,6 +739,80 @@ establishConnections() {
       .slide-up {
         animation: slideUp 0.3s ease forwards;
       }
+
+       /* Abilities grid layout */
+  .monster-abilities {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .ability-card {
+    border-radius: 8px;
+    padding: 4px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
+  }
+  
+  .ability-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .ability-header {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .ability-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ability-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+  }
+
+  .ability-title {
+    font-weight: 500;
+    margin-right: 8px;
+  }
+
+  .ability-damage {
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    background: rgba(0,0,0,0.1);
+    padding: 2px 6px;
+    border-radius: 12px;
+  }
+
+  .ability-description {
+    font-size: 0.8rem;
+    color: #4b5563;
+    flex: 1;
+  }
+
+  .abilities-container {
+    background: #f5f0e5; /* Tan color */
+    border-radius: 12px;
+    padding: 8px;
+    padding-bottom: 16px;
+    margin-top: 8px;
+    border: 1px solid #e6e0d1; /* Slightly darker border */
+  }
+}
+
     `;
   
     return styleElement;
@@ -756,6 +831,8 @@ establishConnections() {
     if (this.party.active.length < this.party.maxActive) {
       this.party.active.push(newMonster);
       console.log(`Added ${newMonster.name} to active party`);
+        // Update relationships whenever a monster is added
+  this.updatePartyRelationships();
       return 'active';
     }
     
@@ -940,6 +1017,8 @@ prepareMonster(monster) {
     destArray.push(monster);
     
     console.log(`Moved ${monster.name} from ${source} to ${destination}`);
+// Update relationships when party composition changes
+  this.updatePartyRelationships();
     return true;
   }
   
@@ -950,6 +1029,8 @@ prepareMonster(monster) {
     if (activeIndex !== -1) {
       const monster = this.party.active.splice(activeIndex, 1)[0];
       console.log(`Removed ${monster.name} from active party`);
+        // Update relationships whenever a monster is removed
+  this.updatePartyRelationships();
       return true;
     }
     
@@ -1359,93 +1440,201 @@ prepareMonster(monster) {
   }
 
   // Create a monster card for the party UI
-// Create a monster card for the party UI
-createMonsterCard(monster, type, isAlt = false) {
-  // Calculate HP percentage
-  const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
-  let hpColorClass = 'high';
-  if (hpPercent < 30) {
-    hpColorClass = 'low';
-  } else if (hpPercent < 70) {
-    hpColorClass = 'medium';
-  }
+// createMonsterCard(monster, type, isAlt = false) {
+//   // Calculate HP percentage
+//   const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+//   let hpColorClass = 'high';
+//   if (hpPercent < 30) {
+//     hpColorClass = 'low';
+//   } else if (hpPercent < 70) {
+//     hpColorClass = 'medium';
+//   }
   
-  // Get color for monster type
-  const typeColors = {
-    Beast: '#4f46e5',
-    Dragon: '#c026d3',
-    Elemental: '#ef4444',
-    Monstrosity: '#65a30d',
-    Construct: '#a16207',
-    Undead: '#6b7280',
-    Fey: '#06b6d4',
-    Giant: '#b45309'
-  };
+//   // Get color for monster type
+//   const typeColors = {
+//     Beast: '#4f46e5',
+//     Dragon: '#c026d3',
+//     Elemental: '#ef4444',
+//     Monstrosity: '#65a30d',
+//     Construct: '#a16207',
+//     Undead: '#6b7280',
+//     Fey: '#06b6d4',
+//     Giant: '#b45309'
+//   };
   
-  const bgColor = typeColors[monster.type] || '#6b7280';
+//   const bgColor = typeColors[monster.type] || '#6b7280';
   
-  // Create the card
-  const card = document.createElement('div');
-  card.className = `monster-card ${type}-party`;
-  if (isAlt) card.classList.add('alt');
-  card.setAttribute('data-monster-id', monster.id);
+//   // Create the card
+//   const card = document.createElement('div');
+//   card.className = `monster-card ${type}-party`;
+//   if (isAlt) card.classList.add('alt');
+//   card.setAttribute('data-monster-id', monster.id);
   
-  // Get token source - properly check for token data structure
-  const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+//   // Get token source - properly check for token data structure
+//   const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
   
-  // Monster card content
-  card.innerHTML = `
-    <div class="monster-header">
-      <div class="monster-avatar" style="background-color: ${bgColor};">
-        ${tokenSource ? 
-          `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-          monster.name.charAt(0)
-        }
-      </div>
-      <div class="monster-info">
-        <div class="monster-name">${monster.name}</div>
-        <div class="monster-type">
-          ${monster.size} ${monster.type}
-          <span class="monster-level-badge">${monster.level || 1}</span>
-        </div>
-      </div>
-    </div>
+//   // Monster card content
+//   card.innerHTML = `
+//     <div class="monster-header">
+//       <div class="monster-avatar" style="background-color: ${bgColor};">
+//         ${tokenSource ? 
+//           `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+//           monster.name.charAt(0)
+//         }
+//       </div>
+//       <div class="monster-info">
+//         <div class="monster-name">${monster.name}</div>
+//         <div class="monster-type">
+//           ${monster.size} ${monster.type}
+//           <span class="monster-level-badge">${monster.level || 1}</span>
+//         </div>
+//       </div>
+//     </div>
     
-    <div class="monster-stats">
-      <!-- HP Bar -->
-      <div class="hp-bar-label">
-        <span>HP</span>
-        <span>${monster.currentHP}/${monster.maxHP}</span>
-      </div>
-      <div class="hp-bar-bg">
-        <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
+//     <div class="monster-stats">
+//       <!-- HP Bar -->
+//       <div class="hp-bar-label">
+//         <span>HP</span>
+//         <span>${monster.currentHP}/${monster.maxHP}</span>
+//       </div>
+//       <div class="hp-bar-bg">
+//         <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
+//       </div>
+      
+//       <!-- Footer with AC and equipment -->
+//       <div class="monster-footer">
+//         <div class="ac-display">
+//           <span class="material-icons small" style="margin-right: 4px;">shield</span>
+//           <span>${monster.armorClass}</span>
+//         </div>
+        
+//         <div class="equipment-icons">
+//           ${monster.equipment?.weapon ? 
+//             `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
+//               <span class="material-icons small">sports_martial_arts</span>
+//             </div>` : ''
+//           }
+//           ${monster.equipment?.armor ? 
+//             `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
+//               <span class="material-icons small">security</span>
+//             </div>` : ''
+//           }
+//         </div>
+//       </div>
+//     </div>
+//   `;
+  
+//   return card;
+// }
+
+// Update createMonsterCard to show relationship indicators
+createMonsterCard(monster, type, isAlt = false) {
+    // Calculate HP percentage
+    const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+    let hpColorClass = 'high';
+    if (hpPercent < 30) {
+      hpColorClass = 'low';
+    } else if (hpPercent < 70) {
+      hpColorClass = 'medium';
+    }
+    
+    // Get color for monster type
+    const typeColors = {
+      Beast: '#4f46e5',
+      Dragon: '#c026d3',
+      Elemental: '#ef4444',
+      Monstrosity: '#65a30d',
+      Construct: '#a16207',
+      Undead: '#6b7280',
+      Fey: '#06b6d4',
+      Giant: '#b45309'
+    };
+    
+    const bgColor = typeColors[monster.type] || '#6b7280';
+    
+    // Get relationship data
+    const relationships = this.getMonstersWithAffinity(monster.id) || [];
+    
+    // Create the card
+    const card = document.createElement('div');
+    card.className = `monster-card ${type}-party`;
+    if (isAlt) card.classList.add('alt');
+    card.setAttribute('data-monster-id', monster.id);
+    
+    // Get token source
+    const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+    
+    // Monster card content
+    card.innerHTML = `
+      <div class="monster-header">
+        <div class="monster-avatar" style="background-color: ${bgColor}; position: relative;">
+          ${tokenSource ? 
+            `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+            monster.name.charAt(0)
+          }
+          ${relationships.length > 0 ? 
+            `<div class="relationship-indicator" style="position: absolute; top: -5px; right: -5px; background: #ff6b6b; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+              <span class="material-icons" style="font-size: 12px; color: white;">favorite</span>
+            </div>` : 
+            ''}
+        </div>
+        <div class="monster-info">
+          <div class="monster-name">${monster.name}</div>
+          <div class="monster-type">
+            ${monster.size} ${monster.type}
+            <span class="monster-level-badge">${monster.level || 1}</span>
+          </div>
+        </div>
       </div>
       
-      <!-- Footer with AC and equipment -->
-      <div class="monster-footer">
-        <div class="ac-display">
-          <span class="material-icons small" style="margin-right: 4px;">shield</span>
-          <span>${monster.armorClass}</span>
+      <div class="monster-stats">
+        <!-- HP Bar -->
+        <div class="hp-bar-label">
+          <span>HP</span>
+          <span>${monster.currentHP}/${monster.maxHP}</span>
+        </div>
+        <div class="hp-bar-bg">
+          <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
         </div>
         
-        <div class="equipment-icons">
-          ${monster.equipment?.weapon ? 
-            `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
-              <span class="material-icons small">sports_martial_arts</span>
-            </div>` : ''
-          }
-          ${monster.equipment?.armor ? 
-            `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
-              <span class="material-icons small">security</span>
-            </div>` : ''
-          }
+        <!-- Footer with AC and equipment -->
+        <div class="monster-footer">
+          <div class="ac-display">
+            <span class="material-icons small" style="margin-right: 4px;">shield</span>
+            <span>${monster.armorClass}</span>
+          </div>
+          
+          <div class="equipment-icons">
+            ${monster.equipment?.weapon ? 
+              `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
+                <span class="material-icons small">sports_martial_arts</span>
+              </div>` : ''
+            }
+            ${monster.equipment?.armor ? 
+              `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
+                <span class="material-icons small">security</span>
+              </div>` : ''
+            }
+          </div>
         </div>
+        
+        ${relationships.length > 0 ? 
+          `<div class="monster-relationships" style="margin-top: 8px; font-size: 0.75rem; color: #666;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="material-icons" style="font-size: 14px; color: #ff6b6b;">favorite</span>
+              <span>Affinity with: ${relationships.map(r => {
+                // Find monster name
+                const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
+                return relatedMonster ? relatedMonster.name : '';
+              }).filter(Boolean).join(', ')}</span>
+            </div>
+          </div>` : 
+          ''}
       </div>
-    </div>
-  `;
-  
-  return card;
-}
+    `;
+    
+    return card;
+  }
 
 
 // Create a detailed view for a selected monster
@@ -1563,41 +1752,70 @@ createMonsterDetailView(monster) {
   
   // Monster abilities section
   if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
-    contentHtml += `
-      <div class="details-section">
-        <div class="details-section-title">Abilities</div>
-        <div class="monster-abilities">
-          ${monster.monsterAbilities.map(ability => {
-            // Determine icon based on ability type
-            let icon = 'star';
-            switch (ability.type) {
-              case 'attack': icon = 'sports_martial_arts'; break;
-              case 'area': icon = 'blur_circular'; break;
-              case 'buff': icon = 'upgrade'; break;
-              case 'debuff': icon = 'threat'; break;
-              case 'control': icon = 'touch_app'; break;
+contentHtml += `
+<div class="details-section">
+  <div class="details-section-title">Abilities</div>
+  <div class="abilities-container">
+  <div class="monster-abilities">
+    ${monster.monsterAbilities.map(ability => {
+      // Determine icon based on ability type
+      let icon = 'star';
+      let bgColor = '#f3f4f6';
+      let iconColor = '#6b7280';
+      
+      switch (ability.type) {
+        case 'attack': 
+          icon = 'sports_martial_arts'; 
+          bgColor = 'rgba(239, 68, 68, 0.1)';
+          iconColor = '#ef4444';
+          break;
+        case 'area': 
+          icon = 'blur_circular'; 
+          bgColor = 'rgba(245, 158, 11, 0.1)';
+          iconColor = '#f59e0b';
+          break;
+        case 'buff': 
+          icon = 'upgrade'; 
+          bgColor = 'rgba(16, 185, 129, 0.1)';
+          iconColor = '#10b981';
+          break;
+        case 'debuff': 
+          icon = 'threat';
+          bgColor = 'rgba(168, 85, 247, 0.1)';
+          iconColor = '#a855f7';
+          break;
+        case 'control': 
+          icon = 'touch_app';
+          bgColor = 'rgba(59, 130, 246, 0.1)';
+          iconColor = '#3b82f6';
+          break;
+      }
+      
+        return `
+        <div class="ability-card" style="background: ${bgColor};">
+          <div class="ability-header">
+            <div class="ability-icon" style="color: ${iconColor};">
+              <span class="material-icons small">${icon}</span>
+            </div>
+            <div class="ability-title-row">
+              <div class="ability-title">${ability.name}</div>
+              ${ability.damage ?
+                `<div class="ability-damage" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">${ability.damage}</div>` :
+                ''
             }
-            
-            return `
-              <div class="ability-card ${ability.type}">
-                <div class="ability-header">
-                  <div class="ability-icon">
-                    <span class="material-icons small">${icon}</span>
-                  </div>
-                  <div class="ability-title">${ability.name}</div>
-                  ${ability.damage ? 
-                    `<div class="ability-damage">${ability.damage}</div>` : 
-                    ''
-                  }
-                </div>
-                <div class="ability-description">${ability.description}</div>
-              </div>
-            `;
-          }).join('')}
+            </div>
+          </div>
+          <div class="ability-description">${ability.description || 'No description available.'}</div>
         </div>
-      </div>
-    `;
+
+      `;
+    }).join('')}
+    </div>
+  </div>
+</div>
+`;
   }
+
   
   // Equipment section
   contentHtml += `
@@ -3718,7 +3936,14 @@ showStarterMonsterDialog(starterChoices) {
     </div>
   `;
 
-    // Add a close/cancel button
+
+  
+  // Assemble dialog
+  container.appendChild(header);
+  container.appendChild(content);
+  overlay.appendChild(container);
+
+      // Add a close/cancel button
     const closeButton = document.createElement('button');
     closeButton.className = 'close-dialog-btn';
     closeButton.style.position = 'absolute';
@@ -3741,11 +3966,7 @@ showStarterMonsterDialog(starterChoices) {
     });
     
     container.appendChild(closeButton);
-  
-  // Assemble dialog
-  container.appendChild(header);
-  container.appendChild(content);
-  overlay.appendChild(container);
+
   document.body.appendChild(overlay);
   
   // Add event listeners for card selection
@@ -3887,4 +4108,242 @@ loadParty() {
   
   return false;
 }
+
+// Add this to PartyManager class
+initializeRelationshipSystem() {
+    // Define type relationships (positive values = like, negative = dislike)
+    this.typeAffinities = {
+      // Positive relationships (natural allies)
+      'Beast': {
+        'Beast': 1,        // Pack animals bond together
+        'Fey': 1,          // Natural connection
+        'Humanoid': 2      // Traditional companion relationship
+      },
+      'Celestial': {
+        'Celestial': 3,    // Divine harmony
+        'Humanoid': 1,     // Protective relationship
+        'Fey': 2,          // Both magical, positive energy
+        'Fiend': -3,       // Natural enemies
+        'Undead': -2       // Oppose corruption
+      },
+      'Construct': {
+        'Construct': 1,    // Mechanical synergy
+        'Humanoid': 1      // Created by humanoids
+      },
+      'Dragon': {
+        'Dragon': -1,      // Often territorial, but respect lineage
+        'Humanoid': 0,     // Varies widely
+        'Kobold': 3        // Dragon worship
+      },
+      'Elemental': {
+        'Elemental': 2,    // Elemental harmony
+        'Fey': 1,          // Natural forces
+        'Undead': -1       // Opposed natural states
+      },
+      'Fey': {
+        'Fey': 2,          // Magical kinship
+        'Plant': 3,        // Deep nature connection
+        'Beast': 1,        // Natural allies
+        'Humanoid': 1,     // Curious relationship
+        'Fiend': -2        // Chaotic tensions
+      },
+      'Fiend': {
+        'Fiend': 2,        // Evil alliance
+        'Undead': 1,       // Dark forces unite
+        'Celestial': -3,   // Eternal enemies
+        'Fey': -2          // Opposed magical natures
+      },
+      'Giant': {
+        'Giant': 2,        // Tribal bonds
+        'Humanoid': -1     // Size disparity and history
+      },
+      'Humanoid': {
+        'Humanoid': 1,     // Social creatures
+        'Beast': 2,        // Traditional companions
+        'Monstrosity': -1  // Traditional enemies
+      },
+      'Monstrosity': {
+        'Monstrosity': 0,  // Not naturally social
+        'Humanoid': -1,    // Traditional prey
+        'Beast': -1        // Territorial conflicts
+      },
+      'Ooze': {
+        'Ooze': 0,         // No real connection
+        // Most oozes don't form connections
+      },
+      'Plant': {
+        'Plant': 1,        // Root systems connect
+        'Fey': 3,          // Strong nature bond
+        'Undead': -2,      // Opposed to natural life
+        'Fire Elemental': -3 // Obvious reasons!
+      },
+      'Undead': {
+        'Undead': 2,       // United in undeath
+        'Fiend': 1,        // Dark alliance
+        'Celestial': -2,   // Natural opposition
+        'Beast': -2        // Life vs undeath
+      },
+      'Aberration': {
+        // Aberrations are alien and struggle to connect
+        'Aberration': 1    // Shared alien nature
+      }
+    };
+    
+    // Special relationships by specific monster rather than type
+    this.specificAffinities = {
+      'Wolf': {
+        'Dire Wolf': 3,    // Pack kinship
+        'Winter Wolf': 2   // Wolf-kind
+      },
+      'Dragon': {
+        'Kobold': 2,       // Dragon worship
+        'Dragonborn': 1    // Draconic connection
+      },
+      'Goblin': {
+        'Hobgoblin': 2,    // Goblinoid bond
+        'Bugbear': 1,      // Goblinoid cousin
+        'Wolf': 1          // Traditional mount/pet
+      },
+      'Zombie': {
+        'Skeleton': 1,     // Basic undead bond
+        'Ghoul': 1,        // Undead connection
+        'Necromancer': 2   // Creator bond
+      }
+      // Many more could be added
+    };
+    
+    // Generate relationships for current party
+    this.updatePartyRelationships();
+    
+    console.log('Relationship system initialized');
+  }
+  
+  // Calculate and update relationships between party members
+  updatePartyRelationships() {
+    // Collection of all monsters
+    const allMonsters = [...this.party.active, ...this.party.reserve];
+    
+    // Create relationship map to track monsters that like each other
+    this.relationshipMap = new Map();
+    
+    // Process each monster
+    allMonsters.forEach(monster => {
+      // Initialize relationship array for this monster
+      if (!this.relationshipMap.has(monster.id)) {
+        this.relationshipMap.set(monster.id, []);
+      }
+      
+      // Check relationship with every other monster
+      allMonsters.forEach(otherMonster => {
+        // Don't compare with self
+        if (monster.id === otherMonster.id) return;
+        
+        // Calculate affinity
+        const affinityScore = this.calculateAffinity(monster, otherMonster);
+        
+        // If positive affinity, add to relationships
+        if (affinityScore > 0) {
+          this.relationshipMap.get(monster.id).push({
+            monsterId: otherMonster.id,
+            level: this.getAffinityLevel(affinityScore),
+            score: affinityScore,
+            benefit: this.getAffinityBenefit(affinityScore)
+          });
+        }
+      });
+    });
+    
+    console.log('Party relationships updated', this.relationshipMap);
+  }
+  
+  // Calculate affinity between two monsters
+  calculateAffinity(monster1, monster2) {
+    let affinity = 0;
+    
+    // Check type affinities
+    const type1 = monster1.type || monster1.data?.basic?.type;
+    const type2 = monster2.type || monster2.data?.basic?.type;
+    
+    // Check for type affinity in both directions
+    if (this.typeAffinities[type1] && this.typeAffinities[type1][type2] !== undefined) {
+      affinity += this.typeAffinities[type1][type2];
+    }
+    
+    if (this.typeAffinities[type2] && this.typeAffinities[type2][type1] !== undefined) {
+      affinity += this.typeAffinities[type2][type1];
+    }
+    
+    // Check specific monster affinities
+    const name1 = monster1.name;
+    const name2 = monster2.name;
+    
+    if (this.specificAffinities[name1] && this.specificAffinities[name1][name2] !== undefined) {
+      affinity += this.specificAffinities[name1][name2];
+    }
+    
+    if (this.specificAffinities[name2] && this.specificAffinities[name2][name1] !== undefined) {
+      affinity += this.specificAffinities[name2][name1];
+    }
+    
+    // Adjust for time spent together in party (bonus to relationship)
+    // For now, this is a placeholder. You could implement a system to track
+    // how long monsters have been in the party together.
+    
+    // Take average to normalize
+    affinity = affinity / 2;
+    
+    return affinity;
+  }
+  
+  // Convert numerical affinity to descriptive level
+  getAffinityLevel(score) {
+    if (score >= 3) return 'High';
+    if (score >= 1) return 'Medium';
+    if (score > 0) return 'Low';
+    if (score === 0) return 'Neutral';
+    if (score > -1) return 'Slight Dislike';
+    if (score > -3) return 'Moderate Dislike';
+    return 'Strong Dislike';
+  }
+  
+  // Determine combat benefit based on affinity score
+  getAffinityBenefit(score) {
+    if (score >= 3) return '+9 to combat rolls';
+    if (score >= 2) return '+7 to combat rolls';
+    if (score >= 1) return '+5 to combat rolls';
+    if (score > 0) return '+3 to combat rolls';
+    if (score === 0) return 'None';
+    if (score > -1) return '-3 to combat rolls';
+    if (score > -3) return '-5 to combat rolls';
+    return '-7 to combat rolls';
+  }
+  
+  // Get combat modifier between two monsters
+  getCombatModifier(monster1Id, monster2Id) {
+    // Look for direct relationship
+    const relationships = this.relationshipMap.get(monster1Id) || [];
+    const relationship = relationships.find(r => r.monsterId === monster2Id);
+    
+    if (relationship) {
+      // Determine numerical bonus
+      const score = relationship.score;
+      if (score >= 3) return 9;
+      if (score >= 2) return 7;
+      if (score >= 1) return 5;
+      if (score > 0) return 3;
+      if (score === 0) return 0;
+      if (score > -1) return -3;
+      if (score > -3) return -5;
+      return -7;
+    }
+    
+    return 0; // No relationship
+  }
+  
+  // Get all monsters that like a specific monster
+  getMonstersWithAffinity(monsterId) {
+    return this.relationshipMap.get(monsterId) || [];
+  }
+
+
 }

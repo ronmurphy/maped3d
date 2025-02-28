@@ -27,6 +27,8 @@
   <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button/button.js"></script>
   <script type="module"
+      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button-group/button-group.js"></script>
+  <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/dialog/dialog.js"></script>
   <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/drawer/drawer.js"></script>
@@ -129,7 +131,7 @@
 
     <header class="header">
       <!-- File Operations Group -->
-      <sl-button-group>
+      <!-- <sl-button-group>
         <sl-tooltip content="Open Maps" placement="right-top">
           <sl-button size="medium" variant="success" outline id="openMapBtn">
             <span class="material-icons">map</span>
@@ -142,13 +144,13 @@
         </sl-tooltip>
       </sl-button-group>
     
-      <!-- Central Title -->
+      Central Title
       <div class="header-title" id="mapTitle">
         <span id="mapTitleText">MapEd 3d</span>
         <span class="material-icons header-title-edit">edit</span>
       </div>
     
-      <!-- Tools Group -->
+      Tools Group
       <sl-button-group>
         <sl-tooltip content="Resource Manager" placement="left-top">
           <sl-button size="medium" variant="success" outline id="resourceManagerBtn" style="display: none;">
@@ -175,7 +177,59 @@
             <span class="material-icons">help_outline</span>
           </sl-button>
         </sl-tooltip>
-      </sl-button-group>
+      </sl-button-group> -->
+
+<!-- File Operations Group -->
+<sl-button-group>
+  <sl-tooltip content="Open Maps" placement="right-top">
+    <sl-button size="medium" variant="success" outline id="openMapBtn">
+      <span class="material-icons">map</span>
+    </sl-button>
+  </sl-tooltip>
+  <sl-tooltip content="Save Project" placement="right-top">
+    <sl-button size="medium" variant="success" outline id="saveProjectBtn">
+      <span class="material-icons">save</span>
+    </sl-button>
+  </sl-tooltip>
+</sl-button-group>
+
+<!-- Central Title -->
+<div class="header-title" id="mapTitle">
+  <span id="mapTitleText">MapEd 3d</span>
+  <span class="material-icons header-title-edit">edit</span>
+</div>
+
+<!-- Tools Group -->
+<sl-button-group style="margin-left: auto;">
+  <sl-tooltip content="Resource Manager" placement="left-top">
+    <sl-button size="medium" variant="success" outline id="resourceManagerBtn" style="display: none;">
+      <span class="material-icons">palette</span>
+    </sl-button>
+  </sl-tooltip>
+  <sl-tooltip content="View in 3D" placement="left-top">
+    <sl-button size="medium" variant="danger" outline id="create3d">
+      <span class="material-icons">view_in_ar</span>
+    </sl-button>
+  </sl-tooltip>
+  <sl-tooltip content="Map Editor Settings" placement="left-top">
+    <sl-button size="medium" variant="warning" outline id="editorPrefsBtn">
+      <span class="material-icons">tune</span>
+    </sl-button>
+  </sl-tooltip>
+  <sl-tooltip content="3D Preferences" placement="left-top">
+    <sl-button size="medium" variant="warning" outline id="preferencesBtn">
+      <span class="material-icons">settings</span>
+    </sl-button>
+  </sl-tooltip>
+  <sl-tooltip content="Help Guide" placement="left-top">
+    <sl-button size="medium" variant="primary" outline id="helpBtn">
+      <span class="material-icons">help_outline</span>
+    </sl-button>
+  </sl-tooltip>
+</sl-button-group>
+
+
+
     </header>
 
     <aside class="sidebar">
