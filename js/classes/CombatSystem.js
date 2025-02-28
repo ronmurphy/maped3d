@@ -2314,62 +2314,78 @@ closeCombat() {
     return true;
   }
 
-  applyRelationshipBonuses(attacker, target) {
-    if (!this.partyManager || !this.partyManager.relationshipMap) {
-      return 0; // No relationship system active
-    }
-    
-    let bonus = 0;
-    
-    // Check if attacker has relationships with other active monsters
-    const activeMonsters = this.initiativeOrder
-      .filter(combatant => combatant.side === attacker.side && combatant.monster.id !== attacker.id)
-      .map(combatant => combatant.monster);
-    
-    // Apply bonuses from all allies with relationships
-    activeMonsters.forEach(ally => {
-      bonus += this.partyManager.getCombatModifier(attacker.id, ally.id);
-    });
-    
-    // If bonus exists, log it and create visual effect
-    if (bonus !== 0) {
-      this.addLogEntry(`${attacker.name} ${bonus > 0 ? 'strengthened' : 'hindered'} by party relationships (${bonus > 0 ? '+' : ''}${bonus})`);
-      
-      // Show relationship effect
-      const attackerCard = this.dialogContainer.querySelector(`.combat-monster[data-monster-id="${attacker.id}"]`);
-      if (attackerCard) {
-        const effect = document.createElement('div');
-        effect.className = 'relationship-effect';
-        effect.style.cssText = `
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          pointer-events: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: relationshipPulse 1s ease-out;
-          opacity: 0;
-        `;
-        
-        effect.innerHTML = `
-          <span class="material-icons" style="font-size: 36px; color: ${bonus > 0 ? '#ff6b6b' : '#6b7280'};">
-            ${bonus > 0 ? 'favorite' : 'heart_broken'}
-          </span>
-        `;
-        
-        attackerCard.style.position = 'relative';
-        attackerCard.appendChild(effect);
-        
-        // Remove effect after animation
-        setTimeout(() => effect.remove(), 1000);
-      }
-    }
-    
-    return bonus;
+applyRelationshipBonuses(attacker, target) {
+  // First, check if attacker exists and has required properties
+  if (!attacker || !target || !this.partyManager || !this.partyManager.relationshipMap) {
+    return 0; // No relationship system active or missing parameters
   }
+  
+  // IMPORTANT: Only apply relationship bonuses for player monsters, not enemies
+  // Find which side the attacker is on by checking the initiative order
+  const attackerEntry = this.initiativeOrder.find(combatant => 
+    combatant.monster.id === attacker.id
+  );
+  
+  // If attacker isn't found or is on enemy side, return 0 (no bonus)
+  if (!attackerEntry || attackerEntry.side !== 'player') {
+    return 0; // No relationship bonuses for enemies
+  }
+  
+  let bonus = 0;
+  
+  // Only proceed if this is a player monster
+  // Check relationships with other active player monsters
+  const activePlayerMonsters = this.initiativeOrder
+    .filter(combatant => 
+      combatant.side === 'player' && 
+      combatant.monster.id !== attacker.id
+    )
+    .map(combatant => combatant.monster);
+  
+  // Apply bonuses from all allies with relationships
+  activePlayerMonsters.forEach(ally => {
+    bonus += this.partyManager.getCombatModifier(attacker.id, ally.id);
+  });
+  
+  // If bonus exists, log it and create visual effect
+  if (bonus !== 0) {
+    this.addLogEntry(`${attacker.name} ${bonus > 0 ? 'strengthened' : 'hindered'} by party relationships (${bonus > 0 ? '+' : ''}${bonus})`);
+    
+    // Show relationship effect visualization
+    const attackerCard = this.dialogContainer.querySelector(`.combat-monster[data-monster-id="${attacker.id}"]`);
+    if (attackerCard) {
+      const effect = document.createElement('div');
+      effect.className = 'relationship-effect';
+      effect.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: relationshipPulse 1s ease-out;
+        opacity: 0;
+      `;
+      
+      effect.innerHTML = `
+        <span class="material-icons" style="font-size: 36px; color: ${bonus > 0 ? '#ff6b6b' : '#6b7280'};">
+          ${bonus > 0 ? 'favorite' : 'heart_broken'}
+        </span>
+      `;
+      
+      attackerCard.style.position = 'relative';
+      attackerCard.appendChild(effect);
+      
+      // Remove effect after animation
+      setTimeout(() => effect.remove(), 1000);
+    }
+  }
+  
+  return bonus;
+}
 
 markTargetableEnemies(monster, ability) {
     // Find all enemy cards
@@ -2770,8 +2786,8 @@ markTargetableEnemies(monster, ability) {
     // Process based on ability type
     switch(ability.type) {
       case 'attack':
-        // Calculate and apply damage
-        const damage = this.calculateAbilityDamage(ability);
+        // Calculate and apply damage - PASS THE MONSTER AS ATTACKER
+        const damage = this.calculateAbilityDamage(ability, monster, target);
         this.applyDamage(target, damage);
         break;
         
@@ -2842,16 +2858,18 @@ markTargetableEnemies(monster, ability) {
     return damage;
   }
 
-  calculateAbilityDamage(ability, attacker, target) {
+  calculateAbilityDamage(ability, attacker = null, target = null) {
     // Base damage calculation
     let damage = this.originalCalculateAbilityDamage(ability);
     
-    // Apply relationship bonus if available
-    const relationshipBonus = this.applyRelationshipBonuses(attacker, target);
-    
-    // Apply bonus to damage (this is simplified, you might want a more complex formula)
-    if (relationshipBonus > 0) {
-      damage += Math.floor(relationshipBonus / 3); // Convert bonus to extra damage
+    // Only apply relationship bonus if both attacker and target are provided
+    if (attacker && target) {
+      const relationshipBonus = this.applyRelationshipBonuses(attacker, target);
+      
+      // Apply bonus to damage
+      if (relationshipBonus > 0) {
+        damage += Math.floor(relationshipBonus / 3);
+      }
     }
     
     return damage;

@@ -1632,6 +1632,72 @@ createMonsterCard(monster, type, isAlt = false) {
           ''}
       </div>
     `;
+
+    const statsDiv = card.querySelector('.monster-stats');
+  
+    // // Create the action buttons container
+    // const actionsDiv = document.createElement('div');
+    // actionsDiv.className = 'monster-actions';
+    // actionsDiv.style.display = 'flex';
+    // actionsDiv.style.justifyContent = 'space-between';
+    // actionsDiv.style.marginTop = '8px';
+    // actionsDiv.style.paddingTop = '8px';
+    // actionsDiv.style.borderTop = '1px solid #f0f0f0';
+    
+    // // Add appropriate button based on current location
+    // if (type === 'active') {
+    //   actionsDiv.innerHTML = `
+    //     <button class="move-to-reserve" data-monster-id="${monster.id}" style="
+    //       background: #f3f4f6;
+    //       border: none;
+    //       border-radius: 4px;
+    //       padding: 4px 8px;
+    //       font-size: 0.7rem;
+    //       cursor: pointer;
+    //       display: flex;
+    //       align-items: center;
+    //     ">
+    //       <span class="material-icons" style="font-size: 12px; margin-right: 2px;">arrow_downward</span>
+    //       To Reserve
+    //     </button>
+    //   `;
+    // } else {
+    //   actionsDiv.innerHTML = `
+    //     <button class="move-to-active" data-monster-id="${monster.id}" style="
+    //       background: #e0e7ff;
+    //       border: none;
+    //       border-radius: 4px;
+    //       padding: 4px 8px;
+    //       font-size: 0.7rem;
+    //       cursor: pointer;
+    //       display: flex;
+    //       align-items: center;
+    //       ${this.party.active.length >= this.party.maxActive ? 'opacity: 0.5; cursor: not-allowed;' : ''}
+    //     ">
+    //       <span class="material-icons" style="font-size: 12px; margin-right: 2px;">arrow_upward</span>
+    //       To Active
+    //     </button>
+    //   `;
+    // }
+    
+    // // Add a details button on the right side
+    // actionsDiv.innerHTML += `
+    //   <button class="view-details-btn" data-monster-id="${monster.id}" style="
+    //     background: #f3f4f6;
+    //     border: none;
+    //     border-radius: 4px;
+    //     padding: 4px 8px;
+    //     font-size: 0.7rem;
+    //     cursor: pointer;
+    //     display: flex;
+    //     align-items: center;
+    //   ">
+    //     <span class="material-icons" style="font-size: 12px; margin-right: 2px;">info</span>
+    //     Details
+    //   </button>
+    // `;
+    
+    // statsDiv.appendChild(actionsDiv);
     
     return card;
   }
@@ -1663,25 +1729,51 @@ createMonsterDetailView(monster) {
     // Create the details view
     const detailsView = document.createElement('div');
     detailsView.className = 'monster-details';
-    
-    // Header
-    const header = document.createElement('div');
-    header.className = 'details-header';
-    header.innerHTML = `
-      <div class="details-avatar" style="background-color: ${bgColor};">
-        ${tokenSource ? 
-          `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-          monster.name.charAt(0)
-        }
-      </div>
-      <div class="details-title">
-        <div class="details-name">${monster.name}</div>
-        <div class="details-type">
+
+      // Get monster location (active or reserve)
+  const isActive = this.party.active.some(m => m.id === monster.id);
+  const buttonType = isActive ? 'reserve' : 'active';
+  const buttonText = isActive ? 'To Reserve' : 'To Active';
+  const buttonIcon = isActive ? 'arrow_downward' : 'arrow_upward';
+  const buttonColor = isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)';
+  const buttonTextColor = isActive ? '#ef4444' : '#3b82f6';
+  const isDisabled = !isActive && this.party.active.length >= this.party.maxActive;
+ 
+  const header = document.createElement('div');
+  header.className = 'details-header';
+  header.innerHTML = `
+    <div class="details-avatar" style="background-color: ${bgColor};">
+      ${tokenSource ? 
+        `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+        monster.name.charAt(0)
+      }
+    </div>
+    <div class="details-title">
+      <div class="details-name">${monster.name}</div>
+      <div class="details-type" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div>
           ${monster.size} ${monster.type} • Level ${monster.level || 1}
           <span class="details-cr-badge">CR ${monster.cr || '?'}</span>
         </div>
+        <button class="move-to-${buttonType}" data-monster-id="${monster.id}" style="
+          background: ${buttonColor};
+          border: none;
+          border-radius: 12px;
+          padding: 2px 8px;
+          font-size: 0.8rem;
+          display: flex;
+          align-items: center;
+          color: ${buttonTextColor};
+          margin-left: 8px;
+          cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
+          opacity: ${isDisabled ? '0.5' : '1'};
+        ">
+          <span class="material-icons" style="font-size: 14px; margin-right: 4px;">${buttonIcon}</span>
+          ${buttonText}
+        </button>
       </div>
-    `;
+    </div>
+  `;
   
   // Content
   const content = document.createElement('div');
@@ -1915,6 +2007,19 @@ contentHtml += `
   }
   
   content.innerHTML = contentHtml;
+
+    // Add event listener to the move button
+    const moveButton = header.querySelector(`.move-to-${buttonType}`);
+    if (moveButton && !isDisabled) {
+      moveButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.moveMonster(monster.id, buttonType)) {
+          this.refreshPartyDialog();
+        } else if (buttonType === 'active') {
+          this.showToast('Active party is full!', 'warning');
+        }
+      });
+    }
   
   // Assemble the view
   detailsView.appendChild(header);
@@ -2238,6 +2343,40 @@ setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel
   
   // Add initial handlers
   addCardClickHandlers();
+
+  // Add this to your setupPartyDialogEvents function after addCardClickHandlers()
+const addMoveButtonHandlers = () => {
+  // Set up "To Reserve" buttons
+  const toReserveButtons = overlay.querySelectorAll('.move-to-reserve');
+  toReserveButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent card selection
+      const monsterId = button.getAttribute('data-monster-id');
+      if (this.moveMonster(monsterId, 'reserve')) {
+        // Refresh the UI
+        this.refreshPartyDialog();
+      }
+    });
+  });
+  
+  // Set up "To Active" buttons
+  const toActiveButtons = overlay.querySelectorAll('.move-to-active');
+  toActiveButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent card selection
+      const monsterId = button.getAttribute('data-monster-id');
+      if (this.moveMonster(monsterId, 'active')) {
+        // Refresh the UI
+        this.refreshPartyDialog();
+      } else {
+        // Show message if active party is full
+        this.showToast('Active party is full!', 'warning');
+      }
+    });
+  });
+};
+
+
   
   // Handle Escape key to close dialog
   const handleKeyDown = (e) => {
@@ -2250,28 +2389,102 @@ setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel
 }
   
   // Refresh party dialog when data changes
-  refreshPartyDialog() {
-    if (!this.partyDialog) return;
+//   refreshPartyDialog() {
+//     if (!this.partyDialog) return;
     
-    const tabGroup = this.partyDialog.querySelector('sl-tab-group');
-    const activeTab = tabGroup.getAttribute('active-tab') || 'active-party';
+//     const tabGroup = this.partyDialog.querySelector('sl-tab-group');
+//     const activeTab = tabGroup.getAttribute('active-tab') || 'active-party';
     
-    // Update tab contents
-    this.partyDialog.querySelector('sl-tab-panel[name="active-party"]').innerHTML = this.renderActiveParty();
-    this.partyDialog.querySelector('sl-tab-panel[name="reserve-party"]').innerHTML = this.renderReserveParty();
+//     // Update tab contents
+//     this.partyDialog.querySelector('sl-tab-panel[name="active-party"]').innerHTML = this.renderActiveParty();
+//     this.partyDialog.querySelector('sl-tab-panel[name="reserve-party"]').innerHTML = this.renderReserveParty();
     
-    // Update tab labels
-    this.partyDialog.querySelectorAll('sl-tab').forEach((tab, index) => {
-      if (index === 0) {
-        tab.textContent = `Active Party (${this.party.active.length}/${this.party.maxActive})`;
-      } else if (index === 1) {
-        tab.textContent = `Reserve Monsters (${this.party.reserve.length})`;
-      }
-    });
+//     // Update tab labels
+//     this.partyDialog.querySelectorAll('sl-tab').forEach((tab, index) => {
+//       if (index === 0) {
+//         tab.textContent = `Active Party (${this.party.active.length}/${this.party.maxActive})`;
+//       } else if (index === 1) {
+//         tab.textContent = `Reserve Monsters (${this.party.reserve.length})`;
+//       }
+//     });
     
-    // Reattach event listeners
-    this.setupPartyDialogEvents(this.partyDialog);
+//     // Reattach event listeners
+//     this.setupPartyDialogEvents(this.partyDialog);
+//   }
+
+// Refresh party dialog when data changes
+refreshPartyDialog() {
+  if (!this.partyDialog) return;
+  
+  // Get references to the active and reserve lists
+  const activeList = this.partyDialog.querySelector('.active-monster-list');
+  const reserveList = this.partyDialog.querySelector('.reserve-monster-list');
+  const detailsPanel = this.partyDialog.querySelector('.party-details');
+  
+  // Update tab labels
+  const tabButtons = this.partyDialog.querySelectorAll('.party-tab');
+  if (tabButtons.length >= 2) {
+    tabButtons[0].textContent = `Active (${this.party.active.length}/${this.party.maxActive})`;
+    tabButtons[1].textContent = `Reserve (${this.party.reserve.length})`;
   }
+  
+  // Clear existing content
+  if (activeList) activeList.innerHTML = '';
+  if (reserveList) reserveList.innerHTML = '';
+  
+  // Repopulate active list
+  if (activeList) {
+    if (this.party.active.length > 0) {
+      this.party.active.forEach((monster, index) => {
+        const card = this.createMonsterCard(monster, 'active', index % 2 !== 0);
+        activeList.appendChild(card);
+      });
+      
+      // Add empty slots
+      for (let i = this.party.active.length; i < this.party.maxActive; i++) {
+        const emptySlot = document.createElement('div');
+        emptySlot.className = 'empty-party-slot';
+        emptySlot.innerHTML = `
+          <span class="material-icons" style="margin-right: 8px;">add_circle_outline</span>
+          Empty Slot
+        `;
+        activeList.appendChild(emptySlot);
+      }
+    } else {
+      // Empty active party message
+      activeList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.8);">
+          <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">sentiment_dissatisfied</span>
+          <p style="margin: 0 0 8px 0; font-size: 1.1rem;">Your active party is empty</p>
+          <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">You need monsters in your party to participate in combat</p>
+        </div>
+      `;
+    }
+  }
+  
+  // Repopulate reserve list
+  if (reserveList) {
+    if (this.party.reserve.length > 0) {
+      this.party.reserve.forEach(monster => {
+        const card = this.createMonsterCard(monster, 'reserve');
+        reserveList.appendChild(card);
+      });
+    } else {
+      // Empty reserve message
+      reserveList.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.8);">
+          <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">inventory_2</span>
+          <p style="margin: 0 0 8px 0; font-size: 1.1rem;">Your reserve is empty</p>
+          <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">Monsters will be stored here when your active party is full</p>
+        </div>
+      `;
+    }
+  }
+  
+  // Reattach event listeners
+  const container = this.partyDialog.querySelector('.party-container');
+  this.setupPartyDialogEvents(this.partyDialog, container, activeList, reserveList, detailsPanel);
+}
   
   // Show monster details overlay (similar to splash art)
   showMonsterDetails(monster) {
