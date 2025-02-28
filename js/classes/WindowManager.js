@@ -13,6 +13,8 @@ class WindowManager {
     this.bringToFront = this.bringToFront.bind(this);
   }
 
+  
+
   registerWindow(element, options = {}) {
     // Default options
     const defaultOptions = {
