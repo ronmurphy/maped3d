@@ -813,6 +813,42 @@ establishConnections() {
   }
 }
 
+  /* Base animation keyframes */
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+  }
+  
+  @keyframes glow {
+    0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
+  }
+  
+  @keyframes warp {
+    0% { transform: scale(1) rotate(0deg); }
+    33% { transform: scale(1.02) rotate(0.3deg); }
+    66% { transform: scale(0.99) rotate(-0.3deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  
+  @keyframes flicker {
+    0% { opacity: 0.8; }
+    10% { opacity: 1; }
+    20% { opacity: 0.9; }
+    30% { opacity: 1; }
+    40% { opacity: 0.8; }
+    60% { opacity: 1; }
+    80% { opacity: 0.9; }
+    100% { opacity: 0.8; }
+  }
+
     `;
   
     return styleElement;
@@ -1452,6 +1488,7 @@ createMonsterCard(monster, type, isAlt = false) {
     }
     
         const bgColor = [monster.type.toLowerCase()]; 
+
     
     // Get relationship data
     const relationships = this.getMonstersWithAffinity(monster.id) || [];
@@ -1464,10 +1501,20 @@ createMonsterCard(monster, type, isAlt = false) {
     
     // Get token source
     const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
-    
+    const typeColor = this.getMonsterTypeColor(monster.type);
+    const animation = this.getMonsterAnimation(monster.type, monster.name);
+  // Apply animation styles if applicable
+  let headerStyle = '';
+  if (animation.useAnimation) {
+    // Convert style object to inline CSS
+    headerStyle = Object.entries(animation.style)
+      .map(([key, value]) => `${key}: ${value};`)
+      .join(' ');
+  }
+
     // Monster card content
     card.innerHTML = `
-      <div class="monster-header">
+    <div class="monster-header" ${animation.useAnimation ? `style="${headerStyle}"` : ''}>
         <div class="monster-avatar" style="background-color: ${bgColor}; position: relative;">
           ${tokenSource ? 
             `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
@@ -1479,14 +1526,23 @@ createMonsterCard(monster, type, isAlt = false) {
             </div>` : 
             ''}
         </div>
-        <div class="monster-info">
-          <div class="monster-name">${monster.name}</div>
-          <div class="monster-type">
-            ${monster.size} ${monster.type}
-            <span class="monster-level-badge">${monster.level || 1}</span>
-          </div>
+      <div class="monster-info">
+        <div class="monster-name" style="
+          background: linear-gradient(90deg, ${typeColor}50, transparent);
+          padding: 3px 8px;
+          border-radius: 4px;
+          color: #333;
+          font-weight: bold;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">${monster.name}</div>
+        <div class="monster-type">
+          ${monster.size} ${monster.type}
+          <span class="monster-level-badge">${monster.level || 1}</span>
         </div>
       </div>
+    </div>
       
       <div class="monster-stats">
         <!-- HP Bar -->
@@ -1584,6 +1640,220 @@ createMonsterCard(monster, type, isAlt = false) {
     return typeColors[type.toLowerCase()] || '#6B7280'; // Default gray if not found
   }
   
+// Add this method to PartyManager class
+getMonsterAnimation(monsterType, monsterName = '') {
+  // Default (no animation)
+  const defaultAnimation = {
+    useAnimation: false,
+    style: {}
+  };
+  
+  // Handle empty or invalid type
+  if (!monsterType) return defaultAnimation;
+  
+  // Normalize type for comparison
+  const type = monsterType.toLowerCase();
+  const name = monsterName.toLowerCase();
+  
+  // Define type-specific animations
+  const animations = {
+    'aberration': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #5500aa, #8800cc, #5500aa)',
+        backgroundSize: '200% 200%',
+        animation: 'warp 10s ease infinite, shimmer 8s infinite linear',
+        transition: 'all 0.5s'
+      },
+      description: 'Reality-warping effect for alien aberrations'
+    },
+    'celestial': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #ffd700, #ffffff, #ffd700)',
+        backgroundSize: '200% 200%',
+        animation: 'shimmer 4s infinite linear, glow 3s infinite ease-in-out',
+        boxShadow: '0 0 10px rgba(255, 215, 0, 0.4)',
+        transition: 'all 0.5s'
+      },
+      description: 'Divine radiance for celestial beings'
+    },
+    'dragon': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #ff4444, #ffaa00, #ff4444)',
+        backgroundSize: '200% 200%',
+        animation: 'shimmer 8s infinite ease-in-out',
+        transition: 'all 0.3s'
+      },
+      description: 'Majestic, slow color shift for dragons'
+    },
+    'elemental': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #ff8800, #ffaa33, #ff8800)',
+        backgroundSize: '200% 200%',
+        animation: 'flicker 4s infinite',
+        transition: 'all 0.3s'
+      },
+      description: 'Elemental energy manifestation'
+    },
+    'fey': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #dd66ff, #aa99ff, #dd66ff)',
+        backgroundSize: '200% 200%',
+        animation: 'shimmer 5s infinite linear',
+        transition: 'all 0.3s'
+      },
+      description: 'Magical shimmer for fey creatures'
+    },
+    'fiend': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #aa2222, #660000, #aa2222)',
+        backgroundSize: '200% 200%',
+        animation: 'pulse 3s infinite ease-in-out',
+        transition: 'all 0.3s'
+      },
+      description: 'Smoldering effect for fiendish beings'
+    },
+    'undead': {
+      useAnimation: true,
+      style: {
+        background: 'linear-gradient(45deg, #663366, #442244, #663366)',
+        backgroundSize: '200% 200%',
+        animation: 'pulse 6s infinite ease-in-out',
+        transition: 'all 0.5s'
+      },
+      description: 'Eerie pulsing for undead creatures'
+    }
+    // Add more types as needed    
+  };
+
+    // Special case for dragons - check name for color indicators
+    if (type === 'dragon' && name) {
+      // Check for chromatic dragons
+      if (name.includes('red')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #ff0000, #aa0000, #ff3300)',
+            backgroundSize: '200% 200%',
+            animation: 'flicker 4s infinite, shimmer 8s infinite',
+            transition: 'all 0.3s'
+          }
+        };
+      } 
+      else if (name.includes('blue')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #0066ff, #0033aa, #0066ff)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 6s infinite linear',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('green')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #00aa33, #006622, #00aa33)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 7s infinite linear',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('black')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #333333, #111111, #333333)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 10s infinite linear',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('white')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #ffffff, #ccccff, #ffffff)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 5s infinite linear, pulse 3s infinite',
+            boxShadow: '0 0 10px rgba(200, 200, 255, 0.5)',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      // Check for metallic dragons
+      else if (name.includes('gold')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #ffd700, #ffaa00, #ffd700)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 6s infinite linear, glow 3s infinite ease-in-out',
+            boxShadow: '0 0 10px rgba(255, 215, 0, 0.4)',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('silver')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #c0c0c0, #e8e8e8, #c0c0c0)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 5s infinite linear, glow 4s infinite ease-in-out',
+            boxShadow: '0 0 10px rgba(192, 192, 192, 0.6)',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('copper')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #b87333, #da8a67, #b87333)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 7s infinite linear',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('brass')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #b5a642, #c9b870, #b5a642)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 6s infinite linear',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+      else if (name.includes('bronze')) {
+        return {
+          useAnimation: true,
+          style: {
+            background: 'linear-gradient(45deg, #cd7f32, #a86d29, #cd7f32)',
+            backgroundSize: '200% 200%',
+            animation: 'shimmer 8s infinite linear',
+            transition: 'all 0.3s'
+          }
+        };
+      }
+    }
+  
+  // Return the appropriate animation or default
+  return animations[type] || defaultAnimation;
+}
+
 
 
 // Create a detailed view for a selected monster
@@ -1591,22 +1861,10 @@ createMonsterDetailView(monster) {
     // Calculate percentages
     const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
     const expPercent = Math.floor((monster.experience / monster.experienceToNext) * 100);
-    
-    // Get color for monster type
-    // const typeColors = {
-    //   Beast: '#4f46e5',
-    //   Dragon: '#c026d3',
-    //   Elemental: '#ef4444',
-    //   Monstrosity: '#65a30d',
-    //   Construct: '#a16207',
-    //   Undead: '#6b7280',
-    //   Fey: '#06b6d4',
-    //   Giant: '#b45309'
-    // };
-    
-    // const bgColor = typeColors[monster.type] || '#6b7280';
 
     const bgColor = this.getMonsterTypeColor(monster.type);
+  const typeColor = this.getMonsterTypeColor(monster.type);
+  const animation = this.getMonsterAnimation(monster.type, monster.name);
     
     // Get token source
     const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
@@ -1626,15 +1884,26 @@ createMonsterDetailView(monster) {
  
   const header = document.createElement('div');
   header.className = 'details-header';
+
+
+// Apply styling based on monster type
+if (animation.useAnimation) {
+  // Apply the type-specific animation
+  Object.assign(header.style, animation.style);
+} else {
+  // Default gradient if no special animation
+  header.style.background = `linear-gradient(135deg, ${typeColor}, #7e22ce)`;
+}
+
   header.innerHTML = `
     <div class="details-avatar" style="background-color: ${bgColor};">
       ${tokenSource ? 
-        `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+        `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; ">` :
         monster.name.charAt(0)
       }
     </div>
     <div class="details-title">
-      <div class="details-name">${monster.name}</div>
+      <div class="details-name" style="text-shadow: 0 1px 2px rgba(0,0,0,0.2);">${monster.name}</div>
       <div class="details-type" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
         <div>
           ${monster.size} ${monster.type} • Level ${monster.level || 1}
@@ -1660,6 +1929,8 @@ createMonsterDetailView(monster) {
     </div>
   `;
   
+
+
   // Content
   const content = document.createElement('div');
   content.className = 'details-content';
