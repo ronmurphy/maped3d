@@ -3466,113 +3466,113 @@ content.innerHTML = '';
   `;
   
   // Add spinning dice animation - was 
-  // diceContainer.innerHTML = `
-  //   <div class="spinning-dice" style="font-size: 64px; animation: spin 1s ease-out forwards;"><i class="ra ra-d20"></i></div>
-  //   <style>
-  //     @keyframes spin {
-  //       0% { transform: rotate(0deg) scale(0.5); opacity: 0.5; }
-  //       50% { transform: rotate(360deg) scale(1.2); opacity: 1; }
-  //       100% { transform: rotate(720deg) scale(1); opacity: 1; }
-  //     }
-  //     @keyframes fadeResult {
-  //       0% { opacity: 0; transform: translateY(20px); }
-  //       100% { opacity: 1; transform: translateY(0); }
-  //     }
-  //   </style>
-  // `;
+  diceContainer.innerHTML = `
+    <div class="spinning-dice" style="font-size: 64px; animation: spin 1s ease-out forwards;"><i class="fa-solid fa-dice-d20"></i></i></div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg) scale(0.5); opacity: 0.5; }
+        50% { transform: rotate(360deg) scale(1.2); opacity: 1; }
+        100% { transform: rotate(720deg) scale(1); opacity: 1; }
+      }
+      @keyframes fadeResult {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+  `;
 
 // Replace the problematic diceContainer.innerHTML code with this:
-diceContainer.innerHTML = `
-  <div id="d20-dice-container" style="
-    width: 100px;
-    height: 100px;
-    position: relative;
-    perspective: 600px;
-  ">
-    <div id="d20-dice" style="
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      transform-style: preserve-3d;
-      transition: transform 1s ease-out;
-    ">
-      <div style="
-        position: absolute;
-        width: 64px;
-        height: 64px;
-        background: linear-gradient(135deg, #8b5cf6, #6366f1);
-        border: 2px solid white;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: white;
-        font-weight: bold;
-        text-shadow: 0 0 5px rgba(0,0,0,0.5);
-      ">
-        20
-      </div>
-    </div>
-  </div>
-  <style>
-    @keyframes fadeResult {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-  </style>
-`;
+// diceContainer.innerHTML = `
+// <div id="d20-dice-container" style="
+//     width: 100px;
+//     height: 100px;
+//     position: relative;
+//     perspective: 600px;
+// ">
+//     <div id="d20-dice" style="
+//         width: 100%;
+//         height: 100%;
+//         position: absolute;
+//         transform-style: preserve-3d;
+//         transition: transform 1s ease-out;
+//     ">
+//         <div style="
+//             position: absolute;
+//             width: 64px;
+//             height: 64px;
+//             background: linear-gradient(135deg, #8b5cf6, #6366f1);
+//             border: 2px solid white;
+//             top: 50%;
+//             left: 50%;
+//             transform: translate(-50%, -50%);
+//             clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+//             display: flex;
+//             align-items: center;
+//             justify-content: center;
+//             font-size: 24px;
+//             color: white;
+//             font-weight: bold;
+//             text-shadow: 0 0 5px rgba(0,0,0,0.5);
+//         ">
+//             20
+//         </div>
+//     </div>
+// </div>`;
 
-// Add this JavaScript right after the innerHTML assignment
-const diceElement = document.getElementById('d20-dice');
-if (diceElement) {
-  // Initial position
-  diceElement.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.5)';
-  diceElement.style.opacity = '0.5';
+// // Add a small delay to ensure the DOM is updated
+// setTimeout(() => {
+//   // Look for the dice element within the diceContainer instead of the entire document
+//   const diceElement = diceContainer.querySelector('#d20-dice');
   
-  // Animation timing variables
-  const duration = 1000; // 1 second
-  const startTime = performance.now();
-  
-  // Animation function
-  function animateDice(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
+//   // Check if element exists to prevent errors
+//   if (diceElement) {
+//     // Initial position
+//     diceElement.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.5)';
+//     diceElement.style.opacity = '0.5';
     
-    // Calculate rotation based on progress
-    const rotateX = progress * 720; 
-    const rotateY = progress * 360;
-    const rotateZ = progress * 180;
+//     // Animation timing variables
+//     const duration = 1000; // 1 second
+//     const startTime = performance.now();
     
-    // Calculate scale - grows in middle, then settles
-    let scale;
-    if (progress < 0.5) {
-      // Scale up to 1.2
-      scale = 0.5 + (progress * 1.4);
-    } else {
-      // Scale down to 1.0
-      scale = 1.2 - ((progress - 0.5) * 0.4);
-    }
+//     // Animation function
+//     function animateDice(currentTime) {
+//         const elapsed = currentTime - startTime;
+//         const progress = Math.min(elapsed / duration, 1);
+        
+//         // Calculate rotation based on progress
+//         const rotateX = progress * 720; 
+//         const rotateY = progress * 360;
+//         const rotateZ = progress * 180;
+        
+//         // Calculate scale - grows in middle, then settles
+//         let scale;
+//         if (progress < 0.5) {
+//             // Scale up to 1.2
+//             scale = 0.5 + (progress * 1.4);
+//         } else {
+//             // Scale down to 1.0
+//             scale = 1.2 - ((progress - 0.5) * 0.4);
+//         }
+        
+//         // Calculate opacity - increases to 1
+//         const opacity = 0.5 + (progress * 0.5);
+        
+//         // Apply transforms
+//         diceElement.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
+//         diceElement.style.opacity = opacity;
+        
+//         // Continue animation if not complete
+//         if (progress < 1) {
+//             requestAnimationFrame(animateDice);
+//         }
+//     }
     
-    // Calculate opacity - increases to 1
-    const opacity = 0.5 + (progress * 0.5);
-    
-    // Apply transforms
-    diceElement.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
-    diceElement.style.opacity = opacity;
-    
-    // Continue animation if not complete
-    if (progress < 1) {
-      requestAnimationFrame(animateDice);
-    }
-  }
-  
-  // Start animation
-  requestAnimationFrame(animateDice);
-}
+//     // Start animation
+//     requestAnimationFrame(animateDice);
+//   } else {
+//     console.warn('Could not find dice element for animation');
+//   }
+// }, 10); // Small delay to allow DOM to update
   
   // Create result message container (hidden initially)
   const resultMessage = document.createElement('div');
