@@ -2493,6 +2493,11 @@ setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel
   
 // Updated showRecruitmentDialog method
 showRecruitmentDialog(monster) {
+
+    if (document.querySelector('.party-overlay')) {
+        document.querySelector('.party-overlay').remove();
+      }
+
   // Create monster from bestiary data if needed
   const recruitMonster = monster.data ? monster : { data: monster };
   
@@ -2851,9 +2856,19 @@ handleRecruitmentAttempt(monster, approach, overlay) {
 // Show recruitment result with animation
 showRecruitmentResult(monster, success, approach, overlay) {
   // Hide previous content
-  const dialogContainer = overlay.querySelector('.recruitment-dialog');
-  const content = overlay.querySelector('.recruitment-content');
-  content.innerHTML = '';
+//   const dialogContainer = overlay.querySelector('.recruitment-dialog');
+//   const content = overlay.querySelector('.recruitment-content');
+//   content.innerHTML = '';
+
+const dialogContainer = overlay.querySelector('.party-container');
+  
+const content = overlay.querySelector('.recruitment-content');
+if (!content) {
+  console.error('Cannot find recruitment-content element');
+  return;
+}
+
+content.innerHTML = '';
   
   // Create result content
   const resultContent = document.createElement('div');
@@ -2982,6 +2997,7 @@ showRecruitmentResult(monster, success, approach, overlay) {
         
         setTimeout(() => {
           overlay.remove();
+          this.recruitmentOverlay = null;
         }, 300);
       });
     } else {
@@ -3011,6 +3027,7 @@ showRecruitmentResult(monster, success, approach, overlay) {
         
         setTimeout(() => {
           overlay.remove();
+          this.recruitmentOverlay = null;
         }, 300);
       });
     }

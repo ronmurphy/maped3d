@@ -25,186 +25,6 @@ class CombatSystem {
     console.log('Combat System initialized');
   }
 
-  // Add this method to CombatSystem class
-// createCombatStyles() {
-//   const styleElement = document.createElement('style');
-//   styleElement.textContent = `
-//     .combat-overlay {
-//       position: fixed;
-//       top: 0;
-//       left: 0;
-//       right: 0;
-//       bottom: 0;
-//       background: var(--sl-overlay-background-color);
-//       display: flex;
-//       justify-content: center;
-//       align-items: center;
-//       z-index: 2000;
-//       opacity: 0;
-//       transition: opacity 0.3s ease;
-//     }
-
-//     .combat-container {
-//       width: 90%;
-//       max-width: 1000px;
-//       height: 90vh;
-//       background: var(--sl-panel-background-color);
-//       border-radius: var(--sl-border-radius-large);
-//       box-shadow: var(--sl-shadow-x-large);
-//       display: flex;
-//       flex-direction: column;
-//       transform: scale(0.95);
-//       transition: transform 0.3s ease;
-//       overflow: hidden;
-//     }
-
-//     .combat-header {
-//       padding: 12px 16px;
-//       background: var(--sl-color-neutral-100);
-//       border-bottom: 1px solid var(--sl-color-neutral-200);
-//       display: flex;
-//       align-items: center;
-//       justify-content: space-between;
-//     }
-
-//     .battle-scene {
-//       flex: 1;
-//       display: flex;
-//       flex-direction: column;
-//       justify-content: space-between;
-//       padding: 16px;
-//       position: relative;
-//       overflow: hidden;
-//       background: var(--sl-color-neutral-50);
-//     }
-
-//     .combat-monster {
-//       position: relative;
-//       width: 150px;
-//       background: var(--sl-color-neutral-0);
-//       border-radius: var(--sl-border-radius-medium);
-//       border: 1px solid var(--sl-color-neutral-200);
-//       padding: 8px;
-//       transition: all 0.3s ease;
-//     }
-
-//     .combat-monster.active {
-//       box-shadow: 0 0 15px var(--sl-color-primary-500);
-//       transform: translateY(-10px) scale(1.05);
-//       z-index: 10;
-//       border-color: var(--sl-color-primary-500);
-//     }
-
-//     .combat-monster.defeated {
-//       opacity: 0.6;
-//       filter: grayscale(100%);
-//     }
-
-//     .hp-bar-bg {
-//       height: 8px;
-//       background: var(--sl-color-neutral-200);
-//       border-radius: var(--sl-border-radius-pill);
-//     }
-
-//     .hp-bar-fill {
-//       height: 100%;
-//       border-radius: var(--sl-border-radius-pill);
-//       transition: width 0.3s ease;
-//     }
-
-//     .hp-bar-fill.high {
-//       background: var(--sl-color-success-500);
-//     }
-
-//     .hp-bar-fill.medium {
-//       background: var(--sl-color-warning-500);
-//     }
-
-//     .hp-bar-fill.low {
-//       background: var(--sl-color-danger-500);
-//     }
-
-//     .initiative-tracker {
-//       position: absolute;
-//       top: 10px;
-//       left: 10px;
-//       background: var(--sl-color-neutral-0);
-//       border-radius: var(--sl-border-radius-medium);
-//       box-shadow: var(--sl-shadow-medium);
-//       padding: 8px;
-//       width: 200px;
-//     }
-
-//     .initiative-item {
-//       display: flex;
-//       align-items: center;
-//       padding: 4px 8px;
-//       border-bottom: 1px solid var(--sl-color-neutral-200);
-//       font-size: 0.9em;
-//     }
-
-//     .initiative-item.active {
-//       background: var(--sl-color-primary-50);
-//       border-left: 3px solid var(--sl-color-primary-500);
-//     }
-
-//     .combat-log {
-//       flex: 0 0 250px;
-//       border-left: 1px solid var(--sl-color-neutral-200);
-//       background: var(--sl-color-neutral-0);
-//       display: flex;
-//       flex-direction: column;
-//     }
-
-//     .action-bar {
-//       padding: 16px;
-//       background: var(--sl-color-neutral-50);
-//       border-top: 1px solid var(--sl-color-neutral-200);
-//     }
-
-//     .ability-btn {
-//       padding: 8px 12px;
-//       border: 1px solid var(--sl-color-neutral-300);
-//       background: var(--sl-color-neutral-0);
-//       border-radius: var(--sl-border-radius-medium);
-//       cursor: pointer;
-//       display: flex;
-//       align-items: center;
-//       gap: 6px;
-//       transition: all 0.2s ease;
-//     }
-
-//     .ability-btn:hover {
-//       background: var(--sl-color-neutral-100);
-//       border-color: var(--sl-color-primary-500);
-//     }
-
-//     .targeting-overlay {
-//       position: absolute;
-//       top: 0;
-//       left: 0;
-//       right: 0;
-//       bottom: 0;
-//       background: var(--sl-overlay-background-color);
-//       display: flex;
-//       flex-direction: column;
-//       justify-content: center;
-//       align-items: center;
-//       z-index: 50;
-//     }
-
-//     .targeting-instructions {
-//       color: var(--sl-color-neutral-0);
-//       font-size: 1.2em;
-//       margin-bottom: 16px;
-//       background: var(--sl-color-neutral-950);
-//       padding: 8px 16px;
-//       border-radius: var(--sl-border-radius-medium);
-//     }
-//   `;
-
-//   return styleElement;
-// }
 
 // Add this method to your CombatSystem class to create the styled CSS
 createCombatStyles() {
@@ -702,10 +522,20 @@ createCombatStyles() {
       .slide-up {
         animation: slideUp 0.3s ease forwards;
       }
-  
+
       .pulse {
         animation: pulse 1s infinite;
       }
+
+      .auto-targeted {
+  animation: auto-target-pulse 0.8s ease;
+}
+
+@keyframes auto-target-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
     `;
 
 styleElement.textContent += `
@@ -745,116 +575,353 @@ styleElement.textContent += `
     return styleElement;
   }
 
-  // New method to set combat background
+
+
+setCombatBackground() {
+    console.log('Setting combat background...');
+    
+    // First, check if dialogContainer exists
+    if (!this.dialogContainer) {
+        console.error('setCombatBackground: dialogContainer is not available');
+        return false;
+    }
+    
+    // Safely check the resource manager and splashArt structure
+    if (!this.resourceManager) {
+        console.error('setCombatBackground: resourceManager is not available');
+        return false;
+    }
+    
+    if (!this.resourceManager.resources || 
+        !this.resourceManager.resources.splashArt) {
+        console.error('setCombatBackground: splashArt property not found in resources');
+        return false;
+    }
+    
+    if (!this.resourceManager.resources.splashArt.background) {
+        console.error('setCombatBackground: background category not found in splashArt');
+        return false;
+    }
+    
+    // Try to get a random background art
+    const backgrounds = this.resourceManager.resources.splashArt.background;
+    console.log(`Found ${backgrounds.size} backgrounds in splashArt.background`);
+    
+    if (backgrounds.size <= 0) {
+        console.warn('setCombatBackground: No backgrounds available');
+        return false;
+    }
+    
+    // Log available backgrounds for debugging
+    if (backgrounds.size > 0) {
+        console.log('Available backgrounds:');
+        backgrounds.forEach((bg, id) => {
+            console.log(`- ID: ${id}, Name: ${bg.name}, Has data: ${!!bg.data}, Data length: ${bg.data ? bg.data.substring(0, 30) + '...' : 'N/A'}`);
+        });
+    }
+    
+    // Get random splash art
+    const randomIndex = Math.floor(Math.random() * backgrounds.size);
+    const backgroundValues = Array.from(backgrounds.values());
+    const backgroundArt = backgroundValues[randomIndex];
+    
+    console.log(`Selected background index ${randomIndex}: ${backgroundArt?.name || 'Unknown'}`);
+    
+    if (!backgroundArt) {
+        console.error('setCombatBackground: Selected background is null or undefined');
+        return false;
+    }
+    
+    if (!backgroundArt.data) {
+        console.error('setCombatBackground: Selected background does not have data property');
+        return false;
+    }
+    
+    try {
+        // Apply as background
+        console.log('Applying background image...');
+        this.dialogContainer.style.backgroundImage = `url(${backgroundArt.data})`;
+        
+        // Randomly choose styling approach
+        const stylingOption = Math.floor(Math.random() * 5);
+        console.log(`Using styling option: ${stylingOption}`);
+        
+        switch (stylingOption) {
+            case 0: 
+                // Full cover (default)
+                this.dialogContainer.style.backgroundSize = 'cover';
+                this.dialogContainer.style.backgroundPosition = 'center';
+                console.log('Applied style: Full cover');
+                break;
+                
+            case 1: 
+                // Contained with possible repetition
+                this.dialogContainer.style.backgroundSize = 'contain';
+                this.dialogContainer.style.backgroundPosition = 'center';
+                this.dialogContainer.style.backgroundRepeat = 'repeat';
+                console.log('Applied style: Contained with repetition');
+                break;
+                
+            case 2: 
+                // Zoomed in on a section
+                this.dialogContainer.style.backgroundSize = '150%';
+                
+                // Pick a random focus point
+                const positions = ['top left', 'top center', 'top right', 
+                                 'center left', 'center', 'center right',
+                                 'bottom left', 'bottom center', 'bottom right'];
+                const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+                this.dialogContainer.style.backgroundPosition = randomPosition;
+                console.log(`Applied style: Zoomed in (${randomPosition})`);
+                break;
+                
+            case 3: 
+                // Slightly tilted background (adds distinctive look)
+                this.dialogContainer.style.backgroundSize = 'cover';
+                this.dialogContainer.style.backgroundPosition = 'center';
+                
+                // Use a separate element for rotation to avoid conflicts
+                // Check if we already have a rotated background layer
+                let bgLayer = this.dialogContainer.querySelector('.combat-bg-layer');
+                if (!bgLayer) {
+                    // Create a new background layer element
+                    bgLayer = document.createElement('div');
+                    bgLayer.className = 'combat-bg-layer';
+                    bgLayer.style.cssText = `
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        z-index: -1;
+                        background-image: inherit;
+                        background-size: inherit;
+                        background-position: inherit;
+                    `;
+                    this.dialogContainer.appendChild(bgLayer);
+                }
+                
+                // Apply rotation to the background layer instead
+                const rotation = Math.random() > 0.5 ? '1deg' : '-1deg';
+                bgLayer.style.transform = `rotate(${rotation})`;
+                console.log(`Applied style: Tilted (${rotation})`);
+                break;
+                
+            case 4:
+                // Panoramic-style with fixed width
+                this.dialogContainer.style.backgroundSize = 'auto 100%';
+                this.dialogContainer.style.backgroundPosition = `${Math.floor(Math.random() * 100)}% center`;
+                console.log('Applied style: Panoramic');
+                break;
+        }
+        
+        // Make sure position is relative for absolute positioning to work
+        const computedStyle = window.getComputedStyle(this.dialogContainer);
+        if (computedStyle.position === 'static') {
+            this.dialogContainer.style.position = 'relative';
+        }
+        
+        // Add overlay to ensure text remains readable regardless of background
+        const overlayColor = 'rgba(46, 16, 101, 0.75)'; // Semi-transparent purple
+        
+        // Use a background blend mode for more interesting effects
+        const blendModes = ['normal', 'multiply', 'overlay', 'darken'];
+        const randomBlend = blendModes[Math.floor(Math.random() * blendModes.length)];
+        
+        this.dialogContainer.style.backgroundColor = overlayColor;
+        this.dialogContainer.style.backgroundBlendMode = randomBlend;
+        console.log(`Applied overlay: ${overlayColor} with blend mode: ${randomBlend}`);
+        
+        return true;
+    } catch (error) {
+        console.error('Error applying background:', error);
+        return false;
+    }
+}
+  
 // setCombatBackground() {
-//     // Check if we have splash art available
-//     if (this.resourceManager && this.resourceManager.resources.splashArt.background) {
-//       // Try to get a random background art
-//       const backgrounds = this.resourceManager.resources.splashArt.background;
-//       if (backgrounds.size > 0) {
+//     console.log('Setting combat background...');
+    
+//     // First, ensure we have a resourceManager connection
+//     if (!this.resourceManager) {
+//         console.error('setCombatBackground: No resourceManager available');
+//         return false;
+//     }
+    
+//     // Check if dialogContainer exists
+//     if (!this.dialogContainer) {
+//         console.error('setCombatBackground: dialogContainer is not available');
+//         return false;
+//     }
+
+//     const category = marker.data.splashArt.category;
+//     const artId = marker.data.splashArt.id;
+//     const art = this.resourceManager?.resources.splashArt[category]?.get(artId);
+    
+//     // Access the background category correctly as an array index
+//     const backgroundCategory = 'background';
+//     const backgrounds = this.resourceManager.resources.splashArt[backgroundCategory];
+    
+//     console.log('Looking for backgrounds in:', backgroundCategory);
+//     console.log('Backgrounds found:', backgrounds ? backgrounds.size : 0);
+    
+//     if (!backgrounds || backgrounds.size === 0) {
+//         console.warn('No backgrounds available, trying to add test backgrounds');
+//         this.addTestBackgrounds();
+//         return false;
+//     }
+    
+//     try {
 //         // Get random splash art
 //         const randomIndex = Math.floor(Math.random() * backgrounds.size);
 //         const backgroundArt = Array.from(backgrounds.values())[randomIndex];
         
-//         if (backgroundArt && backgroundArt.data) {
-//           // Apply as background
-//           this.dialogContainer.style.backgroundImage = `url(${backgroundArt.data})`;
-//           this.dialogContainer.style.backgroundSize = 'cover';
-//           this.dialogContainer.style.backgroundPosition = 'center';
-          
-//           // Add overlay to ensure text remains readable
-//           this.dialogContainer.style.backgroundColor = 'rgba(46, 16, 101, 0.8)'; // Semi-transparent purple
-          
-//           return true;
-//         }
-//       }
-//     }
-    
-//     // Fallback to gradient if no splash art found or error occurs
-//     return false;
-//   }
-
-// Enhanced method to set combat background with random styling
-setCombatBackground() {
-    // Check if we have splash art available
-    if (this.resourceManager && this.resourceManager.resources.splashArt.background) {
-      // Try to get a random background art
-      const backgrounds = this.resourceManager.resources.splashArt.background;
-      if (backgrounds.size > 0) {
-        // Get random splash art
-        const randomIndex = Math.floor(Math.random() * backgrounds.size);
-        const backgroundArt = Array.from(backgrounds.values())[randomIndex];
+//         console.log('Selected background:', backgroundArt?.name);
         
-        if (backgroundArt && backgroundArt.data) {
-          // Apply as background
-          this.dialogContainer.style.backgroundImage = `url(${backgroundArt.data})`;
-          
-          // Randomly choose styling approach
-          const stylingOption = Math.floor(Math.random() * 5);
-          
-          switch (stylingOption) {
-            case 0: 
-              // Full cover (default)
-              this.dialogContainer.style.backgroundSize = 'cover';
-              this.dialogContainer.style.backgroundPosition = 'center';
-              break;
-              
-            case 1: 
-              // Contained with possible repetition
-              this.dialogContainer.style.backgroundSize = 'contain';
-              this.dialogContainer.style.backgroundPosition = 'center';
-              this.dialogContainer.style.backgroundRepeat = 'repeat';
-              break;
-              
-            case 2: 
-              // Zoomed in on a section
-              this.dialogContainer.style.backgroundSize = '150%';
-              
-              // Pick a random focus point
-              const positions = ['top left', 'top center', 'top right', 
-                                 'center left', 'center', 'center right',
-                                 'bottom left', 'bottom center', 'bottom right'];
-              const randomPosition = positions[Math.floor(Math.random() * positions.length)];
-              this.dialogContainer.style.backgroundPosition = randomPosition;
-              break;
-              
-            case 3: 
-              // Slightly tilted background (adds distinctive look)
-              this.dialogContainer.style.backgroundSize = 'cover';
-              this.dialogContainer.style.backgroundPosition = 'center';
-              
-              // Add a subtle rotation to the background with transform
-              const currentTransform = this.dialogContainer.style.transform || '';
-              const rotation = Math.random() > 0.5 ? '1deg' : '-1deg';
-              this.dialogContainer.style.transform = `${currentTransform} rotate(${rotation})`;
-              break;
-              
-            case 4:
-              // Panoramic-style with fixed width
-              this.dialogContainer.style.backgroundSize = 'auto 100%';
-              this.dialogContainer.style.backgroundPosition = `${Math.floor(Math.random() * 100)}% center`;
-              break;
-          }
-          
-          // Add overlay to ensure text remains readable regardless of background
-          const overlayColor = 'rgba(46, 16, 101, 0.75)'; // Semi-transparent purple
-          
-          // Use a background blend mode for more interesting effects
-          const blendModes = ['normal', 'multiply', 'overlay', 'darken'];
-          const randomBlend = blendModes[Math.floor(Math.random() * blendModes.length)];
-          
-          this.dialogContainer.style.backgroundColor = overlayColor;
-          this.dialogContainer.style.backgroundBlendMode = randomBlend;
-          
-          return true;
-        }
-      }
+//         if (!backgroundArt || !backgroundArt.data) {
+//             console.error('Invalid background data');
+//             return false;
+//         }
+        
+//         // Apply as background
+//         console.log('Applying background image from:', backgroundArt.data.substring(0, 30) + '...');
+//         this.dialogContainer.style.backgroundImage = `url("${backgroundArt.data}")`;
+        
+//         // Randomly choose styling approach
+//         const stylingOption = Math.floor(Math.random() * 5);
+        
+//         switch (stylingOption) {
+//             case 0: 
+//                 // Full cover (default)
+//                 this.dialogContainer.style.backgroundSize = 'cover';
+//                 this.dialogContainer.style.backgroundPosition = 'center';
+//                 break;
+                
+//             case 1: 
+//                 // Contained with possible repetition
+//                 this.dialogContainer.style.backgroundSize = 'contain';
+//                 this.dialogContainer.style.backgroundPosition = 'center';
+//                 this.dialogContainer.style.backgroundRepeat = 'repeat';
+//                 break;
+                
+//             case 2: 
+//                 // Zoomed in on a section
+//                 this.dialogContainer.style.backgroundSize = '150%';
+                
+//                 // Pick a random focus point
+//                 const positions = ['top left', 'top center', 'top right', 
+//                                 'center left', 'center', 'center right',
+//                                 'bottom left', 'bottom center', 'bottom right'];
+//                 const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+//                 this.dialogContainer.style.backgroundPosition = randomPosition;
+//                 break;
+                
+//             case 3: 
+//                 // Slightly tilted background (adds distinctive look)
+//                 this.dialogContainer.style.backgroundSize = 'cover';
+//                 this.dialogContainer.style.backgroundPosition = 'center';
+                
+//                 // Add a subtle rotation using a separate element
+//                 const bgLayer = document.createElement('div');
+//                 bgLayer.className = 'combat-bg-layer';
+//                 bgLayer.style.cssText = `
+//                     position: absolute;
+//                     top: 0;
+//                     left: 0;
+//                     right: 0;
+//                     bottom: 0;
+//                     z-index: -1;
+//                     background-image: inherit;
+//                     background-size: inherit;
+//                     background-position: inherit;
+//                 `;
+                
+//                 // Make sure dialogContainer has position
+//                 this.dialogContainer.style.position = 'relative';
+                
+//                 // Apply rotation to the background layer
+//                 const rotation = Math.random() > 0.5 ? '1deg' : '-1deg';
+//                 bgLayer.style.transform = `rotate(${rotation})`;
+                
+//                 // Add to container
+//                 this.dialogContainer.appendChild(bgLayer);
+//                 break;
+                
+//             case 4:
+//                 // Panoramic-style with fixed width
+//                 this.dialogContainer.style.backgroundSize = 'auto 100%';
+//                 this.dialogContainer.style.backgroundPosition = `${Math.floor(Math.random() * 100)}% center`;
+//                 break;
+//         }
+        
+//         // Add overlay to ensure text remains readable regardless of background
+//         const overlayColor = 'rgba(46, 16, 101, 0.75)'; // Semi-transparent purple
+        
+//         // Use a background blend mode for more interesting effects
+//         const blendModes = ['normal', 'multiply', 'overlay', 'darken'];
+//         const randomBlend = blendModes[Math.floor(Math.random() * blendModes.length)];
+        
+//         this.dialogContainer.style.backgroundColor = overlayColor;
+//         this.dialogContainer.style.backgroundBlendMode = randomBlend;
+        
+//         console.log('Background successfully applied!');
+//         return true;
+//     } catch (error) {
+//         console.error('Error applying background:', error);
+//         return false;
+//     }
+// }
+
+// Helper method to add test backgrounds if needed
+addTestBackgrounds() {
+    if (!this.resourceManager) {
+        console.error('Cannot add test backgrounds - no ResourceManager connected');
+        return false;
     }
     
-    // Fallback to gradient if no splash art found or error occurs
-    return false;
-  }
-  
+    console.log('Adding test backgrounds to ResourceManager');
+    
+    // Make sure the splashArt object exists
+    if (!this.resourceManager.resources.splashArt) {
+        this.resourceManager.resources.splashArt = {};
+    }
+    
+    // Initialize the background category as a Map if it doesn't exist
+    if (!this.resourceManager.resources.splashArt['background']) {
+        this.resourceManager.resources.splashArt['background'] = new Map();
+    }
+    
+    // Create some simple SVG backgrounds for testing
+    const backgrounds = [
+        {
+            name: 'Purple Gradient',
+            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%234338ca;stop-opacity:1" /><stop offset="100%" style="stop-color:%237e22ce;stop-opacity:1" /></linearGradient></defs><rect width="800" height="600" fill="url(%23grad)" /></svg>'
+        },
+        {
+            name: 'Dungeon Pattern',
+            data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><defs><pattern id="pattern" patternUnits="userSpaceOnUse" width="100" height="100"><rect width="50" height="50" x="0" y="0" fill="%23432874" /><rect width="50" height="50" x="50" y="50" fill="%23432874" /><rect width="50" height="50" x="50" y="0" fill="%23331c60" /><rect width="50" height="50" x="0" y="50" fill="%23331c60" /></pattern></defs><rect width="800" height="600" fill="url(%23pattern)" /></svg>'
+        }
+    ];
+    
+    // Add each background to the ResourceManager
+    backgrounds.forEach((bg, index) => {
+        const id = `test_background_${index}`;
+        const backgroundData = {
+            id: id,
+            name: bg.name,
+            data: bg.data,
+            thumbnail: bg.data,
+            category: 'background',
+            dateAdded: new Date().toISOString()
+        };
+        
+        this.resourceManager.resources.splashArt['background'].set(id, backgroundData);
+        console.log(`Added test background: ${bg.name}`);
+    });
+    
+    return true;
+}
+
   /**
    * Combat Initialization Methods
    */
@@ -1169,7 +1236,7 @@ showCombatInterface() {
     this.dialogContainer.className = 'combat-container';
 
     // Try to set background from splash art, fallback to gradient is already in CSS
-this.setCombatBackground();
+    this.setCombatBackground();
     
     // Create header
     const header = document.createElement('div');
@@ -1950,31 +2017,53 @@ renderInitiativeList() {
     
     // Set content based on result
     if (result === 'victory') {
-      resultCard.innerHTML = `
-        <span class="material-icons" style="font-size: 64px; color: #FFD700; margin-bottom: 16px;">emoji_events</span>
-        <h2 style="margin: 0 0 16px 0; color: #4CAF50;">Victory!</h2>
-        <p style="margin-bottom: 24px;">Your party has defeated all enemies.</p>
-        
-        <div class="rewards" style="margin-bottom: 24px; background: #f5f5f5; padding: 16px; border-radius: 8px;">
-          <h3 style="margin-top: 0;">Rewards</h3>
-          <div class="experience-reward" style="margin-bottom: 8px;">
-            <span style="font-weight: bold;">Experience:</span> 100 XP
+        resultCard.innerHTML = `
+          <span class="material-icons" style="font-size: 64px; color: #FFD700; margin-bottom: 16px;">emoji_events</span>
+          <h2 style="margin: 0 0 16px 0; color: #4CAF50;">Victory!</h2>
+          <p style="margin-bottom: 24px;">Your party has defeated all enemies.</p>
+          
+          <div class="rewards" style="margin-bottom: 24px; background: #f5f5f5; padding: 16px; border-radius: 8px;">
+            <h3 style="margin-top: 0;">Rewards</h3>
+            <div class="experience-reward" style="margin-bottom: 8px;">
+              <span style="font-weight: bold;">Experience:</span> 100 XP
+            </div>
+            <div class="item-rewards">
+              <span style="font-weight: bold;">Items:</span> None
+            </div>
           </div>
-          <div class="item-rewards">
-            <span style="font-weight: bold;">Items:</span> None
-          </div>
-        </div>
+          
+          <sl-button class="continue-btn" variant="primary">Continue</sl-button>
+        `;
         
-        <sl-button class="continue-btn" variant="primary">Continue</sl-button>
-      `;
-      
-      // Award XP to all player monsters
-      this.playerParty.forEach(monster => {
-        if (monster.currentHP > 0) { // Only award XP to surviving monsters
-          this.partyManager.awardExperience(monster.id, 100);
+        // Award XP to all player monsters
+        this.playerParty.forEach(monster => {
+          if (monster.currentHP > 0) { // Only award XP to surviving monsters
+            this.partyManager.awardExperience(monster.id, 100);
+          }
+        });
+        
+        // Store enemy data for recruitment opportunity
+        if (this.enemyParty.length > 0) {
+          // Get a random enemy that wasn't defeated (or first one if all defeated)
+          const recruitableEnemies = this.enemyParty.filter(enemy => enemy.currentHP > 0);
+          const targetEnemy = recruitableEnemies.length > 0 ? 
+            recruitableEnemies[0] : this.enemyParty[0];
+                
+          // Store for potential recruitment
+          window.lastDefeatedEnemy = targetEnemy;
+          
+          // Show recruitment hint
+          const hintElement = document.createElement('div');
+          hintElement.style.cssText = `
+            margin-top: 12px;
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+          `;
+          hintElement.innerHTML = 'Press <strong>E</strong> after closing to attempt recruitment';
+          resultCard.appendChild(hintElement);
         }
-      });
-    } else if (result === 'defeat') {
+      }else if (result === 'defeat') {
       resultCard.innerHTML = `
         <span class="material-icons" style="font-size: 64px; color: #F44336; margin-bottom: 16px;">sentiment_very_dissatisfied</span>
         <h2 style="margin: 0 0 16px 0; color: #F44336;">Defeat</h2>
@@ -1994,16 +2083,47 @@ renderInitiativeList() {
   }
   
   // Close combat screen
-  closeCombat() {
+//   closeCombat() {
+//     // Animate out
+//     this.combatOverlay.style.opacity = '0';
+//     this.dialogContainer.style.transform = 'scale(0.95)';
+
+//     const combatStyles = document.querySelector('style');
+// if (combatStyles) {
+//   combatStyles.remove();
+// }
+    
+//     // Remove after animation
+//     setTimeout(() => {
+//       this.combatOverlay.remove();
+//       this.combatOverlay = null;
+//       this.dialogContainer = null;
+      
+//       // Reset combat state
+//       this.inCombat = false;
+//       this.initiativeOrder = [];
+//       this.currentTurn = 0;
+//       this.roundNumber = 0;
+//       this.playerParty = [];
+//       this.enemyParty = [];
+      
+//       // Restore all player monsters' HP
+//       this.partyManager.party.active.forEach(monster => {
+//         monster.currentHP = monster.maxHP;
+//       });
+      
+//       // Save party state
+//       this.partyManager.saveParty();
+      
+//       console.log('Combat ended and state reset');
+//     }, 300);
+//   }
+
+closeCombat() {
     // Animate out
     this.combatOverlay.style.opacity = '0';
     this.dialogContainer.style.transform = 'scale(0.95)';
-
-    const combatStyles = document.querySelector('style');
-if (combatStyles) {
-  combatStyles.remove();
-}
-    
+  
     // Remove after animation
     setTimeout(() => {
       this.combatOverlay.remove();
@@ -2015,8 +2135,57 @@ if (combatStyles) {
       this.initiativeOrder = [];
       this.currentTurn = 0;
       this.roundNumber = 0;
-      this.playerParty = [];
-      this.enemyParty = [];
+      
+      // Store enemy data for recruitment
+      const defeatedEnemy = window.lastDefeatedEnemy;
+      
+      // Set up recruitment key listener if we have a defeated enemy
+      if (defeatedEnemy) {
+        const handleRecruitKey = (e) => {
+          if (e.key.toLowerCase() === 'e') {
+            // Remove this listener to prevent multiple dialogs
+            document.removeEventListener('keydown', handleRecruitKey);
+            
+            // Show recruitment dialog
+            if (this.partyManager) {
+              this.partyManager.showRecruitmentDialog(defeatedEnemy);
+            }
+            
+            // Clear stored enemy
+            window.lastDefeatedEnemy = null;
+          }
+        };
+        
+        // Add listener with a slight delay to prevent accidental triggering
+        setTimeout(() => {
+          document.addEventListener('keydown', handleRecruitKey);
+          
+          // Show recruitment prompt
+          const promptElement = document.createElement('div');
+          promptElement.className = 'recruitment-prompt';
+          promptElement.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1000;
+          `;
+          promptElement.innerHTML = 'Press <strong>E</strong> to attempt recruitment';
+          document.body.appendChild(promptElement);
+          
+          // Remove prompt after 5 seconds
+          setTimeout(() => {
+            if (promptElement.parentNode) {
+              promptElement.remove();
+            }
+          }, 5000);
+        }, 500);
+      }
       
       // Restore all player monsters' HP
       this.partyManager.party.active.forEach(monster => {
@@ -2048,8 +2217,8 @@ if (combatStyles) {
     
     // Show target selection for attack abilities
     if (ability.type === 'attack' || ability.type === 'debuff') {
-        this.markTargetableEnemies(currentMonster, ability);
-      this.showTargetSelection(currentMonster, ability);
+       this.markTargetableEnemies(currentMonster, ability);
+    //   this.showTargetSelection(currentMonster, ability);
     } 
     // For self-buff abilities, apply directly
     else if (ability.type === 'buff' || ability.type === 'defense') {
@@ -2093,27 +2262,132 @@ if (combatStyles) {
   }
 
   // New method to mark targets
+// markTargetableEnemies(monster, ability) {
+//     // Find all enemy cards
+//     const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+    
+//     enemyCards.forEach(card => {
+//       const enemyId = card.getAttribute('data-monster-id');
+//       const enemy = this.enemyParty.find(e => e.id === enemyId);
+      
+//       if (enemy && enemy.currentHP > 0) {
+//         // Add targetable class and hint
+//         card.classList.add('targetable');
+        
+//         // Add targeting hint
+//         const hint = document.createElement('div');
+//         hint.className = 'targeting-hint';
+//         hint.textContent = `Click to target with ${ability.name}`;
+//         card.appendChild(hint);
+//       }
+//     });
+    
+//     // Add a floating indicator in the center of the screen
+//     const battleScene = this.dialogContainer.querySelector('.battle-scene');
+//     const indicator = document.createElement('div');
+//     indicator.className = 'battle-notification fade-in';
+//     indicator.textContent = 'Select an enemy to target';
+//     indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+    
+//     battleScene.appendChild(indicator);
+    
+//     // Remove after a few seconds to avoid clutter
+//     setTimeout(() => {
+//       if (indicator.parentNode) {
+//         indicator.classList.remove('fade-in');
+//         indicator.style.opacity = 0;
+//         setTimeout(() => indicator.remove(), 300);
+//       }
+//     }, 3000);
+//   }
+
 markTargetableEnemies(monster, ability) {
     // Find all enemy cards
     const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+    
+    // Find viable targets (enemies with HP > 0)
+    const viableTargets = [];
     
     enemyCards.forEach(card => {
       const enemyId = card.getAttribute('data-monster-id');
       const enemy = this.enemyParty.find(e => e.id === enemyId);
       
       if (enemy && enemy.currentHP > 0) {
-        // Add targetable class and hint
-        card.classList.add('targetable');
-        
-        // Add targeting hint
-        const hint = document.createElement('div');
-        hint.className = 'targeting-hint';
-        hint.textContent = `Click to target with ${ability.name}`;
-        card.appendChild(hint);
+        viableTargets.push({ card, enemy });
       }
     });
     
-    // Add a floating indicator in the center of the screen
+    // If there's only one viable target, auto-target it
+    if (viableTargets.length === 1) {
+      const { enemy } = viableTargets[0];
+      
+      // Create a quick highlight effect to show which enemy was targeted
+      const card = viableTargets[0].card;
+      card.classList.add('auto-targeted');
+      
+      // Create a temporary message
+      const battleScene = this.dialogContainer.querySelector('.battle-scene');
+      const autoMessage = document.createElement('div');
+      autoMessage.className = 'battle-notification fade-in';
+      autoMessage.textContent = `Auto-targeting ${enemy.name}`;
+      autoMessage.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+      battleScene.appendChild(autoMessage);
+      
+      // Remove the message and execute the ability after a short delay
+      setTimeout(() => {
+        // Remove the message
+        autoMessage.classList.remove('fade-in');
+        autoMessage.style.opacity = 0;
+        
+        // Execute the ability
+        this.resolveAbility(monster, ability, enemy);
+        
+        // Move to next turn
+        this.nextTurn();
+        
+        // Clean up
+        setTimeout(() => {
+          autoMessage.remove();
+          card.classList.remove('auto-targeted');
+        }, 300);
+      }, 800); // Short delay so player can see what happened
+      
+      return; // Exit early since we auto-targeted
+    }
+    
+    // If we have multiple targets, proceed with normal targeting
+    viableTargets.forEach(({ card, enemy }) => {
+      // Add targetable class and hint
+      card.classList.add('targetable');
+      
+      // Add targeting hint
+      const hint = document.createElement('div');
+      hint.className = 'targeting-hint';
+      hint.textContent = `Click to target with ${ability.name}`;
+      card.appendChild(hint);
+      
+      // Click handler to execute the ability
+      card.addEventListener('click', () => {
+        // Remove targeting from all cards
+        enemyCards.forEach(c => {
+          c.classList.remove('targetable');
+          const h = c.querySelector('.targeting-hint');
+          if (h) h.remove();
+        });
+        
+        // Execute ability on the target
+        this.resolveAbility(monster, ability, enemy);
+        
+        // Move to next turn
+        this.nextTurn();
+        
+        // Remove battle notification if present
+        const notification = this.dialogContainer.querySelector('.battle-notification');
+        if (notification) notification.remove();
+      });
+    });
+    
+    // Add the targeting instruction message only if we have multiple targets
     const battleScene = this.dialogContainer.querySelector('.battle-scene');
     const indicator = document.createElement('div');
     indicator.className = 'battle-notification fade-in';
@@ -2124,13 +2398,75 @@ markTargetableEnemies(monster, ability) {
     
     // Remove after a few seconds to avoid clutter
     setTimeout(() => {
-      if (indicator.parentNode) {
+      if (indicator && indicator.parentNode) {
         indicator.classList.remove('fade-in');
         indicator.style.opacity = 0;
-        setTimeout(() => indicator.remove(), 300);
+        setTimeout(() => {
+          if (indicator.parentNode) indicator.remove();
+        }, 300);
       }
     }, 3000);
-  }
+}
+
+// Add this method to CombatSystem.js to properly handle target clicks
+// markTargetableEnemies(monster, ability) {
+//     // Find all enemy cards
+//     const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+    
+//     enemyCards.forEach(card => {
+//       const enemyId = card.getAttribute('data-monster-id');
+//       const enemy = this.enemyParty.find(e => e.id === enemyId);
+      
+//       if (enemy && enemy.currentHP > 0) {
+//         // Add targetable class and hint
+//         card.classList.add('targetable');
+        
+//         // Add targeting hint
+//         const hint = document.createElement('div');
+//         hint.className = 'targeting-hint';
+//         hint.textContent = `Click to target with ${ability.name}`;
+//         card.appendChild(hint);
+        
+//         // ADD THIS: Click handler to execute the ability
+//         card.addEventListener('click', () => {
+//           // Remove targeting from all cards
+//           enemyCards.forEach(c => {
+//             c.classList.remove('targetable');
+//             const h = c.querySelector('.targeting-hint');
+//             if (h) h.remove();
+//           });
+          
+//           // Execute ability on the target
+//           this.resolveAbility(monster, ability, enemy);
+          
+//           // Move to next turn
+//           this.nextTurn();
+          
+//           // Remove battle notification if present
+//           const notification = this.dialogContainer.querySelector('.battle-notification');
+//           if (notification) notification.remove();
+//         });
+//       }
+//     });
+    
+//     // Add a floating indicator in the center of the screen
+//     const battleScene = this.dialogContainer.querySelector('.battle-scene');
+//     const indicator = document.createElement('div');
+//     indicator.className = 'battle-notification fade-in';
+//     indicator.textContent = 'Select an enemy to target';
+//     indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+    
+//     battleScene.appendChild(indicator);
+    
+//     // Remove after a few seconds to avoid clutter
+//     setTimeout(() => {
+//       if (indicator.parentNode) {
+//         indicator.classList.remove('fade-in');
+//         indicator.style.opacity = 0;
+//         setTimeout(() => indicator.remove(), 300);
+//       }
+//     }, 3000);
+// }
   
   // Show target selection overlay
   showTargetSelection(monster, ability) {
