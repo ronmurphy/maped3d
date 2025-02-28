@@ -1248,6 +1248,51 @@ class CombatSystem {
     return html;
   }
 
+  getMonsterTypeColor(type) {
+    const typeColors = {
+      aberration: '#5500AA',  
+      beast: '#44AA44',       
+      celestial: '#FFD700',   
+      construct: '#999999',   
+      dragon: '#FF4444',      
+      elemental: '#FF8800',   
+      fey: '#DD66FF',         
+      fiend: '#AA2222',       
+      giant: '#AA7722',       
+      humanoid: '#4444FF',    
+      monstrosity: '#886600', 
+      ooze: '#66CC66',        
+      plant: '#228B22',       
+      undead: '#663366',      
+      vermin: '#996633',      
+  
+      // Subtypes
+      demon: '#990000',       
+      devil: '#660000',       
+      lich: '#330066',        
+      ghost: '#9999FF',       
+      skeleton: '#CCCCCC',    
+      vampire: '#550000',     
+      lycanthrope: '#775500', 
+      mimic: '#AA33CC',       
+      aberrant_horror: '#220044', 
+      swamp_beast: '#556B2F', 
+      sea_monster: '#008080', 
+      storm_creature: '#708090', 
+      fire_entity: '#FF4500', 
+      frost_monster: '#00FFFF', 
+      shadow_creature: '#222222', 
+      celestial_guardian: '#FFFFCC', 
+      arcane_construct: '#6666FF', 
+      ancient_horror: '#3B3B6D', 
+      chaos_entity: '#FF00FF', 
+      nature_spirit: '#32CD32', 
+      sand_creature: '#D2B48C', 
+    };
+  
+    return typeColors[type.toLowerCase()] || '#6B7280'; // Default gray if not found
+  }
+
   // Add helper method to generate default token image
   generateDefaultTokenImage(monster) {
     const canvas = document.createElement('canvas');
@@ -1257,49 +1302,7 @@ class CombatSystem {
     const ctx = canvas.getContext('2d');
 
     // Generate color based on monster type
-    const colors = {
-      aberration: '#5500AA',  // Purple - alien and unnatural beings
-      beast: '#44AA44',       // Green - natural creatures
-      celestial: '#FFD700',   // Gold - divine and radiant beings
-      construct: '#999999',   // Gray - artificial or mechanical beings
-      dragon: '#FF4444',      // Red - powerful, elemental creatures
-      elemental: '#FF8800',   // Orange - creatures of pure elemental energy
-      fey: '#DD66FF',         // Pink/Purple - whimsical and otherworldly
-      fiend: '#AA2222',       // Dark Red - demons and devils
-      giant: '#AA7722',       // Brown/Orange - large humanoid creatures
-      humanoid: '#4444FF',    // Blue - sentient, civilized species
-      monstrosity: '#886600', // Dark Yellow - unnatural or mutated creatures
-      ooze: '#66CC66',        // Light Green - gelatinous and amorphous beings
-      plant: '#228B22',       // Forest Green - living plant-based creatures
-      undead: '#663366',      // Dark Purple - spirits and reanimated corpses
-      vermin: '#996633',      // Brown - insects, spiders, and pests
-
-      // Subtypes and additional categories
-      demon: '#990000',       // Deep Red - Chaotic fiends
-      devil: '#660000',       // Dark Crimson - Lawful fiends
-      lich: '#330066',        // Dark Indigo - Powerful undead mages
-      ghost: '#9999FF',       // Pale Blue - Ethereal spirits
-      skeleton: '#CCCCCC',    // Bone White - Basic undead soldiers
-      vampire: '#550000',     // Blood Red - Classic horror monsters
-      lycanthrope: '#775500', // Brown - Werewolves and shapechangers
-      mimic: '#AA33CC',       // Purple - Deceptive creatures
-      aberrant_horror: '#220044', // Deep Purple - Cosmic horror creatures
-      swamp_beast: '#556B2F', // Dark Olive Green - Creatures of the swamp
-      sea_monster: '#008080', // Teal - Aquatic terrors
-      storm_creature: '#708090', // Slate Gray - Creatures tied to lightning and storms
-      fire_entity: '#FF4500', // Orange-Red - Fire-based beings
-      frost_monster: '#00FFFF', // Cyan - Ice creatures
-      shadow_creature: '#222222', // Almost Black - Beings of darkness
-      celestial_guardian: '#FFFFCC', // Soft Gold - Divine protectors
-      arcane_construct: '#6666FF', // Soft Blue - Magical constructs
-      ancient_horror: '#3B3B6D', // Dark Slate Blue - Forgotten, eldritch things
-      chaos_entity: '#FF00FF', // Magenta - Chaotic beings
-      nature_spirit: '#32CD32', // Lime Green - Embodiments of the wild
-      sand_creature: '#D2B48C', // Tan - Desert-based creatures
-    };
-
-
-    const color = colors[monster.basic.type.toLowerCase()] || '#888888';
+    const color = this.getMonsterTypeColor(monster.basic.type);
 
     // Draw circle background
     ctx.fillStyle = color;
