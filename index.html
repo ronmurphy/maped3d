@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
 
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/rpg-awesome.css">
 
   <!-- Load Shoelace components -->
   <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/dark.css"> -->
@@ -27,7 +28,7 @@
   <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button/button.js"></script>
   <script type="module"
-      src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button-group/button-group.js"></script>
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/button-group/button-group.js"></script>
   <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/components/dialog/dialog.js"></script>
   <script type="module"
@@ -65,14 +66,15 @@
   <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/switch/switch.js"></script>
 
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/alert/alert.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/alert/alert.js"></script>
   <!-- html2canvas-->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Three.js  r128, needs it's one pointerlockcontrols-->
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script> -->
- 
+
   <!-- working also 138.8-->
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.138.3/three.min.js"></script>
 
@@ -83,14 +85,14 @@
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script> -->
 
   <!-- 160.1 last working version i three.min.js file format-->
-   <!-- colors still look washed out-->
+  <!-- colors still look washed out-->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.min.js"></script>
 
   <!-- this is pretty much universal, keep it here-->
   <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/controls/PointerLockControls.js"></script>
 
-<!-- fps counter -->
-<script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script>
+  <!-- fps counter -->
+  <script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script>
 
 
 
@@ -131,7 +133,7 @@
 
     <header class="header">
       <!-- File Operations Group -->
-      <!-- <sl-button-group>
+      <sl-button-group>
         <sl-tooltip content="Open Maps" placement="right-top">
           <sl-button size="medium" variant="success" outline id="openMapBtn">
             <span class="material-icons">map</span>
@@ -143,15 +145,25 @@
           </sl-button>
         </sl-tooltip>
       </sl-button-group>
-    
-      Central Title
+
+      <!-- Central Title -->
       <div class="header-title" id="mapTitle">
         <span id="mapTitleText">MapEd 3d</span>
         <span class="material-icons header-title-edit">edit</span>
       </div>
-    
-      Tools Group
-      <sl-button-group>
+
+      <!-- Tools Group -->
+      <sl-button-group style="margin-left: auto;">
+        <sl-tooltip content="Map Editor Settings" placement="left-top">
+          <sl-button size="medium" variant="warning" outline id="editorPrefsBtn">
+            <span class="material-icons">tune</span>
+          </sl-button>
+        </sl-tooltip>
+        <sl-tooltip content="3D Preferences" placement="left-top">
+          <sl-button size="medium" variant="warning" outline id="preferencesBtn">
+            <span class="material-icons">settings</span>
+          </sl-button>
+        </sl-tooltip>
         <sl-tooltip content="Resource Manager" placement="left-top">
           <sl-button size="medium" variant="success" outline id="resourceManagerBtn" style="display: none;">
             <span class="material-icons">palette</span>
@@ -162,78 +174,18 @@
             <span class="material-icons">view_in_ar</span>
           </sl-button>
         </sl-tooltip>
-        <sl-tooltip content="Map Editor Settings" placement="left-top">
-          <sl-button size="medium" variant="warning" outline id="editorPrefsBtn">
-            <span class="material-icons">tune</span>
-          </sl-button>
-        </sl-tooltip>
-        <sl-tooltip content="3D Preferences" placement="right-top">
-          <sl-button size="medium" variant="warning" outline id="preferencesBtn">
-            <span class="material-icons">settings</span>
-          </sl-button>
-        </sl-tooltip>
         <sl-tooltip content="Help Guide" placement="left-top">
           <sl-button size="medium" variant="primary" outline id="helpBtn">
             <span class="material-icons">help_outline</span>
           </sl-button>
         </sl-tooltip>
-      </sl-button-group> -->
-
-<!-- File Operations Group -->
-<sl-button-group>
-  <sl-tooltip content="Open Maps" placement="right-top">
-    <sl-button size="medium" variant="success" outline id="openMapBtn">
-      <span class="material-icons">map</span>
-    </sl-button>
-  </sl-tooltip>
-  <sl-tooltip content="Save Project" placement="right-top">
-    <sl-button size="medium" variant="success" outline id="saveProjectBtn">
-      <span class="material-icons">save</span>
-    </sl-button>
-  </sl-tooltip>
-</sl-button-group>
-
-<!-- Central Title -->
-<div class="header-title" id="mapTitle">
-  <span id="mapTitleText">MapEd 3d</span>
-  <span class="material-icons header-title-edit">edit</span>
-</div>
-
-<!-- Tools Group -->
-<sl-button-group style="margin-left: auto;">
-  <sl-tooltip content="Resource Manager" placement="left-top">
-    <sl-button size="medium" variant="success" outline id="resourceManagerBtn" style="display: none;">
-      <span class="material-icons">palette</span>
-    </sl-button>
-  </sl-tooltip>
-  <sl-tooltip content="View in 3D" placement="left-top">
-    <sl-button size="medium" variant="danger" outline id="create3d">
-      <span class="material-icons">view_in_ar</span>
-    </sl-button>
-  </sl-tooltip>
-  <sl-tooltip content="Map Editor Settings" placement="left-top">
-    <sl-button size="medium" variant="warning" outline id="editorPrefsBtn">
-      <span class="material-icons">tune</span>
-    </sl-button>
-  </sl-tooltip>
-  <sl-tooltip content="3D Preferences" placement="left-top">
-    <sl-button size="medium" variant="warning" outline id="preferencesBtn">
-      <span class="material-icons">settings</span>
-    </sl-button>
-  </sl-tooltip>
-  <sl-tooltip content="Help Guide" placement="left-top">
-    <sl-button size="medium" variant="primary" outline id="helpBtn">
-      <span class="material-icons">help_outline</span>
-    </sl-button>
-  </sl-tooltip>
-</sl-button-group>
-
-
-
+      </sl-button-group>
     </header>
 
+    <!--Sidebar for Area, Markers and LayerPanel-->
     <aside class="sidebar">
       <div class="sidebar-content">
+        <!-- Area tools-->
         <div class="tool-section">
           <div class="tool-section-title">Tools</div>
           <div class="tool-grid">
@@ -253,39 +205,39 @@
         </div>
 
         <div class="tool-divider"></div>
-
+        <!-- Marker tools-->
         <div class="tool-section">
           <div class="tool-section-title">Map Markers</div>
           <div class="tool-grid marker-tools">
-            <div class="tool-button" id="playerStartTool" data-tooltip="Player Start [S]">
+            <div class="tool-button" id="playerStartTool" data-tooltip="Player Start">
               <span class="material-icons">person_pin_circle</span>
             </div>
-            <div class="tool-button" id="encounterTool" data-tooltip="Add Encounter [E]">
+            <div class="tool-button" id="encounterTool" data-tooltip="Add Encounter">
               <span class="material-icons">local_fire_department</span>
             </div>
-            <div class="tool-button" id="treasureTool" data-tooltip="Add Treasure [T]">
+            <div class="tool-button" id="treasureTool" data-tooltip="Add Treasure">
               <span class="material-icons">workspace_premium</span>
             </div>
-            <div class="tool-button" id="trapTool" data-tooltip="Add Trap [X]">
+            <div class="tool-button" id="trapTool" data-tooltip="Add Trap">
               <span class="material-icons">warning</span>
             </div>
             <div class="tool-button" id="teleportTool" data-tooltip="Add Teleport">
               <span class="material-icons">swap_calls</span>
             </div>
-            <div class="tool-button" id="doorTool" data-tooltip="Add Door [D]">
+            <div class="tool-button" id="doorTool" data-tooltip="Add Door">
               <span class="material-icons">door_front</span>
             </div>
-            <div class="tool-button" id="propTool" data-tooltip="Add Prop [P]">
+            <div class="tool-button" id="propTool" data-tooltip="Add Prop">
               <span class="material-icons">category</span>
             </div>
-            <div class="tool-button" id="splashArtTool" data-tooltip="Add Splash Art [S]">
+            <div class="tool-button" id="splashArtTool" data-tooltip="Add Splash Art">
               <span class="material-icons">add_photo_alternate</span>
-          </div>
+            </div>
           </div>
         </div>
 
         <div class="tool-divider"></div>
-
+        <!--LayerPanel-->
         <div class="layers-panel">
           <div class="tool-section-title">Rooms</div>
           <div class="layers-list" id="layersList">
@@ -302,7 +254,5 @@
     </main>
   </div>
 
-
 </body>
-
 </html>

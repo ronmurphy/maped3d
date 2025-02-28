@@ -1439,93 +1439,6 @@ prepareMonster(monster) {
     }, 10);
   }
 
-  // Create a monster card for the party UI
-// createMonsterCard(monster, type, isAlt = false) {
-//   // Calculate HP percentage
-//   const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
-//   let hpColorClass = 'high';
-//   if (hpPercent < 30) {
-//     hpColorClass = 'low';
-//   } else if (hpPercent < 70) {
-//     hpColorClass = 'medium';
-//   }
-  
-//   // Get color for monster type
-//   const typeColors = {
-//     Beast: '#4f46e5',
-//     Dragon: '#c026d3',
-//     Elemental: '#ef4444',
-//     Monstrosity: '#65a30d',
-//     Construct: '#a16207',
-//     Undead: '#6b7280',
-//     Fey: '#06b6d4',
-//     Giant: '#b45309'
-//   };
-  
-//   const bgColor = typeColors[monster.type] || '#6b7280';
-  
-//   // Create the card
-//   const card = document.createElement('div');
-//   card.className = `monster-card ${type}-party`;
-//   if (isAlt) card.classList.add('alt');
-//   card.setAttribute('data-monster-id', monster.id);
-  
-//   // Get token source - properly check for token data structure
-//   const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
-  
-//   // Monster card content
-//   card.innerHTML = `
-//     <div class="monster-header">
-//       <div class="monster-avatar" style="background-color: ${bgColor};">
-//         ${tokenSource ? 
-//           `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-//           monster.name.charAt(0)
-//         }
-//       </div>
-//       <div class="monster-info">
-//         <div class="monster-name">${monster.name}</div>
-//         <div class="monster-type">
-//           ${monster.size} ${monster.type}
-//           <span class="monster-level-badge">${monster.level || 1}</span>
-//         </div>
-//       </div>
-//     </div>
-    
-//     <div class="monster-stats">
-//       <!-- HP Bar -->
-//       <div class="hp-bar-label">
-//         <span>HP</span>
-//         <span>${monster.currentHP}/${monster.maxHP}</span>
-//       </div>
-//       <div class="hp-bar-bg">
-//         <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
-//       </div>
-      
-//       <!-- Footer with AC and equipment -->
-//       <div class="monster-footer">
-//         <div class="ac-display">
-//           <span class="material-icons small" style="margin-right: 4px;">shield</span>
-//           <span>${monster.armorClass}</span>
-//         </div>
-        
-//         <div class="equipment-icons">
-//           ${monster.equipment?.weapon ? 
-//             `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
-//               <span class="material-icons small">sports_martial_arts</span>
-//             </div>` : ''
-//           }
-//           ${monster.equipment?.armor ? 
-//             `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
-//               <span class="material-icons small">security</span>
-//             </div>` : ''
-//           }
-//         </div>
-//       </div>
-//     </div>
-//   `;
-  
-//   return card;
-// }
 
 // Update createMonsterCard to show relationship indicators
 createMonsterCard(monster, type, isAlt = false) {
@@ -1538,19 +1451,7 @@ createMonsterCard(monster, type, isAlt = false) {
       hpColorClass = 'medium';
     }
     
-    // Get color for monster type
-    const typeColors = {
-      Beast: '#4f46e5',
-      Dragon: '#c026d3',
-      Elemental: '#ef4444',
-      Monstrosity: '#65a30d',
-      Construct: '#a16207',
-      Undead: '#6b7280',
-      Fey: '#06b6d4',
-      Giant: '#b45309'
-    };
-    
-    const bgColor = typeColors[monster.type] || '#6b7280';
+        const bgColor = [monster.type.toLowerCase()]; 
     
     // Get relationship data
     const relationships = this.getMonstersWithAffinity(monster.id) || [];
@@ -1634,73 +1535,55 @@ createMonsterCard(monster, type, isAlt = false) {
     `;
 
     const statsDiv = card.querySelector('.monster-stats');
-  
-    // // Create the action buttons container
-    // const actionsDiv = document.createElement('div');
-    // actionsDiv.className = 'monster-actions';
-    // actionsDiv.style.display = 'flex';
-    // actionsDiv.style.justifyContent = 'space-between';
-    // actionsDiv.style.marginTop = '8px';
-    // actionsDiv.style.paddingTop = '8px';
-    // actionsDiv.style.borderTop = '1px solid #f0f0f0';
-    
-    // // Add appropriate button based on current location
-    // if (type === 'active') {
-    //   actionsDiv.innerHTML = `
-    //     <button class="move-to-reserve" data-monster-id="${monster.id}" style="
-    //       background: #f3f4f6;
-    //       border: none;
-    //       border-radius: 4px;
-    //       padding: 4px 8px;
-    //       font-size: 0.7rem;
-    //       cursor: pointer;
-    //       display: flex;
-    //       align-items: center;
-    //     ">
-    //       <span class="material-icons" style="font-size: 12px; margin-right: 2px;">arrow_downward</span>
-    //       To Reserve
-    //     </button>
-    //   `;
-    // } else {
-    //   actionsDiv.innerHTML = `
-    //     <button class="move-to-active" data-monster-id="${monster.id}" style="
-    //       background: #e0e7ff;
-    //       border: none;
-    //       border-radius: 4px;
-    //       padding: 4px 8px;
-    //       font-size: 0.7rem;
-    //       cursor: pointer;
-    //       display: flex;
-    //       align-items: center;
-    //       ${this.party.active.length >= this.party.maxActive ? 'opacity: 0.5; cursor: not-allowed;' : ''}
-    //     ">
-    //       <span class="material-icons" style="font-size: 12px; margin-right: 2px;">arrow_upward</span>
-    //       To Active
-    //     </button>
-    //   `;
-    // }
-    
-    // // Add a details button on the right side
-    // actionsDiv.innerHTML += `
-    //   <button class="view-details-btn" data-monster-id="${monster.id}" style="
-    //     background: #f3f4f6;
-    //     border: none;
-    //     border-radius: 4px;
-    //     padding: 4px 8px;
-    //     font-size: 0.7rem;
-    //     cursor: pointer;
-    //     display: flex;
-    //     align-items: center;
-    //   ">
-    //     <span class="material-icons" style="font-size: 12px; margin-right: 2px;">info</span>
-    //     Details
-    //   </button>
-    // `;
-    
-    // statsDiv.appendChild(actionsDiv);
     
     return card;
   }
+
+  getMonsterTypeColor(type) {
+    const typeColors = {
+      aberration: '#5500AA',  
+      beast: '#44AA44',       
+      celestial: '#FFD700',   
+      construct: '#999999',   
+      dragon: '#FF4444',      
+      elemental: '#FF8800',   
+      fey: '#DD66FF',         
+      fiend: '#AA2222',       
+      giant: '#AA7722',       
+      humanoid: '#4444FF',    
+      monstrosity: '#886600', 
+      ooze: '#66CC66',        
+      plant: '#228B22',       
+      undead: '#663366',      
+      vermin: '#996633',      
+  
+      // Subtypes
+      demon: '#990000',       
+      devil: '#660000',       
+      lich: '#330066',        
+      ghost: '#9999FF',       
+      skeleton: '#CCCCCC',    
+      vampire: '#550000',     
+      lycanthrope: '#775500', 
+      mimic: '#AA33CC',       
+      aberrant_horror: '#220044', 
+      swamp_beast: '#556B2F', 
+      sea_monster: '#008080', 
+      storm_creature: '#708090', 
+      fire_entity: '#FF4500', 
+      frost_monster: '#00FFFF', 
+      shadow_creature: '#222222', 
+      celestial_guardian: '#FFFFCC', 
+      arcane_construct: '#6666FF', 
+      ancient_horror: '#3B3B6D', 
+      chaos_entity: '#FF00FF', 
+      nature_spirit: '#32CD32', 
+      sand_creature: '#D2B48C', 
+    };
+  
+    return typeColors[type.toLowerCase()] || '#6B7280'; // Default gray if not found
+  }
+  
 
 
 // Create a detailed view for a selected monster
@@ -1710,18 +1593,20 @@ createMonsterDetailView(monster) {
     const expPercent = Math.floor((monster.experience / monster.experienceToNext) * 100);
     
     // Get color for monster type
-    const typeColors = {
-      Beast: '#4f46e5',
-      Dragon: '#c026d3',
-      Elemental: '#ef4444',
-      Monstrosity: '#65a30d',
-      Construct: '#a16207',
-      Undead: '#6b7280',
-      Fey: '#06b6d4',
-      Giant: '#b45309'
-    };
+    // const typeColors = {
+    //   Beast: '#4f46e5',
+    //   Dragon: '#c026d3',
+    //   Elemental: '#ef4444',
+    //   Monstrosity: '#65a30d',
+    //   Construct: '#a16207',
+    //   Undead: '#6b7280',
+    //   Fey: '#06b6d4',
+    //   Giant: '#b45309'
+    // };
     
-    const bgColor = typeColors[monster.type] || '#6b7280';
+    // const bgColor = typeColors[monster.type] || '#6b7280';
+
+    const bgColor = this.getMonsterTypeColor(monster.type);
     
     // Get token source
     const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
@@ -1973,7 +1858,11 @@ contentHtml += `
             if (!relatedMonster) return '';
             
             // Get color for monster type
-            const relatedColor = typeColors[relatedMonster.type] || '#6b7280';
+            // const relatedColor = typeColors[relatedMonster.type] || '#6b7280';
+            // const relatedColor = [relatedMonster.type] || '#6b7280';
+            const relatedColor = this.getMonsterTypeColor(relatedMonster.type);
+            // const relatedColor = typeColors[relatedMonster.type] || '#6b7280';
+
             
             // Determine affinity class
             let affinityClass = 'low';
@@ -2387,30 +2276,6 @@ const addMoveButtonHandlers = () => {
   };
   document.addEventListener('keydown', handleKeyDown);
 }
-  
-  // Refresh party dialog when data changes
-//   refreshPartyDialog() {
-//     if (!this.partyDialog) return;
-    
-//     const tabGroup = this.partyDialog.querySelector('sl-tab-group');
-//     const activeTab = tabGroup.getAttribute('active-tab') || 'active-party';
-    
-//     // Update tab contents
-//     this.partyDialog.querySelector('sl-tab-panel[name="active-party"]').innerHTML = this.renderActiveParty();
-//     this.partyDialog.querySelector('sl-tab-panel[name="reserve-party"]').innerHTML = this.renderReserveParty();
-    
-//     // Update tab labels
-//     this.partyDialog.querySelectorAll('sl-tab').forEach((tab, index) => {
-//       if (index === 0) {
-//         tab.textContent = `Active Party (${this.party.active.length}/${this.party.maxActive})`;
-//       } else if (index === 1) {
-//         tab.textContent = `Reserve Monsters (${this.party.reserve.length})`;
-//       }
-//     });
-    
-//     // Reattach event listeners
-//     this.setupPartyDialogEvents(this.partyDialog);
-//   }
 
 // Refresh party dialog when data changes
 refreshPartyDialog() {
@@ -2961,18 +2826,22 @@ showRecruitmentDialog(monster) {
   const cr = recruitMonster.data.basic?.cr || '?';
   
   // Get color for monster type
-  const typeColors = {
-    Beast: '#4f46e5',
-    Dragon: '#c026d3',
-    Elemental: '#ef4444',
-    Monstrosity: '#65a30d',
-    Construct: '#a16207',
-    Undead: '#6b7280',
-    Fey: '#06b6d4',
-    Giant: '#b45309'
-  };
+  // const typeColors = {
+  //   Beast: '#4f46e5',
+  //   Dragon: '#c026d3',
+  //   Elemental: '#ef4444',
+  //   Monstrosity: '#65a30d',
+  //   Construct: '#a16207',
+  //   Undead: '#6b7280',
+  //   Fey: '#06b6d4',
+  //   Giant: '#b45309'
+  // };
   
-  const bgColor = typeColors[type] || '#6b7280';
+  // const bgColor = typeColors[type] || '#6b7280';
+  // const bgColor = [type] // || '#6b7280';
+  const bgColor = this.getMonsterTypeColor(type);
+  // console.log('mon',type);
+  // console.log('bg',bgColor);
   
   // Create content
   const content = document.createElement('div');
@@ -3325,21 +3194,114 @@ content.innerHTML = '';
     align-items: center;
   `;
   
-  // Add spinning dice animation
-  diceContainer.innerHTML = `
-    <div class="spinning-dice" style="font-size: 64px; animation: spin 1s ease-out forwards;">🎲</div>
-    <style>
-      @keyframes spin {
-        0% { transform: rotate(0deg) scale(0.5); opacity: 0.5; }
-        50% { transform: rotate(360deg) scale(1.2); opacity: 1; }
-        100% { transform: rotate(720deg) scale(1); opacity: 1; }
-      }
-      @keyframes fadeResult {
-        0% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
-      }
-    </style>
-  `;
+  // Add spinning dice animation - was 
+  // diceContainer.innerHTML = `
+  //   <div class="spinning-dice" style="font-size: 64px; animation: spin 1s ease-out forwards;"><i class="ra ra-d20"></i></div>
+  //   <style>
+  //     @keyframes spin {
+  //       0% { transform: rotate(0deg) scale(0.5); opacity: 0.5; }
+  //       50% { transform: rotate(360deg) scale(1.2); opacity: 1; }
+  //       100% { transform: rotate(720deg) scale(1); opacity: 1; }
+  //     }
+  //     @keyframes fadeResult {
+  //       0% { opacity: 0; transform: translateY(20px); }
+  //       100% { opacity: 1; transform: translateY(0); }
+  //     }
+  //   </style>
+  // `;
+
+// Replace the problematic diceContainer.innerHTML code with this:
+diceContainer.innerHTML = `
+  <div id="d20-dice-container" style="
+    width: 100px;
+    height: 100px;
+    position: relative;
+    perspective: 600px;
+  ">
+    <div id="d20-dice" style="
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      transform-style: preserve-3d;
+      transition: transform 1s ease-out;
+    ">
+      <div style="
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        border: 2px solid white;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(0,0,0,0.5);
+      ">
+        20
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes fadeResult {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+`;
+
+// Add this JavaScript right after the innerHTML assignment
+const diceElement = document.getElementById('d20-dice');
+if (diceElement) {
+  // Initial position
+  diceElement.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.5)';
+  diceElement.style.opacity = '0.5';
+  
+  // Animation timing variables
+  const duration = 1000; // 1 second
+  const startTime = performance.now();
+  
+  // Animation function
+  function animateDice(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Calculate rotation based on progress
+    const rotateX = progress * 720; 
+    const rotateY = progress * 360;
+    const rotateZ = progress * 180;
+    
+    // Calculate scale - grows in middle, then settles
+    let scale;
+    if (progress < 0.5) {
+      // Scale up to 1.2
+      scale = 0.5 + (progress * 1.4);
+    } else {
+      // Scale down to 1.0
+      scale = 1.2 - ((progress - 0.5) * 0.4);
+    }
+    
+    // Calculate opacity - increases to 1
+    const opacity = 0.5 + (progress * 0.5);
+    
+    // Apply transforms
+    diceElement.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
+    diceElement.style.opacity = opacity;
+    
+    // Continue animation if not complete
+    if (progress < 1) {
+      requestAnimationFrame(animateDice);
+    }
+  }
+  
+  // Start animation
+  requestAnimationFrame(animateDice);
+}
   
   // Create result message container (hidden initially)
   const resultMessage = document.createElement('div');
@@ -3773,13 +3735,48 @@ generateMonsterThumbnail(monster) {
   const ctx = canvas.getContext('2d');
   
   // Generate color based on monster type
-  const colors = {
-    dragon: '#ff4444',
-    undead: '#663366',
-    beast: '#44aa44',
-    humanoid: '#4444ff',
-    fiend: '#aa4444'
-  };
+const colors = {
+  aberration: '#5500AA',  // Purple - alien and unnatural beings
+  beast: '#44AA44',       // Green - natural creatures
+  celestial: '#FFD700',   // Gold - divine and radiant beings
+  construct: '#999999',   // Gray - artificial or mechanical beings
+  dragon: '#FF4444',      // Red - powerful, elemental creatures
+  elemental: '#FF8800',   // Orange - creatures of pure elemental energy
+  fey: '#DD66FF',         // Pink/Purple - whimsical and otherworldly
+  fiend: '#AA2222',       // Dark Red - demons and devils
+  giant: '#AA7722',       // Brown/Orange - large humanoid creatures
+  humanoid: '#4444FF',    // Blue - sentient, civilized species
+  monstrosity: '#886600', // Dark Yellow - unnatural or mutated creatures
+  ooze: '#66CC66',        // Light Green - gelatinous and amorphous beings
+  plant: '#228B22',       // Forest Green - living plant-based creatures
+  undead: '#663366',      // Dark Purple - spirits and reanimated corpses
+  vermin: '#996633',      // Brown - insects, spiders, and pests
+  
+  // Subtypes and additional categories
+  demon: '#990000',       // Deep Red - Chaotic fiends
+  devil: '#660000',       // Dark Crimson - Lawful fiends
+  lich: '#330066',        // Dark Indigo - Powerful undead mages
+  ghost: '#9999FF',       // Pale Blue - Ethereal spirits
+  skeleton: '#CCCCCC',    // Bone White - Basic undead soldiers
+  vampire: '#550000',     // Blood Red - Classic horror monsters
+  lycanthrope: '#775500', // Brown - Werewolves and shapechangers
+  mimic: '#AA33CC',       // Purple - Deceptive creatures
+  aberrant_horror: '#220044', // Deep Purple - Cosmic horror creatures
+  swamp_beast: '#556B2F', // Dark Olive Green - Creatures of the swamp
+  sea_monster: '#008080', // Teal - Aquatic terrors
+  storm_creature: '#708090', // Slate Gray - Creatures tied to lightning and storms
+  fire_entity: '#FF4500', // Orange-Red - Fire-based beings
+  frost_monster: '#00FFFF', // Cyan - Ice creatures
+  shadow_creature: '#222222', // Almost Black - Beings of darkness
+  celestial_guardian: '#FFFFCC', // Soft Gold - Divine protectors
+  arcane_construct: '#6666FF', // Soft Blue - Magical constructs
+  ancient_horror: '#3B3B6D', // Dark Slate Blue - Forgotten, eldritch things
+  chaos_entity: '#FF00FF', // Magenta - Chaotic beings
+  nature_spirit: '#32CD32', // Lime Green - Embodiments of the wild
+  sand_creature: '#D2B48C', // Tan - Desert-based creatures
+};
+
+
   
   const type = monster.basic?.type || 'unknown';
   const color = colors[type.toLowerCase()] || '#888888';
@@ -4041,18 +4038,20 @@ showStarterMonsterDialog(starterChoices) {
         const cr = monsterData.cr || monsterData.basic?.cr || '?';
         
         // Determine color based on type
-        const typeColors = {
-          Beast: '#4f46e5',
-          Dragon: '#c026d3',
-          Elemental: '#ef4444',
-          Monstrosity: '#65a30d',
-          Construct: '#a16207',
-          Undead: '#6b7280',
-          Fey: '#06b6d4',
-          Giant: '#b45309'
-        };
+        // const typeColors = {
+        //   Beast: '#4f46e5',
+        //   Dragon: '#c026d3',
+        //   Elemental: '#ef4444',
+        //   Monstrosity: '#65a30d',
+        //   Construct: '#a16207',
+        //   Undead: '#6b7280',
+        //   Fey: '#06b6d4',
+        //   Giant: '#b45309'
+        // };
         
-        const bgColor = typeColors[type] || '#6b7280';
+        // const bgColor = typeColors[type] || '#6b7280';
+        const bgColor = this.getMonsterTypeColor(type);
+        // const bgColor = [type] 
         
         return `
           <div class="monster-card starter-card" data-monster-index="${index}" style="
