@@ -3,28 +3,28 @@
  * Handles monster recruitment, party management, and monster progression
  */
 class PartyManager {
-    constructor(resourceManager, monsterManager) {
-        console.log("PartyManager constructor called");
-        
-        // Store direct references
-        this.resourceManager = resourceManager;
-        
-        // Try multiple paths to get MonsterManager
-        this.monsterManager = new MonsterManager(this) || 
-                             (resourceManager ? resourceManager.monsterManager : null) ||
-                             window.monsterManager;
-        
-        console.log("Initial connections:", {
-          hasResourceManager: !!this.resourceManager,
-          hasMonsterManager: !!this.monsterManager
-        });
-        
-        // Direct access to database if possible
-        if (this.monsterManager) {
-          this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
-          console.log("Access to monster database:", !!this.monsterDatabase);
-        }
-    
+  constructor(resourceManager, monsterManager) {
+    console.log("PartyManager constructor called");
+
+    // Store direct references
+    this.resourceManager = resourceManager;
+
+    // Try multiple paths to get MonsterManager
+    this.monsterManager = new MonsterManager(this) ||
+      (resourceManager ? resourceManager.monsterManager : null) ||
+      window.monsterManager;
+
+    console.log("Initial connections:", {
+      hasResourceManager: !!this.resourceManager,
+      hasMonsterManager: !!this.monsterManager
+    });
+
+    // Direct access to database if possible
+    if (this.monsterManager) {
+      this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
+      console.log("Access to monster database:", !!this.monsterDatabase);
+    }
+
     // Initialize player party data
     this.party = {
       active: [],         // Currently active monsters (max 4-6)
@@ -32,29 +32,29 @@ class PartyManager {
       maxActive: 4,       // Starting limit for active party
       maxTotal: 20        // Maximum total monsters that can be recruited
     };
-    
+
     // Initialize inventory for equipment
     this.inventory = {
       weapons: [],
       armor: [],
       misc: []
     };
-    
+
     // Variables for UI elements
     this.partyDialog = null;
     this.activeTab = 'active';
     this.starterCheckPerformed = false;
     this.initializeRelationshipSystem();
-    
+
     console.log('Party Manager initialized');
   }
 
   // New method to establish connections after page load
-establishConnections() {
+  establishConnections() {
     if (!this.monsterManager) {
-      this.monsterManager = window.monsterManager || 
-                           (this.resourceManager ? this.resourceManager.monsterManager : null);
-      
+      this.monsterManager = window.monsterManager ||
+        (this.resourceManager ? this.resourceManager.monsterManager : null);
+
       if (this.monsterManager) {
         console.log("Established delayed connection to MonsterManager");
         this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
@@ -850,45 +850,45 @@ establishConnections() {
   }
 
     `;
-  
+
     return styleElement;
   }
-  
+
   /**
    * Party Management Methods
    */
-  
+
   // Add a monster to party (either active or reserve based on space)
   addMonster(monster) {
     // Clone the monster to avoid modifying the original bestiary data
     const newMonster = this.prepareMonster(monster);
-    
+
     // Check if we have space in active party first
     if (this.party.active.length < this.party.maxActive) {
       this.party.active.push(newMonster);
       console.log(`Added ${newMonster.name} to active party`);
-        // Update relationships whenever a monster is added
-  this.updatePartyRelationships();
+      // Update relationships whenever a monster is added
+      this.updatePartyRelationships();
       return 'active';
     }
-    
+
     // Check if we have space in reserve
     if (this.party.active.length + this.party.reserve.length < this.party.maxTotal) {
       this.party.reserve.push(newMonster);
       console.log(`Added ${newMonster.name} to reserve party`);
       return 'reserve';
     }
-    
+
     // No space available
     console.warn('Party is full, cannot add monster');
     return null;
   }
-  
+
   // Prepare a monster for party by adding additional properties needed for game
-prepareMonster(monster) {
+  prepareMonster(monster) {
     // Clone base monster data
     const base = JSON.parse(JSON.stringify(monster.data || monster));
-    
+
     // Add gameplay properties
     const partyMonster = {
       id: base.id || `monster_${Date.now()}`,
@@ -904,7 +904,7 @@ prepareMonster(monster) {
         data: monster.token?.data || null,
         url: monster.token?.url || null
       },
-      
+
       // Game-specific properties
       level: 1,
       experience: 0,
@@ -919,14 +919,14 @@ prepareMonster(monster) {
       armorClass: base.stats?.ac || 10,
       monsterAbilities: this.generateAbilities(base)
     };
-    
+
     return partyMonster;
   }
-  
+
   // Generate abilities based on monster type
   generateAbilities(monster) {
     const abilities = [];
-    
+
     // Basic attack for all monsters
     abilities.push({
       name: 'Attack',
@@ -934,7 +934,7 @@ prepareMonster(monster) {
       type: 'attack',
       damage: '1d6+' + this.getDamageModifier(monster)
     });
-    
+
     // Add type-specific abilities
     switch (monster.basic?.type?.toLowerCase()) {
       case 'dragon':
@@ -989,7 +989,7 @@ prepareMonster(monster) {
         break;
       // Add more types as needed
     }
-    
+
     // If creature is large or bigger, add a slam attack
     if (['Large', 'Huge', 'Gargantuan'].includes(monster.basic?.size)) {
       abilities.push({
@@ -1000,28 +1000,28 @@ prepareMonster(monster) {
         effect: 'knockback'
       });
     }
-    
+
     return abilities;
   }
-  
+
   // Helper to get damage modifier based on monster stats
   getDamageModifier(monster) {
     if (!monster.abilities) return 0;
-    
+
     // Use the highest of STR or DEX
     const strMod = monster.abilities?.str?.modifier || 0;
     const dexMod = monster.abilities?.dex?.modifier || 0;
-    
+
     return Math.max(strMod, dexMod);
   }
-  
+
   // Move monster between active and reserve
   moveMonster(monsterId, destination) {
     // Find which array the monster is in
     let source = null;
     let sourceArray = null;
     let destArray = null;
-    
+
     if (destination === 'active') {
       sourceArray = this.party.reserve;
       destArray = this.party.active;
@@ -1034,30 +1034,30 @@ prepareMonster(monster) {
       console.error('Invalid destination:', destination);
       return false;
     }
-    
+
     // Check if we have space in destination
     if (destination === 'active' && destArray.length >= this.party.maxActive) {
       console.warn('Active party is full');
       return false;
     }
-    
+
     // Find monster in source array
     const monsterIndex = sourceArray.findIndex(m => m.id === monsterId);
     if (monsterIndex === -1) {
       console.error(`Monster ${monsterId} not found in ${source} party`);
       return false;
     }
-    
+
     // Move monster
     const monster = sourceArray.splice(monsterIndex, 1)[0];
     destArray.push(monster);
-    
+
     console.log(`Moved ${monster.name} from ${source} to ${destination}`);
-// Update relationships when party composition changes
-  this.updatePartyRelationships();
+    // Update relationships when party composition changes
+    this.updatePartyRelationships();
     return true;
   }
-  
+
   // Remove monster from party entirely
   removeMonster(monsterId) {
     // Check active party first
@@ -1065,11 +1065,11 @@ prepareMonster(monster) {
     if (activeIndex !== -1) {
       const monster = this.party.active.splice(activeIndex, 1)[0];
       console.log(`Removed ${monster.name} from active party`);
-        // Update relationships whenever a monster is removed
-  this.updatePartyRelationships();
+      // Update relationships whenever a monster is removed
+      this.updatePartyRelationships();
       return true;
     }
-    
+
     // Check reserve party
     const reserveIndex = this.party.reserve.findIndex(m => m.id === monsterId);
     if (reserveIndex !== -1) {
@@ -1077,28 +1077,28 @@ prepareMonster(monster) {
       console.log(`Removed ${monster.name} from reserve party`);
       return true;
     }
-    
+
     console.error(`Monster ${monsterId} not found in party`);
     return false;
   }
-  
+
   // Find monster by ID
   findMonster(monsterId) {
     // Check active party first
     const activeMonster = this.party.active.find(m => m.id === monsterId);
     if (activeMonster) return activeMonster;
-    
+
     // Check reserve party
     const reserveMonster = this.party.reserve.find(m => m.id === monsterId);
     if (reserveMonster) return reserveMonster;
-    
+
     return null;
   }
-  
+
   /**
    * Equipment Methods
    */
-  
+
   // Equip item to monster
   equipItem(monsterId, slot, item) {
     const monster = this.findMonster(monsterId);
@@ -1106,28 +1106,28 @@ prepareMonster(monster) {
       console.error(`Monster ${monsterId} not found`);
       return false;
     }
-    
+
     // Check if slot is valid
     if (!['weapon', 'armor'].includes(slot)) {
       console.error(`Invalid equipment slot: ${slot}`);
       return false;
     }
-    
+
     // Unequip current item if any
     if (monster.equipment[slot]) {
       this.unequipItem(monsterId, slot);
     }
-    
+
     // Equip new item
     monster.equipment[slot] = item;
-    
+
     // Update monster stats based on equipment
     this.updateMonsterStats(monster);
-    
+
     console.log(`Equipped ${item.name} to ${monster.name}`);
     return true;
   }
-  
+
   // Unequip item from monster
   unequipItem(monsterId, slot) {
     const monster = this.findMonster(monsterId);
@@ -1135,45 +1135,117 @@ prepareMonster(monster) {
       console.error(`Monster ${monsterId} not found`);
       return false;
     }
-    
+
     // Check if slot is valid
     if (!['weapon', 'armor'].includes(slot)) {
       console.error(`Invalid equipment slot: ${slot}`);
       return false;
     }
-    
+
     // Check if monster has item equipped
     if (!monster.equipment[slot]) {
       console.warn(`Monster ${monster.name} has no ${slot} equipped`);
       return false;
     }
-    
+
     // Get the item before unequipping
     const item = monster.equipment[slot];
-    
+
     // Unequip item
     monster.equipment[slot] = null;
-    
+
     // Update monster stats
     this.updateMonsterStats(monster);
-    
+
     console.log(`Unequipped ${item.name} from ${monster.name}`);
     return true;
   }
-  
+
+
+  // Get appropriate RPG Awesome icon for weapon type
+  getWeaponIcon(weapon) {
+    // Default icon
+    if (!weapon) return 'ra-broadsword';
+
+    // Map weapon names to RPG Awesome icons
+    const name = weapon.name.toLowerCase();
+
+    if (name.includes('sword') || name.includes('blade')) {
+      return 'ra-broadsword';
+    }
+    if (name.includes('axe')) {
+      return 'ra-axe';
+    }
+    if (name.includes('mace') || name.includes('hammer')) {
+      return 'ra-hammer';
+    }
+    if (name.includes('staff') || name.includes('wand')) {
+      return 'ra-wizard-staff';
+    }
+    if (name.includes('bow')) {
+      return 'ra-bow';
+    }
+    if (name.includes('dagger') || name.includes('knife')) {
+      return 'ra-dagger';
+    }
+    if (name.includes('spear') || name.includes('pike')) {
+      return 'ra-spear';
+    }
+    if (name.includes('crossbow')) {
+      return 'ra-crossbow';
+    }
+    if (name.includes('flail')) {
+      return 'ra-ball-and-chain';
+    }
+
+    // Default for unknown weapon types
+    return 'ra-broadsword';
+  }
+
+  // Get appropriate RPG Awesome icon for armor type
+  getArmorIcon(armor) {
+    // Default icon
+    if (!armor) return 'ra-shield';
+
+    // Map armor names to RPG Awesome icons
+    const name = armor.name.toLowerCase();
+
+    if (name.includes('leather')) {
+      return 'ra-leather-armor';
+    }
+    if (name.includes('chain') || name.includes('mail')) {
+      return 'ra-chain-mail';
+    }
+    if (name.includes('plate')) {
+      return 'ra-plate-armor';
+    }
+    if (name.includes('scale')) {
+      return 'ra-dragon-scales';
+    }
+    if (name.includes('shield')) {
+      return 'ra-round-shield';
+    }
+    if (name.includes('robe') || name.includes('cloth')) {
+      return 'ra-fizzing-flask'; // Representing mage armor
+    }
+
+    // Default for unknown armor types
+    return 'ra-shield';
+  }
+
   // Update monster stats based on equipment
   updateMonsterStats(monster) {
     // Base AC calculation
     let baseAC = monster.armorClass || 10;
-    
+
     // Apply armor bonus
     if (monster.equipment.armor) {
       baseAC += monster.equipment.armor.acBonus || 0;
     }
-    
+
     // Set updated AC
     monster.armorClass = baseAC;
-    
+
     // Update damage based on weapon
     if (monster.equipment.weapon && monster.monsterAbilities) {
       // Find basic attack ability
@@ -1186,11 +1258,11 @@ prepareMonster(monster) {
       }
     }
   }
-  
+
   /**
    * Monster Level & Experience
    */
-  
+
   // Award experience to a monster
   awardExperience(monsterId, amount) {
     const monster = this.findMonster(monsterId);
@@ -1198,39 +1270,39 @@ prepareMonster(monster) {
       console.error(`Monster ${monsterId} not found`);
       return false;
     }
-    
+
     monster.experience += amount;
     console.log(`${monster.name} gained ${amount} experience (total: ${monster.experience})`);
-    
+
     // Check for level up
     if (monster.experience >= monster.experienceToNext) {
       this.levelUpMonster(monster);
     }
-    
+
     return true;
   }
-  
+
   // Level up a monster
   levelUpMonster(monster) {
     // Increase level
     monster.level += 1;
-    
+
     // Increase stats based on level
     monster.maxHP = Math.floor(monster.maxHP * 1.1);  // 10% HP increase per level
     monster.currentHP = monster.maxHP;  // Heal to full on level up
-    
+
     // Set new experience threshold for next level
     monster.experience = 0;
     monster.experienceToNext = Math.floor(monster.experienceToNext * 1.5);
-    
+
     console.log(`${monster.name} leveled up to level ${monster.level}!`);
-    
+
     // Check if monster learns new ability at this level
     this.checkForNewAbilities(monster);
-    
+
     return true;
   }
-  
+
   // Check if monster learns new abilities at current level
   checkForNewAbilities(monster) {
     // For simplicity, learn a new ability every 3 levels
@@ -1246,15 +1318,15 @@ prepareMonster(monster) {
       }
     }
   }
-  
+
   // Generate a new ability based on monster's type and level
   generateNewAbility(monster) {
     const type = monster.type?.toLowerCase();
     const level = monster.level;
-    
+
     // Pool of possible abilities based on type
     const abilityPool = [];
-    
+
     // Add generic abilities available to all types
     abilityPool.push(
       {
@@ -1270,7 +1342,7 @@ prepareMonster(monster) {
         duration: 1
       }
     );
-    
+
     // Add type-specific advanced abilities
     switch (type) {
       case 'dragon':
@@ -1308,37 +1380,37 @@ prepareMonster(monster) {
         break;
       // Add more types as needed
     }
-    
+
     // Select a random ability from the pool
     if (abilityPool.length > 0) {
       const randomIndex = Math.floor(Math.random() * abilityPool.length);
       return abilityPool[randomIndex];
     }
-    
+
     return null;
   }
-  
+
   /**
    * UI Methods
    */
   showPartyManager() {
-  // Check for starter monster if party is empty
-  if (this.party.active.length === 0 && this.party.reserve.length === 0) {
-    this.checkForStarterMonster().catch(error => 
-      console.error('Error checking for starter monster:', error)
-    );
-  }
+    // Check for starter monster if party is empty
+    if (this.party.active.length === 0 && this.party.reserve.length === 0) {
+      this.checkForStarterMonster().catch(error =>
+        console.error('Error checking for starter monster:', error)
+      );
+    }
     // Add our custom styles to the document
     document.head.appendChild(this.createPartyManagerStyles());
-    
+
     // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'party-overlay';
-    
+
     // Create main container
     const container = document.createElement('div');
     container.className = 'party-container';
-    
+
     // Create header
     const header = document.createElement('div');
     header.className = 'party-header';
@@ -1351,15 +1423,15 @@ prepareMonster(monster) {
         <span class="material-icons">close</span>
       </button>
     `;
-    
+
     // Create content area (sidebar + details)
     const content = document.createElement('div');
     content.className = 'party-content';
-    
+
     // Create sidebar with tabs
     const sidebar = document.createElement('div');
     sidebar.className = 'party-sidebar';
-    
+
     // Create tab buttons
     const tabButtons = document.createElement('div');
     tabButtons.className = 'party-tab-buttons';
@@ -1371,22 +1443,22 @@ prepareMonster(monster) {
         Reserve (${this.party.reserve.length})
       </button>
     `;
-    
+
     // Create party list container
     const partyList = document.createElement('div');
     partyList.className = 'party-list';
-    
+
     // Create active party list (default view)
     const activeList = document.createElement('div');
     activeList.className = 'active-monster-list';
-    
+
     // Add active monsters
     if (this.party.active.length > 0) {
       this.party.active.forEach((monster, index) => {
         const card = this.createMonsterCard(monster, 'active', index % 2 !== 0);
         activeList.appendChild(card);
       });
-      
+
       // Add empty slots
       for (let i = this.party.active.length; i < this.party.maxActive; i++) {
         const emptySlot = document.createElement('div');
@@ -1407,12 +1479,12 @@ prepareMonster(monster) {
         </div>
       `;
     }
-    
+
     // Create reserve party list (hidden initially)
     const reserveList = document.createElement('div');
     reserveList.className = 'reserve-monster-list';
     reserveList.style.display = 'none';
-    
+
     // Add reserve monsters
     if (this.party.reserve.length > 0) {
       this.party.reserve.forEach(monster => {
@@ -1429,15 +1501,15 @@ prepareMonster(monster) {
         </div>
       `;
     }
-    
+
     // Add lists to container
     partyList.appendChild(activeList);
     partyList.appendChild(reserveList);
-    
+
     // Create details panel (right side)
     const detailsPanel = document.createElement('div');
     detailsPanel.className = 'party-details';
-    
+
     // Initial empty state for details
     detailsPanel.innerHTML = `
       <div class="empty-details-message">
@@ -1448,26 +1520,35 @@ prepareMonster(monster) {
         </p>
       </div>
     `;
-    
+
     // Assemble the UI
     sidebar.appendChild(tabButtons);
     sidebar.appendChild(partyList);
-    
+
     content.appendChild(sidebar);
     content.appendChild(detailsPanel);
-    
+
     container.appendChild(header);
     container.appendChild(content);
-    
+
     overlay.appendChild(container);
     document.body.appendChild(overlay);
-    
+
+    window.windowManager.registerWindow(overlay, {
+      draggable: true,
+      dragHandle: '.party-header',
+      initialPosition: {
+        x: Math.max(0, (window.innerWidth - container.offsetWidth) / 2),
+        y: Math.max(0, (window.innerHeight - container.offsetHeight) / 2)
+      }
+    });
+
     // Reference to the dialog for event handlers
     this.partyDialog = overlay;
-    
+
     // Add event listeners
     this.setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel);
-    
+
     // Animate in
     setTimeout(() => {
       overlay.style.opacity = '1';
@@ -1476,8 +1557,8 @@ prepareMonster(monster) {
   }
 
 
-// Update createMonsterCard to show relationship indicators
-createMonsterCard(monster, type, isAlt = false) {
+  // Update createMonsterCard to show relationship indicators
+  createMonsterCard(monster, type, isAlt = false) {
     // Calculate HP percentage
     const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
     let hpColorClass = 'high';
@@ -1486,45 +1567,45 @@ createMonsterCard(monster, type, isAlt = false) {
     } else if (hpPercent < 70) {
       hpColorClass = 'medium';
     }
-    
-        const bgColor = [monster.type.toLowerCase()]; 
 
-    
+    const bgColor = [monster.type.toLowerCase()];
+
+
     // Get relationship data
     const relationships = this.getMonstersWithAffinity(monster.id) || [];
-    
+
     // Create the card
     const card = document.createElement('div');
     card.className = `monster-card ${type}-party`;
     if (isAlt) card.classList.add('alt');
     card.setAttribute('data-monster-id', monster.id);
-    
+
     // Get token source
     const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
     const typeColor = this.getMonsterTypeColor(monster.type);
     const animation = this.getMonsterAnimation(monster.type, monster.name);
-  // Apply animation styles if applicable
-  let headerStyle = '';
-  if (animation.useAnimation) {
-    // Convert style object to inline CSS
-    headerStyle = Object.entries(animation.style)
-      .map(([key, value]) => `${key}: ${value};`)
-      .join(' ');
-  }
+    // Apply animation styles if applicable
+    let headerStyle = '';
+    if (animation.useAnimation) {
+      // Convert style object to inline CSS
+      headerStyle = Object.entries(animation.style)
+        .map(([key, value]) => `${key}: ${value};`)
+        .join(' ');
+    }
 
     // Monster card content
     card.innerHTML = `
     <div class="monster-header" ${animation.useAnimation ? `style="${headerStyle}"` : ''}>
         <div class="monster-avatar" style="background-color: ${bgColor}; position: relative;">
-          ${tokenSource ? 
-            `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-            monster.name.charAt(0)
-          }
-          ${relationships.length > 0 ? 
-            `<div class="relationship-indicator" style="position: absolute; top: -5px; right: -5px; background: #ff6b6b; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+          ${tokenSource ?
+        `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+        monster.name.charAt(0)
+      }
+          ${relationships.length > 0 ?
+        `<div class="relationship-indicator" style="position: absolute; top: -5px; right: -5px; background: #ff6b6b; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
               <span class="material-icons" style="font-size: 12px; color: white;">favorite</span>
-            </div>` : 
-            ''}
+            </div>` :
+        ''}
         </div>
       <div class="monster-info">
         <div class="monster-name" style="
@@ -1562,174 +1643,174 @@ createMonsterCard(monster, type, isAlt = false) {
           </div>
           
           <div class="equipment-icons">
-            ${monster.equipment?.weapon ? 
-              `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
+            ${monster.equipment?.weapon ?
+        `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
                 <span class="material-icons small">sports_martial_arts</span>
               </div>` : ''
-            }
-            ${monster.equipment?.armor ? 
-              `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
+      }
+            ${monster.equipment?.armor ?
+        `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
                 <span class="material-icons small">security</span>
               </div>` : ''
-            }
+      }
           </div>
         </div>
         
-        ${relationships.length > 0 ? 
-          `<div class="monster-relationships" style="margin-top: 8px; font-size: 0.75rem; color: #666;">
+        ${relationships.length > 0 ?
+        `<div class="monster-relationships" style="margin-top: 8px; font-size: 0.75rem; color: #666;">
             <div style="display: flex; align-items: center; gap: 4px;">
               <span class="material-icons" style="font-size: 14px; color: #ff6b6b;">favorite</span>
               <span>Affinity with: ${relationships.map(r => {
-                // Find monster name
-                const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
-                return relatedMonster ? relatedMonster.name : '';
-              }).filter(Boolean).join(', ')}</span>
+          // Find monster name
+          const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
+          return relatedMonster ? relatedMonster.name : '';
+        }).filter(Boolean).join(', ')}</span>
             </div>
-          </div>` : 
-          ''}
+          </div>` :
+        ''}
       </div>
     `;
 
     const statsDiv = card.querySelector('.monster-stats');
-    
+
     return card;
   }
 
   getMonsterTypeColor(type) {
     const typeColors = {
-      aberration: '#5500AA',  
-      beast: '#44AA44',       
-      celestial: '#FFD700',   
-      construct: '#999999',   
-      dragon: '#FF4444',      
-      elemental: '#FF8800',   
-      fey: '#DD66FF',         
-      fiend: '#AA2222',       
-      giant: '#AA7722',       
-      humanoid: '#4444FF',    
-      monstrosity: '#886600', 
-      ooze: '#66CC66',        
-      plant: '#228B22',       
-      undead: '#663366',      
-      vermin: '#996633',      
-  
+      aberration: '#5500AA',
+      beast: '#44AA44',
+      celestial: '#FFD700',
+      construct: '#999999',
+      dragon: '#FF4444',
+      elemental: '#FF8800',
+      fey: '#DD66FF',
+      fiend: '#AA2222',
+      giant: '#AA7722',
+      humanoid: '#4444FF',
+      monstrosity: '#886600',
+      ooze: '#66CC66',
+      plant: '#228B22',
+      undead: '#663366',
+      vermin: '#996633',
+
       // Subtypes
-      demon: '#990000',       
-      devil: '#660000',       
-      lich: '#330066',        
-      ghost: '#9999FF',       
-      skeleton: '#CCCCCC',    
-      vampire: '#550000',     
-      lycanthrope: '#775500', 
-      mimic: '#AA33CC',       
-      aberrant_horror: '#220044', 
-      swamp_beast: '#556B2F', 
-      sea_monster: '#008080', 
-      storm_creature: '#708090', 
-      fire_entity: '#FF4500', 
-      frost_monster: '#00FFFF', 
-      shadow_creature: '#222222', 
-      celestial_guardian: '#FFFFCC', 
-      arcane_construct: '#6666FF', 
-      ancient_horror: '#3B3B6D', 
-      chaos_entity: '#FF00FF', 
-      nature_spirit: '#32CD32', 
-      sand_creature: '#D2B48C', 
+      demon: '#990000',
+      devil: '#660000',
+      lich: '#330066',
+      ghost: '#9999FF',
+      skeleton: '#CCCCCC',
+      vampire: '#550000',
+      lycanthrope: '#775500',
+      mimic: '#AA33CC',
+      aberrant_horror: '#220044',
+      swamp_beast: '#556B2F',
+      sea_monster: '#008080',
+      storm_creature: '#708090',
+      fire_entity: '#FF4500',
+      frost_monster: '#00FFFF',
+      shadow_creature: '#222222',
+      celestial_guardian: '#FFFFCC',
+      arcane_construct: '#6666FF',
+      ancient_horror: '#3B3B6D',
+      chaos_entity: '#FF00FF',
+      nature_spirit: '#32CD32',
+      sand_creature: '#D2B48C',
     };
-  
+
     return typeColors[type.toLowerCase()] || '#6B7280'; // Default gray if not found
   }
-  
-// Add this method to PartyManager class
-getMonsterAnimation(monsterType, monsterName = '') {
-  // Default (no animation)
-  const defaultAnimation = {
-    useAnimation: false,
-    style: {}
-  };
-  
-  // Handle empty or invalid type
-  if (!monsterType) return defaultAnimation;
-  
-  // Normalize type for comparison
-  const type = monsterType.toLowerCase();
-  const name = monsterName.toLowerCase();
-  
-  // Define type-specific animations
-  const animations = {
-    'aberration': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #5500aa, #8800cc, #5500aa)',
-        backgroundSize: '200% 200%',
-        animation: 'warp 10s ease infinite, shimmer 8s infinite linear',
-        transition: 'all 0.5s'
+
+  // Add this method to PartyManager class
+  getMonsterAnimation(monsterType, monsterName = '') {
+    // Default (no animation)
+    const defaultAnimation = {
+      useAnimation: false,
+      style: {}
+    };
+
+    // Handle empty or invalid type
+    if (!monsterType) return defaultAnimation;
+
+    // Normalize type for comparison
+    const type = monsterType.toLowerCase();
+    const name = monsterName.toLowerCase();
+
+    // Define type-specific animations
+    const animations = {
+      'aberration': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #5500aa, #8800cc, #5500aa)',
+          backgroundSize: '200% 200%',
+          animation: 'warp 10s ease infinite, shimmer 8s infinite linear',
+          transition: 'all 0.5s'
+        },
+        description: 'Reality-warping effect for alien aberrations'
       },
-      description: 'Reality-warping effect for alien aberrations'
-    },
-    'celestial': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #ffd700, #ffffff, #ffd700)',
-        backgroundSize: '200% 200%',
-        animation: 'shimmer 4s infinite linear, glow 3s infinite ease-in-out',
-        boxShadow: '0 0 10px rgba(255, 215, 0, 0.4)',
-        transition: 'all 0.5s'
+      'celestial': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #ffd700, #ffffff, #ffd700)',
+          backgroundSize: '200% 200%',
+          animation: 'shimmer 4s infinite linear, glow 3s infinite ease-in-out',
+          boxShadow: '0 0 10px rgba(255, 215, 0, 0.4)',
+          transition: 'all 0.5s'
+        },
+        description: 'Divine radiance for celestial beings'
       },
-      description: 'Divine radiance for celestial beings'
-    },
-    'dragon': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #ff4444, #ffaa00, #ff4444)',
-        backgroundSize: '200% 200%',
-        animation: 'shimmer 8s infinite ease-in-out',
-        transition: 'all 0.3s'
+      'dragon': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #ff4444, #ffaa00, #ff4444)',
+          backgroundSize: '200% 200%',
+          animation: 'shimmer 8s infinite ease-in-out',
+          transition: 'all 0.3s'
+        },
+        description: 'Majestic, slow color shift for dragons'
       },
-      description: 'Majestic, slow color shift for dragons'
-    },
-    'elemental': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #ff8800, #ffaa33, #ff8800)',
-        backgroundSize: '200% 200%',
-        animation: 'flicker 4s infinite',
-        transition: 'all 0.3s'
+      'elemental': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #ff8800, #ffaa33, #ff8800)',
+          backgroundSize: '200% 200%',
+          animation: 'flicker 4s infinite',
+          transition: 'all 0.3s'
+        },
+        description: 'Elemental energy manifestation'
       },
-      description: 'Elemental energy manifestation'
-    },
-    'fey': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #dd66ff, #aa99ff, #dd66ff)',
-        backgroundSize: '200% 200%',
-        animation: 'shimmer 5s infinite linear',
-        transition: 'all 0.3s'
+      'fey': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #dd66ff, #aa99ff, #dd66ff)',
+          backgroundSize: '200% 200%',
+          animation: 'shimmer 5s infinite linear',
+          transition: 'all 0.3s'
+        },
+        description: 'Magical shimmer for fey creatures'
       },
-      description: 'Magical shimmer for fey creatures'
-    },
-    'fiend': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #aa2222, #660000, #aa2222)',
-        backgroundSize: '200% 200%',
-        animation: 'pulse 3s infinite ease-in-out',
-        transition: 'all 0.3s'
+      'fiend': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #aa2222, #660000, #aa2222)',
+          backgroundSize: '200% 200%',
+          animation: 'pulse 3s infinite ease-in-out',
+          transition: 'all 0.3s'
+        },
+        description: 'Smoldering effect for fiendish beings'
       },
-      description: 'Smoldering effect for fiendish beings'
-    },
-    'undead': {
-      useAnimation: true,
-      style: {
-        background: 'linear-gradient(45deg, #663366, #442244, #663366)',
-        backgroundSize: '200% 200%',
-        animation: 'pulse 6s infinite ease-in-out',
-        transition: 'all 0.5s'
-      },
-      description: 'Eerie pulsing for undead creatures'
-    }
-    // Add more types as needed    
-  };
+      'undead': {
+        useAnimation: true,
+        style: {
+          background: 'linear-gradient(45deg, #663366, #442244, #663366)',
+          backgroundSize: '200% 200%',
+          animation: 'pulse 6s infinite ease-in-out',
+          transition: 'all 0.5s'
+        },
+        description: 'Eerie pulsing for undead creatures'
+      }
+      // Add more types as needed    
+    };
 
     // Special case for dragons - check name for color indicators
     if (type === 'dragon' && name) {
@@ -1744,7 +1825,7 @@ getMonsterAnimation(monsterType, monsterName = '') {
             transition: 'all 0.3s'
           }
         };
-      } 
+      }
       else if (name.includes('blue')) {
         return {
           useAnimation: true,
@@ -1849,55 +1930,55 @@ getMonsterAnimation(monsterType, monsterName = '') {
         };
       }
     }
-  
-  // Return the appropriate animation or default
-  return animations[type] || defaultAnimation;
-}
+
+    // Return the appropriate animation or default
+    return animations[type] || defaultAnimation;
+  }
 
 
 
-// Create a detailed view for a selected monster
-createMonsterDetailView(monster) {
+  // Create a detailed view for a selected monster
+  createMonsterDetailView(monster) {
     // Calculate percentages
     const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
     const expPercent = Math.floor((monster.experience / monster.experienceToNext) * 100);
 
     const bgColor = this.getMonsterTypeColor(monster.type);
-  const typeColor = this.getMonsterTypeColor(monster.type);
-  const animation = this.getMonsterAnimation(monster.type, monster.name);
-    
+    const typeColor = this.getMonsterTypeColor(monster.type);
+    const animation = this.getMonsterAnimation(monster.type, monster.name);
+
     // Get token source
     const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
-    
+
     // Create the details view
     const detailsView = document.createElement('div');
     detailsView.className = 'monster-details';
 
-      // Get monster location (active or reserve)
-  const isActive = this.party.active.some(m => m.id === monster.id);
-  const buttonType = isActive ? 'reserve' : 'active';
-  const buttonText = isActive ? 'To Reserve' : 'To Active';
-  const buttonIcon = isActive ? 'arrow_downward' : 'arrow_upward';
-  const buttonColor = isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)';
-  const buttonTextColor = isActive ? '#ef4444' : '#3b82f6';
-  const isDisabled = !isActive && this.party.active.length >= this.party.maxActive;
- 
-  const header = document.createElement('div');
-  header.className = 'details-header';
+    // Get monster location (active or reserve)
+    const isActive = this.party.active.some(m => m.id === monster.id);
+    const buttonType = isActive ? 'reserve' : 'active';
+    const buttonText = isActive ? 'To Reserve' : 'To Active';
+    const buttonIcon = isActive ? 'arrow_downward' : 'arrow_upward';
+    const buttonColor = isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)';
+    const buttonTextColor = isActive ? '#ef4444' : '#3b82f6';
+    const isDisabled = !isActive && this.party.active.length >= this.party.maxActive;
+
+    const header = document.createElement('div');
+    header.className = 'details-header';
 
 
-// Apply styling based on monster type
-if (animation.useAnimation) {
-  // Apply the type-specific animation
-  Object.assign(header.style, animation.style);
-} else {
-  // Default gradient if no special animation
-  header.style.background = `linear-gradient(135deg, ${typeColor}, #7e22ce)`;
-}
+    // Apply styling based on monster type
+    if (animation.useAnimation) {
+      // Apply the type-specific animation
+      Object.assign(header.style, animation.style);
+    } else {
+      // Default gradient if no special animation
+      header.style.background = `linear-gradient(135deg, ${typeColor}, #7e22ce)`;
+    }
 
-  header.innerHTML = `
+    header.innerHTML = `
     <div class="details-avatar" style="background-color: ${bgColor};">
-      ${tokenSource ? 
+      ${tokenSource ?
         `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; ">` :
         monster.name.charAt(0)
       }
@@ -1928,15 +2009,15 @@ if (animation.useAnimation) {
       </div>
     </div>
   `;
-  
 
 
-  // Content
-  const content = document.createElement('div');
-  content.className = 'details-content';
-  
-  // Basic stats section
-  let contentHtml = `
+
+    // Content
+    const content = document.createElement('div');
+    content.className = 'details-content';
+
+    // Basic stats section
+    let contentHtml = `
     <div class="details-section">
       <div class="stat-bars">
         <!-- HP Bar -->
@@ -1979,10 +2060,10 @@ if (animation.useAnimation) {
       </div>
     </div>
   `;
-  
-  // Ability scores section
-  if (monster.abilities) {
-    contentHtml += `
+
+    // Ability scores section
+    if (monster.abilities) {
+      contentHtml += `
       <div class="details-section">
         <div class="details-section-title">Ability Scores</div>
         <div class="ability-scores">
@@ -1996,49 +2077,49 @@ if (animation.useAnimation) {
         </div>
       </div>
     `;
-  }
-  
-  // Monster abilities section
-  if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
-contentHtml += `
+    }
+
+    // Monster abilities section
+    if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
+      contentHtml += `
 <div class="details-section">
   <div class="details-section-title">Abilities</div>
   <div class="abilities-container">
   <div class="monster-abilities">
     ${monster.monsterAbilities.map(ability => {
-      // Determine icon based on ability type
-      let icon = 'star';
-      let bgColor = '#f3f4f6';
-      let iconColor = '#6b7280';
-      
-      switch (ability.type) {
-        case 'attack': 
-          icon = 'sports_martial_arts'; 
-          bgColor = 'rgba(239, 68, 68, 0.1)';
-          iconColor = '#ef4444';
-          break;
-        case 'area': 
-          icon = 'blur_circular'; 
-          bgColor = 'rgba(245, 158, 11, 0.1)';
-          iconColor = '#f59e0b';
-          break;
-        case 'buff': 
-          icon = 'upgrade'; 
-          bgColor = 'rgba(16, 185, 129, 0.1)';
-          iconColor = '#10b981';
-          break;
-        case 'debuff': 
-          icon = 'threat';
-          bgColor = 'rgba(168, 85, 247, 0.1)';
-          iconColor = '#a855f7';
-          break;
-        case 'control': 
-          icon = 'touch_app';
-          bgColor = 'rgba(59, 130, 246, 0.1)';
-          iconColor = '#3b82f6';
-          break;
-      }
-      
+        // Determine icon based on ability type
+        let icon = 'star';
+        let bgColor = '#f3f4f6';
+        let iconColor = '#6b7280';
+
+        switch (ability.type) {
+          case 'attack':
+            icon = 'sports_martial_arts';
+            bgColor = 'rgba(239, 68, 68, 0.1)';
+            iconColor = '#ef4444';
+            break;
+          case 'area':
+            icon = 'blur_circular';
+            bgColor = 'rgba(245, 158, 11, 0.1)';
+            iconColor = '#f59e0b';
+            break;
+          case 'buff':
+            icon = 'upgrade';
+            bgColor = 'rgba(16, 185, 129, 0.1)';
+            iconColor = '#10b981';
+            break;
+          case 'debuff':
+            icon = 'threat';
+            bgColor = 'rgba(168, 85, 247, 0.1)';
+            iconColor = '#a855f7';
+            break;
+          case 'control':
+            icon = 'touch_app';
+            bgColor = 'rgba(59, 130, 246, 0.1)';
+            iconColor = '#3b82f6';
+            break;
+        }
+
         return `
         <div class="ability-card" style="background: ${bgColor};">
           <div class="ability-header">
@@ -2048,125 +2129,215 @@ contentHtml += `
             <div class="ability-title-row">
               <div class="ability-title">${ability.name}</div>
               ${ability.damage ?
-                `<div class="ability-damage" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">${ability.damage}</div>` :
-                ''
-            }
+            `<div class="ability-damage" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">${ability.damage}</div>` :
+            ''
+          }
             </div>
           </div>
           <div class="ability-description">${ability.description || 'No description available.'}</div>
         </div>
 
       `;
-    }).join('')}
+      }).join('')}
     </div>
   </div>
 </div>
 `;
-  }
+    }
 
-  
-  // Equipment section
-  contentHtml += `
-    <div class="details-section">
-      <div class="details-section-title">Equipment</div>
-      <div class="equipment-section">
-        <!-- Weapon slot -->
-        <div class="equipment-slot weapon ${monster.equipment?.weapon ? 'equipped' : ''}">
-          <div class="equipment-header">
-            <div class="equipment-type">
-              <span class="material-icons equipment-icon">sports_martial_arts</span>
-              Weapon
-            </div>
-            <div class="equipment-action">${monster.equipment?.weapon ? 'Change' : 'Equip'}</div>
-          </div>
-          
-          ${monster.equipment?.weapon ? 
-            `<div class="equipment-details">
-              <div class="equipment-name">${monster.equipment.weapon.name}</div>
-              ${monster.equipment.weapon.damageBonus ? 
-                `<div class="equipment-bonus weapon">+${monster.equipment.weapon.damageBonus} damage</div>` : 
-                ''
-              }
-            </div>` : 
-            `<div class="empty-equipment">No weapon equipped</div>`
-          }
+
+    // Equipment section
+    contentHtml += `
+  <div class="details-section">
+    <div class="details-section-title">Equipment</div>
+    <div class="equipment-container" style="
+      background: #f5f3e8;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e6e0d1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    ">
+      <!-- Weapon Slot -->
+      <div class="equipment-slot ${monster.equipment?.weapon ? 'equipped' : 'empty'}" style="
+        background: ${monster.equipment?.weapon ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid ${monster.equipment?.weapon ? 'rgba(239, 68, 68, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
+        position: relative;
+        transition: all 0.2s;
+        cursor: pointer;
+      " data-slot="weapon" data-monster-id="${monster.id}">
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+          <i class="ra ra-crossed-swords" style="
+            font-size: 20px; 
+            margin-right: 8px;
+            color: ${monster.equipment?.weapon ? '#ef4444' : '#666'};
+          "></i>
+          <div style="font-weight: 500;">Weapon</div>
         </div>
         
-        <!-- Armor slot -->
-        <div class="equipment-slot armor ${monster.equipment?.armor ? 'equipped' : ''}">
-          <div class="equipment-header">
-            <div class="equipment-type">
-              <span class="material-icons equipment-icon">shield</span>
-              Armor
+        ${monster.equipment?.weapon ? `
+          <div style="display: flex; align-items: center;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: rgba(239, 68, 68, 0.1);
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-right: 12px;
+            ">
+              <i class="ra ${getWeaponIcon(monster.equipment.weapon)}" style="font-size: 24px; color: #ef4444;"></i>
             </div>
-            <div class="equipment-action">${monster.equipment?.armor ? 'Change' : 'Equip'}</div>
+            <div>
+              <div style="font-weight: 500;">${monster.equipment.weapon.name}</div>
+              ${monster.equipment.weapon.damageBonus ?
+          `<div style="font-size: 0.8rem; color: #ef4444;">+${monster.equipment.weapon.damageBonus} damage</div>` :
+          ''
+        }
+            </div>
           </div>
-          
-          ${monster.equipment?.armor ? 
-            `<div class="equipment-details">
-              <div class="equipment-name">${monster.equipment.armor.name}</div>
-              ${monster.equipment.armor.acBonus ? 
-                `<div class="equipment-bonus armor">+${monster.equipment.armor.acBonus} AC</div>` : 
-                ''
-              }
-            </div>` : 
-            `<div class="empty-equipment">No armor equipped</div>`
-          }
+        ` : `
+          <div style="color: #666; font-style: italic; text-align: center; padding: 8px 0;">
+            No weapon equipped
+          </div>
+        `}
+        
+        <div style="
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
+          font-size: 0.8rem;
+          color: #3b82f6;
+        ">Click to ${monster.equipment?.weapon ? 'change' : 'equip'}</div>
+      </div>
+      
+      <!-- Armor Slot -->
+      <div class="equipment-slot ${monster.equipment?.armor ? 'equipped' : 'empty'}" style="
+        background: ${monster.equipment?.armor ? 'rgba(59, 130, 246, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid ${monster.equipment?.armor ? 'rgba(59, 130, 246, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
+        position: relative;
+        transition: all 0.2s;
+        cursor: pointer;
+      " data-slot="armor" data-monster-id="${monster.id}">
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+          <i class="ra ra-shield" style="
+            font-size: 20px; 
+            margin-right: 8px;
+            color: ${monster.equipment?.armor ? '#3b82f6' : '#666'};
+          "></i>
+          <div style="font-weight: 500;">Armor</div>
         </div>
+        
+        ${monster.equipment?.armor ? `
+          <div style="display: flex; align-items: center;">
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: rgba(59, 130, 246, 0.1);
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-right: 12px;
+            ">
+              <i class="ra ${getArmorIcon(monster.equipment.armor)}" style="font-size: 24px; color: #3b82f6;"></i>
+            </div>
+            <div>
+              <div style="font-weight: 500;">${monster.equipment.armor.name}</div>
+              ${monster.equipment.armor.acBonus ?
+          `<div style="font-size: 0.8rem; color: #3b82f6;">+${monster.equipment.armor.acBonus} armor</div>` :
+          ''
+        }
+            </div>
+          </div>
+        ` : `
+          <div style="color: #666; font-style: italic; text-align: center; padding: 8px 0;">
+            No armor equipped
+          </div>
+        `}
+        
+        <div style="
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
+          font-size: 0.8rem;
+          color: #3b82f6;
+        ">Click to ${monster.equipment?.armor ? 'change' : 'equip'}</div>
       </div>
     </div>
-  `;
-  
-  // Relationships section
-  if (monster.relationships && monster.relationships.length > 0) {
-    contentHtml += `
+  </div>
+`;
+
+    // Relationships section
+    if (monster.relationships && monster.relationships.length > 0) {
+      contentHtml += `
       <div class="details-section">
         <div class="details-section-title">Relationships</div>
         <div class="relationships">
           ${monster.relationships.map(relation => {
-            // Find the related monster
-            const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === relation.monsterId);
-            if (!relatedMonster) return '';
-            
-            // Get color for monster type
-            // const relatedColor = typeColors[relatedMonster.type] || '#6b7280';
-            // const relatedColor = [relatedMonster.type] || '#6b7280';
-            const relatedColor = this.getMonsterTypeColor(relatedMonster.type);
-            // const relatedColor = typeColors[relatedMonster.type] || '#6b7280';
+        // Find the related monster
+        const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === relation.monsterId);
+        if (!relatedMonster) return '';
 
-            
-            // Determine affinity class
-            let affinityClass = 'low';
-            if (relation.level === 'High') affinityClass = 'high';
-            else if (relation.level === 'Medium') affinityClass = 'medium';
-            
-            return `
+        // Get color for monster type
+        const relatedColor = this.getMonsterTypeColor(relatedMonster.type);
+
+        // Determine affinity class
+        let affinityClass = 'low';
+        if (relation.level === 'High') affinityClass = 'high';
+        else if (relation.level === 'Medium') affinityClass = 'medium';
+
+        return `
               <div class="relationship-card">
                 <div class="relationship-avatar" style="background-color: ${relatedColor};">
-                  ${relatedMonster.token ? 
-                    `<img src="${relatedMonster.token}" alt="${relatedMonster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-                    relatedMonster.name.charAt(0)
-                  }
+                  ${relatedMonster.token ?
+            `<img src="${relatedMonster.token}" alt="${relatedMonster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+            relatedMonster.name.charAt(0)
+          }
                 </div>
                 <div class="relationship-info">
                   <div class="relationship-name">${relatedMonster.name}</div>
                   <div class="relationship-details">
                     <span class="affinity-badge ${affinityClass}">${relation.level}</span>
-                    ${relation.benefit && relation.benefit !== 'None' ? 
-                      `<span class="relationship-benefit">${relation.benefit}</span>` : 
-                      ''
-                    }
+                    ${relation.benefit && relation.benefit !== 'None' ?
+            `<span class="relationship-benefit">${relation.benefit}</span>` :
+            ''
+          }
                   </div>
                 </div>
               </div>
             `;
-          }).join('')}
+      }).join('')}
         </div>
       </div>
     `;
-  }
-  
-  content.innerHTML = contentHtml;
+    }
+
+    content.innerHTML = contentHtml;
+
+    const equipmentSlots = content.querySelectorAll('.equipment-slot');
+    equipmentSlots.forEach(slot => {
+      slot.addEventListener('mouseenter', () => {
+        slot.style.transform = 'translateY(-2px)';
+        slot.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+      });
+
+      slot.addEventListener('mouseleave', () => {
+        slot.style.transform = '';
+        slot.style.boxShadow = '';
+      });
+
+      slot.addEventListener('click', () => {
+        const slotType = slot.getAttribute('data-slot');
+        this.showEquipmentDialog(monster, slotType);
+      });
+    });
 
     // Add event listener to the move button
     const moveButton = header.querySelector(`.move-to-${buttonType}`);
@@ -2180,14 +2351,16 @@ contentHtml += `
         }
       });
     }
-  
-  // Assemble the view
-  detailsView.appendChild(header);
-  detailsView.appendChild(content);
-  
-  return detailsView;
-}
-  
+
+
+
+    // Assemble the view
+    detailsView.appendChild(header);
+    detailsView.appendChild(content);
+
+    return detailsView;
+  }
+
   // Render active party display
   renderActiveParty() {
     if (this.party.active.length === 0) {
@@ -2199,14 +2372,14 @@ contentHtml += `
         </div>
       `;
     }
-    
+
     let html = `<div class="active-party-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 16px;">`;
-    
+
     // Render each active monster
     this.party.active.forEach(monster => {
       html += this.renderMonsterCard(monster, 'active');
     });
-    
+
     // Add empty slots
     for (let i = this.party.active.length; i < this.party.maxActive; i++) {
       html += `
@@ -2216,11 +2389,11 @@ contentHtml += `
         </div>
       `;
     }
-    
+
     html += `</div>`;
     return html;
   }
-  
+
   // Render reserve party display
   renderReserveParty() {
     if (this.party.reserve.length === 0) {
@@ -2232,18 +2405,18 @@ contentHtml += `
         </div>
       `;
     }
-    
+
     let html = `<div class="reserve-party-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; padding: 16px;">`;
-    
+
     // Render each reserve monster
     this.party.reserve.forEach(monster => {
       html += this.renderMonsterCard(monster, 'reserve');
     });
-    
+
     html += `</div>`;
     return html;
   }
-  
+
   // Render a monster card
   renderMonsterCard(monster, location) {
     // Format HP as fraction and percentage
@@ -2257,17 +2430,17 @@ contentHtml += `
 
     const tokenSource = monster.token?.data || monster.token?.url || null;
 
-    
+
     // Equipment icons
-    const weaponIcon = monster.equipment.weapon ? 
-      `<img src="${monster.equipment.weapon.icon}" alt="${monster.equipment.weapon.name}" title="${monster.equipment.weapon.name}" style="width: 24px; height: 24px;">` : 
+    const weaponIcon = monster.equipment.weapon ?
+      `<img src="${monster.equipment.weapon.icon}" alt="${monster.equipment.weapon.name}" title="${monster.equipment.weapon.name}" style="width: 24px; height: 24px;">` :
       `<span class="material-icons" style="opacity: 0.3;">add</span>`;
-      
-    const armorIcon = monster.equipment.armor ? 
-      `<img src="${monster.equipment.armor.icon}" alt="${monster.equipment.armor.name}" title="${monster.equipment.armor.name}" style="width: 24px; height: 24px;">` : 
+
+    const armorIcon = monster.equipment.armor ?
+      `<img src="${monster.equipment.armor.icon}" alt="${monster.equipment.armor.name}" title="${monster.equipment.armor.name}" style="width: 24px; height: 24px;">` :
       `<span class="material-icons" style="opacity: 0.3;">add</span>`;
-    
-      return `
+
+    return `
       <div class="monster-card" data-monster-id="${monster.id}" style="...">
         <div class="monster-header" style="...">
           <div class="monster-image" style="width: 64px; height: 64px; margin-right: 10px;">
@@ -2347,7 +2520,7 @@ contentHtml += `
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
-    
+
     // Generate color based on monster type
     const colors = {
       dragon: '#ff4444',
@@ -2357,100 +2530,100 @@ contentHtml += `
       fiend: '#aa4444'
     };
     const color = colors[monster.type.toLowerCase()] || '#888888';
-    
+
     // Draw circle background
     ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
+    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // Add border
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Add monster initial
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(monster.name.charAt(0).toUpperCase(), size/2, size/2);
-    
+    ctx.fillText(monster.name.charAt(0).toUpperCase(), size / 2, size / 2);
+
     return canvas.toDataURL('image/webp');
   }
-  
+
 
   // Setup event handlers for party manager
-setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel) {
-  // Track the currently selected monster
-  let selectedMonster = null;
-  
-  // Pause 3D controls
-  if (window.scene3D) {
-    window.scene3D.pauseControls();
-  }
-  
-  // Store the currently focused element before opening the dialog
-  const previouslyFocused = document.activeElement;
-  
-  // Close button handler
-  const closeButton = container.querySelector('.close-btn');
-  closeButton.addEventListener('click', () => {
-    // Animate out
-    overlay.style.opacity = '0';
-    container.style.transform = 'scale(0.95)';
-    
-    // Remove after animation
-    setTimeout(() => {
-      overlay.remove();
-      
-      // Focus back on the document body
-      const canvas = document.querySelector('canvas') || document.body;
-      canvas.focus();
-      
-      // Reset key states
-      document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
-      
-      // Resume controls
-      if (window.scene3D) {
-        window.scene3D.resumeControls();
-      }
-    }, 300);
-  });
-  
-  // Tab switching
-  const tabButtons = container.querySelectorAll('.party-tab');
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      // Update button states
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-      
-      // Show the corresponding list
-      const tabName = button.getAttribute('data-tab');
-      if (tabName === 'active') {
-        activeList.style.display = '';
-        reserveList.style.display = 'none';
-      } else {
-        activeList.style.display = 'none';
-        reserveList.style.display = '';
-      }
+  setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel) {
+    // Track the currently selected monster
+    let selectedMonster = null;
+
+    // Pause 3D controls
+    if (window.scene3D) {
+      window.scene3D.pauseControls();
+    }
+
+    // Store the currently focused element before opening the dialog
+    const previouslyFocused = document.activeElement;
+
+    // Close button handler
+    const closeButton = container.querySelector('.close-btn');
+    closeButton.addEventListener('click', () => {
+      // Animate out
+      overlay.style.opacity = '0';
+      container.style.transform = 'scale(0.95)';
+
+      // Remove after animation
+      setTimeout(() => {
+        overlay.remove();
+
+        // Focus back on the document body
+        const canvas = document.querySelector('canvas') || document.body;
+        canvas.focus();
+
+        // Reset key states
+        document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+
+        // Resume controls
+        if (window.scene3D) {
+          window.scene3D.resumeControls();
+        }
+      }, 300);
     });
-  });
-  
-  // Monster selection handler
-  const handleMonsterSelection = (monsterId) => {
-    // Remove selection from all cards
-    overlay.querySelectorAll('.monster-card').forEach(card => {
-      card.classList.remove('selected');
+
+    // Tab switching
+    const tabButtons = container.querySelectorAll('.party-tab');
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // Update button states
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+
+        // Show the corresponding list
+        const tabName = button.getAttribute('data-tab');
+        if (tabName === 'active') {
+          activeList.style.display = '';
+          reserveList.style.display = 'none';
+        } else {
+          activeList.style.display = 'none';
+          reserveList.style.display = '';
+        }
+      });
     });
-    
-    if (monsterId === selectedMonster) {
-      // Deselect if clicking the same monster
-      selectedMonster = null;
-      
-      // Show empty details message
-      detailsPanel.innerHTML = `
+
+    // Monster selection handler
+    const handleMonsterSelection = (monsterId) => {
+      // Remove selection from all cards
+      overlay.querySelectorAll('.monster-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+
+      if (monsterId === selectedMonster) {
+        // Deselect if clicking the same monster
+        selectedMonster = null;
+
+        // Show empty details message
+        detailsPanel.innerHTML = `
         <div class="empty-details-message">
           <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">touch_app</span>
           <h2 style="margin: 0 0 8px 0; font-size: 1.5rem;">Select a Monster</h2>
@@ -2459,176 +2632,176 @@ setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel
           </p>
         </div>
       `;
-    } else {
-      // Find the monster
-      const monster = this.findMonster(monsterId);
-      if (!monster) return;
-      
-      // Update selection
-      selectedMonster = monsterId;
-      
-      // Highlight selected card
-      const selectedCard = overlay.querySelector(`.monster-card[data-monster-id="${monsterId}"]`);
-      if (selectedCard) {
-        selectedCard.classList.add('selected');
+      } else {
+        // Find the monster
+        const monster = this.findMonster(monsterId);
+        if (!monster) return;
+
+        // Update selection
+        selectedMonster = monsterId;
+
+        // Highlight selected card
+        const selectedCard = overlay.querySelector(`.monster-card[data-monster-id="${monsterId}"]`);
+        if (selectedCard) {
+          selectedCard.classList.add('selected');
+        }
+
+        // Show monster details
+        detailsPanel.innerHTML = '';
+        const detailView = this.createMonsterDetailView(monster);
+        detailsPanel.appendChild(detailView);
+
+        // Add event listeners to equipment buttons
+        const equipmentActions = detailsPanel.querySelectorAll('.equipment-action');
+        equipmentActions.forEach(button => {
+          button.addEventListener('click', (e) => {
+            const slot = e.target.closest('.equipment-slot');
+            const slotType = slot.classList.contains('weapon') ? 'weapon' : 'armor';
+            this.showEquipmentDialog(monster, slotType);
+          });
+        });
       }
-      
-      // Show monster details
-      detailsPanel.innerHTML = '';
-      const detailView = this.createMonsterDetailView(monster);
-      detailsPanel.appendChild(detailView);
-      
-      // Add event listeners to equipment buttons
-      const equipmentActions = detailsPanel.querySelectorAll('.equipment-action');
-      equipmentActions.forEach(button => {
-        button.addEventListener('click', (e) => {
-          const slot = e.target.closest('.equipment-slot');
-          const slotType = slot.classList.contains('weapon') ? 'weapon' : 'armor';
-          this.showEquipmentDialog(monster, slotType);
+    };
+
+    // Monster card click handlers
+    const addCardClickHandlers = () => {
+      const monsterCards = overlay.querySelectorAll('.monster-card');
+      monsterCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+          const monsterId = card.getAttribute('data-monster-id');
+          handleMonsterSelection(monsterId);
         });
       });
-    }
-  };
-  
-  // Monster card click handlers
-  const addCardClickHandlers = () => {
-    const monsterCards = overlay.querySelectorAll('.monster-card');
-    monsterCards.forEach(card => {
-      card.addEventListener('click', (e) => {
-        const monsterId = card.getAttribute('data-monster-id');
-        handleMonsterSelection(monsterId);
+    };
+
+    // Add initial handlers
+    addCardClickHandlers();
+
+    // Add this to your setupPartyDialogEvents function after addCardClickHandlers()
+    const addMoveButtonHandlers = () => {
+      // Set up "To Reserve" buttons
+      const toReserveButtons = overlay.querySelectorAll('.move-to-reserve');
+      toReserveButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent card selection
+          const monsterId = button.getAttribute('data-monster-id');
+          if (this.moveMonster(monsterId, 'reserve')) {
+            // Refresh the UI
+            this.refreshPartyDialog();
+          }
+        });
       });
-    });
-  };
-  
-  // Add initial handlers
-  addCardClickHandlers();
 
-  // Add this to your setupPartyDialogEvents function after addCardClickHandlers()
-const addMoveButtonHandlers = () => {
-  // Set up "To Reserve" buttons
-  const toReserveButtons = overlay.querySelectorAll('.move-to-reserve');
-  toReserveButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent card selection
-      const monsterId = button.getAttribute('data-monster-id');
-      if (this.moveMonster(monsterId, 'reserve')) {
-        // Refresh the UI
-        this.refreshPartyDialog();
+      // Set up "To Active" buttons
+      const toActiveButtons = overlay.querySelectorAll('.move-to-active');
+      toActiveButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+          e.stopPropagation(); // Prevent card selection
+          const monsterId = button.getAttribute('data-monster-id');
+          if (this.moveMonster(monsterId, 'active')) {
+            // Refresh the UI
+            this.refreshPartyDialog();
+          } else {
+            // Show message if active party is full
+            this.showToast('Active party is full!', 'warning');
+          }
+        });
+      });
+    };
+
+
+
+    // Handle Escape key to close dialog
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeButton.click();
+        document.removeEventListener('keydown', handleKeyDown);
       }
-    });
-  });
-  
-  // Set up "To Active" buttons
-  const toActiveButtons = overlay.querySelectorAll('.move-to-active');
-  toActiveButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent card selection
-      const monsterId = button.getAttribute('data-monster-id');
-      if (this.moveMonster(monsterId, 'active')) {
-        // Refresh the UI
-        this.refreshPartyDialog();
-      } else {
-        // Show message if active party is full
-        this.showToast('Active party is full!', 'warning');
-      }
-    });
-  });
-};
-
-
-  
-  // Handle Escape key to close dialog
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      closeButton.click();
-      document.removeEventListener('keydown', handleKeyDown);
-    }
-  };
-  document.addEventListener('keydown', handleKeyDown);
-}
-
-// Refresh party dialog when data changes
-refreshPartyDialog() {
-  if (!this.partyDialog) return;
-  
-  // Get references to the active and reserve lists
-  const activeList = this.partyDialog.querySelector('.active-monster-list');
-  const reserveList = this.partyDialog.querySelector('.reserve-monster-list');
-  const detailsPanel = this.partyDialog.querySelector('.party-details');
-  
-  // Update tab labels
-  const tabButtons = this.partyDialog.querySelectorAll('.party-tab');
-  if (tabButtons.length >= 2) {
-    tabButtons[0].textContent = `Active (${this.party.active.length}/${this.party.maxActive})`;
-    tabButtons[1].textContent = `Reserve (${this.party.reserve.length})`;
+    };
+    document.addEventListener('keydown', handleKeyDown);
   }
-  
-  // Clear existing content
-  if (activeList) activeList.innerHTML = '';
-  if (reserveList) reserveList.innerHTML = '';
-  
-  // Repopulate active list
-  if (activeList) {
-    if (this.party.active.length > 0) {
-      this.party.active.forEach((monster, index) => {
-        const card = this.createMonsterCard(monster, 'active', index % 2 !== 0);
-        activeList.appendChild(card);
-      });
-      
-      // Add empty slots
-      for (let i = this.party.active.length; i < this.party.maxActive; i++) {
-        const emptySlot = document.createElement('div');
-        emptySlot.className = 'empty-party-slot';
-        emptySlot.innerHTML = `
+
+  // Refresh party dialog when data changes
+  refreshPartyDialog() {
+    if (!this.partyDialog) return;
+
+    // Get references to the active and reserve lists
+    const activeList = this.partyDialog.querySelector('.active-monster-list');
+    const reserveList = this.partyDialog.querySelector('.reserve-monster-list');
+    const detailsPanel = this.partyDialog.querySelector('.party-details');
+
+    // Update tab labels
+    const tabButtons = this.partyDialog.querySelectorAll('.party-tab');
+    if (tabButtons.length >= 2) {
+      tabButtons[0].textContent = `Active (${this.party.active.length}/${this.party.maxActive})`;
+      tabButtons[1].textContent = `Reserve (${this.party.reserve.length})`;
+    }
+
+    // Clear existing content
+    if (activeList) activeList.innerHTML = '';
+    if (reserveList) reserveList.innerHTML = '';
+
+    // Repopulate active list
+    if (activeList) {
+      if (this.party.active.length > 0) {
+        this.party.active.forEach((monster, index) => {
+          const card = this.createMonsterCard(monster, 'active', index % 2 !== 0);
+          activeList.appendChild(card);
+        });
+
+        // Add empty slots
+        for (let i = this.party.active.length; i < this.party.maxActive; i++) {
+          const emptySlot = document.createElement('div');
+          emptySlot.className = 'empty-party-slot';
+          emptySlot.innerHTML = `
           <span class="material-icons" style="margin-right: 8px;">add_circle_outline</span>
           Empty Slot
         `;
-        activeList.appendChild(emptySlot);
-      }
-    } else {
-      // Empty active party message
-      activeList.innerHTML = `
+          activeList.appendChild(emptySlot);
+        }
+      } else {
+        // Empty active party message
+        activeList.innerHTML = `
         <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.8);">
           <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">sentiment_dissatisfied</span>
           <p style="margin: 0 0 8px 0; font-size: 1.1rem;">Your active party is empty</p>
           <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">You need monsters in your party to participate in combat</p>
         </div>
       `;
+      }
     }
-  }
-  
-  // Repopulate reserve list
-  if (reserveList) {
-    if (this.party.reserve.length > 0) {
-      this.party.reserve.forEach(monster => {
-        const card = this.createMonsterCard(monster, 'reserve');
-        reserveList.appendChild(card);
-      });
-    } else {
-      // Empty reserve message
-      reserveList.innerHTML = `
+
+    // Repopulate reserve list
+    if (reserveList) {
+      if (this.party.reserve.length > 0) {
+        this.party.reserve.forEach(monster => {
+          const card = this.createMonsterCard(monster, 'reserve');
+          reserveList.appendChild(card);
+        });
+      } else {
+        // Empty reserve message
+        reserveList.innerHTML = `
         <div style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.8);">
           <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">inventory_2</span>
           <p style="margin: 0 0 8px 0; font-size: 1.1rem;">Your reserve is empty</p>
           <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">Monsters will be stored here when your active party is full</p>
         </div>
       `;
+      }
     }
+
+    // Reattach event listeners
+    const container = this.partyDialog.querySelector('.party-container');
+    this.setupPartyDialogEvents(this.partyDialog, container, activeList, reserveList, detailsPanel);
   }
-  
-  // Reattach event listeners
-  const container = this.partyDialog.querySelector('.party-container');
-  this.setupPartyDialogEvents(this.partyDialog, container, activeList, reserveList, detailsPanel);
-}
-  
+
   // Show monster details overlay (similar to splash art)
   showMonsterDetails(monster) {
     // Pause any 3D controls if they exist
     if (window.scene3D && typeof window.scene3D.pauseControls === 'function') {
       window.scene3D.pauseControls();
     }
-    
+
     const overlay = document.createElement('div');
     overlay.className = 'monster-details-overlay';
     overlay.style.cssText = `
@@ -2780,32 +2953,32 @@ refreshPartyDialog() {
           <div class="ability">
             <div class="ability-name" style="font-weight: bold;">STR</div>
             <div class="ability-score">${monster.abilities.str.score + levelBonus}</div>
-            <div class="ability-mod">(${formatMod(monster.abilities.str.modifier + Math.floor(levelBonus/2))})</div>
+            <div class="ability-mod">(${formatMod(monster.abilities.str.modifier + Math.floor(levelBonus / 2))})</div>
           </div>
           <div class="ability">
             <div class="ability-name" style="font-weight: bold;">DEX</div>
             <div class="ability-score">${monster.abilities.dex.score + levelBonus}</div>
-            <div class="ability-mod">(${formatMod(monster.abilities.dex.modifier + Math.floor(levelBonus/2))})</div>
+            <div class="ability-mod">(${formatMod(monster.abilities.dex.modifier + Math.floor(levelBonus / 2))})</div>
           </div>
           <div class="ability">
             <div class="ability-name" style="font-weight: bold;">CON</div>
             <div class="ability-score">${monster.abilities.con.score + levelBonus}</div>
-            <div class="ability-mod">(${formatMod(monster.abilities.con.modifier + Math.floor(levelBonus/2))})</div>
+            <div class="ability-mod">(${formatMod(monster.abilities.con.modifier + Math.floor(levelBonus / 2))})</div>
           </div>
           <div class="ability">
             <div class="ability-name" style="font-weight: bold;">INT</div>
             <div class="ability-score">${monster.abilities.int.score + levelBonus}</div>
-            <div class="ability-mod">(${formatMod(monster.abilities.int.modifier + Math.floor(levelBonus/2))})</div>
+            <div class="ability-mod">(${formatMod(monster.abilities.int.modifier + Math.floor(levelBonus / 2))})</div>
           </div>
           <div class="ability">
             <div class="ability-name" style="font-weight: bold;">WIS</div>
             <div class="ability-score">${monster.abilities.wis.score + levelBonus}</div>
-            <div class="ability-mod">(${formatMod(monster.abilities.wis.modifier + Math.floor(levelBonus/2))})</div>
+            <div class="ability-mod">(${formatMod(monster.abilities.wis.modifier + Math.floor(levelBonus / 2))})</div>
           </div>
           <div class="ability">
             <div class="ability-name" style="font-weight: bold;">CHA</div>
             <div class="ability-score">${monster.abilities.cha.score + levelBonus}</div>
-            <div class="ability-mod">(${formatMod(monster.abilities.cha.modifier + Math.floor(levelBonus/2))})</div>
+            <div class="ability-mod">(${formatMod(monster.abilities.cha.modifier + Math.floor(levelBonus / 2))})</div>
           </div>
         </div>
       `;
@@ -2831,7 +3004,7 @@ refreshPartyDialog() {
         // Determine icon based on ability type
         let icon = 'sports_martial_arts'; // Default for attack
         let color = '#607D8B'; // Default color
-        
+
         switch (ability.type) {
           case 'attack': icon = 'sports_martial_arts'; color = '#F44336'; break;
           case 'area': icon = 'blur_circular'; color = '#FF9800'; break;
@@ -2842,7 +3015,7 @@ refreshPartyDialog() {
           case 'reaction': icon = 'autorenew'; color = '#795548'; break;
           case 'support': icon = 'group'; color = '#607D8B'; break;
         }
-        
+
         abilitiesHtml += `
           <div class="ability-card" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
             <div class="ability-header" style="display: flex; align-items: center; padding: 8px; background: ${color}20; border-bottom: 1px solid ${color}40;">
@@ -2856,7 +3029,7 @@ refreshPartyDialog() {
           </div>
         `;
       });
-      
+
       abilitiesHtml += `</div>`;
       monsterAbilitiesSection.innerHTML = abilitiesHtml;
     } else {
@@ -2880,7 +3053,7 @@ refreshPartyDialog() {
     const closeDialog = () => {
       overlay.style.opacity = '0';
       detailsContainer.style.transform = 'scale(0.95)';
-      
+
       setTimeout(() => {
         overlay.remove();
         // Resume controls if they exist
@@ -2911,90 +3084,319 @@ refreshPartyDialog() {
 
     // Add to body and trigger animation
     document.body.appendChild(overlay);
-    
+
     // Force browser to process the new elements before animating
     setTimeout(() => {
       overlay.style.opacity = '1';
       detailsContainer.style.transform = 'scale(1)';
     }, 10);
   }
-  
-  // Show equipment dialog for a monster
-  showEquipmentDialog(monster, selectedSlot = null) {
-    // Get available equipment
-    const weapons = this.getAvailableEquipment('weapon');
-    const armor = this.getAvailableEquipment('armor');
-    
-    // Create dialog
+
+  // Add or update your showEquipmentDialog method
+  showEquipmentDialog(monster, selectedSlot = 'weapon') {
+    // Create dialog container
     const dialog = document.createElement('sl-dialog');
-    dialog.label = `Equip ${monster.name}`;
-    dialog.style.setProperty('--width', '500px');
-    
-    // Create content with tabs for different equipment types
-    let contentHtml = `
-      <sl-tab-group>
-        <sl-tab slot="nav" panel="weapons" ${!selectedSlot || selectedSlot === 'weapon' ? 'active' : ''}>Weapons</sl-tab>
-        <sl-tab slot="nav" panel="armor" ${selectedSlot === 'armor' ? 'active' : ''}>Armor</sl-tab>
-        
-        <sl-tab-panel name="weapons">
-          ${this.renderEquipmentList(weapons, monster, 'weapon')}
-        </sl-tab-panel>
-        
-        <sl-tab-panel name="armor">
-          ${this.renderEquipmentList(armor, monster, 'armor')}
-        </sl-tab-panel>
-      </sl-tab-group>
-    `;
-    
-    dialog.innerHTML = contentHtml;
-    
-    // Add footer with buttons
-    const footer = document.createElement('div');
-    footer.slot = 'footer';
-    footer.innerHTML = `
-      <sl-button variant="neutral" class="close-btn">Close</sl-button>
-    `;
-    dialog.appendChild(footer);
-    
-    // Add event listeners
-    dialog.addEventListener('sl-after-show', () => {
-      // Close button
-      dialog.querySelector('.close-btn').addEventListener('click', () => {
-        dialog.hide();
-      });
+    dialog.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
+    dialog.style.setProperty('--width', '600px');
+    dialog.style.zIndex = "10002";
+    // Create placeholder equipment (to be replaced with actual inventory later)
+    const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
+
+    // Dialog content
+    dialog.innerHTML = `
+    <div style="
+      background: #f5f3e8;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e6e0d1;
+      margin-bottom: 16px;
+    ">
+      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+        <i class="ra ${selectedSlot === 'weapon' ? 'ra-crossed-swords' : 'ra-shield'}" style="
+          font-size: 24px;
+          margin-right: 12px;
+          color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
+        "></i>
+        <div style="font-weight: bold; font-size: 1.1rem;">Available ${selectedSlot === 'weapon' ? 'Weapons' : 'Armor'}</div>
+      </div>
       
-      // Equipment item clicks
-      dialog.querySelectorAll('.equipment-item').forEach(item => {
-        item.addEventListener('click', e => {
-          const itemId = e.currentTarget.getAttribute('data-item-id');
-          const slot = e.currentTarget.getAttribute('data-slot');
-          
+      <!-- Current equipment -->
+      ${monster.equipment[selectedSlot] ? `
+        <div style="
+          margin-bottom: 16px;
+          padding: 12px;
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 8px;
+        ">
+          <div style="margin-bottom: 8px; font-weight: bold; display: flex; align-items: center;">
+            <i class="ra ra-slash-ring" style="font-size: 16px; margin-right: 8px; color: #666;"></i>
+            Currently Equipped
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="
+              width: 48px;
+              height: 48px;
+              background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-right: 12px;
+            ">
+              <i class="ra ${selectedSlot === 'weapon' ?
+          this.getWeaponIcon(monster.equipment[selectedSlot]) :
+          this.getArmorIcon(monster.equipment[selectedSlot])
+        }" style="
+                font-size: 28px; 
+                color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
+              "></i>
+            </div>
+            <div>
+              <div style="font-weight: 500;">${monster.equipment[selectedSlot].name}</div>
+              ${monster.equipment[selectedSlot].damageBonus ?
+          `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
+          ''
+        }
+              ${monster.equipment[selectedSlot].acBonus ?
+          `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
+          ''
+        }
+            </div>
+          </div>
+        </div>
+      ` : ''}
+      
+      <!-- Equipment options -->
+      <div class="equipment-options" style="
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 12px;
+      ">
+        <!-- Option to unequip -->
+        <div class="equipment-item" data-item-id="none" data-slot="${selectedSlot}" style="
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 8px;
+          padding: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+        ">
+          <div style="display: flex; align-items: center;">
+            <div style="
+              width: 48px;
+              height: 48px;
+              background: rgba(239, 68, 68, 0.05);
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-right: 12px;
+            ">
+              <i class="ra ra-broken-skull" style="font-size: 28px; color: #666;"></i>
+            </div>
+            <div>
+              <div style="font-weight: 500;">Unequip</div>
+              <div style="font-size: 0.9rem; color: #666;">Remove current ${selectedSlot}</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Equipment items -->
+        ${placeholderEquipment.map(item => `
+          <div class="equipment-item" 
+               data-item-id="${item.id}" 
+               data-slot="${selectedSlot}" 
+               style="
+                 background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)'};
+                 border-radius: 8px;
+                 padding: 12px;
+                 cursor: pointer;
+                 transition: all 0.2s;
+                 border: 1px solid ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
+               ">
+            <div style="display: flex; align-items: center;">
+              <div style="
+                width: 48px;
+                height: 48px;
+                background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 12px;
+              ">
+                <i class="ra ${selectedSlot === 'weapon' ? this.getWeaponIcon(item) : this.getArmorIcon(item)}" 
+                   style="font-size: 28px; color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};"></i>
+              </div>
+              <div>
+                <div style="font-weight: 500;">${item.name}</div>
+                ${item.damageBonus ?
+            `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
+            ''
+          }
+                ${item.acBonus ?
+            `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
+            ''
+          }
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div slot="footer">
+      <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+    </div>
+  `;
+
+    // Add hover effects for equipment items
+    const setupEquipmentItems = () => {
+      const items = dialog.querySelectorAll('.equipment-item');
+      items.forEach(item => {
+        // Hover effect
+        item.addEventListener('mouseenter', () => {
+          item.style.transform = 'translateY(-2px)';
+          item.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+        });
+
+        item.addEventListener('mouseleave', () => {
+          item.style.transform = '';
+          item.style.boxShadow = '';
+        });
+
+        // Click handler
+        item.addEventListener('click', () => {
+          const itemId = item.getAttribute('data-item-id');
+          const slot = item.getAttribute('data-slot');
+
           if (itemId === 'none') {
             // Unequip
             this.unequipItem(monster.id, slot);
           } else {
-            // Find equipment
-            const equipment = slot === 'weapon' ? 
-              weapons.find(w => w.id === itemId) : 
-              armor.find(a => a.id === itemId);
-            
+            // Find and equip the item
+            const equipment = placeholderEquipment.find(e => e.id === itemId);
             if (equipment) {
               this.equipItem(monster.id, slot, equipment);
             }
           }
-          
-          // Refresh UI
+
+          // Close dialog
           dialog.hide();
+          // Refresh party UI
           this.refreshPartyDialog();
         });
       });
+    };
+
+    // Add event handlers
+    dialog.addEventListener('sl-after-show', () => {
+      setupEquipmentItems();
+
+      // Cancel button
+      dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+        dialog.hide();
+      });
     });
-    
-    // Show dialog
+
+
+    // Add to document and show
     document.body.appendChild(dialog);
+
+
+  // Register with window manager AFTER adding to DOM but BEFORE showing
+  // This ensures the element is available in the DOM for positioning
+  window.windowManager.registerWindow(dialog, {
+    draggable: true,
+    // No need to specify dragHandle for Shoelace dialogs as we handle it specially
+    initialPosition: {
+      x: Math.max(0, (window.innerWidth - 600) / 2),
+      y: Math.max(0, (window.innerHeight - 400) / 2)
+    }
+  });
+  
+  // Listen for when dialog is closed to unregister it
+  dialog.addEventListener('sl-after-hide', () => {
+    window.windowManager.unregisterWindow(dialog.id);
+    // Optional: Remove from DOM after hiding
+    setTimeout(() => {
+      if (dialog.parentNode) {
+        dialog.parentNode.removeChild(dialog);
+      }
+    }, 300);
+  });
+
+
     dialog.show();
   }
-  
+
+  // Placeholder equipment function (to be replaced with inventory integration)
+  getPlaceholderEquipment(type) {
+    if (type === 'weapon') {
+      return [
+        {
+          id: 'sword1',
+          name: 'Iron Sword',
+          damageBonus: 1,
+          type: 'weapon'
+        },
+        {
+          id: 'axe1',
+          name: 'Battle Axe',
+          damageBonus: 2,
+          type: 'weapon'
+        },
+        {
+          id: 'staff1',
+          name: 'Magic Staff',
+          damageBonus: 1,
+          type: 'weapon'
+        },
+        {
+          id: 'dagger1',
+          name: 'Assassin\'s Dagger',
+          damageBonus: 1,
+          type: 'weapon'
+        },
+        {
+          id: 'bow1',
+          name: 'Hunter\'s Bow',
+          damageBonus: 2,
+          type: 'weapon'
+        }
+      ];
+    } else if (type === 'armor') {
+      return [
+        {
+          id: 'leather1',
+          name: 'Leather Armor',
+          acBonus: 1,
+          type: 'armor'
+        },
+        {
+          id: 'chain1',
+          name: 'Chain Mail',
+          acBonus: 3,
+          type: 'armor'
+        },
+        {
+          id: 'plate1',
+          name: 'Plate Armor',
+          acBonus: 5,
+          type: 'armor'
+        },
+        {
+          id: 'robe1',
+          name: 'Mage Robes',
+          acBonus: 1,
+          type: 'armor'
+        }
+      ];
+    }
+
+    return [];
+  }
+
   // Render equipment list for dialog
   renderEquipmentList(items, monster, slot) {
     // If no items, show message
@@ -3006,10 +3408,10 @@ refreshPartyDialog() {
         </div>
       `;
     }
-    
+
     // Get currently equipped item
     const equippedItem = monster.equipment[slot];
-    
+
     // Build html for equipment list
     let html = `
       <div class="equipment-list" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
@@ -3022,20 +3424,20 @@ refreshPartyDialog() {
           </div>
         </div>
     `;
-    
+
     // Add each item
     items.forEach(item => {
       // Check if this is the equipped item
       const isEquipped = equippedItem && equippedItem.id === item.id;
-      
+
       html += `
         <div class="equipment-item ${isEquipped ? 'equipped' : ''}" 
              data-item-id="${item.id}" 
              data-slot="${slot}" 
              style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; ${isEquipped ? 'background: #e3f2fd; border-color: #2196F3;' : ''}">
           <div class="item-icon" style="margin-right: 16px;">
-            ${item.icon ? `<img src="${item.icon}" alt="${item.name}" style="width: 40px; height: 40px;">` : 
-              `<span class="material-icons" style="font-size: 40px; color: #607D8B;">${slot === 'weapon' ? 'sports_martial_arts' : 'security'}</span>`}
+            ${item.icon ? `<img src="${item.icon}" alt="${item.name}" style="width: 40px; height: 40px;">` :
+          `<span class="material-icons" style="font-size: 40px; color: #607D8B;">${slot === 'weapon' ? 'sports_martial_arts' : 'security'}</span>`}
           </div>
           <div style="flex: 1;">
             <div style="font-weight: bold; display: flex; align-items: center;">
@@ -3053,35 +3455,35 @@ refreshPartyDialog() {
         </div>
       `;
     });
-    
+
     html += `</div>`;
     return html;
   }
-  
-// Updated showRecruitmentDialog method
-showRecruitmentDialog(monster) {
+
+  // Updated showRecruitmentDialog method
+  showRecruitmentDialog(monster) {
 
     if (document.querySelector('.party-overlay')) {
-        document.querySelector('.party-overlay').remove();
-      }
+      document.querySelector('.party-overlay').remove();
+    }
 
-  // Create monster from bestiary data if needed
-  const recruitMonster = monster.data ? monster : { data: monster };
-  
-  // Create overlay and dialog
-  const overlay = document.createElement('div');
-  overlay.className = 'party-overlay';
-  overlay.style.opacity = '0';
+    // Create monster from bestiary data if needed
+    const recruitMonster = monster.data ? monster : { data: monster };
 
-  const dialogContainer = document.createElement('div');
-  dialogContainer.className = 'party-container';
-  dialogContainer.style.maxWidth = '700px';
-  dialogContainer.style.transform = 'scale(0.95)';
+    // Create overlay and dialog
+    const overlay = document.createElement('div');
+    overlay.className = 'party-overlay';
+    overlay.style.opacity = '0';
 
-  // Create header
-  const header = document.createElement('div');
-  header.className = 'party-header';
-  header.innerHTML = `
+    const dialogContainer = document.createElement('div');
+    dialogContainer.className = 'party-container';
+    dialogContainer.style.maxWidth = '700px';
+    dialogContainer.style.transform = 'scale(0.95)';
+
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'party-header';
+    header.innerHTML = `
     <div style="text-align: center; width: 100%;">
       <h1 style="margin: 0; font-size: 1.5rem;">Monster Encounter</h1>
     </div>
@@ -3090,37 +3492,37 @@ showRecruitmentDialog(monster) {
     </button>
   `;
 
-  // Get monster info
-  const name = recruitMonster.data.basic?.name || 'Unknown Monster';
-  const size = recruitMonster.data.basic?.size || 'Medium';
-  const type = recruitMonster.data.basic?.type || 'Unknown';
-  const cr = recruitMonster.data.basic?.cr || '?';
-  
-  // Get color for monster type
-  // const typeColors = {
-  //   Beast: '#4f46e5',
-  //   Dragon: '#c026d3',
-  //   Elemental: '#ef4444',
-  //   Monstrosity: '#65a30d',
-  //   Construct: '#a16207',
-  //   Undead: '#6b7280',
-  //   Fey: '#06b6d4',
-  //   Giant: '#b45309'
-  // };
-  
-  // const bgColor = typeColors[type] || '#6b7280';
-  // const bgColor = [type] // || '#6b7280';
-  const bgColor = this.getMonsterTypeColor(type);
-  // console.log('mon',type);
-  // console.log('bg',bgColor);
-  
-  // Create content
-  const content = document.createElement('div');
-  content.className = 'recruitment-content';
-  content.style.padding = '24px';
-  content.style.color = 'white';
-  
-  content.innerHTML = `
+    // Get monster info
+    const name = recruitMonster.data.basic?.name || 'Unknown Monster';
+    const size = recruitMonster.data.basic?.size || 'Medium';
+    const type = recruitMonster.data.basic?.type || 'Unknown';
+    const cr = recruitMonster.data.basic?.cr || '?';
+
+    // Get color for monster type
+    // const typeColors = {
+    //   Beast: '#4f46e5',
+    //   Dragon: '#c026d3',
+    //   Elemental: '#ef4444',
+    //   Monstrosity: '#65a30d',
+    //   Construct: '#a16207',
+    //   Undead: '#6b7280',
+    //   Fey: '#06b6d4',
+    //   Giant: '#b45309'
+    // };
+
+    // const bgColor = typeColors[type] || '#6b7280';
+    // const bgColor = [type] // || '#6b7280';
+    const bgColor = this.getMonsterTypeColor(type);
+    // console.log('mon',type);
+    // console.log('bg',bgColor);
+
+    // Create content
+    const content = document.createElement('div');
+    content.className = 'recruitment-content';
+    content.style.padding = '24px';
+    content.style.color = 'white';
+
+    content.innerHTML = `
     <!-- Monster presentation section -->
     <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 32px;">
       <!-- Tilted monster card -->
@@ -3147,10 +3549,10 @@ showRecruitmentDialog(monster) {
             font-weight: bold;
             margin-right: 12px;
           ">
-            ${recruitMonster.data.token?.data ? 
-              `<img src="${recruitMonster.data.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-              name.charAt(0)
-            }
+            ${recruitMonster.data.token?.data ?
+        `<img src="${recruitMonster.data.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+        name.charAt(0)
+      }
           </div>
           <div>
             <div style="font-weight: bold; font-size: 1.1rem;">${name}</div>
@@ -3300,162 +3702,162 @@ showRecruitmentDialog(monster) {
       </button>
     </div>
   `;
-  
-  // Assemble dialog
-  dialogContainer.appendChild(header);
-  dialogContainer.appendChild(content);
-  overlay.appendChild(dialogContainer);
-  document.body.appendChild(overlay);
-  
-  // Add hover effects to approach buttons
-  const approachButtons = overlay.querySelectorAll('.approach-btn');
-  approachButtons.forEach(button => {
-    // Get current background
-    const computedStyle = window.getComputedStyle(button);
-    const bgColor = computedStyle.backgroundColor;
-    
-    // Create hover color (more opaque)
-    const color = bgColor.replace('0.15', '0.25').replace('0.2', '0.3');
-    
-    // Add hover effect
-    button.addEventListener('mouseenter', () => {
-      button.style.backgroundColor = color;
-      button.style.transform = 'translateY(-2px)';
+
+    // Assemble dialog
+    dialogContainer.appendChild(header);
+    dialogContainer.appendChild(content);
+    overlay.appendChild(dialogContainer);
+    document.body.appendChild(overlay);
+
+    // Add hover effects to approach buttons
+    const approachButtons = overlay.querySelectorAll('.approach-btn');
+    approachButtons.forEach(button => {
+      // Get current background
+      const computedStyle = window.getComputedStyle(button);
+      const bgColor = computedStyle.backgroundColor;
+
+      // Create hover color (more opaque)
+      const color = bgColor.replace('0.15', '0.25').replace('0.2', '0.3');
+
+      // Add hover effect
+      button.addEventListener('mouseenter', () => {
+        button.style.backgroundColor = color;
+        button.style.transform = 'translateY(-2px)';
+      });
+
+      button.addEventListener('mouseleave', () => {
+        button.style.backgroundColor = bgColor;
+        button.style.transform = '';
+      });
     });
-    
-    button.addEventListener('mouseleave', () => {
-      button.style.backgroundColor = bgColor;
-      button.style.transform = '';
+
+    // Add event listeners for buttons
+    overlay.querySelector('.close-dialog-btn').addEventListener('click', () => {
+      overlay.style.opacity = '0';
+      dialogContainer.style.transform = 'scale(0.95)';
+      setTimeout(() => overlay.remove(), 300);
     });
-  });
-  
-  // Add event listeners for buttons
-  overlay.querySelector('.close-dialog-btn').addEventListener('click', () => {
-    overlay.style.opacity = '0';
-    dialogContainer.style.transform = 'scale(0.95)';
-    setTimeout(() => overlay.remove(), 300);
-  });
-  
-  overlay.querySelector('.negotiate').addEventListener('click', () => {
-    this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
-  });
-  
-  overlay.querySelector('.impress').addEventListener('click', () => {
-    this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
-  });
-  
-  overlay.querySelector('.gift').addEventListener('click', () => {
-    this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
-  });
-  
-  overlay.querySelector('.fight').addEventListener('click', () => {
-    overlay.style.opacity = '0';
-    dialogContainer.style.transform = 'scale(0.95)';
+
+    overlay.querySelector('.negotiate').addEventListener('click', () => {
+      this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
+    });
+
+    overlay.querySelector('.impress').addEventListener('click', () => {
+      this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
+    });
+
+    overlay.querySelector('.gift').addEventListener('click', () => {
+      this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
+    });
+
+    overlay.querySelector('.fight').addEventListener('click', () => {
+      overlay.style.opacity = '0';
+      dialogContainer.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        overlay.remove();
+        if (window.combatSystem) {
+          window.combatSystem.initiateCombat([recruitMonster]);
+        }
+      }, 300);
+    });
+
+    overlay.querySelector('.flee').addEventListener('click', () => {
+      overlay.style.opacity = '0';
+      dialogContainer.style.transform = 'scale(0.95)';
+      setTimeout(() => overlay.remove(), 300);
+    });
+
+    // Animate in
     setTimeout(() => {
-      overlay.remove();
-      if (window.combatSystem) {
-        window.combatSystem.initiateCombat([recruitMonster]);
+      overlay.style.opacity = '1';
+      dialogContainer.style.transform = 'scale(1)';
+    }, 10);
+  }
+
+
+  // Handle recruitment attempt
+  handleRecruitmentAttempt(monster, approach, overlay) {
+    // Determine success chance based on monster type and approach
+    let successChance = 0.5;  // Base 50% chance
+
+    // Adjust based on monster type and approach
+    if (approach === 'negotiate') {
+      // Intelligent creatures are more receptive to negotiation
+      if (['humanoid', 'fey', 'fiend', 'celestial'].includes(monster.data.basic?.type?.toLowerCase())) {
+        successChance += 0.2;
+      } else if (['beast', 'monstrosity', 'ooze'].includes(monster.data.basic?.type?.toLowerCase())) {
+        successChance -= 0.2;
       }
-    }, 300);
-  });
-  
-  overlay.querySelector('.flee').addEventListener('click', () => {
-    overlay.style.opacity = '0';
-    dialogContainer.style.transform = 'scale(0.95)';
-    setTimeout(() => overlay.remove(), 300);
-  });
-  
-  // Animate in
-  setTimeout(() => {
-    overlay.style.opacity = '1';
-    dialogContainer.style.transform = 'scale(1)';
-  }, 10);
-}
+    } else if (approach === 'impress') {
+      // Some monsters respect displays of strength
+      if (['dragon', 'monstrosity', 'giant'].includes(monster.data.basic?.type?.toLowerCase())) {
+        successChance += 0.2;
+      } else if (['fey', 'celestial', 'undead'].includes(monster.data.basic?.type?.toLowerCase())) {
+        successChance -= 0.2;
+      }
+    } else if (approach === 'gift') {
+      // Some creatures value gifts more than others
+      if (['dragon', 'fey', 'humanoid'].includes(monster.data.basic?.type?.toLowerCase())) {
+        successChance += 0.2;
+      }
+    }
 
+    // Adjust based on monster CR
+    // Higher CR monsters are harder to recruit
+    const cr = parseFloat(monster.data.basic?.cr || '0');
+    if (cr <= 1) {
+      successChance += 0.1;
+    } else if (cr >= 5) {
+      successChance -= 0.1 * Math.min(5, Math.floor(cr / 5));  // -0.1 for every 5 CR
+    }
 
-// Handle recruitment attempt
-handleRecruitmentAttempt(monster, approach, overlay) {
-  // Determine success chance based on monster type and approach
-  let successChance = 0.5;  // Base 50% chance
-  
-  // Adjust based on monster type and approach
-  if (approach === 'negotiate') {
-    // Intelligent creatures are more receptive to negotiation
-    if (['humanoid', 'fey', 'fiend', 'celestial'].includes(monster.data.basic?.type?.toLowerCase())) {
-      successChance += 0.2;
-    } else if (['beast', 'monstrosity', 'ooze'].includes(monster.data.basic?.type?.toLowerCase())) {
-      successChance -= 0.2;
-    }
-  } else if (approach === 'impress') {
-    // Some monsters respect displays of strength
-    if (['dragon', 'monstrosity', 'giant'].includes(monster.data.basic?.type?.toLowerCase())) {
-      successChance += 0.2;
-    } else if (['fey', 'celestial', 'undead'].includes(monster.data.basic?.type?.toLowerCase())) {
-      successChance -= 0.2;
-    }
-  } else if (approach === 'gift') {
-    // Some creatures value gifts more than others
-    if (['dragon', 'fey', 'humanoid'].includes(monster.data.basic?.type?.toLowerCase())) {
-      successChance += 0.2;
-    }
+    // Cap success chance
+    successChance = Math.max(0.1, Math.min(0.9, successChance));
+
+    // Roll for success
+    const roll = Math.random();
+    const success = roll <= successChance;
+
+    console.log(`Recruitment attempt (${approach}): ${roll} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
+
+    // Show result with dice animation
+    this.showRecruitmentResult(monster, success, approach, overlay);
+
+    return success;
   }
-  
-  // Adjust based on monster CR
-  // Higher CR monsters are harder to recruit
-  const cr = parseFloat(monster.data.basic?.cr || '0');
-  if (cr <= 1) {
-    successChance += 0.1;
-  } else if (cr >= 5) {
-    successChance -= 0.1 * Math.min(5, Math.floor(cr / 5));  // -0.1 for every 5 CR
-  }
-  
-  // Cap success chance
-  successChance = Math.max(0.1, Math.min(0.9, successChance));
-  
-  // Roll for success
-  const roll = Math.random();
-  const success = roll <= successChance;
-  
-  console.log(`Recruitment attempt (${approach}): ${roll} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
-  
-  // Show result with dice animation
-  this.showRecruitmentResult(monster, success, approach, overlay);
-  
-  return success;
-}
 
-// Show recruitment result with animation
-showRecruitmentResult(monster, success, approach, overlay) {
-  // Hide previous content
-//   const dialogContainer = overlay.querySelector('.recruitment-dialog');
-//   const content = overlay.querySelector('.recruitment-content');
-//   content.innerHTML = '';
+  // Show recruitment result with animation
+  showRecruitmentResult(monster, success, approach, overlay) {
+    // Hide previous content
+    //   const dialogContainer = overlay.querySelector('.recruitment-dialog');
+    //   const content = overlay.querySelector('.recruitment-content');
+    //   content.innerHTML = '';
 
-const dialogContainer = overlay.querySelector('.party-container');
-  
-const content = overlay.querySelector('.recruitment-content');
-if (!content) {
-  console.error('Cannot find recruitment-content element');
-  return;
-}
+    const dialogContainer = overlay.querySelector('.party-container');
 
-content.innerHTML = '';
-  
-  // Create result content
-  const resultContent = document.createElement('div');
-  resultContent.className = 'recruitment-result';
-  resultContent.style.cssText = `
+    const content = overlay.querySelector('.recruitment-content');
+    if (!content) {
+      console.error('Cannot find recruitment-content element');
+      return;
+    }
+
+    content.innerHTML = '';
+
+    // Create result content
+    const resultContent = document.createElement('div');
+    resultContent.className = 'recruitment-result';
+    resultContent.style.cssText = `
     padding: 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
   `;
-  
-  // Create dice animation container
-  const diceContainer = document.createElement('div');
-  diceContainer.className = 'dice-animation';
-  diceContainer.style.cssText = `
+
+    // Create dice animation container
+    const diceContainer = document.createElement('div');
+    diceContainer.className = 'dice-animation';
+    diceContainer.style.cssText = `
     margin-bottom: 24px;
     position: relative;
     width: 100px;
@@ -3464,9 +3866,9 @@ content.innerHTML = '';
     justify-content: center;
     align-items: center;
   `;
-  
-  // Add spinning dice animation - was 
-  diceContainer.innerHTML = `
+
+    // Add spinning dice animation - was 
+    diceContainer.innerHTML = `
     <div class="spinning-dice" style="font-size: 64px; animation: spin 1s ease-out forwards;"><i class="fa-solid fa-dice-d20"></i></i></div>
     <style>
       @keyframes spin {
@@ -3481,156 +3883,156 @@ content.innerHTML = '';
     </style>
   `;
 
-// Replace the problematic diceContainer.innerHTML code with this:
-// diceContainer.innerHTML = `
-// <div id="d20-dice-container" style="
-//     width: 100px;
-//     height: 100px;
-//     position: relative;
-//     perspective: 600px;
-// ">
-//     <div id="d20-dice" style="
-//         width: 100%;
-//         height: 100%;
-//         position: absolute;
-//         transform-style: preserve-3d;
-//         transition: transform 1s ease-out;
-//     ">
-//         <div style="
-//             position: absolute;
-//             width: 64px;
-//             height: 64px;
-//             background: linear-gradient(135deg, #8b5cf6, #6366f1);
-//             border: 2px solid white;
-//             top: 50%;
-//             left: 50%;
-//             transform: translate(-50%, -50%);
-//             clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-//             display: flex;
-//             align-items: center;
-//             justify-content: center;
-//             font-size: 24px;
-//             color: white;
-//             font-weight: bold;
-//             text-shadow: 0 0 5px rgba(0,0,0,0.5);
-//         ">
-//             20
-//         </div>
-//     </div>
-// </div>`;
+    // Replace the problematic diceContainer.innerHTML code with this:
+    // diceContainer.innerHTML = `
+    // <div id="d20-dice-container" style="
+    //     width: 100px;
+    //     height: 100px;
+    //     position: relative;
+    //     perspective: 600px;
+    // ">
+    //     <div id="d20-dice" style="
+    //         width: 100%;
+    //         height: 100%;
+    //         position: absolute;
+    //         transform-style: preserve-3d;
+    //         transition: transform 1s ease-out;
+    //     ">
+    //         <div style="
+    //             position: absolute;
+    //             width: 64px;
+    //             height: 64px;
+    //             background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    //             border: 2px solid white;
+    //             top: 50%;
+    //             left: 50%;
+    //             transform: translate(-50%, -50%);
+    //             clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+    //             display: flex;
+    //             align-items: center;
+    //             justify-content: center;
+    //             font-size: 24px;
+    //             color: white;
+    //             font-weight: bold;
+    //             text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    //         ">
+    //             20
+    //         </div>
+    //     </div>
+    // </div>`;
 
-// // Add a small delay to ensure the DOM is updated
-// setTimeout(() => {
-//   // Look for the dice element within the diceContainer instead of the entire document
-//   const diceElement = diceContainer.querySelector('#d20-dice');
-  
-//   // Check if element exists to prevent errors
-//   if (diceElement) {
-//     // Initial position
-//     diceElement.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.5)';
-//     diceElement.style.opacity = '0.5';
-    
-//     // Animation timing variables
-//     const duration = 1000; // 1 second
-//     const startTime = performance.now();
-    
-//     // Animation function
-//     function animateDice(currentTime) {
-//         const elapsed = currentTime - startTime;
-//         const progress = Math.min(elapsed / duration, 1);
-        
-//         // Calculate rotation based on progress
-//         const rotateX = progress * 720; 
-//         const rotateY = progress * 360;
-//         const rotateZ = progress * 180;
-        
-//         // Calculate scale - grows in middle, then settles
-//         let scale;
-//         if (progress < 0.5) {
-//             // Scale up to 1.2
-//             scale = 0.5 + (progress * 1.4);
-//         } else {
-//             // Scale down to 1.0
-//             scale = 1.2 - ((progress - 0.5) * 0.4);
-//         }
-        
-//         // Calculate opacity - increases to 1
-//         const opacity = 0.5 + (progress * 0.5);
-        
-//         // Apply transforms
-//         diceElement.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
-//         diceElement.style.opacity = opacity;
-        
-//         // Continue animation if not complete
-//         if (progress < 1) {
-//             requestAnimationFrame(animateDice);
-//         }
-//     }
-    
-//     // Start animation
-//     requestAnimationFrame(animateDice);
-//   } else {
-//     console.warn('Could not find dice element for animation');
-//   }
-// }, 10); // Small delay to allow DOM to update
-  
-  // Create result message container (hidden initially)
-  const resultMessage = document.createElement('div');
-  resultMessage.className = 'result-message';
-  resultMessage.style.cssText = `
+    // // Add a small delay to ensure the DOM is updated
+    // setTimeout(() => {
+    //   // Look for the dice element within the diceContainer instead of the entire document
+    //   const diceElement = diceContainer.querySelector('#d20-dice');
+
+    //   // Check if element exists to prevent errors
+    //   if (diceElement) {
+    //     // Initial position
+    //     diceElement.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.5)';
+    //     diceElement.style.opacity = '0.5';
+
+    //     // Animation timing variables
+    //     const duration = 1000; // 1 second
+    //     const startTime = performance.now();
+
+    //     // Animation function
+    //     function animateDice(currentTime) {
+    //         const elapsed = currentTime - startTime;
+    //         const progress = Math.min(elapsed / duration, 1);
+
+    //         // Calculate rotation based on progress
+    //         const rotateX = progress * 720; 
+    //         const rotateY = progress * 360;
+    //         const rotateZ = progress * 180;
+
+    //         // Calculate scale - grows in middle, then settles
+    //         let scale;
+    //         if (progress < 0.5) {
+    //             // Scale up to 1.2
+    //             scale = 0.5 + (progress * 1.4);
+    //         } else {
+    //             // Scale down to 1.0
+    //             scale = 1.2 - ((progress - 0.5) * 0.4);
+    //         }
+
+    //         // Calculate opacity - increases to 1
+    //         const opacity = 0.5 + (progress * 0.5);
+
+    //         // Apply transforms
+    //         diceElement.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
+    //         diceElement.style.opacity = opacity;
+
+    //         // Continue animation if not complete
+    //         if (progress < 1) {
+    //             requestAnimationFrame(animateDice);
+    //         }
+    //     }
+
+    //     // Start animation
+    //     requestAnimationFrame(animateDice);
+    //   } else {
+    //     console.warn('Could not find dice element for animation');
+    //   }
+    // }, 10); // Small delay to allow DOM to update
+
+    // Create result message container (hidden initially)
+    const resultMessage = document.createElement('div');
+    resultMessage.className = 'result-message';
+    resultMessage.style.cssText = `
     opacity: 0;
     animation: fadeResult 0.5s ease-out 1s forwards;
   `;
-  
-  // Determine result message based on success and approach
-  let message, icon, iconColor;
-  
-  if (success) {
-    message = `${monster.data.basic?.name} has joined your party!`;
-    icon = 'emoji_events';
-    iconColor = '#FFD700';
-    
-    // Additional flavor based on approach
-    let approachMessage = '';
-    switch (approach) {
-      case 'negotiate':
-        approachMessage = 'Your diplomatic approach was successful.';
-        break;
-      case 'impress':
-        approachMessage = 'The monster was impressed by your display of strength.';
-        break;
-      case 'gift':
-        approachMessage = 'Your gift was well-received.';
-        break;
-    }
-    
-    resultMessage.innerHTML = `
+
+    // Determine result message based on success and approach
+    let message, icon, iconColor;
+
+    if (success) {
+      message = `${monster.data.basic?.name} has joined your party!`;
+      icon = 'emoji_events';
+      iconColor = '#FFD700';
+
+      // Additional flavor based on approach
+      let approachMessage = '';
+      switch (approach) {
+        case 'negotiate':
+          approachMessage = 'Your diplomatic approach was successful.';
+          break;
+        case 'impress':
+          approachMessage = 'The monster was impressed by your display of strength.';
+          break;
+        case 'gift':
+          approachMessage = 'Your gift was well-received.';
+          break;
+      }
+
+      resultMessage.innerHTML = `
       <span class="material-icons" style="font-size: 48px; color: ${iconColor}; margin-bottom: 16px;">${icon}</span>
       <h2 style="margin: 0 0 8px 0; color: #388E3C;">Success!</h2>
       <p style="margin: 0 0 16px 0; font-size: 1.2em;">${message}</p>
       <p style="color: #666;">${approachMessage}</p>
       <sl-button class="continue-btn" variant="primary" style="margin-top: 24px;">Continue</sl-button>
     `;
-  } else {
-    message = `${monster.data.basic?.name} refused to join your party.`;
-    icon = 'cancel';
-    iconColor = '#F44336';
-    
-    // Additional flavor based on approach
-    let approachMessage = '';
-    switch (approach) {
-      case 'negotiate':
-        approachMessage = 'Your words failed to convince the monster.';
-        break;
-      case 'impress':
-        approachMessage = 'The monster was unimpressed by your display.';
-        break;
-      case 'gift':
-        approachMessage = 'Your gift was rejected.';
-        break;
-    }
-    
-    resultMessage.innerHTML = `
+    } else {
+      message = `${monster.data.basic?.name} refused to join your party.`;
+      icon = 'cancel';
+      iconColor = '#F44336';
+
+      // Additional flavor based on approach
+      let approachMessage = '';
+      switch (approach) {
+        case 'negotiate':
+          approachMessage = 'Your words failed to convince the monster.';
+          break;
+        case 'impress':
+          approachMessage = 'The monster was unimpressed by your display.';
+          break;
+        case 'gift':
+          approachMessage = 'Your gift was rejected.';
+          break;
+      }
+
+      resultMessage.innerHTML = `
       <span class="material-icons" style="font-size: 48px; color: ${iconColor}; margin-bottom: 16px;">${icon}</span>
       <h2 style="margin: 0 0 8px 0; color: #D32F2F;">Failure!</h2>
       <p style="margin: 0 0 16px 0; font-size: 1.2em;">${message}</p>
@@ -3640,142 +4042,142 @@ content.innerHTML = '';
         <sl-button class="flee-btn" variant="neutral">Flee</sl-button>
       </div>
     `;
-  }
-  
-  // Assemble result content
-  resultContent.appendChild(diceContainer);
-  resultContent.appendChild(resultMessage);
-  content.appendChild(resultContent);
-  
-  // Add event listeners after dice animation finishes
-  setTimeout(() => {
-    if (success) {
-      // Add monster to party
-      this.addMonster(monster);
-      
-      // Continue button
-      resultContent.querySelector('.continue-btn').addEventListener('click', () => {
-        // Close overlay
-        overlay.style.opacity = '0';
-        dialogContainer.style.transform = 'scale(0.95)';
-        
-        setTimeout(() => {
-          overlay.remove();
-          this.recruitmentOverlay = null;
-        }, 300);
-      });
-    } else {
-      // Fight button
-      resultContent.querySelector('.fight-btn').addEventListener('click', () => {
-        // Close overlay
-        overlay.style.opacity = '0';
-        dialogContainer.style.transform = 'scale(0.95)';
-        
-        setTimeout(() => {
-          overlay.remove();
-          
-          // Trigger combat with this monster
-          if (window.combatSystem) {
-            window.combatSystem.initiateCombat([monster]);
-          } else {
-            console.warn('Combat system not available');
-          }
-        }, 300);
-      });
-      
-      // Flee button
-      resultContent.querySelector('.flee-btn').addEventListener('click', () => {
-        // Close overlay
-        overlay.style.opacity = '0';
-        dialogContainer.style.transform = 'scale(0.95)';
-        
-        setTimeout(() => {
-          overlay.remove();
-          this.recruitmentOverlay = null;
-        }, 300);
-      });
     }
-  }, 1000);  // Wait for dice animation
-}
 
-/**
- * Equipment/Inventory Helpers
- */
+    // Assemble result content
+    resultContent.appendChild(diceContainer);
+    resultContent.appendChild(resultMessage);
+    content.appendChild(resultContent);
 
-// Get available equipment
-getAvailableEquipment(type) {
-  // This would normally get equipment from inventory
-  // For now, we'll return sample items
-  
-  if (type === 'weapon') {
-    return [
-      {
-        id: 'sword1',
-        name: 'Iron Sword',
-        description: 'A simple but sturdy iron sword',
-        damageBonus: 1,
-        icon: 'icons/weapons/sword.png'
-      },
-      {
-        id: 'axe1',
-        name: 'Battle Axe',
-        description: 'A heavy axe that deals devastating blows',
-        damageBonus: 2,
-        icon: 'icons/weapons/axe.png'
-      },
-      {
-        id: 'wand1',
-        name: 'Magic Wand',
-        description: 'A wooden wand with magical properties',
-        damageBonus: 1,
-        icon: 'icons/weapons/wand.png'
+    // Add event listeners after dice animation finishes
+    setTimeout(() => {
+      if (success) {
+        // Add monster to party
+        this.addMonster(monster);
+
+        // Continue button
+        resultContent.querySelector('.continue-btn').addEventListener('click', () => {
+          // Close overlay
+          overlay.style.opacity = '0';
+          dialogContainer.style.transform = 'scale(0.95)';
+
+          setTimeout(() => {
+            overlay.remove();
+            this.recruitmentOverlay = null;
+          }, 300);
+        });
+      } else {
+        // Fight button
+        resultContent.querySelector('.fight-btn').addEventListener('click', () => {
+          // Close overlay
+          overlay.style.opacity = '0';
+          dialogContainer.style.transform = 'scale(0.95)';
+
+          setTimeout(() => {
+            overlay.remove();
+
+            // Trigger combat with this monster
+            if (window.combatSystem) {
+              window.combatSystem.initiateCombat([monster]);
+            } else {
+              console.warn('Combat system not available');
+            }
+          }, 300);
+        });
+
+        // Flee button
+        resultContent.querySelector('.flee-btn').addEventListener('click', () => {
+          // Close overlay
+          overlay.style.opacity = '0';
+          dialogContainer.style.transform = 'scale(0.95)';
+
+          setTimeout(() => {
+            overlay.remove();
+            this.recruitmentOverlay = null;
+          }, 300);
+        });
       }
-    ];
-  } else if (type === 'armor') {
-    return [
-      {
-        id: 'leather1',
-        name: 'Leather Armor',
-        description: 'Simple protection made from tanned hide',
-        acBonus: 1,
-        icon: 'icons/armor/leather.png'
-      },
-      {
-        id: 'chain1',
-        name: 'Chain Mail',
-        description: 'Interlocking metal rings provide good protection',
-        acBonus: 3,
-        icon: 'icons/armor/chainmail.png'
-      },
-      {
-        id: 'scale1',
-        name: 'Scale Armor',
-        description: 'Overlapping metal scales for flexible defense',
-        acBonus: 2,
-        icon: 'icons/armor/scale.png'
-      }
-    ];
+    }, 1000);  // Wait for dice animation
   }
-  
-  return [];
-}
+
+  /**
+   * Equipment/Inventory Helpers
+   */
+
+  // Get available equipment
+  getAvailableEquipment(type) {
+    // This would normally get equipment from inventory
+    // For now, we'll return sample items
+
+    if (type === 'weapon') {
+      return [
+        {
+          id: 'sword1',
+          name: 'Iron Sword',
+          description: 'A simple but sturdy iron sword',
+          damageBonus: 1,
+          icon: 'icons/weapons/sword.png'
+        },
+        {
+          id: 'axe1',
+          name: 'Battle Axe',
+          description: 'A heavy axe that deals devastating blows',
+          damageBonus: 2,
+          icon: 'icons/weapons/axe.png'
+        },
+        {
+          id: 'wand1',
+          name: 'Magic Wand',
+          description: 'A wooden wand with magical properties',
+          damageBonus: 1,
+          icon: 'icons/weapons/wand.png'
+        }
+      ];
+    } else if (type === 'armor') {
+      return [
+        {
+          id: 'leather1',
+          name: 'Leather Armor',
+          description: 'Simple protection made from tanned hide',
+          acBonus: 1,
+          icon: 'icons/armor/leather.png'
+        },
+        {
+          id: 'chain1',
+          name: 'Chain Mail',
+          description: 'Interlocking metal rings provide good protection',
+          acBonus: 3,
+          icon: 'icons/armor/chainmail.png'
+        },
+        {
+          id: 'scale1',
+          name: 'Scale Armor',
+          description: 'Overlapping metal scales for flexible defense',
+          acBonus: 2,
+          icon: 'icons/armor/scale.png'
+        }
+      ];
+    }
+
+    return [];
+  }
 
 
-/**
- * Starter Monsters
- */
-// New method to ensure we can access bestiary data
-ensureBestiaryAccess() {
+  /**
+   * Starter Monsters
+   */
+  // New method to ensure we can access bestiary data
+  ensureBestiaryAccess() {
     // If ResourceManager doesn't have bestiary data but has MonsterManager, load it
-    if (this.resourceManager && 
-        this.resourceManager.resources && 
-        this.resourceManager.resources.bestiary.size === 0 && 
-        this.resourceManager.monsterManager) {
-      
+    if (this.resourceManager &&
+      this.resourceManager.resources &&
+      this.resourceManager.resources.bestiary.size === 0 &&
+      this.resourceManager.monsterManager) {
+
       console.log('PartyManager: Loading bestiary from database');
       this.resourceManager.loadBestiaryFromDatabase();
     }
-    
+
     // If we have direct access to MonsterManager but ResourceManager doesn't, set it up
     if (this.monsterManager && !this.resourceManager?.monsterManager) {
       console.log('PartyManager: Setting up MonsterManager connection');
@@ -3785,57 +4187,57 @@ ensureBestiaryAccess() {
       }
     }
   }
-  
-// Make checkForStarterMonster async
-async checkForStarterMonster() {
-  try {
-    // Await the result from getEligibleStarterMonsters
-    const eligibleMonsters = await this.getEligibleStarterMonsters();
-    
-    // If we don't have any eligible monsters, just exit
-    if (!eligibleMonsters || eligibleMonsters.length === 0) {
-      console.warn('No eligible starter monsters found in bestiary');
-      return;
-    }
-    
-    // Pick 3 random monsters from eligible list
-    const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
-    
-    // Show starter selection dialog
-    this.showStarterMonsterDialog(starterChoices);
-  } catch (error) {
-    console.error('Error getting starter monsters:', error);
-    // Fallback to defaults as a last resort
-    const defaultMonsters = this.createDefaultStarterMonsters();
-    const starterChoices = this.getRandomStarters(defaultMonsters, 3);
-    this.showStarterMonsterDialog(starterChoices);
-  }
-}
 
-// Find eligible starter monsters from bestiary
-getEligibleStarterMonsters() {
+  // Make checkForStarterMonster async
+  async checkForStarterMonster() {
+    try {
+      // Await the result from getEligibleStarterMonsters
+      const eligibleMonsters = await this.getEligibleStarterMonsters();
+
+      // If we don't have any eligible monsters, just exit
+      if (!eligibleMonsters || eligibleMonsters.length === 0) {
+        console.warn('No eligible starter monsters found in bestiary');
+        return;
+      }
+
+      // Pick 3 random monsters from eligible list
+      const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
+
+      // Show starter selection dialog
+      this.showStarterMonsterDialog(starterChoices);
+    } catch (error) {
+      console.error('Error getting starter monsters:', error);
+      // Fallback to defaults as a last resort
+      const defaultMonsters = this.createDefaultStarterMonsters();
+      const starterChoices = this.getRandomStarters(defaultMonsters, 3);
+      this.showStarterMonsterDialog(starterChoices);
+    }
+  }
+
+  // Find eligible starter monsters from bestiary
+  getEligibleStarterMonsters() {
     console.log("PartyManager looking for starter monsters");
-    
+
     // Get direct access to database if possible
-    const monsterDatabase = this.monsterDatabase || 
-                           (this.monsterManager ? this.monsterManager.loadDatabase() : null);
-    
+    const monsterDatabase = this.monsterDatabase ||
+      (this.monsterManager ? this.monsterManager.loadDatabase() : null);
+
     console.log("Direct database access:", !!monsterDatabase);
-    
+
     // Create a list of eligible monsters
     const eligibleMonsters = [];
-    
+
     // If we have direct access to the database, use it
     if (monsterDatabase && monsterDatabase.monsters) {
       console.log(`Found ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
-      
+
       // Process all monsters in the database
       Object.values(monsterDatabase.monsters).forEach(monster => {
         try {
           // Check CR value for eligibility
           const cr = monster.basic?.cr || '0';
           const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
-          
+
           if (isEligible) {
             console.log(`Found eligible starter: ${monster.basic.name} (CR ${cr})`);
             eligibleMonsters.push(this.formatMonsterForParty(monster));
@@ -3847,27 +4249,27 @@ getEligibleStarterMonsters() {
     } else {
       console.warn("No direct database access available");
     }
-    
+
     console.log(`Found ${eligibleMonsters.length} eligible starter monsters`);
-    
+
     // If no eligible monsters found, create default starter monsters
     if (eligibleMonsters.length === 0) {
       console.log("No eligible monsters found, creating defaults");
       return this.createDefaultStarterMonsters();
     }
-    
+
     return eligibleMonsters;
   }
 
   // Helper method to retry getting monsters with increasing delays
-retryGetMonsters(resourceManager, monsterDatabase, attempt = 0, maxAttempts = 3) {
+  retryGetMonsters(resourceManager, monsterDatabase, attempt = 0, maxAttempts = 3) {
     const eligibleMonsters = [];
     const MAX_STARTER_XP = 100;
-    
+
     // First try ResourceManager's bestiary
     if (resourceManager?.resources?.bestiary?.size > 0) {
       console.log(`Checking ${resourceManager.resources.bestiary.size} monsters in ResourceManager`);
-      
+
       resourceManager.resources.bestiary.forEach(monster => {
         try {
           // Calculate XP from CR if needed
@@ -3884,18 +4286,18 @@ retryGetMonsters(resourceManager, monsterDatabase, attempt = 0, maxAttempts = 3)
     // Then try direct database access as fallback
     else if (monsterDatabase?.monsters) {
       console.log(`Checking ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
-      
+
       Object.values(monsterDatabase.monsters).forEach(monster => {
         try {
           // Get XP from CR
           const cr = monster.basic?.cr || "0";
           let xp = 0;
-          
+
           if (cr === "1/4") xp = 50;
           else if (cr === "1/2") xp = 100;
           else if (cr === "0") xp = 10;
           else if (cr === "1/8") xp = 25;
-          
+
           if (xp <= MAX_STARTER_XP && xp > 0) {
             console.log(`Found eligible starter: ${monster.basic.name} (CR: ${cr}, XP: ${xp})`);
             eligibleMonsters.push(this.formatMonsterForParty(monster));
@@ -3905,37 +4307,37 @@ retryGetMonsters(resourceManager, monsterDatabase, attempt = 0, maxAttempts = 3)
         }
       });
     }
-    
+
     console.log(`Found ${eligibleMonsters.length} eligible starter monsters on attempt ${attempt + 1}`);
-    
+
     // If no monsters found and we have retries left, try again with delay
     if (eligibleMonsters.length === 0 && attempt < maxAttempts - 1) {
       const delay = (attempt + 1) * 500; // Increasing delays: 500ms, 1000ms, etc.
       console.log(`No monsters found yet, retrying in ${delay}ms...`);
-      
+
       return new Promise(resolve => {
         setTimeout(() => {
           resolve(this.retryGetMonsters(resourceManager, monsterDatabase, attempt + 1, maxAttempts));
         }, delay);
       });
     }
-    
+
     // If we still don't have monsters or we're out of retries, create defaults
     if (eligibleMonsters.length === 0) {
       console.log("No eligible monsters found, creating defaults");
       return this.createDefaultStarterMonsters();
     }
-    
+
     return eligibleMonsters;
   }
 
-// Add these helper methods if they don't exist
-// Helper to format monster for party
-formatMonsterForParty(monster) {
+  // Add these helper methods if they don't exist
+  // Helper to format monster for party
+  formatMonsterForParty(monster) {
     try {
       // Create token if needed
       let tokenData = null;
-      
+
       if (monster.token?.data) {
         tokenData = monster.token.data;
       } else if (monster.token?.url) {
@@ -3944,7 +4346,7 @@ formatMonsterForParty(monster) {
         // Generate a default token
         tokenData = this.monsterManager?.generateDefaultMonsterToken(monster.basic.name, monster.basic.size) || null;
       }
-      
+
       return {
         id: `monster_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         name: monster.basic.name,
@@ -3971,144 +4373,156 @@ formatMonsterForParty(monster) {
     }
   }
 
-getMonsterXP(monster) {
-  // XP might be in different locations based on data structure
-  if (monster.data?.basic?.xp) return parseInt(monster.data.basic.xp);
-  if (monster.data?.xp) return parseInt(monster.data.xp);
-  if (monster.basic?.xp) return parseInt(monster.basic.xp);
-  if (monster.xp) return parseInt(monster.xp);
-  
-  // If no XP found, try to determine from CR
-  const cr = monster.data?.basic?.cr || monster.basic?.cr;
-  if (cr) {
-    const crToXP = {
-      '0': 10,
-      '1/8': 25,
-      '1/4': 50,
-      '1/2': 100,
-      '1': 200
-    };
-    return crToXP[cr] || 0;
+  getMonsterXP(monster) {
+    // XP might be in different locations based on data structure
+    if (monster.data?.basic?.xp) return parseInt(monster.data.basic.xp);
+    if (monster.data?.xp) return parseInt(monster.data.xp);
+    if (monster.basic?.xp) return parseInt(monster.basic.xp);
+    if (monster.xp) return parseInt(monster.xp);
+
+    // If no XP found, try to determine from CR
+    const cr = monster.data?.basic?.cr || monster.basic?.cr;
+    if (cr) {
+      const crToXP = {
+        '0': 10,
+        '1/8': 25,
+        '1/4': 50,
+        '1/2': 100,
+        '1': 200
+      };
+      return crToXP[cr] || 0;
+    }
+
+    return 0;
   }
-  
-  return 0;
-}
 
-getMonsterName(monster) {
-  return monster.data?.basic?.name || monster.basic?.name || monster.name || "Unknown Monster";
-}
+  getMonsterName(monster) {
+    return monster.data?.basic?.name || monster.basic?.name || monster.name || "Unknown Monster";
+  }
 
-generateMonsterThumbnail(monster) {
-  const canvas = document.createElement('canvas');
-  const size = 64;
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  
-  // Generate color based on monster type
-const colors = {
-  aberration: '#5500AA',  // Purple - alien and unnatural beings
-  beast: '#44AA44',       // Green - natural creatures
-  celestial: '#FFD700',   // Gold - divine and radiant beings
-  construct: '#999999',   // Gray - artificial or mechanical beings
-  dragon: '#FF4444',      // Red - powerful, elemental creatures
-  elemental: '#FF8800',   // Orange - creatures of pure elemental energy
-  fey: '#DD66FF',         // Pink/Purple - whimsical and otherworldly
-  fiend: '#AA2222',       // Dark Red - demons and devils
-  giant: '#AA7722',       // Brown/Orange - large humanoid creatures
-  humanoid: '#4444FF',    // Blue - sentient, civilized species
-  monstrosity: '#886600', // Dark Yellow - unnatural or mutated creatures
-  ooze: '#66CC66',        // Light Green - gelatinous and amorphous beings
-  plant: '#228B22',       // Forest Green - living plant-based creatures
-  undead: '#663366',      // Dark Purple - spirits and reanimated corpses
-  vermin: '#996633',      // Brown - insects, spiders, and pests
-  
-  // Subtypes and additional categories
-  demon: '#990000',       // Deep Red - Chaotic fiends
-  devil: '#660000',       // Dark Crimson - Lawful fiends
-  lich: '#330066',        // Dark Indigo - Powerful undead mages
-  ghost: '#9999FF',       // Pale Blue - Ethereal spirits
-  skeleton: '#CCCCCC',    // Bone White - Basic undead soldiers
-  vampire: '#550000',     // Blood Red - Classic horror monsters
-  lycanthrope: '#775500', // Brown - Werewolves and shapechangers
-  mimic: '#AA33CC',       // Purple - Deceptive creatures
-  aberrant_horror: '#220044', // Deep Purple - Cosmic horror creatures
-  swamp_beast: '#556B2F', // Dark Olive Green - Creatures of the swamp
-  sea_monster: '#008080', // Teal - Aquatic terrors
-  storm_creature: '#708090', // Slate Gray - Creatures tied to lightning and storms
-  fire_entity: '#FF4500', // Orange-Red - Fire-based beings
-  frost_monster: '#00FFFF', // Cyan - Ice creatures
-  shadow_creature: '#222222', // Almost Black - Beings of darkness
-  celestial_guardian: '#FFFFCC', // Soft Gold - Divine protectors
-  arcane_construct: '#6666FF', // Soft Blue - Magical constructs
-  ancient_horror: '#3B3B6D', // Dark Slate Blue - Forgotten, eldritch things
-  chaos_entity: '#FF00FF', // Magenta - Chaotic beings
-  nature_spirit: '#32CD32', // Lime Green - Embodiments of the wild
-  sand_creature: '#D2B48C', // Tan - Desert-based creatures
-};
+  generateMonsterThumbnail(monster) {
+    const canvas = document.createElement('canvas');
+    const size = 64;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Generate color based on monster type
+    const colors = {
+      aberration: '#5500AA',  // Purple - alien and unnatural beings
+      beast: '#44AA44',       // Green - natural creatures
+      celestial: '#FFD700',   // Gold - divine and radiant beings
+      construct: '#999999',   // Gray - artificial or mechanical beings
+      dragon: '#FF4444',      // Red - powerful, elemental creatures
+      elemental: '#FF8800',   // Orange - creatures of pure elemental energy
+      fey: '#DD66FF',         // Pink/Purple - whimsical and otherworldly
+      fiend: '#AA2222',       // Dark Red - demons and devils
+      giant: '#AA7722',       // Brown/Orange - large humanoid creatures
+      humanoid: '#4444FF',    // Blue - sentient, civilized species
+      monstrosity: '#886600', // Dark Yellow - unnatural or mutated creatures
+      ooze: '#66CC66',        // Light Green - gelatinous and amorphous beings
+      plant: '#228B22',       // Forest Green - living plant-based creatures
+      undead: '#663366',      // Dark Purple - spirits and reanimated corpses
+      vermin: '#996633',      // Brown - insects, spiders, and pests
+
+      // Subtypes and additional categories
+      demon: '#990000',       // Deep Red - Chaotic fiends
+      devil: '#660000',       // Dark Crimson - Lawful fiends
+      lich: '#330066',        // Dark Indigo - Powerful undead mages
+      ghost: '#9999FF',       // Pale Blue - Ethereal spirits
+      skeleton: '#CCCCCC',    // Bone White - Basic undead soldiers
+      vampire: '#550000',     // Blood Red - Classic horror monsters
+      lycanthrope: '#775500', // Brown - Werewolves and shapechangers
+      mimic: '#AA33CC',       // Purple - Deceptive creatures
+      aberrant_horror: '#220044', // Deep Purple - Cosmic horror creatures
+      swamp_beast: '#556B2F', // Dark Olive Green - Creatures of the swamp
+      sea_monster: '#008080', // Teal - Aquatic terrors
+      storm_creature: '#708090', // Slate Gray - Creatures tied to lightning and storms
+      fire_entity: '#FF4500', // Orange-Red - Fire-based beings
+      frost_monster: '#00FFFF', // Cyan - Ice creatures
+      shadow_creature: '#222222', // Almost Black - Beings of darkness
+      celestial_guardian: '#FFFFCC', // Soft Gold - Divine protectors
+      arcane_construct: '#6666FF', // Soft Blue - Magical constructs
+      ancient_horror: '#3B3B6D', // Dark Slate Blue - Forgotten, eldritch things
+      chaos_entity: '#FF00FF', // Magenta - Chaotic beings
+      nature_spirit: '#32CD32', // Lime Green - Embodiments of the wild
+      sand_creature: '#D2B48C', // Tan - Desert-based creatures
+    };
 
 
-  
-  const type = monster.basic?.type || 'unknown';
-  const color = colors[type.toLowerCase()] || '#888888';
-  
-  // Draw circle background
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(size/2, size/2, size/2 - 2, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Add border
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  
-  // Add monster initial
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 32px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText((monster.basic?.name || 'M').charAt(0).toUpperCase(), size/2, size/2);
-  
-  return canvas.toDataURL('image/webp');
-}
-// Updated createDefaultStarterMonsters with tokens
-createDefaultStarterMonsters() {
-  // Create simple SVG-based tokens
-  const wolfToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%234f46e5" stroke="white" stroke-width="2"/><path d="M30,40 L42,55 L35,70 L50,60 L65,70 L58,55 L70,40 L55,45 L50,30 L45,45 Z" fill="white"/></svg>`;
-  
-  const fireToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="white" stroke-width="2"/><path d="M50,20 C60,40 80,40 70,60 C65,70 60,75 50,80 C40,75 35,70 30,60 C20,40 40,40 50,20 Z" fill="white"/></svg>`;
-  
-  const feyToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2306b6d4" stroke="white" stroke-width="2"/><path d="M30,60 C25,40 50,20 75,40 C65,45 70,65 50,70 C30,65 35,45 30,60 Z M35,35 C40,30 60,30 65,35 C55,45 45,45 35,35 Z" fill="white"/></svg>`;
 
-  return [
-    {
-      id: 'starter_wolf',
-      name: 'Young Wolf',
-      type: 'Beast',
-      size: 'Medium',
-      level: 1,
-      cr: '1/4',
-      currentHP: 11,
-      maxHP: 11,
-      armorClass: 13,
-      experience: 0,
-      experienceToNext: 100,
-      token: {
-        data: wolfToken
-      },
-      data: {
-        basic: {
-          name: 'Young Wolf',
-          type: 'Beast',
-          size: 'Medium',
-          cr: '1/4',
-          alignment: 'Unaligned'
+    const type = monster.basic?.type || 'unknown';
+    const color = colors[type.toLowerCase()] || '#888888';
+
+    // Draw circle background
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Add border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Add monster initial
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((monster.basic?.name || 'M').charAt(0).toUpperCase(), size / 2, size / 2);
+
+    return canvas.toDataURL('image/webp');
+  }
+  // Updated createDefaultStarterMonsters with tokens
+  createDefaultStarterMonsters() {
+    // Create simple SVG-based tokens
+    const wolfToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%234f46e5" stroke="white" stroke-width="2"/><path d="M30,40 L42,55 L35,70 L50,60 L65,70 L58,55 L70,40 L55,45 L50,30 L45,45 Z" fill="white"/></svg>`;
+
+    const fireToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="white" stroke-width="2"/><path d="M50,20 C60,40 80,40 70,60 C65,70 60,75 50,80 C40,75 35,70 30,60 C20,40 40,40 50,20 Z" fill="white"/></svg>`;
+
+    const feyToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2306b6d4" stroke="white" stroke-width="2"/><path d="M30,60 C25,40 50,20 75,40 C65,45 70,65 50,70 C30,65 35,45 30,60 Z M35,35 C40,30 60,30 65,35 C55,45 45,45 35,35 Z" fill="white"/></svg>`;
+
+    return [
+      {
+        id: 'starter_wolf',
+        name: 'Young Wolf',
+        type: 'Beast',
+        size: 'Medium',
+        level: 1,
+        cr: '1/4',
+        currentHP: 11,
+        maxHP: 11,
+        armorClass: 13,
+        experience: 0,
+        experienceToNext: 100,
+        token: {
+          data: wolfToken
         },
-        stats: {
-          ac: 13,
-          hp: { average: 11, roll: '2d8+2', max: 18 },
-          speed: '40 ft.'
+        data: {
+          basic: {
+            name: 'Young Wolf',
+            type: 'Beast',
+            size: 'Medium',
+            cr: '1/4',
+            alignment: 'Unaligned'
+          },
+          stats: {
+            ac: 13,
+            hp: { average: 11, roll: '2d8+2', max: 18 },
+            speed: '40 ft.'
+          },
+          abilities: {
+            str: { score: 12, modifier: 1 },
+            dex: { score: 15, modifier: 2 },
+            con: { score: 12, modifier: 1 },
+            int: { score: 3, modifier: -4 },
+            wis: { score: 12, modifier: 1 },
+            cha: { score: 6, modifier: -2 }
+          },
+          token: {
+            data: wolfToken
+          }
         },
         abilities: {
           str: { score: 12, modifier: 1 },
@@ -4118,50 +4532,50 @@ createDefaultStarterMonsters() {
           wis: { score: 12, modifier: 1 },
           cha: { score: 6, modifier: -2 }
         },
+        monsterAbilities: [
+          { name: 'Bite', type: 'attack', damage: '1d4+1', description: 'Melee attack that deals piercing damage.' },
+          { name: 'Pack Tactics', type: 'buff', description: 'Advantage on attack rolls when allies are nearby.' }
+        ]
+      },
+      {
+        id: 'starter_elemental',
+        name: 'Minor Fire Elemental',
+        type: 'Elemental',
+        size: 'Small',
+        level: 1,
+        cr: '1/2',
+        currentHP: 15,
+        maxHP: 15,
+        armorClass: 13,
+        experience: 0,
+        experienceToNext: 100,
         token: {
-          data: wolfToken
-        }
-      },
-      abilities: {
-        str: { score: 12, modifier: 1 },
-        dex: { score: 15, modifier: 2 },
-        con: { score: 12, modifier: 1 },
-        int: { score: 3, modifier: -4 },
-        wis: { score: 12, modifier: 1 },
-        cha: { score: 6, modifier: -2 }
-      },
-      monsterAbilities: [
-        { name: 'Bite', type: 'attack', damage: '1d4+1', description: 'Melee attack that deals piercing damage.' },
-        { name: 'Pack Tactics', type: 'buff', description: 'Advantage on attack rolls when allies are nearby.' }
-      ]
-    },
-    {
-      id: 'starter_elemental',
-      name: 'Minor Fire Elemental',
-      type: 'Elemental',
-      size: 'Small',
-      level: 1,
-      cr: '1/2',
-      currentHP: 15,
-      maxHP: 15,
-      armorClass: 13,
-      experience: 0,
-      experienceToNext: 100,
-      token: {
-        data: fireToken
-      },
-      data: {
-        basic: {
-          name: 'Minor Fire Elemental',
-          type: 'Elemental',
-          size: 'Small',
-          cr: '1/2',
-          alignment: 'Neutral'
+          data: fireToken
         },
-        stats: {
-          ac: 13,
-          hp: { average: 15, roll: '3d6+6', max: 24 },
-          speed: '30 ft.'
+        data: {
+          basic: {
+            name: 'Minor Fire Elemental',
+            type: 'Elemental',
+            size: 'Small',
+            cr: '1/2',
+            alignment: 'Neutral'
+          },
+          stats: {
+            ac: 13,
+            hp: { average: 15, roll: '3d6+6', max: 24 },
+            speed: '30 ft.'
+          },
+          abilities: {
+            str: { score: 10, modifier: 0 },
+            dex: { score: 16, modifier: 3 },
+            con: { score: 14, modifier: 2 },
+            int: { score: 6, modifier: -2 },
+            wis: { score: 10, modifier: 0 },
+            cha: { score: 6, modifier: -2 }
+          },
+          token: {
+            data: fireToken
+          }
         },
         abilities: {
           str: { score: 10, modifier: 0 },
@@ -4171,50 +4585,50 @@ createDefaultStarterMonsters() {
           wis: { score: 10, modifier: 0 },
           cha: { score: 6, modifier: -2 }
         },
+        monsterAbilities: [
+          { name: 'Fire Touch', type: 'attack', damage: '1d6+3', description: 'Melee attack that deals fire damage.' },
+          { name: 'Heat Aura', type: 'area', damage: '1d4', description: 'Damages enemies in close proximity.' }
+        ]
+      },
+      {
+        id: 'starter_sprite',
+        name: 'Forest Sprite',
+        type: 'Fey',
+        size: 'Tiny',
+        level: 1,
+        cr: '1/4',
+        currentHP: 10,
+        maxHP: 10,
+        armorClass: 15,
+        experience: 0,
+        experienceToNext: 100,
         token: {
-          data: fireToken
-        }
-      },
-      abilities: {
-        str: { score: 10, modifier: 0 },
-        dex: { score: 16, modifier: 3 },
-        con: { score: 14, modifier: 2 },
-        int: { score: 6, modifier: -2 },
-        wis: { score: 10, modifier: 0 },
-        cha: { score: 6, modifier: -2 }
-      },
-      monsterAbilities: [
-        { name: 'Fire Touch', type: 'attack', damage: '1d6+3', description: 'Melee attack that deals fire damage.' },
-        { name: 'Heat Aura', type: 'area', damage: '1d4', description: 'Damages enemies in close proximity.' }
-      ]
-    },
-    {
-      id: 'starter_sprite',
-      name: 'Forest Sprite',
-      type: 'Fey',
-      size: 'Tiny',
-      level: 1,
-      cr: '1/4',
-      currentHP: 10,
-      maxHP: 10,
-      armorClass: 15,
-      experience: 0,
-      experienceToNext: 100,
-      token: {
-        data: feyToken
-      },
-      data: {
-        basic: {
-          name: 'Forest Sprite',
-          type: 'Fey',
-          size: 'Tiny',
-          cr: '1/4',
-          alignment: 'Neutral Good'
+          data: feyToken
         },
-        stats: {
-          ac: 15,
-          hp: { average: 10, roll: '4d4', max: 16 },
-          speed: '20 ft., fly 40 ft.'
+        data: {
+          basic: {
+            name: 'Forest Sprite',
+            type: 'Fey',
+            size: 'Tiny',
+            cr: '1/4',
+            alignment: 'Neutral Good'
+          },
+          stats: {
+            ac: 15,
+            hp: { average: 10, roll: '4d4', max: 16 },
+            speed: '20 ft., fly 40 ft.'
+          },
+          abilities: {
+            str: { score: 4, modifier: -3 },
+            dex: { score: 18, modifier: 4 },
+            con: { score: 10, modifier: 0 },
+            int: { score: 14, modifier: 2 },
+            wis: { score: 13, modifier: 1 },
+            cha: { score: 15, modifier: 2 }
+          },
+          token: {
+            data: feyToken
+          }
         },
         abilities: {
           str: { score: 4, modifier: -3 },
@@ -4224,76 +4638,64 @@ createDefaultStarterMonsters() {
           wis: { score: 13, modifier: 1 },
           cha: { score: 15, modifier: 2 }
         },
-        token: {
-          data: feyToken
-        }
-      },
-      abilities: {
-        str: { score: 4, modifier: -3 },
-        dex: { score: 18, modifier: 4 },
-        con: { score: 10, modifier: 0 },
-        int: { score: 14, modifier: 2 },
-        wis: { score: 13, modifier: 1 },
-        cha: { score: 15, modifier: 2 }
-      },
-      monsterAbilities: [
-        { name: 'Magical Touch', type: 'attack', damage: '1d4+4', description: 'Ranged attack that deals magical damage.' },
-        { name: 'Invisibility', type: 'buff', description: 'Can become invisible until next attack.' }
-      ]
-    }
-  ];
-}
-
-// Choose random starter choices
-getRandomStarters(monsters, count) {
-  const shuffled = [...monsters].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, Math.min(count, shuffled.length));
-}
-
-// Offer starter monster selection
-offerStarterMonster() {
-  const eligibleMonsters = this.getEligibleStarterMonsters();
-  
-  if (eligibleMonsters.length === 0) {
-    console.warn('No eligible starter monsters found in bestiary');
-    return;
+        monsterAbilities: [
+          { name: 'Magical Touch', type: 'attack', damage: '1d4+4', description: 'Ranged attack that deals magical damage.' },
+          { name: 'Invisibility', type: 'buff', description: 'Can become invisible until next attack.' }
+        ]
+      }
+    ];
   }
-  
-  // Pick 3 random monsters from eligible list
-  const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
-  
-  // Show starter selection dialog
-  this.showStarterMonsterDialog(starterChoices);
-}
 
-// Show starter monster selection dialog with our styled UI
-showStarterMonsterDialog(starterChoices) {
-  // Create dialog
-  const overlay = document.createElement('div');
-  overlay.className = 'party-overlay';
-  overlay.style.opacity = '0';
-  
-  const container = document.createElement('div');
-  container.className = 'party-container';
-  container.style.transform = 'scale(0.95)';
-  container.style.maxWidth = '800px';
-  
-  // Create header
-  const header = document.createElement('div');
-  header.className = 'party-header';
-  header.innerHTML = `
+  // Choose random starter choices
+  getRandomStarters(monsters, count) {
+    const shuffled = [...monsters].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+  }
+
+  // Offer starter monster selection
+  offerStarterMonster() {
+    const eligibleMonsters = this.getEligibleStarterMonsters();
+
+    if (eligibleMonsters.length === 0) {
+      console.warn('No eligible starter monsters found in bestiary');
+      return;
+    }
+
+    // Pick 3 random monsters from eligible list
+    const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
+
+    // Show starter selection dialog
+    this.showStarterMonsterDialog(starterChoices);
+  }
+
+  // Show starter monster selection dialog with our styled UI
+  showStarterMonsterDialog(starterChoices) {
+    // Create dialog
+    const overlay = document.createElement('div');
+    overlay.className = 'party-overlay';
+    overlay.style.opacity = '0';
+
+    const container = document.createElement('div');
+    container.className = 'party-container';
+    container.style.transform = 'scale(0.95)';
+    container.style.maxWidth = '800px';
+
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'party-header';
+    header.innerHTML = `
     <div style="text-align: center; width: 100%;">
       <h1 style="margin: 0; font-size: 1.5rem;">Choose Your Starter Monster</h1>
     </div>
   `;
-  
-  // Create content
-  const content = document.createElement('div');
-  content.style.padding = '24px';
-  content.style.color = 'white';
-  
-  // Introduction text
-  content.innerHTML = `
+
+    // Create content
+    const content = document.createElement('div');
+    content.style.padding = '24px';
+    content.style.color = 'white';
+
+    // Introduction text
+    content.innerHTML = `
     <div style="text-align: center; margin-bottom: 24px;">
       <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
       <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
@@ -4301,30 +4703,30 @@ showStarterMonsterDialog(starterChoices) {
     
     <div class="starter-choices" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 32px;">
       ${starterChoices.map((monster, index) => {
-        // Get monster data
-        const monsterData = monster.data || monster;
-        const name = monsterData.name || monsterData.basic?.name || 'Unknown Monster';
-        const type = monsterData.type || monsterData.basic?.type || 'Unknown';
-        const size = monsterData.size || monsterData.basic?.size || 'Medium';
-        const cr = monsterData.cr || monsterData.basic?.cr || '?';
-        
-        // Determine color based on type
-        // const typeColors = {
-        //   Beast: '#4f46e5',
-        //   Dragon: '#c026d3',
-        //   Elemental: '#ef4444',
-        //   Monstrosity: '#65a30d',
-        //   Construct: '#a16207',
-        //   Undead: '#6b7280',
-        //   Fey: '#06b6d4',
-        //   Giant: '#b45309'
-        // };
-        
-        // const bgColor = typeColors[type] || '#6b7280';
-        const bgColor = this.getMonsterTypeColor(type);
-        // const bgColor = [type] 
-        
-        return `
+      // Get monster data
+      const monsterData = monster.data || monster;
+      const name = monsterData.name || monsterData.basic?.name || 'Unknown Monster';
+      const type = monsterData.type || monsterData.basic?.type || 'Unknown';
+      const size = monsterData.size || monsterData.basic?.size || 'Medium';
+      const cr = monsterData.cr || monsterData.basic?.cr || '?';
+
+      // Determine color based on type
+      // const typeColors = {
+      //   Beast: '#4f46e5',
+      //   Dragon: '#c026d3',
+      //   Elemental: '#ef4444',
+      //   Monstrosity: '#65a30d',
+      //   Construct: '#a16207',
+      //   Undead: '#6b7280',
+      //   Fey: '#06b6d4',
+      //   Giant: '#b45309'
+      // };
+
+      // const bgColor = typeColors[type] || '#6b7280';
+      const bgColor = this.getMonsterTypeColor(type);
+      // const bgColor = [type] 
+
+      return `
           <div class="monster-card starter-card" data-monster-index="${index}" style="
             width: 200px;
             background: white;
@@ -4349,10 +4751,10 @@ showStarterMonsterDialog(starterChoices) {
                 font-weight: bold;
                 margin-right: 12px;
               ">
-                ${monster.token?.data ? 
-                  `<img src="${monster.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-                  name.charAt(0)
-                }
+                ${monster.token?.data ?
+          `<img src="${monster.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+          name.charAt(0)
+        }
               </div>
               <div>
                 <div style="font-weight: bold;">${name}</div>
@@ -4415,18 +4817,18 @@ showStarterMonsterDialog(starterChoices) {
             </div>
           </div>
         `;
-      }).join('')}
+    }).join('')}
     </div>
   `;
 
 
-  
-  // Assemble dialog
-  container.appendChild(header);
-  container.appendChild(content);
-  overlay.appendChild(container);
 
-      // Add a close/cancel button
+    // Assemble dialog
+    container.appendChild(header);
+    container.appendChild(content);
+    overlay.appendChild(container);
+
+    // Add a close/cancel button
     const closeButton = document.createElement('button');
     closeButton.className = 'close-dialog-btn';
     closeButton.style.position = 'absolute';
@@ -4437,78 +4839,78 @@ showStarterMonsterDialog(starterChoices) {
     closeButton.style.color = 'white';
     closeButton.style.cursor = 'pointer';
     closeButton.innerHTML = '<span class="material-icons">close</span>';
-    
+
     closeButton.addEventListener('click', () => {
       // Reset the check flag so we can show the party manager
       this.starterCheckPerformed = false;
-      
+
       // Close the dialog
       overlay.style.opacity = '0';
       container.style.transform = 'scale(0.95)';
       setTimeout(() => overlay.remove(), 300);
     });
-    
+
     container.appendChild(closeButton);
 
-  document.body.appendChild(overlay);
-  
-  // Add event listeners for card selection
-  const starterCards = overlay.querySelectorAll('.starter-card');
-  starterCards.forEach(card => {
-    // Add hover effect
-    card.addEventListener('mouseenter', () => {
-      card.style.transform = `rotate(0deg) scale(1.05)`;
-      card.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.4)';
+    document.body.appendChild(overlay);
+
+    // Add event listeners for card selection
+    const starterCards = overlay.querySelectorAll('.starter-card');
+    starterCards.forEach(card => {
+      // Add hover effect
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = `rotate(0deg) scale(1.05)`;
+        card.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.4)';
+      });
+
+      card.addEventListener('mouseleave', () => {
+        const index = parseInt(card.getAttribute('data-monster-index'));
+        card.style.transform = `rotate(${index % 2 === 0 ? -5 : 5}deg)`;
+        card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+      });
+
+      // Selection handler
+      card.addEventListener('click', () => {
+        const index = parseInt(card.getAttribute('data-monster-index'));
+        const selectedMonster = starterChoices[index];
+
+        // Add the monster to party
+        this.addMonster(selectedMonster);
+
+        // Save party
+        this.saveParty();
+
+        // Close dialog
+        overlay.style.opacity = '0';
+        container.style.transform = 'scale(0.95)';
+
+        setTimeout(() => {
+          overlay.remove();
+
+          // Show confirmation
+          this.showToast('Starter monster added to your party!', 'success');
+        }, 300);
+      });
     });
-    
-    card.addEventListener('mouseleave', () => {
-      const index = parseInt(card.getAttribute('data-monster-index'));
-      card.style.transform = `rotate(${index % 2 === 0 ? -5 : 5}deg)`;
-      card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-    });
-    
-    // Selection handler
-    card.addEventListener('click', () => {
-      const index = parseInt(card.getAttribute('data-monster-index'));
-      const selectedMonster = starterChoices[index];
-      
-      // Add the monster to party
-      this.addMonster(selectedMonster);
-      
-      // Save party
-      this.saveParty();
-      
-      // Close dialog
-      overlay.style.opacity = '0';
-      container.style.transform = 'scale(0.95)';
-      
-      setTimeout(() => {
-        overlay.remove();
-        
-        // Show confirmation
-        this.showToast('Starter monster added to your party!', 'success');
-      }, 300);
-    });
-  });
-  
-  // Animate in
-  setTimeout(() => {
-    overlay.style.opacity = '1';
-    container.style.transform = 'scale(1)';
-  }, 10);
-}
+
+    // Animate in
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      container.style.transform = 'scale(1)';
+    }, 10);
+  }
 
 
 
-/**
- * Helper UI Methods
- */
+  /**
+   * Helper UI Methods
+   */
 
-// Show a toast message
-showToast(message, variant = 'info', duration = 3000) {
-  const toast = document.createElement('div');
-  toast.className = 'party-manager-toast';
-  toast.style.cssText = `
+  // Show a toast message
+  showToast(message, variant = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = 'party-manager-toast';
+    toast.style.cssText = `
     position: fixed;
     bottom: 20px;
     left: 50%;
@@ -4522,78 +4924,78 @@ showToast(message, variant = 'info', duration = 3000) {
     opacity: 0;
     transition: opacity 0.3s ease;
   `;
-  
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  
-  // Show toast
-  setTimeout(() => { toast.style.opacity = '1'; }, 10);
-  
-  // Hide toast after duration
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => { toast.remove(); }, 300);
-  }, duration);
-}
 
-// Get color for toast variant
-getToastColor(variant) {
-  switch (variant) {
-    case 'success': return '#4CAF50';
-    case 'warning': return '#FF9800';
-    case 'error': return '#F44336';
-    case 'info':
-    default: return '#2196F3';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Show toast
+    setTimeout(() => { toast.style.opacity = '1'; }, 10);
+
+    // Hide toast after duration
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => { toast.remove(); }, 300);
+    }, duration);
   }
-}
 
-/**
- * Saving & Loading
- */
+  // Get color for toast variant
+  getToastColor(variant) {
+    switch (variant) {
+      case 'success': return '#4CAF50';
+      case 'warning': return '#FF9800';
+      case 'error': return '#F44336';
+      case 'info':
+      default: return '#2196F3';
+    }
+  }
 
-// Save party data to localStorage
-saveParty() {
-  try {
-    const partyData = {
-      active: this.party.active,
-      reserve: this.party.reserve,
-      maxActive: this.party.maxActive,
-      maxTotal: this.party.maxTotal
-    };
-    
-    localStorage.setItem('partyData', JSON.stringify(partyData));
-    console.log('Party data saved');
-    return true;
-  } catch (error) {
-    console.error('Error saving party data:', error);
+  /**
+   * Saving & Loading
+   */
+
+  // Save party data to localStorage
+  saveParty() {
+    try {
+      const partyData = {
+        active: this.party.active,
+        reserve: this.party.reserve,
+        maxActive: this.party.maxActive,
+        maxTotal: this.party.maxTotal
+      };
+
+      localStorage.setItem('partyData', JSON.stringify(partyData));
+      console.log('Party data saved');
+      return true;
+    } catch (error) {
+      console.error('Error saving party data:', error);
+      return false;
+    }
+  }
+
+  // Load party data from localStorage
+  loadParty() {
+    try {
+      const savedData = localStorage.getItem('partyData');
+      if (savedData) {
+        const partyData = JSON.parse(savedData);
+
+        this.party.active = partyData.active || [];
+        this.party.reserve = partyData.reserve || [];
+        this.party.maxActive = partyData.maxActive || 4;
+        this.party.maxTotal = partyData.maxTotal || 20;
+
+        console.log('Party data loaded');
+        return true;
+      }
+    } catch (error) {
+      console.error('Error loading party data:', error);
+    }
+
     return false;
   }
-}
 
-// Load party data from localStorage
-loadParty() {
-  try {
-    const savedData = localStorage.getItem('partyData');
-    if (savedData) {
-      const partyData = JSON.parse(savedData);
-      
-      this.party.active = partyData.active || [];
-      this.party.reserve = partyData.reserve || [];
-      this.party.maxActive = partyData.maxActive || 4;
-      this.party.maxTotal = partyData.maxTotal || 20;
-      
-      console.log('Party data loaded');
-      return true;
-    }
-  } catch (error) {
-    console.error('Error loading party data:', error);
-  }
-  
-  return false;
-}
-
-// Add this to PartyManager class
-initializeRelationshipSystem() {
+  // Add this to PartyManager class
+  initializeRelationshipSystem() {
     // Define type relationships (positive values = like, negative = dislike)
     this.typeAffinities = {
       // Positive relationships (natural allies)
@@ -4671,7 +5073,7 @@ initializeRelationshipSystem() {
         'Aberration': 1    // Shared alien nature
       }
     };
-    
+
     // Special relationships by specific monster rather than type
     this.specificAffinities = {
       'Wolf': {
@@ -4694,36 +5096,36 @@ initializeRelationshipSystem() {
       }
       // Many more could be added
     };
-    
+
     // Generate relationships for current party
     this.updatePartyRelationships();
-    
+
     console.log('Relationship system initialized');
   }
-  
+
   // Calculate and update relationships between party members
   updatePartyRelationships() {
     // Collection of all monsters
     const allMonsters = [...this.party.active, ...this.party.reserve];
-    
+
     // Create relationship map to track monsters that like each other
     this.relationshipMap = new Map();
-    
+
     // Process each monster
     allMonsters.forEach(monster => {
       // Initialize relationship array for this monster
       if (!this.relationshipMap.has(monster.id)) {
         this.relationshipMap.set(monster.id, []);
       }
-      
+
       // Check relationship with every other monster
       allMonsters.forEach(otherMonster => {
         // Don't compare with self
         if (monster.id === otherMonster.id) return;
-        
+
         // Calculate affinity
         const affinityScore = this.calculateAffinity(monster, otherMonster);
-        
+
         // If positive affinity, add to relationships
         if (affinityScore > 0) {
           this.relationshipMap.get(monster.id).push({
@@ -4735,49 +5137,49 @@ initializeRelationshipSystem() {
         }
       });
     });
-    
+
     console.log('Party relationships updated', this.relationshipMap);
   }
-  
+
   // Calculate affinity between two monsters
   calculateAffinity(monster1, monster2) {
     let affinity = 0;
-    
+
     // Check type affinities
     const type1 = monster1.type || monster1.data?.basic?.type;
     const type2 = monster2.type || monster2.data?.basic?.type;
-    
+
     // Check for type affinity in both directions
     if (this.typeAffinities[type1] && this.typeAffinities[type1][type2] !== undefined) {
       affinity += this.typeAffinities[type1][type2];
     }
-    
+
     if (this.typeAffinities[type2] && this.typeAffinities[type2][type1] !== undefined) {
       affinity += this.typeAffinities[type2][type1];
     }
-    
+
     // Check specific monster affinities
     const name1 = monster1.name;
     const name2 = monster2.name;
-    
+
     if (this.specificAffinities[name1] && this.specificAffinities[name1][name2] !== undefined) {
       affinity += this.specificAffinities[name1][name2];
     }
-    
+
     if (this.specificAffinities[name2] && this.specificAffinities[name2][name1] !== undefined) {
       affinity += this.specificAffinities[name2][name1];
     }
-    
+
     // Adjust for time spent together in party (bonus to relationship)
     // For now, this is a placeholder. You could implement a system to track
     // how long monsters have been in the party together.
-    
+
     // Take average to normalize
     affinity = affinity / 2;
-    
+
     return affinity;
   }
-  
+
   // Convert numerical affinity to descriptive level
   getAffinityLevel(score) {
     if (score >= 3) return 'High';
@@ -4788,7 +5190,7 @@ initializeRelationshipSystem() {
     if (score > -3) return 'Moderate Dislike';
     return 'Strong Dislike';
   }
-  
+
   // Determine combat benefit based on affinity score
   getAffinityBenefit(score) {
     if (score >= 3) return '+9 to combat rolls';
@@ -4800,13 +5202,13 @@ initializeRelationshipSystem() {
     if (score > -3) return '-5 to combat rolls';
     return '-7 to combat rolls';
   }
-  
+
   // Get combat modifier between two monsters
   getCombatModifier(monster1Id, monster2Id) {
     // Look for direct relationship
     const relationships = this.relationshipMap.get(monster1Id) || [];
     const relationship = relationships.find(r => r.monsterId === monster2Id);
-    
+
     if (relationship) {
       // Determine numerical bonus
       const score = relationship.score;
@@ -4819,10 +5221,10 @@ initializeRelationshipSystem() {
       if (score > -3) return -5;
       return -7;
     }
-    
+
     return 0; // No relationship
   }
-  
+
   // Get all monsters that like a specific monster
   getMonstersWithAffinity(monsterId) {
     return this.relationshipMap.get(monsterId) || [];

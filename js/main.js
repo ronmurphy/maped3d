@@ -1,5 +1,23 @@
 // js/main.js
 
+window.windowManager = new WindowManager();
+
+  // // Optional: Add a global event listener to close all windows on Escape
+  // document.addEventListener('keydown', (e) => {
+  //   if (e.key === 'Escape' && window.windowManager) {
+  //     // Only close the topmost window
+  //     const allWindows = window.windowManager.getAllWindows();
+  //     if (allWindows.length > 0) {
+  //       const topWindow = allWindows[allWindows.length - 1];
+  //       // If it's a Shoelace dialog, use hide method
+  //       if (topWindow.element.tagName.toLowerCase() === 'sl-dialog') {
+  //         topWindow.element.hide();
+  //       }
+  //       window.windowManager.unregisterWindow(topWindow.id);
+  //     }
+  //   }
+  // });
+
 // Utility function for map dimensions
 function parseMapDimensions(filename) {
     const dimensionMatch = filename.match(/(\d+)x(\d+)/i);
