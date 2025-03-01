@@ -1058,6 +1058,82 @@ class PartyManager {
     return true;
   }
 
+// Add this method to PartyManager
+dismissMonster(monsterId) {
+  const monster = this.findMonster(monsterId);
+  if (!monster) {
+    console.error(`Monster ${monsterId} not found`);
+    return false;
+  }
+  
+  // Return equipment to inventory first
+  if (monster.equipment) {
+    // Check weapon slot
+    if (monster.equipment.weapon) {
+      console.log(`Returning ${monster.name}'s weapon to inventory`);
+      // We don't need to add it back to inventory since our getPlaceholderEquipment 
+      // is currently just generating items, not removing them from inventory
+      
+      // But for future inventory implementation, you'd add code here to 
+      // return the item to the inventory
+      monster.equipment.weapon = null;
+    }
+    
+    // Check armor slot
+    if (monster.equipment.armor) {
+      console.log(`Returning ${monster.name}'s armor to inventory`);
+      // Same logic as for weapons
+      monster.equipment.armor = null;
+    }
+  }
+  
+  // Remove from appropriate array
+  const activeIndex = this.party.active.findIndex(m => m.id === monsterId);
+  if (activeIndex !== -1) {
+    this.party.active.splice(activeIndex, 1);
+    console.log(`Removed ${monster.name} from active party`);
+  } else {
+    const reserveIndex = this.party.reserve.findIndex(m => m.id === monsterId);
+    if (reserveIndex !== -1) {
+      this.party.reserve.splice(reserveIndex, 1);
+      console.log(`Removed ${monster.name} from reserve party`);
+    }
+  }
+  
+  // Update relationships
+  this.updatePartyRelationships();
+  
+  // Save party
+  this.saveParty();
+  
+  return true;
+}
+
+// Add this method to show confirmation dialog
+showDismissConfirmation(monster) {
+  if (!this.dismissDrawer) return;
+  
+  this.dismissDrawer.label = `Dismiss ${monster.name}`;
+  
+  const content = this.dismissDrawer.querySelector('.dismiss-drawer-content');
+  content.innerHTML = `
+    <div style="text-align: center; padding: 16px;">
+      <span class="material-icons" style="font-size: 48px; color: #ef4444; margin-bottom: 16px;">warning</span>
+      <h2 style="margin: 0 0 16px 0; color: #333;">Are you sure?</h2>
+      <p style="margin-bottom: 8px;">Are you sure you want to dismiss <strong>${monster.name}</strong>?</p>
+      <p style="color: #666; font-style: italic;">They will leave your party permanently.</p>
+      ${(monster.equipment?.weapon || monster.equipment?.armor) ? 
+        `<p style="margin-top: 16px; color: #3b82f6;">Their equipment will be returned to your inventory.</p>` : ''}
+    </div>
+  `;
+  
+  // Store monster ID for the confirm button
+  this.dismissDrawer.dataset.monsterId = monster.id;
+  
+  // Show drawer
+  this.dismissDrawer.show();
+}
+
   // Remove monster from party entirely
   removeMonster(monsterId) {
     // Check active party first
@@ -1100,66 +1176,143 @@ class PartyManager {
    */
 
   // Equip item to monster
-  equipItem(monsterId, slot, item) {
-    const monster = this.findMonster(monsterId);
-    if (!monster) {
-      console.error(`Monster ${monsterId} not found`);
-      return false;
-    }
+  // equipItem(monsterId, slot, item) {
+  //   const monster = this.findMonster(monsterId);
+  //   if (!monster) {
+  //     console.error(`Monster ${monsterId} not found`);
+  //     return false;
+  //   }
 
-    // Check if slot is valid
-    if (!['weapon', 'armor'].includes(slot)) {
-      console.error(`Invalid equipment slot: ${slot}`);
-      return false;
-    }
+  //   // Check if slot is valid
+  //   if (!['weapon', 'armor'].includes(slot)) {
+  //     console.error(`Invalid equipment slot: ${slot}`);
+  //     return false;
+  //   }
 
-    // Unequip current item if any
-    if (monster.equipment[slot]) {
-      this.unequipItem(monsterId, slot);
-    }
+  //   // Unequip current item if any
+  //   if (monster.equipment[slot]) {
+  //     this.unequipItem(monsterId, slot);
+  //   }
 
-    // Equip new item
-    monster.equipment[slot] = item;
+  //   // Equip new item
+  //   monster.equipment[slot] = item;
 
-    // Update monster stats based on equipment
-    this.updateMonsterStats(monster);
+  //   // Update monster stats based on equipment
+  //   this.updateMonsterStats(monster);
 
-    console.log(`Equipped ${item.name} to ${monster.name}`);
-    return true;
+  //   console.log(`Equipped ${item.name} to ${monster.name}`);
+  //   return true;
+  // }
+
+  // // Unequip item from monster
+  // unequipItem(monsterId, slot) {
+  //   const monster = this.findMonster(monsterId);
+  //   if (!monster) {
+  //     console.error(`Monster ${monsterId} not found`);
+  //     return false;
+  //   }
+
+  //   // Check if slot is valid
+  //   if (!['weapon', 'armor'].includes(slot)) {
+  //     console.error(`Invalid equipment slot: ${slot}`);
+  //     return false;
+  //   }
+
+  //   // Check if monster has item equipped
+  //   if (!monster.equipment[slot]) {
+  //     console.warn(`Monster ${monster.name} has no ${slot} equipped`);
+  //     return false;
+  //   }
+
+  //   // Get the item before unequipping
+  //   const item = monster.equipment[slot];
+
+  //   // Unequip item
+  //   monster.equipment[slot] = null;
+
+  //   // Update monster stats
+  //   this.updateMonsterStats(monster);
+
+  //   console.log(`Unequipped ${item.name} from ${monster.name}`);
+  //   return true;
+  // }
+
+  // Equip item to monster
+equipItem(monsterId, slot, item) {
+  const monster = this.findMonster(monsterId);
+  if (!monster) {
+    console.error(`Monster ${monsterId} not found`);
+    return false;
   }
 
-  // Unequip item from monster
-  unequipItem(monsterId, slot) {
-    const monster = this.findMonster(monsterId);
-    if (!monster) {
-      console.error(`Monster ${monsterId} not found`);
-      return false;
-    }
-
-    // Check if slot is valid
-    if (!['weapon', 'armor'].includes(slot)) {
-      console.error(`Invalid equipment slot: ${slot}`);
-      return false;
-    }
-
-    // Check if monster has item equipped
-    if (!monster.equipment[slot]) {
-      console.warn(`Monster ${monster.name} has no ${slot} equipped`);
-      return false;
-    }
-
-    // Get the item before unequipping
-    const item = monster.equipment[slot];
-
-    // Unequip item
-    monster.equipment[slot] = null;
-
-    // Update monster stats
-    this.updateMonsterStats(monster);
-
-    console.log(`Unequipped ${item.name} from ${monster.name}`);
-    return true;
+  // Check if slot is valid
+  if (!['weapon', 'armor'].includes(slot)) {
+    console.error(`Invalid equipment slot: ${slot}`);
+    return false;
   }
+
+  console.log(`Equipping ${item.name} to ${monster.name}'s ${slot} slot`);
+  console.log("Item details:", item);
+
+  // Unequip current item if any
+  if (monster.equipment[slot]) {
+    console.log(`Unequipping current ${slot}: ${monster.equipment[slot].name}`);
+    this.unequipItem(monsterId, slot);
+  }
+
+  // Equip new item
+  monster.equipment[slot] = item;
+
+  // Update monster stats based on equipment
+  this.updateMonsterStats(monster);
+
+  console.log(`Successfully equipped ${item.name} to ${monster.name}`);
+  console.log("Monster after equipping:", monster);
+  
+  // Save party after equipping
+  this.saveParty();
+  
+  return true;
+}
+
+// Unequip item from monster
+unequipItem(monsterId, slot) {
+  const monster = this.findMonster(monsterId);
+  if (!monster) {
+    console.error(`Monster ${monsterId} not found`);
+    return false;
+  }
+
+  // Check if slot is valid
+  if (!['weapon', 'armor'].includes(slot)) {
+    console.error(`Invalid equipment slot: ${slot}`);
+    return false;
+  }
+
+  // Check if monster has item equipped
+  if (!monster.equipment[slot]) {
+    console.warn(`Monster ${monster.name} has no ${slot} equipped`);
+    return false;
+  }
+
+  // Get the item before unequipping
+  const item = monster.equipment[slot];
+  console.log(`Unequipping ${item.name} from ${monster.name}'s ${slot} slot`);
+
+  // Unequip item
+  monster.equipment[slot] = null;
+
+  // Update monster stats
+  this.updateMonsterStats(monster);
+
+  console.log(`Successfully unequipped ${item.name} from ${monster.name}`);
+  console.log("Monster after unequipping:", monster);
+  
+  // Save party after unequipping
+  this.saveParty();
+  
+  return true;
+}
 
 
   // Get appropriate RPG Awesome icon for weapon type
@@ -1426,6 +1579,21 @@ class PartyManager {
         <span class="material-icons">close</span>
       </button>
     `;
+
+//     header.innerHTML = `
+//   <div style="display: flex; align-items: center;">
+//     <span class="material-icons" style="margin-right: 8px;">pets</span>
+//     <h1 style="margin: 0; font-size: 1.25rem;">Monster Party</h1>
+//   </div>
+//   <div>
+//     <button class="test-save-btn" style="background: #4338ca; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-right: 8px; cursor: pointer;">
+//       Test Save/Load
+//     </button>
+//     <button class="close-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s;">
+//       <span class="material-icons">close</span>
+//     </button>
+//   </div>
+// `;
   
     // Create content area (sidebar + details)
     const content = document.createElement('div');
@@ -1504,6 +1672,13 @@ class PartyManager {
         </div>
       `;
     }
+
+    const testBtn = header.querySelector('.test-save-btn');
+if (testBtn) {
+  testBtn.addEventListener('click', () => {
+    this.testSaveLoad();
+  });
+}
   
     // Add lists to container
     partyList.appendChild(activeList);
@@ -1551,6 +1726,28 @@ class PartyManager {
     
     // Add the drawer to the container BEFORE adding container to the overlay
     container.appendChild(equipmentDrawer);
+
+    const dismissDrawer = document.createElement('sl-drawer');
+dismissDrawer.label = "Dismiss Monster";
+dismissDrawer.placement = "end";
+dismissDrawer.setAttribute('contained', '');
+dismissDrawer.style.setProperty('--size', '40%');
+dismissDrawer.innerHTML = `
+  <div class="dismiss-drawer-content">
+    <!-- Content will be populated when opened -->
+  </div>
+  <div slot="footer">
+    <sl-button variant="neutral" class="cancel-dismiss-btn">Cancel</sl-button>
+    <sl-button variant="danger" class="confirm-dismiss-btn">Dismiss Monster</sl-button>
+  </div>
+`;
+container.appendChild(dismissDrawer);
+this.dismissDrawer = dismissDrawer;
+
+// Add cancel button handler
+dismissDrawer.querySelector('.cancel-dismiss-btn').addEventListener('click', () => {
+  dismissDrawer.hide();
+});
     
     // Now add the container to the overlay
     overlay.appendChild(container);
@@ -1565,6 +1762,17 @@ class PartyManager {
     equipmentDrawer.querySelector('.close-drawer-btn').addEventListener('click', () => {
       equipmentDrawer.hide();
     });
+
+    // Add this in showPartyManager after setting up the dismissDrawer
+dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', () => {
+  const monsterId = this.dismissDrawer.dataset.monsterId;
+  if (monsterId) {
+    this.dismissMonster(monsterId);
+    this.dismissDrawer.hide();
+    this.refreshPartyDialog();
+    this.showToast(`Monster has been dismissed from your party.`, 'info');
+  }
+});
   
     // Add event listeners
     this.setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel);
@@ -2025,6 +2233,22 @@ class PartyManager {
           <span class="material-icons" style="font-size: 14px; margin-right: 4px;">${buttonIcon}</span>
           ${buttonText}
         </button>
+
+        <button class="dismiss-monster-btn" data-monster-id="${monster.id}" style="
+  background: rgba(239, 68, 68, 0.2);
+  border: none;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  color: #ef4444;
+  margin-left: 8px;
+  cursor: pointer;
+">
+  <span class="material-icons" style="font-size: 14px; margin-right: 4px;">delete</span>
+  Dismiss
+</button>
       </div>
     </div>
   `;
@@ -2209,7 +2433,7 @@ class PartyManager {
               justify-content: center;
               margin-right: 12px;
             ">
-              <i class="ra ${getWeaponIcon(monster.equipment.weapon)}" style="font-size: 24px; color: #ef4444;"></i>
+              <i class="ra ${this.getWeaponIcon(monster.equipment.weapon)}" style="font-size: 24px; color: #ef4444;"></i>
             </div>
             <div>
               <div style="font-weight: 500;">${monster.equipment.weapon.name}</div>
@@ -2265,7 +2489,7 @@ class PartyManager {
               justify-content: center;
               margin-right: 12px;
             ">
-              <i class="ra ${getArmorIcon(monster.equipment.armor)}" style="font-size: 24px; color: #3b82f6;"></i>
+              <i class="ra ${this.getArmorIcon(monster.equipment.armor)}" style="font-size: 24px; color: #3b82f6;"></i>
             </div>
             <div>
               <div style="font-weight: 500;">${monster.equipment.armor.name}</div>
@@ -2696,7 +2920,19 @@ class PartyManager {
     // Add initial handlers
     addCardClickHandlers();
 
-    // Add this to your setupPartyDialogEvents function after addCardClickHandlers()
+      // Listen for clicks on the details panel (for dismiss button)
+  detailsPanel.addEventListener('click', (e) => {
+    const dismissBtn = e.target.closest('.dismiss-monster-btn');
+    if (dismissBtn) {
+      e.stopPropagation();
+      const monsterId = dismissBtn.getAttribute('data-monster-id');
+      const monster = this.findMonster(monsterId);
+      if (monster) {
+        this.showDismissConfirmation(monster);
+      }
+    }
+  });
+
     const addMoveButtonHandlers = () => {
       // Set up "To Reserve" buttons
       const toReserveButtons = overlay.querySelectorAll('.move-to-reserve');
@@ -2730,14 +2966,14 @@ class PartyManager {
 
 
 
-    // Handle Escape key to close dialog
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        closeButton.click();
-        document.removeEventListener('keydown', handleKeyDown);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
+    // // Handle Escape key to close dialog
+    // const handleKeyDown = (e) => {
+    //   if (e.key === 'Escape') {
+    //     closeButton.click();
+    //     document.removeEventListener('keydown', handleKeyDown);
+    //   }
+    // };
+    // document.addEventListener('keydown', handleKeyDown);
   }
 
   // Refresh party dialog when data changes
@@ -3112,269 +3348,6 @@ class PartyManager {
   }
 
   // Add or update your showEquipmentDialog method
-  // showEquipmentDialog(monster, selectedSlot = 'weapon') {
-
-  //     // First, if we have an active party dialog that's modal, tell it about our external dialog
-  // if (this.partyDialog && this.partyDialog.tagName.toLowerCase() === 'sl-dialog' && this.partyDialog.modal) {
-  //   // Deactivate the party dialog's focus trapping
-  //   this.partyDialog.modal.activateExternal();
-  // }
-  //   // Create dialog container
-  //   const dialog = document.createElement('sl-dialog');
-  //   dialog.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
-  //   dialog.style.setProperty('--width', '600px');
-
-  
-  // // Set a high z-index to ensure it appears above party manager
-  // dialog.style.zIndex = "20000"; // Much higher than party dialog
-
-  //   // Create placeholder equipment (to be replaced with actual inventory later)
-  //   const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
-
-  //   // Dialog content
-  //   dialog.innerHTML = `
-  //   <div style="
-  //     background: #f5f3e8;
-  //     border-radius: 12px;
-  //     padding: 16px;
-  //     border: 1px solid #e6e0d1;
-  //     margin-bottom: 16px;
-  //   ">
-  //     <div style="display: flex; align-items: center; margin-bottom: 12px;">
-  //       <i class="ra ${selectedSlot === 'weapon' ? 'ra-crossed-swords' : 'ra-shield'}" style="
-  //         font-size: 24px;
-  //         margin-right: 12px;
-  //         color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
-  //       "></i>
-  //       <div style="font-weight: bold; font-size: 1.1rem;">Available ${selectedSlot === 'weapon' ? 'Weapons' : 'Armor'}</div>
-  //     </div>
-      
-  //     <!-- Current equipment -->
-  //     ${monster.equipment[selectedSlot] ? `
-  //       <div style="
-  //         margin-bottom: 16px;
-  //         padding: 12px;
-  //         background: rgba(0, 0, 0, 0.05);
-  //         border-radius: 8px;
-  //       ">
-  //         <div style="margin-bottom: 8px; font-weight: bold; display: flex; align-items: center;">
-  //           <i class="ra ra-slash-ring" style="font-size: 16px; margin-right: 8px; color: #666;"></i>
-  //           Currently Equipped
-  //         </div>
-  //         <div style="display: flex; align-items: center;">
-  //           <div style="
-  //             width: 48px;
-  //             height: 48px;
-  //             background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
-  //             border-radius: 8px;
-  //             display: flex;
-  //             align-items: center;
-  //             justify-content: center;
-  //             margin-right: 12px;
-  //           ">
-  //             <i class="ra ${selectedSlot === 'weapon' ?
-  //         this.getWeaponIcon(monster.equipment[selectedSlot]) :
-  //         this.getArmorIcon(monster.equipment[selectedSlot])
-  //       }" style="
-  //               font-size: 28px; 
-  //               color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
-  //             "></i>
-  //           </div>
-  //           <div>
-  //             <div style="font-weight: 500;">${monster.equipment[selectedSlot].name}</div>
-  //             ${monster.equipment[selectedSlot].damageBonus ?
-  //         `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
-  //         ''
-  //       }
-  //             ${monster.equipment[selectedSlot].acBonus ?
-  //         `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
-  //         ''
-  //       }
-  //           </div>
-  //         </div>
-  //       </div>
-  //     ` : ''}
-      
-  //     <!-- Equipment options -->
-  //     <div class="equipment-options" style="
-  //       display: grid;
-  //       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  //       gap: 12px;
-  //     ">
-  //       <!-- Option to unequip -->
-  //       <div class="equipment-item" data-item-id="none" data-slot="${selectedSlot}" style="
-  //         background: rgba(0, 0, 0, 0.05);
-  //         border-radius: 8px;
-  //         padding: 12px;
-  //         cursor: pointer;
-  //         transition: all 0.2s;
-  //         border: 1px solid rgba(0, 0, 0, 0.1);
-  //       ">
-  //         <div style="display: flex; align-items: center;">
-  //           <div style="
-  //             width: 48px;
-  //             height: 48px;
-  //             background: rgba(239, 68, 68, 0.05);
-  //             border-radius: 8px;
-  //             display: flex;
-  //             align-items: center;
-  //             justify-content: center;
-  //             margin-right: 12px;
-  //           ">
-  //             <i class="ra ra-broken-skull" style="font-size: 28px; color: #666;"></i>
-  //           </div>
-  //           <div>
-  //             <div style="font-weight: 500;">Unequip</div>
-  //             <div style="font-size: 0.9rem; color: #666;">Remove current ${selectedSlot}</div>
-  //           </div>
-  //         </div>
-  //       </div>
-        
-  //       <!-- Equipment items -->
-  //       ${placeholderEquipment.map(item => `
-  //         <div class="equipment-item" 
-  //              data-item-id="${item.id}" 
-  //              data-slot="${selectedSlot}" 
-  //              style="
-  //                background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)'};
-  //                border-radius: 8px;
-  //                padding: 12px;
-  //                cursor: pointer;
-  //                transition: all 0.2s;
-  //                border: 1px solid ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
-  //              ">
-  //           <div style="display: flex; align-items: center;">
-  //             <div style="
-  //               width: 48px;
-  //               height: 48px;
-  //               background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
-  //               border-radius: 8px;
-  //               display: flex;
-  //               align-items: center;
-  //               justify-content: center;
-  //               margin-right: 12px;
-  //             ">
-  //               <i class="ra ${selectedSlot === 'weapon' ? this.getWeaponIcon(item) : this.getArmorIcon(item)}" 
-  //                  style="font-size: 28px; color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};"></i>
-  //             </div>
-  //             <div>
-  //               <div style="font-weight: 500;">${item.name}</div>
-  //               ${item.damageBonus ?
-  //           `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
-  //           ''
-  //         }
-  //               ${item.acBonus ?
-  //           `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
-  //           ''
-  //         }
-  //             </div>
-  //           </div>
-  //         </div>
-  //       `).join('')}
-  //     </div>
-  //   </div>
-    
-  //   <div slot="footer">
-  //     <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
-  //   </div>
-  // `;
-
-
-  //   // Add hover effects for equipment items
-  //   const setupEquipmentItems = () => {
-  //     const items = dialog.querySelectorAll('.equipment-item');
-  //     items.forEach(item => {
-  //       // Hover effect
-  //       item.addEventListener('mouseenter', () => {
-  //         item.style.transform = 'translateY(-2px)';
-  //         item.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-  //       });
-
-  //       item.addEventListener('mouseleave', () => {
-  //         item.style.transform = '';
-  //         item.style.boxShadow = '';
-  //       });
-
-  //       // Click handler
-  //       item.addEventListener('click', () => {
-  //         const itemId = item.getAttribute('data-item-id');
-  //         const slot = item.getAttribute('data-slot');
-
-  //         if (itemId === 'none') {
-  //           // Unequip
-  //           this.unequipItem(monster.id, slot);
-  //         } else {
-  //           // Find and equip the item
-  //           const equipment = placeholderEquipment.find(e => e.id === itemId);
-  //           if (equipment) {
-  //             this.equipItem(monster.id, slot, equipment);
-  //           }
-  //         }
-
-  //         // Close dialog
-  //         dialog.hide();
-  //         // Refresh party UI
-  //         this.refreshPartyDialog();
-  //       });
-  //     });
-  //   };
-
-  //   // Add event handlers
-  //   dialog.addEventListener('sl-after-show', () => {
-  //     setupEquipmentItems();
-
-  //     // Cancel button
-  //     dialog.querySelector('.cancel-btn').addEventListener('click', () => {
-  //       dialog.hide();
-  //     });
-  //   });
-
-
-  //     // When the dialog is closed, restore focus trapping to party dialog
-  // dialog.addEventListener('sl-after-hide', () => {
-  //   if (this.partyDialog && this.partyDialog.tagName.toLowerCase() === 'sl-dialog' && this.partyDialog.modal) {
-  //     // Reactivate the party dialog's focus trapping
-  //     this.partyDialog.modal.deactivateExternal();
-  //   }
-    
-  //   // Remove dialog from DOM after hiding
-  //   setTimeout(() => {
-  //     if (dialog.parentNode) {
-  //       dialog.parentNode.removeChild(dialog);
-  //     }
-  //   }, 300);
-  // });
-
-  //   // Add to document and show
-  //   document.body.appendChild(dialog);
-
-
-  // // // Register with window manager AFTER adding to DOM but BEFORE showing
-  // // // This ensures the element is available in the DOM for positioning
-  // // window.windowManager.registerWindow(dialog, {
-  // //   draggable: true,
-  // //   // No need to specify dragHandle for Shoelace dialogs as we handle it specially
-  // //   initialPosition: {
-  // //     x: Math.max(0, (window.innerWidth - 600) / 2),
-  // //     y: Math.max(0, (window.innerHeight - 400) / 2)
-  // //   }
-  // // });
-  
-  // // // Listen for when dialog is closed to unregister it
-  // // dialog.addEventListener('sl-after-hide', () => {
-  // //   window.windowManager.unregisterWindow(dialog.id);
-  // //   // Optional: Remove from DOM after hiding
-  // //   setTimeout(() => {
-  // //     if (dialog.parentNode) {
-  // //       dialog.parentNode.removeChild(dialog);
-  // //     }
-  // //   }, 300);
-  // // });
-
-
-  //   dialog.show();
-  // }
-
   showEquipmentDialog(monster, selectedSlot = 'weapon') {
     // Make sure party manager is open
     if (!this.partyDialog || !this.equipmentDrawer) {
@@ -3383,7 +3356,7 @@ class PartyManager {
     }
     
     // Get placeholder equipment
-    const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
+    const placeholderEquipment =  this.getPlaceholderEquipment(selectedSlot);
     
     // Update drawer label
     this.equipmentDrawer.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
@@ -3585,70 +3558,98 @@ class PartyManager {
   }
 
   // Placeholder equipment function (to be replaced with inventory integration)
-  getPlaceholderEquipment(type) {
-    if (type === 'weapon') {
-      return [
-        {
-          id: 'sword1',
-          name: 'Iron Sword',
-          damageBonus: 1,
-          type: 'weapon'
-        },
-        {
-          id: 'axe1',
-          name: 'Battle Axe',
-          damageBonus: 2,
-          type: 'weapon'
-        },
-        {
-          id: 'staff1',
-          name: 'Magic Staff',
-          damageBonus: 1,
-          type: 'weapon'
-        },
-        {
-          id: 'dagger1',
-          name: 'Assassin\'s Dagger',
-          damageBonus: 1,
-          type: 'weapon'
-        },
-        {
-          id: 'bow1',
-          name: 'Hunter\'s Bow',
-          damageBonus: 2,
-          type: 'weapon'
-        }
-      ];
-    } else if (type === 'armor') {
-      return [
-        {
-          id: 'leather1',
-          name: 'Leather Armor',
-          acBonus: 1,
-          type: 'armor'
-        },
-        {
-          id: 'chain1',
-          name: 'Chain Mail',
-          acBonus: 3,
-          type: 'armor'
-        },
-        {
-          id: 'plate1',
-          name: 'Plate Armor',
-          acBonus: 5,
-          type: 'armor'
-        },
-        {
-          id: 'robe1',
-          name: 'Mage Robes',
-          acBonus: 1,
-          type: 'armor'
-        }
-      ];
+  getEquipmentFromInventory(type) {
+    if (!this.inventory) {
+      // Generate starter equipment if we don't have any
+      this.generateStarterEquipment();
     }
-
+    
+    if (type === 'weapon') {
+      return this.inventory.weapons || [];
+    } else if (type === 'armor') {
+      return this.inventory.armor || [];
+    }
+    
     return [];
+  }
+
+  getPlaceholderEquipment(type) {
+    // Generate starter equipment if we don't have any
+    if (!this.inventory || 
+        !this.inventory.weapons ||
+        !this.inventory.armor ||
+        this.inventory.weapons.length === 0 ||
+        this.inventory.armor.length === 0) {
+      this.generateStarterEquipment();
+    }
+    
+    if (type === 'weapon') {
+      return this.inventory.weapons || [];
+    } else if (type === 'armor') {
+      return this.inventory.armor || [];
+    }
+  
+    return [];
+  }
+
+  generateStarterEquipment() {
+    // Create basic starter weapons
+    const starterWeapons = [
+      {
+        id: 'starter_sword',
+        name: 'Adventurer\'s Sword',
+        damageBonus: 1,
+        type: 'weapon',
+        description: 'A reliable starter sword.'
+      },
+      {
+        id: 'starter_staff',
+        name: 'Apprentice\'s Staff',
+        damageBonus: 1,
+        type: 'weapon',
+        description: 'A basic magical staff.'
+      }
+    ];
+    
+    // Create basic starter armor
+    const starterArmor = [
+      {
+        id: 'starter_leather',
+        name: 'Basic Leather Armor',
+        acBonus: 1,
+        type: 'armor',
+        description: 'Simple but effective protection.'
+      },
+      {
+        id: 'starter_robe',
+        name: 'Apprentice\'s Robe',
+        acBonus: 1,
+        type: 'armor',
+        description: 'Light protection with magical properties.'
+      }
+    ];
+    
+    // Initialize inventory if needed
+    if (!this.inventory) {
+      this.inventory = {
+        weapons: [],
+        armor: []
+      };
+    }
+    
+    // Add weapons if inventory is empty
+    if (!this.inventory.weapons || this.inventory.weapons.length === 0) {
+      this.inventory.weapons = starterWeapons;
+    }
+    
+    // Add armor if inventory is empty
+    if (!this.inventory.armor || this.inventory.armor.length === 0) {
+      this.inventory.armor = starterArmor;
+    }
+    
+    console.log('Generated starter equipment:', this.inventory);
+    
+    return this.inventory;
   }
 
   // Render equipment list for dialog
@@ -5210,45 +5211,127 @@ class PartyManager {
    */
 
   // Save party data to localStorage
-  saveParty() {
-    try {
-      const partyData = {
-        active: this.party.active,
-        reserve: this.party.reserve,
-        maxActive: this.party.maxActive,
-        maxTotal: this.party.maxTotal
-      };
+  // saveParty() {
+  //   try {
+  //     const partyData = {
+  //       active: this.party.active,
+  //       reserve: this.party.reserve,
+  //       maxActive: this.party.maxActive,
+  //       maxTotal: this.party.maxTotal
+  //     };
 
-      localStorage.setItem('partyData', JSON.stringify(partyData));
-      console.log('Party data saved');
-      return true;
-    } catch (error) {
-      console.error('Error saving party data:', error);
-      return false;
-    }
-  }
+  //     localStorage.setItem('partyData', JSON.stringify(partyData));
+  //     console.log('Party data saved');
+  //     return true;
+  //   } catch (error) {
+  //     console.error('Error saving party data:', error);
+  //     return false;
+  //   }
+  // }
 
-  // Load party data from localStorage
-  loadParty() {
-    try {
-      const savedData = localStorage.getItem('partyData');
-      if (savedData) {
-        const partyData = JSON.parse(savedData);
+  // // Load party data from localStorage
+  // loadParty() {
+  //   try {
+  //     const savedData = localStorage.getItem('partyData');
+  //     if (savedData) {
+  //       const partyData = JSON.parse(savedData);
 
-        this.party.active = partyData.active || [];
-        this.party.reserve = partyData.reserve || [];
-        this.party.maxActive = partyData.maxActive || 4;
-        this.party.maxTotal = partyData.maxTotal || 20;
+  //       this.party.active = partyData.active || [];
+  //       this.party.reserve = partyData.reserve || [];
+  //       this.party.maxActive = partyData.maxActive || 4;
+  //       this.party.maxTotal = partyData.maxTotal || 20;
 
-        console.log('Party data loaded');
-        return true;
-      }
-    } catch (error) {
-      console.error('Error loading party data:', error);
-    }
+  //       console.log('Party data loaded');
+  //       return true;
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading party data:', error);
+  //   }
 
+  //   return false;
+  // }
+
+  // Add to saveParty method
+saveParty() {
+  try {
+    const partyData = {
+      active: this.party.active,
+      reserve: this.party.reserve,
+      maxActive: this.party.maxActive,
+      maxTotal: this.party.maxTotal,
+      inventory: this.inventory // Include inventory
+    };
+
+    localStorage.setItem('partyData', JSON.stringify(partyData));
+    console.log('Party data saved with inventory');
+    
+    // Show a quick toast to confirm
+    this.showToast('Party saved!', 'success');
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving party data:', error);
+    this.showToast('Error saving party', 'error');
     return false;
   }
+}
+
+// Update loadParty method
+loadParty() {
+  try {
+    const savedData = localStorage.getItem('partyData');
+    if (savedData) {
+      const partyData = JSON.parse(savedData);
+
+      this.party.active = partyData.active || [];
+      this.party.reserve = partyData.reserve || [];
+      this.party.maxActive = partyData.maxActive || 4;
+      this.party.maxTotal = partyData.maxTotal || 20;
+      this.inventory = partyData.inventory || { weapons: [], armor: [] };
+
+      console.log('Party data loaded with inventory:', this.inventory);
+      return true;
+    }
+  } catch (error) {
+    console.error('Error loading party data:', error);
+  }
+
+  return false;
+}
+
+// Test save/load functionality
+testSaveLoad() {
+  console.log("Testing party save/load functionality");
+  
+  // Make sure we have some equipment
+  this.generateStarterEquipment();
+  
+  // Save the party
+  console.log("Before saving:", {
+    active: this.party.active.length,
+    reserve: this.party.reserve.length,
+    inventory: this.inventory
+  });
+  
+  this.saveParty();
+  console.log("Party saved to localStorage");
+  
+  // Clear some data to test loading
+  this.party.active = [];
+  this.inventory = { weapons: [], armor: [] };
+  console.log("Cleared party data for testing");
+  
+  // Load the party
+  this.loadParty();
+  console.log("After loading:", {
+    active: this.party.active.length,
+    reserve: this.party.reserve.length,
+    inventory: this.inventory
+  });
+  
+  // Show a confirmation
+  this.showToast("Save/load test complete", "info");
+}
 
   // Add this to PartyManager class
   initializeRelationshipSystem() {
