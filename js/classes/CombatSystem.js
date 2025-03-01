@@ -4,9 +4,33 @@
  */
 class CombatSystem {
   constructor(partyManager, resourceManager) {
+    console.log("CombatSystem constructor called");
+    
     // Store references to managers
     this.partyManager = partyManager;
     this.resourceManager = resourceManager;
+  
+    // Direct instantiation like in PartyManager
+    this.monsterManager = new MonsterManager(this);
+    console.log("CombatSystem: Created new MonsterManager instance directly");
+  
+    // Now get direct access to database
+    if (this.monsterManager) {
+      this.monsterDatabase = this.monsterManager.monsterDatabase || 
+                            this.monsterManager.loadDatabase();
+      console.log("CombatSystem: Access to monster database:", !!this.monsterDatabase);
+    } else {
+      console.warn("CombatSystem: Could not create MonsterManager");
+    }
+  
+    // Now get direct access to database if possible
+    if (this.monsterManager) {
+      this.monsterDatabase = this.monsterManager.monsterDatabase || 
+                            this.monsterManager.loadDatabase();
+      console.log("CombatSystem: Access to monster database:", !!this.monsterDatabase);
+    } else {
+      console.warn("CombatSystem: Could not connect to MonsterManager database");
+    }
 
     // Combat state
     this.inCombat = false;
@@ -621,6 +645,60 @@ class CombatSystem {
   pointer-events: none;
   max-width: 200px;
 }
+
+.enemy-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+  padding-top: 32px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.enemy-layout-single {
+  justify-content: center;
+}
+
+.enemy-layout-duo {
+  justify-content: space-around;
+  width: 100%;
+}
+
+.enemy-layout-trio {
+  width: 100%;
+  height: 180px; /* Provide enough height for arrangement */
+  position: relative;
+}
+
+.enemy-layout-trio .combat-monster:first-child {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) rotate(4deg);
+  z-index: 3;
+}
+
+.enemy-layout-trio .combat-monster:nth-child(2) {
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  transform: translateX(-50%) rotate(-3deg);
+  z-index: 2;
+}
+
+.enemy-layout-trio .combat-monster:nth-child(3) {
+  position: absolute;
+  bottom: 0;
+  left: 75%;
+  transform: translateX(-50%) rotate(7deg);
+  z-index: 1;
+}
+
+/* Make enemy cards slightly smaller when multiple */
+.enemy-layout-duo .combat-monster,
+.enemy-layout-trio .combat-monster {
+  width: 160px; /* Slightly smaller than the standard 180px */
+}
 `;
 
     return styleElement;
@@ -843,42 +921,74 @@ class CombatSystem {
    * Combat Initialization Methods
    */
 
-  // Initialize combat with enemy monsters
-  initiateCombat(enemies) {
-    // Check if we're already in combat
+
+  async initiateCombat(enemies) {
+    console.log('========== COMBAT INITIALIZATION ==========');
     if (this.inCombat) {
       console.warn('Already in combat');
       return false;
     }
-
+  
     // Check if player has active monsters
+    console.log('Checking player party:', this.partyManager.party.active.length, 'active monsters');
     if (!this.partyManager.party.active.length) {
+      console.log('No active monsters in party, showing dialog');
       this.showNeedMonstersDialog();
       return false;
     }
-
+  
     // Set combat state
     this.inCombat = true;
-
-    // Process enemy data (ensure they're in the right format)
-    const processedEnemies = enemies.map(enemy => {
-      // If enemy is bestiary reference, convert to combat monster
-      if (enemy.data && !enemy.monsterAbilities) {
-        return this.partyManager.prepareMonster(enemy);
-      }
-      return enemy;
-    });
-
-    // Setup combat participants
+    
+    // Setup player party
     this.playerParty = [...this.partyManager.party.active];
-    this.enemyParty = processedEnemies;
-
-    // Roll initiative
+    console.log(`Player party: ${this.playerParty.length} monsters`);
+    console.log('Player names:', this.playerParty.map(p => p.name).join(', '));
+    
+    // Handle enemy setup
+    console.log('Enemy parameter type:', enemies ? (Array.isArray(enemies) ? 'Array' : typeof enemies) : 'undefined');
+    
+    if (Array.isArray(enemies) && enemies.length > 0) {
+      console.log(`Using provided enemy list: ${enemies.length} enemies`);
+      this.enemyParty = enemies.map(enemy => this.prepareEnemyForCombat(enemy));
+    } else if (enemies) {
+      console.log('Single enemy provided, wrapping in array');
+      this.enemyParty = [this.prepareEnemyForCombat(enemies)];
+    } else {
+      console.log('No enemies provided, generating random enemy party');
+      
+      try {
+        // Generate random enemies asynchronously
+        const generatedEnemies = await this.generateEnemyParty(this.playerParty);
+        
+        if (generatedEnemies && generatedEnemies.length > 0) {
+          this.enemyParty = generatedEnemies;
+        } else {
+          // Fallback to a default enemy if generation failed
+          console.log('Enemy generation failed, using default enemy');
+          const defaultEnemy = this.generateDefaultEnemies(1)[0];
+          this.enemyParty = [this.prepareEnemyForCombat(defaultEnemy)];
+        }
+      } catch (error) {
+        console.error("Error generating enemy party:", error);
+        // Fallback to default enemy
+        const defaultEnemy = this.generateDefaultEnemies(1)[0];
+        this.enemyParty = [this.prepareEnemyForCombat(defaultEnemy)];
+      }
+    }
+  
+    console.log(`Final enemy party: ${this.enemyParty.length} monsters`);
+    console.log('Enemy names:', this.enemyParty.map(e => e.name).join(', '));
+    
+    // Roll initiative 
     this.rollInitiative();
-
+    console.log('Initiative order:', this.initiativeOrder.map(c => `${c.monster.name} (${c.initiative})`).join(', '));
+  
     // Show combat UI
+    console.log('Showing combat interface');
     this.showCombatInterface();
-
+    console.log('========== COMBAT INITIALIZATION COMPLETE ==========');
+  
     return true;
   }
 
@@ -1547,46 +1657,55 @@ class CombatSystem {
     }, 1000);
   }
 
-  // Move to next turn
+    // Move to next turn - Fixed to skip defeated monsters
   nextTurn() {
     // Move to next combatant
     this.currentTurn++;
-
+  
     // If we've gone through all combatants, start a new round
     if (this.currentTurn >= this.initiativeOrder.length) {
       this.currentTurn = 0;
       this.roundNumber++;
       this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
-
+  
       // Update round number in UI
-      const roundDisplay = this.dialogContainer.querySelector('.combat-round');
+      const roundDisplay = this.dialogContainer.querySelector('.combat-header span:last-child');
       if (roundDisplay) {
         roundDisplay.textContent = `Round ${this.roundNumber}`;
       }
     }
-
+  
     // Update initiative UI
     this.updateInitiativeTracker();
-
+  
     // Check for combat end conditions
     if (this.checkCombatEnd()) {
       return;
     }
-
-    // Process the new turn
+  
+    // Get current combatant
     const currentCombatant = this.initiativeOrder[this.currentTurn];
-    if (currentCombatant) {
-      this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
-
-      // Update action bar for player turn
-      if (currentCombatant.side === 'player') {
-        this.updateActionBar(currentCombatant.monster);
-      } else {
-        // For enemy turn, clear action bar
-        this.updateActionBar(null);
-        // Process enemy turn with a slight delay
-        setTimeout(() => this.processEnemyTurn(), 1000);
-      }
+    if (!currentCombatant) return; // Safety check
+    
+    // NEW CODE: Check if current monster is defeated, if so skip this turn
+    if (currentCombatant.monster.currentHP <= 0) {
+      this.addLogEntry(`${currentCombatant.monster.name} is defeated and cannot act.`);
+      // Call nextTurn again to skip to the next combatant
+      this.nextTurn();
+      return;
+    }
+  
+    // Process the turn for a non-defeated monster
+    this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
+  
+    // Update action bar for player turn
+    if (currentCombatant.side === 'player') {
+      this.updateActionBar(currentCombatant.monster);
+    } else {
+      // For enemy turn, clear action bar
+      this.updateActionBar(null);
+      // Process enemy turn with a slight delay
+      setTimeout(() => this.processEnemyTurn(), 1000);
     }
   }
 
@@ -2485,6 +2604,513 @@ class CombatSystem {
   // Roll dice of specified size
   rollDice(sides) {
     return Math.floor(Math.random() * sides) + 1;
+  }  
+  
+
+  establishConnections() {
+    console.log("CombatSystem: Establishing connections");
+    
+    // Try multiple paths to establish MonsterManager connection
+    if (!this.monsterManager || !this.monsterDatabase) {
+      console.log("CombatSystem: Attempting to re-establish connection to monster database");
+      
+      // Try to get MonsterManager from PartyManager first (most reliable)
+      if (this.partyManager && this.partyManager.monsterManager) {
+        this.monsterManager = this.partyManager.monsterManager;
+        this.monsterDatabase = this.partyManager.monsterDatabase;
+        console.log("CombatSystem: Connected via PartyManager");
+      } 
+      // If that fails, check resourceManager
+      else if (this.resourceManager && this.resourceManager.monsterManager) {
+        this.monsterManager = this.resourceManager.monsterManager;
+        this.monsterDatabase = this.monsterManager?.monsterDatabase;
+        console.log("CombatSystem: Connected via ResourceManager");
+      }
+      // Last resort: create a new instance
+      else {
+        this.monsterManager = new MonsterManager(this);
+        this.monsterDatabase = this.monsterManager.monsterDatabase || 
+                              this.monsterManager.loadDatabase();
+        console.log("CombatSystem: Created new connection");
+      }
+    }
+    
+    console.log("CombatSystem: Connection status - MonsterManager:", !!this.monsterManager, 
+                "MonsterDatabase:", !!this.monsterDatabase);
+    
+    return !!this.monsterDatabase;
+  }
+
+  
+  getEnemiesFromManager(targetCR, manager = null) {
+    const mm = manager || this.monsterManager;
+    console.log('========== DATABASE SEARCH START ==========');
+    console.log(`Manager provided: ${!!manager}, Using: ${!!mm}`);
+    
+    if (!mm || !mm.monsterDatabase) {
+      console.warn("No monster database available for enemy selection");
+      console.log('MonsterManager:', mm);
+      console.log('Database:', mm?.monsterDatabase);
+      console.log('========== DATABASE SEARCH END (FAILED) ==========');
+      return [];
+    }
+    
+    console.log(`Searching for enemies with target CR ~${targetCR}`);
+    
+    // Get CR range (50% below to 25% above target)
+    const minCR = targetCR * 0.5;
+    const maxCR = targetCR * 1.25;
+    console.log(`CR Range: ${minCR} to ${maxCR}`);
+    
+    // Search the database for monsters in CR range
+    const candidates = [];
+    
+    try {
+      // Get all monsters from database
+      const allMonsters = Array.from(mm.monsterDatabase.values());
+      console.log(`Total monsters in database: ${allMonsters.length}`);
+      console.log('Sample monster from DB:', allMonsters.length > 0 ? 
+                  JSON.stringify(allMonsters[0].basic || allMonsters[0]).substring(0, 100) + '...' : 'None');
+      
+      let noBasicCount = 0;
+      let noCRCount = 0;
+      let invalidCRCount = 0;
+      let inRangeCount = 0;
+      
+      for (const monster of allMonsters) {
+        // Skip non-hostile creatures and those without CR
+        if (!monster.basic) {
+          noBasicCount++;
+          continue;
+        }
+        
+        if (!monster.basic.cr) {
+          noCRCount++;
+          continue;
+        }
+        
+        // Convert CR to number for comparison
+        let crValue = monster.basic.cr;
+        if (typeof crValue === 'string') {
+          // Handle fractional CR values
+          if (crValue.includes('/')) {
+            const [numerator, denominator] = crValue.split('/').map(Number);
+            crValue = numerator / denominator;
+          } else {
+            crValue = Number(crValue);
+          }
+        }
+        
+        // Check if CR is in range
+        if (!isNaN(crValue)) {
+          if (crValue >= minCR && crValue <= maxCR) {
+            candidates.push(monster);
+            inRangeCount++;
+          }
+        } else {
+          invalidCRCount++;
+        }
+      }
+      
+      console.log('Database search stats:');
+      console.log(`- Monsters missing 'basic': ${noBasicCount}`);
+      console.log(`- Monsters missing CR: ${noCRCount}`);
+      console.log(`- Monsters with invalid CR: ${invalidCRCount}`);
+      console.log(`- Monsters in CR range: ${inRangeCount}`);
+      
+      if (candidates.length > 0) {
+        console.log('Sample candidate monster:', 
+                    JSON.stringify(candidates[0].basic || candidates[0]).substring(0, 100) + '...');
+      }
+      
+      console.log(`Found ${candidates.length} suitable enemies in CR range ${minCR} - ${maxCR}`);
+    } catch (error) {
+      console.error("Error searching monster database:", error);
+    }
+    
+    console.log('========== DATABASE SEARCH END ==========');
+    return candidates;
+  }
+  
+
+  generateDefaultEnemies(targetCR) {
+    // Basic set of default enemies with varying CRs
+    const defaultEnemies = [
+      {
+        id: `default_goblin_${Date.now()}`,
+        basic: {
+          name: "Goblin Scout",
+          type: "Humanoid",
+          size: "Small",
+          cr: "1/4"
+        },
+        abilities: {
+          str: { score: 8, modifier: -1 },
+          dex: { score: 14, modifier: 2 },
+          con: { score: 10, modifier: 0 },
+          int: { score: 10, modifier: 0 },
+          wis: { score: 8, modifier: -1 },
+          cha: { score: 8, modifier: -1 }
+        },
+        stats: {
+          ac: 15,
+          hp: { average: 7 }
+        }
+      },
+      {
+        id: `default_orc_${Date.now()}`,
+        basic: {
+          name: "Orc Warrior",
+          type: "Humanoid",
+          size: "Medium",
+          cr: "1/2"
+        },
+        abilities: {
+          str: { score: 16, modifier: 3 },
+          dex: { score: 12, modifier: 1 },
+          con: { score: 16, modifier: 3 },
+          int: { score: 7, modifier: -2 },
+          wis: { score: 11, modifier: 0 },
+          cha: { score: 10, modifier: 0 }
+        },
+        stats: {
+          ac: 13,
+          hp: { average: 15 }
+        }
+      },
+      {
+        id: `default_ogre_${Date.now()}`,
+        basic: {
+          name: "Ogre Brute",
+          type: "Giant",
+          size: "Large",
+          cr: "2"
+        },
+        abilities: {
+          str: { score: 19, modifier: 4 },
+          dex: { score: 8, modifier: -1 },
+          con: { score: 16, modifier: 3 },
+          int: { score: 5, modifier: -3 },
+          wis: { score: 7, modifier: -2 },
+          cha: { score: 7, modifier: -2 }
+        },
+        stats: {
+          ac: 11,
+          hp: { average: 59 }
+        }
+      }
+    ];
+    
+    // Scale the enemies based on target CR
+    const scaledEnemies = defaultEnemies.map(enemy => {
+      const enemyClone = JSON.parse(JSON.stringify(enemy));
+      const originalCr = this.parseCR(enemyClone.basic.cr);
+      const scaleRate = targetCR / originalCr;
+      
+      // Only scale if significant difference
+      if (scaleRate > 1.5 || scaleRate < 0.67) {
+        // Scale HP based on CR
+        if (enemyClone.stats && enemyClone.stats.hp) {
+          enemyClone.stats.hp.average = Math.max(1, Math.floor(
+            enemyClone.stats.hp.average * Math.sqrt(scaleRate)
+          ));
+        }
+        
+        // Scale CR
+        const newCR = Math.max(1/8, originalCr * scaleRate);
+        enemyClone.basic.cr = this.formatCR(newCR);
+        
+        // Add scaling info to name
+        if (scaleRate > 1) {
+          enemyClone.basic.name = `Veteran ${enemyClone.basic.name}`;
+        } else if (scaleRate < 1) {
+          enemyClone.basic.name = `Young ${enemyClone.basic.name}`;
+        }
+      }
+      
+      return enemyClone;
+    });
+    
+    console.log(`Generated ${scaledEnemies.length} default enemies`);
+    return scaledEnemies;
+  }
+  
+  // Helper methods for CR conversion
+  parseCR(cr) {
+    if (typeof cr === 'number') return cr;
+    if (typeof cr !== 'string') return 0;
+    
+    // Handle fractional CR values like "1/4"
+    if (cr.includes('/')) {
+      const [numerator, denominator] = cr.split('/').map(Number);
+      return numerator / denominator;
+    }
+    
+    return Number(cr) || 0;
+  }
+  
+  formatCR(cr) {
+    if (cr >= 1) return String(Math.floor(cr));
+    
+    // Handle fractional CRs
+    if (cr >= 0.5) return "1/2";
+    if (cr >= 0.25) return "1/4";
+    if (cr >= 0.125) return "1/8";
+    return "0";
+  }
+
+
+// Add this improved method to your CombatSystem class
+async generateEnemyParty(playerParty) {
+  console.log('========== ENEMY PARTY GENERATION START ==========');
+  
+  // Get player party strength metrics
+  const partySize = playerParty.length;
+  const averageLevel = playerParty.reduce((sum, monster) => sum + monster.level, 0) / partySize;
+  console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
+  
+  // Determine number of enemies with fairer scaling
+  let enemyCount;
+  
+  if (partySize === 1) {
+    // For solo player: always 1 enemy for fair fights
+    enemyCount = 1;
+  } else if (partySize === 2) {
+    // For 2-player party: 1-2 enemies, biased toward 1
+    const roll = Math.random();
+    enemyCount = roll < 0.7 ? 1 : 2;
+    console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
+  } else {
+    // For 3+ player party: scale enemies more aggressively
+    // Maximum of 3 enemies regardless of party size
+    const maxEnemies = Math.min(partySize, 3);
+    
+    // Weight toward more enemies for larger parties
+    const weights = [0.2, 0.3, 0.5]; // Weights for 1, 2, or 3 enemies
+    const roll = Math.random();
+    console.log(`3+ player party roll: ${roll}`);
+    
+    if (roll < weights[0]) {
+      enemyCount = 1;
+    } else if (roll < weights[0] + weights[1]) {
+      enemyCount = 2;
+    } else {
+      enemyCount = maxEnemies;
+    }
+    console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
+  }
+  
+  console.log(`Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`);
+  
+  // Calculate target CR
+  const targetCR = averageLevel * 0.75;
+  console.log(`Target CR: ${targetCR}`);
+  
+  // Try to get monsters from the database
+  let potentialEnemies = [];
+  
+  try {
+    // Make sure we have a connection
+    if (this.monsterManager && this.monsterManager.monsterDatabase) {
+      console.log("MonsterDatabase type:", typeof this.monsterManager.monsterDatabase);
+      console.log("MonsterDatabase has monsters property:", !!this.monsterManager.monsterDatabase.monsters);
+      
+      // Get all monsters from database - KEY DIFFERENCE: Handle the proper data structure
+      let allMonsters = [];
+      
+      // MonsterManager's database is an object with a 'monsters' property (not a Map)
+      if (this.monsterManager.monsterDatabase && this.monsterManager.monsterDatabase.monsters) {
+        console.log("Accessing via monsterDatabase.monsters object");
+        allMonsters = Object.values(this.monsterManager.monsterDatabase.monsters);
+      }
+      
+      console.log(`Got ${allMonsters.length} total monsters from database`);
+      
+      // Filter by CR range
+      const minCR = targetCR * 0.5;
+      const maxCR = targetCR * 1.25;
+      
+      potentialEnemies = allMonsters.filter(monster => {
+        // Check if monster has basic data
+        if (!monster.basic || !monster.basic.cr) return false;
+        
+        // Parse CR value
+        let crValue = monster.basic.cr;
+        if (typeof crValue === 'string') {
+          if (crValue.includes('/')) {
+            const [num, denom] = crValue.split('/').map(Number);
+            crValue = num / denom;
+          } else {
+            crValue = Number(crValue);
+          }
+        }
+        
+        // Include if in range
+        return !isNaN(crValue) && crValue >= minCR && crValue <= maxCR;
+      });
+      
+      console.log(`Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`);
+    }
+  } catch (error) {
+    console.error("Error accessing monster database:", error);
+  }
+  
+  // If we don't have enough monsters, use default enemies
+  if (!potentialEnemies || potentialEnemies.length < enemyCount) {
+    console.log("Using default enemy templates - not enough monsters in database");
+    potentialEnemies = this.generateDefaultEnemies(targetCR);
+    console.log(`Generated ${potentialEnemies.length} default enemies`);
+  }
+  
+  // Select random enemies from potential pool
+  const selectedEnemies = [];
+  for (let i = 0; i < enemyCount; i++) {
+    if (potentialEnemies.length > 0) {
+      const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
+      const enemy = potentialEnemies.splice(randomIndex, 1)[0];
+      
+      console.log(`Selected enemy ${i+1}:`, enemy.basic ? enemy.basic.name : enemy.name);
+      
+      // Prepare enemy for combat
+      const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
+      selectedEnemies.push(combatEnemy);
+    }
+  }
+  
+  console.log(`Final enemy party size: ${selectedEnemies.length}`);
+  console.log(`Enemy names: ${selectedEnemies.map(e => e.name).join(', ')}`);
+  console.log('========== ENEMY PARTY GENERATION END ==========');
+  
+  return selectedEnemies;
+}
+
+// Add this async connection method
+async establishAsyncConnections() {
+  console.log("CombatSystem: Establishing async connections");
+  
+  if (!this.monsterManager || !this.monsterDatabase) {
+    console.log("CombatSystem: No active connections, trying to establish");
+    
+    // Try connection through PartyManager first
+    if (this.partyManager && this.partyManager.monsterManager) {
+      this.monsterManager = this.partyManager.monsterManager;
+      this.monsterDatabase = this.partyManager.monsterDatabase;
+      console.log("CombatSystem: Connected via PartyManager");
+    } 
+    // If that fails, try direct connection
+    else {
+      this.monsterManager = new MonsterManager(this);
+      console.log("CombatSystem: Created new MonsterManager instance");
+      
+      // Wait for database to load
+      try {
+        this.monsterDatabase = await this.monsterManager.loadDatabase();
+        console.log("CombatSystem: Loaded database asynchronously");
+      } catch (error) {
+        console.error("CombatSystem: Failed to load database:", error);
+      }
+    }
+  }
+  
+  // Verify we actually have monsters
+  if (this.monsterDatabase) {
+    const count = this.monsterDatabase.size || 0;
+    console.log(`CombatSystem: Database has ${count} monsters`);
+  }
+  
+  return !!this.monsterDatabase;
+}
+
+  prepareEnemyForCombat(enemy, targetCR) {
+    console.log('========== PREPARING ENEMY FOR COMBAT ==========');
+    console.log('Enemy before preparation:', enemy.basic ? enemy.basic.name : enemy.name);
+    
+    // If it's already in combat format, return as is
+    if (enemy.currentHP && enemy.maxHP && enemy.monsterAbilities) {
+      console.log('Enemy already in combat format');
+      return enemy;
+    }
+    
+    // Otherwise, convert from bestiary format using PartyManager's prepare method
+    if (this.partyManager) {
+      console.log('Using PartyManager to prepare monster');
+      console.log('PartyManager available:', !!this.partyManager);
+      console.log('prepareMonster method available:', typeof this.partyManager.prepareMonster === 'function');
+      
+      const preparedEnemy = this.partyManager.prepareMonster(enemy);
+      
+      // Add some randomization to make fights more interesting
+      // Vary HP between 90-110% of base
+      const hpVariance = 0.9 + (Math.random() * 0.2);
+      preparedEnemy.maxHP = Math.floor(preparedEnemy.maxHP * hpVariance);
+      preparedEnemy.currentHP = preparedEnemy.maxHP;
+      
+      // Give it a unique ID
+      preparedEnemy.id = `enemy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      
+      console.log('Enemy after preparation:', preparedEnemy.name);
+      console.log(`HP: ${preparedEnemy.currentHP}/${preparedEnemy.maxHP}`);
+      console.log(`Abilities: ${preparedEnemy.monsterAbilities?.length || 0}`);
+      console.log('========== ENEMY PREPARATION COMPLETE ==========');
+      
+      return preparedEnemy;
+    }
+    
+    // Fallback if no party manager
+    console.log('No PartyManager available, returning unprepared enemy');
+    console.log('========== ENEMY PREPARATION FAILED ==========');
+    return enemy;
+  }
+
+  
+  // Update enemy area rendering for multiple enemies
+  updateEnemyArea() {
+    const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+    if (!enemyArea) return;
+    
+    // Clear existing content
+    enemyArea.innerHTML = '';
+    
+    // Determine layout based on enemy count
+    const count = this.enemyParty.length;
+    let layoutClass = 'enemy-layout-single';
+    
+    if (count === 2) {
+      layoutClass = 'enemy-layout-duo';
+    } else if (count === 3) {
+      layoutClass = 'enemy-layout-trio';
+    }
+    
+    enemyArea.className = `enemy-area ${layoutClass}`;
+    
+    // Add each enemy card with correct positioning
+    this.enemyParty.forEach((monster, index) => {
+      const monsterCard = this.createMonsterCard(monster, 'enemy', index);
+      
+      // Apply positioning based on layout
+      if (count === 1) {
+        // Single enemy - centered
+        monsterCard.style.transform = 'rotate(4deg)';
+      } else if (count === 2) {
+        // Two enemies - side by side with opposite tilts
+        const rotation = index === 0 ? 5 : -5;
+        monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
+      } else {
+        // Three enemies - triangular arrangement
+        if (index === 0) {
+          // Top center
+          monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
+        } else if (index === 1) {
+          // Bottom left
+          monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
+        } else {
+          // Bottom right
+          monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
+        }
+      }
+      
+      enemyArea.appendChild(monsterCard);
+    });
   }
 
   // Get current monster
@@ -2498,4 +3124,6 @@ class CombatSystem {
     const currentCombatant = this.initiativeOrder[this.currentTurn];
     return currentCombatant && currentCombatant.monster.id === monster.id;
   }
+
+
 }

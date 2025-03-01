@@ -1118,7 +1118,7 @@ showDismissConfirmation(monster) {
   const content = this.dismissDrawer.querySelector('.dismiss-drawer-content');
   content.innerHTML = `
     <div style="text-align: center; padding: 16px;">
-      <span class="material-icons" style="font-size: 48px; color: #ef4444; margin-bottom: 16px;">warning</span>
+      <span class="material-icons" style="font-size: 48px; color:rgb(177, 0, 0); margin-bottom: 16px;">warning</span>
       <h2 style="margin: 0 0 16px 0; color: #333;">Are you sure?</h2>
       <p style="margin-bottom: 8px;">Are you sure you want to dismiss <strong>${monster.name}</strong>?</p>
       <p style="color: #666; font-style: italic;">They will leave your party permanently.</p>
@@ -1175,70 +1175,8 @@ showDismissConfirmation(monster) {
    * Equipment Methods
    */
 
-  // Equip item to monster
-  // equipItem(monsterId, slot, item) {
-  //   const monster = this.findMonster(monsterId);
-  //   if (!monster) {
-  //     console.error(`Monster ${monsterId} not found`);
-  //     return false;
-  //   }
 
-  //   // Check if slot is valid
-  //   if (!['weapon', 'armor'].includes(slot)) {
-  //     console.error(`Invalid equipment slot: ${slot}`);
-  //     return false;
-  //   }
-
-  //   // Unequip current item if any
-  //   if (monster.equipment[slot]) {
-  //     this.unequipItem(monsterId, slot);
-  //   }
-
-  //   // Equip new item
-  //   monster.equipment[slot] = item;
-
-  //   // Update monster stats based on equipment
-  //   this.updateMonsterStats(monster);
-
-  //   console.log(`Equipped ${item.name} to ${monster.name}`);
-  //   return true;
-  // }
-
-  // // Unequip item from monster
-  // unequipItem(monsterId, slot) {
-  //   const monster = this.findMonster(monsterId);
-  //   if (!monster) {
-  //     console.error(`Monster ${monsterId} not found`);
-  //     return false;
-  //   }
-
-  //   // Check if slot is valid
-  //   if (!['weapon', 'armor'].includes(slot)) {
-  //     console.error(`Invalid equipment slot: ${slot}`);
-  //     return false;
-  //   }
-
-  //   // Check if monster has item equipped
-  //   if (!monster.equipment[slot]) {
-  //     console.warn(`Monster ${monster.name} has no ${slot} equipped`);
-  //     return false;
-  //   }
-
-  //   // Get the item before unequipping
-  //   const item = monster.equipment[slot];
-
-  //   // Unequip item
-  //   monster.equipment[slot] = null;
-
-  //   // Update monster stats
-  //   this.updateMonsterStats(monster);
-
-  //   console.log(`Unequipped ${item.name} from ${monster.name}`);
-  //   return true;
-  // }
-
-  // Equip item to monster
-equipItem(monsterId, slot, item) {
+  equipItem(monsterId, slot, item) {
   const monster = this.findMonster(monsterId);
   if (!monster) {
     console.error(`Monster ${monsterId} not found`);
@@ -2186,8 +2124,8 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     const buttonType = isActive ? 'reserve' : 'active';
     const buttonText = isActive ? 'To Reserve' : 'To Active';
     const buttonIcon = isActive ? 'arrow_downward' : 'arrow_upward';
-    const buttonColor = isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)';
-    const buttonTextColor = isActive ? '#ef4444' : '#3b82f6';
+    const buttonColor = isActive ? 'rgba(252, 252, 252, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+    const buttonTextColor = isActive ? '#fff' : '#000';
     const isDisabled = !isActive && this.party.active.length >= this.party.maxActive;
 
     const header = document.createElement('div');
@@ -2235,14 +2173,14 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
         </button>
 
         <button class="dismiss-monster-btn" data-monster-id="${monster.id}" style="
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(255, 0, 0, 0.34);
   border: none;
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 0.8rem;
   display: flex;
   align-items: center;
-  color: #ef4444;
+  color:rgb(255, 255, 255);
   margin-left: 8px;
   cursor: pointer;
 ">
@@ -4011,7 +3949,8 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
       setTimeout(() => {
         overlay.remove();
         if (window.combatSystem) {
-          window.combatSystem.initiateCombat([recruitMonster]);
+          // window.combatSystem.initiateCombat([recruitMonster]);
+          window.combatSystem.initiateCombat();
         }
       }, 300);
     });
@@ -4965,21 +4904,8 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
       const size = monsterData.size || monsterData.basic?.size || 'Medium';
       const cr = monsterData.cr || monsterData.basic?.cr || '?';
 
-      // Determine color based on type
-      // const typeColors = {
-      //   Beast: '#4f46e5',
-      //   Dragon: '#c026d3',
-      //   Elemental: '#ef4444',
-      //   Monstrosity: '#65a30d',
-      //   Construct: '#a16207',
-      //   Undead: '#6b7280',
-      //   Fey: '#06b6d4',
-      //   Giant: '#b45309'
-      // };
-
-      // const bgColor = typeColors[type] || '#6b7280';
       const bgColor = this.getMonsterTypeColor(type);
-      // const bgColor = [type] 
+
 
       return `
           <div class="monster-card starter-card" data-monster-index="${index}" style="
