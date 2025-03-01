@@ -1305,14 +1305,12 @@ class CombatSystem {
     const playerArea = document.createElement('div');
     playerArea.className = 'player-area';
 
-    // Add enemy monsters
-    // this.enemyParty.forEach((monster, index) => {
-    //   const monsterCard = this.createMonsterCard(monster, 'enemy', index);
-    //   // Position each monster card with a slight offset
-    //   monsterCard.style.transform = `translateY(-${index * 15}px) translateX(-${index * 20}px)`;
-    //   enemyArea.appendChild(monsterCard);
-    // });
-    this.updateEnemyArea();
+    // this.updateEnemyArea(enemyArea);
+
+    setTimeout(() => {
+      this.updateEnemyArea(enemyArea);
+      console.log("Delayed enemy area update complete");
+    }, 50);
 
     // Add player monsters
     this.playerParty.forEach((monster, index) => {
@@ -3776,34 +3774,42 @@ async establishAsyncConnections() {
   // }
 
   // Add to CombatSystem class
-  updateEnemyArea() {
-    // const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+  updateEnemyArea(providedEnemyArea = null) {
+        // const enemyArea = this.dialogContainer.querySelector('.enemy-area');
     // console.log("Updating enemy area, reference found:", !!enemyArea);
     
   // Try to find the enemy area
-  let enemyArea = this.dialogContainer.querySelector('.enemy-area');
+  // let enemyArea = this.dialogContainer.querySelector('.enemy-area');
+  // console.log("Updating enemy area, reference found:", !!enemyArea);
+  
+  // // If not found, create it
+  // if (!enemyArea) {
+  //   console.log("Enemy area not found, creating it");
+  //   const combatArea = this.dialogContainer.querySelector('.battle-scene');
+  //   if (!combatArea) {
+  //     console.error("Cannot find battle scene to add enemy area");
+  //     return;
+  //   }
+    
+  //   enemyArea = document.createElement('div');
+  //   enemyArea.className = 'enemy-area';
+    
+  //   // Add it at the beginning of combat area
+  //   if (combatArea.firstChild) {
+  //     combatArea.insertBefore(enemyArea, combatArea.firstChild);
+  //   } else {
+  //     combatArea.appendChild(enemyArea);
+  //   }
+    
+  //   console.log("Created enemy area");
+  // }
+
+  const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
   console.log("Updating enemy area, reference found:", !!enemyArea);
   
-  // If not found, create it
   if (!enemyArea) {
-    console.log("Enemy area not found, creating it");
-    const combatArea = this.dialogContainer.querySelector('.battle-scene');
-    if (!combatArea) {
-      console.error("Cannot find battle scene to add enemy area");
-      return;
-    }
-    
-    enemyArea = document.createElement('div');
-    enemyArea.className = 'enemy-area';
-    
-    // Add it at the beginning of combat area
-    if (combatArea.firstChild) {
-      combatArea.insertBefore(enemyArea, combatArea.firstChild);
-    } else {
-      combatArea.appendChild(enemyArea);
-    }
-    
-    console.log("Created enemy area");
+    console.error("Enemy area not found and not provided");
+    return;
   }
   
   // Clear existing content
@@ -3832,6 +3838,9 @@ async establishAsyncConnections() {
     
     console.log(`Using layout class: ${layoutClass}`);
     enemyArea.className = `enemy-area ${layoutClass}`;
+
+    console.log("Enemy area dimensions:", enemyArea.offsetWidth, enemyArea.offsetHeight);
+enemyArea.style.minHeight = '150px';  // Ensure there's space for the cards
     
     // Add each enemy card with correct positioning
     this.enemyParty.forEach((monster, index) => {
@@ -3872,6 +3881,24 @@ async establishAsyncConnections() {
     console.log(`Appending enemy card ${index + 1} to enemy area`);
     enemyArea.appendChild(monsterCard);
   });
+
+  setTimeout(() => {
+    const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+    console.log(`Checking visibility after update: found ${enemyCards.length} enemy cards`);
+    
+    enemyCards.forEach((card, i) => {
+      console.log(`Enemy card ${i} computed style:`, 
+        window.getComputedStyle(card).display,
+        window.getComputedStyle(card).visibility,
+        window.getComputedStyle(card).opacity
+      );
+      
+      // Force visibility if needed
+      card.style.display = 'block';
+      card.style.visibility = 'visible';
+      card.style.opacity = '1';
+    });
+  }, 100);
   
   console.log("Enemy area update complete, final content length:", enemyArea.children.length);
 }
