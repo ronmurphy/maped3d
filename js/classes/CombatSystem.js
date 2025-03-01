@@ -928,6 +928,112 @@ class CombatSystem {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.02); }
 }
+
+.defeated-enemies-row {
+  position: absolute;
+  top: 16px;
+  left: 230px; /* Position right after initiative tracker */
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  gap: 8px;
+  color: white;
+  font-size: 0.9em;
+}
+
+.defeated-header {
+  opacity: 0.8;
+  font-size: 0.9em;
+}
+
+.defeated-token {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.defeated-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+  filter: grayscale(80%);
+}
+
+.defeated-x {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  font-weight: bold;
+  text-shadow: 0 0 2px black;
+}
+
+// In your createCombatStyles method, update these styles:
+.battle-scene {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.initiative-tracker {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  width: 200px;
+  color: white;
+  overflow: hidden;
+  z-index: 50; /* Ensure it's above other elements */
+}
+
+.enemy-area {
+  margin-left: 220px; /* Clear the initiative tracker */
+  margin-top: 16px;
+  width: calc(100% - 240px); /* Leave room for initiative tracker */
+  height: 250px; /* Fixed height square area */
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.defeated-enemies-row {
+  position: absolute;
+  top: 230px; /* Position below initiative tracker */
+  left: 16px;
+  width: 200px; /* Same width as initiative tracker */
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 4px 8px;
+  gap: 6px;
+  color: white;
+  font-size: 0.9em;
+  max-height: 100px;
+  overflow-y: auto;
+  z-index: 50;
+}
 `;
 
     return styleElement;
@@ -2858,22 +2964,31 @@ getRandomVerb(level) {
     return healing;
   }
 
-  // Apply damage to a target
-  // applyDamage(target, damage) {
-  //   // Apply damage
-  //   target.currentHP = Math.max(0, target.currentHP - damage);
-
-  //   // Log the damage
-  //   this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
-
-  //   // Update UI to reflect changes
-  //   this.updateCombatDisplay();
-
-  //   // Check if combat should end
-  //   this.checkCombatEnd();
-  // }
 
   // Modify applyDamage method
+// applyDamage(target, damage, attacker, isCritical = false) {
+//   // Store original HP for log
+//   const originalHP = target.currentHP;
+  
+//   // Apply damage
+//   target.currentHP = Math.max(0, target.currentHP - damage);
+  
+//   // Log using the visual system
+//   this.addVisualLogEntry({
+//     type: 'damage',
+//     attacker: attacker,
+//     target: target,
+//     damage: damage,
+//     isCritical: isCritical
+//   });
+  
+//   // Update UI to reflect changes
+//   this.updateCombatDisplay();
+  
+//   // Check if combat should end
+//   this.checkCombatEnd();
+// }
+
 applyDamage(target, damage, attacker, isCritical = false) {
   // Store original HP for log
   const originalHP = target.currentHP;
@@ -2881,17 +2996,24 @@ applyDamage(target, damage, attacker, isCritical = false) {
   // Apply damage
   target.currentHP = Math.max(0, target.currentHP - damage);
   
-  // Log using the visual system
-  this.addVisualLogEntry({
-    type: 'damage',
-    attacker: attacker,
-    target: target,
-    damage: damage,
-    isCritical: isCritical
-  });
+  // Log using the visual system (if implemented)
+  // this.addVisualLogEntry({ ... });
+  
+  // Traditional log
+  this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
   
   // Update UI to reflect changes
   this.updateCombatDisplay();
+  
+  // Check if this was an enemy that just got defeated
+  if (target.currentHP <= 0 && target.currentHP !== originalHP) {
+    // Enemy was just defeated
+    const isEnemy = this.enemyParty.some(m => m.id === target.id);
+    if (isEnemy) {
+      // Refresh enemy area
+      this.updateEnemyArea();
+    }
+  }
   
   // Check if combat should end
   this.checkCombatEnd();
@@ -3724,183 +3846,461 @@ async establishAsyncConnections() {
 
   
   // Update enemy area rendering for multiple enemies
-  // updateEnemyArea() {
-  //   const enemyArea = this.dialogContainer.querySelector('.enemy-area');
-  //   if (!enemyArea) return;
-    
-  //   // Clear existing content
-  //   enemyArea.innerHTML = '';
-    
-  //   // Determine layout based on enemy count
-  //   const count = this.enemyParty.length;
-  //   let layoutClass = 'enemy-layout-single';
-    
-  //   if (count === 2) {
-  //     layoutClass = 'enemy-layout-duo';
-  //   } else if (count === 3) {
-  //     layoutClass = 'enemy-layout-trio';
-  //   }
-    
-  //   enemyArea.className = `enemy-area ${layoutClass}`;
-    
-  //   // Add each enemy card with correct positioning
-  //   this.enemyParty.forEach((monster, index) => {
-  //     const monsterCard = this.createMonsterCard(monster, 'enemy', index);
-      
-  //     // Apply positioning based on layout
-  //     if (count === 1) {
-  //       // Single enemy - centered
-  //       monsterCard.style.transform = 'rotate(4deg)';
-  //     } else if (count === 2) {
-  //       // Two enemies - side by side with opposite tilts
-  //       const rotation = index === 0 ? 5 : -5;
-  //       monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
-  //     } else {
-  //       // Three enemies - triangular arrangement
-  //       if (index === 0) {
-  //         // Top center
-  //         monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
-  //       } else if (index === 1) {
-  //         // Bottom left
-  //         monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
-  //       } else {
-  //         // Bottom right
-  //         monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
-  //       }
-  //     }
-      
-  //     enemyArea.appendChild(monsterCard);
-  //   });
-  // }
+//   updateEnemyArea(providedEnemyArea = null) {
 
-  // Add to CombatSystem class
-  updateEnemyArea(providedEnemyArea = null) {
-        // const enemyArea = this.dialogContainer.querySelector('.enemy-area');
-    // console.log("Updating enemy area, reference found:", !!enemyArea);
-    
-  // Try to find the enemy area
-  // let enemyArea = this.dialogContainer.querySelector('.enemy-area');
-  // console.log("Updating enemy area, reference found:", !!enemyArea);
+
+//   const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
+//   console.log("Updating enemy area, reference found:", !!enemyArea);
   
-  // // If not found, create it
-  // if (!enemyArea) {
-  //   console.log("Enemy area not found, creating it");
-  //   const combatArea = this.dialogContainer.querySelector('.battle-scene');
-  //   if (!combatArea) {
-  //     console.error("Cannot find battle scene to add enemy area");
-  //     return;
-  //   }
-    
-  //   enemyArea = document.createElement('div');
-  //   enemyArea.className = 'enemy-area';
-    
-  //   // Add it at the beginning of combat area
-  //   if (combatArea.firstChild) {
-  //     combatArea.insertBefore(enemyArea, combatArea.firstChild);
-  //   } else {
-  //     combatArea.appendChild(enemyArea);
-  //   }
-    
-  //   console.log("Created enemy area");
-  // }
+//   if (!enemyArea) {
+//     console.error("Enemy area not found and not provided");
+//     return;
+//   }
+  
+//   // Clear existing content
+//   console.log("Previous enemy area content:", enemyArea.innerHTML);
+//   enemyArea.innerHTML = '';
 
+//     if (!enemyArea) return;
+    
+//     // Clear existing content
+//     console.log("Previous enemy area content:", enemyArea.innerHTML);
+//     enemyArea.innerHTML = '';
+    
+//     // Determine layout based on enemy count
+//     const count = this.enemyParty.length;
+//     console.log(`Setting up layout for ${count} enemies`);
+    
+//     let layoutClass = 'enemy-layout-single';
+    
+//     if (count === 2) {
+//       layoutClass = 'enemy-layout-duo';
+//     } else if (count === 3) {
+//       layoutClass = 'enemy-layout-trio';
+//     } else if (count >= 4) {
+//       layoutClass = 'enemy-layout-quad';
+//     }
+    
+//     console.log(`Using layout class: ${layoutClass}`);
+//     enemyArea.className = `enemy-area ${layoutClass}`;
+
+//     console.log("Enemy area dimensions:", enemyArea.offsetWidth, enemyArea.offsetHeight);
+// enemyArea.style.minHeight = '150px';  // Ensure there's space for the cards
+    
+//     // Add each enemy card with correct positioning
+//     this.enemyParty.forEach((monster, index) => {
+//       console.log(`Creating card for enemy ${index + 1}: ${monster.name}`);
+//       const monsterCard = this.createMonsterCard(monster, 'enemy', index);
+    
+//     // Apply positioning based on layout
+//     if (count === 1) {
+//       // Single enemy - centered
+//       monsterCard.style.transform = 'rotate(4deg)';
+//     } else if (count === 2) {
+//       // Two enemies - side by side with opposite tilts
+//       const rotation = index === 0 ? 5 : -5;
+//       monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
+//     } else if (count === 3) {
+//       // Three enemies - triangular arrangement
+//       if (index === 0) {
+//         // Top center
+//         monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
+//       } else if (index === 1) {
+//         // Bottom left
+//         monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
+//       } else {
+//         // Bottom right
+//         monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
+//       }
+//     } else {
+//       // Four enemies - 2x2 grid
+//       const row = Math.floor(index / 2);
+//       const col = index % 2;
+//       const xOffset = col === 0 ? -40 : 40;
+//       const yOffset = row === 0 ? -30 : 30;
+//       const rotation = (index % 3) * 3 - 3; // Varies between -3, 0, 3, 0 degrees
+      
+//       monsterCard.style.transform = `translate(${xOffset}px, ${yOffset}px) rotate(${rotation}deg)`;
+//     }
+    
+//     console.log(`Appending enemy card ${index + 1} to enemy area`);
+//     enemyArea.appendChild(monsterCard);
+//   });
+
+//   setTimeout(() => {
+//     const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+//     console.log(`Checking visibility after update: found ${enemyCards.length} enemy cards`);
+    
+//     enemyCards.forEach((card, i) => {
+//       console.log(`Enemy card ${i} computed style:`, 
+//         window.getComputedStyle(card).display,
+//         window.getComputedStyle(card).visibility,
+//         window.getComputedStyle(card).opacity
+//       );
+      
+//       // Force visibility if needed
+//       card.style.display = 'block';
+//       card.style.visibility = 'visible';
+//       card.style.opacity = '1';
+//     });
+//   }, 100);
+  
+//   console.log("Enemy area update complete, final content length:", enemyArea.children.length);
+// }
+
+// updateEnemyArea(providedEnemyArea = null) {
+//   // Use provided area or find it
+//   const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
+//   console.log("Updating enemy area, reference found:", !!enemyArea);
+  
+//   if (!enemyArea) {
+//     console.error("Enemy area not found and not provided");
+//     return;
+//   }
+  
+//   // Clear existing content
+//   enemyArea.innerHTML = '';
+  
+//   // Get active (non-defeated) enemies
+//   const activeEnemies = this.enemyParty.filter(monster => monster.currentHP > 0);
+//   const count = activeEnemies.length;
+  
+//   console.log(`Setting up layout for ${count} active enemies`);
+  
+//   // Set layout class based on count
+//   let layoutClass = 'enemy-layout-single';
+//   if (count === 2) {
+//     layoutClass = 'enemy-layout-duo';
+//   } else if (count === 3) {
+//     layoutClass = 'enemy-layout-trio';
+//   } else if (count >= 4) {
+//     layoutClass = 'enemy-layout-quad';
+//   }
+  
+//   enemyArea.className = `enemy-area ${layoutClass}`;
+  
+//   // Add cards for active enemies with appropriate positioning
+//   if (count === 1) {
+//     // Single enemy - centered
+//     const monster = activeEnemies[0];
+//     const card = this.createMonsterCard(monster, 'enemy', 0);
+//     card.style.transform = 'rotate(4deg)';
+//     enemyArea.appendChild(card);
+//   } 
+//   else if (count === 2) {
+//     // Two enemies - diagonal arrangement
+//     activeEnemies.forEach((monster, index) => {
+//       const card = this.createMonsterCard(monster, 'enemy', index);
+      
+//       if (index === 0) {
+//         // Top left
+//         card.style.transform = 'translate(-30%, -10%) rotate(-5deg)';
+//       } else {
+//         // Bottom right
+//         card.style.transform = 'translate(30%, 10%) rotate(5deg)';
+//       }
+      
+//       enemyArea.appendChild(card);
+//     });
+//   }
+//   else if (count === 3) {
+//     // Three enemies - triangle arrangement
+//     activeEnemies.forEach((monster, index) => {
+//       const card = this.createMonsterCard(monster, 'enemy', index);
+      
+//       if (index === 0) {
+//         // Top center
+//         card.style.transform = 'translate(0, -25%) rotate(0deg)';
+//         card.style.zIndex = '3';
+//       } 
+//       else if (index === 1) {
+//         // Bottom left
+//         card.style.transform = 'translate(-40%, 15%) rotate(-7deg)';
+//         card.style.zIndex = '2';
+//       } 
+//       else {
+//         // Bottom right
+//         card.style.transform = 'translate(40%, 15%) rotate(7deg)';
+//         card.style.zIndex = '1';
+//       }
+      
+//       enemyArea.appendChild(card);
+//     });
+//   }
+//   else if (count >= 4) {
+//     // Four enemies - 2x2 grid
+//     activeEnemies.slice(0, 4).forEach((monster, index) => {
+//       const card = this.createMonsterCard(monster, 'enemy', index);
+      
+//       const row = Math.floor(index / 2);
+//       const col = index % 2;
+      
+//       // Position in grid
+//       if (row === 0 && col === 0) {
+//         // Top left
+//         card.style.transform = 'translate(-35%, -25%) rotate(-5deg)';
+//         card.style.zIndex = '4';
+//       } 
+//       else if (row === 0 && col === 1) {
+//         // Top right
+//         card.style.transform = 'translate(35%, -25%) rotate(5deg)';
+//         card.style.zIndex = '3';
+//       } 
+//       else if (row === 1 && col === 0) {
+//         // Bottom left
+//         card.style.transform = 'translate(-35%, 25%) rotate(-10deg)';
+//         card.style.zIndex = '2';
+//       } 
+//       else {
+//         // Bottom right
+//         card.style.transform = 'translate(35%, 25%) rotate(10deg)';
+//         card.style.zIndex = '1';
+//       }
+      
+//       enemyArea.appendChild(card);
+//     });
+//   }
+  
+//   // Create the defeated enemy token row
+//   this.updateDefeatedEnemiesRow();
+// }
+
+updateEnemyArea(providedEnemyArea = null) {
+  // Use provided area or find it
   const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
-  console.log("Updating enemy area, reference found:", !!enemyArea);
   
   if (!enemyArea) {
     console.error("Enemy area not found and not provided");
     return;
   }
   
+  // Remove any transitions temporarily to prevent race conditions
+  enemyArea.style.transition = 'none';
+  
   // Clear existing content
-  console.log("Previous enemy area content:", enemyArea.innerHTML);
   enemyArea.innerHTML = '';
-
-    if (!enemyArea) return;
+  
+  // Get active (non-defeated) enemies
+  const activeEnemies = this.enemyParty.filter(monster => monster.currentHP > 0);
+  const count = activeEnemies.length;
+  
+  // Add cards with explicit, fixed positioning
+  if (count === 1) {
+    // Single enemy - centered
+    const monster = activeEnemies[0];
+    const card = this.createMonsterCard(monster, 'enemy', 0);
     
-    // Clear existing content
-    console.log("Previous enemy area content:", enemyArea.innerHTML);
-    enemyArea.innerHTML = '';
+    // Fixed position
+    card.style.position = 'absolute';
+    card.style.left = 'calc(50% - 80px)'; // Half card width
+    card.style.top = 'calc(50% - 100px)'; // Position in middle
+    card.style.transform = 'rotate(4deg)';
+    card.style.transition = 'none'; // Prevent transitions
     
-    // Determine layout based on enemy count
-    const count = this.enemyParty.length;
-    console.log(`Setting up layout for ${count} enemies`);
-    
-    let layoutClass = 'enemy-layout-single';
-    
-    if (count === 2) {
-      layoutClass = 'enemy-layout-duo';
-    } else if (count === 3) {
-      layoutClass = 'enemy-layout-trio';
-    } else if (count >= 4) {
-      layoutClass = 'enemy-layout-quad';
-    }
-    
-    console.log(`Using layout class: ${layoutClass}`);
-    enemyArea.className = `enemy-area ${layoutClass}`;
-
-    console.log("Enemy area dimensions:", enemyArea.offsetWidth, enemyArea.offsetHeight);
-enemyArea.style.minHeight = '150px';  // Ensure there's space for the cards
-    
-    // Add each enemy card with correct positioning
-    this.enemyParty.forEach((monster, index) => {
-      console.log(`Creating card for enemy ${index + 1}: ${monster.name}`);
-      const monsterCard = this.createMonsterCard(monster, 'enemy', index);
-    
-    // Apply positioning based on layout
-    if (count === 1) {
-      // Single enemy - centered
-      monsterCard.style.transform = 'rotate(4deg)';
-    } else if (count === 2) {
-      // Two enemies - side by side with opposite tilts
-      const rotation = index === 0 ? 5 : -5;
-      monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
-    } else if (count === 3) {
-      // Three enemies - triangular arrangement
+    enemyArea.appendChild(card);
+  } 
+  else if (count === 2) {
+    // Two enemies - diagonal arrangement
+    activeEnemies.forEach((monster, index) => {
+      const card = this.createMonsterCard(monster, 'enemy', index);
+      
+      // Fixed position
+      card.style.position = 'absolute';
+      card.style.transition = 'none'; // Prevent transitions
+      
       if (index === 0) {
-        // Top center
-        monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
-      } else if (index === 1) {
-        // Bottom left
-        monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
+        // Top left
+        card.style.left = 'calc(35% - 80px)';
+        card.style.top = 'calc(35% - 100px)';
+        card.style.transform = 'rotate(-5deg)';
       } else {
         // Bottom right
-        monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
+        card.style.left = 'calc(65% - 80px)';
+        card.style.top = 'calc(65% - 100px)';
+        card.style.transform = 'rotate(5deg)';
       }
-    } else {
-      // Four enemies - 2x2 grid
+      
+      enemyArea.appendChild(card);
+    });
+  }
+  else if (count === 3) {
+    // Three enemies - triangle arrangement
+    activeEnemies.forEach((monster, index) => {
+      const card = this.createMonsterCard(monster, 'enemy', index);
+      
+      // Fixed position
+      card.style.position = 'absolute';
+      card.style.transition = 'none'; // Prevent transitions
+      
+      if (index === 0) {
+        // Top center
+        card.style.left = 'calc(50% - 80px)';
+        card.style.top = '20px';
+        card.style.transform = 'rotate(0deg)';
+        card.style.zIndex = '3';
+      } 
+      else if (index === 1) {
+        // Bottom left
+        card.style.left = 'calc(30% - 80px)';
+        card.style.top = '130px';
+        card.style.transform = 'rotate(-7deg)';
+        card.style.zIndex = '2';
+      } 
+      else {
+        // Bottom right
+        card.style.left = 'calc(70% - 80px)';
+        card.style.top = '130px';
+        card.style.transform = 'rotate(7deg)';
+        card.style.zIndex = '1';
+      }
+      
+      enemyArea.appendChild(card);
+    });
+  }
+  else if (count >= 4) {
+    // Four enemies - 2x2 grid
+    activeEnemies.slice(0, 4).forEach((monster, index) => {
+      const card = this.createMonsterCard(monster, 'enemy', index);
+      
+      // Fixed position
+      card.style.position = 'absolute';
+      card.style.transition = 'none'; // Prevent transitions
+      
       const row = Math.floor(index / 2);
       const col = index % 2;
-      const xOffset = col === 0 ? -40 : 40;
-      const yOffset = row === 0 ? -30 : 30;
-      const rotation = (index % 3) * 3 - 3; // Varies between -3, 0, 3, 0 degrees
       
-      monsterCard.style.transform = `translate(${xOffset}px, ${yOffset}px) rotate(${rotation}deg)`;
-    }
-    
-    console.log(`Appending enemy card ${index + 1} to enemy area`);
-    enemyArea.appendChild(monsterCard);
-  });
-
-  setTimeout(() => {
-    const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
-    console.log(`Checking visibility after update: found ${enemyCards.length} enemy cards`);
-    
-    enemyCards.forEach((card, i) => {
-      console.log(`Enemy card ${i} computed style:`, 
-        window.getComputedStyle(card).display,
-        window.getComputedStyle(card).visibility,
-        window.getComputedStyle(card).opacity
-      );
+      // Position in grid
+      if (row === 0 && col === 0) {
+        // Top left
+        card.style.left = 'calc(30% - 80px)';
+        card.style.top = '30px';
+        card.style.transform = 'rotate(-5deg)';
+        card.style.zIndex = '4';
+      } 
+      else if (row === 0 && col === 1) {
+        // Top right
+        card.style.left = 'calc(70% - 80px)';
+        card.style.top = '30px';
+        card.style.transform = 'rotate(5deg)';
+        card.style.zIndex = '3';
+      } 
+      else if (row === 1 && col === 0) {
+        // Bottom left
+        card.style.left = 'calc(30% - 80px)';
+        card.style.top = '150px';
+        card.style.transform = 'rotate(-10deg)';
+        card.style.zIndex = '2';
+      } 
+      else {
+        // Bottom right
+        card.style.left = 'calc(70% - 80px)';
+        card.style.top = '150px';
+        card.style.transform = 'rotate(10deg)';
+        card.style.zIndex = '1';
+      }
       
-      // Force visibility if needed
-      card.style.display = 'block';
-      card.style.visibility = 'visible';
-      card.style.opacity = '1';
+      enemyArea.appendChild(card);
     });
-  }, 100);
+  }
   
-  console.log("Enemy area update complete, final content length:", enemyArea.children.length);
+  // Create the defeated enemy token row
+  this.updateDefeatedEnemiesRow();
+  
+  // Force a reflow to ensure all positions are applied immediately
+  enemyArea.offsetHeight;
+  
+  // Re-enable transitions after a delay
+  setTimeout(() => {
+    enemyArea.style.transition = '';
+    
+    // Re-enable transitions on cards
+    const cards = enemyArea.querySelectorAll('.combat-monster');
+    cards.forEach(card => {
+      card.style.transition = '';
+    });
+  }, 50);
+}
+
+updateDefeatedEnemiesRow() {
+  // First, find or create the defeated enemies container
+  // let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
+  
+  // if (!defeatedRow) {
+  //   // Create container for defeated enemies
+  //   defeatedRow = document.createElement('div');
+  //   defeatedRow.className = 'defeated-enemies-row';
+    
+  //   // Add to the battle scene
+  //   const initiativeTracker = this.dialogContainer.querySelector('.initiative-tracker');
+  //   if (initiativeTracker) {
+  //     // Insert after initiative tracker
+  //     initiativeTracker.parentNode.insertBefore(defeatedRow, initiativeTracker.nextSibling);
+  //   }
+  // }
+  
+  // // Clear existing content
+  // defeatedRow.innerHTML = '';
+  
+  // // Get defeated enemies
+  // const defeatedEnemies = this.enemyParty.filter(monster => monster.currentHP <= 0);
+  
+  // // If none, hide the row
+  // if (defeatedEnemies.length === 0) {
+  //   defeatedRow.style.display = 'none';
+  //   return;
+  // }
+  
+  // // Show the row and add tokens
+  // defeatedRow.style.display = 'flex';
+
+  let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
+  
+  if (!defeatedRow) {
+    // Create container for defeated enemies
+    defeatedRow = document.createElement('div');
+    defeatedRow.className = 'defeated-enemies-row';
+    
+    // Add to the battle scene
+    const initiativeTracker = this.dialogContainer.querySelector('.initiative-tracker');
+    if (initiativeTracker) {
+      // Insert AFTER initiative tracker (as a sibling, not inside it)
+      initiativeTracker.parentNode.insertBefore(defeatedRow, initiativeTracker.nextSibling);
+    } else {
+      // Fallback - add to battle scene
+      const battleScene = this.dialogContainer.querySelector('.battle-scene');
+      if (battleScene) {
+        battleScene.appendChild(defeatedRow);
+      }
+    }
+  }
+  
+  // Update CSS positioning to place it below
+  defeatedRow.style.position = 'absolute';
+  defeatedRow.style.top = '230px'; // Below initiative tracker
+  defeatedRow.style.left = '16px'; // Same left alignment
+  
+  // Add header
+  const header = document.createElement('div');
+  header.className = 'defeated-header';
+  header.textContent = 'Defeated:';
+  defeatedRow.appendChild(header);
+  
+  // Add tokens for each defeated enemy
+  defeatedEnemies.forEach(monster => {
+    const token = document.createElement('div');
+    token.className = 'defeated-token';
+    token.title = monster.name;
+    
+    // Get token image or create placeholder
+    const tokenImage = monster.token?.data || this.generateDefaultTokenImage(monster);
+    
+    token.innerHTML = `
+      <img src="${tokenImage}" alt="${monster.name}">
+      <div class="defeated-x">✕</div>
+    `;
+    
+    defeatedRow.appendChild(token);
+  });
 }
 
   // Get current monster
