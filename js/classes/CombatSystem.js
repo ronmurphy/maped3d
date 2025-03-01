@@ -1,6 +1,8 @@
 /**
  * CombatSystem.js
  * Handles turn-based combat using monsters from the party system
+ * 
+ * neeeds fixing for the random additional monsters generated
  */
 class CombatSystem {
   constructor(partyManager, resourceManager) {
