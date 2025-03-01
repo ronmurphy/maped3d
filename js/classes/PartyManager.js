@@ -1560,12 +1560,24 @@ unequipItem(monsterId, slot) {
       // Position relative is required for contained drawers
   container.style.position = 'relative';
   
-    // Create header
-    const header = document.createElement('div');
+    // Create header -- alt material icon is 'groups' or 'pets'
+    // const header = document.createElement('div');
+    // header.className = 'party-header';
+    // header.innerHTML = `
+    //   <div style="display: flex; align-items: center;">
+    //     <span class="material-icons" style="margin-right: 8px;">pets</span>
+    //     <h1 style="margin: 0; font-size: 1.25rem;">Monster Party</h1>
+    //   </div>
+    //   <button class="close-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s;">
+    //     <span class="material-icons">close</span>
+    //   </button>
+    // `;
+
+        const header = document.createElement('div');
     header.className = 'party-header';
     header.innerHTML = `
       <div style="display: flex; align-items: center;">
-        <span class="material-icons" style="margin-right: 8px;">pets</span>
+        <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px;">
         <h1 style="margin: 0; font-size: 1.25rem;">Monster Party</h1>
       </div>
       <button class="close-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s;">
@@ -3636,7 +3648,7 @@ setTimeout(() => {
               }
             }
           }, 50); 
-          
+
         });
       });
     };
