@@ -1,6 +1,6 @@
 // js/main.js
 
-window.windowManager = new WindowManager();
+// window.windowManager = new WindowManager();
 
   // // Optional: Add a global event listener to close all windows on Escape
   // document.addEventListener('keydown', (e) => {

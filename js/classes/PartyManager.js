@@ -1393,6 +1393,7 @@ class PartyManager {
   /**
    * UI Methods
    */
+
   showPartyManager() {
     // Check for starter monster if party is empty
     if (this.party.active.length === 0 && this.party.reserve.length === 0) {
@@ -1402,15 +1403,17 @@ class PartyManager {
     }
     // Add our custom styles to the document
     document.head.appendChild(this.createPartyManagerStyles());
-
+  
     // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'party-overlay';
-
+  
     // Create main container
     const container = document.createElement('div');
     container.className = 'party-container';
-
+      // Position relative is required for contained drawers
+  container.style.position = 'relative';
+  
     // Create header
     const header = document.createElement('div');
     header.className = 'party-header';
@@ -1423,15 +1426,15 @@ class PartyManager {
         <span class="material-icons">close</span>
       </button>
     `;
-
+  
     // Create content area (sidebar + details)
     const content = document.createElement('div');
     content.className = 'party-content';
-
+  
     // Create sidebar with tabs
     const sidebar = document.createElement('div');
     sidebar.className = 'party-sidebar';
-
+  
     // Create tab buttons
     const tabButtons = document.createElement('div');
     tabButtons.className = 'party-tab-buttons';
@@ -1443,22 +1446,22 @@ class PartyManager {
         Reserve (${this.party.reserve.length})
       </button>
     `;
-
+  
     // Create party list container
     const partyList = document.createElement('div');
     partyList.className = 'party-list';
-
+  
     // Create active party list (default view)
     const activeList = document.createElement('div');
     activeList.className = 'active-monster-list';
-
+  
     // Add active monsters
     if (this.party.active.length > 0) {
       this.party.active.forEach((monster, index) => {
         const card = this.createMonsterCard(monster, 'active', index % 2 !== 0);
         activeList.appendChild(card);
       });
-
+  
       // Add empty slots
       for (let i = this.party.active.length; i < this.party.maxActive; i++) {
         const emptySlot = document.createElement('div');
@@ -1479,12 +1482,12 @@ class PartyManager {
         </div>
       `;
     }
-
+  
     // Create reserve party list (hidden initially)
     const reserveList = document.createElement('div');
     reserveList.className = 'reserve-monster-list';
     reserveList.style.display = 'none';
-
+  
     // Add reserve monsters
     if (this.party.reserve.length > 0) {
       this.party.reserve.forEach(monster => {
@@ -1501,15 +1504,15 @@ class PartyManager {
         </div>
       `;
     }
-
+  
     // Add lists to container
     partyList.appendChild(activeList);
     partyList.appendChild(reserveList);
-
+  
     // Create details panel (right side)
     const detailsPanel = document.createElement('div');
     detailsPanel.className = 'party-details';
-
+  
     // Initial empty state for details
     detailsPanel.innerHTML = `
       <div class="empty-details-message">
@@ -1520,44 +1523,60 @@ class PartyManager {
         </p>
       </div>
     `;
-
+  
     // Assemble the UI
     sidebar.appendChild(tabButtons);
     sidebar.appendChild(partyList);
-
+  
     content.appendChild(sidebar);
     content.appendChild(detailsPanel);
-
+  
     container.appendChild(header);
     container.appendChild(content);
-
+    // Create the equipment drawer that will be contained within the container
+    const equipmentDrawer = document.createElement('sl-drawer');
+    equipmentDrawer.label = "Equipment";
+    equipmentDrawer.placement = "end"; // Come in from the right side
+    equipmentDrawer.setAttribute('contained', ''); // Make it contained within parent
+    equipmentDrawer.style.setProperty('--size', '50%'); // Width of the drawer
+    
+    equipmentDrawer.innerHTML = `
+      <div class="equipment-drawer-content">
+        <!-- Content will be populated when opened -->
+      </div>
+      <div slot="footer">
+        <sl-button variant="neutral" class="close-drawer-btn">Close</sl-button>
+      </div>
+    `;
+    
+    // Add the drawer to the container BEFORE adding container to the overlay
+    container.appendChild(equipmentDrawer);
+    
+    // Now add the container to the overlay
     overlay.appendChild(container);
     document.body.appendChild(overlay);
-
-    window.windowManager.registerWindow(overlay, {
-      draggable: true,
-      dragHandle: '.party-header',
-      initialPosition: {
-        x: Math.max(0, (window.innerWidth - container.offsetWidth) / 2),
-        y: Math.max(0, (window.innerHeight - container.offsetHeight) / 2)
-      }
-    });
-
+  
     // Reference to the dialog for event handlers
     this.partyDialog = overlay;
-
+    this.dialogContainer = container;
+    this.equipmentDrawer = equipmentDrawer;
+    
+    // Add close button handler for the drawer
+    equipmentDrawer.querySelector('.close-drawer-btn').addEventListener('click', () => {
+      equipmentDrawer.hide();
+    });
+  
     // Add event listeners
     this.setupPartyDialogEvents(overlay, container, activeList, reserveList, detailsPanel);
-
+  
     // Animate in
     setTimeout(() => {
       overlay.style.opacity = '1';
       container.style.transform = 'scale(1)';
     }, 10);
   }
-
-
-  // Update createMonsterCard to show relationship indicators
+  
+  
   createMonsterCard(monster, type, isAlt = false) {
     // Calculate HP percentage
     const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
@@ -3093,17 +3112,285 @@ class PartyManager {
   }
 
   // Add or update your showEquipmentDialog method
-  showEquipmentDialog(monster, selectedSlot = 'weapon') {
-    // Create dialog container
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
-    dialog.style.setProperty('--width', '600px');
-    dialog.style.zIndex = "10002";
-    // Create placeholder equipment (to be replaced with actual inventory later)
-    const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
+  // showEquipmentDialog(monster, selectedSlot = 'weapon') {
 
-    // Dialog content
-    dialog.innerHTML = `
+  //     // First, if we have an active party dialog that's modal, tell it about our external dialog
+  // if (this.partyDialog && this.partyDialog.tagName.toLowerCase() === 'sl-dialog' && this.partyDialog.modal) {
+  //   // Deactivate the party dialog's focus trapping
+  //   this.partyDialog.modal.activateExternal();
+  // }
+  //   // Create dialog container
+  //   const dialog = document.createElement('sl-dialog');
+  //   dialog.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
+  //   dialog.style.setProperty('--width', '600px');
+
+  
+  // // Set a high z-index to ensure it appears above party manager
+  // dialog.style.zIndex = "20000"; // Much higher than party dialog
+
+  //   // Create placeholder equipment (to be replaced with actual inventory later)
+  //   const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
+
+  //   // Dialog content
+  //   dialog.innerHTML = `
+  //   <div style="
+  //     background: #f5f3e8;
+  //     border-radius: 12px;
+  //     padding: 16px;
+  //     border: 1px solid #e6e0d1;
+  //     margin-bottom: 16px;
+  //   ">
+  //     <div style="display: flex; align-items: center; margin-bottom: 12px;">
+  //       <i class="ra ${selectedSlot === 'weapon' ? 'ra-crossed-swords' : 'ra-shield'}" style="
+  //         font-size: 24px;
+  //         margin-right: 12px;
+  //         color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
+  //       "></i>
+  //       <div style="font-weight: bold; font-size: 1.1rem;">Available ${selectedSlot === 'weapon' ? 'Weapons' : 'Armor'}</div>
+  //     </div>
+      
+  //     <!-- Current equipment -->
+  //     ${monster.equipment[selectedSlot] ? `
+  //       <div style="
+  //         margin-bottom: 16px;
+  //         padding: 12px;
+  //         background: rgba(0, 0, 0, 0.05);
+  //         border-radius: 8px;
+  //       ">
+  //         <div style="margin-bottom: 8px; font-weight: bold; display: flex; align-items: center;">
+  //           <i class="ra ra-slash-ring" style="font-size: 16px; margin-right: 8px; color: #666;"></i>
+  //           Currently Equipped
+  //         </div>
+  //         <div style="display: flex; align-items: center;">
+  //           <div style="
+  //             width: 48px;
+  //             height: 48px;
+  //             background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
+  //             border-radius: 8px;
+  //             display: flex;
+  //             align-items: center;
+  //             justify-content: center;
+  //             margin-right: 12px;
+  //           ">
+  //             <i class="ra ${selectedSlot === 'weapon' ?
+  //         this.getWeaponIcon(monster.equipment[selectedSlot]) :
+  //         this.getArmorIcon(monster.equipment[selectedSlot])
+  //       }" style="
+  //               font-size: 28px; 
+  //               color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
+  //             "></i>
+  //           </div>
+  //           <div>
+  //             <div style="font-weight: 500;">${monster.equipment[selectedSlot].name}</div>
+  //             ${monster.equipment[selectedSlot].damageBonus ?
+  //         `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
+  //         ''
+  //       }
+  //             ${monster.equipment[selectedSlot].acBonus ?
+  //         `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
+  //         ''
+  //       }
+  //           </div>
+  //         </div>
+  //       </div>
+  //     ` : ''}
+      
+  //     <!-- Equipment options -->
+  //     <div class="equipment-options" style="
+  //       display: grid;
+  //       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  //       gap: 12px;
+  //     ">
+  //       <!-- Option to unequip -->
+  //       <div class="equipment-item" data-item-id="none" data-slot="${selectedSlot}" style="
+  //         background: rgba(0, 0, 0, 0.05);
+  //         border-radius: 8px;
+  //         padding: 12px;
+  //         cursor: pointer;
+  //         transition: all 0.2s;
+  //         border: 1px solid rgba(0, 0, 0, 0.1);
+  //       ">
+  //         <div style="display: flex; align-items: center;">
+  //           <div style="
+  //             width: 48px;
+  //             height: 48px;
+  //             background: rgba(239, 68, 68, 0.05);
+  //             border-radius: 8px;
+  //             display: flex;
+  //             align-items: center;
+  //             justify-content: center;
+  //             margin-right: 12px;
+  //           ">
+  //             <i class="ra ra-broken-skull" style="font-size: 28px; color: #666;"></i>
+  //           </div>
+  //           <div>
+  //             <div style="font-weight: 500;">Unequip</div>
+  //             <div style="font-size: 0.9rem; color: #666;">Remove current ${selectedSlot}</div>
+  //           </div>
+  //         </div>
+  //       </div>
+        
+  //       <!-- Equipment items -->
+  //       ${placeholderEquipment.map(item => `
+  //         <div class="equipment-item" 
+  //              data-item-id="${item.id}" 
+  //              data-slot="${selectedSlot}" 
+  //              style="
+  //                background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)'};
+  //                border-radius: 8px;
+  //                padding: 12px;
+  //                cursor: pointer;
+  //                transition: all 0.2s;
+  //                border: 1px solid ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
+  //              ">
+  //           <div style="display: flex; align-items: center;">
+  //             <div style="
+  //               width: 48px;
+  //               height: 48px;
+  //               background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
+  //               border-radius: 8px;
+  //               display: flex;
+  //               align-items: center;
+  //               justify-content: center;
+  //               margin-right: 12px;
+  //             ">
+  //               <i class="ra ${selectedSlot === 'weapon' ? this.getWeaponIcon(item) : this.getArmorIcon(item)}" 
+  //                  style="font-size: 28px; color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};"></i>
+  //             </div>
+  //             <div>
+  //               <div style="font-weight: 500;">${item.name}</div>
+  //               ${item.damageBonus ?
+  //           `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
+  //           ''
+  //         }
+  //               ${item.acBonus ?
+  //           `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
+  //           ''
+  //         }
+  //             </div>
+  //           </div>
+  //         </div>
+  //       `).join('')}
+  //     </div>
+  //   </div>
+    
+  //   <div slot="footer">
+  //     <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+  //   </div>
+  // `;
+
+
+  //   // Add hover effects for equipment items
+  //   const setupEquipmentItems = () => {
+  //     const items = dialog.querySelectorAll('.equipment-item');
+  //     items.forEach(item => {
+  //       // Hover effect
+  //       item.addEventListener('mouseenter', () => {
+  //         item.style.transform = 'translateY(-2px)';
+  //         item.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+  //       });
+
+  //       item.addEventListener('mouseleave', () => {
+  //         item.style.transform = '';
+  //         item.style.boxShadow = '';
+  //       });
+
+  //       // Click handler
+  //       item.addEventListener('click', () => {
+  //         const itemId = item.getAttribute('data-item-id');
+  //         const slot = item.getAttribute('data-slot');
+
+  //         if (itemId === 'none') {
+  //           // Unequip
+  //           this.unequipItem(monster.id, slot);
+  //         } else {
+  //           // Find and equip the item
+  //           const equipment = placeholderEquipment.find(e => e.id === itemId);
+  //           if (equipment) {
+  //             this.equipItem(monster.id, slot, equipment);
+  //           }
+  //         }
+
+  //         // Close dialog
+  //         dialog.hide();
+  //         // Refresh party UI
+  //         this.refreshPartyDialog();
+  //       });
+  //     });
+  //   };
+
+  //   // Add event handlers
+  //   dialog.addEventListener('sl-after-show', () => {
+  //     setupEquipmentItems();
+
+  //     // Cancel button
+  //     dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+  //       dialog.hide();
+  //     });
+  //   });
+
+
+  //     // When the dialog is closed, restore focus trapping to party dialog
+  // dialog.addEventListener('sl-after-hide', () => {
+  //   if (this.partyDialog && this.partyDialog.tagName.toLowerCase() === 'sl-dialog' && this.partyDialog.modal) {
+  //     // Reactivate the party dialog's focus trapping
+  //     this.partyDialog.modal.deactivateExternal();
+  //   }
+    
+  //   // Remove dialog from DOM after hiding
+  //   setTimeout(() => {
+  //     if (dialog.parentNode) {
+  //       dialog.parentNode.removeChild(dialog);
+  //     }
+  //   }, 300);
+  // });
+
+  //   // Add to document and show
+  //   document.body.appendChild(dialog);
+
+
+  // // // Register with window manager AFTER adding to DOM but BEFORE showing
+  // // // This ensures the element is available in the DOM for positioning
+  // // window.windowManager.registerWindow(dialog, {
+  // //   draggable: true,
+  // //   // No need to specify dragHandle for Shoelace dialogs as we handle it specially
+  // //   initialPosition: {
+  // //     x: Math.max(0, (window.innerWidth - 600) / 2),
+  // //     y: Math.max(0, (window.innerHeight - 400) / 2)
+  // //   }
+  // // });
+  
+  // // // Listen for when dialog is closed to unregister it
+  // // dialog.addEventListener('sl-after-hide', () => {
+  // //   window.windowManager.unregisterWindow(dialog.id);
+  // //   // Optional: Remove from DOM after hiding
+  // //   setTimeout(() => {
+  // //     if (dialog.parentNode) {
+  // //       dialog.parentNode.removeChild(dialog);
+  // //     }
+  // //   }, 300);
+  // // });
+
+
+  //   dialog.show();
+  // }
+
+  showEquipmentDialog(monster, selectedSlot = 'weapon') {
+    // Make sure party manager is open
+    if (!this.partyDialog || !this.equipmentDrawer) {
+      console.error('Party manager must be open to show equipment dialog');
+      return;
+    }
+    
+    // Get placeholder equipment
+    const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
+    
+    // Update drawer label
+    this.equipmentDrawer.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
+    
+    // Update drawer content
+    const drawerContent = this.equipmentDrawer.querySelector('.equipment-drawer-content');
+    drawerContent.innerHTML = `
     <div style="
       background: #f5f3e8;
       border-radius: 12px;
@@ -3144,9 +3431,9 @@ class PartyManager {
               margin-right: 12px;
             ">
               <i class="ra ${selectedSlot === 'weapon' ?
-          this.getWeaponIcon(monster.equipment[selectedSlot]) :
-          this.getArmorIcon(monster.equipment[selectedSlot])
-        }" style="
+        this.getWeaponIcon(monster.equipment[selectedSlot]) :
+        this.getArmorIcon(monster.equipment[selectedSlot])
+      }" style="
                 font-size: 28px; 
                 color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
               "></i>
@@ -3154,13 +3441,13 @@ class PartyManager {
             <div>
               <div style="font-weight: 500;">${monster.equipment[selectedSlot].name}</div>
               ${monster.equipment[selectedSlot].damageBonus ?
-          `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
-          ''
-        }
+        `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
+        ''
+      }
               ${monster.equipment[selectedSlot].acBonus ?
-          `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
-          ''
-        }
+        `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
+        ''
+      }
             </div>
           </div>
         </div>
@@ -3231,103 +3518,70 @@ class PartyManager {
               <div>
                 <div style="font-weight: 500;">${item.name}</div>
                 ${item.damageBonus ?
-            `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
-            ''
-          }
+          `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
+          ''
+        }
                 ${item.acBonus ?
-            `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
-            ''
-          }
+          `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
+          ''
+        }
               </div>
             </div>
           </div>
         `).join('')}
       </div>
     </div>
+    `;
     
-    <div slot="footer">
-      <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
-    </div>
-  `;
-
-    // Add hover effects for equipment items
+    // Store the monster ID for use in event handlers
+    this.equipmentDrawer.dataset.monsterId = monster.id;
+    
+    // Show the drawer
+    this.equipmentDrawer.show();
+    
+    // Add hover effects and click handlers for equipment items
     const setupEquipmentItems = () => {
-      const items = dialog.querySelectorAll('.equipment-item');
+      const items = this.equipmentDrawer.querySelectorAll('.equipment-item');
       items.forEach(item => {
         // Hover effect
         item.addEventListener('mouseenter', () => {
           item.style.transform = 'translateY(-2px)';
           item.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
         });
-
+  
         item.addEventListener('mouseleave', () => {
           item.style.transform = '';
           item.style.boxShadow = '';
         });
-
+  
         // Click handler
         item.addEventListener('click', () => {
           const itemId = item.getAttribute('data-item-id');
           const slot = item.getAttribute('data-slot');
-
+          const monsterId = this.equipmentDrawer.dataset.monsterId;
+          
           if (itemId === 'none') {
             // Unequip
-            this.unequipItem(monster.id, slot);
+            this.unequipItem(monsterId, slot);
           } else {
             // Find and equip the item
             const equipment = placeholderEquipment.find(e => e.id === itemId);
             if (equipment) {
-              this.equipItem(monster.id, slot, equipment);
+              this.equipItem(monsterId, slot, equipment);
             }
           }
-
-          // Close dialog
-          dialog.hide();
+  
+          // Close drawer
+          this.equipmentDrawer.hide();
+          
           // Refresh party UI
           this.refreshPartyDialog();
         });
       });
     };
-
-    // Add event handlers
-    dialog.addEventListener('sl-after-show', () => {
-      setupEquipmentItems();
-
-      // Cancel button
-      dialog.querySelector('.cancel-btn').addEventListener('click', () => {
-        dialog.hide();
-      });
-    });
-
-
-    // Add to document and show
-    document.body.appendChild(dialog);
-
-
-  // Register with window manager AFTER adding to DOM but BEFORE showing
-  // This ensures the element is available in the DOM for positioning
-  window.windowManager.registerWindow(dialog, {
-    draggable: true,
-    // No need to specify dragHandle for Shoelace dialogs as we handle it specially
-    initialPosition: {
-      x: Math.max(0, (window.innerWidth - 600) / 2),
-      y: Math.max(0, (window.innerHeight - 400) / 2)
-    }
-  });
-  
-  // Listen for when dialog is closed to unregister it
-  dialog.addEventListener('sl-after-hide', () => {
-    window.windowManager.unregisterWindow(dialog.id);
-    // Optional: Remove from DOM after hiding
-    setTimeout(() => {
-      if (dialog.parentNode) {
-        dialog.parentNode.removeChild(dialog);
-      }
-    }, 300);
-  });
-
-
-    dialog.show();
+    
+    // Setup the items after the drawer is shown
+    this.equipmentDrawer.addEventListener('sl-after-show', setupEquipmentItems, { once: true });
   }
 
   // Placeholder equipment function (to be replaced with inventory integration)
@@ -4879,7 +5133,7 @@ class PartyManager {
 
         // Save party
         this.saveParty();
-
+    this.refreshPartyDialog();
         // Close dialog
         overlay.style.opacity = '0';
         container.style.transform = 'scale(0.95)';
@@ -4898,6 +5152,8 @@ class PartyManager {
       overlay.style.opacity = '1';
       container.style.transform = 'scale(1)';
     }, 10);
+
+
   }
 
 
