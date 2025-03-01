@@ -701,6 +701,233 @@ class CombatSystem {
 .enemy-layout-trio .combat-monster {
   width: 160px; /* Slightly smaller than the standard 180px */
 }
+
+.enemy-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+  padding-top: 32px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.enemy-layout-single {
+  justify-content: center;
+}
+
+.enemy-layout-duo {
+  justify-content: space-around;
+  width: 100%;
+}
+
+.enemy-layout-trio {
+  width: 100%;
+  height: 180px; /* Provide enough height for arrangement */
+  position: relative;
+}
+
+.enemy-layout-trio .combat-monster:first-child {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) rotate(4deg);
+  z-index: 3;
+}
+
+.enemy-layout-trio .combat-monster:nth-child(2) {
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  transform: translateX(-50%) rotate(-3deg);
+  z-index: 2;
+}
+
+.enemy-layout-trio .combat-monster:nth-child(3) {
+  position: absolute;
+  bottom: 0;
+  left: 75%;
+  transform: translateX(-50%) rotate(7deg);
+  z-index: 1;
+}
+
+.enemy-layout-quad {
+  width: 100%;
+  height: 200px;
+  position: relative;
+}
+
+.enemy-layout-quad .combat-monster:nth-child(1) {
+  position: absolute;
+  top: 10px;
+  left: 25%;
+  transform: translateX(-50%) rotate(-2deg);
+  z-index: 4;
+}
+
+.enemy-layout-quad .combat-monster:nth-child(2) {
+  position: absolute;
+  top: 10px;
+  left: 75%;
+  transform: translateX(-50%) rotate(2deg);
+  z-index: 3;
+}
+
+.enemy-layout-quad .combat-monster:nth-child(3) {
+  position: absolute;
+  bottom: 10px;
+  left: 25%;
+  transform: translateX(-50%) rotate(-4deg);
+  z-index: 2;
+}
+
+.enemy-layout-quad .combat-monster:nth-child(4) {
+  position: absolute;
+  bottom: 10px;
+  left: 75%;
+  transform: translateX(-50%) rotate(4deg);
+  z-index: 1;
+}
+
+/* Make enemy cards slightly smaller when multiple */
+.enemy-layout-duo .combat-monster,
+.enemy-layout-trio .combat-monster,
+.enemy-layout-quad .combat-monster {
+  width: 160px; /* Slightly smaller than the standard 180px */
+}
+
+.initiative-tracker {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  width: 200px;
+  color: white;
+  overflow: hidden;
+}
+
+.initiative-list {
+  max-height: 300px; /* Increase from 200px */
+  overflow-y: auto;
+}
+
+/* Visual combat log styles */
+.log-entry {
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border-left: 4px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+.log-entry.action {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.log-entry.heal {
+  background: rgba(16, 185, 129, 0.1);
+  border-left-color: #10b981;
+}
+
+.log-action {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.log-combatants {
+  display: flex;
+  align-items: center;
+}
+
+.log-token {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+}
+
+.log-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.log-token.attacker {
+  border: 2px solid #ef4444;
+}
+
+.log-token.healer {
+  border: 2px solid #10b981;
+}
+
+.log-verb {
+  margin: 0 6px;
+  font-weight: bold;
+}
+
+.log-result {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 32px;
+  font-size: 0.9em;
+}
+
+.log-damage {
+  font-weight: bold;
+  color: #ef4444;
+}
+
+.log-heal {
+  font-weight: bold;
+  color: #10b981;
+}
+
+.log-intensity {
+  font-style: italic;
+  margin-right: 4px;
+}
+
+.critical-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+
+/* Log animations */
+@keyframes slideIn {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.log-critical {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-2px); }
+  40%, 80% { transform: translateX(2px); }
+}
+
+.log-heavy {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
 `;
 
     return styleElement;
@@ -1079,12 +1306,13 @@ class CombatSystem {
     playerArea.className = 'player-area';
 
     // Add enemy monsters
-    this.enemyParty.forEach((monster, index) => {
-      const monsterCard = this.createMonsterCard(monster, 'enemy', index);
-      // Position each monster card with a slight offset
-      monsterCard.style.transform = `translateY(-${index * 15}px) translateX(-${index * 20}px)`;
-      enemyArea.appendChild(monsterCard);
-    });
+    // this.enemyParty.forEach((monster, index) => {
+    //   const monsterCard = this.createMonsterCard(monster, 'enemy', index);
+    //   // Position each monster card with a slight offset
+    //   monsterCard.style.transform = `translateY(-${index * 15}px) translateX(-${index * 20}px)`;
+    //   enemyArea.appendChild(monsterCard);
+    // });
+    this.updateEnemyArea();
 
     // Add player monsters
     this.playerParty.forEach((monster, index) => {
@@ -1190,6 +1418,8 @@ class CombatSystem {
 
   // New method to create styled monster cards
   createMonsterCard(monster, side, index) {
+    console.log(`Creating monster card: ${monster.name}, type: ${side}, index: ${index}`);
+
     const isPlayer = side === 'player';
     const isActive = this.isMonsterActive(monster);
     const isDefeated = monster.currentHP <= 0;
@@ -1262,6 +1492,8 @@ class CombatSystem {
         <div class="defeated-indicator">✕</div>
       ` : ''}
     `;
+
+    console.log(`Card created for ${monster.name}`);
 
     return card;
   }
@@ -1437,6 +1669,127 @@ class CombatSystem {
     return canvas.toDataURL('image/webp');
   }
 
+
+  // Add this method to CombatSystem class
+addVisualLogEntry(data) {
+  // Get log container
+  const logEntries = this.dialogContainer.querySelector('.log-entries');
+  if (!logEntries) return;
+
+  // Handle different types of log entries
+  if (data.type === 'damage') {
+    const { attacker, target, damage, isCritical } = data;
+    
+    // Get miniature tokens (or generate placeholder)
+    const attackerToken = attacker.token?.data || this.generateDefaultTokenImage(attacker);
+    const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
+    
+    // Choose appropriate verb based on damage amount
+    let verb = 'hit';
+    let intensity = '';
+    
+    // Base verb on percentage of target's max HP
+    const damagePercent = (damage / target.maxHP) * 100;
+    
+    if (isCritical) {
+      verb = this.getRandomVerb('critical');
+      intensity = 'critically';
+    } else if (damagePercent < 10) {
+      verb = this.getRandomVerb('light');
+    } else if (damagePercent > 25) {
+      verb = this.getRandomVerb('heavy');
+      intensity = 'heavily';
+    }
+    
+    // Create new entry
+    const entry = document.createElement('div');
+    entry.className = 'log-entry action';
+    
+    // Apply subtle animation based on damage level
+    let animation = '';
+    if (isCritical) {
+      animation = 'log-critical';
+      entry.classList.add('critical');
+    } else if (damagePercent > 25) {
+      animation = 'log-heavy';
+      entry.classList.add('heavy');
+    }
+    
+    entry.innerHTML = `
+      <div class="log-action ${animation}">
+        <div class="log-combatants">
+          <div class="log-token attacker">
+            <img src="${attackerToken}" alt="${attacker.name}" title="${attacker.name}">
+            ${isCritical ? '<div class="critical-indicator"></div>' : ''}
+          </div>
+          <span class="log-verb">${verb}</span>
+          <div class="log-token target">
+            <img src="${targetToken}" alt="${target.name}" title="${target.name}">
+          </div>
+        </div>
+        <div class="log-result">
+          ${intensity ? `<span class="log-intensity">${intensity}</span>` : ''}
+          for <span class="log-damage">${damage}</span> damage
+        </div>
+      </div>
+    `;
+    
+    // Add to log
+    logEntries.appendChild(entry);
+  } 
+  else if (data.type === 'heal') {
+    // Similar to damage but for healing
+    const { healer, target, amount } = data;
+    
+    const healerToken = healer.token?.data || this.generateDefaultTokenImage(healer);
+    const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
+    
+    const entry = document.createElement('div');
+    entry.className = 'log-entry heal';
+    
+    entry.innerHTML = `
+      <div class="log-action">
+        <div class="log-combatants">
+          <div class="log-token healer">
+            <img src="${healerToken}" alt="${healer.name}" title="${healer.name}">
+          </div>
+          <span class="log-verb">healed</span>
+          <div class="log-token target">
+            <img src="${targetToken}" alt="${target.name}" title="${target.name}">
+          </div>
+        </div>
+        <div class="log-result">
+          for <span class="log-heal">${amount}</span> health
+        </div>
+      </div>
+    `;
+    
+    logEntries.appendChild(entry);
+  }
+  else {
+    // Default text-based log for other types
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.textContent = data.message;
+    logEntries.appendChild(entry);
+  }
+
+  // Scroll to bottom
+  logEntries.scrollTop = logEntries.scrollHeight;
+}
+
+// Helper to get random verb based on damage level
+getRandomVerb(level) {
+  const verbs = {
+    light: ['grazed', 'scratched', 'nicked', 'clipped', 'poked'],
+    medium: ['hit', 'struck', 'attacked', 'wounded', 'bashed'],
+    heavy: ['slammed', 'crushed', 'thrashed', 'walloped', 'clobbered'],
+    critical: ['devastated', 'decimated', 'annihilated', 'obliterated', 'pulverized']
+  };
+  
+  const options = verbs[level] || verbs.medium;
+  return options[Math.floor(Math.random() * options.length)];
+}
 
   renderInitiativeList() {
     if (!this.initiativeOrder || this.initiativeOrder.length === 0) {
@@ -1946,7 +2299,8 @@ class CombatSystem {
         // Process each target
         targets.forEach(target => {
           const damage = this.calculateAbilityDamage(ability);
-          this.applyDamage(target, damage);
+          this.applyDamage(target, damage, monster);
+          // this.applyDamage(target, damage);
           totalDamage += damage;
         });
 
@@ -2386,7 +2740,8 @@ class CombatSystem {
       case 'attack':
         // Calculate and apply damage - PASS THE MONSTER AS ATTACKER
         const damage = this.calculateAbilityDamage(ability, monster, target);
-        this.applyDamage(target, damage);
+        this.applyDamage(target, damage, monster);
+        // this.applyDamage(target, damage);
         break;
 
       case 'buff':
@@ -2506,19 +2861,65 @@ class CombatSystem {
   }
 
   // Apply damage to a target
-  applyDamage(target, damage) {
-    // Apply damage
-    target.currentHP = Math.max(0, target.currentHP - damage);
+  // applyDamage(target, damage) {
+  //   // Apply damage
+  //   target.currentHP = Math.max(0, target.currentHP - damage);
 
-    // Log the damage
-    this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
+  //   // Log the damage
+  //   this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
 
-    // Update UI to reflect changes
-    this.updateCombatDisplay();
+  //   // Update UI to reflect changes
+  //   this.updateCombatDisplay();
 
-    // Check if combat should end
-    this.checkCombatEnd();
-  }
+  //   // Check if combat should end
+  //   this.checkCombatEnd();
+  // }
+
+  // Modify applyDamage method
+applyDamage(target, damage, attacker, isCritical = false) {
+  // Store original HP for log
+  const originalHP = target.currentHP;
+  
+  // Apply damage
+  target.currentHP = Math.max(0, target.currentHP - damage);
+  
+  // Log using the visual system
+  this.addVisualLogEntry({
+    type: 'damage',
+    attacker: attacker,
+    target: target,
+    damage: damage,
+    isCritical: isCritical
+  });
+  
+  // Update UI to reflect changes
+  this.updateCombatDisplay();
+  
+  // Check if combat should end
+  this.checkCombatEnd();
+}
+
+// Similarly for healing
+resolveHealingAbility(monster, ability, target) {
+  // Calculate healing amount
+  const healing = this.calculateHealingAmount(ability);
+  
+  // Apply healing
+  const originalHP = target.currentHP;
+  target.currentHP = Math.min(target.maxHP, target.currentHP + healing);
+  const actualHealing = target.currentHP - originalHP;
+  
+  // Log using visual system
+  this.addVisualLogEntry({
+    type: 'heal',
+    healer: monster,
+    target: target,
+    amount: actualHealing
+  });
+  
+  // Update UI
+  this.updateCombatDisplay();
+}
 
   /**
    * UI Update Methods
@@ -2643,6 +3044,84 @@ class CombatSystem {
     return !!this.monsterDatabase;
   }
 
+  // Add this method to CombatSystem class
+// async ensureDatabaseConnection() {
+//   console.log("CombatSystem: Checking database connection");
+  
+//   // If we don't have a monster database, try to get it
+//   if (!this.monsterDatabase || 
+//       (this.monsterDatabase.monsters && Object.keys(this.monsterDatabase.monsters).length === 0)) {
+    
+//     console.log("CombatSystem: Database missing or empty, attempting to reconnect");
+    
+//     // Try connections in order of likelihood
+//     if (this.partyManager && this.partyManager.monsterManager) {
+//       console.log("CombatSystem: Connecting via PartyManager");
+//       this.monsterManager = this.partyManager.monsterManager;
+//       this.monsterDatabase = this.monsterManager.monsterDatabase || 
+//                             await this.monsterManager.loadDatabase();
+//     } 
+//     else if (this.resourceManager && this.resourceManager.monsterManager) {
+//       console.log("CombatSystem: Connecting via ResourceManager");
+//       this.monsterManager = this.resourceManager.monsterManager;
+//       this.monsterDatabase = this.monsterManager.monsterDatabase || 
+//                             await this.monsterManager.loadDatabase();
+//     }
+//     else {
+//       console.log("CombatSystem: Creating new connection");
+//       this.monsterManager = new MonsterManager(this);
+//       this.monsterDatabase = await this.monsterManager.loadDatabase();
+//     }
+//   }
+  
+//   const hasConnection = this.monsterDatabase && 
+//                         this.monsterDatabase.monsters && 
+//                         Object.keys(this.monsterDatabase.monsters).length > 0;
+  
+//   console.log(`CombatSystem: Database connection ${hasConnection ? 'successful' : 'failed'}, 
+//                Found ${hasConnection ? Object.keys(this.monsterDatabase.monsters).length : 0} monsters`);
+  
+//   return hasConnection;
+// }
+
+async ensureDatabaseConnection() {
+  console.log("CombatSystem: Checking database connection");
+  
+  // If we don't have a monster database, try to get it
+  if (!this.monsterDatabase || 
+      (this.monsterDatabase.monsters && Object.keys(this.monsterDatabase.monsters).length === 0)) {
+    
+    console.log("CombatSystem: Database missing or empty, attempting to reconnect");
+    
+    // Try connections in order of likelihood
+    if (this.partyManager && this.partyManager.monsterManager) {
+      console.log("CombatSystem: Connecting via PartyManager");
+      this.monsterManager = this.partyManager.monsterManager;
+      this.monsterDatabase = this.monsterManager.monsterDatabase || 
+                            await this.monsterManager.loadDatabase();
+    } 
+    else if (this.resourceManager && this.resourceManager.monsterManager) {
+      console.log("CombatSystem: Connecting via ResourceManager");
+      this.monsterManager = this.resourceManager.monsterManager;
+      this.monsterDatabase = this.monsterManager.monsterDatabase || 
+                            await this.monsterManager.loadDatabase();
+    }
+    else {
+      console.log("CombatSystem: Creating new connection");
+      this.monsterManager = new MonsterManager(this);
+      this.monsterDatabase = await this.monsterManager.loadDatabase();
+    }
+  }
+  
+  const hasConnection = this.monsterDatabase && 
+                        this.monsterDatabase.monsters && 
+                        Object.keys(this.monsterDatabase.monsters).length > 0;
+  
+  console.log(`CombatSystem: Database connection ${hasConnection ? 'successful' : 'failed'}, 
+               Found ${hasConnection ? Object.keys(this.monsterDatabase.monsters).length : 0} monsters`);
+  
+  return hasConnection;
+}
   
   getEnemiesFromManager(targetCR, manager = null) {
     const mm = manager || this.monsterManager;
@@ -2863,6 +3342,129 @@ class CombatSystem {
 
 
 // Add this improved method to your CombatSystem class
+// async generateEnemyParty(playerParty) {
+//   console.log('========== ENEMY PARTY GENERATION START ==========');
+  
+//   // Get player party strength metrics
+//   const partySize = playerParty.length;
+//   const averageLevel = playerParty.reduce((sum, monster) => sum + monster.level, 0) / partySize;
+//   console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
+  
+//   // Determine number of enemies with fairer scaling
+//   let enemyCount;
+  
+//   if (partySize === 1) {
+//     // For solo player: always 1 enemy for fair fights
+//     enemyCount = 1;
+//   } else if (partySize === 2) {
+//     // For 2-player party: 1-2 enemies, biased toward 1
+//     const roll = Math.random();
+//     enemyCount = roll < 0.7 ? 1 : 2;
+//     console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
+//   } else {
+//     // For 3+ player party: scale enemies more aggressively
+//     // Maximum of 3 enemies regardless of party size
+//     const maxEnemies = Math.min(partySize, 3);
+    
+//     // Weight toward more enemies for larger parties
+//     const weights = [0.2, 0.3, 0.5]; // Weights for 1, 2, or 3 enemies
+//     const roll = Math.random();
+//     console.log(`3+ player party roll: ${roll}`);
+    
+//     if (roll < weights[0]) {
+//       enemyCount = 1;
+//     } else if (roll < weights[0] + weights[1]) {
+//       enemyCount = 2;
+//     } else {
+//       enemyCount = maxEnemies;
+//     }
+//     console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
+//   }
+  
+//   console.log(`Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`);
+  
+//   // Calculate target CR
+//   const targetCR = averageLevel * 0.75;
+//   console.log(`Target CR: ${targetCR}`);
+  
+//   // Try to get monsters from the database
+//   let potentialEnemies = [];
+  
+//   try {
+//     // Make sure we have a connection
+//     if (this.monsterManager && this.monsterManager.monsterDatabase) {
+//       console.log("MonsterDatabase type:", typeof this.monsterManager.monsterDatabase);
+//       console.log("MonsterDatabase has monsters property:", !!this.monsterManager.monsterDatabase.monsters);
+      
+//       // Get all monsters from database - KEY DIFFERENCE: Handle the proper data structure
+//       let allMonsters = [];
+      
+//       // MonsterManager's database is an object with a 'monsters' property (not a Map)
+//       if (this.monsterManager.monsterDatabase && this.monsterManager.monsterDatabase.monsters) {
+//         console.log("Accessing via monsterDatabase.monsters object");
+//         allMonsters = Object.values(this.monsterManager.monsterDatabase.monsters);
+//       }
+      
+//       console.log(`Got ${allMonsters.length} total monsters from database`);
+      
+//       // Filter by CR range
+//       const minCR = targetCR * 0.5;
+//       const maxCR = targetCR * 1.25;
+      
+//       potentialEnemies = allMonsters.filter(monster => {
+//         // Check if monster has basic data
+//         if (!monster.basic || !monster.basic.cr) return false;
+        
+//         // Parse CR value
+//         let crValue = monster.basic.cr;
+//         if (typeof crValue === 'string') {
+//           if (crValue.includes('/')) {
+//             const [num, denom] = crValue.split('/').map(Number);
+//             crValue = num / denom;
+//           } else {
+//             crValue = Number(crValue);
+//           }
+//         }
+        
+//         // Include if in range
+//         return !isNaN(crValue) && crValue >= minCR && crValue <= maxCR;
+//       });
+      
+//       console.log(`Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`);
+//     }
+//   } catch (error) {
+//     console.error("Error accessing monster database:", error);
+//   }
+  
+//   // If we don't have enough monsters, use default enemies
+//   if (!potentialEnemies || potentialEnemies.length < enemyCount) {
+//     console.log("Using default enemy templates - not enough monsters in database");
+//     potentialEnemies = this.generateDefaultEnemies(targetCR);
+//     console.log(`Generated ${potentialEnemies.length} default enemies`);
+//   }
+  
+//   // Select random enemies from potential pool
+//   const selectedEnemies = [];
+//   for (let i = 0; i < enemyCount; i++) {
+//     if (potentialEnemies.length > 0) {
+//       const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
+//       const enemy = potentialEnemies.splice(randomIndex, 1)[0];
+      
+//       console.log(`Selected enemy ${i+1}:`, enemy.basic ? enemy.basic.name : enemy.name);
+      
+//       // Prepare enemy for combat
+//       const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
+//       selectedEnemies.push(combatEnemy);
+//     }
+//   }
+  
+//   console.log(`Final enemy party size: ${selectedEnemies.length}`);
+//   console.log(`Enemy names: ${selectedEnemies.map(e => e.name).join(', ')}`);
+//   console.log('========== ENEMY PARTY GENERATION END ==========');
+  
+//   return selectedEnemies;
+// }
+
 async generateEnemyParty(playerParty) {
   console.log('========== ENEMY PARTY GENERATION START ==========');
   
@@ -2908,29 +3510,34 @@ async generateEnemyParty(playerParty) {
   const targetCR = averageLevel * 0.75;
   console.log(`Target CR: ${targetCR}`);
   
+  // Ensure database connection before searching
+  await this.ensureDatabaseConnection();
+  
   // Try to get monsters from the database
   let potentialEnemies = [];
   
   try {
     // Make sure we have a connection
-    if (this.monsterManager && this.monsterManager.monsterDatabase) {
-      console.log("MonsterDatabase type:", typeof this.monsterManager.monsterDatabase);
-      console.log("MonsterDatabase has monsters property:", !!this.monsterManager.monsterDatabase.monsters);
+    if (this.monsterDatabase && this.monsterDatabase.monsters) {
+      console.log("MonsterDatabase type:", typeof this.monsterDatabase);
+      console.log("MonsterDatabase has monsters property:", !!this.monsterDatabase.monsters);
       
-      // Get all monsters from database - KEY DIFFERENCE: Handle the proper data structure
+      // Get all monsters from database
       let allMonsters = [];
       
       // MonsterManager's database is an object with a 'monsters' property (not a Map)
-      if (this.monsterManager.monsterDatabase && this.monsterManager.monsterDatabase.monsters) {
+      if (this.monsterDatabase && this.monsterDatabase.monsters) {
         console.log("Accessing via monsterDatabase.monsters object");
-        allMonsters = Object.values(this.monsterManager.monsterDatabase.monsters);
+        allMonsters = Object.values(this.monsterDatabase.monsters);
       }
       
       console.log(`Got ${allMonsters.length} total monsters from database`);
       
-      // Filter by CR range
-      const minCR = targetCR * 0.5;
-      const maxCR = targetCR * 1.25;
+      // Filter by CR range - USE MORE FLEXIBLE RANGE
+      const minCR = Math.max(0.125, targetCR * 0.5); // Minimum CR of 1/8
+      const maxCR = Math.min(30, targetCR * 2);      // More generous upper bound
+      
+      console.log(`Initial CR range: ${minCR} to ${maxCR}`);
       
       potentialEnemies = allMonsters.filter(monster => {
         // Check if monster has basic data
@@ -2952,6 +3559,59 @@ async generateEnemyParty(playerParty) {
       });
       
       console.log(`Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`);
+      
+      // If we find few monsters, retry with even wider range
+      if (potentialEnemies.length < enemyCount) {
+        console.log("Too few monsters found, expanding CR range further");
+        const widerMinCR = Math.max(0.125, targetCR * 0.25); // Very low minimum
+        const widerMaxCR = Math.min(30, targetCR * 3);      // Very high maximum
+        
+        console.log(`Expanded CR range: ${widerMinCR} to ${widerMaxCR}`);
+        
+        potentialEnemies = allMonsters.filter(monster => {
+          if (!monster.basic || !monster.basic.cr) return false;
+          
+          // Parse CR value
+          let crValue = monster.basic.cr;
+          if (typeof crValue === 'string') {
+            if (crValue.includes('/')) {
+              const [num, denom] = crValue.split('/').map(Number);
+              crValue = num / denom;
+            } else {
+              crValue = Number(crValue);
+            }
+          }
+          
+          return !isNaN(crValue) && crValue >= widerMinCR && crValue <= widerMaxCR;
+        });
+        
+        console.log(`With expanded range ${widerMinCR} to ${widerMaxCR}, found ${potentialEnemies.length} monsters`);
+      }
+      
+      // Log found monster CRs to help debug
+      if (potentialEnemies.length > 0) {
+        console.log("Found monsters with following CRs:");
+        const crValues = potentialEnemies.map(m => m.basic.cr);
+        const uniqueCRs = [...new Set(crValues)].sort((a, b) => {
+          // Convert both to numbers for comparison
+          const aNum = a.includes('/') ? 
+            Number(a.split('/')[0]) / Number(a.split('/')[1]) : 
+            Number(a);
+          const bNum = b.includes('/') ? 
+            Number(b.split('/')[0]) / Number(b.split('/')[1]) : 
+            Number(b);
+          return aNum - bNum;
+        });
+        console.log(uniqueCRs.join(', '));
+      }
+      
+      // If still no monsters, grab a random selection
+      if (potentialEnemies.length < enemyCount && allMonsters.length > 0) {
+        console.log("Still insufficient monsters, selecting random monsters from full database");
+        // Just randomly select from all available monsters
+        potentialEnemies = [...allMonsters].sort(() => Math.random() - 0.5).slice(0, Math.min(10, allMonsters.length));
+        console.log(`Selected ${potentialEnemies.length} random monsters from full database`);
+      }
     }
   } catch (error) {
     console.error("Error accessing monster database:", error);
@@ -2971,7 +3631,7 @@ async generateEnemyParty(playerParty) {
       const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
       const enemy = potentialEnemies.splice(randomIndex, 1)[0];
       
-      console.log(`Selected enemy ${i+1}:`, enemy.basic ? enemy.basic.name : enemy.name);
+      console.log(`Selected enemy ${i+1}: ${enemy.basic ? enemy.basic.name : enemy.name}`);
       
       // Prepare enemy for combat
       const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
@@ -3066,54 +3726,155 @@ async establishAsyncConnections() {
 
   
   // Update enemy area rendering for multiple enemies
+  // updateEnemyArea() {
+  //   const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+  //   if (!enemyArea) return;
+    
+  //   // Clear existing content
+  //   enemyArea.innerHTML = '';
+    
+  //   // Determine layout based on enemy count
+  //   const count = this.enemyParty.length;
+  //   let layoutClass = 'enemy-layout-single';
+    
+  //   if (count === 2) {
+  //     layoutClass = 'enemy-layout-duo';
+  //   } else if (count === 3) {
+  //     layoutClass = 'enemy-layout-trio';
+  //   }
+    
+  //   enemyArea.className = `enemy-area ${layoutClass}`;
+    
+  //   // Add each enemy card with correct positioning
+  //   this.enemyParty.forEach((monster, index) => {
+  //     const monsterCard = this.createMonsterCard(monster, 'enemy', index);
+      
+  //     // Apply positioning based on layout
+  //     if (count === 1) {
+  //       // Single enemy - centered
+  //       monsterCard.style.transform = 'rotate(4deg)';
+  //     } else if (count === 2) {
+  //       // Two enemies - side by side with opposite tilts
+  //       const rotation = index === 0 ? 5 : -5;
+  //       monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
+  //     } else {
+  //       // Three enemies - triangular arrangement
+  //       if (index === 0) {
+  //         // Top center
+  //         monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
+  //       } else if (index === 1) {
+  //         // Bottom left
+  //         monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
+  //       } else {
+  //         // Bottom right
+  //         monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
+  //       }
+  //     }
+      
+  //     enemyArea.appendChild(monsterCard);
+  //   });
+  // }
+
+  // Add to CombatSystem class
   updateEnemyArea() {
-    const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+    // const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+    // console.log("Updating enemy area, reference found:", !!enemyArea);
+    
+  // Try to find the enemy area
+  let enemyArea = this.dialogContainer.querySelector('.enemy-area');
+  console.log("Updating enemy area, reference found:", !!enemyArea);
+  
+  // If not found, create it
+  if (!enemyArea) {
+    console.log("Enemy area not found, creating it");
+    const combatArea = this.dialogContainer.querySelector('.battle-scene');
+    if (!combatArea) {
+      console.error("Cannot find battle scene to add enemy area");
+      return;
+    }
+    
+    enemyArea = document.createElement('div');
+    enemyArea.className = 'enemy-area';
+    
+    // Add it at the beginning of combat area
+    if (combatArea.firstChild) {
+      combatArea.insertBefore(enemyArea, combatArea.firstChild);
+    } else {
+      combatArea.appendChild(enemyArea);
+    }
+    
+    console.log("Created enemy area");
+  }
+  
+  // Clear existing content
+  console.log("Previous enemy area content:", enemyArea.innerHTML);
+  enemyArea.innerHTML = '';
+
     if (!enemyArea) return;
     
     // Clear existing content
+    console.log("Previous enemy area content:", enemyArea.innerHTML);
     enemyArea.innerHTML = '';
     
     // Determine layout based on enemy count
     const count = this.enemyParty.length;
+    console.log(`Setting up layout for ${count} enemies`);
+    
     let layoutClass = 'enemy-layout-single';
     
     if (count === 2) {
       layoutClass = 'enemy-layout-duo';
     } else if (count === 3) {
       layoutClass = 'enemy-layout-trio';
+    } else if (count >= 4) {
+      layoutClass = 'enemy-layout-quad';
     }
     
+    console.log(`Using layout class: ${layoutClass}`);
     enemyArea.className = `enemy-area ${layoutClass}`;
     
     // Add each enemy card with correct positioning
     this.enemyParty.forEach((monster, index) => {
+      console.log(`Creating card for enemy ${index + 1}: ${monster.name}`);
       const monsterCard = this.createMonsterCard(monster, 'enemy', index);
-      
-      // Apply positioning based on layout
-      if (count === 1) {
-        // Single enemy - centered
-        monsterCard.style.transform = 'rotate(4deg)';
-      } else if (count === 2) {
-        // Two enemies - side by side with opposite tilts
-        const rotation = index === 0 ? 5 : -5;
-        monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
+    
+    // Apply positioning based on layout
+    if (count === 1) {
+      // Single enemy - centered
+      monsterCard.style.transform = 'rotate(4deg)';
+    } else if (count === 2) {
+      // Two enemies - side by side with opposite tilts
+      const rotation = index === 0 ? 5 : -5;
+      monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
+    } else if (count === 3) {
+      // Three enemies - triangular arrangement
+      if (index === 0) {
+        // Top center
+        monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
+      } else if (index === 1) {
+        // Bottom left
+        monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
       } else {
-        // Three enemies - triangular arrangement
-        if (index === 0) {
-          // Top center
-          monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
-        } else if (index === 1) {
-          // Bottom left
-          monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
-        } else {
-          // Bottom right
-          monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
-        }
+        // Bottom right
+        monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
       }
+    } else {
+      // Four enemies - 2x2 grid
+      const row = Math.floor(index / 2);
+      const col = index % 2;
+      const xOffset = col === 0 ? -40 : 40;
+      const yOffset = row === 0 ? -30 : 30;
+      const rotation = (index % 3) * 3 - 3; // Varies between -3, 0, 3, 0 degrees
       
-      enemyArea.appendChild(monsterCard);
-    });
-  }
+      monsterCard.style.transform = `translate(${xOffset}px, ${yOffset}px) rotate(${rotation}deg)`;
+    }
+    
+    console.log(`Appending enemy card ${index + 1} to enemy area`);
+    enemyArea.appendChild(monsterCard);
+  });
+  
+  console.log("Enemy area update complete, final content length:", enemyArea.children.length);
+}
 
   // Get current monster
   getCurrentMonster() {
