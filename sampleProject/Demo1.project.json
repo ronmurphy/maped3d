@@ -1,0 +1,19 @@
+{
+  "name": "Demo1",
+  "version": "1.0",
+  "timestamp": "2025-03-01T17:36:41.013Z",
+  "resources": {
+    "filename": "Demo1.resource.json",
+    "relativePath": "./",
+    "lastModified": "2025-03-01T17:36:41.013Z"
+  },
+  "map": {
+    "filename": "Demo1.map.json",
+    "relativePath": "./",
+    "lastModified": "2025-03-01T17:36:41.013Z"
+  },
+  "settings": {
+    "defaultView": "2D",
+    "autoSave": false
+  }
+}

@@ -1034,6 +1034,165 @@ class CombatSystem {
   overflow-y: auto;
   z-index: 50;
 }
+
+/* Add to createCombatStyles method */
+/* Visual combat log styles */
+.log-entry {
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border-left: 4px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+.log-entry.action {
+  background: rgba(239, 68, 68, 0.1);
+  border-left-color: #ef4444;
+}
+
+.log-entry.heal {
+  background: rgba(16, 185, 129, 0.1);
+  border-left-color: #10b981;
+}
+
+.log-action {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.log-combatants {
+  display: flex;
+  align-items: center;
+}
+
+.log-token {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+}
+
+.log-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.log-token.attacker {
+  border: 2px solid #ef4444;
+}
+
+.log-token.healer {
+  border: 2px solid #10b981;
+}
+
+.log-verb {
+  margin: 0 6px;
+  font-weight: bold;
+}
+
+.log-result {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 32px;
+  font-size: 0.9em;
+}
+
+.log-damage {
+  font-weight: bold;
+  color: #ef4444;
+}
+
+.log-heal {
+  font-weight: bold;
+  color: #10b981;
+}
+
+.log-intensity {
+  font-style: italic;
+  margin-right: 4px;
+}
+
+.critical-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+
+/* Log animations */
+@keyframes slideIn {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.log-critical {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-2px); }
+  40%, 80% { transform: translateX(2px); }
+}
+
+.log-heavy {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.defeated-enemies-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  height: 32px;
+}
+
+.defeated-token {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.defeated-token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+  filter: grayscale(80%);
+}
+
+.defeated-x {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  font-weight: bold;
+  text-shadow: 0 0 2px black;
+}
 `;
 
     return styleElement;
@@ -1775,6 +1934,126 @@ class CombatSystem {
 
 
   // Add this method to CombatSystem class
+// addVisualLogEntry(data) {
+//   // Get log container
+//   const logEntries = this.dialogContainer.querySelector('.log-entries');
+//   if (!logEntries) return;
+
+//   // Handle different types of log entries
+//   if (data.type === 'damage') {
+//     const { attacker, target, damage, isCritical } = data;
+    
+//     // Get miniature tokens (or generate placeholder)
+//     const attackerToken = attacker.token?.data || this.generateDefaultTokenImage(attacker);
+//     const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
+    
+//     // Choose appropriate verb based on damage amount
+//     let verb = 'hit';
+//     let intensity = '';
+    
+//     // Base verb on percentage of target's max HP
+//     const damagePercent = (damage / target.maxHP) * 100;
+    
+//     if (isCritical) {
+//       verb = this.getRandomVerb('critical');
+//       intensity = 'critically';
+//     } else if (damagePercent < 10) {
+//       verb = this.getRandomVerb('light');
+//     } else if (damagePercent > 25) {
+//       verb = this.getRandomVerb('heavy');
+//       intensity = 'heavily';
+//     }
+    
+//     // Create new entry
+//     const entry = document.createElement('div');
+//     entry.className = 'log-entry action';
+    
+//     // Apply subtle animation based on damage level
+//     let animation = '';
+//     if (isCritical) {
+//       animation = 'log-critical';
+//       entry.classList.add('critical');
+//     } else if (damagePercent > 25) {
+//       animation = 'log-heavy';
+//       entry.classList.add('heavy');
+//     }
+    
+//     entry.innerHTML = `
+//       <div class="log-action ${animation}">
+//         <div class="log-combatants">
+//           <div class="log-token attacker">
+//             <img src="${attackerToken}" alt="${attacker.name}" title="${attacker.name}">
+//             ${isCritical ? '<div class="critical-indicator"></div>' : ''}
+//           </div>
+//           <span class="log-verb">${verb}</span>
+//           <div class="log-token target">
+//             <img src="${targetToken}" alt="${target.name}" title="${target.name}">
+//           </div>
+//         </div>
+//         <div class="log-result">
+//           ${intensity ? `<span class="log-intensity">${intensity}</span>` : ''}
+//           for <span class="log-damage">${damage}</span> damage
+//         </div>
+//       </div>
+//     `;
+    
+//     // Add to log
+//     logEntries.appendChild(entry);
+//   } 
+//   else if (data.type === 'heal') {
+//     // Similar to damage but for healing
+//     const { healer, target, amount } = data;
+    
+//     const healerToken = healer.token?.data || this.generateDefaultTokenImage(healer);
+//     const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
+    
+//     const entry = document.createElement('div');
+//     entry.className = 'log-entry heal';
+    
+//     entry.innerHTML = `
+//       <div class="log-action">
+//         <div class="log-combatants">
+//           <div class="log-token healer">
+//             <img src="${healerToken}" alt="${healer.name}" title="${healer.name}">
+//           </div>
+//           <span class="log-verb">healed</span>
+//           <div class="log-token target">
+//             <img src="${targetToken}" alt="${target.name}" title="${target.name}">
+//           </div>
+//         </div>
+//         <div class="log-result">
+//           for <span class="log-heal">${amount}</span> health
+//         </div>
+//       </div>
+//     `;
+    
+//     logEntries.appendChild(entry);
+//   }
+//   else {
+//     // Default text-based log for other types
+//     const entry = document.createElement('div');
+//     entry.className = 'log-entry';
+//     entry.textContent = data.message;
+//     logEntries.appendChild(entry);
+//   }
+
+//   // Scroll to bottom
+//   logEntries.scrollTop = logEntries.scrollHeight;
+// }
+
+// // Helper to get random verb based on damage level
+// getRandomVerb(level) {
+//   const verbs = {
+//     light: ['grazed', 'scratched', 'nicked', 'clipped', 'poked'],
+//     medium: ['hit', 'struck', 'attacked', 'wounded', 'bashed'],
+//     heavy: ['slammed', 'crushed', 'thrashed', 'walloped', 'clobbered'],
+//     critical: ['devastated', 'decimated', 'annihilated', 'obliterated', 'pulverized']
+//   };
+  
+//   const options = verbs[level] || verbs.medium;
+//   return options[Math.floor(Math.random() * options.length)];
+// }
+
 addVisualLogEntry(data) {
   // Get log container
   const logEntries = this.dialogContainer.querySelector('.log-entries');
@@ -2117,56 +2396,108 @@ getRandomVerb(level) {
   }
 
     // Move to next turn - Fixed to skip defeated monsters
-  nextTurn() {
-    // Move to next combatant
-    this.currentTurn++;
+  // nextTurn() {
+  //   // Move to next combatant
+  //   this.currentTurn++;
   
-    // If we've gone through all combatants, start a new round
-    if (this.currentTurn >= this.initiativeOrder.length) {
-      this.currentTurn = 0;
-      this.roundNumber++;
-      this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
+  //   // If we've gone through all combatants, start a new round
+  //   if (this.currentTurn >= this.initiativeOrder.length) {
+  //     this.currentTurn = 0;
+  //     this.roundNumber++;
+  //     this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
   
-      // Update round number in UI
-      const roundDisplay = this.dialogContainer.querySelector('.combat-header span:last-child');
-      if (roundDisplay) {
-        roundDisplay.textContent = `Round ${this.roundNumber}`;
-      }
-    }
+  //     // Update round number in UI
+  //     const roundDisplay = this.dialogContainer.querySelector('.combat-header span:last-child');
+  //     if (roundDisplay) {
+  //       roundDisplay.textContent = `Round ${this.roundNumber}`;
+  //     }
+  //   }
   
-    // Update initiative UI
-    this.updateInitiativeTracker();
+  //   // Update initiative UI
+  //   this.updateInitiativeTracker();
   
-    // Check for combat end conditions
-    if (this.checkCombatEnd()) {
-      return;
-    }
+  //   // Check for combat end conditions
+  //   if (this.checkCombatEnd()) {
+  //     return;
+  //   }
   
-    // Get current combatant
-    const currentCombatant = this.initiativeOrder[this.currentTurn];
-    if (!currentCombatant) return; // Safety check
+  //   // Get current combatant
+  //   const currentCombatant = this.initiativeOrder[this.currentTurn];
+  //   if (!currentCombatant) return; // Safety check
     
-    // NEW CODE: Check if current monster is defeated, if so skip this turn
-    if (currentCombatant.monster.currentHP <= 0) {
-      this.addLogEntry(`${currentCombatant.monster.name} is defeated and cannot act.`);
-      // Call nextTurn again to skip to the next combatant
-      this.nextTurn();
-      return;
-    }
+  //   // NEW CODE: Check if current monster is defeated, if so skip this turn
+  //   if (currentCombatant.monster.currentHP <= 0) {
+  //     this.addLogEntry(`${currentCombatant.monster.name} is defeated and cannot act.`);
+  //     // Call nextTurn again to skip to the next combatant
+  //     this.nextTurn();
+  //     return;
+  //   }
   
-    // Process the turn for a non-defeated monster
-    this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
+  //   // Process the turn for a non-defeated monster
+  //   this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
   
-    // Update action bar for player turn
-    if (currentCombatant.side === 'player') {
-      this.updateActionBar(currentCombatant.monster);
-    } else {
-      // For enemy turn, clear action bar
-      this.updateActionBar(null);
-      // Process enemy turn with a slight delay
-      setTimeout(() => this.processEnemyTurn(), 1000);
+  //   // Update action bar for player turn
+  //   if (currentCombatant.side === 'player') {
+  //     this.updateActionBar(currentCombatant.monster);
+  //   } else {
+  //     // For enemy turn, clear action bar
+  //     this.updateActionBar(null);
+  //     // Process enemy turn with a slight delay
+  //     setTimeout(() => this.processEnemyTurn(), 1000);
+  //   }
+  // }
+
+  // Fix the nextTurn method to check combat end
+nextTurn() {
+  // Move to next combatant
+  this.currentTurn++;
+  
+  // If we've gone through all combatants, start a new round
+  if (this.currentTurn >= this.initiativeOrder.length) {
+    this.currentTurn = 0;
+    this.roundNumber++;
+    this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
+    
+    // Update round number in UI
+    const roundDisplay = this.dialogContainer.querySelector('.combat-header span:last-child');
+    if (roundDisplay) {
+      roundDisplay.textContent = `Round ${this.roundNumber}`;
     }
   }
+  
+  // Update initiative UI
+  this.updateInitiativeTracker();
+  
+  // Check for combat end conditions
+  if (this.checkCombatEnd()) {
+    return;
+  }
+  
+  // Get current combatant
+  const currentCombatant = this.initiativeOrder[this.currentTurn];
+  if (!currentCombatant) return; // Safety check
+  
+  // NEW CODE: Check if current monster is defeated, if so skip this turn
+  if (currentCombatant.monster.currentHP <= 0) {
+    this.addLogEntry(`${currentCombatant.monster.name} is defeated and cannot act.`);
+    // Call nextTurn again to skip to the next combatant
+    this.nextTurn();
+    return;
+  }
+  
+  // Process the turn for a non-defeated monster
+  this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
+  
+  // Update action bar for player turn
+  if (currentCombatant.side === 'player') {
+    this.updateActionBar(currentCombatant.monster);
+  } else {
+    // For enemy turn, clear action bar
+    this.updateActionBar(null);
+    // Process enemy turn with a slight delay
+    setTimeout(() => this.processEnemyTurn(), 1000);
+  }
+}
 
   // Check if combat has ended
   checkCombatEnd() {
@@ -2227,7 +2558,7 @@ getRandomVerb(level) {
           <h2 style="margin: 0 0 16px 0; color: #4CAF50;">Victory!</h2>
           <p style="margin-bottom: 24px;">Your party has defeated all enemies.</p>
           
-          <div class="rewards" style="margin-bottom: 24px; background: #f5f5f5; padding: 16px; border-radius: 8px;">
+          <div class="rewards" style="margin-bottom: 24px; background:rgb(116, 8, 218); padding: 16px; border-radius: 8px;">
             <h3 style="margin-top: 0;">Rewards</h3>
             <div class="experience-reward" style="margin-bottom: 8px;">
               <span style="font-weight: bold;">Experience:</span> 100 XP
@@ -2989,6 +3320,7 @@ getRandomVerb(level) {
 //   this.checkCombatEnd();
 // }
 
+// Update applyDamage to use the visual log
 applyDamage(target, damage, attacker, isCritical = false) {
   // Store original HP for log
   const originalHP = target.currentHP;
@@ -2996,11 +3328,19 @@ applyDamage(target, damage, attacker, isCritical = false) {
   // Apply damage
   target.currentHP = Math.max(0, target.currentHP - damage);
   
-  // Log using the visual system (if implemented)
-  // this.addVisualLogEntry({ ... });
-  
-  // Traditional log
-  this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
+  // Log using the visual system
+  if (attacker) {
+    this.addVisualLogEntry({
+      type: 'damage',
+      attacker: attacker,
+      target: target,
+      damage: damage,
+      isCritical: isCritical
+    });
+  } else {
+    // Fallback to text log for damage without a clear source
+    this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
+  }
   
   // Update UI to reflect changes
   this.updateCombatDisplay();
@@ -4221,38 +4561,72 @@ updateEnemyArea(providedEnemyArea = null) {
   }, 50);
 }
 
-updateDefeatedEnemiesRow() {
-  // First, find or create the defeated enemies container
-  // let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
+// updateDefeatedEnemiesRow() {
+//   // Find or create the defeated enemies container
+//   let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
   
-  // if (!defeatedRow) {
-  //   // Create container for defeated enemies
-  //   defeatedRow = document.createElement('div');
-  //   defeatedRow.className = 'defeated-enemies-row';
+//   if (!defeatedRow) {
+//     // Create container for defeated enemies
+//     defeatedRow = document.createElement('div');
+//     defeatedRow.className = 'defeated-enemies-row';
     
-  //   // Add to the battle scene
-  //   const initiativeTracker = this.dialogContainer.querySelector('.initiative-tracker');
-  //   if (initiativeTracker) {
-  //     // Insert after initiative tracker
-  //     initiativeTracker.parentNode.insertBefore(defeatedRow, initiativeTracker.nextSibling);
-  //   }
-  // }
+//     // Add to the battle scene
+//     const battleScene = this.dialogContainer.querySelector('.battle-scene');
+//     if (battleScene) {
+//       battleScene.appendChild(defeatedRow);
+//     }
+//   }
   
-  // // Clear existing content
-  // defeatedRow.innerHTML = '';
+//   // Update CSS positioning to place it below initiative tracker
+//   defeatedRow.style.position = 'absolute';
+//   defeatedRow.style.top = '230px'; // Below initiative tracker
+//   defeatedRow.style.left = '16px'; // Same left alignment
   
-  // // Get defeated enemies
-  // const defeatedEnemies = this.enemyParty.filter(monster => monster.currentHP <= 0);
+//   // Clear existing content
+//   defeatedRow.innerHTML = '';
   
-  // // If none, hide the row
-  // if (defeatedEnemies.length === 0) {
-  //   defeatedRow.style.display = 'none';
-  //   return;
-  // }
+//   // Get defeated enemies
+//   const defeatedEnemies = this.enemyParty.filter(monster => monster.currentHP <= 0);
   
-  // // Show the row and add tokens
-  // defeatedRow.style.display = 'flex';
+//   // If none, hide the row
+//   if (defeatedEnemies.length === 0) {
+//     defeatedRow.style.display = 'none';
+//     return;
+//   }
+  
+//   // Show the row and add tokens
+//   defeatedRow.style.display = 'flex';
+  
+//   // Add header
+//   const header = document.createElement('div');
+//   header.className = 'defeated-header';
+//   header.textContent = 'Defeated:';
+//   defeatedRow.appendChild(header);
+  
+//   // Add tokens for each defeated enemy
+//   defeatedEnemies.forEach(monster => {
+//     const token = document.createElement('div');
+//     token.className = 'defeated-token';
+//     token.title = monster.name;
+    
+//     // Get token image or create placeholder
+//     const tokenImage = monster.token?.data || this.generateDefaultTokenImage(monster);
+    
+//     token.innerHTML = `
+//       <img src="${tokenImage}" alt="${monster.name}">
+//       <div class="defeated-x">✕</div>
+//     `;
+    
+//     defeatedRow.appendChild(token);
+//   });
+// }
 
+updateDefeatedEnemiesRow() {
+  // Find the header area
+  const header = this.dialogContainer.querySelector('.combat-header');
+  if (!header) return;
+  
+  // Find or create the defeated enemies container
   let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
   
   if (!defeatedRow) {
@@ -4260,30 +4634,37 @@ updateDefeatedEnemiesRow() {
     defeatedRow = document.createElement('div');
     defeatedRow.className = 'defeated-enemies-row';
     
-    // Add to the battle scene
-    const initiativeTracker = this.dialogContainer.querySelector('.initiative-tracker');
-    if (initiativeTracker) {
-      // Insert AFTER initiative tracker (as a sibling, not inside it)
-      initiativeTracker.parentNode.insertBefore(defeatedRow, initiativeTracker.nextSibling);
-    } else {
-      // Fallback - add to battle scene
-      const battleScene = this.dialogContainer.querySelector('.battle-scene');
-      if (battleScene) {
-        battleScene.appendChild(defeatedRow);
-      }
-    }
+    // Add to the header
+    header.appendChild(defeatedRow);
   }
   
-  // Update CSS positioning to place it below
-  defeatedRow.style.position = 'absolute';
-  defeatedRow.style.top = '230px'; // Below initiative tracker
-  defeatedRow.style.left = '16px'; // Same left alignment
+  // Update styling to fit in header
+  defeatedRow.style.position = 'relative'; // Not absolute
+  defeatedRow.style.top = 'auto';
+  defeatedRow.style.left = 'auto';
+  defeatedRow.style.marginLeft = '16px';
+  defeatedRow.style.display = 'flex';
+  defeatedRow.style.alignItems = 'center';
   
-  // Add header
-  const header = document.createElement('div');
-  header.className = 'defeated-header';
-  header.textContent = 'Defeated:';
-  defeatedRow.appendChild(header);
+  // Clear existing content
+  defeatedRow.innerHTML = '';
+  
+  // Get defeated enemies
+  const defeatedEnemies = this.enemyParty.filter(monster => monster.currentHP <= 0);
+  
+  // If none, hide the row
+  if (defeatedEnemies.length === 0) {
+    defeatedRow.style.display = 'none';
+    return;
+  }
+  
+  // Show the row and add tokens
+  defeatedRow.style.display = 'flex';
+  
+  // Add header with count
+  defeatedRow.innerHTML = `
+    <span style="margin-right: 8px; opacity: 0.8;">Defeated: ${defeatedEnemies.length}</span>
+  `;
   
   // Add tokens for each defeated enemy
   defeatedEnemies.forEach(monster => {
