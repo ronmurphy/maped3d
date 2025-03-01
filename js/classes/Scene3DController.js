@@ -1315,7 +1315,42 @@ class Scene3DController {
           this.addPlayerLight(!this.playerLight);
         }
         break;
-      case "KeyP": // P for FPS toggle
+      case "KeyP": // P fshow PArty
+      if (window.partyManager) {
+        // Pause 3D controls while party manager is open
+        this.pauseControls();
+        
+        // Show party manager
+        window.partyManager.showPartyManager();
+        
+        // Resume controls when party manager closes
+        const checkForDialog = setInterval(() => {
+          const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+          if (!dialog) {
+            this.resumeControls();
+            clearInterval(checkForDialog);
+          }
+        }, 100);
+      } else {
+        console.warn('Party Manager not available');
+      }
+      break;
+      // case "KeyH": // H for Toggle lighting
+      //   // Debounce key press (500ms cooldown)
+      //   const now = Date.now();
+      //   if (!event.repeat && (!this.lastKeyPresses.h || now - this.lastKeyPresses.h > 500)) {
+      //     this.lastKeyPresses.h = now;
+      //     this.setLightingEnabled(!this.lightingEnabled);
+      //     this.showNotification(`Advanced lighting ${this.lightingEnabled ? 'enabled' : 'disabled'}`);
+      //   }
+      //   break;
+      case "Backquote": // ` for FPS counter
+        // const nowG = Date.now();
+        // if (!event.repeat && (!this.lastKeyPresses.h || nowG - this.lastKeyPresses.h > 500)) {
+        //   this.lastKeyPresses.h = nowG;
+        //   this.showPreferencesDialog(); // this.showPreferencesDialog();
+        // }
+        // break;
         if (!event.repeat &&
           !(document.activeElement instanceof HTMLInputElement) &&
           !(document.activeElement instanceof HTMLTextAreaElement)) {
@@ -1324,22 +1359,7 @@ class Scene3DController {
           this.monitorMemory();
         }
         break;
-      case "KeyH": // H for Toggle lighting
-        // Debounce key press (500ms cooldown)
-        const now = Date.now();
-        if (!event.repeat && (!this.lastKeyPresses.h || now - this.lastKeyPresses.h > 500)) {
-          this.lastKeyPresses.h = now;
-          this.setLightingEnabled(!this.lightingEnabled);
-          this.showNotification(`Advanced lighting ${this.lightingEnabled ? 'enabled' : 'disabled'}`);
-        }
-        break;
-      case "Backquote": // ` for Preferences
-        const nowG = Date.now();
-        if (!event.repeat && (!this.lastKeyPresses.h || nowG - this.lastKeyPresses.h > 500)) {
-          this.lastKeyPresses.h = nowG;
-          this.showPreferencesDialog(); // this.showPreferencesDialog();
-        }
-        break;
+
       case "ShiftLeft":
         this.moveState.shiftHeld = true;
         this.moveState.sprint = true;
@@ -1357,13 +1377,13 @@ class Scene3DController {
           }
         }
         break;
-      case "KeyC":
-        if (!event.repeat) {
-          this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
-          this.updateWallClipping();
-        }
-        break;
-      case "Backslash":
+      // case "KeyC":
+      //   if (!event.repeat) {
+      //     this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
+      //     this.updateWallClipping();
+      //   }
+      //   break;
+      case "KeyI":
         this.toggleInventory();
         break;
       case "KeyE":
@@ -4814,10 +4834,10 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         Click to Start<br>
         WASD or Arrow Keys to move<br>
         Hold Shift or Right Mouse Button to sprint<br>
-        ~ to open Config<br>
-        | for inventory<br>
+        ~ to show FPS<br>
+        I for inventory<br>
         E as the Action key<br>
-        P for FPS stats<br>
+        P for Party Manager<br>
         ESC to exit
       `;
       container.appendChild(instructions);

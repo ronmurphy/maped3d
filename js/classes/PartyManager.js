@@ -849,6 +849,61 @@ class PartyManager {
     100% { opacity: 0.8; }
   }
 
+    /* Abilities grid layout - more robust version */
+  .monster-abilities {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    min-width: 340px; /* Ensures at least two columns */
+    width: 100%;
+  }
+  
+  /* Ensure abilities container doesn't get too constrained */
+  .abilities-container {
+    background: #f5f0e5;
+    border-radius: 12px;
+    padding: 8px 12px 16px;
+    margin-top: 8px;
+    border: 1px solid #e6e0d1;
+    width: 100%;
+    min-width: 340px;
+    overflow: visible;
+  }
+  
+  /* Ensure ability cards maintain reasonable size */
+  .ability-card {
+    min-width: 150px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .abilities-container {
+  background: #f5f3e8;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e6e0d1;
+  width: 100%; /* Take full width of parent */
+  max-width: 100%; /* Prevent overflow */
+  box-sizing: border-box; /* Include padding in width calculation */
+  overflow: hidden; /* Prevent content from overflowing */
+}
+
+/* Keep the grid layout, but ensure it stays within bounds */
+.monster-abilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Style ability cards consistently */
+.ability-card {
+  min-width: 0; /* Allow cards to shrink if needed */
+  width: 100%;
+  box-sizing: border-box;
+}
+
     `;
 
     return styleElement;
@@ -1684,6 +1739,7 @@ this.dismissDrawer = dismissDrawer;
 
 // Add cancel button handler
 dismissDrawer.querySelector('.cancel-dismiss-btn').addEventListener('click', () => {
+  // this.refreshPartyDialog();
   dismissDrawer.hide();
 });
     
@@ -2263,11 +2319,23 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     // Monster abilities section
     if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
       contentHtml += `
-<div class="details-section">
-  <div class="details-section-title">Abilities</div>
-  <div class="abilities-container">
-  <div class="monster-abilities">
-    ${monster.monsterAbilities.map(ability => {
+      <div class="details-section">
+        <div class="details-section-title">Abilities</div>
+        <div class="abilities-container" style="
+          background: #f5f3e8;
+          border-radius: 12px;
+          padding: 16px;
+          border: 1px solid #e6e0d1;
+          width: 100%;
+          box-sizing: border-box;
+        ">
+          <div class="monster-abilities" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            width: 100%;
+          ">
+            ${monster.monsterAbilities.map(ability => {
         // Determine icon based on ability type
         let icon = 'star';
         let bgColor = '#f3f4f6';
@@ -2501,6 +2569,70 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     }
 
     content.innerHTML = contentHtml;
+
+  // ADD DEBUGGING CODE HERE - Monitor abilities container sizing
+// In PartyManager.js, update the debugging code
+setTimeout(() => {
+  const abilitiesContainer = content.querySelector('.abilities-container');
+  const monsterAbilities = content.querySelector('.monster-abilities');
+  
+  if (abilitiesContainer && monsterAbilities) {
+    console.log("[LAYOUT DEBUG] Initial abilities container size:", {
+      containerWidth: abilitiesContainer.offsetWidth,
+      containerHeight: abilitiesContainer.offsetHeight,
+      abilitiesWidth: monsterAbilities.offsetWidth,
+      abilitiesHeight: monsterAbilities.offsetHeight,
+      containerStyleWidth: window.getComputedStyle(abilitiesContainer).width,
+      abilitiesStyleWidth: window.getComputedStyle(monsterAbilities).width,
+      parentWidth: abilitiesContainer.parentElement.offsetWidth
+    });
+    
+    // Create ResizeObserver to monitor for size changes
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        console.log("[LAYOUT DEBUG] Container size changed:", {
+          element: entry.target.className,
+          width: entry.contentRect.width,
+          height: entry.contentRect.height
+        });
+        
+        // Check layout direction based on width
+        if (entry.target.classList.contains('monster-abilities')) {
+          const gridComputedStyle = window.getComputedStyle(entry.target);
+          console.log("[LAYOUT DEBUG] Grid template:", {
+            columns: gridComputedStyle.gridTemplateColumns,
+            rows: gridComputedStyle.gridTemplateRows
+          });
+          
+          // Check if layout became column instead of row
+          if (gridComputedStyle.gridTemplateColumns.split(' ').length === 1) {
+            console.warn("[LAYOUT DEBUG] Layout changed to single column!");
+            console.log("[LAYOUT DEBUG] Container hierarchy:", {
+              parent: entry.target.parentElement.className,
+              parentWidth: entry.target.parentElement.offsetWidth,
+              grandparent: entry.target.parentElement.parentElement.className,
+              grandparentWidth: entry.target.parentElement.parentElement.offsetWidth
+            });
+          }
+        }
+      }
+    });
+    
+    // Observe both containers
+    resizeObserver.observe(abilitiesContainer);
+    resizeObserver.observe(monsterAbilities);
+    
+    // Store observer in a property so it's not garbage collected
+    if (!this._resizeObservers) this._resizeObservers = [];
+    this._resizeObservers.push(resizeObserver);
+    
+    // Removed problematic getEventListeners call
+  } else {
+    console.warn("[LAYOUT DEBUG] Could not find abilities containers");
+  }
+}, 100);
+
+
 
     const equipmentSlots = content.querySelectorAll('.equipment-slot');
     equipmentSlots.forEach(slot => {
@@ -3474,12 +3606,14 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
           if (itemId === 'none') {
             // Unequip
             this.unequipItem(monsterId, slot);
+            // this.refreshPartyDialog();
           } else {
             // Find and equip the item
             const equipment = placeholderEquipment.find(e => e.id === itemId);
             if (equipment) {
               this.equipItem(monsterId, slot, equipment);
             }
+            // this.refreshPartyDialog();
           }
   
           // Close drawer
@@ -3487,6 +3621,22 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
           
           // Refresh party UI
           this.refreshPartyDialog();
+
+          setTimeout(() => {
+            // Find the updated monster
+            const updatedMonster = this.findMonster(monsterId);
+            if (updatedMonster) {
+              // Get the details panel
+              const detailsPanel = this.partyDialog.querySelector('.party-details');
+              if (detailsPanel) {
+                // Clear and update details view
+                detailsPanel.innerHTML = '';
+                const detailView = this.createMonsterDetailView(updatedMonster);
+                detailsPanel.appendChild(detailView);
+              }
+            }
+          }, 50); 
+          
         });
       });
     };

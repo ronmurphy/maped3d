@@ -2703,45 +2703,111 @@ nextTurn() {
    */
 
   // Use a monster's ability
-  useMonsterAbility(abilityName) {
-    const currentMonster = this.getCurrentMonster();
-    if (!currentMonster) return false;
+  // useMonsterAbility(abilityName) {
+  //   const currentMonster = this.getCurrentMonster();
+  //   if (!currentMonster) return false;
 
+  //   // Find the ability
+  //   const ability = currentMonster.monsterAbilities.find(a => a.name === abilityName);
+  //   if (!ability) {
+  //     console.error(`Ability ${abilityName} not found for ${currentMonster.name}`);
+  //     return false;
+  //   }
+
+  //   // Show target selection for attack abilities
+  //   if (ability.type === 'attack' || ability.type === 'debuff') {
+  //     this.markTargetableEnemies(currentMonster, ability);
+  //     //   this.showTargetSelection(currentMonster, ability);
+  //   }
+  //   // For self-buff abilities, apply directly
+  //   else if (ability.type === 'buff' || ability.type === 'defense') {
+  //     this.resolveAbility(currentMonster, ability, currentMonster);
+  //     this.nextTurn();
+  //   }
+  //   // For area abilities, apply to all valid targets
+  //   else if (ability.type === 'area') {
+  //     // Get all valid enemy targets
+  //     const targets = this.enemyParty.filter(monster => monster.currentHP > 0);
+  //     if (targets.length > 0) {
+  //       let totalDamage = 0;
+
+  //       // Process each target
+  //       targets.forEach(target => {
+  //         const damage = this.calculateAbilityDamage(ability);
+  //         this.applyDamage(target, damage, monster);
+  //         // this.applyDamage(target, damage);
+  //         totalDamage += damage;
+  //       });
+
+  //       // Log the area attack
+  //       this.addLogEntry(`${currentMonster.name} uses ${ability.name}, dealing ${totalDamage} total damage to ${targets.length} targets.`);
+
+  //       // Move to next turn
+  //       this.nextTurn();
+  //     } else {
+  //       this.addLogEntry(`${currentMonster.name} has no valid targets for ${ability.name}.`);
+  //     }
+  //   }
+  //   // For healing abilities, show friendly target selection
+  //   else if (ability.type === 'healing') {
+  //     this.showFriendlyTargetSelection(currentMonster, ability);
+  //   }
+  //   else {
+  //     // For other ability types
+  //     this.addLogEntry(`${currentMonster.name} uses ${ability.name}.`);
+  //     this.nextTurn();
+  //   }
+
+  //   return true;
+  // }
+
+    // Updated useMonsterAbility method to fix ability activation issues
+  useMonsterAbility(abilityName) {
+    console.log(`Attempting to use ability: ${abilityName}`);
+    const currentMonster = this.getCurrentMonster();
+    if (!currentMonster) {
+      console.error('No active monster found for ability use');
+      return false;
+    }
+  
     // Find the ability
     const ability = currentMonster.monsterAbilities.find(a => a.name === abilityName);
     if (!ability) {
-      console.error(`Ability ${abilityName} not found for ${currentMonster.name}`);
+      console.error(`Ability "${abilityName}" not found for ${currentMonster.name}`);
       return false;
     }
-
+  
+    console.log(`Found ability: ${ability.name}, type: ${ability.type}`);
+  
     // Show target selection for attack abilities
     if (ability.type === 'attack' || ability.type === 'debuff') {
+      console.log('Initiating target selection for attack/debuff ability');
       this.markTargetableEnemies(currentMonster, ability);
-      //   this.showTargetSelection(currentMonster, ability);
     }
     // For self-buff abilities, apply directly
     else if (ability.type === 'buff' || ability.type === 'defense') {
+      console.log('Applying self-buff ability directly');
       this.resolveAbility(currentMonster, ability, currentMonster);
       this.nextTurn();
     }
     // For area abilities, apply to all valid targets
     else if (ability.type === 'area') {
+      console.log('Processing area effect ability');
       // Get all valid enemy targets
       const targets = this.enemyParty.filter(monster => monster.currentHP > 0);
       if (targets.length > 0) {
         let totalDamage = 0;
-
+  
         // Process each target
         targets.forEach(target => {
-          const damage = this.calculateAbilityDamage(ability);
-          this.applyDamage(target, damage, monster);
-          // this.applyDamage(target, damage);
+          const damage = this.calculateAbilityDamage(ability, currentMonster, target);
+          this.applyDamage(target, damage, currentMonster);
           totalDamage += damage;
         });
-
+  
         // Log the area attack
         this.addLogEntry(`${currentMonster.name} uses ${ability.name}, dealing ${totalDamage} total damage to ${targets.length} targets.`);
-
+  
         // Move to next turn
         this.nextTurn();
       } else {
@@ -2750,14 +2816,16 @@ nextTurn() {
     }
     // For healing abilities, show friendly target selection
     else if (ability.type === 'healing') {
+      console.log('Initiating friendly target selection for healing ability');
       this.showFriendlyTargetSelection(currentMonster, ability);
     }
     else {
       // For other ability types
+      console.log(`Using generic ability type: ${ability.type}`);
       this.addLogEntry(`${currentMonster.name} uses ${ability.name}.`);
       this.nextTurn();
     }
-
+  
     return true;
   }
 
@@ -2834,30 +2902,148 @@ nextTurn() {
     return bonus;
   }
 
-  markTargetableEnemies(monster, ability) {
-    // Find all enemy cards
-    const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
+  // markTargetableEnemies(monster, ability) {
+  //   // Find all enemy cards
+  //   const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
 
+  //   // Find viable targets (enemies with HP > 0)
+  //   const viableTargets = [];
+
+  //   enemyCards.forEach(card => {
+  //     const enemyId = card.getAttribute('data-monster-id');
+  //     const enemy = this.enemyParty.find(e => e.id === enemyId);
+
+  //     if (enemy && enemy.currentHP > 0) {
+  //       viableTargets.push({ card, enemy });
+  //     }
+  //   });
+
+  //   // If there's only one viable target, auto-target it
+  //   if (viableTargets.length === 1) {
+  //     const { enemy } = viableTargets[0];
+
+  //     // Create a quick highlight effect to show which enemy was targeted
+  //     const card = viableTargets[0].card;
+  //     card.classList.add('auto-targeted');
+
+  //     // Create a temporary message
+  //     const battleScene = this.dialogContainer.querySelector('.battle-scene');
+  //     const autoMessage = document.createElement('div');
+  //     autoMessage.className = 'battle-notification fade-in';
+  //     autoMessage.textContent = `Auto-targeting ${enemy.name}`;
+  //     autoMessage.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+  //     battleScene.appendChild(autoMessage);
+
+  //     // Remove the message and execute the ability after a short delay
+  //     setTimeout(() => {
+  //       // Remove the message
+  //       autoMessage.classList.remove('fade-in');
+  //       autoMessage.style.opacity = 0;
+
+  //       // Execute the ability
+  //       this.resolveAbility(monster, ability, enemy);
+
+  //       // Move to next turn
+  //       this.nextTurn();
+
+  //       // Clean up
+  //       setTimeout(() => {
+  //         autoMessage.remove();
+  //         card.classList.remove('auto-targeted');
+  //       }, 300);
+  //     }, 800); // Short delay so player can see what happened
+
+  //     return; // Exit early since we auto-targeted
+  //   }
+
+  //   // If we have multiple targets, proceed with normal targeting
+  //   viableTargets.forEach(({ card, enemy }) => {
+  //     // Add targetable class and hint
+  //     card.classList.add('targetable');
+
+  //     // Add targeting hint
+  //     const hint = document.createElement('div');
+  //     hint.className = 'targeting-hint';
+  //     hint.textContent = `Click to target with ${ability.name}`;
+  //     card.appendChild(hint);
+
+  //     // Click handler to execute the ability
+  //     card.addEventListener('click', () => {
+  //       // Remove targeting from all cards
+  //       enemyCards.forEach(c => {
+  //         c.classList.remove('targetable');
+  //         const h = c.querySelector('.targeting-hint');
+  //         if (h) h.remove();
+  //       });
+
+  //       // Execute ability on the target
+  //       this.resolveAbility(monster, ability, enemy);
+
+  //       // Move to next turn
+  //       this.nextTurn();
+
+  //       // Remove battle notification if present
+  //       const notification = this.dialogContainer.querySelector('.battle-notification');
+  //       if (notification) notification.remove();
+  //     });
+  //   });
+
+  //   // Add the targeting instruction message only if we have multiple targets
+  //   const battleScene = this.dialogContainer.querySelector('.battle-scene');
+  //   const indicator = document.createElement('div');
+  //   indicator.className = 'battle-notification fade-in';
+  //   indicator.textContent = 'Select an enemy to target';
+  //   indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+
+  //   battleScene.appendChild(indicator);
+
+  //   // Remove after a few seconds to avoid clutter
+  //   setTimeout(() => {
+  //     if (indicator && indicator.parentNode) {
+  //       indicator.classList.remove('fade-in');
+  //       indicator.style.opacity = 0;
+  //       setTimeout(() => {
+  //         if (indicator.parentNode) indicator.remove();
+  //       }, 300);
+  //     }
+  //   }, 3000);
+  // }
+
+  // Show target selection overlay
+  
+    // Updated markTargetableEnemies method
+  
+  
+    markTargetableEnemies(monster, ability) {
+    console.log(`Setting up targeting for ${monster.name} using ${ability.name}`);
+    
+    // Find all enemy cards
+    const enemyCards = Array.from(this.dialogContainer.querySelectorAll('.combat-monster.enemy'));
+    console.log(`Found ${enemyCards.length} enemy cards for targeting`);
+  
     // Find viable targets (enemies with HP > 0)
     const viableTargets = [];
-
+  
     enemyCards.forEach(card => {
       const enemyId = card.getAttribute('data-monster-id');
       const enemy = this.enemyParty.find(e => e.id === enemyId);
-
+  
       if (enemy && enemy.currentHP > 0) {
         viableTargets.push({ card, enemy });
+        console.log(`Viable target found: ${enemy.name} (HP: ${enemy.currentHP}/${enemy.maxHP})`);
       }
     });
-
+  
+    console.log(`Total viable targets: ${viableTargets.length}`);
+  
     // If there's only one viable target, auto-target it
     if (viableTargets.length === 1) {
-      const { enemy } = viableTargets[0];
-
-      // Create a quick highlight effect to show which enemy was targeted
-      const card = viableTargets[0].card;
+      const { enemy, card } = viableTargets[0];
+      console.log(`Auto-targeting single enemy: ${enemy.name}`);
+  
+      // Create a quick highlight effect
       card.classList.add('auto-targeted');
-
+  
       // Create a temporary message
       const battleScene = this.dialogContainer.querySelector('.battle-scene');
       const autoMessage = document.createElement('div');
@@ -2865,83 +3051,93 @@ nextTurn() {
       autoMessage.textContent = `Auto-targeting ${enemy.name}`;
       autoMessage.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
       battleScene.appendChild(autoMessage);
-
+  
       // Remove the message and execute the ability after a short delay
       setTimeout(() => {
-        // Remove the message
         autoMessage.classList.remove('fade-in');
-        autoMessage.style.opacity = 0;
-
-        // Execute the ability
+        autoMessage.style.opacity = '0';
+  
+        console.log(`Resolving ability ${ability.name} against ${enemy.name}`);
         this.resolveAbility(monster, ability, enemy);
-
+  
         // Move to next turn
         this.nextTurn();
-
+  
         // Clean up
         setTimeout(() => {
           autoMessage.remove();
           card.classList.remove('auto-targeted');
         }, 300);
-      }, 800); // Short delay so player can see what happened
-
-      return; // Exit early since we auto-targeted
+      }, 800);
+  
+      return;
     }
-
-    // If we have multiple targets, proceed with normal targeting
+  
+    // If we have multiple targets, proceed with manual targeting
+    console.log(`Setting up manual targeting for ${viableTargets.length} enemies`);
+    
     viableTargets.forEach(({ card, enemy }) => {
       // Add targetable class and hint
       card.classList.add('targetable');
-
+  
       // Add targeting hint
       const hint = document.createElement('div');
       hint.className = 'targeting-hint';
       hint.textContent = `Click to target with ${ability.name}`;
       card.appendChild(hint);
-
-      // Click handler to execute the ability
-      card.addEventListener('click', () => {
+  
+      // Create new click handler
+      const targetClickHandler = () => {
+        console.log(`Target selected: ${enemy.name}`);
+        
         // Remove targeting from all cards
         enemyCards.forEach(c => {
           c.classList.remove('targetable');
           const h = c.querySelector('.targeting-hint');
           if (h) h.remove();
+          
+          // Important: Remove all previous click handlers
+          c.removeEventListener('click', targetClickHandler);
         });
-
+  
         // Execute ability on the target
         this.resolveAbility(monster, ability, enemy);
-
+  
         // Move to next turn
         this.nextTurn();
-
+  
         // Remove battle notification if present
         const notification = this.dialogContainer.querySelector('.battle-notification');
         if (notification) notification.remove();
-      });
+      };
+  
+      // Add click handler
+      card.addEventListener('click', targetClickHandler);
     });
-
-    // Add the targeting instruction message only if we have multiple targets
+  
+    // Add the targeting instruction message
     const battleScene = this.dialogContainer.querySelector('.battle-scene');
     const indicator = document.createElement('div');
     indicator.className = 'battle-notification fade-in';
     indicator.textContent = 'Select an enemy to target';
     indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
-
     battleScene.appendChild(indicator);
-
+  
     // Remove after a few seconds to avoid clutter
     setTimeout(() => {
       if (indicator && indicator.parentNode) {
         indicator.classList.remove('fade-in');
-        indicator.style.opacity = 0;
+        indicator.style.opacity = '0';
         setTimeout(() => {
           if (indicator.parentNode) indicator.remove();
         }, 300);
       }
     }, 3000);
   }
-
-  // Show target selection overlay
+  
+  
+  
+  
   showTargetSelection(monster, ability) {
     // Get valid targets (non-defeated enemies)
     const validTargets = this.enemyParty.filter(enemy => enemy.currentHP > 0);
@@ -3166,37 +3362,83 @@ nextTurn() {
   }
 
   // Resolve an ability's effects
-  resolveAbility(monster, ability, target) {
-    // Log the ability use
-    this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
+  // resolveAbility(monster, ability, target) {
+  //   // Log the ability use
+  //   this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
 
-    // Process based on ability type
-    switch (ability.type) {
-      case 'attack':
-        // Calculate and apply damage - PASS THE MONSTER AS ATTACKER
-        const damage = this.calculateAbilityDamage(ability, monster, target);
-        this.applyDamage(target, damage, monster);
-        // this.applyDamage(target, damage);
-        break;
+  //   // Process based on ability type
+  //   switch (ability.type) {
+  //     case 'attack':
+  //       // Calculate and apply damage - PASS THE MONSTER AS ATTACKER
+  //       const damage = this.calculateAbilityDamage(ability, monster, target);
+  //       this.applyDamage(target, damage, monster);
+  //       // this.applyDamage(target, damage);
+  //       break;
 
-      case 'buff':
-        // Apply buff to monster
-        this.addLogEntry(`${monster.name} gains a beneficial effect.`);
-        break;
+  //     case 'buff':
+  //       // Apply buff to monster
+  //       this.addLogEntry(`${monster.name} gains a beneficial effect.`);
+  //       break;
 
-      case 'debuff':
-        // Apply debuff to target
-        this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
-        break;
+  //     case 'debuff':
+  //       // Apply debuff to target
+  //       this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
+  //       break;
 
-      default:
-        this.addLogEntry(`${ability.name} is used.`);
-        break;
-    }
+  //     default:
+  //       this.addLogEntry(`${ability.name} is used.`);
+  //       break;
+  //   }
 
-    // Update UI to reflect changes
-    this.updateCombatDisplay();
+  //   // Update UI to reflect changes
+  //   this.updateCombatDisplay();
+  // }
+
+// Updated resolveAbility method
+resolveAbility(monster, ability, target) {
+  console.log(`${monster.name} uses ${ability.name} on ${target.name}`);
+
+  // Log the ability use
+  this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
+
+  // Process based on ability type
+  switch (ability.type) {
+    case 'attack':
+      console.log(`Processing attack ability: ${ability.name}`);
+      // Calculate and apply damage
+      const damage = this.calculateAbilityDamage(ability, monster, target);
+      console.log(`Calculated damage: ${damage}`);
+      this.applyDamage(target, damage, monster);
+      break;
+
+    case 'buff':
+      // Apply buff to monster
+      console.log(`Applying buff: ${ability.name}`);
+      this.addLogEntry(`${monster.name} gains a beneficial effect.`);
+      
+      // Here you could implement actual stat buffs
+      // For example: monster.tempStatBonus = { type: 'ac', value: 2, duration: 3 };
+      break;
+
+    case 'debuff':
+      // Apply debuff to target
+      console.log(`Applying debuff: ${ability.name}`);
+      this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
+      
+      // Here you could implement actual debuffs
+      // For example: target.tempStatPenalty = { type: 'ac', value: -2, duration: 3 };
+      break;
+
+    default:
+      console.log(`Using generic ability type: ${ability.type}`);
+      this.addLogEntry(`${ability.name} is used.`);
+      break;
   }
+
+  // Update UI to reflect changes
+  this.updateCombatDisplay();
+}
+
 
   // Resolve healing ability
   resolveHealingAbility(monster, ability, target) {
