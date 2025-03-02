@@ -2815,6 +2815,89 @@ createMonsterCard(monster, side, index) {
    * Combat Action Methods
    */
 
+
+
+getWeaponDamage(weaponName) {
+  // Simple roll method - returns a random number between 1 and sides
+  const roll = (sides) => Math.floor(Math.random() * sides) + 1;
+  
+  // Default for unarmed/missing weapon
+  if (!weaponName) {
+    const damage = roll(4); // 1d4 unarmed attack
+    console.log(`Unarmed attack rolled 1d4: ${damage}`);
+    return damage;
+  }
+  
+  const name = weaponName.toLowerCase();
+  let damage = 0;
+  let diceNotation = "";
+  
+  // Determine weapon type and roll appropriate dice
+  if (name.includes('dagger') || name.includes('knife')) {
+    // 1d4 damage
+    damage = roll(4);
+    diceNotation = "1d4";
+  } else if (name.includes('short') && name.includes('sword') || name.includes('shortsword')) {
+    // 1d6 damage
+    damage = roll(6);
+    diceNotation = "1d6";
+  } else if (name.includes('sword') || name.includes('saber') || name.includes('rapier')) {
+    // 1d8 damage
+    damage = roll(8);
+    diceNotation = "1d8";
+  } else if (name.includes('axe') || name.includes('battleaxe')) {
+    // 1d10 damage
+    damage = roll(10);
+    diceNotation = "1d10";
+  } else if (name.includes('great') && (name.includes('sword') || name.includes('axe'))) {
+    // 2d6 damage for greatsword/greataxe
+    damage = roll(6) + roll(6);
+    diceNotation = "2d6";
+  } else if (name.includes('mace') || name.includes('club')) {
+    // 1d6 damage
+    damage = roll(6);
+    diceNotation = "1d6";
+  } else if (name.includes('hammer') || name.includes('warhammer')) {
+    // 1d8 damage
+    damage = roll(8);
+    diceNotation = "1d8";
+  } else if (name.includes('maul') || name.includes('great hammer')) {
+    // 2d6 damage
+    damage = roll(6) + roll(6);
+    diceNotation = "2d6";
+  } else if (name.includes('spear')) {
+    // 1d6 damage
+    damage = roll(6);
+    diceNotation = "1d6";
+  } else {
+    // Default 1d6 for unknown weapons
+    damage = roll(6);
+    diceNotation = "1d6";
+  }
+  
+  console.log(`Weapon "${weaponName}" rolled ${diceNotation}: ${damage}`);
+  return damage;
+}
+
+// Add a method to get just the dice notation for display purposes
+getWeaponDiceNotation(weaponName) {
+  if (!weaponName) return "1d4";
+  
+  const name = weaponName.toLowerCase();
+  
+  if (name.includes('dagger') || name.includes('knife')) return "1d4";
+  if (name.includes('short') && name.includes('sword') || name.includes('shortsword')) return "1d6";
+  if (name.includes('sword') || name.includes('saber') || name.includes('rapier')) return "1d8";
+  if (name.includes('axe') || name.includes('battleaxe')) return "1d10";
+  if (name.includes('great') && (name.includes('sword') || name.includes('axe'))) return "2d6";
+  if (name.includes('mace') || name.includes('club')) return "1d6";
+  if (name.includes('hammer') || name.includes('warhammer')) return "1d8";
+  if (name.includes('maul') || name.includes('great hammer')) return "2d6";
+  if (name.includes('spear')) return "1d6";
+  
+  return "1d6"; // Default
+}
+
   // Use a monster's ability
   useMonsterAbility(abilityName) {
     console.log(`Attempting to use ability: ${abilityName}`);
@@ -3463,20 +3546,51 @@ createMonsterCard(monster, side, index) {
     return damage;
   }
 
+  // calculateAbilityDamage(ability, attacker = null, target = null) {
+  //   // Base damage calculation
+  //   let damage = this.originalCalculateAbilityDamage(ability);
+
+  //   // Only apply relationship bonus if both attacker and target are provided
+  //   if (attacker && target) {
+  //     const relationshipBonus = this.applyRelationshipBonuses(attacker, target);
+
+  //     // Apply bonus to damage
+  //     if (relationshipBonus > 0) {
+  //       damage += Math.floor(relationshipBonus / 3);
+  //     }
+  //   }
+
+  //   return damage;
+  // }
+
+    // In the calculateAbilityDamage method, replace the weapon damage calculation
+  
   calculateAbilityDamage(ability, attacker = null, target = null) {
     // Base damage calculation
     let damage = this.originalCalculateAbilityDamage(ability);
-
+  
+    // If this is an attack ability and attacker has a weapon, add weapon damage
+    if (attacker && ability.type === "attack") {
+      const weapon = attacker.equipment?.weapon;
+      
+      if (weapon) {
+        // Get weapon damage directly
+        const weaponDamage = this.getWeaponDamage(weapon.name);
+        console.log(`Weapon ${weapon.name} dealt ${weaponDamage} damage`);
+        damage += weaponDamage;
+      }
+    }
+  
     // Only apply relationship bonus if both attacker and target are provided
     if (attacker && target) {
       const relationshipBonus = this.applyRelationshipBonuses(attacker, target);
-
+  
       // Apply bonus to damage
       if (relationshipBonus > 0) {
         damage += Math.floor(relationshipBonus / 3);
       }
     }
-
+  
     return damage;
   }
 

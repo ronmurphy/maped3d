@@ -3386,16 +3386,7 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
         
         ${monster.equipment?.weapon ? `
           <div style="display: flex; align-items: center;">
-            <div style="
-              width: 40px;
-              height: 40px;
-              background: rgba(239, 68, 68, 0.1);
-              border-radius: 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-right: 12px;
-            ">
+            <div style="width: 40px; height: 40px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
               ${monster.equipment.weapon.image ? 
                 `<img src="${monster.equipment.weapon.image}" alt="${monster.equipment.weapon.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` :
                 `<i class="ra ${this.getWeaponIcon(monster.equipment.weapon)}" style="font-size: 24px; color: #ef4444;"></i>`
@@ -3403,10 +3394,9 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
             </div>
             <div>
               <div style="font-weight: 500;">${monster.equipment.weapon.name}</div>
-              ${monster.equipment.weapon.damageBonus ?
-                `<div style="font-size: 0.8rem; color: #ef4444;">+${monster.equipment.weapon.damageBonus} damage</div>` :
-                ''
-              }
+              <div style="font-size: 0.8rem; color: #ef4444;">
+                ${this.getWeaponDiceNotation(monster.equipment.weapon.name)} damage
+              </div>
             </div>
           </div>
         ` : `
@@ -3635,6 +3625,24 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     detailsView.appendChild(content);
 
     return detailsView;
+  }
+
+  getWeaponDiceNotation(weaponName) {
+    if (!weaponName) return "1d4";
+    
+    const name = weaponName.toLowerCase();
+    
+    if (name.includes('dagger') || name.includes('knife')) return "1d4";
+    if (name.includes('short') && name.includes('sword') || name.includes('shortsword')) return "1d6";
+    if (name.includes('sword') || name.includes('saber') || name.includes('rapier')) return "1d8";
+    if (name.includes('axe') || name.includes('battleaxe')) return "1d10";
+    if (name.includes('great') && (name.includes('sword') || name.includes('axe'))) return "2d6";
+    if (name.includes('mace') || name.includes('club')) return "1d6";
+    if (name.includes('hammer') || name.includes('warhammer')) return "1d8";
+    if (name.includes('maul') || name.includes('great hammer')) return "2d6";
+    if (name.includes('spear')) return "1d6";
+    
+    return "1d6"; // Default
   }
 
   // Render active party display
