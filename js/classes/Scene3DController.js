@@ -149,122 +149,282 @@ class Scene3DController {
 
 
   cleanup() {
-    console.log('Starting Scene3D cleanup...');
+    console.log('Starting enhanced Scene3D cleanup...');
     this.isActive = false;
-
+  
     // Cancel any pending animation frames first
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
-
-    // Clean up UI elements
-    [
-      'teleportPrompt',
-      'doorPrompt',
-      'encounterPrompt',
-      'pickupPrompt',
-      'splashArtPrompt',
-      'inventoryDrawer'
-    ].forEach(element => {
+    
+    // Stop all timers and intervals
+    if (this.miniMapUpdateInterval) {
+      clearInterval(this.miniMapUpdateInterval);
+      this.miniMapUpdateInterval = null;
+    }
+  
+    // Clean up UI elements with proper checks
+    const uiElements = [
+      'teleportPrompt', 'doorPrompt', 'encounterPrompt', 'pickupPrompt', 
+      'splashArtPrompt', 'inventoryDrawer', 'qualityIndicator'
+    ];
+    
+    uiElements.forEach(element => {
       if (this[element]) {
         if (this[element].remove) this[element].remove();
+        if (this[element].parentNode) this[element].parentNode.removeChild(this[element]);
         this[element] = null;
       }
     });
-
-    // Remove all event listeners
+  
+    // Remove all event listeners with named functions
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
+    document.removeEventListener("keydown", this.keyHandlers.keydown);
+    document.removeEventListener("keyup", this.keyHandlers.keyup);
     window.removeEventListener('resize', this.handleResize);
-
-    // Clean up audio
-    if (this.camera) {
-      const listener = this.camera.children.find(child => child instanceof THREE.AudioListener);
-      if (listener) {
-        this.camera.remove(listener);
-        listener.context.close();
-      }
-    }
-
-    // Clean up physics
-    if (this.physics) {
-      this.physics.cleanup();
-      this.physics = null;
-    }
-
-    // Clean up visual effects
-    if (this.visualEffects) {
-      this.visualEffects.dispose();
-      this.visualEffects = null;
-    }
-
-    // Clean up day/night cycle
-    if (this.dayNightCycle) {
-      this.dayNightCycle.dispose();
-      this.dayNightCycle = null;
-    }
-
-    // Clean up stats
-    if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
-      this.stats.dom.parentNode.removeChild(this.stats.dom);
-      this.stats = null;
-    }
-
-    // Clean up controls
-    if (this.controls) {
-      this.controls.disconnect();
-      this.controls.dispose();
-      this.controls = null;
-    }
-
-    // Clean up renderer
+  
+    // Clean up renderer DOM element - critical for WebGL context release
     if (this.renderer) {
+      console.log('Disposing of renderer...');
+      
+      // Force immediate renderer disposal
       this.renderer.dispose();
-      if (this.renderer.domElement && this.renderer.domElement.parentNode) {
-        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      
+      // Dispose of all render targets
+      if (this.renderer.renderTargets) {
+        Object.keys(this.renderer.renderTargets).forEach(key => {
+          this.renderer.renderTargets[key].dispose();
+          delete this.renderer.renderTargets[key];
+        });
       }
+      
+      // Remove DOM element
+      if (this.renderer.domElement) {
+        if (this.renderer.domElement.parentNode) {
+          this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+        }
+      }
+      
+      // Force context loss (important for WebGL resource cleanup)
+      if (this.renderer.forceContextLoss) {
+        this.renderer.forceContextLoss();
+      }
+      
+      // Force context release
+      const gl = this.renderer.getContext();
+      if (gl && gl.getExtension('WEBGL_lose_context')) {
+        gl.getExtension('WEBGL_lose_context').loseContext();
+      }
+      
       this.renderer = null;
     }
-
-    // Clean up scene
+  
+    // Clean up audio with better checks
+    if (this.camera) {
+      // Find and dispose of audio listener
+      const listener = this.camera.children.find(child => child instanceof THREE.AudioListener);
+      if (listener) {
+        console.log('Cleaning up audio listener...');
+        this.camera.remove(listener);
+        if (listener.context && listener.context.close) {
+          listener.context.close();
+        }
+        
+        // Dispose of all audio sources
+        this.scene.traverse(object => {
+          if (object.isAudio) {
+            object.disconnect();
+            if (object.source) {
+              object.source.disconnect();
+              object.source = null;
+            }
+            if (object.buffer) {
+              object.buffer = null;
+            }
+          }
+        });
+      }
+    }
+  
+    // Clean up specific sounds
+    ['doorSound', 'jumpSound'].forEach(sound => {
+      if (this[sound]) {
+        if (this[sound].isPlaying) this[sound].stop();
+        if (this[sound].disconnect) this[sound].disconnect();
+        this[sound] = null;
+      }
+    });
+  
+    // Clean up physics with proper checks
+    if (this.physics) {
+      console.log('Cleaning up physics...');
+      if (this.physics.cleanup) this.physics.cleanup();
+      this.physics = null;
+    }
+  
+    // Clean up visual effects
+    if (this.visualEffects) {
+      console.log('Cleaning up visual effects...');
+      if (this.visualEffects.dispose) this.visualEffects.dispose();
+      this.visualEffects = null;
+    }
+  
+    // Clean up day/night cycle
+    if (this.dayNightCycle) {
+      console.log('Cleaning up day/night cycle...');
+      if (this.dayNightCycle.dispose) this.dayNightCycle.dispose();
+      this.dayNightCycle = null;
+    }
+  
+    // Clean up stats with proper checks
+    if (this.stats) {
+      console.log('Cleaning up stats...');
+      if (this.stats.dom && this.stats.dom.parentNode) {
+        this.stats.dom.parentNode.removeChild(this.stats.dom);
+      }
+      this.stats = null;
+    }
+  
+    // Clean up controls
+    if (this.controls) {
+      console.log('Cleaning up controls...');
+      this.controls.disconnect();
+      if (this.controls.dispose) this.controls.dispose();
+      this.controls = null;
+    }
+  
+    // Dispose all geometries, materials, and textures in the scene
+    console.log('Disposing scene objects...');
     if (this.scene) {
       this.scene.traverse((object) => {
+        // Remove all event listeners
+        if (object._listeners) {
+          object._listeners = {};
+        }
+        
+        // Dispose geometry with safety checks
         if (object.geometry) {
           object.geometry.dispose();
+          object.geometry = null;
         }
+        
+        // Dispose material(s) thoroughly
         if (object.material) {
           if (Array.isArray(object.material)) {
             object.material.forEach(material => this.disposeMaterial(material));
           } else {
             this.disposeMaterial(object.material);
           }
+          object.material = null;
         }
       });
+      
+      // Clear the scene
+      while (this.scene.children.length > 0) {
+        this.scene.remove(this.scene.children[0]);
+      }
+      
       this.scene = null;
     }
-
-
-    // Clear arrays and maps
+  
+    // Explicit cleanup of memory-heavy components
+    if (this.baseImage) {
+      this.baseImage.src = '';
+      this.baseImage = null;
+    }
+  
+    // Clear arrays and maps with proper nullifying
+    console.log('Clearing data structures...');
     this.teleporters = [];
     this.doors = [];
     this.markers = [];
-    this.inventory = new Map();
-
-    // Force texture cleanup
+    if (this.inventory) {
+      this.inventory.clear();
+      this.inventory = null;
+    }
+  
+    // Clear all references to objects
+    this.nearestSplashArt = null;
+    this.activeSplashArt = null;
+    this.nearestProp = null;
+    this.nearestEncounter = null;
+    this.activeTeleporter = null;
+    this.activeDoor = null;
+    this.playerLight = null;
+  
+    // Clear cached objects in Three.js
     THREE.Cache.clear();
-
+  
+    // Clean up mini-map
     this.cleanupMiniMap();
-
-    // Suggest garbage collection
-    setTimeout(() => {
-      console.log('Cleanup completed');
-      if (window.gc) window.gc();
-    }, 100);
-
+  
+    // Clean up any potential circular references
+    this.movementVector = null;
+    this.frustum = null;
+    this.projScreenMatrix = null;
+    this.particlePool = null;
+  
     // Clear all remaining properties
     this.clear();
-    console.log('Scene3D cleanup finished');
+    
+    // Explicitly request garbage collection when available
+    console.log('Cleanup complete, requesting garbage collection...');
+    setTimeout(() => {
+      if (window.gc) window.gc();
+    }, 300);
+  
+    // Force another garbage collection attempt after a delay
+    setTimeout(() => {
+      if (window.gc) window.gc();
+      console.log('Final cleanup completed');
+    }, 1000);
+  }
+  
+  // Enhanced method to thoroughly dispose of materials including all textures
+  disposeMaterial(material) {
+    if (!material) return;
+  
+    // Dispose all texture properties
+    const textureProps = [
+      'map', 'lightMap', 'bumpMap', 'normalMap', 'displacementMap', 'specularMap',
+      'emissiveMap', 'metalnessMap', 'roughnessMap', 'alphaMap', 'aoMap', 'envMap',
+      'matcap', 'gradientMap'
+    ];
+    
+    textureProps.forEach(prop => {
+      if (material[prop]) {
+        material[prop].dispose();
+        material[prop] = null;
+      }
+    });
+  
+    // Check for custom properties
+    if (material.userData) {
+      Object.keys(material.userData).forEach(key => {
+        if (material.userData[key] && 
+            material.userData[key].isTexture) {
+          material.userData[key].dispose();
+          material.userData[key] = null;
+        }
+      });
+    }
+  
+    // Also dispose any MeshStandardMaterial specific fields
+    if (material.isMeshStandardMaterial) {
+      if (material.envMap) {
+        material.envMap.dispose();
+        material.envMap = null;
+      }
+      
+      if (material.onBeforeCompile) {
+        material.onBeforeCompile = null;
+      }
+    }
+  
+    // Dispose the material itself
+    material.dispose();
   }
 
   disposeMaterial(material) {
