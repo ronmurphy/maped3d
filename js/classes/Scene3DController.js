@@ -471,6 +471,7 @@ this.keyDebounceTimers = {};
       });
       this.scene = null;
     }
+
   
     // Clear arrays and maps
     this.teleporters = [];
@@ -480,6 +481,8 @@ this.keyDebounceTimers = {};
   
     // Force texture cleanup
     THREE.Cache.clear();
+
+    this.cleanupMiniMap();
   
     // Suggest garbage collection
     setTimeout(() => {
@@ -3129,6 +3132,8 @@ case "KeyP": // P to show Party Manager
         }
       });
     };
+
+    this.createMiniMap();
 
     // Return with all class method references
     return {
@@ -7004,5 +7009,772 @@ createPartyAndCombatSystems() {
     }
   }
 }
+
+// createMiniMap() {
+//   console.log('Creating mini-map');
+
+//   // Only create once
+//   if (this.miniMapContainer) {
+//     console.log('Mini-map already exists');
+//     return;
+//   }
+
+//   // Check if we have the necessary map image
+//   if (!this.baseImage || !this.baseImage.src) {
+//     console.warn('No base image available for mini-map');
+//     return;
+//   }
+
+//   // Create minimap container
+//   this.miniMapContainer = document.createElement('div');
+//   this.miniMapContainer.className = 'mini-map-container';
+//   this.miniMapContainer.style.cssText = `
+//     position: absolute;
+//     bottom: 20px;
+//     right: 20px;
+//     width: 180px;
+//     height: 180px;
+//     border-radius: 10px;
+//     background: rgba(0, 0, 0, 0.5);
+//     overflow: hidden;
+//     transform: rotate(-3deg);
+//     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+//     border: 2px solid rgba(255, 255, 255, 0.3);
+//     z-index: 1000;
+//     transition: transform 0.3s ease;
+//   `;
+
+//   // Create map image container with overflow hidden
+//   const mapViewport = document.createElement('div');
+//   mapViewport.className = 'mini-map-viewport';
+//   mapViewport.style.cssText = `
+//     position: relative;
+//     width: 100%;
+//     height: 100%;
+//     overflow: hidden;
+//     border-radius: 8px;
+//   `;
+
+//   // Create the map image element
+//   this.miniMapImage = document.createElement('div');
+//   this.miniMapImage.className = 'mini-map-image';
+//   this.miniMapImage.style.cssText = `
+//     position: absolute;
+//     background-image: url(${this.baseImage.src});
+//     background-size: cover;
+//     transition: transform 0.2s ease-out;
+//   `;
+
+//   // Calculate scale - we want the entire map to be visible at first
+//   const mapAspectRatio = this.baseImage.width / this.baseImage.height;
+//   const viewportAspectRatio = 180 / 180; // Our viewport is square
+
+//   let width, height;
+//   if (mapAspectRatio > viewportAspectRatio) {
+//     // Map is wider than viewport
+//     width = this.baseImage.width;
+//     height = this.baseImage.width / viewportAspectRatio;
+//   } else {
+//     // Map is taller than viewport
+//     height = this.baseImage.height;
+//     width = this.baseImage.height * viewportAspectRatio;
+//   }
+
+//   // Set the map image dimensions
+//   this.miniMapImage.style.width = width + 'px';
+//   this.miniMapImage.style.height = height + 'px';
+//   this.miniMapImage.style.left = '0px';
+//   this.miniMapImage.style.top = '0px';
+
+//   // Create player indicator
+//   this.miniMapPlayer = document.createElement('div');
+//   this.miniMapPlayer.className = 'mini-map-player';
+//   this.miniMapPlayer.style.cssText = `
+//     position: absolute;
+//     width: 8px;
+//     height: 8px;
+//     background-color: #3b82f6;
+//     border: 2px solid white;
+//     border-radius: 50%;
+//     transform: translate(-50%, -50%);
+//     z-index: 10;
+//     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+//   `;
+
+//   // Direction indicator (shows which way player is facing)
+//   this.miniMapDirection = document.createElement('div');
+//   this.miniMapDirection.className = 'mini-map-direction';
+//   this.miniMapDirection.style.cssText = `
+//     position: absolute;
+//     width: 0;
+//     height: 0;
+//     border-left: 6px solid transparent;
+//     border-right: 6px solid transparent;
+//     border-bottom: 12px solid #3b82f6;
+//     transform: translate(-50%, -50%) rotate(0deg);
+//     transform-origin: center bottom;
+//     z-index: 9;
+//   `;
+
+//   // Add compass elements
+//   const directions = [
+//     { letter: 'N', rotation: 0, top: '5px', left: '50%' },
+//     { letter: 'E', rotation: 90, top: '50%', right: '5px' },
+//     { letter: 'S', rotation: 180, bottom: '5px', left: '50%' },
+//     { letter: 'W', rotation: 270, top: '50%', left: '5px' }
+//   ];
+
+//   directions.forEach(dir => {
+//     const dirMarker = document.createElement('div');
+//     dirMarker.className = 'compass-marker';
+//     dirMarker.textContent = dir.letter;
+//     dirMarker.style.cssText = `
+//       position: absolute;
+//       font-size: 10px;
+//       font-weight: bold;
+//       color: rgba(255, 255, 255, 0.8);
+//       z-index: 8;
+//       ${dir.top ? `top: ${dir.top};` : ''}
+//       ${dir.bottom ? `bottom: ${dir.bottom};` : ''}
+//       ${dir.left ? `left: ${dir.left};` : ''}
+//       ${dir.right ? `right: ${dir.right};` : ''}
+//       transform: translate(-50%, -50%) rotate(${dir.rotation}deg);
+//     `;
+//     mapViewport.appendChild(dirMarker);
+//   });
+
+//   // Add toggle button
+//   const toggleButton = document.createElement('div');
+//   toggleButton.className = 'mini-map-toggle';
+//   toggleButton.innerHTML = '<span class="material-icons">map</span>';
+//   toggleButton.style.cssText = `
+//     position: absolute;
+//     top: -10px;
+//     right: -10px;
+//     width: 24px;
+//     height: 24px;
+//     background: rgba(0, 0, 0, 0.7);
+//     color: white;
+//     border-radius: 50%;
+//     display: flex;
+//     align-items: center;
+//     justify-content: center;
+//     cursor: pointer;
+//     font-size: 14px;
+//     z-index: 11;
+//     transition: transform 0.2s ease;
+//   `;
+
+//   // Toggle mini-map visibility
+//   let isMinimized = false;
+//   toggleButton.addEventListener('click', () => {
+//     if (isMinimized) {
+//       this.miniMapContainer.style.transform = 'rotate(-3deg)';
+//       this.miniMapContainer.style.width = '180px';
+//       this.miniMapContainer.style.height = '180px';
+//       toggleButton.innerHTML = '<span class="material-icons">map</span>';
+//     } else {
+//       this.miniMapContainer.style.transform = 'rotate(-3deg) scale(0.5)';
+//       this.miniMapContainer.style.width = '60px';
+//       this.miniMapContainer.style.height = '60px';
+//       toggleButton.innerHTML = '<span class="material-icons">zoom_out_map</span>';
+//     }
+//     isMinimized = !isMinimized;
+//   });
+
+//   // Assemble the components
+//   mapViewport.appendChild(this.miniMapImage);
+//   mapViewport.appendChild(this.miniMapPlayer);
+//   mapViewport.appendChild(this.miniMapDirection);
+//   this.miniMapContainer.appendChild(mapViewport);
+//   this.miniMapContainer.appendChild(toggleButton);
+
+//   // Find where to add the mini-map
+//   const container = document.querySelector('.drawer-3d-view');
+//   if (container) {
+//     container.appendChild(this.miniMapContainer);
+//   } else {
+//     document.body.appendChild(this.miniMapContainer);
+//   }
+
+//   // Add hover effect
+//   this.miniMapContainer.addEventListener('mouseenter', () => {
+//     if (!isMinimized) {
+//       this.miniMapContainer.style.transform = 'rotate(-3deg) scale(1.05)';
+//     }
+//   });
+
+//   this.miniMapContainer.addEventListener('mouseleave', () => {
+//     if (!isMinimized) {
+//       this.miniMapContainer.style.transform = 'rotate(-3deg)';
+//     }
+//   });
+
+//   // Initial update
+//   this.updateMiniMap();
+
+//   // Schedule updates
+//   this.miniMapUpdateInterval = setInterval(() => {
+//     this.updateMiniMap();
+//   }, 100);
+
+//   console.log('Mini-map created successfully');
+// }
+
+// // Add this method to update the mini-map
+// updateMiniMap() {
+//   if (!this.miniMapContainer || !this.camera) return;
+
+//   // Get player position in world coordinates
+//   const playerX = this.camera.position.x;
+//   const playerZ = this.camera.position.z;
+
+//   // Convert to map coordinates (which are usually scaled)
+//   // boxWidth and boxDepth are the dimensions of your 3D world from (0,0) to (boxWidth, boxDepth)
+//   // We need to convert from (-boxWidth/2, -boxDepth/2) to (boxWidth/2, boxDepth/2) to (0,0) to (baseImage.width, baseImage.height)
+//   const mapX = ((playerX + this.boxWidth / 2) / this.boxWidth) * this.baseImage.width;
+//   const mapZ = ((playerZ + this.boxDepth / 2) / this.boxDepth) * this.baseImage.height;
+
+//   // Update player indicator position
+//   const viewport = this.miniMapContainer.querySelector('.mini-map-viewport');
+//   const viewportWidth = viewport.offsetWidth;
+//   const viewportHeight = viewport.offsetHeight;
+
+//   // Scale factor between the 3D world and the mini-map
+//   const scaleX = this.miniMapImage.offsetWidth / this.baseImage.width;
+//   const scaleZ = this.miniMapImage.offsetHeight / this.baseImage.height;
+
+//   // Calculate how much to offset the map to center the player
+//   const mapOffsetX = viewportWidth / 2 - mapX * scaleX;
+//   const mapOffsetZ = viewportHeight / 2 - mapZ * scaleZ;
+
+//   // Position the map
+//   this.miniMapImage.style.transform = `translate(${mapOffsetX}px, ${mapOffsetZ}px)`;
+
+//   // Position the player indicator at the center of the viewport
+//   this.miniMapPlayer.style.left = `${viewportWidth / 2}px`;
+//   this.miniMapPlayer.style.top = `${viewportHeight / 2}px`;
+
+//   // Position and rotate the direction indicator
+//   this.miniMapDirection.style.left = `${viewportWidth / 2}px`;
+//   this.miniMapDirection.style.top = `${viewportHeight / 2}px`;
+
+//   // Get player rotation (y-axis rotation in radians)
+//   if (this.camera.rotation) {
+//     // Convert to degrees and adjust
+//     let degrees = -this.camera.rotation.y * (180 / Math.PI);
+//     this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
+//   } else if (this.controls && this.controls.getObject) {
+//     // For PointerLockControls, we can get rotation from camera rotation
+//     const direction = new THREE.Vector3(0, 0, -1);
+//     direction.applyQuaternion(this.camera.quaternion);
+//     const angle = Math.atan2(direction.x, direction.z);
+//     let degrees = angle * (180 / Math.PI);
+//     this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
+//   }
+// }
+
+// // Add this method to clean up the mini-map
+// cleanupMiniMap() {
+//   if (this.miniMapUpdateInterval) {
+//     clearInterval(this.miniMapUpdateInterval);
+//     this.miniMapUpdateInterval = null;
+//   }
+
+//   if (this.miniMapContainer && this.miniMapContainer.parentNode) {
+//     this.miniMapContainer.parentNode.removeChild(this.miniMapContainer);
+//     this.miniMapContainer = null;
+//     this.miniMapImage = null;
+//     this.miniMapPlayer = null;
+//     this.miniMapDirection = null;
+//   }
+// }
+
+// Improved Mini-Map Implementation for Scene3DController
+// This version handles varying map sizes and ensures accurate player positioning
+
+createMiniMap() {
+  console.log('Creating improved mini-map');
+
+  // Only create once
+  if (this.miniMapContainer) {
+    console.log('Mini-map already exists');
+    return;
+  }
+
+  // Check if we have the necessary map image
+  if (!this.baseImage || !this.baseImage.src) {
+    console.warn('No base image available for mini-map');
+    return;
+  }
+
+  // Create minimap container with tilted card aesthetic
+  this.miniMapContainer = document.createElement('div');
+  this.miniMapContainer.className = 'mini-map-container';
+  this.miniMapContainer.style.cssText = `
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 180px;
+    height: 180px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    transform: rotate(-3deg);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    user-select: none;
+  `;
+
+  // Create map image container with overflow hidden
+  const mapViewport = document.createElement('div');
+  mapViewport.className = 'mini-map-viewport';
+  mapViewport.style.cssText = `
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+  `;
+
+  // Store the map dimensions for accurate calculation
+  this.miniMapDimensions = {
+    worldWidth: this.boxWidth,
+    worldDepth: this.boxDepth,
+    imageWidth: this.baseImage.width,
+    imageHeight: this.baseImage.height,
+    viewportWidth: 180,
+    viewportHeight: 180
+  };
+
+  // Calculate the scale factor between 3D world and image
+  this.miniMapDimensions.scaleX = this.miniMapDimensions.imageWidth / this.miniMapDimensions.worldWidth;
+  this.miniMapDimensions.scaleZ = this.miniMapDimensions.imageHeight / this.miniMapDimensions.worldDepth;
+
+  // Create the map image element - sized to match the world scale exactly
+  this.miniMapImage = document.createElement('div');
+  this.miniMapImage.className = 'mini-map-image';
+  this.miniMapImage.style.cssText = `
+    position: absolute;
+    background-image: url(${this.baseImage.src});
+    background-size: 100% 100%;
+    width: ${this.miniMapDimensions.imageWidth}px;
+    height: ${this.miniMapDimensions.imageHeight}px;
+    transform-origin: top left;
+    transition: transform 0.1s ease-out;
+  `;
+
+  // Create player indicator
+  this.miniMapPlayer = document.createElement('div');
+  this.miniMapPlayer.className = 'mini-map-player';
+  this.miniMapPlayer.style.cssText = `
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: #3b82f6;
+    border: 2px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  `;
+
+  // Direction indicator (shows which way player is facing)
+  this.miniMapDirection = document.createElement('div');
+  this.miniMapDirection.className = 'mini-map-direction';
+  this.miniMapDirection.style.cssText = `
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 12px solid #3b82f6;
+    transform: translate(-50%, -50%) rotate(0deg);
+    transform-origin: center bottom;
+    z-index: 10;
+    pointer-events: none;
+  `;
+
+  // Add border frame to emphasize the mini-map
+  const mapBorder = document.createElement('div');
+  mapBorder.className = 'mini-map-border';
+  mapBorder.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 12;
+  `;
+
+  // Add compass elements
+  const directions = [
+    { letter: 'N', rotation: 0, top: '5px', left: '50%' },
+    { letter: 'E', rotation: 90, top: '50%', right: '5px' },
+    { letter: 'S', rotation: 180, bottom: '5px', left: '50%' },
+    { letter: 'W', rotation: 270, top: '50%', left: '5px' }
+  ];
+
+  directions.forEach(dir => {
+    const dirMarker = document.createElement('div');
+    dirMarker.className = 'compass-marker';
+    dirMarker.textContent = dir.letter;
+    dirMarker.style.cssText = `
+      position: absolute;
+      font-size: 10px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.8);
+      z-index: 9;
+      ${dir.top ? `top: ${dir.top};` : ''}
+      ${dir.bottom ? `bottom: ${dir.bottom};` : ''}
+      ${dir.left ? `left: ${dir.left};` : ''}
+      ${dir.right ? `right: ${dir.right};` : ''}
+      transform: translate(-50%, -50%) rotate(${dir.rotation}deg);
+      text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+      pointer-events: none;
+    `;
+    mapViewport.appendChild(dirMarker);
+  });
+
+  // Add zoom buttons for adjustable mini-map
+  const zoomControls = document.createElement('div');
+  zoomControls.className = 'mini-map-zoom-controls';
+  zoomControls.style.cssText = `
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 13;
+  `;
+
+  const zoomInBtn = document.createElement('div');
+  zoomInBtn.className = 'mini-map-zoom-in';
+  zoomInBtn.innerHTML = '+';
+  zoomInBtn.style.cssText = `
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.2s;
+  `;
+
+  const zoomOutBtn = document.createElement('div');
+  zoomOutBtn.className = 'mini-map-zoom-out';
+  zoomOutBtn.innerHTML = '-';
+  zoomOutBtn.style.cssText = `
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.2s;
+  `;
+
+  zoomControls.appendChild(zoomInBtn);
+  zoomControls.appendChild(zoomOutBtn);
+
+  // Zoom functionality
+  this.miniMapZoom = 1.0; // Default zoom level
+  const maxZoom = 4.0;
+  const minZoom = 0.5;
+  const zoomStep = 0.25;
+
+  zoomInBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (this.miniMapZoom < maxZoom) {
+      this.miniMapZoom += zoomStep;
+      this.updateMiniMap(true); // Force update
+    }
+  });
+
+  zoomOutBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (this.miniMapZoom > minZoom) {
+      this.miniMapZoom -= zoomStep;
+      this.updateMiniMap(true); // Force update
+    }
+  });
+
+  // Add toggle/minimize button
+  const toggleButton = document.createElement('div');
+  toggleButton.className = 'mini-map-toggle';
+  toggleButton.innerHTML = '<span class="material-icons">map</span>';
+  toggleButton.style.cssText = `
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 14;
+    transition: transform 0.2s ease;
+  `;
+
+  // Toggle mini-map visibility
+  let isMinimized = false;
+  toggleButton.addEventListener('click', () => {
+    if (isMinimized) {
+      this.miniMapContainer.style.transform = 'rotate(-3deg)';
+      this.miniMapContainer.style.width = '180px';
+      this.miniMapContainer.style.height = '180px';
+      toggleButton.innerHTML = '<span class="material-icons">map</span>';
+    } else {
+      this.miniMapContainer.style.transform = 'rotate(-3deg) scale(0.5)';
+      this.miniMapContainer.style.width = '60px';
+      this.miniMapContainer.style.height = '60px';
+      toggleButton.innerHTML = '<span class="material-icons">zoom_out_map</span>';
+    }
+    isMinimized = !isMinimized;
+  });
+
+  // Add pan functionality using mouse drag
+  let isDragging = false;
+  let dragStart = { x: 0, y: 0 };
+  let currentOffset = { x: 0, y: 0 };
+
+  mapViewport.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    dragStart.x = e.clientX;
+    dragStart.y = e.clientY;
+    mapViewport.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    
+    // Update current offset (will be applied in updateMiniMap)
+    currentOffset.x += dx;
+    currentOffset.y += dy;
+    
+    // Update drag start for next move
+    dragStart.x = e.clientX;
+    dragStart.y = e.clientY;
+    
+    // Force an update
+    this.updateMiniMap(true);
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      mapViewport.style.cursor = 'grab';
+    }
+  });
+
+  // Reset pan button
+  const resetPanBtn = document.createElement('div');
+  resetPanBtn.className = 'mini-map-reset';
+  resetPanBtn.innerHTML = '⟳';
+  resetPanBtn.style.cssText = `
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+    z-index: 13;
+  `;
+
+  resetPanBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Reset offset and center on player
+    currentOffset = { x: 0, y: 0 };
+    this.updateMiniMap(true);
+  });
+
+  // Store the current offset for panning
+  this.miniMapOffset = currentOffset;
+
+  // Assemble the components
+  mapViewport.appendChild(this.miniMapImage);
+  mapViewport.appendChild(this.miniMapPlayer);
+  mapViewport.appendChild(this.miniMapDirection);
+  mapViewport.appendChild(mapBorder);
+  mapViewport.appendChild(zoomControls);
+  mapViewport.appendChild(resetPanBtn);
+  this.miniMapContainer.appendChild(mapViewport);
+  this.miniMapContainer.appendChild(toggleButton);
+
+  // Find where to add the mini-map
+  const container = document.querySelector('.drawer-3d-view');
+  if (container) {
+    container.appendChild(this.miniMapContainer);
+  } else {
+    document.body.appendChild(this.miniMapContainer);
+  }
+
+  // Add hover effect
+  this.miniMapContainer.addEventListener('mouseenter', () => {
+    if (!isMinimized) {
+      this.miniMapContainer.style.transform = 'rotate(-3deg) scale(1.05)';
+    }
+    mapViewport.style.cursor = 'grab';
+  });
+
+  this.miniMapContainer.addEventListener('mouseleave', () => {
+    if (!isMinimized) {
+      this.miniMapContainer.style.transform = 'rotate(-3deg)';
+    }
+    mapViewport.style.cursor = 'default';
+    isDragging = false;
+  });
+
+  // Initial update
+  this.updateMiniMap(true);
+
+  // Schedule updates
+  this.miniMapUpdateInterval = setInterval(() => {
+    this.updateMiniMap();
+  }, 100);
+
+  console.log('Improved mini-map created successfully');
+}
+
+// Improved updateMiniMap method with better scaling and positioning
+updateMiniMap(forceUpdate = false) {
+  if (!this.miniMapContainer || !this.camera) return;
+
+  // Skip updates if minimized and not forcing an update
+  if (this.miniMapContainer.style.width === '60px' && !forceUpdate) return;
+
+  // Get the viewport dimensions
+  const viewport = this.miniMapContainer.querySelector('.mini-map-viewport');
+  const viewportWidth = viewport.offsetWidth;
+  const viewportHeight = viewport.offsetHeight;
+
+  // Get player position in world coordinates (already converted from camera position)
+  const playerX = this.camera.position.x;
+  const playerZ = this.camera.position.z;
+
+  // Calculate the center of the 3D world
+  const worldCenterX = 0; // Assuming the center is at origin
+  const worldCenterZ = 0;
+
+  // Convert player position to map image coordinates
+  // Step 1: Convert from world coords to normalized coords (0-1)
+  // First adjust from world center to world corner
+  const normalizedX = (playerX + this.miniMapDimensions.worldWidth / 2) / this.miniMapDimensions.worldWidth;
+  const normalizedZ = (playerZ + this.miniMapDimensions.worldDepth / 2) / this.miniMapDimensions.worldDepth;
+
+  // Step 2: Convert normalized coords to pixel coords on the map image
+  const mapPixelX = normalizedX * this.miniMapDimensions.imageWidth;
+  const mapPixelZ = normalizedZ * this.miniMapDimensions.imageHeight;
+
+  // DEBUGGING: Log map coordinates and player world position
+  if (forceUpdate) {
+    console.log("World position:", { x: playerX, z: playerZ });
+    console.log("Normalized coordinates:", { x: normalizedX, z: normalizedZ });
+    console.log("Map pixel coordinates:", { x: mapPixelX, z: mapPixelZ });
+  }
+
+  // Calculate the image scale to account for zoom
+  const imageScale = Math.min(
+    viewportWidth / this.miniMapDimensions.imageWidth,
+    viewportHeight / this.miniMapDimensions.imageHeight
+  ) * this.miniMapZoom;
+
+  // Calculate the scaled image dimensions
+  const scaledImageWidth = this.miniMapDimensions.imageWidth * imageScale;
+  const scaledImageHeight = this.miniMapDimensions.imageHeight * imageScale;
+
+  // Calculate center offset for the image to position player at center
+  // Also include any user panning offset
+  let offsetX = (viewportWidth / 2) - (mapPixelX * imageScale) + this.miniMapOffset.x;
+  let offsetZ = (viewportHeight / 2) - (mapPixelZ * imageScale) + this.miniMapOffset.y;
+
+  // Apply scale and position to map image
+  this.miniMapImage.style.transform = `translate(${offsetX}px, ${offsetZ}px) scale(${imageScale})`;
+
+  // Update the player indicator position - always at viewport center unless panned
+  const playerPosX = viewportWidth / 2 - this.miniMapOffset.x;
+  const playerPosZ = viewportHeight / 2 - this.miniMapOffset.y;
+  
+  this.miniMapPlayer.style.left = `${playerPosX}px`;
+  this.miniMapPlayer.style.top = `${playerPosZ}px`;
+
+  // Update the direction indicator
+  this.miniMapDirection.style.left = `${playerPosX}px`;
+  this.miniMapDirection.style.top = `${playerPosZ}px`;
+
+  // Get player rotation for the direction indicator
+  if (this.camera.rotation) {
+    // Convert to degrees and adjust
+    let degrees = -this.camera.rotation.y * (180 / Math.PI);
+    this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
+  } else if (this.controls && this.controls.getObject) {
+    // For PointerLockControls, we get rotation from camera quaternion
+    const direction = new THREE.Vector3(0, 0, -1);
+    direction.applyQuaternion(this.camera.quaternion);
+    const angle = Math.atan2(direction.x, direction.z);
+    let degrees = angle * (180 / Math.PI);
+    this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
+  }
+}
+
+// Clean up the mini-map resources
+cleanupMiniMap() {
+  if (this.miniMapUpdateInterval) {
+    clearInterval(this.miniMapUpdateInterval);
+    this.miniMapUpdateInterval = null;
+  }
+
+  // Remove event listeners
+  document.removeEventListener('mousemove', this._miniMapMouseMove);
+  document.removeEventListener('mouseup', this._miniMapMouseUp);
+
+  if (this.miniMapContainer && this.miniMapContainer.parentNode) {
+    this.miniMapContainer.parentNode.removeChild(this.miniMapContainer);
+    this.miniMapContainer = null;
+    this.miniMapImage = null;
+    this.miniMapPlayer = null;
+    this.miniMapDirection = null;
+    this.miniMapOffset = null;
+    this.miniMapDimensions = null;
+    this.miniMapZoom = null;
+  }
+}
+
+// Call this method in your initialize or init3DScene function
+// createMiniMap();
 
 }
