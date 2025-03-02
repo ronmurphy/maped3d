@@ -1,3 +1,4 @@
+window.DEBUG_MODE = true;
 /**
  * PartyManager.js
  * Handles monster recruitment, party management, and monster progression
@@ -45,6 +46,26 @@ class PartyManager {
     this.activeTab = 'active';
     this.starterCheckPerformed = false;
     this.initializeRelationshipSystem();
+
+      // Try to connect to Scene3DController
+      let connectionAttempts = 0;
+      const tryConnect = () => {
+        connectionAttempts++;
+        console.log(`Connection attempt ${connectionAttempts} to Scene3DController`);
+        
+        if (this.connectToSceneInventory()) {
+          console.log('Successfully connected to Scene3DController');
+        } else if (connectionAttempts < 5) {
+          console.log(`Connection failed, retrying in ${connectionAttempts * 500}ms...`);
+          setTimeout(tryConnect, connectionAttempts * 500);
+        } else {
+          console.warn('Failed to connect to Scene3DController after multiple attempts');
+        }
+      };
+      
+      // Start connection attempts
+      setTimeout(tryConnect, 1000);
+
 
     console.log('Party Manager initialized');
   }
@@ -1230,11 +1251,11 @@ showDismissConfirmation(monster) {
    * Equipment Methods
    */
 
-
-  equipItem(monsterId, slot, item) {
+// Modified equipItem method to fix ID mismatch issue
+equipItem(monsterId, slot, itemId) {
   const monster = this.findMonster(monsterId);
   if (!monster) {
-    console.error(`Monster ${monsterId} not found`);
+    console.error(`Monster with ID ${monsterId} not found`);
     return false;
   }
 
@@ -1243,29 +1264,569 @@ showDismissConfirmation(monster) {
     console.error(`Invalid equipment slot: ${slot}`);
     return false;
   }
-
-  console.log(`Equipping ${item.name} to ${monster.name}'s ${slot} slot`);
-  console.log("Item details:", item);
-
-  // Unequip current item if any
+  
+  console.log(`Equipping item ${itemId} to ${monster.name}'s ${slot} slot`);
+  
+  // 1. FIND THE ITEM FROM THE CORRECT INVENTORY
+  let item = null;
+  let itemSource = null;
+  
+  // Check for "none" to handle unequipping
+  if (itemId === 'none') {
+    console.log(`Unequipping ${monster.name}'s ${slot}`);
+    if (monster.equipment[slot]) {
+      // Return item to appropriate inventory if it was from local inventory
+      if (monster.equipment[slot].source !== '3d-inventory') {
+        if (slot === 'weapon') {
+          this.inventory.weapons.push(monster.equipment[slot]);
+        } else {
+          this.inventory.armor.push(monster.equipment[slot]);
+        }
+      }
+    }
+    
+    // Remove equipment
+    monster.equipment[slot] = null;
+    this.updateMonsterStats(monster);
+    this.saveParty();
+    
+    console.log(`Unequipped ${slot} from ${monster.name}`);
+    this.showToast(`Unequipped ${monster.name}'s ${slot}`, 'success');
+    return true;
+  }
+  
+  // First check Scene3D inventory (world items)
+  if (this.scene3D && typeof this.scene3D.getInventoryItems === 'function') {
+    // Get all potential items from Scene3D
+    const sceneItems = this.scene3D.getInventoryItems();
+    
+    // DEBUG: Log all item IDs to see what's available
+    console.log('Available items from 3D world:');
+    sceneItems.forEach(i => console.log(`- Item: ${i.name}, ID: ${i.id}, Type: ${typeof i.id}`));
+    
+    // Convert itemId to both string and number for more robust comparison
+    const itemIdStr = String(itemId);
+    const itemIdNum = Number(itemId);
+    
+    // Try to find item matching either string or number ID
+    const matchingItem = sceneItems.find(i => 
+      String(i.id) === itemIdStr || 
+      (i.id === itemIdNum) ||
+      // Also try with "prop-" prefix that might be getting added
+      String(i.id) === `prop-${itemIdStr}` ||
+      String(itemId).replace('prop-', '') === String(i.id)
+    );
+    
+    if (matchingItem) {
+      // Important: Make a deep copy of the item to avoid reference issues
+      item = JSON.parse(JSON.stringify(matchingItem));
+      itemSource = '3d-inventory';
+      console.log('Found item in 3D world inventory:', item);
+    } else {
+      console.log(`Could not find item with ID ${itemId} in 3D world inventory`);
+    }
+  }
+  
+  // If not found in Scene3D, check local inventory
+  if (!item) {
+    const localItems = (slot === 'weapon') ? this.inventory.weapons : this.inventory.armor;
+    
+    // DEBUG: Log all local items
+    console.log(`Available items in local ${slot} inventory:`);
+    localItems.forEach(i => console.log(`- Item: ${i.name}, ID: ${i.id}, Type: ${typeof i.id}`));
+    
+    // Use same flexible ID matching
+    const itemIdStr = String(itemId);
+    const itemIdNum = Number(itemId);
+    
+    const matchingItem = localItems.find(i => 
+      String(i.id) === itemIdStr || 
+      (i.id === itemIdNum) ||
+      String(i.id) === `prop-${itemIdStr}` ||
+      String(itemId).replace('prop-', '') === String(i.id)
+    );
+    
+    if (matchingItem) {
+      item = { ...matchingItem }; // Clone to avoid reference issues
+      itemSource = 'local-inventory';
+      console.log('Found item in local inventory:', item);
+    } else {
+      console.log(`Could not find item with ID ${itemId} in local inventory`);
+    }
+  }
+  
+  // Alternative approach: If still no item found, try direct inventory lookup
+  // This is a fallback for Scene3D's specific inventory format
+  if (!item && this.scene3D && this.scene3D.inventory) {
+    console.log('Attempting direct inventory lookup as fallback');
+    // Note: inventory in Scene3D might be a Map, not an array
+    if (this.scene3D.inventory instanceof Map) {
+      if (this.scene3D.inventory.has(itemId)) {
+        const invItem = this.scene3D.inventory.get(itemId);
+        if (invItem && invItem.prop) {
+          console.log('Found item directly in Scene3D inventory Map:', invItem.prop);
+          
+          // Convert to proper equipment format
+          item = {
+            id: invItem.prop.id || itemId,
+            name: invItem.prop.name || 'Unknown Item',
+            type: slot, // Use the slot we're trying to fill
+            image: invItem.prop.image || null,
+            damageBonus: slot === 'weapon' ? Math.ceil(Math.random() * 3) : 0,
+            acBonus: slot === 'armor' ? Math.ceil(Math.random() * 3) : 0,
+            source: '3d-inventory'
+          };
+          itemSource = '3d-inventory';
+        }
+      }
+    }
+  }
+  
+  // If no item found, return error
+  if (!item) {
+    console.error(`Item ${itemId} not found in any inventory`);
+    
+    // Add extra error info for debugging
+    console.error(`Unable to find item with ID ${itemId} in either inventory.`);
+    console.error(`ItemID type: ${typeof itemId}`);
+    
+    // For debugging only: Create a placeholder item as a last resort
+    // Remove this for production code
+    if (window.DEBUG_MODE) {
+      console.warn('DEBUG MODE: Creating placeholder item');
+      item = {
+        id: itemId,
+        name: slot === 'weapon' ? 'Debug Weapon' : 'Debug Armor',
+        type: slot,
+        damageBonus: slot === 'weapon' ? 2 : 0,
+        acBonus: slot === 'armor' ? 2 : 0,
+        source: 'debug'
+      };
+      itemSource = 'debug';
+    } else {
+      return false;
+    }
+  }
+  
+  // 2. UNEQUIP CURRENT ITEM IF ANY
   if (monster.equipment[slot]) {
     console.log(`Unequipping current ${slot}: ${monster.equipment[slot].name}`);
-    this.unequipItem(monsterId, slot);
+    
+    // Return the item to the appropriate inventory
+    if (monster.equipment[slot].source === '3d-inventory') {
+      console.log('Item would return to 3D inventory (not implemented)');
+    } else {
+      if (slot === 'weapon') {
+        this.inventory.weapons.push(monster.equipment[slot]);
+      } else if (slot === 'armor') {
+        this.inventory.armor.push(monster.equipment[slot]);
+      }
+    }
   }
-
-  // Equip new item
-  monster.equipment[slot] = item;
-
-  // Update monster stats based on equipment
-  this.updateMonsterStats(monster);
-
-  console.log(`Successfully equipped ${item.name} to ${monster.name}`);
-  console.log("Monster after equipping:", monster);
   
-  // Save party after equipping
+  // 3. EQUIP NEW ITEM TO MONSTER
+  console.log(`Equipping ${item.name} to ${monster.name}`);
+  monster.equipment[slot] = {
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    image: item.image || null,
+    damageBonus: item.damageBonus || 0,
+    acBonus: item.acBonus || 0,
+    source: itemSource
+  };
+  
+  console.log(`Equipped item details:`, monster.equipment[slot]);
+  
+  // 4. REMOVE ITEM FROM SOURCE INVENTORY
+  if (itemSource === '3d-inventory' && this.scene3D && typeof this.scene3D.removeFromInventory === 'function') {
+    console.log(`Removing item ${item.id} from 3D inventory`);
+    this.scene3D.removeFromInventory(item.id);
+  } else {
+    // Remove from local inventory
+    if (slot === 'weapon') {
+      this.inventory.weapons = this.inventory.weapons.filter(w => w.id !== item.id);
+    } else if (slot === 'armor') {
+      this.inventory.armor = this.inventory.armor.filter(a => a.id !== item.id);
+    }
+  }
+  
+  // 5. UPDATE MONSTER STATS
+  this.updateMonsterStats(monster);
+  
+  // 6. SAVE PARTY STATE
   this.saveParty();
   
+  // 7. Show a success toast
+  this.showToast(`Equipped ${item.name} to ${monster.name}`, 'success');
+  
+  // 8. FORCE UI REFRESH with a longer timeout to ensure updates are processed
+  setTimeout(() => {
+    console.log("Executing delayed UI refresh for monster details");
+    
+    // Double-check that monster data has been updated
+    const updatedMonster = this.findMonster(monsterId);
+    console.log("Updated monster equipment status:", {
+      slot: slot,
+      equipped: !!updatedMonster.equipment[slot],
+      item: updatedMonster.equipment[slot]
+    });
+    
+    // Update the monster detail view
+    const detailsPanel = this.partyDialog?.querySelector('.party-details');
+    if (detailsPanel) {
+      detailsPanel.innerHTML = '';
+      const detailView = this.createMonsterDetailView(updatedMonster);
+      detailsPanel.appendChild(detailView);
+    }
+  }, 300);
+  
   return true;
+}
+
+  debugEquipmentSystem() {
+    console.group('PartyManager Equipment System Debug');
+    
+    // Check Scene3D connection
+    console.log('Scene3D connection:', {
+      exists: !!this.scene3D,
+      hasGetMethod: this.scene3D && typeof this.scene3D.getInventoryItems === 'function',
+      hasRemoveMethod: this.scene3D && typeof this.scene3D.removeFromInventory === 'function'
+    });
+    
+    // Check for 3D items
+    if (this.scene3D && typeof this.scene3D.getInventoryItems === 'function') {
+      const items = this.scene3D.getInventoryItems();
+      console.log('Items from Scene3D inventory:', items);
+    }
+    
+    // Check local inventory
+    console.log('PartyManager weapon inventory:', this.inventory.weapons);
+    console.log('PartyManager armor inventory:', this.inventory.armor);
+    
+    // Check active monsters' equipment
+    console.log('Active monsters equipment:');
+    this.party.active.forEach(monster => {
+      console.log(`${monster.name}:`, {
+        weapon: monster.equipment.weapon,
+        armor: monster.equipment.armor
+      });
+    });
+    
+    // Test drawer construction
+    const testSlot = 'weapon';
+    const testEquipment = this.getPlaceholderEquipment(testSlot);
+    console.log(`Test getPlaceholderEquipment("${testSlot}"):`, testEquipment);
+    
+    console.groupEnd();
+    
+    return {
+      scene3dConnected: !!this.scene3D,
+      scene3dItemsCount: this.scene3D && typeof this.scene3D.getInventoryItems === 'function' 
+        ? this.scene3D.getInventoryItems().length 
+        : 'unknown',
+      localWeaponsCount: this.inventory.weapons.length,
+      localArmorCount: this.inventory.armor.length,
+      totalEquipmentOptions: testEquipment.length
+    };
+  }
+
+// Add this method to PartyManager class
+debugMonsterEquipment(monsterId) {
+  const monster = this.findMonster(monsterId);
+  if (!monster) {
+    console.error(`Monster with ID ${monsterId} not found for debugging`);
+    return;
+  }
+  
+  console.group(`Equipment Debug Info for ${monster.name}`);
+  
+  // Log basic monster info
+  console.log('Monster ID:', monster.id);
+  console.log('Monster name:', monster.name);
+  console.log('Monster level:', monster.level);
+  
+  // Check equipment slots
+  console.log('Weapon equipped:', !!monster.equipment.weapon);
+  if (monster.equipment.weapon) {
+    console.log('Weapon details:', {
+      id: monster.equipment.weapon.id,
+      name: monster.equipment.weapon.name,
+      damageBonus: monster.equipment.weapon.damageBonus,
+      source: monster.equipment.weapon.source,
+      hasImage: !!monster.equipment.weapon.image,
+      imageLength: monster.equipment.weapon.image ? monster.equipment.weapon.image.length : 0
+    });
+  }
+  
+  console.log('Armor equipped:', !!monster.equipment.armor);
+  if (monster.equipment.armor) {
+    console.log('Armor details:', {
+      id: monster.equipment.armor.id,
+      name: monster.equipment.armor.name,
+      acBonus: monster.equipment.armor.acBonus,
+      source: monster.equipment.armor.source,
+      hasImage: !!monster.equipment.armor.image,
+      imageLength: monster.equipment.armor.image ? monster.equipment.armor.image.length : 0
+    });
+  }
+  
+  // Check for UI elements
+  if (this.partyDialog) {
+    console.log('Party dialog exists');
+    const detailsPanel = this.partyDialog.querySelector('.party-details');
+    if (detailsPanel) {
+      console.log('Details panel exists');
+      const weaponSlot = detailsPanel.querySelector('.equipment-slot[data-slot="weapon"]');
+      const armorSlot = detailsPanel.querySelector('.equipment-slot[data-slot="armor"]');
+      
+      console.log('Weapon UI element exists:', !!weaponSlot);
+      console.log('Armor UI element exists:', !!armorSlot);
+      
+      if (weaponSlot) {
+        console.log('Weapon UI classes:', weaponSlot.className);
+        console.log('Weapon UI is showing as equipped:', weaponSlot.classList.contains('equipped'));
+        
+        // Check content
+        const weaponName = weaponSlot.querySelector('[style*="font-weight: 500;"]');
+        if (weaponName) {
+          console.log('Weapon name in UI:', weaponName.textContent);
+        } else {
+          console.log('Weapon name element not found in UI');
+        }
+      }
+    } else {
+      console.log('Details panel does not exist');
+    }
+  } else {
+    console.log('Party dialog does not exist');
+  }
+  
+  console.groupEnd();
+  
+  // Add debugging button to UI if possible
+  this.addDebugButton(monster);
+}
+
+// Add a debug button to the UI
+addDebugButton(monster) {
+  if (!this.partyDialog) return;
+  
+  // Check if debug button already exists
+  if (this.partyDialog.querySelector('.debug-equipment-btn')) return;
+  
+  const detailsPanel = this.partyDialog.querySelector('.party-details');
+  if (!detailsPanel) return;
+  
+  const debugBtn = document.createElement('button');
+  debugBtn.className = 'debug-equipment-btn';
+  debugBtn.textContent = 'Debug Equipment';
+  debugBtn.style.cssText = `
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 1000;
+  `;
+  
+  debugBtn.addEventListener('click', () => {
+    this.debugMonsterEquipment(monster.id);
+    this.forceRefreshEquipmentUI(monster);
+  });
+  
+  detailsPanel.appendChild(debugBtn);
+}
+
+// Add this method to PartyManager class
+// This allows Scene3DController to notify when an item is ready to equip
+notifyItemReadyToEquip(item) {
+  console.log('PartyManager notified of item ready to equip:', item);
+  
+  // Store the item temporarily
+  if (!this._pendingEquipItems) {
+    this._pendingEquipItems = [];
+  }
+  this._pendingEquipItems.push(item);
+  
+  // Show a notification to the user
+  this.showToast(`Select a monster to equip ${item.name}`, 'info');
+  
+  // Add a listener to monster cards to detect selection
+  this.setupEquipItemListeners();
+}
+
+// Add this helper method to PartyManager
+setupEquipItemListeners() {
+  if (!this.partyDialog || !this._pendingEquipItems || this._pendingEquipItems.length === 0) {
+    return;
+  }
+  
+  const item = this._pendingEquipItems[0]; // Get the first pending item
+  const monsterCards = this.partyDialog.querySelectorAll('.monster-card');
+  
+  // Add click listeners to all monster cards
+  monsterCards.forEach(card => {
+    // Remove any existing equip-item-listener to prevent duplicates
+    if (card._hasEquipItemListener) {
+      return; // Skip if already has listener
+    }
+    
+    // Create a new click handler specifically for equipment
+    const equipClickHandler = (e) => {
+      // Get the monster ID
+      const monsterId = card.getAttribute('data-monster-id');
+      if (!monsterId) return;
+      
+      // Find the monster
+      const monster = this.findMonster(monsterId);
+      if (!monster) return;
+      
+      // Show confirmation dialog
+      this.showEquipConfirmation(monster, item);
+      
+      // Remove this special listener after a selection is made
+      monsterCards.forEach(c => {
+        c.removeEventListener('click', c._equipClickHandler);
+        delete c._equipClickHandler;
+        delete c._hasEquipItemListener;
+      });
+      
+      // Prevent further handling of this click
+      e.stopPropagation();
+    };
+    
+    // Store the handler reference so we can remove it later
+    card._equipClickHandler = equipClickHandler;
+    card._hasEquipItemListener = true;
+    
+    // Add the listener
+    card.addEventListener('click', equipClickHandler);
+  });
+}
+
+// Add this helper to show equipment confirmation
+showEquipConfirmation(monster, item) {
+  // Create confirmation dialog
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = `Equip ${item.name}`;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    padding: 16px;
+    text-align: center;
+  `;
+  
+  // Add item image if available
+  if (item.image) {
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.style.cssText = `
+      max-width: 100px;
+      max-height: 100px;
+      object-fit: contain;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    `;
+    content.appendChild(img);
+  }
+  
+  content.innerHTML += `
+    <p>Do you want to equip <strong>${item.name}</strong> to <strong>${monster.name}</strong>?</p>
+  `;
+  
+  // Add information about bonuses
+  if (item.type === 'weapon' && item.damageBonus) {
+    content.innerHTML += `<p>This weapon adds <strong>+${item.damageBonus} damage</strong>.</p>`;
+  } else if (item.type === 'armor' && item.acBonus) {
+    content.innerHTML += `<p>This armor adds <strong>+${item.acBonus} AC</strong>.</p>`;
+  }
+  
+  // Add buttons
+  const footer = document.createElement('div');
+  footer.style.cssText = `
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 16px;
+  `;
+  
+  const confirmBtn = document.createElement('sl-button');
+  confirmBtn.setAttribute('variant', 'primary');
+  confirmBtn.textContent = 'Equip';
+  confirmBtn.addEventListener('click', () => {
+    // Perform the equip
+    const slot = item.type; // 'weapon' or 'armor'
+    const success = this.equipItem(monster.id, slot, item.id);
+    
+    if (success) {
+      this.showToast(`Equipped ${item.name} to ${monster.name}`, 'success');
+      
+      // Remove from pending items
+      if (this._pendingEquipItems) {
+        this._pendingEquipItems = this._pendingEquipItems.filter(i => i.id !== item.id);
+      }
+      
+      // Find and update monster details view if it's currently displayed
+      const detailsPanel = this.partyDialog?.querySelector('.party-details');
+      if (detailsPanel) {
+        const currentMonsterDetails = detailsPanel.querySelector('.monster-details');
+        if (currentMonsterDetails) {
+          // Refresh the details view for this monster
+          detailsPanel.innerHTML = '';
+          const detailView = this.createMonsterDetailView(monster);
+          detailsPanel.appendChild(detailView);
+        }
+      }
+    } else {
+      this.showToast(`Failed to equip ${item.name}`, 'error');
+    }
+    
+    dialog.hide();
+  });
+  
+  const cancelBtn = document.createElement('sl-button');
+  cancelBtn.setAttribute('variant', 'neutral');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => {
+    dialog.hide();
+  });
+  
+  footer.appendChild(cancelBtn);
+  footer.appendChild(confirmBtn);
+  
+  content.appendChild(footer);
+  dialog.appendChild(content);
+  
+  // Add to document and show
+  document.body.appendChild(dialog);
+  dialog.show();
+}
+
+// Add this function to force refresh the UI
+forceRefreshEquipmentUI(monster) {
+  if (!this.partyDialog) return;
+  
+  const detailsPanel = this.partyDialog.querySelector('.party-details');
+  if (!detailsPanel) return;
+  
+  console.log("Force refreshing equipment UI for", monster.name);
+  
+  // Completely rebuild the details view
+  detailsPanel.innerHTML = '';
+  const detailView = this.createMonsterDetailView(monster);
+  detailsPanel.appendChild(detailView);
+  
+  // Add the debug button back
+  this.addDebugButton(monster);
+  
+  // Show a notification
+  this.showToast("Equipment display forcibly refreshed", "info");
 }
 
 // Unequip item from monster
@@ -2451,14 +3012,17 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
               justify-content: center;
               margin-right: 12px;
             ">
-              <i class="ra ${this.getWeaponIcon(monster.equipment.weapon)}" style="font-size: 24px; color: #ef4444;"></i>
+              ${monster.equipment.weapon.image ? 
+                `<img src="${monster.equipment.weapon.image}" alt="${monster.equipment.weapon.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` :
+                `<i class="ra ${this.getWeaponIcon(monster.equipment.weapon)}" style="font-size: 24px; color: #ef4444;"></i>`
+              }
             </div>
             <div>
               <div style="font-weight: 500;">${monster.equipment.weapon.name}</div>
               ${monster.equipment.weapon.damageBonus ?
-          `<div style="font-size: 0.8rem; color: #ef4444;">+${monster.equipment.weapon.damageBonus} damage</div>` :
-          ''
-        }
+                `<div style="font-size: 0.8rem; color: #ef4444;">+${monster.equipment.weapon.damageBonus} damage</div>` :
+                ''
+              }
             </div>
           </div>
         ` : `
@@ -2507,14 +3071,17 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
               justify-content: center;
               margin-right: 12px;
             ">
-              <i class="ra ${this.getArmorIcon(monster.equipment.armor)}" style="font-size: 24px; color: #3b82f6;"></i>
+              ${monster.equipment.armor.image ? 
+                `<img src="${monster.equipment.armor.image}" alt="${monster.equipment.armor.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` :
+                `<i class="ra ${this.getArmorIcon(monster.equipment.armor)}" style="font-size: 24px; color: #3b82f6;"></i>`
+              }
             </div>
             <div>
               <div style="font-weight: 500;">${monster.equipment.armor.name}</div>
               ${monster.equipment.armor.acBonus ?
-          `<div style="font-size: 0.8rem; color: #3b82f6;">+${monster.equipment.armor.acBonus} armor</div>` :
-          ''
-        }
+                `<div style="font-size: 0.8rem; color: #3b82f6;">+${monster.equipment.armor.acBonus} armor</div>` :
+                ''
+              }
             </div>
           </div>
         ` : `
@@ -2584,65 +3151,65 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
 
   // ADD DEBUGGING CODE HERE - Monitor abilities container sizing
 // In PartyManager.js, update the debugging code
-setTimeout(() => {
-  const abilitiesContainer = content.querySelector('.abilities-container');
-  const monsterAbilities = content.querySelector('.monster-abilities');
+// setTimeout(() => {
+//   const abilitiesContainer = content.querySelector('.abilities-container');
+//   const monsterAbilities = content.querySelector('.monster-abilities');
   
-  if (abilitiesContainer && monsterAbilities) {
-    console.log("[LAYOUT DEBUG] Initial abilities container size:", {
-      containerWidth: abilitiesContainer.offsetWidth,
-      containerHeight: abilitiesContainer.offsetHeight,
-      abilitiesWidth: monsterAbilities.offsetWidth,
-      abilitiesHeight: monsterAbilities.offsetHeight,
-      containerStyleWidth: window.getComputedStyle(abilitiesContainer).width,
-      abilitiesStyleWidth: window.getComputedStyle(monsterAbilities).width,
-      parentWidth: abilitiesContainer.parentElement.offsetWidth
-    });
+//   if (abilitiesContainer && monsterAbilities) {
+//     console.log("[LAYOUT DEBUG] Initial abilities container size:", {
+//       containerWidth: abilitiesContainer.offsetWidth,
+//       containerHeight: abilitiesContainer.offsetHeight,
+//       abilitiesWidth: monsterAbilities.offsetWidth,
+//       abilitiesHeight: monsterAbilities.offsetHeight,
+//       containerStyleWidth: window.getComputedStyle(abilitiesContainer).width,
+//       abilitiesStyleWidth: window.getComputedStyle(monsterAbilities).width,
+//       parentWidth: abilitiesContainer.parentElement.offsetWidth
+//     });
     
-    // Create ResizeObserver to monitor for size changes
-    const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        console.log("[LAYOUT DEBUG] Container size changed:", {
-          element: entry.target.className,
-          width: entry.contentRect.width,
-          height: entry.contentRect.height
-        });
+//     // Create ResizeObserver to monitor for size changes
+//     const resizeObserver = new ResizeObserver(entries => {
+//       for (const entry of entries) {
+//         console.log("[LAYOUT DEBUG] Container size changed:", {
+//           element: entry.target.className,
+//           width: entry.contentRect.width,
+//           height: entry.contentRect.height
+//         });
         
-        // Check layout direction based on width
-        if (entry.target.classList.contains('monster-abilities')) {
-          const gridComputedStyle = window.getComputedStyle(entry.target);
-          console.log("[LAYOUT DEBUG] Grid template:", {
-            columns: gridComputedStyle.gridTemplateColumns,
-            rows: gridComputedStyle.gridTemplateRows
-          });
+//         // Check layout direction based on width
+//         if (entry.target.classList.contains('monster-abilities')) {
+//           const gridComputedStyle = window.getComputedStyle(entry.target);
+//           console.log("[LAYOUT DEBUG] Grid template:", {
+//             columns: gridComputedStyle.gridTemplateColumns,
+//             rows: gridComputedStyle.gridTemplateRows
+//           });
           
-          // Check if layout became column instead of row
-          if (gridComputedStyle.gridTemplateColumns.split(' ').length === 1) {
-            console.warn("[LAYOUT DEBUG] Layout changed to single column!");
-            console.log("[LAYOUT DEBUG] Container hierarchy:", {
-              parent: entry.target.parentElement.className,
-              parentWidth: entry.target.parentElement.offsetWidth,
-              grandparent: entry.target.parentElement.parentElement.className,
-              grandparentWidth: entry.target.parentElement.parentElement.offsetWidth
-            });
-          }
-        }
-      }
-    });
+//           // Check if layout became column instead of row
+//           if (gridComputedStyle.gridTemplateColumns.split(' ').length === 1) {
+//             console.warn("[LAYOUT DEBUG] Layout changed to single column!");
+//             console.log("[LAYOUT DEBUG] Container hierarchy:", {
+//               parent: entry.target.parentElement.className,
+//               parentWidth: entry.target.parentElement.offsetWidth,
+//               grandparent: entry.target.parentElement.parentElement.className,
+//               grandparentWidth: entry.target.parentElement.parentElement.offsetWidth
+//             });
+//           }
+//         }
+//       }
+//     });
     
-    // Observe both containers
-    resizeObserver.observe(abilitiesContainer);
-    resizeObserver.observe(monsterAbilities);
+//     // Observe both containers
+//     resizeObserver.observe(abilitiesContainer);
+//     resizeObserver.observe(monsterAbilities);
     
-    // Store observer in a property so it's not garbage collected
-    if (!this._resizeObservers) this._resizeObservers = [];
-    this._resizeObservers.push(resizeObserver);
+//     // Store observer in a property so it's not garbage collected
+//     if (!this._resizeObservers) this._resizeObservers = [];
+//     this._resizeObservers.push(resizeObserver);
     
-    // Removed problematic getEventListeners call
-  } else {
-    console.warn("[LAYOUT DEBUG] Could not find abilities containers");
-  }
-}, 100);
+//     // Removed problematic getEventListeners call
+//   } else {
+//     console.warn("[LAYOUT DEBUG] Could not find abilities containers");
+//   }
+// }, 100);
 
 
 
@@ -3430,50 +3997,143 @@ setTimeout(() => {
   }
 
   // Add or update your showEquipmentDialog method
-  showEquipmentDialog(monster, selectedSlot = 'weapon') {
-    // Make sure party manager is open
-    if (!this.partyDialog || !this.equipmentDrawer) {
-      console.error('Party manager must be open to show equipment dialog');
-      return;
-    }
+
+// Modified showEquipmentDialog to ensure correct item ID display
+showEquipmentDialog(monster, selectedSlot = 'weapon') {
+  // Make sure party manager is open
+  if (!this.partyDialog || !this.equipmentDrawer) {
+    console.error('Party manager must be open to show equipment dialog');
+    return;
+  }
+  
+  // Get placeholder equipment
+  const placeholderEquipment = this.getPlaceholderEquipment(selectedSlot);
+  
+  // Log all available items with their IDs for debugging
+  console.log(`Available items for slot ${selectedSlot}:`);
+  placeholderEquipment.forEach(item => {
+    console.log(`- Item: ${item.name}, ID: ${item.id}, Type: ${typeof item.id}, Source: ${item.source || 'unknown'}`);
+  });
+  
+  // Update drawer label
+  this.equipmentDrawer.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
+  
+  // Update drawer content
+  const drawerContent = this.equipmentDrawer.querySelector('.equipment-drawer-content');
+  drawerContent.innerHTML = `
+  <div style="
+    background: #f5f3e8;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #e6e0d1;
+    margin-bottom: 16px;
+  ">
+    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+      <i class="ra ${selectedSlot === 'weapon' ? 'ra-crossed-swords' : 'ra-shield'}" style="
+        font-size: 24px;
+        margin-right: 12px;
+        color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
+      "></i>
+      <div style="font-weight: bold; font-size: 1.1rem;">Available ${selectedSlot === 'weapon' ? 'Weapons' : 'Armor'}</div>
+    </div>
     
-    // Get placeholder equipment
-    const placeholderEquipment =  this.getPlaceholderEquipment(selectedSlot);
+    <!-- Current equipment -->
+    ${monster.equipment[selectedSlot] ? `
+      <div style="
+        margin-bottom: 16px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+      ">
+        <div style="margin-bottom: 8px; font-weight: bold; display: flex; align-items: center;">
+          <i class="ra ra-slash-ring" style="font-size: 16px; margin-right: 8px; color: #666;"></i>
+          Currently Equipped
+        </div>
+        <div style="display: flex; align-items: center;">
+          <div style="
+            width: 48px;
+            height: 48px;
+            background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+          ">
+            ${monster.equipment[selectedSlot].image ? 
+              `<img src="${monster.equipment[selectedSlot].image}" alt="${monster.equipment[selectedSlot].name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` :
+              `<i class="ra ${selectedSlot === 'weapon' ?
+                this.getWeaponIcon(monster.equipment[selectedSlot]) :
+                this.getArmorIcon(monster.equipment[selectedSlot])
+              }" style="
+                font-size: 28px; 
+                color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
+              "></i>`
+            }
+          </div>
+          <div>
+            <div style="font-weight: 500;">${monster.equipment[selectedSlot].name}</div>
+            ${monster.equipment[selectedSlot].damageBonus ?
+              `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
+              ''
+            }
+            ${monster.equipment[selectedSlot].acBonus ?
+              `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
+              ''
+            }
+          </div>
+        </div>
+      </div>
+    ` : ''}
     
-    // Update drawer label
-    this.equipmentDrawer.label = `Equip ${selectedSlot.charAt(0).toUpperCase() + selectedSlot.slice(1)} for ${monster.name}`;
-    
-    // Update drawer content
-    const drawerContent = this.equipmentDrawer.querySelector('.equipment-drawer-content');
-    drawerContent.innerHTML = `
-    <div style="
-      background: #f5f3e8;
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid #e6e0d1;
-      margin-bottom: 16px;
+    <!-- Equipment options -->
+    <div class="equipment-options" style="
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
     ">
-      <div style="display: flex; align-items: center; margin-bottom: 12px;">
-        <i class="ra ${selectedSlot === 'weapon' ? 'ra-crossed-swords' : 'ra-shield'}" style="
-          font-size: 24px;
-          margin-right: 12px;
-          color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
-        "></i>
-        <div style="font-weight: bold; font-size: 1.1rem;">Available ${selectedSlot === 'weapon' ? 'Weapons' : 'Armor'}</div>
+      <!-- Option to unequip -->
+      <div class="equipment-item" data-item-id="none" data-slot="${selectedSlot}" style="
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      ">
+        <div style="display: flex; align-items: center;">
+          <div style="
+            width: 48px;
+            height: 48px;
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+          ">
+            <i class="ra ra-broken-skull" style="font-size: 28px; color: #666;"></i>
+          </div>
+          <div>
+            <div style="font-weight: 500;">Unequip</div>
+            <div style="font-size: 0.9rem; color: #666;">Remove current ${selectedSlot}</div>
+          </div>
+        </div>
       </div>
       
-      <!-- Current equipment -->
-      ${monster.equipment[selectedSlot] ? `
-        <div style="
-          margin-bottom: 16px;
-          padding: 12px;
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 8px;
-        ">
-          <div style="margin-bottom: 8px; font-weight: bold; display: flex; align-items: center;">
-            <i class="ra ra-slash-ring" style="font-size: 16px; margin-right: 8px; color: #666;"></i>
-            Currently Equipped
-          </div>
+      <!-- Equipment items -->
+      ${placeholderEquipment.map(item => `
+        <div class="equipment-item" 
+             data-item-id="${item.id}" 
+             data-slot="${selectedSlot}" 
+             style="
+               background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)'};
+               border-radius: 8px;
+               padding: 12px;
+               cursor: pointer;
+               transition: all 0.2s;
+               border: 1px solid ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
+             ">
           <div style="display: flex; align-items: center;">
             <div style="
               width: 48px;
@@ -3485,177 +4145,142 @@ setTimeout(() => {
               justify-content: center;
               margin-right: 12px;
             ">
-              <i class="ra ${selectedSlot === 'weapon' ?
-        this.getWeaponIcon(monster.equipment[selectedSlot]) :
-        this.getArmorIcon(monster.equipment[selectedSlot])
-      }" style="
-                font-size: 28px; 
-                color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};
-              "></i>
-            </div>
-            <div>
-              <div style="font-weight: 500;">${monster.equipment[selectedSlot].name}</div>
-              ${monster.equipment[selectedSlot].damageBonus ?
-        `<div style="font-size: 0.9rem; color: #ef4444;">+${monster.equipment[selectedSlot].damageBonus} damage</div>` :
-        ''
-      }
-              ${monster.equipment[selectedSlot].acBonus ?
-        `<div style="font-size: 0.9rem; color: #3b82f6;">+${monster.equipment[selectedSlot].acBonus} armor</div>` :
-        ''
-      }
-            </div>
-          </div>
-        </div>
-      ` : ''}
-      
-      <!-- Equipment options -->
-      <div class="equipment-options" style="
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 12px;
-      ">
-        <!-- Option to unequip -->
-        <div class="equipment-item" data-item-id="none" data-slot="${selectedSlot}" style="
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 8px;
-          padding: 12px;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-        ">
-          <div style="display: flex; align-items: center;">
-            <div style="
-              width: 48px;
-              height: 48px;
-              background: rgba(239, 68, 68, 0.05);
-              border-radius: 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-right: 12px;
-            ">
-              <i class="ra ra-broken-skull" style="font-size: 28px; color: #666;"></i>
-            </div>
-            <div>
-              <div style="font-weight: 500;">Unequip</div>
-              <div style="font-size: 0.9rem; color: #666;">Remove current ${selectedSlot}</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Equipment items -->
-        ${placeholderEquipment.map(item => `
-          <div class="equipment-item" 
-               data-item-id="${item.id}" 
-               data-slot="${selectedSlot}" 
-               style="
-                 background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)'};
-                 border-radius: 8px;
-                 padding: 12px;
-                 cursor: pointer;
-                 transition: all 0.2s;
-                 border: 1px solid ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
-               ">
-            <div style="display: flex; align-items: center;">
-              <div style="
-                width: 48px;
-                height: 48px;
-                background: ${selectedSlot === 'weapon' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'};
-                border-radius: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-right: 12px;
-              ">
-                <i class="ra ${selectedSlot === 'weapon' ? this.getWeaponIcon(item) : this.getArmorIcon(item)}" 
-                   style="font-size: 28px; color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};"></i>
-              </div>
-              <div>
-                <div style="font-weight: 500;">${item.name}</div>
-                ${item.damageBonus ?
-          `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
-          ''
-        }
-                ${item.acBonus ?
-          `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
-          ''
-        }
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-    `;
-    
-    // Store the monster ID for use in event handlers
-    this.equipmentDrawer.dataset.monsterId = monster.id;
-    
-    // Show the drawer
-    this.equipmentDrawer.show();
-    
-    // Add hover effects and click handlers for equipment items
-    const setupEquipmentItems = () => {
-      const items = this.equipmentDrawer.querySelectorAll('.equipment-item');
-      items.forEach(item => {
-        // Hover effect
-        item.addEventListener('mouseenter', () => {
-          item.style.transform = 'translateY(-2px)';
-          item.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-        });
-  
-        item.addEventListener('mouseleave', () => {
-          item.style.transform = '';
-          item.style.boxShadow = '';
-        });
-  
-        // Click handler
-        item.addEventListener('click', () => {
-          const itemId = item.getAttribute('data-item-id');
-          const slot = item.getAttribute('data-slot');
-          const monsterId = this.equipmentDrawer.dataset.monsterId;
-          
-          if (itemId === 'none') {
-            // Unequip
-            this.unequipItem(monsterId, slot);
-            // this.refreshPartyDialog();
-          } else {
-            // Find and equip the item
-            const equipment = placeholderEquipment.find(e => e.id === itemId);
-            if (equipment) {
-              this.equipItem(monsterId, slot, equipment);
-            }
-            // this.refreshPartyDialog();
-          }
-  
-          // Close drawer
-          this.equipmentDrawer.hide();
-          
-          // Refresh party UI
-          this.refreshPartyDialog();
-
-          setTimeout(() => {
-            // Find the updated monster
-            const updatedMonster = this.findMonster(monsterId);
-            if (updatedMonster) {
-              // Get the details panel
-              const detailsPanel = this.partyDialog.querySelector('.party-details');
-              if (detailsPanel) {
-                // Clear and update details view
-                detailsPanel.innerHTML = '';
-                const detailView = this.createMonsterDetailView(updatedMonster);
-                detailsPanel.appendChild(detailView);
+              ${item.image ? 
+                `<img src="${item.image}" alt="${item.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` :
+                `<i class="ra ${selectedSlot === 'weapon' ? this.getWeaponIcon(item) : this.getArmorIcon(item)}"
+                   style="font-size: 28px; color: ${selectedSlot === 'weapon' ? '#ef4444' : '#3b82f6'};"></i>`
               }
-            }
-          }, 50); 
-
-        });
+            </div>
+            <div>
+              <div style="font-weight: 500;">${item.name}</div>
+              ${item.source === '3d-inventory' ? 
+                `<div style="font-size: 0.8rem; color: #10b981;">From World (ID: ${item.id})</div>` : 
+                ''
+              }
+              ${item.damageBonus ?
+                `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
+                ''
+              }
+              ${item.acBonus ?
+                `<div style="font-size: 0.9rem; color: #3b82f6;">+${item.acBonus} armor</div>` :
+                ''
+              }
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+  `;
+  
+  // Store the monster ID for use in event handlers
+  this.equipmentDrawer.dataset.monsterId = monster.id;
+  
+  // Show the drawer
+  this.equipmentDrawer.show();
+  
+  // Add hover effects and click handlers for equipment items
+  const setupEquipmentItems = () => {
+    const items = this.equipmentDrawer.querySelectorAll('.equipment-item');
+    items.forEach(item => {
+      // Hover effect
+      item.addEventListener('mouseenter', () => {
+        item.style.transform = 'translateY(-2px)';
+        item.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
       });
-    };
+
+      item.addEventListener('mouseleave', () => {
+        item.style.transform = '';
+        item.style.boxShadow = '';
+      });
+
+      // Click handler
+      item.addEventListener('click', () => {
+        const itemId = item.getAttribute('data-item-id');
+        const slot = item.getAttribute('data-slot');
+        const monsterId = this.equipmentDrawer.dataset.monsterId;
+        
+        // Log exactly what's being passed to equipItem
+        console.log('Item clicked:', {
+          itemId, 
+          slot, 
+          monsterId,
+          itemIdType: typeof itemId
+        });
+        
+        if (itemId === 'none') {
+          // Unequip
+          this.unequipItem(monsterId, slot);
+        } else {
+          // Find and equip the item - This is the critical part
+          this.equipItem(monsterId, slot, itemId);
+        }
+
+        // Close drawer
+        this.equipmentDrawer.hide();
+        
+        // Refresh party UI with explicit delay
+        setTimeout(() => {
+          this.refreshPartyDialog();
+          
+          // Find the updated monster
+          const updatedMonster = this.findMonster(monsterId);
+          if (updatedMonster) {
+            // Get the details panel
+            const detailsPanel = this.partyDialog.querySelector('.party-details');
+            if (detailsPanel) {
+              // Clear and update details view
+              detailsPanel.innerHTML = '';
+              const detailView = this.createMonsterDetailView(updatedMonster);
+              detailsPanel.appendChild(detailView);
+            }
+          }
+        }, 300); // Longer delay for more reliable updates
+      });
+    });
+  };
+  
+  // Setup the items after the drawer is shown
+  this.equipmentDrawer.addEventListener('sl-after-show', setupEquipmentItems, { once: true });
+}
+
+// Add to PartyManager class
+connectToSceneInventory() {
+  console.log('PartyManager.connectToSceneInventory called');
+  
+  // Try to get Scene3DController instance
+  this.scene3D = window.scene3D || null;
+  
+  if (this.scene3D) {
+    console.log('Connected to Scene3DController:', this.scene3D);
+    console.log('Scene3D has inventory:', !!this.scene3D.inventory);
+    console.log('Scene3D has getInventoryItems method:', typeof this.scene3D.getInventoryItems === 'function');
     
-    // Setup the items after the drawer is shown
-    this.equipmentDrawer.addEventListener('sl-after-show', setupEquipmentItems, { once: true });
+    // Test the method if it exists
+    if (typeof this.scene3D.getInventoryItems === 'function') {
+      try {
+        const items = this.scene3D.getInventoryItems();
+        console.log('Sample result from getInventoryItems:', items.length > 0 ? items[0] : 'No items available');
+      } catch (error) {
+        console.error('Error testing getInventoryItems:', error);
+      }
+    }
+    
+    return true;
+  } else {
+    console.warn('No Scene3DController found - window.scene3D is:', window.scene3D);
+    
+    // Try again with a delay
+    setTimeout(() => {
+      if (window.scene3D && !this.scene3D) {
+        this.scene3D = window.scene3D;
+        console.log('Delayed connection to Scene3DController established');
+      }
+    }, 1000);
+    
+    return false;
   }
+}
 
   // Placeholder equipment function (to be replaced with inventory integration)
   getEquipmentFromInventory(type) {
@@ -3673,24 +4298,78 @@ setTimeout(() => {
     return [];
   }
 
+  // getPlaceholderEquipment(type) {
+  //   // Generate starter equipment if we don't have any
+  //   if (!this.inventory || 
+  //       !this.inventory.weapons ||
+  //       !this.inventory.armor ||
+  //       this.inventory.weapons.length === 0 ||
+  //       this.inventory.armor.length === 0) {
+  //     this.generateStarterEquipment();
+  //   }
+    
+  //   if (type === 'weapon') {
+  //     return this.inventory.weapons || [];
+  //   } else if (type === 'armor') {
+  //     return this.inventory.armor || [];
+  //   }
+  
+  //   return [];
+  // }
+
   getPlaceholderEquipment(type) {
-    // Generate starter equipment if we don't have any
-    if (!this.inventory || 
-        !this.inventory.weapons ||
-        !this.inventory.armor ||
-        this.inventory.weapons.length === 0 ||
-        this.inventory.armor.length === 0) {
-      this.generateStarterEquipment();
+    console.log(`PartyManager.getPlaceholderEquipment(${type}) called`);
+    
+    // Initialize result array with existing inventory items
+    let result = [];
+    
+    // Get items from own inventory
+    if (type === 'weapon' && this.inventory && this.inventory.weapons) {
+      result = [...this.inventory.weapons];
+      console.log(`Found ${result.length} weapons in Party's own inventory`);
+    } else if (type === 'armor' && this.inventory && this.inventory.armor) {
+      result = [...this.inventory.armor];
+      console.log(`Found ${result.length} armor pieces in Party's own inventory`);
     }
     
-    if (type === 'weapon') {
-      return this.inventory.weapons || [];
-    } else if (type === 'armor') {
-      return this.inventory.armor || [];
+    // Try to get items from Scene3D inventory
+    if (this.scene3D) {
+      console.log('Scene3D connection exists, checking for getInventoryItems method');
+      
+      if (typeof this.scene3D.getInventoryItems === 'function') {
+        console.log('Calling scene3D.getInventoryItems()');
+        const sceneItems = this.scene3D.getInventoryItems().filter(item => item.type === type);
+        
+        if (sceneItems.length > 0) {
+          console.log(`Found ${sceneItems.length} ${type}s in scene inventory:`, sceneItems);
+          result = [...result, ...sceneItems];
+        } else {
+          console.log(`No ${type}s found in scene inventory`);
+        }
+      } else {
+        console.warn('Scene3D connected, but getInventoryItems method is missing!');
+      }
+    } else {
+      console.log('No Scene3D connection, skipping scene inventory');
     }
-  
-    return [];
+    
+    // Generate starter equipment if we still don't have any
+    if (result.length === 0) {
+      console.log('No equipment found, generating starter equipment');
+      this.generateStarterEquipment();
+      
+      // Get the generated items
+      if (type === 'weapon' && this.inventory && this.inventory.weapons) {
+        result = [...this.inventory.weapons];
+      } else if (type === 'armor' && this.inventory && this.inventory.armor) {
+        result = [...this.inventory.armor];
+      }
+    }
+    
+    console.log(`Returning ${result.length} ${type} items`);
+    return result;
   }
+
 
   generateStarterEquipment() {
     // Create basic starter weapons

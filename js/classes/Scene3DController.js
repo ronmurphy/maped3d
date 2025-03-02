@@ -1,3 +1,5 @@
+window.DEBUG_MODE = true;
+
 class Scene3DController {
   constructor() {
     this.moveState = {
@@ -39,6 +41,10 @@ class Scene3DController {
     this.dayNightCycle = null;
     this.encounterPrompt = null;
     this.nearestEncounter = null;
+
+    window.scene3D = this;
+    console.log('Set window.scene3D reference in constructor');
+
     this.setupInventorySystem();
     // this.initializePartyAndCombatSystems();
     this.clear();
@@ -3248,6 +3254,96 @@ class Scene3DController {
   }
 
 
+  getInventoryItems() {
+    console.log('Scene3DController.getInventoryItems called');
+    
+    // Convert inventory Map to an array of usable items
+    const items = [];
+    
+    if (!this.inventory || !(this.inventory instanceof Map)) {
+      console.warn('Scene3DController: Invalid inventory structure');
+      return items;
+    }
+    
+    // Debug output
+    console.log(`Processing ${this.inventory.size} inventory items`);
+    
+    this.inventory.forEach((item, id) => {
+      const prop = item.prop;
+      if (!prop) {
+        console.warn('Item missing prop data:', id);
+        return;
+      }
+      
+      // Determine if this is equipment and what type
+      let equipmentType = null;
+      if (prop.name && (
+        prop.name.toLowerCase().includes('sword') || 
+        prop.name.toLowerCase().includes('axe') ||
+        prop.name.toLowerCase().includes('dagger') ||
+        prop.name.toLowerCase().includes('staff') ||
+        prop.name.toLowerCase().includes('wand') ||
+        prop.name.toLowerCase().includes('bow') ||
+        prop.name.toLowerCase().includes('mace')
+      )) {
+        equipmentType = 'weapon';
+      } 
+      else if (prop.name && (
+        prop.name.toLowerCase().includes('armor') || 
+        prop.name.toLowerCase().includes('shield') ||
+        prop.name.toLowerCase().includes('helmet') ||
+        prop.name.toLowerCase().includes('robe') ||
+        prop.name.toLowerCase().includes('mail')
+      )) {
+        equipmentType = 'armor';
+      }
+      
+      // Only include items identified as equipment
+      if (equipmentType) {
+        // Make sure to use the original ID that's in the inventory Map
+        const equipItem = {
+          id: id, // IMPORTANT: Use the original Map key as the definitive ID 
+          name: prop.name || 'Unknown Item',
+          description: prop.description || '',
+          type: equipmentType,
+          image: prop.image || null,
+          // Add appropriate bonus based on item type
+          damageBonus: equipmentType === 'weapon' ? Math.ceil(Math.random() * 3) : 0,
+          acBonus: equipmentType === 'armor' ? Math.ceil(Math.random() * 3) : 0,
+          source: '3d-inventory'
+        };
+        
+        // Log the item we're adding
+        console.log(`Adding inventory item to equipment: ${equipItem.name} with ID ${equipItem.id}`);
+        items.push(equipItem);
+      }
+    });
+    
+    console.log(`Prepared ${items.length} equipment items from 3D inventory`);
+    return items;
+  }
+
+  logInventoryItems() {
+    console.group('Scene3D Inventory Contents');
+    
+    if (!this.inventory) {
+      console.log('No inventory found');
+      console.groupEnd();
+      return;
+    }
+    
+    if (this.inventory instanceof Map) {
+      console.log(`Inventory has ${this.inventory.size} items`);
+      this.inventory.forEach((item, id) => {
+        console.log(`ID: ${id}, Name: ${item.prop?.name || 'Unknown'}, Type: ${typeof id}`);
+      });
+    } else {
+      console.log('Inventory is not a Map:', this.inventory);
+    }
+    
+    console.groupEnd();
+  }
+
   addToInventory(prop) {
     if (!prop || !prop.id) {
       console.warn('Invalid prop data for inventory', prop);
@@ -3405,37 +3501,36 @@ class Scene3DController {
   }
 
   removeFromInventory(itemId) {
+    console.log('Scene3DController.removeFromInventory called for item:', itemId);
+    
     if (!this.inventory.has(itemId)) {
       console.warn('Item not found in inventory:', itemId);
       return false;
     }
-
+    
+    // Get the item before removing it
     const item = this.inventory.get(itemId);
-    const element = item.element;
-
-    // Animate removal
-    element.style.opacity = '0';
-    element.style.transform = 'scale(0.8)';
-
-    setTimeout(() => {
-      // Remove from DOM
-      if (element.parentNode) {
-        element.parentNode.removeChild(element);
-      }
-
-      // Remove from inventory map
-      this.inventory.delete(itemId);
-
-      // Show empty message if inventory is now empty
-      if (this.inventory.size === 0) {
-        const grid = this.inventoryDrawer.querySelector('.inventory-grid');
+    
+    // Remove from DOM if element exists
+    if (item.element && item.element.parentNode) {
+      item.element.parentNode.removeChild(item.element);
+    }
+    
+    // Remove from inventory Map
+    const result = this.inventory.delete(itemId);
+    console.log(`Removed item ${itemId} from 3D inventory:`, result);
+    
+    // If inventory drawer is open, update the empty message
+    if (this.inventoryDrawer && this.isInventoryShowing) {
+      const grid = this.inventoryDrawer.querySelector('.inventory-grid');
+      if (grid) {
         const emptyMessage = grid.querySelector('.empty-inventory-message');
-        if (emptyMessage) {
+        if (emptyMessage && this.inventory.size === 0) {
           emptyMessage.style.display = 'block';
         }
       }
-    }, 300);
-
+    }
+    
     return true;
   }
 
@@ -3506,105 +3601,289 @@ class Scene3DController {
     this.showNotification(`Used ${item.prop.name || 'Item'}`);
   }
 
-  showItemDetails(prop) {
-    console.log('Showing details for item:', prop);
+  // showItemDetails(prop) {
+  //   console.log('Showing details for item:', prop);
 
-    // Create modal dialog for item details
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = prop.name || 'Item Details';
-    dialog.style.setProperty('--sl-z-index-dialog', '4000');
+  //   // Create modal dialog for item details
+  //   const dialog = document.createElement('sl-dialog');
+  //   dialog.label = prop.name || 'Item Details';
+  //   dialog.style.setProperty('--sl-z-index-dialog', '4000');
 
-    const content = document.createElement('div');
-    content.style.cssText = `
+  //   const content = document.createElement('div');
+  //   content.style.cssText = `
+  //   display: flex;
+  //   flex-direction: column;
+  //   align-items: center;
+  //   padding: 16px;
+  // `;
+
+  //   // Add image if available
+  //   if (prop.image) {
+  //     const img = document.createElement('img');
+  //     img.src = prop.image;
+  //     img.style.cssText = `
+  //     max-width: 200px;
+  //     max-height: 200px;
+  //     object-fit: contain;
+  //     margin-bottom: 16px;
+  //     border-radius: 8px;
+  //   `;
+  //     content.appendChild(img);
+  //   }
+
+  //   // Add description
+  //   const description = document.createElement('p');
+  //   description.textContent = prop.description || 'No description available.';
+  //   description.style.cssText = `
+  //   text-align: center;
+  //   margin-bottom: 16px;
+  //   line-height: 1.5;
+  // `;
+  //   content.appendChild(description);
+
+  //   // Add actions
+  //   const actions = document.createElement('div');
+  //   actions.style.cssText = `
+  //   display: flex;
+  //   gap: 8px;
+  //   justify-content: center;
+  //   flex-wrap: wrap;
+  // `;
+
+  //   // Use item button (regular)
+  //   const useButton = document.createElement('sl-button');
+  //   useButton.setAttribute('variant', 'primary');
+  //   useButton.textContent = 'Use Item';
+  //   useButton.addEventListener('click', () => {
+  //     dialog.hide();
+  //     this.useInventoryItem(prop.id);
+  //   });
+  //   actions.appendChild(useButton);
+
+  //   // Drop vertically
+  //   const dropButton = document.createElement('sl-button');
+  //   dropButton.setAttribute('variant', 'neutral');
+  //   dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
+  //   dropButton.addEventListener('click', () => {
+  //     dialog.hide();
+  //     this.dropInventoryItem(prop.id, 'vertical');
+  //   });
+  //   actions.appendChild(dropButton);
+
+  //   // Drop horizontally 
+  //   const dropHorizontalButton = document.createElement('sl-button');
+  //   dropHorizontalButton.setAttribute('variant', 'neutral');
+  //   dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
+  //   dropHorizontalButton.addEventListener('click', () => {
+  //     dialog.hide();
+  //     this.dropInventoryItem(prop.id, 'horizontal');
+  //   });
+  //   actions.appendChild(dropHorizontalButton);
+
+  //   // Place on wall (only show if wall is detected)
+  //   const wallInfo = this.checkWallInFront();
+  //   if (wallInfo.hit) {
+  //     const placeWallButton = document.createElement('sl-button');
+  //     placeWallButton.setAttribute('variant', 'neutral');
+  //     placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
+  //     placeWallButton.addEventListener('click', () => {
+  //       dialog.hide();
+  //       this.placeItemOnWall(prop.id, wallInfo);
+  //     });
+  //     actions.appendChild(placeWallButton);
+  //   }
+
+  //   content.appendChild(actions);
+  //   dialog.appendChild(content);
+
+  //   // Add to document and show
+  //   document.body.appendChild(dialog);
+  //   dialog.show();
+
+  //   }
+
+// Add this to Scene3DController's showItemDetails method to improve connection
+// This replaces or adds to the existing method
+
+showItemDetails(prop) {
+  console.log('Showing details for item:', prop);
+
+  // Create modal dialog for item details
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = prop.name || 'Item Details';
+  dialog.style.setProperty('--sl-z-index-dialog', '4000');
+
+  const content = document.createElement('div');
+  content.style.cssText = `
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 16px;
   `;
 
-    // Add image if available
-    if (prop.image) {
-      const img = document.createElement('img');
-      img.src = prop.image;
-      img.style.cssText = `
+  // Add image if available
+  if (prop.image) {
+    const img = document.createElement('img');
+    img.src = prop.image;
+    img.style.cssText = `
       max-width: 200px;
       max-height: 200px;
       object-fit: contain;
       margin-bottom: 16px;
       border-radius: 8px;
     `;
-      content.appendChild(img);
-    }
+    content.appendChild(img);
+  }
 
-    // Add description
-    const description = document.createElement('p');
-    description.textContent = prop.description || 'No description available.';
-    description.style.cssText = `
+  // Add description
+  const description = document.createElement('p');
+  description.textContent = prop.description || 'No description available.';
+  description.style.cssText = `
     text-align: center;
     margin-bottom: 16px;
     line-height: 1.5;
   `;
-    content.appendChild(description);
+  content.appendChild(description);
 
-    // Add actions
-    const actions = document.createElement('div');
-    actions.style.cssText = `
+  // Equipment detection - determine if this is equipment
+  const isWeapon = prop.name.toLowerCase().includes('sword') || 
+                 prop.name.toLowerCase().includes('axe') ||
+                 prop.name.toLowerCase().includes('dagger') ||
+                 prop.name.toLowerCase().includes('staff') ||
+                 prop.name.toLowerCase().includes('wand') ||
+                 prop.name.toLowerCase().includes('bow') ||
+                 prop.name.toLowerCase().includes('mace');
+                 
+  const isArmor = prop.name.toLowerCase().includes('armor') || 
+                prop.name.toLowerCase().includes('shield') ||
+                prop.name.toLowerCase().includes('helmet') ||
+                prop.name.toLowerCase().includes('robe') ||
+                prop.name.toLowerCase().includes('mail');
+
+  // If it's equipment, add "Equip to Party" button
+  if (isWeapon || isArmor) {
+    const equipToPartyBtn = document.createElement('sl-button');
+    equipToPartyBtn.setAttribute('variant', 'primary');
+    equipToPartyBtn.innerHTML = '<span class="material-icons">people</span> Equip to Party Member';
+    equipToPartyBtn.style.marginBottom = '12px';
+    
+    equipToPartyBtn.addEventListener('click', () => {
+      dialog.hide();
+      
+      // Make sure we have PartyManager
+      if (window.partyManager) {
+        // Pause controls while PartyManager is open
+        this.pauseControls();
+        
+        // First, prepare the item for PartyManager
+        const itemForParty = {
+          id: prop.id || `item-${Date.now()}`,
+          name: prop.name,
+          type: isWeapon ? 'weapon' : 'armor',
+          image: prop.image,
+          // Add appropriate bonus based on item type
+          damageBonus: isWeapon ? Math.ceil(Math.random() * 3) : 0,
+          acBonus: isArmor ? Math.ceil(Math.random() * 3) : 0,
+          source: '3d-inventory'  // Mark source to identify where it came from
+        };
+        
+        console.log('Prepared item for PartyManager:', itemForParty);
+        
+        // Store this item so it can be accessed by PartyManager's equipItem method
+        if (!this._itemsForParty) {
+          this._itemsForParty = new Map();
+        }
+        this._itemsForParty.set(itemForParty.id, itemForParty);
+        
+        // Show PartyManager
+        window.partyManager.showPartyManager();
+        
+        // Wait a bit for PartyManager to initialize
+        setTimeout(() => {
+          // Let PartyManager know an item is waiting to be equipped
+          if (window.partyManager.notifyItemReadyToEquip) {
+            window.partyManager.notifyItemReadyToEquip(itemForParty);
+          } else {
+            console.warn('PartyManager does not have notifyItemReadyToEquip method');
+          }
+        }, 300);
+        
+        // Monitor for dialog close to restore controls
+        const checkForDialog = setInterval(() => {
+          const dialog = document.querySelector('.party-overlay');
+          if (!dialog) {
+            this.resumeControls();
+            clearInterval(checkForDialog);
+          }
+        }, 100);
+      } else {
+        console.warn('PartyManager not available');
+        this.showNotification('Party Manager not available', 'error');
+      }
+    });
+    
+    content.appendChild(equipToPartyBtn);
+  }
+
+  // Add normal actions
+  const actions = document.createElement('div');
+  actions.style.cssText = `
     display: flex;
     gap: 8px;
     justify-content: center;
     flex-wrap: wrap;
   `;
 
-    // Use item button (regular)
-    const useButton = document.createElement('sl-button');
-    useButton.setAttribute('variant', 'primary');
-    useButton.textContent = 'Use Item';
-    useButton.addEventListener('click', () => {
+  // Use item button (regular)
+  const useButton = document.createElement('sl-button');
+  useButton.setAttribute('variant', 'primary');
+  useButton.textContent = 'Use Item';
+  useButton.addEventListener('click', () => {
+    dialog.hide();
+    this.useInventoryItem(prop.id);
+  });
+  actions.appendChild(useButton);
+
+  // Drop vertically
+  const dropButton = document.createElement('sl-button');
+  dropButton.setAttribute('variant', 'neutral');
+  dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
+  dropButton.addEventListener('click', () => {
+    dialog.hide();
+    this.dropInventoryItem(prop.id, 'vertical');
+  });
+  actions.appendChild(dropButton);
+
+  // Drop horizontally 
+  const dropHorizontalButton = document.createElement('sl-button');
+  dropHorizontalButton.setAttribute('variant', 'neutral');
+  dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
+  dropHorizontalButton.addEventListener('click', () => {
+    dialog.hide();
+    this.dropInventoryItem(prop.id, 'horizontal');
+  });
+  actions.appendChild(dropHorizontalButton);
+
+  // Place on wall (only show if wall is detected)
+  const wallInfo = this.checkWallInFront();
+  if (wallInfo.hit) {
+    const placeWallButton = document.createElement('sl-button');
+    placeWallButton.setAttribute('variant', 'neutral');
+    placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
+    placeWallButton.addEventListener('click', () => {
       dialog.hide();
-      this.useInventoryItem(prop.id);
+      this.placeItemOnWall(prop.id, wallInfo);
     });
-    actions.appendChild(useButton);
-
-    // Drop vertically
-    const dropButton = document.createElement('sl-button');
-    dropButton.setAttribute('variant', 'neutral');
-    dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
-    dropButton.addEventListener('click', () => {
-      dialog.hide();
-      this.dropInventoryItem(prop.id, 'vertical');
-    });
-    actions.appendChild(dropButton);
-
-    // Drop horizontally 
-    const dropHorizontalButton = document.createElement('sl-button');
-    dropHorizontalButton.setAttribute('variant', 'neutral');
-    dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
-    dropHorizontalButton.addEventListener('click', () => {
-      dialog.hide();
-      this.dropInventoryItem(prop.id, 'horizontal');
-    });
-    actions.appendChild(dropHorizontalButton);
-
-    // Place on wall (only show if wall is detected)
-    const wallInfo = this.checkWallInFront();
-    if (wallInfo.hit) {
-      const placeWallButton = document.createElement('sl-button');
-      placeWallButton.setAttribute('variant', 'neutral');
-      placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
-      placeWallButton.addEventListener('click', () => {
-        dialog.hide();
-        this.placeItemOnWall(prop.id, wallInfo);
-      });
-      actions.appendChild(placeWallButton);
-    }
-
-    content.appendChild(actions);
-    dialog.appendChild(content);
-
-    // Add to document and show
-    document.body.appendChild(dialog);
-    dialog.show();
+    actions.appendChild(placeWallButton);
   }
+
+  content.appendChild(actions);
+  dialog.appendChild(content);
+
+  // Add to document and show
+  document.body.appendChild(dialog);
+  dialog.show();
+}
 
   placeItemOnWall(itemId, wallInfo) {
     if (!this.inventory.has(itemId) || !wallInfo.hit) {
@@ -4740,6 +5019,10 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
   // }
 
     async show3DView() {
+        // Expose this instance to the global scope for other systems to access
+  // window.scene3D = this;
+  // console.log('Set window.scene3D reference:', window.scene3D);
+  
     const { drawer, container, progress } = this.setupDrawer();
   
     progress.style.display = "block";

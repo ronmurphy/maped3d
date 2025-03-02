@@ -1,37 +1,47 @@
 /**
  * CombatSystem.js
  * Handles turn-based combat using monsters from the party system
- * 
+ *
  * neeeds fixing for the random additional monsters generated
  */
 class CombatSystem {
   constructor(partyManager, resourceManager) {
     console.log("CombatSystem constructor called");
-    
+
     // Store references to managers
     this.partyManager = partyManager;
     this.resourceManager = resourceManager;
-  
+
     // Direct instantiation like in PartyManager
     this.monsterManager = new MonsterManager(this);
     console.log("CombatSystem: Created new MonsterManager instance directly");
-  
+
     // Now get direct access to database
     if (this.monsterManager) {
-      this.monsterDatabase = this.monsterManager.monsterDatabase || 
-                            this.monsterManager.loadDatabase();
-      console.log("CombatSystem: Access to monster database:", !!this.monsterDatabase);
+      this.monsterDatabase =
+        this.monsterManager.monsterDatabase ||
+        this.monsterManager.loadDatabase();
+      console.log(
+        "CombatSystem: Access to monster database:",
+        !!this.monsterDatabase
+      );
     } else {
       console.warn("CombatSystem: Could not create MonsterManager");
     }
-  
+
     // Now get direct access to database if possible
     if (this.monsterManager) {
-      this.monsterDatabase = this.monsterManager.monsterDatabase || 
-                            this.monsterManager.loadDatabase();
-      console.log("CombatSystem: Access to monster database:", !!this.monsterDatabase);
+      this.monsterDatabase =
+        this.monsterManager.monsterDatabase ||
+        this.monsterManager.loadDatabase();
+      console.log(
+        "CombatSystem: Access to monster database:",
+        !!this.monsterDatabase
+      );
     } else {
-      console.warn("CombatSystem: Could not connect to MonsterManager database");
+      console.warn(
+        "CombatSystem: Could not connect to MonsterManager database"
+      );
     }
 
     // Combat state
@@ -48,11 +58,11 @@ class CombatSystem {
     this.combatOverlay = null;
     this.dialogContainer = null;
 
-    console.log('Combat System initialized');
+    console.log("Combat System initialized");
   }
 
   createCombatStyles() {
-    const styleElement = document.createElement('style');
+    const styleElement = document.createElement("style");
     styleElement.textContent = `
 .combat-overlay {
   position: fixed;
@@ -1198,48 +1208,60 @@ class CombatSystem {
     return styleElement;
   }
 
-
-
   setCombatBackground() {
-    console.log('Setting combat background...');
+    console.log("Setting combat background...");
 
     // First, check if dialogContainer exists
     if (!this.dialogContainer) {
-      console.error('setCombatBackground: dialogContainer is not available');
+      console.error("setCombatBackground: dialogContainer is not available");
       return false;
     }
 
     // Safely check the resource manager and splashArt structure
     if (!this.resourceManager) {
-      console.error('setCombatBackground: resourceManager is not available');
+      console.error("setCombatBackground: resourceManager is not available");
       return false;
     }
 
-    if (!this.resourceManager.resources ||
-      !this.resourceManager.resources.splashArt) {
-      console.error('setCombatBackground: splashArt property not found in resources');
+    if (
+      !this.resourceManager.resources ||
+      !this.resourceManager.resources.splashArt
+    ) {
+      console.error(
+        "setCombatBackground: splashArt property not found in resources"
+      );
       return false;
     }
 
     if (!this.resourceManager.resources.splashArt.background) {
-      console.error('setCombatBackground: background category not found in splashArt');
+      console.error(
+        "setCombatBackground: background category not found in splashArt"
+      );
       return false;
     }
 
     // Try to get a random background art
     const backgrounds = this.resourceManager.resources.splashArt.background;
-    console.log(`Found ${backgrounds.size} backgrounds in splashArt.background`);
+    console.log(
+      `Found ${backgrounds.size} backgrounds in splashArt.background`
+    );
 
     if (backgrounds.size <= 0) {
-      console.warn('setCombatBackground: No backgrounds available');
+      console.warn("setCombatBackground: No backgrounds available");
       return false;
     }
 
     // Log available backgrounds for debugging
     if (backgrounds.size > 0) {
-      console.log('Available backgrounds:');
+      console.log("Available backgrounds:");
       backgrounds.forEach((bg, id) => {
-        console.log(`- ID: ${id}, Name: ${bg.name}, Has data: ${!!bg.data}, Data length: ${bg.data ? bg.data.substring(0, 30) + '...' : 'N/A'}`);
+        console.log(
+          `- ID: ${id}, Name: ${
+            bg.name
+          }, Has data: ${!!bg.data}, Data length: ${
+            bg.data ? bg.data.substring(0, 30) + "..." : "N/A"
+          }`
+        );
       });
     }
 
@@ -1248,21 +1270,29 @@ class CombatSystem {
     const backgroundValues = Array.from(backgrounds.values());
     const backgroundArt = backgroundValues[randomIndex];
 
-    console.log(`Selected background index ${randomIndex}: ${backgroundArt?.name || 'Unknown'}`);
+    console.log(
+      `Selected background index ${randomIndex}: ${
+        backgroundArt?.name || "Unknown"
+      }`
+    );
 
     if (!backgroundArt) {
-      console.error('setCombatBackground: Selected background is null or undefined');
+      console.error(
+        "setCombatBackground: Selected background is null or undefined"
+      );
       return false;
     }
 
     if (!backgroundArt.data) {
-      console.error('setCombatBackground: Selected background does not have data property');
+      console.error(
+        "setCombatBackground: Selected background does not have data property"
+      );
       return false;
     }
 
     try {
       // Apply as background
-      console.log('Applying background image...');
+      console.log("Applying background image...");
       this.dialogContainer.style.backgroundImage = `url(${backgroundArt.data})`;
 
       // Randomly choose styling approach
@@ -1272,44 +1302,53 @@ class CombatSystem {
       switch (stylingOption) {
         case 0:
           // Full cover (default)
-          this.dialogContainer.style.backgroundSize = 'cover';
-          this.dialogContainer.style.backgroundPosition = 'center';
-          console.log('Applied style: Full cover');
+          this.dialogContainer.style.backgroundSize = "cover";
+          this.dialogContainer.style.backgroundPosition = "center";
+          console.log("Applied style: Full cover");
           break;
 
         case 1:
           // Contained with possible repetition
-          this.dialogContainer.style.backgroundSize = 'contain';
-          this.dialogContainer.style.backgroundPosition = 'center';
-          this.dialogContainer.style.backgroundRepeat = 'repeat';
-          console.log('Applied style: Contained with repetition');
+          this.dialogContainer.style.backgroundSize = "contain";
+          this.dialogContainer.style.backgroundPosition = "center";
+          this.dialogContainer.style.backgroundRepeat = "repeat";
+          console.log("Applied style: Contained with repetition");
           break;
 
         case 2:
           // Zoomed in on a section
-          this.dialogContainer.style.backgroundSize = '150%';
+          this.dialogContainer.style.backgroundSize = "150%";
 
           // Pick a random focus point
-          const positions = ['top left', 'top center', 'top right',
-            'center left', 'center', 'center right',
-            'bottom left', 'bottom center', 'bottom right'];
-          const randomPosition = positions[Math.floor(Math.random() * positions.length)];
+          const positions = [
+            "top left",
+            "top center",
+            "top right",
+            "center left",
+            "center",
+            "center right",
+            "bottom left",
+            "bottom center",
+            "bottom right"
+          ];
+          const randomPosition =
+            positions[Math.floor(Math.random() * positions.length)];
           this.dialogContainer.style.backgroundPosition = randomPosition;
           console.log(`Applied style: Zoomed in (${randomPosition})`);
           break;
 
         case 3:
           // Slightly tilted background (adds distinctive look)
-          this.dialogContainer.style.backgroundSize = 'cover';
-          this.dialogContainer.style.backgroundPosition = 'center';
+          this.dialogContainer.style.backgroundSize = "cover";
+          this.dialogContainer.style.backgroundPosition = "center";
 
           // Use a separate element for rotation to avoid conflicts
           // Check if we already have a rotated background layer
-          let bgLayer = this.dialogContainer.querySelector('.combat-bg-layer');
+          let bgLayer = this.dialogContainer.querySelector(".combat-bg-layer");
           if (!bgLayer) {
             // Create a new background layer element
-            bgLayer = document.createElement('div');
-            bgLayer.className = 'combat-bg-layer';
+            bgLayer = document.createElement("div");
+            bgLayer.className = "combat-bg-layer";
             bgLayer.style.cssText = `
                         position: absolute;
                         top: 0;
@@ -1325,50 +1364,57 @@ class CombatSystem {
           }
 
           // Apply rotation to the background layer instead
-          const rotation = Math.random() > 0.5 ? '1deg' : '-1deg';
+          const rotation = Math.random() > 0.5 ? "1deg" : "-1deg";
           bgLayer.style.transform = `rotate(${rotation})`;
           console.log(`Applied style: Tilted (${rotation})`);
           break;
 
         case 4:
           // Panoramic-style with fixed width
-          this.dialogContainer.style.backgroundSize = 'auto 100%';
-          this.dialogContainer.style.backgroundPosition = `${Math.floor(Math.random() * 100)}% center`;
-          console.log('Applied style: Panoramic');
+          this.dialogContainer.style.backgroundSize = "auto 100%";
+          this.dialogContainer.style.backgroundPosition = `${Math.floor(
+            Math.random() * 100
+          )}% center`;
+          console.log("Applied style: Panoramic");
           break;
       }
 
       // Make sure position is relative for absolute positioning to work
       const computedStyle = window.getComputedStyle(this.dialogContainer);
-      if (computedStyle.position === 'static') {
-        this.dialogContainer.style.position = 'relative';
+      if (computedStyle.position === "static") {
+        this.dialogContainer.style.position = "relative";
       }
 
       // Add overlay to ensure text remains readable regardless of background
-      const overlayColor = 'rgba(46, 16, 101, 0.75)'; // Semi-transparent purple
+      const overlayColor = "rgba(46, 16, 101, 0.75)"; // Semi-transparent purple
 
       // Use a background blend mode for more interesting effects
-      const blendModes = ['normal', 'multiply', 'overlay', 'darken'];
-      const randomBlend = blendModes[Math.floor(Math.random() * blendModes.length)];
+      const blendModes = ["normal", "multiply", "overlay", "darken"];
+      const randomBlend =
+        blendModes[Math.floor(Math.random() * blendModes.length)];
 
       this.dialogContainer.style.backgroundColor = overlayColor;
       this.dialogContainer.style.backgroundBlendMode = randomBlend;
-      console.log(`Applied overlay: ${overlayColor} with blend mode: ${randomBlend}`);
+      console.log(
+        `Applied overlay: ${overlayColor} with blend mode: ${randomBlend}`
+      );
 
       return true;
     } catch (error) {
-      console.error('Error applying background:', error);
+      console.error("Error applying background:", error);
       return false;
     }
   }
 
   addTestBackgrounds() {
     if (!this.resourceManager) {
-      console.error('Cannot add test backgrounds - no ResourceManager connected');
+      console.error(
+        "Cannot add test backgrounds - no ResourceManager connected"
+      );
       return false;
     }
 
-    console.log('Adding test backgrounds to ResourceManager');
+    console.log("Adding test backgrounds to ResourceManager");
 
     // Make sure the splashArt object exists
     if (!this.resourceManager.resources.splashArt) {
@@ -1376,18 +1422,18 @@ class CombatSystem {
     }
 
     // Initialize the background category as a Map if it doesn't exist
-    if (!this.resourceManager.resources.splashArt['background']) {
-      this.resourceManager.resources.splashArt['background'] = new Map();
+    if (!this.resourceManager.resources.splashArt["background"]) {
+      this.resourceManager.resources.splashArt["background"] = new Map();
     }
 
     // Create some simple SVG backgrounds for testing
     const backgrounds = [
       {
-        name: 'Purple Gradient',
+        name: "Purple Gradient",
         data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%234338ca;stop-opacity:1" /><stop offset="100%" style="stop-color:%237e22ce;stop-opacity:1" /></linearGradient></defs><rect width="800" height="600" fill="url(%23grad)" /></svg>'
       },
       {
-        name: 'Dungeon Pattern',
+        name: "Dungeon Pattern",
         data: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><defs><pattern id="pattern" patternUnits="userSpaceOnUse" width="100" height="100"><rect width="50" height="50" x="0" y="0" fill="%23432874" /><rect width="50" height="50" x="50" y="50" fill="%23432874" /><rect width="50" height="50" x="50" y="0" fill="%23331c60" /><rect width="50" height="50" x="0" y="50" fill="%23331c60" /></pattern></defs><rect width="800" height="600" fill="url(%23pattern)" /></svg>'
       }
     ];
@@ -1400,11 +1446,14 @@ class CombatSystem {
         name: bg.name,
         data: bg.data,
         thumbnail: bg.data,
-        category: 'background',
+        category: "background",
         dateAdded: new Date().toISOString()
       };
 
-      this.resourceManager.resources.splashArt['background'].set(id, backgroundData);
+      this.resourceManager.resources.splashArt["background"].set(
+        id,
+        backgroundData
+      );
       console.log(`Added test background: ${bg.name}`);
     });
 
@@ -1415,51 +1464,68 @@ class CombatSystem {
    * Combat Initialization Methods
    */
 
-
   async initiateCombat(enemies) {
-    console.log('========== COMBAT INITIALIZATION ==========');
+    console.log("========== COMBAT INITIALIZATION ==========");
     if (this.inCombat) {
-      console.warn('Already in combat');
+      console.warn("Already in combat");
       return false;
     }
-  
+
     // Check if player has active monsters
-    console.log('Checking player party:', this.partyManager.party.active.length, 'active monsters');
+    console.log(
+      "Checking player party:",
+      this.partyManager.party.active.length,
+      "active monsters"
+    );
     if (!this.partyManager.party.active.length) {
-      console.log('No active monsters in party, showing dialog');
+      console.log("No active monsters in party, showing dialog");
       this.showNeedMonstersDialog();
       return false;
     }
-  
+
     // Set combat state
     this.inCombat = true;
-    
+
     // Setup player party
     this.playerParty = [...this.partyManager.party.active];
     console.log(`Player party: ${this.playerParty.length} monsters`);
-    console.log('Player names:', this.playerParty.map(p => p.name).join(', '));
-    
+    console.log(
+      "Player names:",
+      this.playerParty.map((p) => p.name).join(", ")
+    );
+
     // Handle enemy setup
-    console.log('Enemy parameter type:', enemies ? (Array.isArray(enemies) ? 'Array' : typeof enemies) : 'undefined');
-    
+    console.log(
+      "Enemy parameter type:",
+      enemies
+        ? Array.isArray(enemies)
+          ? "Array"
+          : typeof enemies
+        : "undefined"
+    );
+
     if (Array.isArray(enemies) && enemies.length > 0) {
       console.log(`Using provided enemy list: ${enemies.length} enemies`);
-      this.enemyParty = enemies.map(enemy => this.prepareEnemyForCombat(enemy));
+      this.enemyParty = enemies.map((enemy) =>
+        this.prepareEnemyForCombat(enemy)
+      );
     } else if (enemies) {
-      console.log('Single enemy provided, wrapping in array');
+      console.log("Single enemy provided, wrapping in array");
       this.enemyParty = [this.prepareEnemyForCombat(enemies)];
     } else {
-      console.log('No enemies provided, generating random enemy party');
-      
+      console.log("No enemies provided, generating random enemy party");
+
       try {
         // Generate random enemies asynchronously
-        const generatedEnemies = await this.generateEnemyParty(this.playerParty);
-        
+        const generatedEnemies = await this.generateEnemyParty(
+          this.playerParty
+        );
+
         if (generatedEnemies && generatedEnemies.length > 0) {
           this.enemyParty = generatedEnemies;
         } else {
           // Fallback to a default enemy if generation failed
-          console.log('Enemy generation failed, using default enemy');
+          console.log("Enemy generation failed, using default enemy");
           const defaultEnemy = this.generateDefaultEnemies(1)[0];
           this.enemyParty = [this.prepareEnemyForCombat(defaultEnemy)];
         }
@@ -1470,19 +1536,24 @@ class CombatSystem {
         this.enemyParty = [this.prepareEnemyForCombat(defaultEnemy)];
       }
     }
-  
+
     console.log(`Final enemy party: ${this.enemyParty.length} monsters`);
-    console.log('Enemy names:', this.enemyParty.map(e => e.name).join(', '));
-    
-    // Roll initiative 
+    console.log("Enemy names:", this.enemyParty.map((e) => e.name).join(", "));
+
+    // Roll initiative
     this.rollInitiative();
-    console.log('Initiative order:', this.initiativeOrder.map(c => `${c.monster.name} (${c.initiative})`).join(', '));
-  
+    console.log(
+      "Initiative order:",
+      this.initiativeOrder
+        .map((c) => `${c.monster.name} (${c.initiative})`)
+        .join(", ")
+    );
+
     // Show combat UI
-    console.log('Showing combat interface');
+    console.log("Showing combat interface");
     this.showCombatInterface();
-    console.log('========== COMBAT INITIALIZATION COMPLETE ==========');
-  
+    console.log("========== COMBAT INITIALIZATION COMPLETE ==========");
+
     return true;
   }
 
@@ -1491,7 +1562,7 @@ class CombatSystem {
     const allParticipants = [];
 
     // Add player monsters with initiative rolls
-    this.playerParty.forEach(monster => {
+    this.playerParty.forEach((monster) => {
       // Base initiative on DEX
       const dexMod = monster.abilities?.dex?.modifier || 0;
       const initiativeRoll = this.rollDice(20) + dexMod;
@@ -1499,12 +1570,12 @@ class CombatSystem {
       allParticipants.push({
         monster,
         initiative: initiativeRoll,
-        side: 'player'
+        side: "player"
       });
     });
 
     // Add enemy monsters with initiative rolls
-    this.enemyParty.forEach(monster => {
+    this.enemyParty.forEach((monster) => {
       // Base initiative on DEX
       const dexMod = monster.abilities?.dex?.modifier || 0;
       const initiativeRoll = this.rollDice(20) + dexMod;
@@ -1512,18 +1583,20 @@ class CombatSystem {
       allParticipants.push({
         monster,
         initiative: initiativeRoll,
-        side: 'enemy'
+        side: "enemy"
       });
     });
 
     // Sort by initiative (highest first)
-    this.initiativeOrder = allParticipants.sort((a, b) => b.initiative - a.initiative);
+    this.initiativeOrder = allParticipants.sort(
+      (a, b) => b.initiative - a.initiative
+    );
 
     // Reset turn counter
     this.currentTurn = 0;
     this.roundNumber = 1;
 
-    console.log('Initiative order:', this.initiativeOrder);
+    console.log("Initiative order:", this.initiativeOrder);
   }
 
   /**
@@ -1535,19 +1608,19 @@ class CombatSystem {
     document.head.appendChild(this.createCombatStyles());
 
     // Create overlay
-    this.combatOverlay = document.createElement('div');
-    this.combatOverlay.className = 'combat-overlay';
+    this.combatOverlay = document.createElement("div");
+    this.combatOverlay.className = "combat-overlay";
 
     // Create main combat container
-    this.dialogContainer = document.createElement('div');
-    this.dialogContainer.className = 'combat-container';
+    this.dialogContainer = document.createElement("div");
+    this.dialogContainer.className = "combat-container";
 
     // Try to set background from splash art, fallback to gradient is already in CSS
     this.setCombatBackground();
 
     // Create header
-    const header = document.createElement('div');
-    header.className = 'combat-header';
+    const header = document.createElement("div");
+    header.className = "combat-header";
     header.innerHTML = `
       <div style="display: flex; align-items: center;">
         <span class="material-icons" style="margin-right: 8px;">swords</span>
@@ -1559,16 +1632,16 @@ class CombatSystem {
     `;
 
     // Create main combat area
-    const combatArea = document.createElement('div');
-    combatArea.className = 'battle-scene';
+    const combatArea = document.createElement("div");
+    combatArea.className = "battle-scene";
 
     // Create enemy area at top
-    const enemyArea = document.createElement('div');
-    enemyArea.className = 'enemy-area';
+    const enemyArea = document.createElement("div");
+    enemyArea.className = "enemy-area";
 
     // Create player area at bottom
-    const playerArea = document.createElement('div');
-    playerArea.className = 'player-area';
+    const playerArea = document.createElement("div");
+    playerArea.className = "player-area";
 
     // this.updateEnemyArea(enemyArea);
 
@@ -1579,15 +1652,17 @@ class CombatSystem {
 
     // Add player monsters
     this.playerParty.forEach((monster, index) => {
-      const monsterCard = this.createMonsterCard(monster, 'player', index);
+      const monsterCard = this.createMonsterCard(monster, "player", index);
       // Position each monster card with a slight offset
-      monsterCard.style.transform = `translateY(${index * 15}px) translateX(${index * 20}px)`;
+      monsterCard.style.transform = `translateY(${index * 15}px) translateX(${
+        index * 20
+      }px)`;
       playerArea.appendChild(monsterCard);
     });
 
     // Create initiative tracker
-    const initiativeTracker = document.createElement('div');
-    initiativeTracker.className = 'initiative-tracker';
+    const initiativeTracker = document.createElement("div");
+    initiativeTracker.className = "initiative-tracker";
     initiativeTracker.innerHTML = `
       <div class="initiative-header">Initiative Order</div>
       <div class="initiative-list">
@@ -1596,16 +1671,16 @@ class CombatSystem {
     `;
 
     // Create battle notification (current turn)
-    const battleNotification = document.createElement('div');
-    battleNotification.className = 'battle-notification fade-in';
+    const battleNotification = document.createElement("div");
+    battleNotification.className = "battle-notification fade-in";
     const currentMonster = this.getCurrentMonster();
     if (currentMonster) {
       battleNotification.textContent = `${currentMonster.name}'s Turn`;
     }
 
     // Create combat log
-    const combatLog = document.createElement('div');
-    combatLog.className = 'combat-log';
+    const combatLog = document.createElement("div");
+    combatLog.className = "combat-log";
     combatLog.innerHTML = `
       <div class="log-header">
         <span class="material-icons" style="font-size: 16px; margin-right: 8px;">history</span>
@@ -1623,12 +1698,12 @@ class CombatSystem {
     `;
 
     // Create action bar
-    const actionBar = document.createElement('div');
-    actionBar.className = 'action-bar';
+    const actionBar = document.createElement("div");
+    actionBar.className = "action-bar";
 
     // Only show action buttons if it's player's turn
     const currentCombatant = this.initiativeOrder[this.currentTurn];
-    if (currentCombatant && currentCombatant.side === 'player') {
+    if (currentCombatant && currentCombatant.side === "player") {
       const currentMonster = currentCombatant.monster;
       actionBar.innerHTML = this.renderActionBar(currentMonster);
     } else {
@@ -1650,10 +1725,10 @@ class CombatSystem {
     this.dialogContainer.appendChild(actionBar);
 
     // Add log to the right
-    const mainContent = document.createElement('div');
-    mainContent.style.display = 'flex';
-    mainContent.style.flex = '1';
-    mainContent.style.overflow = 'hidden';
+    const mainContent = document.createElement("div");
+    mainContent.style.display = "flex";
+    mainContent.style.flex = "1";
+    mainContent.style.overflow = "hidden";
 
     mainContent.appendChild(combatArea);
     mainContent.appendChild(combatLog);
@@ -1669,11 +1744,11 @@ class CombatSystem {
 
     // Animate in
     setTimeout(() => {
-      this.combatOverlay.style.opacity = '1';
-      this.dialogContainer.style.transform = 'scale(1)';
+      this.combatOverlay.style.opacity = "1";
+      this.dialogContainer.style.transform = "scale(1)";
 
       // If it's enemy's turn, start AI processing
-      if (currentCombatant && currentCombatant.side === 'enemy') {
+      if (currentCombatant && currentCombatant.side === "enemy") {
         setTimeout(() => this.processEnemyTurn(), 1000);
       }
     }, 10);
@@ -1681,27 +1756,29 @@ class CombatSystem {
 
   // New method to create styled monster cards
   createMonsterCard(monster, side, index) {
-    console.log(`Creating monster card: ${monster.name}, type: ${side}, index: ${index}`);
+    console.log(
+      `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
+    );
 
-    const isPlayer = side === 'player';
+    const isPlayer = side === "player";
     const isActive = this.isMonsterActive(monster);
     const isDefeated = monster.currentHP <= 0;
 
     // Calculate HP percentage
     const hpPercent = (monster.currentHP / monster.maxHP) * 100;
-    let hpBarColorClass = 'high';
+    let hpBarColorClass = "high";
     if (hpPercent < 30) {
-      hpBarColorClass = 'low';
+      hpBarColorClass = "low";
     } else if (hpPercent < 70) {
-      hpBarColorClass = 'medium';
+      hpBarColorClass = "medium";
     }
 
     // Create card wrapper
-    const card = document.createElement('div');
+    const card = document.createElement("div");
     card.className = `combat-monster ${side}`;
-    if (isActive) card.classList.add('active');
-    if (isDefeated) card.classList.add('defeated');
-    card.setAttribute('data-monster-id', monster.id);
+    if (isActive) card.classList.add("active");
+    if (isDefeated) card.classList.add("defeated");
+    card.setAttribute("data-monster-id", monster.id);
 
     // Generate token or placeholder
     const tokenSource = monster.token?.data || monster.token?.url || null;
@@ -1710,15 +1787,18 @@ class CombatSystem {
     card.innerHTML = `
       <div class="monster-header">
         <div class="monster-image">
-          ${tokenSource ?
-        `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
-        `<span>${monster.name.charAt(0)}</span>`
-      }
+          ${
+            tokenSource
+              ? `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+              : `<span>${monster.name.charAt(0)}</span>`
+          }
         </div>
         <div class="monster-info">
           <div class="monster-name">${monster.name}</div>
           <div class="monster-type">
-            ${monster.size} ${monster.type} ${isPlayer ? `• Lvl ${monster.level || 1}` : ''}
+            ${monster.size} ${monster.type} ${
+      isPlayer ? `• Lvl ${monster.level || 1}` : ""
+    }
           </div>
         </div>
       </div>
@@ -1738,22 +1818,33 @@ class CombatSystem {
             <span>${monster.armorClass || monster.stats.ac || 10}</span>
           </div>
           <div class="stat-row">
-            <span>${isPlayer ? 'EXP' : 'CR'}</span>
-            <span>${isPlayer ?
-        (monster.experience ? `${monster.experience}/${monster.experienceToNext}` : '0/100') :
-        (monster.cr || monster.basic?.cr || '?')
-      }</span>
+            <span>${isPlayer ? "EXP" : "CR"}</span>
+            <span>${
+              isPlayer
+                ? monster.experience
+                  ? `${monster.experience}/${monster.experienceToNext}`
+                  : "0/100"
+                : monster.cr || monster.basic?.cr || "?"
+            }</span>
           </div>
         </div>
       </div>
       
-      ${isActive ? `
+      ${
+        isActive
+          ? `
         <div class="active-indicator">ACTIVE</div>
-      ` : ''}
+      `
+          : ""
+      }
       
-      ${isDefeated ? `
+      ${
+        isDefeated
+          ? `
         <div class="defeated-indicator">✕</div>
-      ` : ''}
+      `
+          : ""
+      }
     `;
 
     console.log(`Card created for ${monster.name}`);
@@ -1767,21 +1858,20 @@ class CombatSystem {
       return `<div class="empty-party-message">No ${side} monsters</div>`;
     }
 
-    let html = '';
+    let html = "";
 
-    monsters.forEach(monster => {
+    monsters.forEach((monster) => {
       // Determine if this monster is active
       const isActive = this.isMonsterActive(monster);
       const isDefeated = monster.currentHP <= 0;
 
-
       // Calculate HP percentage
       const hpPercent = (monster.currentHP / monster.maxHP) * 100;
-      let hpBarColor = '#4CAF50';  // Green
+      let hpBarColor = "#4CAF50"; // Green
       if (hpPercent < 30) {
-        hpBarColor = '#F44336';  // Red
+        hpBarColor = "#F44336"; // Red
       } else if (hpPercent < 70) {
-        hpBarColor = '#FF9800';  // Orange
+        hpBarColor = "#FF9800"; // Orange
       }
 
       // Apply styling based on status
@@ -1813,17 +1903,28 @@ class CombatSystem {
         `;
       }
 
-      const tokenSource = monster.token?.data || monster.token?.url || this.generateDefaultTokenImage(monster);
+      const tokenSource =
+        monster.token?.data ||
+        monster.token?.url ||
+        this.generateDefaultTokenImage(monster);
 
       html += `
-        <div class="combat-monster ${side}" data-monster-id="${monster.id}" style="${cardStyle}">
+        <div class="combat-monster ${side}" data-monster-id="${
+        monster.id
+      }" style="${cardStyle}">
           <div class="monster-header" style="display: flex; align-items: center; margin-bottom: 8px;">
             <div class="monster-image" style="width: 40px; height: 40px; margin-right: 8px;">
-              <img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+              <img src="${tokenSource}" alt="${
+        monster.name
+      }" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
             </div>
             <div class="monster-info" style="flex: 1; overflow: hidden;">
-              <div class="monster-name" style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${monster.name}</div>
-              <div class="monster-level" style="font-size: 0.8em;">Lvl ${monster.level}</div>
+              <div class="monster-name" style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${
+                monster.name
+              }</div>
+              <div class="monster-level" style="font-size: 0.8em;">Lvl ${
+                monster.level
+              }</div>
             </div>
           </div>
           
@@ -1837,17 +1938,25 @@ class CombatSystem {
             </div>
           </div>
           
-          ${isActive ? `
+          ${
+            isActive
+              ? `
             <div class="active-indicator" style="position: absolute; top: -10px; left: calc(50% - 12px); background: #2196F3; color: white; border-radius: 12px; padding: 2px 6px; font-size: 0.7em; font-weight: bold;">
               ACTIVE
             </div>
-          ` : ''}
+          `
+              : ""
+          }
           
-          ${isDefeated ? `
+          ${
+            isDefeated
+              ? `
             <div class="defeated-indicator" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; pointer-events: none;">
               <span class="material-icons" style="font-size: 48px; color: rgba(200, 0, 0, 0.7);">close</span>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
         </div>
       `;
     });
@@ -1857,56 +1966,56 @@ class CombatSystem {
 
   getMonsterTypeColor(type) {
     const typeColors = {
-      aberration: '#5500AA',  
-      beast: '#44AA44',       
-      celestial: '#FFD700',   
-      construct: '#999999',   
-      dragon: '#FF4444',      
-      elemental: '#FF8800',   
-      fey: '#DD66FF',         
-      fiend: '#AA2222',       
-      giant: '#AA7722',       
-      humanoid: '#4444FF',    
-      monstrosity: '#886600', 
-      ooze: '#66CC66',        
-      plant: '#228B22',       
-      undead: '#663366',      
-      vermin: '#996633',      
-  
+      aberration: "#5500AA",
+      beast: "#44AA44",
+      celestial: "#FFD700",
+      construct: "#999999",
+      dragon: "#FF4444",
+      elemental: "#FF8800",
+      fey: "#DD66FF",
+      fiend: "#AA2222",
+      giant: "#AA7722",
+      humanoid: "#4444FF",
+      monstrosity: "#886600",
+      ooze: "#66CC66",
+      plant: "#228B22",
+      undead: "#663366",
+      vermin: "#996633",
+
       // Subtypes
-      demon: '#990000',       
-      devil: '#660000',       
-      lich: '#330066',        
-      ghost: '#9999FF',       
-      skeleton: '#CCCCCC',    
-      vampire: '#550000',     
-      lycanthrope: '#775500', 
-      mimic: '#AA33CC',       
-      aberrant_horror: '#220044', 
-      swamp_beast: '#556B2F', 
-      sea_monster: '#008080', 
-      storm_creature: '#708090', 
-      fire_entity: '#FF4500', 
-      frost_monster: '#00FFFF', 
-      shadow_creature: '#222222', 
-      celestial_guardian: '#FFFFCC', 
-      arcane_construct: '#6666FF', 
-      ancient_horror: '#3B3B6D', 
-      chaos_entity: '#FF00FF', 
-      nature_spirit: '#32CD32', 
-      sand_creature: '#D2B48C', 
+      demon: "#990000",
+      devil: "#660000",
+      lich: "#330066",
+      ghost: "#9999FF",
+      skeleton: "#CCCCCC",
+      vampire: "#550000",
+      lycanthrope: "#775500",
+      mimic: "#AA33CC",
+      aberrant_horror: "#220044",
+      swamp_beast: "#556B2F",
+      sea_monster: "#008080",
+      storm_creature: "#708090",
+      fire_entity: "#FF4500",
+      frost_monster: "#00FFFF",
+      shadow_creature: "#222222",
+      celestial_guardian: "#FFFFCC",
+      arcane_construct: "#6666FF",
+      ancient_horror: "#3B3B6D",
+      chaos_entity: "#FF00FF",
+      nature_spirit: "#32CD32",
+      sand_creature: "#D2B48C"
     };
-  
-    return typeColors[type.toLowerCase()] || '#6B7280'; // Default gray if not found
+
+    return typeColors[type.toLowerCase()] || "#6B7280"; // Default gray if not found
   }
 
   // Add helper method to generate default token image
   generateDefaultTokenImage(monster) {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     const size = 64;
     canvas.width = size;
     canvas.height = size;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
 
     // Generate color based on monster type
     const color = this.getMonsterTypeColor(monster.basic.type);
@@ -1918,219 +2027,104 @@ class CombatSystem {
     ctx.fill();
 
     // Add border
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
     ctx.stroke();
 
     // Add monster initial
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 32px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillText(monster.name.charAt(0).toUpperCase(), size / 2, size / 2);
 
-    return canvas.toDataURL('image/webp');
+    return canvas.toDataURL("image/webp");
   }
 
+  addVisualLogEntry(data) {
+    // Get log container
+    const logEntries = this.dialogContainer.querySelector(".log-entries");
+    if (!logEntries) return;
 
-  // Add this method to CombatSystem class
-// addVisualLogEntry(data) {
-//   // Get log container
-//   const logEntries = this.dialogContainer.querySelector('.log-entries');
-//   if (!logEntries) return;
+    // Handle different types of log entries
+    if (data.type === "damage") {
+      const { attacker, target, damage, isCritical } = data;
 
-//   // Handle different types of log entries
-//   if (data.type === 'damage') {
-//     const { attacker, target, damage, isCritical } = data;
-    
-//     // Get miniature tokens (or generate placeholder)
-//     const attackerToken = attacker.token?.data || this.generateDefaultTokenImage(attacker);
-//     const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
-    
-//     // Choose appropriate verb based on damage amount
-//     let verb = 'hit';
-//     let intensity = '';
-    
-//     // Base verb on percentage of target's max HP
-//     const damagePercent = (damage / target.maxHP) * 100;
-    
-//     if (isCritical) {
-//       verb = this.getRandomVerb('critical');
-//       intensity = 'critically';
-//     } else if (damagePercent < 10) {
-//       verb = this.getRandomVerb('light');
-//     } else if (damagePercent > 25) {
-//       verb = this.getRandomVerb('heavy');
-//       intensity = 'heavily';
-//     }
-    
-//     // Create new entry
-//     const entry = document.createElement('div');
-//     entry.className = 'log-entry action';
-    
-//     // Apply subtle animation based on damage level
-//     let animation = '';
-//     if (isCritical) {
-//       animation = 'log-critical';
-//       entry.classList.add('critical');
-//     } else if (damagePercent > 25) {
-//       animation = 'log-heavy';
-//       entry.classList.add('heavy');
-//     }
-    
-//     entry.innerHTML = `
-//       <div class="log-action ${animation}">
-//         <div class="log-combatants">
-//           <div class="log-token attacker">
-//             <img src="${attackerToken}" alt="${attacker.name}" title="${attacker.name}">
-//             ${isCritical ? '<div class="critical-indicator"></div>' : ''}
-//           </div>
-//           <span class="log-verb">${verb}</span>
-//           <div class="log-token target">
-//             <img src="${targetToken}" alt="${target.name}" title="${target.name}">
-//           </div>
-//         </div>
-//         <div class="log-result">
-//           ${intensity ? `<span class="log-intensity">${intensity}</span>` : ''}
-//           for <span class="log-damage">${damage}</span> damage
-//         </div>
-//       </div>
-//     `;
-    
-//     // Add to log
-//     logEntries.appendChild(entry);
-//   } 
-//   else if (data.type === 'heal') {
-//     // Similar to damage but for healing
-//     const { healer, target, amount } = data;
-    
-//     const healerToken = healer.token?.data || this.generateDefaultTokenImage(healer);
-//     const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
-    
-//     const entry = document.createElement('div');
-//     entry.className = 'log-entry heal';
-    
-//     entry.innerHTML = `
-//       <div class="log-action">
-//         <div class="log-combatants">
-//           <div class="log-token healer">
-//             <img src="${healerToken}" alt="${healer.name}" title="${healer.name}">
-//           </div>
-//           <span class="log-verb">healed</span>
-//           <div class="log-token target">
-//             <img src="${targetToken}" alt="${target.name}" title="${target.name}">
-//           </div>
-//         </div>
-//         <div class="log-result">
-//           for <span class="log-heal">${amount}</span> health
-//         </div>
-//       </div>
-//     `;
-    
-//     logEntries.appendChild(entry);
-//   }
-//   else {
-//     // Default text-based log for other types
-//     const entry = document.createElement('div');
-//     entry.className = 'log-entry';
-//     entry.textContent = data.message;
-//     logEntries.appendChild(entry);
-//   }
+      // Get miniature tokens (or generate placeholder)
+      const attackerToken =
+        attacker.token?.data || this.generateDefaultTokenImage(attacker);
+      const targetToken =
+        target.token?.data || this.generateDefaultTokenImage(target);
 
-//   // Scroll to bottom
-//   logEntries.scrollTop = logEntries.scrollHeight;
-// }
+      // Choose appropriate verb based on damage amount
+      let verb = "hit";
+      let intensity = "";
 
-// // Helper to get random verb based on damage level
-// getRandomVerb(level) {
-//   const verbs = {
-//     light: ['grazed', 'scratched', 'nicked', 'clipped', 'poked'],
-//     medium: ['hit', 'struck', 'attacked', 'wounded', 'bashed'],
-//     heavy: ['slammed', 'crushed', 'thrashed', 'walloped', 'clobbered'],
-//     critical: ['devastated', 'decimated', 'annihilated', 'obliterated', 'pulverized']
-//   };
-  
-//   const options = verbs[level] || verbs.medium;
-//   return options[Math.floor(Math.random() * options.length)];
-// }
+      // Base verb on percentage of target's max HP
+      const damagePercent = (damage / target.maxHP) * 100;
 
-addVisualLogEntry(data) {
-  // Get log container
-  const logEntries = this.dialogContainer.querySelector('.log-entries');
-  if (!logEntries) return;
+      if (isCritical) {
+        verb = this.getRandomVerb("critical");
+        intensity = "critically";
+      } else if (damagePercent < 10) {
+        verb = this.getRandomVerb("light");
+      } else if (damagePercent > 25) {
+        verb = this.getRandomVerb("heavy");
+        intensity = "heavily";
+      }
 
-  // Handle different types of log entries
-  if (data.type === 'damage') {
-    const { attacker, target, damage, isCritical } = data;
-    
-    // Get miniature tokens (or generate placeholder)
-    const attackerToken = attacker.token?.data || this.generateDefaultTokenImage(attacker);
-    const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
-    
-    // Choose appropriate verb based on damage amount
-    let verb = 'hit';
-    let intensity = '';
-    
-    // Base verb on percentage of target's max HP
-    const damagePercent = (damage / target.maxHP) * 100;
-    
-    if (isCritical) {
-      verb = this.getRandomVerb('critical');
-      intensity = 'critically';
-    } else if (damagePercent < 10) {
-      verb = this.getRandomVerb('light');
-    } else if (damagePercent > 25) {
-      verb = this.getRandomVerb('heavy');
-      intensity = 'heavily';
-    }
-    
-    // Create new entry
-    const entry = document.createElement('div');
-    entry.className = 'log-entry action';
-    
-    // Apply subtle animation based on damage level
-    let animation = '';
-    if (isCritical) {
-      animation = 'log-critical';
-      entry.classList.add('critical');
-    } else if (damagePercent > 25) {
-      animation = 'log-heavy';
-      entry.classList.add('heavy');
-    }
-    
-    entry.innerHTML = `
+      // Create new entry
+      const entry = document.createElement("div");
+      entry.className = "log-entry action";
+
+      // Apply subtle animation based on damage level
+      let animation = "";
+      if (isCritical) {
+        animation = "log-critical";
+        entry.classList.add("critical");
+      } else if (damagePercent > 25) {
+        animation = "log-heavy";
+        entry.classList.add("heavy");
+      }
+
+      entry.innerHTML = `
       <div class="log-action ${animation}">
         <div class="log-combatants">
           <div class="log-token attacker">
-            <img src="${attackerToken}" alt="${attacker.name}" title="${attacker.name}">
-            ${isCritical ? '<div class="critical-indicator"></div>' : ''}
+            <img src="${attackerToken}" alt="${attacker.name}" title="${
+        attacker.name
+      }">
+            ${isCritical ? '<div class="critical-indicator"></div>' : ""}
           </div>
           <span class="log-verb">${verb}</span>
           <div class="log-token target">
-            <img src="${targetToken}" alt="${target.name}" title="${target.name}">
+            <img src="${targetToken}" alt="${target.name}" title="${
+        target.name
+      }">
           </div>
         </div>
         <div class="log-result">
-          ${intensity ? `<span class="log-intensity">${intensity}</span>` : ''}
+          ${intensity ? `<span class="log-intensity">${intensity}</span>` : ""}
           for <span class="log-damage">${damage}</span> damage
         </div>
       </div>
     `;
-    
-    // Add to log
-    logEntries.appendChild(entry);
-  } 
-  else if (data.type === 'heal') {
-    // Similar to damage but for healing
-    const { healer, target, amount } = data;
-    
-    const healerToken = healer.token?.data || this.generateDefaultTokenImage(healer);
-    const targetToken = target.token?.data || this.generateDefaultTokenImage(target);
-    
-    const entry = document.createElement('div');
-    entry.className = 'log-entry heal';
-    
-    entry.innerHTML = `
+
+      // Add to log
+      logEntries.appendChild(entry);
+    } else if (data.type === "heal") {
+      // Similar to damage but for healing
+      const { healer, target, amount } = data;
+
+      const healerToken =
+        healer.token?.data || this.generateDefaultTokenImage(healer);
+      const targetToken =
+        target.token?.data || this.generateDefaultTokenImage(target);
+
+      const entry = document.createElement("div");
+      entry.className = "log-entry heal";
+
+      entry.innerHTML = `
       <div class="log-action">
         <div class="log-combatants">
           <div class="log-token healer">
@@ -2146,58 +2140,66 @@ addVisualLogEntry(data) {
         </div>
       </div>
     `;
-    
-    logEntries.appendChild(entry);
-  }
-  else {
-    // Default text-based log for other types
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.textContent = data.message;
-    logEntries.appendChild(entry);
+
+      logEntries.appendChild(entry);
+    } else {
+      // Default text-based log for other types
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.textContent = data.message;
+      logEntries.appendChild(entry);
+    }
+
+    // Scroll to bottom
+    logEntries.scrollTop = logEntries.scrollHeight;
   }
 
-  // Scroll to bottom
-  logEntries.scrollTop = logEntries.scrollHeight;
-}
+  // Helper to get random verb based on damage level
+  getRandomVerb(level) {
+    const verbs = {
+      light: ["grazed", "scratched", "nicked", "clipped", "poked"],
+      medium: ["hit", "struck", "attacked", "wounded", "bashed"],
+      heavy: ["slammed", "crushed", "thrashed", "walloped", "clobbered"],
+      critical: [
+        "devastated",
+        "decimated",
+        "annihilated",
+        "obliterated",
+        "pulverized"
+      ]
+    };
 
-// Helper to get random verb based on damage level
-getRandomVerb(level) {
-  const verbs = {
-    light: ['grazed', 'scratched', 'nicked', 'clipped', 'poked'],
-    medium: ['hit', 'struck', 'attacked', 'wounded', 'bashed'],
-    heavy: ['slammed', 'crushed', 'thrashed', 'walloped', 'clobbered'],
-    critical: ['devastated', 'decimated', 'annihilated', 'obliterated', 'pulverized']
-  };
-  
-  const options = verbs[level] || verbs.medium;
-  return options[Math.floor(Math.random() * options.length)];
-}
+    const options = verbs[level] || verbs.medium;
+    return options[Math.floor(Math.random() * options.length)];
+  }
 
   renderInitiativeList() {
     if (!this.initiativeOrder || this.initiativeOrder.length === 0) {
       return '<div style="padding: 8px; text-align: center;">No combatants</div>';
     }
 
-    let html = '';
+    let html = "";
 
     this.initiativeOrder.forEach((combatant, index) => {
       const { monster, initiative, side } = combatant;
       const isCurrentTurn = index === this.currentTurn;
       const isDefeated = monster.currentHP <= 0;
 
-      const classes = ['initiative-item'];
-      if (isCurrentTurn) classes.push('active');
-      if (isDefeated) classes.push('defeated');
+      const classes = ["initiative-item"];
+      if (isCurrentTurn) classes.push("active");
+      if (isDefeated) classes.push("defeated");
 
       html += `
-        <div class="${classes.join(' ')}">
-          ${isCurrentTurn ?
-          `<span class="material-icons" style="margin-right: 8px; font-size: 16px; color: #fcd34d;">play_arrow</span>` :
-          `<span style="width: 24px; display: inline-block;"></span>`
-        }
+        <div class="${classes.join(" ")}">
+          ${
+            isCurrentTurn
+              ? `<span class="material-icons" style="margin-right: 8px; font-size: 16px; color: #fcd34d;">play_arrow</span>`
+              : `<span style="width: 24px; display: inline-block;"></span>`
+          }
           <div class="initiative-marker ${side}"></div>
-          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${monster.name}</span>
+          <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">${
+            monster.name
+          }</span>
           <span style="margin-left: 4px; font-weight: bold;">${initiative}</span>
         </div>
       `;
@@ -2205,7 +2207,6 @@ getRandomVerb(level) {
 
     return html;
   }
-
 
   renderActionBar(monster) {
     if (!monster || monster.currentHP <= 0) {
@@ -2219,26 +2220,48 @@ getRandomVerb(level) {
     let html = `<div class="abilities-container">`;
 
     // Add abilities with icons
-    monster.monsterAbilities.forEach(ability => {
+    monster.monsterAbilities.forEach((ability) => {
       // Determine icon based on ability type
-      let icon = 'sports_martial_arts'; // Default for attack
+      let icon = "sports_martial_arts"; // Default for attack
 
       switch (ability.type) {
-        case 'attack': icon = 'sports_martial_arts'; break;
-        case 'area': icon = 'blur_circular'; break;
-        case 'buff': icon = 'upgrade'; break;
-        case 'debuff': icon = 'threat'; break;
-        case 'defense': icon = 'shield'; break;
-        case 'healing': icon = 'healing'; break;
-        case 'reaction': icon = 'autorenew'; break;
-        case 'support': icon = 'group'; break;
+        case "attack":
+          icon = "sports_martial_arts";
+          break;
+        case "area":
+          icon = "blur_circular";
+          break;
+        case "buff":
+          icon = "upgrade";
+          break;
+        case "debuff":
+          icon = "threat";
+          break;
+        case "defense":
+          icon = "shield";
+          break;
+        case "healing":
+          icon = "healing";
+          break;
+        case "reaction":
+          icon = "autorenew";
+          break;
+        case "support":
+          icon = "group";
+          break;
       }
 
       html += `
-        <button class="ability-btn ${ability.type}" data-ability="${ability.name.replace(/\s+/g, '_')}">
+        <button class="ability-btn ${
+          ability.type
+        }" data-ability="${ability.name.replace(/\s+/g, "_")}">
           <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
           <span>${ability.name}</span>
-          ${ability.damage ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>` : ''}
+          ${
+            ability.damage
+              ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>`
+              : ""
+          }
         </button>
       `;
     });
@@ -2263,36 +2286,38 @@ getRandomVerb(level) {
 
   setupCombatEventListeners() {
     // Skip button
-    const skipBtn = this.dialogContainer.querySelector('.skip-turn-btn');
+    const skipBtn = this.dialogContainer.querySelector(".skip-turn-btn");
     if (skipBtn) {
-      skipBtn.addEventListener('click', () => {
+      skipBtn.addEventListener("click", () => {
         this.addLogEntry(`${this.getCurrentMonster().name} skips their turn.`);
         this.nextTurn();
       });
     }
 
     // Ability buttons
-    const abilityBtns = this.dialogContainer.querySelectorAll('.ability-btn');
-    abilityBtns.forEach(btn => {
-      btn.addEventListener('click', e => {
-        const abilityName = e.currentTarget.getAttribute('data-ability').replace(/_/g, ' ');
+    const abilityBtns = this.dialogContainer.querySelectorAll(".ability-btn");
+    abilityBtns.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const abilityName = e.currentTarget
+          .getAttribute("data-ability")
+          .replace(/_/g, " ");
         this.useMonsterAbility(abilityName);
       });
     });
 
     // Use item button
-    const itemBtn = this.dialogContainer.querySelector('.use-item-btn');
+    const itemBtn = this.dialogContainer.querySelector(".use-item-btn");
     if (itemBtn) {
-      itemBtn.addEventListener('click', () => {
-        alert('Item usage not implemented yet');
+      itemBtn.addEventListener("click", () => {
+        alert("Item usage not implemented yet");
       });
     }
   }
 
   // Show dialog when player has no monsters in party
   showNeedMonstersDialog() {
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = 'No Active Monsters';
+    const dialog = document.createElement("sl-dialog");
+    dialog.label = "No Active Monsters";
 
     dialog.innerHTML = `
       <div style="text-align: center; padding: 20px;">
@@ -2308,13 +2333,15 @@ getRandomVerb(level) {
     `;
 
     // Add event listeners
-    dialog.addEventListener('sl-after-show', () => {
-      dialog.querySelector('.manage-party-btn').addEventListener('click', () => {
-        dialog.hide();
-        this.partyManager.showPartyManager();
-      });
+    dialog.addEventListener("sl-after-show", () => {
+      dialog
+        .querySelector(".manage-party-btn")
+        .addEventListener("click", () => {
+          dialog.hide();
+          this.partyManager.showPartyManager();
+        });
 
-      dialog.querySelector('.close-btn').addEventListener('click', () => {
+      dialog.querySelector(".close-btn").addEventListener("click", () => {
         dialog.hide();
       });
     });
@@ -2343,14 +2370,14 @@ getRandomVerb(level) {
     }
 
     // If it's player's turn, wait for player input
-    if (side === 'player') {
+    if (side === "player") {
       // Update UI to show it's player's turn
       this.updateActionBar(monster);
       return true;
     }
 
     // If it's enemy's turn, process AI
-    if (side === 'enemy') {
+    if (side === "enemy") {
       this.processEnemyTurn();
       return true;
     }
@@ -2363,22 +2390,26 @@ getRandomVerb(level) {
     // Small delay for better UX
     setTimeout(() => {
       const currentCombatant = this.initiativeOrder[this.currentTurn];
-      if (!currentCombatant || currentCombatant.side !== 'enemy') return;
+      if (!currentCombatant || currentCombatant.side !== "enemy") return;
 
       const monster = currentCombatant.monster;
 
       // Simple AI: select random ability and random target
       if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
         // Choose random ability
-        const randomAbilityIndex = Math.floor(Math.random() * monster.monsterAbilities.length);
+        const randomAbilityIndex = Math.floor(
+          Math.random() * monster.monsterAbilities.length
+        );
         const ability = monster.monsterAbilities[randomAbilityIndex];
 
         // Find valid targets (non-defeated player monsters)
-        const validTargets = this.playerParty.filter(m => m.currentHP > 0);
+        const validTargets = this.playerParty.filter((m) => m.currentHP > 0);
 
         if (validTargets.length > 0) {
           // Select random target
-          const randomTargetIndex = Math.floor(Math.random() * validTargets.length);
+          const randomTargetIndex = Math.floor(
+            Math.random() * validTargets.length
+          );
           const target = validTargets[randomTargetIndex];
 
           // Use ability
@@ -2387,7 +2418,9 @@ getRandomVerb(level) {
           this.addLogEntry(`${monster.name} has no valid targets.`);
         }
       } else {
-        this.addLogEntry(`${monster.name} has no abilities and skips their turn.`);
+        this.addLogEntry(
+          `${monster.name} has no abilities and skips their turn.`
+        );
       }
 
       // Move to next turn
@@ -2395,123 +2428,80 @@ getRandomVerb(level) {
     }, 1000);
   }
 
-    // Move to next turn - Fixed to skip defeated monsters
-  // nextTurn() {
-  //   // Move to next combatant
-  //   this.currentTurn++;
-  
-  //   // If we've gone through all combatants, start a new round
-  //   if (this.currentTurn >= this.initiativeOrder.length) {
-  //     this.currentTurn = 0;
-  //     this.roundNumber++;
-  //     this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
-  
-  //     // Update round number in UI
-  //     const roundDisplay = this.dialogContainer.querySelector('.combat-header span:last-child');
-  //     if (roundDisplay) {
-  //       roundDisplay.textContent = `Round ${this.roundNumber}`;
-  //     }
-  //   }
-  
-  //   // Update initiative UI
-  //   this.updateInitiativeTracker();
-  
-  //   // Check for combat end conditions
-  //   if (this.checkCombatEnd()) {
-  //     return;
-  //   }
-  
-  //   // Get current combatant
-  //   const currentCombatant = this.initiativeOrder[this.currentTurn];
-  //   if (!currentCombatant) return; // Safety check
-    
-  //   // NEW CODE: Check if current monster is defeated, if so skip this turn
-  //   if (currentCombatant.monster.currentHP <= 0) {
-  //     this.addLogEntry(`${currentCombatant.monster.name} is defeated and cannot act.`);
-  //     // Call nextTurn again to skip to the next combatant
-  //     this.nextTurn();
-  //     return;
-  //   }
-  
-  //   // Process the turn for a non-defeated monster
-  //   this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
-  
-  //   // Update action bar for player turn
-  //   if (currentCombatant.side === 'player') {
-  //     this.updateActionBar(currentCombatant.monster);
-  //   } else {
-  //     // For enemy turn, clear action bar
-  //     this.updateActionBar(null);
-  //     // Process enemy turn with a slight delay
-  //     setTimeout(() => this.processEnemyTurn(), 1000);
-  //   }
-  // }
+  // Move to next turn - Fixed to skip defeated monsters
 
-  // Fix the nextTurn method to check combat end
-nextTurn() {
-  // Move to next combatant
-  this.currentTurn++;
-  
-  // If we've gone through all combatants, start a new round
-  if (this.currentTurn >= this.initiativeOrder.length) {
-    this.currentTurn = 0;
-    this.roundNumber++;
-    this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
-    
-    // Update round number in UI
-    const roundDisplay = this.dialogContainer.querySelector('.combat-header span:last-child');
-    if (roundDisplay) {
-      roundDisplay.textContent = `Round ${this.roundNumber}`;
+  nextTurn() {
+    // Move to next combatant
+    this.currentTurn++;
+
+    // If we've gone through all combatants, start a new round
+    if (this.currentTurn >= this.initiativeOrder.length) {
+      this.currentTurn = 0;
+      this.roundNumber++;
+      this.addLogEntry(`Round ${this.roundNumber} begins.`, true);
+
+      // Update round number in UI
+      const roundDisplay = this.dialogContainer.querySelector(
+        ".combat-header span:last-child"
+      );
+      if (roundDisplay) {
+        roundDisplay.textContent = `Round ${this.roundNumber}`;
+      }
+    }
+
+    // Update initiative UI
+    this.updateInitiativeTracker();
+
+    // Check for combat end conditions
+    if (this.checkCombatEnd()) {
+      return;
+    }
+
+    // Get current combatant
+    const currentCombatant = this.initiativeOrder[this.currentTurn];
+    if (!currentCombatant) return; // Safety check
+
+    // NEW CODE: Check if current monster is defeated, if so skip this turn
+    if (currentCombatant.monster.currentHP <= 0) {
+      this.addLogEntry(
+        `${currentCombatant.monster.name} is defeated and cannot act.`
+      );
+      // Call nextTurn again to skip to the next combatant
+      this.nextTurn();
+      return;
+    }
+
+    // Process the turn for a non-defeated monster
+    this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
+
+    // Update action bar for player turn
+    if (currentCombatant.side === "player") {
+      this.updateActionBar(currentCombatant.monster);
+    } else {
+      // For enemy turn, clear action bar
+      this.updateActionBar(null);
+      // Process enemy turn with a slight delay
+      setTimeout(() => this.processEnemyTurn(), 1000);
     }
   }
-  
-  // Update initiative UI
-  this.updateInitiativeTracker();
-  
-  // Check for combat end conditions
-  if (this.checkCombatEnd()) {
-    return;
-  }
-  
-  // Get current combatant
-  const currentCombatant = this.initiativeOrder[this.currentTurn];
-  if (!currentCombatant) return; // Safety check
-  
-  // NEW CODE: Check if current monster is defeated, if so skip this turn
-  if (currentCombatant.monster.currentHP <= 0) {
-    this.addLogEntry(`${currentCombatant.monster.name} is defeated and cannot act.`);
-    // Call nextTurn again to skip to the next combatant
-    this.nextTurn();
-    return;
-  }
-  
-  // Process the turn for a non-defeated monster
-  this.addLogEntry(`${currentCombatant.monster.name}'s turn.`);
-  
-  // Update action bar for player turn
-  if (currentCombatant.side === 'player') {
-    this.updateActionBar(currentCombatant.monster);
-  } else {
-    // For enemy turn, clear action bar
-    this.updateActionBar(null);
-    // Process enemy turn with a slight delay
-    setTimeout(() => this.processEnemyTurn(), 1000);
-  }
-}
 
   // Check if combat has ended
   checkCombatEnd() {
     // Check if all player monsters are defeated
-    const allPlayerDefeated = this.playerParty.every(monster => monster.currentHP <= 0);
+    const allPlayerDefeated = this.playerParty.every(
+      (monster) => monster.currentHP <= 0
+    );
     if (allPlayerDefeated) {
-      this.endCombat('defeat');
+      this.endCombat("defeat");
       return true;
     }
 
     // Check if all enemy monsters are defeated
-    const allEnemiesDefeated = this.enemyParty.every(monster => monster.currentHP <= 0);
+    const allEnemiesDefeated = this.enemyParty.every(
+      (monster) => monster.currentHP <= 0
+    );
     if (allEnemiesDefeated) {
-      this.endCombat('victory');
+      this.endCombat("victory");
       return true;
     }
 
@@ -2524,8 +2514,8 @@ nextTurn() {
     this.inCombat = false;
 
     // Create result overlay
-    const resultOverlay = document.createElement('div');
-    resultOverlay.className = 'combat-result-overlay';
+    const resultOverlay = document.createElement("div");
+    resultOverlay.className = "combat-result-overlay";
     resultOverlay.style.cssText = `
       position: absolute;
       top: 0;
@@ -2540,8 +2530,8 @@ nextTurn() {
     `;
 
     // Create result card
-    const resultCard = document.createElement('div');
-    resultCard.className = 'combat-result-card';
+    const resultCard = document.createElement("div");
+    resultCard.className = "combat-result-card";
     resultCard.style.cssText = `
       background: white;
       border-radius: 8px;
@@ -2552,7 +2542,7 @@ nextTurn() {
     `;
 
     // Set content based on result
-    if (result === 'victory') {
+    if (result === "victory") {
       resultCard.innerHTML = `
           <span class="material-icons" style="font-size: 64px; color: #FFD700; margin-bottom: 16px;">emoji_events</span>
           <h2 style="margin: 0 0 16px 0; color: #4CAF50;">Victory!</h2>
@@ -2572,8 +2562,9 @@ nextTurn() {
         `;
 
       // Award XP to all player monsters
-      this.playerParty.forEach(monster => {
-        if (monster.currentHP > 0) { // Only award XP to surviving monsters
+      this.playerParty.forEach((monster) => {
+        if (monster.currentHP > 0) {
+          // Only award XP to surviving monsters
           this.partyManager.awardExperience(monster.id, 100);
         }
       });
@@ -2581,25 +2572,30 @@ nextTurn() {
       // Store enemy data for recruitment opportunity
       if (this.enemyParty.length > 0) {
         // Get a random enemy that wasn't defeated (or first one if all defeated)
-        const recruitableEnemies = this.enemyParty.filter(enemy => enemy.currentHP > 0);
-        const targetEnemy = recruitableEnemies.length > 0 ?
-          recruitableEnemies[0] : this.enemyParty[0];
+        const recruitableEnemies = this.enemyParty.filter(
+          (enemy) => enemy.currentHP > 0
+        );
+        const targetEnemy =
+          recruitableEnemies.length > 0
+            ? recruitableEnemies[0]
+            : this.enemyParty[0];
 
         // Store for potential recruitment
         window.lastDefeatedEnemy = targetEnemy;
 
         // Show recruitment hint
-        const hintElement = document.createElement('div');
+        const hintElement = document.createElement("div");
         hintElement.style.cssText = `
             margin-top: 12px;
             font-size: 0.9em;
             color: #666;
             text-align: center;
           `;
-        hintElement.innerHTML = 'Press <strong>E</strong> after closing to attempt recruitment';
+        hintElement.innerHTML =
+          "Press <strong>E</strong> after closing to attempt recruitment";
         resultCard.appendChild(hintElement);
       }
-    } else if (result === 'defeat') {
+    } else if (result === "defeat") {
       resultCard.innerHTML = `
         <span class="material-icons" style="font-size: 64px; color: #F44336; margin-bottom: 16px;">sentiment_very_dissatisfied</span>
         <h2 style="margin: 0 0 16px 0; color: #F44336;">Defeat</h2>
@@ -2613,15 +2609,15 @@ nextTurn() {
     this.dialogContainer.appendChild(resultOverlay);
 
     // Add event listener to close combat
-    resultCard.querySelector('.continue-btn').addEventListener('click', () => {
+    resultCard.querySelector(".continue-btn").addEventListener("click", () => {
       this.closeCombat();
     });
   }
 
   closeCombat() {
     // Animate out
-    this.combatOverlay.style.opacity = '0';
-    this.dialogContainer.style.transform = 'scale(0.95)';
+    this.combatOverlay.style.opacity = "0";
+    this.dialogContainer.style.transform = "scale(0.95)";
 
     // Remove after animation
     setTimeout(() => {
@@ -2641,9 +2637,9 @@ nextTurn() {
       // Set up recruitment key listener if we have a defeated enemy
       if (defeatedEnemy) {
         const handleRecruitKey = (e) => {
-          if (e.key.toLowerCase() === 'e') {
+          if (e.key.toLowerCase() === "e") {
             // Remove this listener to prevent multiple dialogs
-            document.removeEventListener('keydown', handleRecruitKey);
+            document.removeEventListener("keydown", handleRecruitKey);
 
             // Show recruitment dialog
             if (this.partyManager) {
@@ -2657,11 +2653,11 @@ nextTurn() {
 
         // Add listener with a slight delay to prevent accidental triggering
         setTimeout(() => {
-          document.addEventListener('keydown', handleRecruitKey);
+          document.addEventListener("keydown", handleRecruitKey);
 
           // Show recruitment prompt
-          const promptElement = document.createElement('div');
-          promptElement.className = 'recruitment-prompt';
+          const promptElement = document.createElement("div");
+          promptElement.className = "recruitment-prompt";
           promptElement.style.cssText = `
             position: fixed;
             bottom: 20px;
@@ -2674,7 +2670,8 @@ nextTurn() {
             font-size: 14px;
             z-index: 1000;
           `;
-          promptElement.innerHTML = 'Press <strong>E</strong> to attempt recruitment';
+          promptElement.innerHTML =
+            "Press <strong>E</strong> to attempt recruitment";
           document.body.appendChild(promptElement);
 
           // Remove prompt after 5 seconds
@@ -2687,14 +2684,14 @@ nextTurn() {
       }
 
       // Restore all player monsters' HP
-      this.partyManager.party.active.forEach(monster => {
+      this.partyManager.party.active.forEach((monster) => {
         monster.currentHP = monster.maxHP;
       });
 
       // Save party state
       this.partyManager.saveParty();
 
-      console.log('Combat ended and state reset');
+      console.log("Combat ended and state reset");
     }, 300);
   }
 
@@ -2703,146 +2700,105 @@ nextTurn() {
    */
 
   // Use a monster's ability
-  // useMonsterAbility(abilityName) {
-  //   const currentMonster = this.getCurrentMonster();
-  //   if (!currentMonster) return false;
-
-  //   // Find the ability
-  //   const ability = currentMonster.monsterAbilities.find(a => a.name === abilityName);
-  //   if (!ability) {
-  //     console.error(`Ability ${abilityName} not found for ${currentMonster.name}`);
-  //     return false;
-  //   }
-
-  //   // Show target selection for attack abilities
-  //   if (ability.type === 'attack' || ability.type === 'debuff') {
-  //     this.markTargetableEnemies(currentMonster, ability);
-  //     //   this.showTargetSelection(currentMonster, ability);
-  //   }
-  //   // For self-buff abilities, apply directly
-  //   else if (ability.type === 'buff' || ability.type === 'defense') {
-  //     this.resolveAbility(currentMonster, ability, currentMonster);
-  //     this.nextTurn();
-  //   }
-  //   // For area abilities, apply to all valid targets
-  //   else if (ability.type === 'area') {
-  //     // Get all valid enemy targets
-  //     const targets = this.enemyParty.filter(monster => monster.currentHP > 0);
-  //     if (targets.length > 0) {
-  //       let totalDamage = 0;
-
-  //       // Process each target
-  //       targets.forEach(target => {
-  //         const damage = this.calculateAbilityDamage(ability);
-  //         this.applyDamage(target, damage, monster);
-  //         // this.applyDamage(target, damage);
-  //         totalDamage += damage;
-  //       });
-
-  //       // Log the area attack
-  //       this.addLogEntry(`${currentMonster.name} uses ${ability.name}, dealing ${totalDamage} total damage to ${targets.length} targets.`);
-
-  //       // Move to next turn
-  //       this.nextTurn();
-  //     } else {
-  //       this.addLogEntry(`${currentMonster.name} has no valid targets for ${ability.name}.`);
-  //     }
-  //   }
-  //   // For healing abilities, show friendly target selection
-  //   else if (ability.type === 'healing') {
-  //     this.showFriendlyTargetSelection(currentMonster, ability);
-  //   }
-  //   else {
-  //     // For other ability types
-  //     this.addLogEntry(`${currentMonster.name} uses ${ability.name}.`);
-  //     this.nextTurn();
-  //   }
-
-  //   return true;
-  // }
-
-    // Updated useMonsterAbility method to fix ability activation issues
   useMonsterAbility(abilityName) {
     console.log(`Attempting to use ability: ${abilityName}`);
     const currentMonster = this.getCurrentMonster();
     if (!currentMonster) {
-      console.error('No active monster found for ability use');
+      console.error("No active monster found for ability use");
       return false;
     }
-  
+
     // Find the ability
-    const ability = currentMonster.monsterAbilities.find(a => a.name === abilityName);
+    const ability = currentMonster.monsterAbilities.find(
+      (a) => a.name === abilityName
+    );
     if (!ability) {
-      console.error(`Ability "${abilityName}" not found for ${currentMonster.name}`);
+      console.error(
+        `Ability "${abilityName}" not found for ${currentMonster.name}`
+      );
       return false;
     }
-  
+
     console.log(`Found ability: ${ability.name}, type: ${ability.type}`);
-  
+
     // Show target selection for attack abilities
-    if (ability.type === 'attack' || ability.type === 'debuff') {
-      console.log('Initiating target selection for attack/debuff ability');
+    if (ability.type === "attack" || ability.type === "debuff") {
+      console.log("Initiating target selection for attack/debuff ability");
       this.markTargetableEnemies(currentMonster, ability);
     }
     // For self-buff abilities, apply directly
-    else if (ability.type === 'buff' || ability.type === 'defense') {
-      console.log('Applying self-buff ability directly');
+    else if (ability.type === "buff" || ability.type === "defense") {
+      console.log("Applying self-buff ability directly");
       this.resolveAbility(currentMonster, ability, currentMonster);
       this.nextTurn();
     }
     // For area abilities, apply to all valid targets
-    else if (ability.type === 'area') {
-      console.log('Processing area effect ability');
+    else if (ability.type === "area") {
+      console.log("Processing area effect ability");
       // Get all valid enemy targets
-      const targets = this.enemyParty.filter(monster => monster.currentHP > 0);
+      const targets = this.enemyParty.filter(
+        (monster) => monster.currentHP > 0
+      );
       if (targets.length > 0) {
         let totalDamage = 0;
-  
+
         // Process each target
-        targets.forEach(target => {
-          const damage = this.calculateAbilityDamage(ability, currentMonster, target);
+        targets.forEach((target) => {
+          const damage = this.calculateAbilityDamage(
+            ability,
+            currentMonster,
+            target
+          );
           this.applyDamage(target, damage, currentMonster);
           totalDamage += damage;
         });
-  
+
         // Log the area attack
-        this.addLogEntry(`${currentMonster.name} uses ${ability.name}, dealing ${totalDamage} total damage to ${targets.length} targets.`);
-  
+        this.addLogEntry(
+          `${currentMonster.name} uses ${ability.name}, dealing ${totalDamage} total damage to ${targets.length} targets.`
+        );
+
         // Move to next turn
         this.nextTurn();
       } else {
-        this.addLogEntry(`${currentMonster.name} has no valid targets for ${ability.name}.`);
+        this.addLogEntry(
+          `${currentMonster.name} has no valid targets for ${ability.name}.`
+        );
       }
     }
     // For healing abilities, show friendly target selection
-    else if (ability.type === 'healing') {
-      console.log('Initiating friendly target selection for healing ability');
+    else if (ability.type === "healing") {
+      console.log("Initiating friendly target selection for healing ability");
       this.showFriendlyTargetSelection(currentMonster, ability);
-    }
-    else {
+    } else {
       // For other ability types
       console.log(`Using generic ability type: ${ability.type}`);
       this.addLogEntry(`${currentMonster.name} uses ${ability.name}.`);
       this.nextTurn();
     }
-  
+
     return true;
   }
 
   applyRelationshipBonuses(attacker, target) {
     // First, check if attacker exists and has required properties
-    if (!attacker || !target || !this.partyManager || !this.partyManager.relationshipMap) {
+    if (
+      !attacker ||
+      !target ||
+      !this.partyManager ||
+      !this.partyManager.relationshipMap
+    ) {
       return 0; // No relationship system active or missing parameters
     }
 
     // IMPORTANT: Only apply relationship bonuses for player monsters, not enemies
     // Find which side the attacker is on by checking the initiative order
-    const attackerEntry = this.initiativeOrder.find(combatant =>
-      combatant.monster.id === attacker.id
+    const attackerEntry = this.initiativeOrder.find(
+      (combatant) => combatant.monster.id === attacker.id
     );
 
     // If attacker isn't found or is on enemy side, return 0 (no bonus)
-    if (!attackerEntry || attackerEntry.side !== 'player') {
+    if (!attackerEntry || attackerEntry.side !== "player") {
       return 0; // No relationship bonuses for enemies
     }
 
@@ -2851,26 +2807,32 @@ nextTurn() {
     // Only proceed if this is a player monster
     // Check relationships with other active player monsters
     const activePlayerMonsters = this.initiativeOrder
-      .filter(combatant =>
-        combatant.side === 'player' &&
-        combatant.monster.id !== attacker.id
+      .filter(
+        (combatant) =>
+          combatant.side === "player" && combatant.monster.id !== attacker.id
       )
-      .map(combatant => combatant.monster);
+      .map((combatant) => combatant.monster);
 
     // Apply bonuses from all allies with relationships
-    activePlayerMonsters.forEach(ally => {
+    activePlayerMonsters.forEach((ally) => {
       bonus += this.partyManager.getCombatModifier(attacker.id, ally.id);
     });
 
     // If bonus exists, log it and create visual effect
     if (bonus !== 0) {
-      this.addLogEntry(`${attacker.name} ${bonus > 0 ? 'strengthened' : 'hindered'} by party relationships (${bonus > 0 ? '+' : ''}${bonus})`);
+      this.addLogEntry(
+        `${attacker.name} ${
+          bonus > 0 ? "strengthened" : "hindered"
+        } by party relationships (${bonus > 0 ? "+" : ""}${bonus})`
+      );
 
       // Show relationship effect visualization
-      const attackerCard = this.dialogContainer.querySelector(`.combat-monster[data-monster-id="${attacker.id}"]`);
+      const attackerCard = this.dialogContainer.querySelector(
+        `.combat-monster[data-monster-id="${attacker.id}"]`
+      );
       if (attackerCard) {
-        const effect = document.createElement('div');
-        effect.className = 'relationship-effect';
+        const effect = document.createElement("div");
+        effect.className = "relationship-effect";
         effect.style.cssText = `
         position: absolute;
         top: 0;
@@ -2886,12 +2848,14 @@ nextTurn() {
       `;
 
         effect.innerHTML = `
-        <span class="material-icons" style="font-size: 36px; color: ${bonus > 0 ? '#ff6b6b' : '#6b7280'};">
-          ${bonus > 0 ? 'favorite' : 'heart_broken'}
+        <span class="material-icons" style="font-size: 36px; color: ${
+          bonus > 0 ? "#ff6b6b" : "#6b7280"
+        };">
+          ${bonus > 0 ? "favorite" : "heart_broken"}
         </span>
       `;
 
-        attackerCard.style.position = 'relative';
+        attackerCard.style.position = "relative";
         attackerCard.appendChild(effect);
 
         // Remove effect after animation
@@ -2902,254 +2866,153 @@ nextTurn() {
     return bonus;
   }
 
-  // markTargetableEnemies(monster, ability) {
-  //   // Find all enemy cards
-  //   const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
-
-  //   // Find viable targets (enemies with HP > 0)
-  //   const viableTargets = [];
-
-  //   enemyCards.forEach(card => {
-  //     const enemyId = card.getAttribute('data-monster-id');
-  //     const enemy = this.enemyParty.find(e => e.id === enemyId);
-
-  //     if (enemy && enemy.currentHP > 0) {
-  //       viableTargets.push({ card, enemy });
-  //     }
-  //   });
-
-  //   // If there's only one viable target, auto-target it
-  //   if (viableTargets.length === 1) {
-  //     const { enemy } = viableTargets[0];
-
-  //     // Create a quick highlight effect to show which enemy was targeted
-  //     const card = viableTargets[0].card;
-  //     card.classList.add('auto-targeted');
-
-  //     // Create a temporary message
-  //     const battleScene = this.dialogContainer.querySelector('.battle-scene');
-  //     const autoMessage = document.createElement('div');
-  //     autoMessage.className = 'battle-notification fade-in';
-  //     autoMessage.textContent = `Auto-targeting ${enemy.name}`;
-  //     autoMessage.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
-  //     battleScene.appendChild(autoMessage);
-
-  //     // Remove the message and execute the ability after a short delay
-  //     setTimeout(() => {
-  //       // Remove the message
-  //       autoMessage.classList.remove('fade-in');
-  //       autoMessage.style.opacity = 0;
-
-  //       // Execute the ability
-  //       this.resolveAbility(monster, ability, enemy);
-
-  //       // Move to next turn
-  //       this.nextTurn();
-
-  //       // Clean up
-  //       setTimeout(() => {
-  //         autoMessage.remove();
-  //         card.classList.remove('auto-targeted');
-  //       }, 300);
-  //     }, 800); // Short delay so player can see what happened
-
-  //     return; // Exit early since we auto-targeted
-  //   }
-
-  //   // If we have multiple targets, proceed with normal targeting
-  //   viableTargets.forEach(({ card, enemy }) => {
-  //     // Add targetable class and hint
-  //     card.classList.add('targetable');
-
-  //     // Add targeting hint
-  //     const hint = document.createElement('div');
-  //     hint.className = 'targeting-hint';
-  //     hint.textContent = `Click to target with ${ability.name}`;
-  //     card.appendChild(hint);
-
-  //     // Click handler to execute the ability
-  //     card.addEventListener('click', () => {
-  //       // Remove targeting from all cards
-  //       enemyCards.forEach(c => {
-  //         c.classList.remove('targetable');
-  //         const h = c.querySelector('.targeting-hint');
-  //         if (h) h.remove();
-  //       });
-
-  //       // Execute ability on the target
-  //       this.resolveAbility(monster, ability, enemy);
-
-  //       // Move to next turn
-  //       this.nextTurn();
-
-  //       // Remove battle notification if present
-  //       const notification = this.dialogContainer.querySelector('.battle-notification');
-  //       if (notification) notification.remove();
-  //     });
-  //   });
-
-  //   // Add the targeting instruction message only if we have multiple targets
-  //   const battleScene = this.dialogContainer.querySelector('.battle-scene');
-  //   const indicator = document.createElement('div');
-  //   indicator.className = 'battle-notification fade-in';
-  //   indicator.textContent = 'Select an enemy to target';
-  //   indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
-
-  //   battleScene.appendChild(indicator);
-
-  //   // Remove after a few seconds to avoid clutter
-  //   setTimeout(() => {
-  //     if (indicator && indicator.parentNode) {
-  //       indicator.classList.remove('fade-in');
-  //       indicator.style.opacity = 0;
-  //       setTimeout(() => {
-  //         if (indicator.parentNode) indicator.remove();
-  //       }, 300);
-  //     }
-  //   }, 3000);
-  // }
 
   // Show target selection overlay
-  
-    // Updated markTargetableEnemies method
-  
-  
-    markTargetableEnemies(monster, ability) {
-    console.log(`Setting up targeting for ${monster.name} using ${ability.name}`);
-    
+  markTargetableEnemies(monster, ability) {
+    console.log(
+      `Setting up targeting for ${monster.name} using ${ability.name}`
+    );
+
     // Find all enemy cards
-    const enemyCards = Array.from(this.dialogContainer.querySelectorAll('.combat-monster.enemy'));
+    const enemyCards = Array.from(
+      this.dialogContainer.querySelectorAll(".combat-monster.enemy")
+    );
     console.log(`Found ${enemyCards.length} enemy cards for targeting`);
-  
+
     // Find viable targets (enemies with HP > 0)
     const viableTargets = [];
-  
-    enemyCards.forEach(card => {
-      const enemyId = card.getAttribute('data-monster-id');
-      const enemy = this.enemyParty.find(e => e.id === enemyId);
-  
+
+    enemyCards.forEach((card) => {
+      const enemyId = card.getAttribute("data-monster-id");
+      const enemy = this.enemyParty.find((e) => e.id === enemyId);
+
       if (enemy && enemy.currentHP > 0) {
         viableTargets.push({ card, enemy });
-        console.log(`Viable target found: ${enemy.name} (HP: ${enemy.currentHP}/${enemy.maxHP})`);
+        console.log(
+          `Viable target found: ${enemy.name} (HP: ${enemy.currentHP}/${enemy.maxHP})`
+        );
       }
     });
-  
+
     console.log(`Total viable targets: ${viableTargets.length}`);
-  
+
     // If there's only one viable target, auto-target it
     if (viableTargets.length === 1) {
       const { enemy, card } = viableTargets[0];
       console.log(`Auto-targeting single enemy: ${enemy.name}`);
-  
+
       // Create a quick highlight effect
-      card.classList.add('auto-targeted');
-  
+      card.classList.add("auto-targeted");
+
       // Create a temporary message
-      const battleScene = this.dialogContainer.querySelector('.battle-scene');
-      const autoMessage = document.createElement('div');
-      autoMessage.className = 'battle-notification fade-in';
+      const battleScene = this.dialogContainer.querySelector(".battle-scene");
+      const autoMessage = document.createElement("div");
+      autoMessage.className = "battle-notification fade-in";
       autoMessage.textContent = `Auto-targeting ${enemy.name}`;
-      autoMessage.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+      autoMessage.style.backgroundColor = "rgba(239, 68, 68, 0.8)";
       battleScene.appendChild(autoMessage);
-  
+
       // Remove the message and execute the ability after a short delay
       setTimeout(() => {
-        autoMessage.classList.remove('fade-in');
-        autoMessage.style.opacity = '0';
-  
+        autoMessage.classList.remove("fade-in");
+        autoMessage.style.opacity = "0";
+
         console.log(`Resolving ability ${ability.name} against ${enemy.name}`);
         this.resolveAbility(monster, ability, enemy);
-  
+
         // Move to next turn
         this.nextTurn();
-  
+
         // Clean up
         setTimeout(() => {
           autoMessage.remove();
-          card.classList.remove('auto-targeted');
+          card.classList.remove("auto-targeted");
         }, 300);
       }, 800);
-  
+
       return;
     }
-  
+
     // If we have multiple targets, proceed with manual targeting
-    console.log(`Setting up manual targeting for ${viableTargets.length} enemies`);
-    
+    console.log(
+      `Setting up manual targeting for ${viableTargets.length} enemies`
+    );
+
     viableTargets.forEach(({ card, enemy }) => {
       // Add targetable class and hint
-      card.classList.add('targetable');
-  
+      card.classList.add("targetable");
+
       // Add targeting hint
-      const hint = document.createElement('div');
-      hint.className = 'targeting-hint';
+      const hint = document.createElement("div");
+      hint.className = "targeting-hint";
       hint.textContent = `Click to target with ${ability.name}`;
       card.appendChild(hint);
-  
+
       // Create new click handler
       const targetClickHandler = () => {
         console.log(`Target selected: ${enemy.name}`);
-        
+
         // Remove targeting from all cards
-        enemyCards.forEach(c => {
-          c.classList.remove('targetable');
-          const h = c.querySelector('.targeting-hint');
+        enemyCards.forEach((c) => {
+          c.classList.remove("targetable");
+          const h = c.querySelector(".targeting-hint");
           if (h) h.remove();
-          
+
           // Important: Remove all previous click handlers
-          c.removeEventListener('click', targetClickHandler);
+          c.removeEventListener("click", targetClickHandler);
         });
-  
+
         // Execute ability on the target
         this.resolveAbility(monster, ability, enemy);
-  
+
         // Move to next turn
         this.nextTurn();
-  
+
         // Remove battle notification if present
-        const notification = this.dialogContainer.querySelector('.battle-notification');
+        const notification = this.dialogContainer.querySelector(
+          ".battle-notification"
+        );
         if (notification) notification.remove();
       };
-  
+
       // Add click handler
-      card.addEventListener('click', targetClickHandler);
+      card.addEventListener("click", targetClickHandler);
     });
-  
+
     // Add the targeting instruction message
-    const battleScene = this.dialogContainer.querySelector('.battle-scene');
-    const indicator = document.createElement('div');
-    indicator.className = 'battle-notification fade-in';
-    indicator.textContent = 'Select an enemy to target';
-    indicator.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+    const battleScene = this.dialogContainer.querySelector(".battle-scene");
+    const indicator = document.createElement("div");
+    indicator.className = "battle-notification fade-in";
+    indicator.textContent = "Select an enemy to target";
+    indicator.style.backgroundColor = "rgba(239, 68, 68, 0.8)";
     battleScene.appendChild(indicator);
-  
+
     // Remove after a few seconds to avoid clutter
     setTimeout(() => {
       if (indicator && indicator.parentNode) {
-        indicator.classList.remove('fade-in');
-        indicator.style.opacity = '0';
+        indicator.classList.remove("fade-in");
+        indicator.style.opacity = "0";
         setTimeout(() => {
           if (indicator.parentNode) indicator.remove();
         }, 300);
       }
     }, 3000);
   }
-  
-  
-  
-  
+
   showTargetSelection(monster, ability) {
     // Get valid targets (non-defeated enemies)
-    const validTargets = this.enemyParty.filter(enemy => enemy.currentHP > 0);
+    const validTargets = this.enemyParty.filter((enemy) => enemy.currentHP > 0);
 
     if (validTargets.length === 0) {
-      this.addLogEntry(`${monster.name} has no valid targets for ${ability.name}.`);
+      this.addLogEntry(
+        `${monster.name} has no valid targets for ${ability.name}.`
+      );
       return;
     }
 
     // Create targeting overlay
-    const targetingOverlay = document.createElement('div');
-    targetingOverlay.className = 'targeting-overlay';
+    const targetingOverlay = document.createElement("div");
+    targetingOverlay.className = "targeting-overlay";
     targetingOverlay.style.cssText = `
       position: absolute;
       top: 0;
@@ -3165,8 +3028,8 @@ nextTurn() {
     `;
 
     // Add targeting instructions
-    const instructions = document.createElement('div');
-    instructions.className = 'targeting-instructions';
+    const instructions = document.createElement("div");
+    instructions.className = "targeting-instructions";
     instructions.style.cssText = `
       color: white;
       font-size: 1.2em;
@@ -3180,30 +3043,32 @@ nextTurn() {
     targetingOverlay.appendChild(instructions);
 
     // Add overlay to dialog
-    const battleScene = this.dialogContainer.querySelector('.battle-scene');
+    const battleScene = this.dialogContainer.querySelector(".battle-scene");
     battleScene.appendChild(targetingOverlay);
 
     // Highlight enemy monsters as targetable
-    const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
-    enemyCards.forEach(card => {
-      const enemyId = card.getAttribute('data-monster-id');
-      const enemy = this.enemyParty.find(e => e.id === enemyId);
+    const enemyCards = this.dialogContainer.querySelectorAll(
+      ".combat-monster.enemy"
+    );
+    enemyCards.forEach((card) => {
+      const enemyId = card.getAttribute("data-monster-id");
+      const enemy = this.enemyParty.find((e) => e.id === enemyId);
 
       if (enemy && enemy.currentHP > 0) {
-        card.style.cursor = 'pointer';
-        card.style.boxShadow = '0 0 10px rgba(244, 67, 54, 0.7)';
-        card.style.transform = 'scale(1.05)';
+        card.style.cursor = "pointer";
+        card.style.boxShadow = "0 0 10px rgba(244, 67, 54, 0.7)";
+        card.style.transform = "scale(1.05)";
 
         // Add click handler
-        card.addEventListener('click', () => {
+        card.addEventListener("click", () => {
           // Remove overlay
           targetingOverlay.remove();
 
           // Reset styling
-          enemyCards.forEach(c => {
-            c.style.cursor = '';
-            c.style.boxShadow = '';
-            c.style.transform = '';
+          enemyCards.forEach((c) => {
+            c.style.cursor = "";
+            c.style.boxShadow = "";
+            c.style.transform = "";
           });
 
           // Resolve the ability
@@ -3216,8 +3081,8 @@ nextTurn() {
     });
 
     // Add cancel button
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'cancel-targeting-btn';
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "cancel-targeting-btn";
     cancelBtn.style.cssText = `
       background: white;
       border: none;
@@ -3234,15 +3099,15 @@ nextTurn() {
       <span>Cancel</span>
     `;
 
-    cancelBtn.addEventListener('click', () => {
+    cancelBtn.addEventListener("click", () => {
       // Remove overlay
       targetingOverlay.remove();
 
       // Reset styling
-      enemyCards.forEach(card => {
-        card.style.cursor = '';
-        card.style.boxShadow = '';
-        card.style.transform = '';
+      enemyCards.forEach((card) => {
+        card.style.cursor = "";
+        card.style.boxShadow = "";
+        card.style.transform = "";
       });
     });
 
@@ -3252,16 +3117,18 @@ nextTurn() {
   // Show friendly target selection overlay
   showFriendlyTargetSelection(monster, ability) {
     // Get valid targets (non-defeated player monsters)
-    const validTargets = this.playerParty.filter(m => m.currentHP > 0);
+    const validTargets = this.playerParty.filter((m) => m.currentHP > 0);
 
     if (validTargets.length === 0) {
-      this.addLogEntry(`${monster.name} has no valid targets for ${ability.name}.`);
+      this.addLogEntry(
+        `${monster.name} has no valid targets for ${ability.name}.`
+      );
       return;
     }
 
     // Create targeting overlay
-    const targetingOverlay = document.createElement('div');
-    targetingOverlay.className = 'targeting-overlay';
+    const targetingOverlay = document.createElement("div");
+    targetingOverlay.className = "targeting-overlay";
     targetingOverlay.style.cssText = `
       position: absolute;
       top: 0;
@@ -3277,8 +3144,8 @@ nextTurn() {
     `;
 
     // Add targeting instructions
-    const instructions = document.createElement('div');
-    instructions.className = 'targeting-instructions';
+    const instructions = document.createElement("div");
+    instructions.className = "targeting-instructions";
     instructions.style.cssText = `
       color: white;
       font-size: 1.2em;
@@ -3292,30 +3159,32 @@ nextTurn() {
     targetingOverlay.appendChild(instructions);
 
     // Add overlay to dialog
-    const battleScene = this.dialogContainer.querySelector('.battle-scene');
+    const battleScene = this.dialogContainer.querySelector(".battle-scene");
     battleScene.appendChild(targetingOverlay);
 
     // Highlight player monsters as targetable
-    const playerCards = this.dialogContainer.querySelectorAll('.combat-monster.player');
-    playerCards.forEach(card => {
-      const playerId = card.getAttribute('data-monster-id');
-      const playerMonster = this.playerParty.find(p => p.id === playerId);
+    const playerCards = this.dialogContainer.querySelectorAll(
+      ".combat-monster.player"
+    );
+    playerCards.forEach((card) => {
+      const playerId = card.getAttribute("data-monster-id");
+      const playerMonster = this.playerParty.find((p) => p.id === playerId);
 
       if (playerMonster && playerMonster.currentHP > 0) {
-        card.style.cursor = 'pointer';
-        card.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.7)';
-        card.style.transform = 'scale(1.05)';
+        card.style.cursor = "pointer";
+        card.style.boxShadow = "0 0 10px rgba(76, 175, 80, 0.7)";
+        card.style.transform = "scale(1.05)";
 
         // Add click handler
-        card.addEventListener('click', () => {
+        card.addEventListener("click", () => {
           // Remove overlay
           targetingOverlay.remove();
 
           // Reset styling
-          playerCards.forEach(c => {
-            c.style.cursor = '';
-            c.style.boxShadow = '';
-            c.style.transform = '';
+          playerCards.forEach((c) => {
+            c.style.cursor = "";
+            c.style.boxShadow = "";
+            c.style.transform = "";
           });
 
           // Resolve the ability
@@ -3328,8 +3197,8 @@ nextTurn() {
     });
 
     // Add cancel button
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'cancel-targeting-btn';
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "cancel-targeting-btn";
     cancelBtn.style.cssText = `
       background: white;
       border: none;
@@ -3346,99 +3215,65 @@ nextTurn() {
       <span>Cancel</span>
     `;
 
-    cancelBtn.addEventListener('click', () => {
+    cancelBtn.addEventListener("click", () => {
       // Remove overlay
       targetingOverlay.remove();
 
       // Reset styling
-      playerCards.forEach(card => {
-        card.style.cursor = '';
-        card.style.boxShadow = '';
-        card.style.transform = '';
+      playerCards.forEach((card) => {
+        card.style.cursor = "";
+        card.style.boxShadow = "";
+        card.style.transform = "";
       });
     });
 
     targetingOverlay.appendChild(cancelBtn);
   }
 
-  // Resolve an ability's effects
-  // resolveAbility(monster, ability, target) {
-  //   // Log the ability use
-  //   this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
+  // Updated resolveAbility method
+  resolveAbility(monster, ability, target) {
+    console.log(`${monster.name} uses ${ability.name} on ${target.name}`);
 
-  //   // Process based on ability type
-  //   switch (ability.type) {
-  //     case 'attack':
-  //       // Calculate and apply damage - PASS THE MONSTER AS ATTACKER
-  //       const damage = this.calculateAbilityDamage(ability, monster, target);
-  //       this.applyDamage(target, damage, monster);
-  //       // this.applyDamage(target, damage);
-  //       break;
+    // Log the ability use
+    this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
 
-  //     case 'buff':
-  //       // Apply buff to monster
-  //       this.addLogEntry(`${monster.name} gains a beneficial effect.`);
-  //       break;
+    // Process based on ability type
+    switch (ability.type) {
+      case "attack":
+        console.log(`Processing attack ability: ${ability.name}`);
+        // Calculate and apply damage
+        const damage = this.calculateAbilityDamage(ability, monster, target);
+        console.log(`Calculated damage: ${damage}`);
+        this.applyDamage(target, damage, monster);
+        break;
 
-  //     case 'debuff':
-  //       // Apply debuff to target
-  //       this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
-  //       break;
+      case "buff":
+        // Apply buff to monster
+        console.log(`Applying buff: ${ability.name}`);
+        this.addLogEntry(`${monster.name} gains a beneficial effect.`);
 
-  //     default:
-  //       this.addLogEntry(`${ability.name} is used.`);
-  //       break;
-  //   }
+        // Here you could implement actual stat buffs
+        // For example: monster.tempStatBonus = { type: 'ac', value: 2, duration: 3 };
+        break;
 
-  //   // Update UI to reflect changes
-  //   this.updateCombatDisplay();
-  // }
+      case "debuff":
+        // Apply debuff to target
+        console.log(`Applying debuff: ${ability.name}`);
+        this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
 
-// Updated resolveAbility method
-resolveAbility(monster, ability, target) {
-  console.log(`${monster.name} uses ${ability.name} on ${target.name}`);
+        // Here you could implement actual debuffs
+        // For example: target.tempStatPenalty = { type: 'ac', value: -2, duration: 3 };
+        break;
 
-  // Log the ability use
-  this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
+      default:
+        console.log(`Using generic ability type: ${ability.type}`);
+        this.addLogEntry(`${ability.name} is used.`);
+        break;
+    }
 
-  // Process based on ability type
-  switch (ability.type) {
-    case 'attack':
-      console.log(`Processing attack ability: ${ability.name}`);
-      // Calculate and apply damage
-      const damage = this.calculateAbilityDamage(ability, monster, target);
-      console.log(`Calculated damage: ${damage}`);
-      this.applyDamage(target, damage, monster);
-      break;
-
-    case 'buff':
-      // Apply buff to monster
-      console.log(`Applying buff: ${ability.name}`);
-      this.addLogEntry(`${monster.name} gains a beneficial effect.`);
-      
-      // Here you could implement actual stat buffs
-      // For example: monster.tempStatBonus = { type: 'ac', value: 2, duration: 3 };
-      break;
-
-    case 'debuff':
-      // Apply debuff to target
-      console.log(`Applying debuff: ${ability.name}`);
-      this.addLogEntry(`${target.name} is afflicted with a negative effect.`);
-      
-      // Here you could implement actual debuffs
-      // For example: target.tempStatPenalty = { type: 'ac', value: -2, duration: 3 };
-      break;
-
-    default:
-      console.log(`Using generic ability type: ${ability.type}`);
-      this.addLogEntry(`${ability.name} is used.`);
-      break;
+    // Update UI to reflect changes
+    this.updateCombatDisplay();
   }
-
-  // Update UI to reflect changes
-  this.updateCombatDisplay();
-}
-
 
   // Resolve healing ability
   resolveHealingAbility(monster, ability, target) {
@@ -3451,7 +3286,9 @@ resolveAbility(monster, ability, target) {
     const actualHealing = target.currentHP - originalHP;
 
     // Log the healing
-    this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}, healing for ${actualHealing} HP.`);
+    this.addLogEntry(
+      `${monster.name} uses ${ability.name} on ${target.name}, healing for ${actualHealing} HP.`
+    );
 
     // Update UI
     this.updateCombatDisplay();
@@ -3466,9 +3303,9 @@ resolveAbility(monster, ability, target) {
     let damage = 0;
 
     // Check if it has dice notation
-    if (damageFormula.includes('d')) {
-      const [dice, modifier] = damageFormula.split('+');
-      const [numDice, dieSize] = dice.split('d').map(n => parseInt(n));
+    if (damageFormula.includes("d")) {
+      const [dice, modifier] = damageFormula.split("+");
+      const [numDice, dieSize] = dice.split("d").map((n) => parseInt(n));
 
       // Roll the dice
       for (let i = 0; i < numDice; i++) {
@@ -3515,9 +3352,9 @@ resolveAbility(monster, ability, target) {
     let healing = 0;
 
     // Check if it has dice notation
-    if (healingFormula.includes('d')) {
-      const [dice, modifier] = healingFormula.split('+');
-      const [numDice, dieSize] = dice.split('d').map(n => parseInt(n));
+    if (healingFormula.includes("d")) {
+      const [dice, modifier] = healingFormula.split("+");
+      const [numDice, dieSize] = dice.split("d").map((n) => parseInt(n));
 
       // Roll the dice
       for (let i = 0; i < numDice; i++) {
@@ -3537,91 +3374,70 @@ resolveAbility(monster, ability, target) {
     return healing;
   }
 
+  // Update applyDamage to use the visual log
+  applyDamage(target, damage, attacker, isCritical = false) {
+    // Store original HP for log
+    const originalHP = target.currentHP;
 
-  // Modify applyDamage method
-// applyDamage(target, damage, attacker, isCritical = false) {
-//   // Store original HP for log
-//   const originalHP = target.currentHP;
-  
-//   // Apply damage
-//   target.currentHP = Math.max(0, target.currentHP - damage);
-  
-//   // Log using the visual system
-//   this.addVisualLogEntry({
-//     type: 'damage',
-//     attacker: attacker,
-//     target: target,
-//     damage: damage,
-//     isCritical: isCritical
-//   });
-  
-//   // Update UI to reflect changes
-//   this.updateCombatDisplay();
-  
-//   // Check if combat should end
-//   this.checkCombatEnd();
-// }
+    // Apply damage
+    target.currentHP = Math.max(0, target.currentHP - damage);
 
-// Update applyDamage to use the visual log
-applyDamage(target, damage, attacker, isCritical = false) {
-  // Store original HP for log
-  const originalHP = target.currentHP;
-  
-  // Apply damage
-  target.currentHP = Math.max(0, target.currentHP - damage);
-  
-  // Log using the visual system
-  if (attacker) {
-    this.addVisualLogEntry({
-      type: 'damage',
-      attacker: attacker,
-      target: target,
-      damage: damage,
-      isCritical: isCritical
-    });
-  } else {
-    // Fallback to text log for damage without a clear source
-    this.addLogEntry(`${target.name} takes ${damage} damage${target.currentHP <= 0 ? ' and is defeated!' : '.'}`);
-  }
-  
-  // Update UI to reflect changes
-  this.updateCombatDisplay();
-  
-  // Check if this was an enemy that just got defeated
-  if (target.currentHP <= 0 && target.currentHP !== originalHP) {
-    // Enemy was just defeated
-    const isEnemy = this.enemyParty.some(m => m.id === target.id);
-    if (isEnemy) {
-      // Refresh enemy area
-      this.updateEnemyArea();
+    // Log using the visual system
+    if (attacker) {
+      this.addVisualLogEntry({
+        type: "damage",
+        attacker: attacker,
+        target: target,
+        damage: damage,
+        isCritical: isCritical
+      });
+    } else {
+      // Fallback to text log for damage without a clear source
+      this.addLogEntry(
+        `${target.name} takes ${damage} damage${
+          target.currentHP <= 0 ? " and is defeated!" : "."
+        }`
+      );
     }
-  }
-  
-  // Check if combat should end
-  this.checkCombatEnd();
-}
 
-// Similarly for healing
-resolveHealingAbility(monster, ability, target) {
-  // Calculate healing amount
-  const healing = this.calculateHealingAmount(ability);
-  
-  // Apply healing
-  const originalHP = target.currentHP;
-  target.currentHP = Math.min(target.maxHP, target.currentHP + healing);
-  const actualHealing = target.currentHP - originalHP;
-  
-  // Log using visual system
-  this.addVisualLogEntry({
-    type: 'heal',
-    healer: monster,
-    target: target,
-    amount: actualHealing
-  });
-  
-  // Update UI
-  this.updateCombatDisplay();
-}
+    // Update UI to reflect changes
+    this.updateCombatDisplay();
+
+    // Check if this was an enemy that just got defeated
+    if (target.currentHP <= 0 && target.currentHP !== originalHP) {
+      // Enemy was just defeated
+      const isEnemy = this.enemyParty.some((m) => m.id === target.id);
+      if (isEnemy) {
+        // Refresh enemy area
+        this.updateEnemyArea();
+      }
+    }
+
+    // Check if combat should end
+    this.checkCombatEnd();
+  }
+
+  // Similarly for healing
+  resolveHealingAbility(monster, ability, target) {
+    // Calculate healing amount
+    const healing = this.calculateHealingAmount(ability);
+
+    // Apply healing
+    const originalHP = target.currentHP;
+    target.currentHP = Math.min(target.maxHP, target.currentHP + healing);
+    const actualHealing = target.currentHP - originalHP;
+
+    // Log using visual system
+    this.addVisualLogEntry({
+      type: "heal",
+      healer: monster,
+      target: target,
+      amount: actualHealing
+    });
+
+    // Update UI
+    this.updateCombatDisplay();
+  }
 
   /**
    * UI Update Methods
@@ -3629,7 +3445,7 @@ resolveHealingAbility(monster, ability, target) {
 
   // Update action bar based on current monster
   updateActionBar(monster) {
-    const actionBar = this.dialogContainer.querySelector('.action-bar');
+    const actionBar = this.dialogContainer.querySelector(".action-bar");
     if (!actionBar) return;
 
     if (monster && monster.currentHP > 0) {
@@ -3646,7 +3462,8 @@ resolveHealingAbility(monster, ability, target) {
 
   // Update initiative tracker UI
   updateInitiativeTracker() {
-    const initiativeList = this.dialogContainer.querySelector('.initiative-list');
+    const initiativeList =
+      this.dialogContainer.querySelector(".initiative-list");
     if (!initiativeList) return;
 
     initiativeList.innerHTML = this.renderInitiativeList();
@@ -3655,15 +3472,18 @@ resolveHealingAbility(monster, ability, target) {
   // Update all combat displays
   updateCombatDisplay() {
     // Update enemy display
-    const enemyArea = this.dialogContainer.querySelector('.enemy-area');
+    const enemyArea = this.dialogContainer.querySelector(".enemy-area");
     if (enemyArea) {
-      enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, 'enemy');
+      enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, "enemy");
     }
 
     // Update player display
-    const playerArea = this.dialogContainer.querySelector('.player-area');
+    const playerArea = this.dialogContainer.querySelector(".player-area");
     if (playerArea) {
-      playerArea.innerHTML = this.renderMonsterGroup(this.playerParty, 'player');
+      playerArea.innerHTML = this.renderMonsterGroup(
+        this.playerParty,
+        "player"
+      );
     }
 
     // Update initiative display
@@ -3673,17 +3493,21 @@ resolveHealingAbility(monster, ability, target) {
   // Add entry to combat log
   addLogEntry(message, isRoundHeader = false) {
     // Get log container
-    const logEntries = this.dialogContainer.querySelector('.log-entries');
+    const logEntries = this.dialogContainer.querySelector(".log-entries");
     if (!logEntries) return;
 
     // Create new entry
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
     entry.style.cssText = `
     margin-bottom: 8px;
     padding-bottom: 8px;
     border-bottom: 1px solid #eee;
-    ${isRoundHeader ? 'font-weight: bold; background-color: #f5f5f5; padding: 4px;' : ''}
+    ${
+      isRoundHeader
+        ? "font-weight: bold; background-color: #f5f5f5; padding: 4px;"
+        : ""
+    }
   `;
 
     if (isRoundHeader) {
@@ -3709,22 +3533,23 @@ resolveHealingAbility(monster, ability, target) {
   // Roll dice of specified size
   rollDice(sides) {
     return Math.floor(Math.random() * sides) + 1;
-  }  
-  
+  }
 
   establishConnections() {
     console.log("CombatSystem: Establishing connections");
-    
+
     // Try multiple paths to establish MonsterManager connection
     if (!this.monsterManager || !this.monsterDatabase) {
-      console.log("CombatSystem: Attempting to re-establish connection to monster database");
-      
+      console.log(
+        "CombatSystem: Attempting to re-establish connection to monster database"
+      );
+
       // Try to get MonsterManager from PartyManager first (most reliable)
       if (this.partyManager && this.partyManager.monsterManager) {
         this.monsterManager = this.partyManager.monsterManager;
         this.monsterDatabase = this.partyManager.monsterDatabase;
         console.log("CombatSystem: Connected via PartyManager");
-      } 
+      }
       // If that fails, check resourceManager
       else if (this.resourceManager && this.resourceManager.monsterManager) {
         this.monsterManager = this.resourceManager.monsterManager;
@@ -3734,156 +3559,139 @@ resolveHealingAbility(monster, ability, target) {
       // Last resort: create a new instance
       else {
         this.monsterManager = new MonsterManager(this);
-        this.monsterDatabase = this.monsterManager.monsterDatabase || 
-                              this.monsterManager.loadDatabase();
+        this.monsterDatabase =
+          this.monsterManager.monsterDatabase ||
+          this.monsterManager.loadDatabase();
         console.log("CombatSystem: Created new connection");
       }
     }
-    
-    console.log("CombatSystem: Connection status - MonsterManager:", !!this.monsterManager, 
-                "MonsterDatabase:", !!this.monsterDatabase);
-    
+
+    console.log(
+      "CombatSystem: Connection status - MonsterManager:",
+      !!this.monsterManager,
+      "MonsterDatabase:",
+      !!this.monsterDatabase
+    );
+
     return !!this.monsterDatabase;
   }
 
-  // Add this method to CombatSystem class
-// async ensureDatabaseConnection() {
-//   console.log("CombatSystem: Checking database connection");
-  
-//   // If we don't have a monster database, try to get it
-//   if (!this.monsterDatabase || 
-//       (this.monsterDatabase.monsters && Object.keys(this.monsterDatabase.monsters).length === 0)) {
-    
-//     console.log("CombatSystem: Database missing or empty, attempting to reconnect");
-    
-//     // Try connections in order of likelihood
-//     if (this.partyManager && this.partyManager.monsterManager) {
-//       console.log("CombatSystem: Connecting via PartyManager");
-//       this.monsterManager = this.partyManager.monsterManager;
-//       this.monsterDatabase = this.monsterManager.monsterDatabase || 
-//                             await this.monsterManager.loadDatabase();
-//     } 
-//     else if (this.resourceManager && this.resourceManager.monsterManager) {
-//       console.log("CombatSystem: Connecting via ResourceManager");
-//       this.monsterManager = this.resourceManager.monsterManager;
-//       this.monsterDatabase = this.monsterManager.monsterDatabase || 
-//                             await this.monsterManager.loadDatabase();
-//     }
-//     else {
-//       console.log("CombatSystem: Creating new connection");
-//       this.monsterManager = new MonsterManager(this);
-//       this.monsterDatabase = await this.monsterManager.loadDatabase();
-//     }
-//   }
-  
-//   const hasConnection = this.monsterDatabase && 
-//                         this.monsterDatabase.monsters && 
-//                         Object.keys(this.monsterDatabase.monsters).length > 0;
-  
-//   console.log(`CombatSystem: Database connection ${hasConnection ? 'successful' : 'failed'}, 
-//                Found ${hasConnection ? Object.keys(this.monsterDatabase.monsters).length : 0} monsters`);
-  
-//   return hasConnection;
-// }
+  async ensureDatabaseConnection() {
+    console.log("CombatSystem: Checking database connection");
 
-async ensureDatabaseConnection() {
-  console.log("CombatSystem: Checking database connection");
-  
-  // If we don't have a monster database, try to get it
-  if (!this.monsterDatabase || 
-      (this.monsterDatabase.monsters && Object.keys(this.monsterDatabase.monsters).length === 0)) {
-    
-    console.log("CombatSystem: Database missing or empty, attempting to reconnect");
-    
-    // Try connections in order of likelihood
-    if (this.partyManager && this.partyManager.monsterManager) {
-      console.log("CombatSystem: Connecting via PartyManager");
-      this.monsterManager = this.partyManager.monsterManager;
-      this.monsterDatabase = this.monsterManager.monsterDatabase || 
-                            await this.monsterManager.loadDatabase();
-    } 
-    else if (this.resourceManager && this.resourceManager.monsterManager) {
-      console.log("CombatSystem: Connecting via ResourceManager");
-      this.monsterManager = this.resourceManager.monsterManager;
-      this.monsterDatabase = this.monsterManager.monsterDatabase || 
-                            await this.monsterManager.loadDatabase();
+    // If we don't have a monster database, try to get it
+    if (
+      !this.monsterDatabase ||
+      (this.monsterDatabase.monsters &&
+        Object.keys(this.monsterDatabase.monsters).length === 0)
+    ) {
+      console.log(
+        "CombatSystem: Database missing or empty, attempting to reconnect"
+      );
+
+      // Try connections in order of likelihood
+      if (this.partyManager && this.partyManager.monsterManager) {
+        console.log("CombatSystem: Connecting via PartyManager");
+        this.monsterManager = this.partyManager.monsterManager;
+        this.monsterDatabase =
+          this.monsterManager.monsterDatabase ||
+          (await this.monsterManager.loadDatabase());
+      } else if (this.resourceManager && this.resourceManager.monsterManager) {
+        console.log("CombatSystem: Connecting via ResourceManager");
+        this.monsterManager = this.resourceManager.monsterManager;
+        this.monsterDatabase =
+          this.monsterManager.monsterDatabase ||
+          (await this.monsterManager.loadDatabase());
+      } else {
+        console.log("CombatSystem: Creating new connection");
+        this.monsterManager = new MonsterManager(this);
+        this.monsterDatabase = await this.monsterManager.loadDatabase();
+      }
     }
-    else {
-      console.log("CombatSystem: Creating new connection");
-      this.monsterManager = new MonsterManager(this);
-      this.monsterDatabase = await this.monsterManager.loadDatabase();
-    }
+
+    const hasConnection =
+      this.monsterDatabase &&
+      this.monsterDatabase.monsters &&
+      Object.keys(this.monsterDatabase.monsters).length > 0;
+
+    console.log(`CombatSystem: Database connection ${
+      hasConnection ? "successful" : "failed"
+    }, 
+               Found ${
+                 hasConnection
+                   ? Object.keys(this.monsterDatabase.monsters).length
+                   : 0
+               } monsters`);
+
+    return hasConnection;
   }
-  
-  const hasConnection = this.monsterDatabase && 
-                        this.monsterDatabase.monsters && 
-                        Object.keys(this.monsterDatabase.monsters).length > 0;
-  
-  console.log(`CombatSystem: Database connection ${hasConnection ? 'successful' : 'failed'}, 
-               Found ${hasConnection ? Object.keys(this.monsterDatabase.monsters).length : 0} monsters`);
-  
-  return hasConnection;
-}
-  
+
   getEnemiesFromManager(targetCR, manager = null) {
     const mm = manager || this.monsterManager;
-    console.log('========== DATABASE SEARCH START ==========');
+    console.log("========== DATABASE SEARCH START ==========");
     console.log(`Manager provided: ${!!manager}, Using: ${!!mm}`);
-    
+
     if (!mm || !mm.monsterDatabase) {
       console.warn("No monster database available for enemy selection");
-      console.log('MonsterManager:', mm);
-      console.log('Database:', mm?.monsterDatabase);
-      console.log('========== DATABASE SEARCH END (FAILED) ==========');
+      console.log("MonsterManager:", mm);
+      console.log("Database:", mm?.monsterDatabase);
+      console.log("========== DATABASE SEARCH END (FAILED) ==========");
       return [];
     }
-    
+
     console.log(`Searching for enemies with target CR ~${targetCR}`);
-    
+
     // Get CR range (50% below to 25% above target)
     const minCR = targetCR * 0.5;
     const maxCR = targetCR * 1.25;
     console.log(`CR Range: ${minCR} to ${maxCR}`);
-    
+
     // Search the database for monsters in CR range
     const candidates = [];
-    
+
     try {
       // Get all monsters from database
       const allMonsters = Array.from(mm.monsterDatabase.values());
       console.log(`Total monsters in database: ${allMonsters.length}`);
-      console.log('Sample monster from DB:', allMonsters.length > 0 ? 
-                  JSON.stringify(allMonsters[0].basic || allMonsters[0]).substring(0, 100) + '...' : 'None');
-      
+      console.log(
+        "Sample monster from DB:",
+        allMonsters.length > 0
+          ? JSON.stringify(allMonsters[0].basic || allMonsters[0]).substring(
+              0,
+              100
+            ) + "..."
+          : "None"
+      );
+
       let noBasicCount = 0;
       let noCRCount = 0;
       let invalidCRCount = 0;
       let inRangeCount = 0;
-      
+
       for (const monster of allMonsters) {
         // Skip non-hostile creatures and those without CR
         if (!monster.basic) {
           noBasicCount++;
           continue;
         }
-        
+
         if (!monster.basic.cr) {
           noCRCount++;
           continue;
         }
-        
+
         // Convert CR to number for comparison
         let crValue = monster.basic.cr;
-        if (typeof crValue === 'string') {
+        if (typeof crValue === "string") {
           // Handle fractional CR values
-          if (crValue.includes('/')) {
-            const [numerator, denominator] = crValue.split('/').map(Number);
+          if (crValue.includes("/")) {
+            const [numerator, denominator] = crValue.split("/").map(Number);
             crValue = numerator / denominator;
           } else {
             crValue = Number(crValue);
           }
         }
-        
+
         // Check if CR is in range
         if (!isNaN(crValue)) {
           if (crValue >= minCR && crValue <= maxCR) {
@@ -3894,147 +3702,154 @@ async ensureDatabaseConnection() {
           invalidCRCount++;
         }
       }
-      
-      console.log('Database search stats:');
+
+      console.log("Database search stats:");
       console.log(`- Monsters missing 'basic': ${noBasicCount}`);
       console.log(`- Monsters missing CR: ${noCRCount}`);
       console.log(`- Monsters with invalid CR: ${invalidCRCount}`);
       console.log(`- Monsters in CR range: ${inRangeCount}`);
-      
+
       if (candidates.length > 0) {
-        console.log('Sample candidate monster:', 
-                    JSON.stringify(candidates[0].basic || candidates[0]).substring(0, 100) + '...');
+        console.log(
+          "Sample candidate monster:",
+          JSON.stringify(candidates[0].basic || candidates[0]).substring(
+            0,
+            100
+          ) + "..."
+        );
       }
-      
-      console.log(`Found ${candidates.length} suitable enemies in CR range ${minCR} - ${maxCR}`);
+
+      console.log(
+        `Found ${candidates.length} suitable enemies in CR range ${minCR} - ${maxCR}`
+      );
     } catch (error) {
       console.error("Error searching monster database:", error);
     }
-    
-    console.log('========== DATABASE SEARCH END ==========');
+
+    console.log("========== DATABASE SEARCH END ==========");
     return candidates;
   }
-  
 
-  generateDefaultEnemies(targetCR) {
-    // Basic set of default enemies with varying CRs
-    const defaultEnemies = [
-      {
-        id: `default_goblin_${Date.now()}`,
-        basic: {
-          name: "Goblin Scout",
-          type: "Humanoid",
-          size: "Small",
-          cr: "1/4"
-        },
-        abilities: {
-          str: { score: 8, modifier: -1 },
-          dex: { score: 14, modifier: 2 },
-          con: { score: 10, modifier: 0 },
-          int: { score: 10, modifier: 0 },
-          wis: { score: 8, modifier: -1 },
-          cha: { score: 8, modifier: -1 }
-        },
-        stats: {
-          ac: 15,
-          hp: { average: 7 }
-        }
-      },
-      {
-        id: `default_orc_${Date.now()}`,
-        basic: {
-          name: "Orc Warrior",
-          type: "Humanoid",
-          size: "Medium",
-          cr: "1/2"
-        },
-        abilities: {
-          str: { score: 16, modifier: 3 },
-          dex: { score: 12, modifier: 1 },
-          con: { score: 16, modifier: 3 },
-          int: { score: 7, modifier: -2 },
-          wis: { score: 11, modifier: 0 },
-          cha: { score: 10, modifier: 0 }
-        },
-        stats: {
-          ac: 13,
-          hp: { average: 15 }
-        }
-      },
-      {
-        id: `default_ogre_${Date.now()}`,
-        basic: {
-          name: "Ogre Brute",
-          type: "Giant",
-          size: "Large",
-          cr: "2"
-        },
-        abilities: {
-          str: { score: 19, modifier: 4 },
-          dex: { score: 8, modifier: -1 },
-          con: { score: 16, modifier: 3 },
-          int: { score: 5, modifier: -3 },
-          wis: { score: 7, modifier: -2 },
-          cha: { score: 7, modifier: -2 }
-        },
-        stats: {
-          ac: 11,
-          hp: { average: 59 }
-        }
-      }
-    ];
-    
-    // Scale the enemies based on target CR
-    const scaledEnemies = defaultEnemies.map(enemy => {
-      const enemyClone = JSON.parse(JSON.stringify(enemy));
-      const originalCr = this.parseCR(enemyClone.basic.cr);
-      const scaleRate = targetCR / originalCr;
-      
-      // Only scale if significant difference
-      if (scaleRate > 1.5 || scaleRate < 0.67) {
-        // Scale HP based on CR
-        if (enemyClone.stats && enemyClone.stats.hp) {
-          enemyClone.stats.hp.average = Math.max(1, Math.floor(
-            enemyClone.stats.hp.average * Math.sqrt(scaleRate)
-          ));
-        }
-        
-        // Scale CR
-        const newCR = Math.max(1/8, originalCr * scaleRate);
-        enemyClone.basic.cr = this.formatCR(newCR);
-        
-        // Add scaling info to name
-        if (scaleRate > 1) {
-          enemyClone.basic.name = `Veteran ${enemyClone.basic.name}`;
-        } else if (scaleRate < 1) {
-          enemyClone.basic.name = `Young ${enemyClone.basic.name}`;
-        }
-      }
-      
-      return enemyClone;
-    });
-    
-    console.log(`Generated ${scaledEnemies.length} default enemies`);
-    return scaledEnemies;
-  }
-  
+  // generateDefaultEnemies(targetCR) {
+  //   // Basic set of default enemies with varying CRs
+  //   const defaultEnemies = [
+  //     {
+  //       id: `default_goblin_${Date.now()}`,
+  //       basic: {
+  //         name: "Goblin Scout",
+  //         type: "Humanoid",
+  //         size: "Small",
+  //         cr: "1/4"
+  //       },
+  //       abilities: {
+  //         str: { score: 8, modifier: -1 },
+  //         dex: { score: 14, modifier: 2 },
+  //         con: { score: 10, modifier: 0 },
+  //         int: { score: 10, modifier: 0 },
+  //         wis: { score: 8, modifier: -1 },
+  //         cha: { score: 8, modifier: -1 }
+  //       },
+  //       stats: {
+  //         ac: 15,
+  //         hp: { average: 7 }
+  //       }
+  //     },
+  //     {
+  //       id: `default_orc_${Date.now()}`,
+  //       basic: {
+  //         name: "Orc Warrior",
+  //         type: "Humanoid",
+  //         size: "Medium",
+  //         cr: "1/2"
+  //       },
+  //       abilities: {
+  //         str: { score: 16, modifier: 3 },
+  //         dex: { score: 12, modifier: 1 },
+  //         con: { score: 16, modifier: 3 },
+  //         int: { score: 7, modifier: -2 },
+  //         wis: { score: 11, modifier: 0 },
+  //         cha: { score: 10, modifier: 0 }
+  //       },
+  //       stats: {
+  //         ac: 13,
+  //         hp: { average: 15 }
+  //       }
+  //     },
+  //     {
+  //       id: `default_ogre_${Date.now()}`,
+  //       basic: {
+  //         name: "Ogre Brute",
+  //         type: "Giant",
+  //         size: "Large",
+  //         cr: "2"
+  //       },
+  //       abilities: {
+  //         str: { score: 19, modifier: 4 },
+  //         dex: { score: 8, modifier: -1 },
+  //         con: { score: 16, modifier: 3 },
+  //         int: { score: 5, modifier: -3 },
+  //         wis: { score: 7, modifier: -2 },
+  //         cha: { score: 7, modifier: -2 }
+  //       },
+  //       stats: {
+  //         ac: 11,
+  //         hp: { average: 59 }
+  //       }
+  //     }
+  //   ];
+
+  //   // Scale the enemies based on target CR
+  //   const scaledEnemies = defaultEnemies.map((enemy) => {
+  //     const enemyClone = JSON.parse(JSON.stringify(enemy));
+  //     const originalCr = this.parseCR(enemyClone.basic.cr);
+  //     const scaleRate = targetCR / originalCr;
+
+  //     // Only scale if significant difference
+  //     if (scaleRate > 1.5 || scaleRate < 0.67) {
+  //       // Scale HP based on CR
+  //       if (enemyClone.stats && enemyClone.stats.hp) {
+  //         enemyClone.stats.hp.average = Math.max(
+  //           1,
+  //           Math.floor(enemyClone.stats.hp.average * Math.sqrt(scaleRate))
+  //         );
+  //       }
+
+  //       // Scale CR
+  //       const newCR = Math.max(1 / 8, originalCr * scaleRate);
+  //       enemyClone.basic.cr = this.formatCR(newCR);
+
+  //       // Add scaling info to name
+  //       if (scaleRate > 1) {
+  //         enemyClone.basic.name = `Veteran ${enemyClone.basic.name}`;
+  //       } else if (scaleRate < 1) {
+  //         enemyClone.basic.name = `Young ${enemyClone.basic.name}`;
+  //       }
+  //     }
+
+  //     return enemyClone;
+  //   });
+
+  //   console.log(`Generated ${scaledEnemies.length} default enemies`);
+  //   return scaledEnemies;
+  // }
+
   // Helper methods for CR conversion
   parseCR(cr) {
-    if (typeof cr === 'number') return cr;
-    if (typeof cr !== 'string') return 0;
-    
+    if (typeof cr === "number") return cr;
+    if (typeof cr !== "string") return 0;
+
     // Handle fractional CR values like "1/4"
-    if (cr.includes('/')) {
-      const [numerator, denominator] = cr.split('/').map(Number);
+    if (cr.includes("/")) {
+      const [numerator, denominator] = cr.split("/").map(Number);
       return numerator / denominator;
     }
-    
+
     return Number(cr) || 0;
   }
-  
+
   formatCR(cr) {
     if (cr >= 1) return String(Math.floor(cr));
-    
+
     // Handle fractional CRs
     if (cr >= 0.5) return "1/2";
     if (cr >= 0.25) return "1/4";
@@ -4042,889 +3857,518 @@ async ensureDatabaseConnection() {
     return "0";
   }
 
+  async generateEnemyParty(playerParty) {
+    console.log("========== ENEMY PARTY GENERATION START ==========");
 
-// Add this improved method to your CombatSystem class
-// async generateEnemyParty(playerParty) {
-//   console.log('========== ENEMY PARTY GENERATION START ==========');
-  
-//   // Get player party strength metrics
-//   const partySize = playerParty.length;
-//   const averageLevel = playerParty.reduce((sum, monster) => sum + monster.level, 0) / partySize;
-//   console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
-  
-//   // Determine number of enemies with fairer scaling
-//   let enemyCount;
-  
-//   if (partySize === 1) {
-//     // For solo player: always 1 enemy for fair fights
-//     enemyCount = 1;
-//   } else if (partySize === 2) {
-//     // For 2-player party: 1-2 enemies, biased toward 1
-//     const roll = Math.random();
-//     enemyCount = roll < 0.7 ? 1 : 2;
-//     console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
-//   } else {
-//     // For 3+ player party: scale enemies more aggressively
-//     // Maximum of 3 enemies regardless of party size
-//     const maxEnemies = Math.min(partySize, 3);
-    
-//     // Weight toward more enemies for larger parties
-//     const weights = [0.2, 0.3, 0.5]; // Weights for 1, 2, or 3 enemies
-//     const roll = Math.random();
-//     console.log(`3+ player party roll: ${roll}`);
-    
-//     if (roll < weights[0]) {
-//       enemyCount = 1;
-//     } else if (roll < weights[0] + weights[1]) {
-//       enemyCount = 2;
-//     } else {
-//       enemyCount = maxEnemies;
-//     }
-//     console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
-//   }
-  
-//   console.log(`Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`);
-  
-//   // Calculate target CR
-//   const targetCR = averageLevel * 0.75;
-//   console.log(`Target CR: ${targetCR}`);
-  
-//   // Try to get monsters from the database
-//   let potentialEnemies = [];
-  
-//   try {
-//     // Make sure we have a connection
-//     if (this.monsterManager && this.monsterManager.monsterDatabase) {
-//       console.log("MonsterDatabase type:", typeof this.monsterManager.monsterDatabase);
-//       console.log("MonsterDatabase has monsters property:", !!this.monsterManager.monsterDatabase.monsters);
-      
-//       // Get all monsters from database - KEY DIFFERENCE: Handle the proper data structure
-//       let allMonsters = [];
-      
-//       // MonsterManager's database is an object with a 'monsters' property (not a Map)
-//       if (this.monsterManager.monsterDatabase && this.monsterManager.monsterDatabase.monsters) {
-//         console.log("Accessing via monsterDatabase.monsters object");
-//         allMonsters = Object.values(this.monsterManager.monsterDatabase.monsters);
-//       }
-      
-//       console.log(`Got ${allMonsters.length} total monsters from database`);
-      
-//       // Filter by CR range
-//       const minCR = targetCR * 0.5;
-//       const maxCR = targetCR * 1.25;
-      
-//       potentialEnemies = allMonsters.filter(monster => {
-//         // Check if monster has basic data
-//         if (!monster.basic || !monster.basic.cr) return false;
-        
-//         // Parse CR value
-//         let crValue = monster.basic.cr;
-//         if (typeof crValue === 'string') {
-//           if (crValue.includes('/')) {
-//             const [num, denom] = crValue.split('/').map(Number);
-//             crValue = num / denom;
-//           } else {
-//             crValue = Number(crValue);
-//           }
-//         }
-        
-//         // Include if in range
-//         return !isNaN(crValue) && crValue >= minCR && crValue <= maxCR;
-//       });
-      
-//       console.log(`Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`);
-//     }
-//   } catch (error) {
-//     console.error("Error accessing monster database:", error);
-//   }
-  
-//   // If we don't have enough monsters, use default enemies
-//   if (!potentialEnemies || potentialEnemies.length < enemyCount) {
-//     console.log("Using default enemy templates - not enough monsters in database");
-//     potentialEnemies = this.generateDefaultEnemies(targetCR);
-//     console.log(`Generated ${potentialEnemies.length} default enemies`);
-//   }
-  
-//   // Select random enemies from potential pool
-//   const selectedEnemies = [];
-//   for (let i = 0; i < enemyCount; i++) {
-//     if (potentialEnemies.length > 0) {
-//       const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
-//       const enemy = potentialEnemies.splice(randomIndex, 1)[0];
-      
-//       console.log(`Selected enemy ${i+1}:`, enemy.basic ? enemy.basic.name : enemy.name);
-      
-//       // Prepare enemy for combat
-//       const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
-//       selectedEnemies.push(combatEnemy);
-//     }
-//   }
-  
-//   console.log(`Final enemy party size: ${selectedEnemies.length}`);
-//   console.log(`Enemy names: ${selectedEnemies.map(e => e.name).join(', ')}`);
-//   console.log('========== ENEMY PARTY GENERATION END ==========');
-  
-//   return selectedEnemies;
-// }
+    // Get player party strength metrics
+    const partySize = playerParty.length;
+    const averageLevel =
+      playerParty.reduce((sum, monster) => sum + monster.level, 0) / partySize;
+    console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
 
-async generateEnemyParty(playerParty) {
-  console.log('========== ENEMY PARTY GENERATION START ==========');
-  
-  // Get player party strength metrics
-  const partySize = playerParty.length;
-  const averageLevel = playerParty.reduce((sum, monster) => sum + monster.level, 0) / partySize;
-  console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
-  
-  // Determine number of enemies with fairer scaling
-  let enemyCount;
-  
-  if (partySize === 1) {
-    // For solo player: always 1 enemy for fair fights
-    enemyCount = 1;
-  } else if (partySize === 2) {
-    // For 2-player party: 1-2 enemies, biased toward 1
-    const roll = Math.random();
-    enemyCount = roll < 0.7 ? 1 : 2;
-    console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
-  } else {
-    // For 3+ player party: scale enemies more aggressively
-    // Maximum of 3 enemies regardless of party size
-    const maxEnemies = Math.min(partySize, 3);
-    
-    // Weight toward more enemies for larger parties
-    const weights = [0.2, 0.3, 0.5]; // Weights for 1, 2, or 3 enemies
-    const roll = Math.random();
-    console.log(`3+ player party roll: ${roll}`);
-    
-    if (roll < weights[0]) {
+    // Determine number of enemies with fairer scaling
+    let enemyCount;
+
+    if (partySize === 1) {
+      // For solo player: always 1 enemy for fair fights
       enemyCount = 1;
-    } else if (roll < weights[0] + weights[1]) {
-      enemyCount = 2;
+    } else if (partySize === 2) {
+      // For 2-player party: 1-2 enemies, biased toward 1
+      const roll = Math.random();
+      enemyCount = roll < 0.7 ? 1 : 2;
+      console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
     } else {
-      enemyCount = maxEnemies;
-    }
-    console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
-  }
-  
-  console.log(`Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`);
-  
-  // Calculate target CR
-  const targetCR = averageLevel * 0.75;
-  console.log(`Target CR: ${targetCR}`);
-  
-  // Ensure database connection before searching
-  await this.ensureDatabaseConnection();
-  
-  // Try to get monsters from the database
-  let potentialEnemies = [];
-  
-  try {
-    // Make sure we have a connection
-    if (this.monsterDatabase && this.monsterDatabase.monsters) {
-      console.log("MonsterDatabase type:", typeof this.monsterDatabase);
-      console.log("MonsterDatabase has monsters property:", !!this.monsterDatabase.monsters);
-      
-      // Get all monsters from database
-      let allMonsters = [];
-      
-      // MonsterManager's database is an object with a 'monsters' property (not a Map)
-      if (this.monsterDatabase && this.monsterDatabase.monsters) {
-        console.log("Accessing via monsterDatabase.monsters object");
-        allMonsters = Object.values(this.monsterDatabase.monsters);
+      // For 3+ player party: scale enemies more aggressively
+      // Maximum of 3 enemies regardless of party size
+      const maxEnemies = Math.min(partySize, 3);
+
+      // Weight toward more enemies for larger parties
+      const weights = [0.2, 0.3, 0.5]; // Weights for 1, 2, or 3 enemies
+      const roll = Math.random();
+      console.log(`3+ player party roll: ${roll}`);
+
+      if (roll < weights[0]) {
+        enemyCount = 1;
+      } else if (roll < weights[0] + weights[1]) {
+        enemyCount = 2;
+      } else {
+        enemyCount = maxEnemies;
       }
-      
-      console.log(`Got ${allMonsters.length} total monsters from database`);
-      
-      // Filter by CR range - USE MORE FLEXIBLE RANGE
-      const minCR = Math.max(0.125, targetCR * 0.5); // Minimum CR of 1/8
-      const maxCR = Math.min(30, targetCR * 2);      // More generous upper bound
-      
-      console.log(`Initial CR range: ${minCR} to ${maxCR}`);
-      
-      potentialEnemies = allMonsters.filter(monster => {
-        // Check if monster has basic data
-        if (!monster.basic || !monster.basic.cr) return false;
-        
-        // Parse CR value
-        let crValue = monster.basic.cr;
-        if (typeof crValue === 'string') {
-          if (crValue.includes('/')) {
-            const [num, denom] = crValue.split('/').map(Number);
-            crValue = num / denom;
-          } else {
-            crValue = Number(crValue);
-          }
+      console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
+    }
+
+    console.log(
+      `Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`
+    );
+
+    // Calculate target CR
+    const targetCR = averageLevel * 0.75;
+    console.log(`Target CR: ${targetCR}`);
+
+    // Ensure database connection before searching
+    await this.ensureDatabaseConnection();
+
+    // Try to get monsters from the database
+    let potentialEnemies = [];
+
+    try {
+      // Make sure we have a connection
+      if (this.monsterDatabase && this.monsterDatabase.monsters) {
+        console.log("MonsterDatabase type:", typeof this.monsterDatabase);
+        console.log(
+          "MonsterDatabase has monsters property:",
+          !!this.monsterDatabase.monsters
+        );
+
+        // Get all monsters from database
+        let allMonsters = [];
+
+        // MonsterManager's database is an object with a 'monsters' property (not a Map)
+        if (this.monsterDatabase && this.monsterDatabase.monsters) {
+          console.log("Accessing via monsterDatabase.monsters object");
+          allMonsters = Object.values(this.monsterDatabase.monsters);
         }
-        
-        // Include if in range
-        return !isNaN(crValue) && crValue >= minCR && crValue <= maxCR;
-      });
-      
-      console.log(`Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`);
-      
-      // If we find few monsters, retry with even wider range
-      if (potentialEnemies.length < enemyCount) {
-        console.log("Too few monsters found, expanding CR range further");
-        const widerMinCR = Math.max(0.125, targetCR * 0.25); // Very low minimum
-        const widerMaxCR = Math.min(30, targetCR * 3);      // Very high maximum
-        
-        console.log(`Expanded CR range: ${widerMinCR} to ${widerMaxCR}`);
-        
-        potentialEnemies = allMonsters.filter(monster => {
+
+        console.log(`Got ${allMonsters.length} total monsters from database`);
+
+        // Filter by CR range - USE MORE FLEXIBLE RANGE
+        const minCR = Math.max(0.125, targetCR * 0.5); // Minimum CR of 1/8
+        const maxCR = Math.min(30, targetCR * 2); // More generous upper bound
+
+        console.log(`Initial CR range: ${minCR} to ${maxCR}`);
+
+        potentialEnemies = allMonsters.filter((monster) => {
+          // Check if monster has basic data
           if (!monster.basic || !monster.basic.cr) return false;
-          
+
           // Parse CR value
           let crValue = monster.basic.cr;
-          if (typeof crValue === 'string') {
-            if (crValue.includes('/')) {
-              const [num, denom] = crValue.split('/').map(Number);
+          if (typeof crValue === "string") {
+            if (crValue.includes("/")) {
+              const [num, denom] = crValue.split("/").map(Number);
               crValue = num / denom;
             } else {
               crValue = Number(crValue);
             }
           }
-          
-          return !isNaN(crValue) && crValue >= widerMinCR && crValue <= widerMaxCR;
-        });
-        
-        console.log(`With expanded range ${widerMinCR} to ${widerMaxCR}, found ${potentialEnemies.length} monsters`);
-      }
-      
-      // Log found monster CRs to help debug
-      if (potentialEnemies.length > 0) {
-        console.log("Found monsters with following CRs:");
-        const crValues = potentialEnemies.map(m => m.basic.cr);
-        const uniqueCRs = [...new Set(crValues)].sort((a, b) => {
-          // Convert both to numbers for comparison
-          const aNum = a.includes('/') ? 
-            Number(a.split('/')[0]) / Number(a.split('/')[1]) : 
-            Number(a);
-          const bNum = b.includes('/') ? 
-            Number(b.split('/')[0]) / Number(b.split('/')[1]) : 
-            Number(b);
-          return aNum - bNum;
-        });
-        console.log(uniqueCRs.join(', '));
-      }
-      
-      // If still no monsters, grab a random selection
-      if (potentialEnemies.length < enemyCount && allMonsters.length > 0) {
-        console.log("Still insufficient monsters, selecting random monsters from full database");
-        // Just randomly select from all available monsters
-        potentialEnemies = [...allMonsters].sort(() => Math.random() - 0.5).slice(0, Math.min(10, allMonsters.length));
-        console.log(`Selected ${potentialEnemies.length} random monsters from full database`);
-      }
-    }
-  } catch (error) {
-    console.error("Error accessing monster database:", error);
-  }
-  
-  // If we don't have enough monsters, use default enemies
-  if (!potentialEnemies || potentialEnemies.length < enemyCount) {
-    console.log("Using default enemy templates - not enough monsters in database");
-    potentialEnemies = this.generateDefaultEnemies(targetCR);
-    console.log(`Generated ${potentialEnemies.length} default enemies`);
-  }
-  
-  // Select random enemies from potential pool
-  const selectedEnemies = [];
-  for (let i = 0; i < enemyCount; i++) {
-    if (potentialEnemies.length > 0) {
-      const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
-      const enemy = potentialEnemies.splice(randomIndex, 1)[0];
-      
-      console.log(`Selected enemy ${i+1}: ${enemy.basic ? enemy.basic.name : enemy.name}`);
-      
-      // Prepare enemy for combat
-      const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
-      selectedEnemies.push(combatEnemy);
-    }
-  }
-  
-  console.log(`Final enemy party size: ${selectedEnemies.length}`);
-  console.log(`Enemy names: ${selectedEnemies.map(e => e.name).join(', ')}`);
-  console.log('========== ENEMY PARTY GENERATION END ==========');
-  
-  return selectedEnemies;
-}
 
-// Add this async connection method
-async establishAsyncConnections() {
-  console.log("CombatSystem: Establishing async connections");
-  
-  if (!this.monsterManager || !this.monsterDatabase) {
-    console.log("CombatSystem: No active connections, trying to establish");
-    
-    // Try connection through PartyManager first
-    if (this.partyManager && this.partyManager.monsterManager) {
-      this.monsterManager = this.partyManager.monsterManager;
-      this.monsterDatabase = this.partyManager.monsterDatabase;
-      console.log("CombatSystem: Connected via PartyManager");
-    } 
-    // If that fails, try direct connection
-    else {
-      this.monsterManager = new MonsterManager(this);
-      console.log("CombatSystem: Created new MonsterManager instance");
-      
-      // Wait for database to load
-      try {
-        this.monsterDatabase = await this.monsterManager.loadDatabase();
-        console.log("CombatSystem: Loaded database asynchronously");
-      } catch (error) {
-        console.error("CombatSystem: Failed to load database:", error);
+          // Include if in range
+          return !isNaN(crValue) && crValue >= minCR && crValue <= maxCR;
+        });
+
+        console.log(
+          `Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`
+        );
+
+        // If we find few monsters, retry with even wider range
+        if (potentialEnemies.length < enemyCount) {
+          console.log("Too few monsters found, expanding CR range further");
+          const widerMinCR = Math.max(0.125, targetCR * 0.25); // Very low minimum
+          const widerMaxCR = Math.min(30, targetCR * 3); // Very high maximum
+
+          console.log(`Expanded CR range: ${widerMinCR} to ${widerMaxCR}`);
+
+          potentialEnemies = allMonsters.filter((monster) => {
+            if (!monster.basic || !monster.basic.cr) return false;
+
+            // Parse CR value
+            let crValue = monster.basic.cr;
+            if (typeof crValue === "string") {
+              if (crValue.includes("/")) {
+                const [num, denom] = crValue.split("/").map(Number);
+                crValue = num / denom;
+              } else {
+                crValue = Number(crValue);
+              }
+            }
+
+            return (
+              !isNaN(crValue) && crValue >= widerMinCR && crValue <= widerMaxCR
+            );
+          });
+
+          console.log(
+            `With expanded range ${widerMinCR} to ${widerMaxCR}, found ${potentialEnemies.length} monsters`
+          );
+        }
+
+        // Log found monster CRs to help debug
+        if (potentialEnemies.length > 0) {
+          console.log("Found monsters with following CRs:");
+          const crValues = potentialEnemies.map((m) => m.basic.cr);
+          const uniqueCRs = [...new Set(crValues)].sort((a, b) => {
+            // Convert both to numbers for comparison
+            const aNum = a.includes("/")
+              ? Number(a.split("/")[0]) / Number(a.split("/")[1])
+              : Number(a);
+            const bNum = b.includes("/")
+              ? Number(b.split("/")[0]) / Number(b.split("/")[1])
+              : Number(b);
+            return aNum - bNum;
+          });
+          console.log(uniqueCRs.join(", "));
+        }
+
+        // If still no monsters, grab a random selection
+        if (potentialEnemies.length < enemyCount && allMonsters.length > 0) {
+          console.log(
+            "Still insufficient monsters, selecting random monsters from full database"
+          );
+          // Just randomly select from all available monsters
+          potentialEnemies = [...allMonsters]
+            .sort(() => Math.random() - 0.5)
+            .slice(0, Math.min(10, allMonsters.length));
+          console.log(
+            `Selected ${potentialEnemies.length} random monsters from full database`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error accessing monster database:", error);
+    }
+
+    // If we don't have enough monsters, use default enemies
+    if (!potentialEnemies || potentialEnemies.length < enemyCount) {
+      console.log(
+        "Using default enemy templates - not enough monsters in database"
+      );
+      potentialEnemies = this.generateDefaultEnemies(targetCR);
+      console.log(`Generated ${potentialEnemies.length} default enemies`);
+    }
+
+    // Select random enemies from potential pool
+    const selectedEnemies = [];
+    for (let i = 0; i < enemyCount; i++) {
+      if (potentialEnemies.length > 0) {
+        const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
+        const enemy = potentialEnemies.splice(randomIndex, 1)[0];
+
+        console.log(
+          `Selected enemy ${i + 1}: ${
+            enemy.basic ? enemy.basic.name : enemy.name
+          }`
+        );
+
+        // Prepare enemy for combat
+        const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
+        selectedEnemies.push(combatEnemy);
       }
     }
+
+    console.log(`Final enemy party size: ${selectedEnemies.length}`);
+    console.log(
+      `Enemy names: ${selectedEnemies.map((e) => e.name).join(", ")}`
+    );
+    console.log("========== ENEMY PARTY GENERATION END ==========");
+
+    return selectedEnemies;
   }
-  
-  // Verify we actually have monsters
-  if (this.monsterDatabase) {
-    const count = this.monsterDatabase.size || 0;
-    console.log(`CombatSystem: Database has ${count} monsters`);
+
+  // Add this async connection method
+  async establishAsyncConnections() {
+    console.log("CombatSystem: Establishing async connections");
+
+    if (!this.monsterManager || !this.monsterDatabase) {
+      console.log("CombatSystem: No active connections, trying to establish");
+
+      // Try connection through PartyManager first
+      if (this.partyManager && this.partyManager.monsterManager) {
+        this.monsterManager = this.partyManager.monsterManager;
+        this.monsterDatabase = this.partyManager.monsterDatabase;
+        console.log("CombatSystem: Connected via PartyManager");
+      }
+      // If that fails, try direct connection
+      else {
+        this.monsterManager = new MonsterManager(this);
+        console.log("CombatSystem: Created new MonsterManager instance");
+
+        // Wait for database to load
+        try {
+          this.monsterDatabase = await this.monsterManager.loadDatabase();
+          console.log("CombatSystem: Loaded database asynchronously");
+        } catch (error) {
+          console.error("CombatSystem: Failed to load database:", error);
+        }
+      }
+    }
+
+    // Verify we actually have monsters
+    if (this.monsterDatabase) {
+      const count = this.monsterDatabase.size || 0;
+      console.log(`CombatSystem: Database has ${count} monsters`);
+    }
+
+    return !!this.monsterDatabase;
   }
-  
-  return !!this.monsterDatabase;
-}
 
   prepareEnemyForCombat(enemy, targetCR) {
-    console.log('========== PREPARING ENEMY FOR COMBAT ==========');
-    console.log('Enemy before preparation:', enemy.basic ? enemy.basic.name : enemy.name);
-    
+    console.log("========== PREPARING ENEMY FOR COMBAT ==========");
+    console.log(
+      "Enemy before preparation:",
+      enemy.basic ? enemy.basic.name : enemy.name
+    );
+
     // If it's already in combat format, return as is
     if (enemy.currentHP && enemy.maxHP && enemy.monsterAbilities) {
-      console.log('Enemy already in combat format');
+      console.log("Enemy already in combat format");
       return enemy;
     }
-    
+
     // Otherwise, convert from bestiary format using PartyManager's prepare method
     if (this.partyManager) {
-      console.log('Using PartyManager to prepare monster');
-      console.log('PartyManager available:', !!this.partyManager);
-      console.log('prepareMonster method available:', typeof this.partyManager.prepareMonster === 'function');
-      
+      console.log("Using PartyManager to prepare monster");
+      console.log("PartyManager available:", !!this.partyManager);
+      console.log(
+        "prepareMonster method available:",
+        typeof this.partyManager.prepareMonster === "function"
+      );
+
       const preparedEnemy = this.partyManager.prepareMonster(enemy);
-      
+
       // Add some randomization to make fights more interesting
       // Vary HP between 90-110% of base
-      const hpVariance = 0.9 + (Math.random() * 0.2);
+      const hpVariance = 0.9 + Math.random() * 0.2;
       preparedEnemy.maxHP = Math.floor(preparedEnemy.maxHP * hpVariance);
       preparedEnemy.currentHP = preparedEnemy.maxHP;
-      
+
       // Give it a unique ID
-      preparedEnemy.id = `enemy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      
-      console.log('Enemy after preparation:', preparedEnemy.name);
+      preparedEnemy.id = `enemy_${Date.now()}_${Math.floor(
+        Math.random() * 1000
+      )}`;
+
+      console.log("Enemy after preparation:", preparedEnemy.name);
       console.log(`HP: ${preparedEnemy.currentHP}/${preparedEnemy.maxHP}`);
       console.log(`Abilities: ${preparedEnemy.monsterAbilities?.length || 0}`);
-      console.log('========== ENEMY PREPARATION COMPLETE ==========');
-      
+      console.log("========== ENEMY PREPARATION COMPLETE ==========");
+
       return preparedEnemy;
     }
-    
+
     // Fallback if no party manager
-    console.log('No PartyManager available, returning unprepared enemy');
-    console.log('========== ENEMY PREPARATION FAILED ==========');
+    console.log("No PartyManager available, returning unprepared enemy");
+    console.log("========== ENEMY PREPARATION FAILED ==========");
     return enemy;
   }
 
-  
   // Update enemy area rendering for multiple enemies
-//   updateEnemyArea(providedEnemyArea = null) {
+  updateEnemyArea(providedEnemyArea = null) {
+    // Use provided area or find it
+    const enemyArea =
+      providedEnemyArea || this.dialogContainer.querySelector(".enemy-area");
 
+    if (!enemyArea) {
+      console.error("Enemy area not found and not provided");
+      return;
+    }
 
-//   const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
-//   console.log("Updating enemy area, reference found:", !!enemyArea);
-  
-//   if (!enemyArea) {
-//     console.error("Enemy area not found and not provided");
-//     return;
-//   }
-  
-//   // Clear existing content
-//   console.log("Previous enemy area content:", enemyArea.innerHTML);
-//   enemyArea.innerHTML = '';
+    // Remove any transitions temporarily to prevent race conditions
+    enemyArea.style.transition = "none";
 
-//     if (!enemyArea) return;
-    
-//     // Clear existing content
-//     console.log("Previous enemy area content:", enemyArea.innerHTML);
-//     enemyArea.innerHTML = '';
-    
-//     // Determine layout based on enemy count
-//     const count = this.enemyParty.length;
-//     console.log(`Setting up layout for ${count} enemies`);
-    
-//     let layoutClass = 'enemy-layout-single';
-    
-//     if (count === 2) {
-//       layoutClass = 'enemy-layout-duo';
-//     } else if (count === 3) {
-//       layoutClass = 'enemy-layout-trio';
-//     } else if (count >= 4) {
-//       layoutClass = 'enemy-layout-quad';
-//     }
-    
-//     console.log(`Using layout class: ${layoutClass}`);
-//     enemyArea.className = `enemy-area ${layoutClass}`;
+    // Clear existing content
+    enemyArea.innerHTML = "";
 
-//     console.log("Enemy area dimensions:", enemyArea.offsetWidth, enemyArea.offsetHeight);
-// enemyArea.style.minHeight = '150px';  // Ensure there's space for the cards
-    
-//     // Add each enemy card with correct positioning
-//     this.enemyParty.forEach((monster, index) => {
-//       console.log(`Creating card for enemy ${index + 1}: ${monster.name}`);
-//       const monsterCard = this.createMonsterCard(monster, 'enemy', index);
-    
-//     // Apply positioning based on layout
-//     if (count === 1) {
-//       // Single enemy - centered
-//       monsterCard.style.transform = 'rotate(4deg)';
-//     } else if (count === 2) {
-//       // Two enemies - side by side with opposite tilts
-//       const rotation = index === 0 ? 5 : -5;
-//       monsterCard.style.transform = `translateX(${index === 0 ? '-20px' : '20px'}) rotate(${rotation}deg)`;
-//     } else if (count === 3) {
-//       // Three enemies - triangular arrangement
-//       if (index === 0) {
-//         // Top center
-//         monsterCard.style.transform = 'translateY(-15px) translateX(0) rotate(4deg)';
-//       } else if (index === 1) {
-//         // Bottom left
-//         monsterCard.style.transform = 'translateY(10px) translateX(-40px) rotate(-3deg)';
-//       } else {
-//         // Bottom right
-//         monsterCard.style.transform = 'translateY(10px) translateX(40px) rotate(7deg)';
-//       }
-//     } else {
-//       // Four enemies - 2x2 grid
-//       const row = Math.floor(index / 2);
-//       const col = index % 2;
-//       const xOffset = col === 0 ? -40 : 40;
-//       const yOffset = row === 0 ? -30 : 30;
-//       const rotation = (index % 3) * 3 - 3; // Varies between -3, 0, 3, 0 degrees
-      
-//       monsterCard.style.transform = `translate(${xOffset}px, ${yOffset}px) rotate(${rotation}deg)`;
-//     }
-    
-//     console.log(`Appending enemy card ${index + 1} to enemy area`);
-//     enemyArea.appendChild(monsterCard);
-//   });
+    // Get active (non-defeated) enemies
+    const activeEnemies = this.enemyParty.filter(
+      (monster) => monster.currentHP > 0
+    );
+    const count = activeEnemies.length;
 
-//   setTimeout(() => {
-//     const enemyCards = this.dialogContainer.querySelectorAll('.combat-monster.enemy');
-//     console.log(`Checking visibility after update: found ${enemyCards.length} enemy cards`);
-    
-//     enemyCards.forEach((card, i) => {
-//       console.log(`Enemy card ${i} computed style:`, 
-//         window.getComputedStyle(card).display,
-//         window.getComputedStyle(card).visibility,
-//         window.getComputedStyle(card).opacity
-//       );
-      
-//       // Force visibility if needed
-//       card.style.display = 'block';
-//       card.style.visibility = 'visible';
-//       card.style.opacity = '1';
-//     });
-//   }, 100);
-  
-//   console.log("Enemy area update complete, final content length:", enemyArea.children.length);
-// }
+    // Add cards with explicit, fixed positioning
+    if (count === 1) {
+      // Single enemy - centered
+      const monster = activeEnemies[0];
+      const card = this.createMonsterCard(monster, "enemy", 0);
 
-// updateEnemyArea(providedEnemyArea = null) {
-//   // Use provided area or find it
-//   const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
-//   console.log("Updating enemy area, reference found:", !!enemyArea);
-  
-//   if (!enemyArea) {
-//     console.error("Enemy area not found and not provided");
-//     return;
-//   }
-  
-//   // Clear existing content
-//   enemyArea.innerHTML = '';
-  
-//   // Get active (non-defeated) enemies
-//   const activeEnemies = this.enemyParty.filter(monster => monster.currentHP > 0);
-//   const count = activeEnemies.length;
-  
-//   console.log(`Setting up layout for ${count} active enemies`);
-  
-//   // Set layout class based on count
-//   let layoutClass = 'enemy-layout-single';
-//   if (count === 2) {
-//     layoutClass = 'enemy-layout-duo';
-//   } else if (count === 3) {
-//     layoutClass = 'enemy-layout-trio';
-//   } else if (count >= 4) {
-//     layoutClass = 'enemy-layout-quad';
-//   }
-  
-//   enemyArea.className = `enemy-area ${layoutClass}`;
-  
-//   // Add cards for active enemies with appropriate positioning
-//   if (count === 1) {
-//     // Single enemy - centered
-//     const monster = activeEnemies[0];
-//     const card = this.createMonsterCard(monster, 'enemy', 0);
-//     card.style.transform = 'rotate(4deg)';
-//     enemyArea.appendChild(card);
-//   } 
-//   else if (count === 2) {
-//     // Two enemies - diagonal arrangement
-//     activeEnemies.forEach((monster, index) => {
-//       const card = this.createMonsterCard(monster, 'enemy', index);
-      
-//       if (index === 0) {
-//         // Top left
-//         card.style.transform = 'translate(-30%, -10%) rotate(-5deg)';
-//       } else {
-//         // Bottom right
-//         card.style.transform = 'translate(30%, 10%) rotate(5deg)';
-//       }
-      
-//       enemyArea.appendChild(card);
-//     });
-//   }
-//   else if (count === 3) {
-//     // Three enemies - triangle arrangement
-//     activeEnemies.forEach((monster, index) => {
-//       const card = this.createMonsterCard(monster, 'enemy', index);
-      
-//       if (index === 0) {
-//         // Top center
-//         card.style.transform = 'translate(0, -25%) rotate(0deg)';
-//         card.style.zIndex = '3';
-//       } 
-//       else if (index === 1) {
-//         // Bottom left
-//         card.style.transform = 'translate(-40%, 15%) rotate(-7deg)';
-//         card.style.zIndex = '2';
-//       } 
-//       else {
-//         // Bottom right
-//         card.style.transform = 'translate(40%, 15%) rotate(7deg)';
-//         card.style.zIndex = '1';
-//       }
-      
-//       enemyArea.appendChild(card);
-//     });
-//   }
-//   else if (count >= 4) {
-//     // Four enemies - 2x2 grid
-//     activeEnemies.slice(0, 4).forEach((monster, index) => {
-//       const card = this.createMonsterCard(monster, 'enemy', index);
-      
-//       const row = Math.floor(index / 2);
-//       const col = index % 2;
-      
-//       // Position in grid
-//       if (row === 0 && col === 0) {
-//         // Top left
-//         card.style.transform = 'translate(-35%, -25%) rotate(-5deg)';
-//         card.style.zIndex = '4';
-//       } 
-//       else if (row === 0 && col === 1) {
-//         // Top right
-//         card.style.transform = 'translate(35%, -25%) rotate(5deg)';
-//         card.style.zIndex = '3';
-//       } 
-//       else if (row === 1 && col === 0) {
-//         // Bottom left
-//         card.style.transform = 'translate(-35%, 25%) rotate(-10deg)';
-//         card.style.zIndex = '2';
-//       } 
-//       else {
-//         // Bottom right
-//         card.style.transform = 'translate(35%, 25%) rotate(10deg)';
-//         card.style.zIndex = '1';
-//       }
-      
-//       enemyArea.appendChild(card);
-//     });
-//   }
-  
-//   // Create the defeated enemy token row
-//   this.updateDefeatedEnemiesRow();
-// }
-
-updateEnemyArea(providedEnemyArea = null) {
-  // Use provided area or find it
-  const enemyArea = providedEnemyArea || this.dialogContainer.querySelector('.enemy-area');
-  
-  if (!enemyArea) {
-    console.error("Enemy area not found and not provided");
-    return;
-  }
-  
-  // Remove any transitions temporarily to prevent race conditions
-  enemyArea.style.transition = 'none';
-  
-  // Clear existing content
-  enemyArea.innerHTML = '';
-  
-  // Get active (non-defeated) enemies
-  const activeEnemies = this.enemyParty.filter(monster => monster.currentHP > 0);
-  const count = activeEnemies.length;
-  
-  // Add cards with explicit, fixed positioning
-  if (count === 1) {
-    // Single enemy - centered
-    const monster = activeEnemies[0];
-    const card = this.createMonsterCard(monster, 'enemy', 0);
-    
-    // Fixed position
-    card.style.position = 'absolute';
-    card.style.left = 'calc(50% - 80px)'; // Half card width
-    card.style.top = 'calc(50% - 100px)'; // Position in middle
-    card.style.transform = 'rotate(4deg)';
-    card.style.transition = 'none'; // Prevent transitions
-    
-    enemyArea.appendChild(card);
-  } 
-  else if (count === 2) {
-    // Two enemies - diagonal arrangement
-    activeEnemies.forEach((monster, index) => {
-      const card = this.createMonsterCard(monster, 'enemy', index);
-      
       // Fixed position
-      card.style.position = 'absolute';
-      card.style.transition = 'none'; // Prevent transitions
-      
-      if (index === 0) {
-        // Top left
-        card.style.left = 'calc(35% - 80px)';
-        card.style.top = 'calc(35% - 100px)';
-        card.style.transform = 'rotate(-5deg)';
-      } else {
-        // Bottom right
-        card.style.left = 'calc(65% - 80px)';
-        card.style.top = 'calc(65% - 100px)';
-        card.style.transform = 'rotate(5deg)';
-      }
-      
-      enemyArea.appendChild(card);
-    });
-  }
-  else if (count === 3) {
-    // Three enemies - triangle arrangement
-    activeEnemies.forEach((monster, index) => {
-      const card = this.createMonsterCard(monster, 'enemy', index);
-      
-      // Fixed position
-      card.style.position = 'absolute';
-      card.style.transition = 'none'; // Prevent transitions
-      
-      if (index === 0) {
-        // Top center
-        card.style.left = 'calc(50% - 80px)';
-        card.style.top = '20px';
-        card.style.transform = 'rotate(0deg)';
-        card.style.zIndex = '3';
-      } 
-      else if (index === 1) {
-        // Bottom left
-        card.style.left = 'calc(30% - 80px)';
-        card.style.top = '130px';
-        card.style.transform = 'rotate(-7deg)';
-        card.style.zIndex = '2';
-      } 
-      else {
-        // Bottom right
-        card.style.left = 'calc(70% - 80px)';
-        card.style.top = '130px';
-        card.style.transform = 'rotate(7deg)';
-        card.style.zIndex = '1';
-      }
-      
-      enemyArea.appendChild(card);
-    });
-  }
-  else if (count >= 4) {
-    // Four enemies - 2x2 grid
-    activeEnemies.slice(0, 4).forEach((monster, index) => {
-      const card = this.createMonsterCard(monster, 'enemy', index);
-      
-      // Fixed position
-      card.style.position = 'absolute';
-      card.style.transition = 'none'; // Prevent transitions
-      
-      const row = Math.floor(index / 2);
-      const col = index % 2;
-      
-      // Position in grid
-      if (row === 0 && col === 0) {
-        // Top left
-        card.style.left = 'calc(30% - 80px)';
-        card.style.top = '30px';
-        card.style.transform = 'rotate(-5deg)';
-        card.style.zIndex = '4';
-      } 
-      else if (row === 0 && col === 1) {
-        // Top right
-        card.style.left = 'calc(70% - 80px)';
-        card.style.top = '30px';
-        card.style.transform = 'rotate(5deg)';
-        card.style.zIndex = '3';
-      } 
-      else if (row === 1 && col === 0) {
-        // Bottom left
-        card.style.left = 'calc(30% - 80px)';
-        card.style.top = '150px';
-        card.style.transform = 'rotate(-10deg)';
-        card.style.zIndex = '2';
-      } 
-      else {
-        // Bottom right
-        card.style.left = 'calc(70% - 80px)';
-        card.style.top = '150px';
-        card.style.transform = 'rotate(10deg)';
-        card.style.zIndex = '1';
-      }
-      
-      enemyArea.appendChild(card);
-    });
-  }
-  
-  // Create the defeated enemy token row
-  this.updateDefeatedEnemiesRow();
-  
-  // Force a reflow to ensure all positions are applied immediately
-  enemyArea.offsetHeight;
-  
-  // Re-enable transitions after a delay
-  setTimeout(() => {
-    enemyArea.style.transition = '';
-    
-    // Re-enable transitions on cards
-    const cards = enemyArea.querySelectorAll('.combat-monster');
-    cards.forEach(card => {
-      card.style.transition = '';
-    });
-  }, 50);
-}
+      card.style.position = "absolute";
+      card.style.left = "calc(50% - 80px)"; // Half card width
+      card.style.top = "calc(50% - 100px)"; // Position in middle
+      card.style.transform = "rotate(4deg)";
+      card.style.transition = "none"; // Prevent transitions
 
-// updateDefeatedEnemiesRow() {
-//   // Find or create the defeated enemies container
-//   let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
-  
-//   if (!defeatedRow) {
-//     // Create container for defeated enemies
-//     defeatedRow = document.createElement('div');
-//     defeatedRow.className = 'defeated-enemies-row';
-    
-//     // Add to the battle scene
-//     const battleScene = this.dialogContainer.querySelector('.battle-scene');
-//     if (battleScene) {
-//       battleScene.appendChild(defeatedRow);
-//     }
-//   }
-  
-//   // Update CSS positioning to place it below initiative tracker
-//   defeatedRow.style.position = 'absolute';
-//   defeatedRow.style.top = '230px'; // Below initiative tracker
-//   defeatedRow.style.left = '16px'; // Same left alignment
-  
-//   // Clear existing content
-//   defeatedRow.innerHTML = '';
-  
-//   // Get defeated enemies
-//   const defeatedEnemies = this.enemyParty.filter(monster => monster.currentHP <= 0);
-  
-//   // If none, hide the row
-//   if (defeatedEnemies.length === 0) {
-//     defeatedRow.style.display = 'none';
-//     return;
-//   }
-  
-//   // Show the row and add tokens
-//   defeatedRow.style.display = 'flex';
-  
-//   // Add header
-//   const header = document.createElement('div');
-//   header.className = 'defeated-header';
-//   header.textContent = 'Defeated:';
-//   defeatedRow.appendChild(header);
-  
-//   // Add tokens for each defeated enemy
-//   defeatedEnemies.forEach(monster => {
-//     const token = document.createElement('div');
-//     token.className = 'defeated-token';
-//     token.title = monster.name;
-    
-//     // Get token image or create placeholder
-//     const tokenImage = monster.token?.data || this.generateDefaultTokenImage(monster);
-    
-//     token.innerHTML = `
-//       <img src="${tokenImage}" alt="${monster.name}">
-//       <div class="defeated-x">✕</div>
-//     `;
-    
-//     defeatedRow.appendChild(token);
-//   });
-// }
+      enemyArea.appendChild(card);
+    } else if (count === 2) {
+      // Two enemies - diagonal arrangement
+      activeEnemies.forEach((monster, index) => {
+        const card = this.createMonsterCard(monster, "enemy", index);
 
-updateDefeatedEnemiesRow() {
-  // Find the header area
-  const header = this.dialogContainer.querySelector('.combat-header');
-  if (!header) return;
-  
-  // Find or create the defeated enemies container
-  let defeatedRow = this.dialogContainer.querySelector('.defeated-enemies-row');
-  
-  if (!defeatedRow) {
-    // Create container for defeated enemies
-    defeatedRow = document.createElement('div');
-    defeatedRow.className = 'defeated-enemies-row';
-    
-    // Add to the header
-    header.appendChild(defeatedRow);
+        // Fixed position
+        card.style.position = "absolute";
+        card.style.transition = "none"; // Prevent transitions
+
+        if (index === 0) {
+          // Top left
+          card.style.left = "calc(35% - 80px)";
+          card.style.top = "calc(35% - 100px)";
+          card.style.transform = "rotate(-5deg)";
+        } else {
+          // Bottom right
+          card.style.left = "calc(65% - 80px)";
+          card.style.top = "calc(65% - 100px)";
+          card.style.transform = "rotate(5deg)";
+        }
+
+        enemyArea.appendChild(card);
+      });
+    } else if (count === 3) {
+      // Three enemies - triangle arrangement
+      activeEnemies.forEach((monster, index) => {
+        const card = this.createMonsterCard(monster, "enemy", index);
+
+        // Fixed position
+        card.style.position = "absolute";
+        card.style.transition = "none"; // Prevent transitions
+
+        if (index === 0) {
+          // Top center
+          card.style.left = "calc(50% - 80px)";
+          card.style.top = "20px";
+          card.style.transform = "rotate(0deg)";
+          card.style.zIndex = "3";
+        } else if (index === 1) {
+          // Bottom left
+          card.style.left = "calc(30% - 80px)";
+          card.style.top = "130px";
+          card.style.transform = "rotate(-7deg)";
+          card.style.zIndex = "2";
+        } else {
+          // Bottom right
+          card.style.left = "calc(70% - 80px)";
+          card.style.top = "130px";
+          card.style.transform = "rotate(7deg)";
+          card.style.zIndex = "1";
+        }
+
+        enemyArea.appendChild(card);
+      });
+    } else if (count >= 4) {
+      // Four enemies - 2x2 grid
+      activeEnemies.slice(0, 4).forEach((monster, index) => {
+        const card = this.createMonsterCard(monster, "enemy", index);
+
+        // Fixed position
+        card.style.position = "absolute";
+        card.style.transition = "none"; // Prevent transitions
+
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+
+        // Position in grid
+        if (row === 0 && col === 0) {
+          // Top left
+          card.style.left = "calc(30% - 80px)";
+          card.style.top = "30px";
+          card.style.transform = "rotate(-5deg)";
+          card.style.zIndex = "4";
+        } else if (row === 0 && col === 1) {
+          // Top right
+          card.style.left = "calc(70% - 80px)";
+          card.style.top = "30px";
+          card.style.transform = "rotate(5deg)";
+          card.style.zIndex = "3";
+        } else if (row === 1 && col === 0) {
+          // Bottom left
+          card.style.left = "calc(30% - 80px)";
+          card.style.top = "150px";
+          card.style.transform = "rotate(-10deg)";
+          card.style.zIndex = "2";
+        } else {
+          // Bottom right
+          card.style.left = "calc(70% - 80px)";
+          card.style.top = "150px";
+          card.style.transform = "rotate(10deg)";
+          card.style.zIndex = "1";
+        }
+
+        enemyArea.appendChild(card);
+      });
+    }
+
+    // Create the defeated enemy token row
+    this.updateDefeatedEnemiesRow();
+
+    // Force a reflow to ensure all positions are applied immediately
+    enemyArea.offsetHeight;
+
+    // Re-enable transitions after a delay
+    setTimeout(() => {
+      enemyArea.style.transition = "";
+
+      // Re-enable transitions on cards
+      const cards = enemyArea.querySelectorAll(".combat-monster");
+      cards.forEach((card) => {
+        card.style.transition = "";
+      });
+    }, 50);
   }
-  
-  // Update styling to fit in header
-  defeatedRow.style.position = 'relative'; // Not absolute
-  defeatedRow.style.top = 'auto';
-  defeatedRow.style.left = 'auto';
-  defeatedRow.style.marginLeft = '16px';
-  defeatedRow.style.display = 'flex';
-  defeatedRow.style.alignItems = 'center';
-  
-  // Clear existing content
-  defeatedRow.innerHTML = '';
-  
-  // Get defeated enemies
-  const defeatedEnemies = this.enemyParty.filter(monster => monster.currentHP <= 0);
-  
-  // If none, hide the row
-  if (defeatedEnemies.length === 0) {
-    defeatedRow.style.display = 'none';
-    return;
-  }
-  
-  // Show the row and add tokens
-  defeatedRow.style.display = 'flex';
-  
-  // Add header with count
-  defeatedRow.innerHTML = `
+
+  updateDefeatedEnemiesRow() {
+    // Find the header area
+    const header = this.dialogContainer.querySelector(".combat-header");
+    if (!header) return;
+
+    // Find or create the defeated enemies container
+    let defeatedRow = this.dialogContainer.querySelector(
+      ".defeated-enemies-row"
+    );
+
+    if (!defeatedRow) {
+      // Create container for defeated enemies
+      defeatedRow = document.createElement("div");
+      defeatedRow.className = "defeated-enemies-row";
+
+      // Add to the header
+      header.appendChild(defeatedRow);
+    }
+
+    // Update styling to fit in header
+    defeatedRow.style.position = "relative"; // Not absolute
+    defeatedRow.style.top = "auto";
+    defeatedRow.style.left = "auto";
+    defeatedRow.style.marginLeft = "16px";
+    defeatedRow.style.display = "flex";
+    defeatedRow.style.alignItems = "center";
+
+    // Clear existing content
+    defeatedRow.innerHTML = "";
+
+    // Get defeated enemies
+    const defeatedEnemies = this.enemyParty.filter(
+      (monster) => monster.currentHP <= 0
+    );
+
+    // If none, hide the row
+    if (defeatedEnemies.length === 0) {
+      defeatedRow.style.display = "none";
+      return;
+    }
+
+    // Show the row and add tokens
+    defeatedRow.style.display = "flex";
+
+    // Add header with count
+    defeatedRow.innerHTML = `
     <span style="margin-right: 8px; opacity: 0.8;">Defeated: ${defeatedEnemies.length}</span>
   `;
-  
-  // Add tokens for each defeated enemy
-  defeatedEnemies.forEach(monster => {
-    const token = document.createElement('div');
-    token.className = 'defeated-token';
-    token.title = monster.name;
-    
-    // Get token image or create placeholder
-    const tokenImage = monster.token?.data || this.generateDefaultTokenImage(monster);
-    
-    token.innerHTML = `
+
+    // Add tokens for each defeated enemy
+    defeatedEnemies.forEach((monster) => {
+      const token = document.createElement("div");
+      token.className = "defeated-token";
+      token.title = monster.name;
+
+      // Get token image or create placeholder
+      const tokenImage =
+        monster.token?.data || this.generateDefaultTokenImage(monster);
+
+      token.innerHTML = `
       <img src="${tokenImage}" alt="${monster.name}">
       <div class="defeated-x">✕</div>
     `;
-    
-    defeatedRow.appendChild(token);
-  });
-}
+
+      defeatedRow.appendChild(token);
+    });
+  }
 
   // Get current monster
   getCurrentMonster() {
@@ -4937,6 +4381,4 @@ updateDefeatedEnemiesRow() {
     const currentCombatant = this.initiativeOrder[this.currentTurn];
     return currentCombatant && currentCombatant.monster.id === monster.id;
   }
-
-
 }
