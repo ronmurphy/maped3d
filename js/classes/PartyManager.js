@@ -2776,7 +2776,7 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
                   color: #ef4444;
                   font-size: 0.7rem;
                   font-weight: bold;
-                ">W</div>` : ''
+                "><i class="ra ra-sword"></i></div>` : ''
               }
               
               ${monster.equipment?.armor ?
@@ -2791,7 +2791,7 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
                   color: #3b82f6;
                   font-size: 0.7rem;
                   font-weight: bold;
-                ">A</div>` : ''
+                "><i class="ra ra-helmet ra-fw"></i></div>` : ''
               }
             </div>
           </div>

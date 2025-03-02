@@ -1827,6 +1827,244 @@ class CombatSystem {
 
 
 // Updated createMonsterCard with fixed active indicator
+// createMonsterCard(monster, side, index) {
+//   console.log(
+//     `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
+//   );
+
+//   const isPlayer = side === "player";
+//   const isActive = this.isMonsterActive(monster);
+//   const isDefeated = monster.currentHP <= 0;
+
+//   // Calculate HP percentage
+//   const hpPercent = (monster.currentHP / monster.maxHP) * 100;
+//   let hpBarColorClass = "high";
+//   if (hpPercent < 30) {
+//     hpBarColorClass = "low";
+//   } else if (hpPercent < 70) {
+//     hpBarColorClass = "medium";
+//   }
+
+//   // Get monster type color
+//   const typeColor = this.getMonsterTypeColor(monster.type || "beast");
+  
+//   // Calculate tilt angle based on monster ID (consistent per monster)
+//   // Less tilt in combat (from -3 to 3 degrees) to keep the UI cleaner
+//   const idHash = monster.id.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+//   const tiltAngle = ((idHash % 7) - 3) * (side === "player" ? 1 : -1);
+
+//   // Generate token or placeholder
+//   const tokenSource = monster.token?.data || monster.token?.url || null;
+
+//   // Create card wrapper
+//   const card = document.createElement("div");
+//   card.className = `combat-monster ${side}`;
+//   if (isActive) card.classList.add("active");
+//   if (isDefeated) card.classList.add("defeated");
+//   card.setAttribute("data-monster-id", monster.id);
+  
+//   // Apply tilt effect
+//   card.style.transform = `rotate(${tiltAngle}deg)`;
+//   card.style.transition = "all 0.3s ease";
+  
+//   // Add card HTML content with the new design
+//   card.innerHTML = `
+//     <div class="monster-content" style="
+//       position: relative;
+//       background: white;
+//       border-radius: 8px;
+//       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+//       overflow: visible; /* Changed from hidden to visible to allow active indicator to be fully visible */
+//       width: 180px;
+//     ">
+//       <!-- Active indicator - moved above header to ensure visibility -->
+//       ${
+//         isActive
+//           ? `
+//         <div class="active-indicator" style="
+//           position: absolute;
+//           top: -12px; /* Moved up slightly */
+//           left: 50%;
+//           transform: translateX(-50%);
+//           background: #3b82f6;
+//           color: white;
+//           border-radius: 12px;
+//           padding: 2px 8px;
+//           font-size: 0.7em;
+//           font-weight: bold;
+//           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+//           z-index: 100; /* Ensure it's above everything */
+//         ">ACTIVE</div>
+//       `
+//           : ""
+//       }
+      
+//       <!-- Header banner with monster name and type -->
+//       <div class="monster-header" style="
+//         background: linear-gradient(135deg, ${typeColor}dd, ${typeColor});
+//         padding: 8px;
+//         display: flex;
+//         justify-content: space-between;
+//         align-items: center;
+//         border-bottom: 1px solid #eee;
+//         color: white;
+//       ">
+//         <div class="monster-info" style="
+//           flex: 1;
+//           overflow: hidden;
+//           margin-right: 8px;
+//         ">
+//           <div class="monster-name" style="
+//             font-weight: bold;
+//             white-space: nowrap;
+//             overflow: hidden;
+//             text-overflow: ellipsis;
+//             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+//           ">${monster.name}</div>
+          
+//           <div class="monster-type" style="
+//             font-size: 0.8em;
+//             opacity: 0.9;
+//           ">
+//             ${monster.size} ${monster.type || ""}
+//           </div>
+//         </div>
+        
+//         <!-- Monster image/token -->
+//         <div class="monster-image" style="
+//           width: 48px;
+//           height: 48px;
+//           border-radius: 50%;
+//           overflow: hidden;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//           color: white;
+//           font-weight: bold;
+//           font-size: 20px;
+//           border: 2px solid ${side === "player" ? "#3b82f6" : "#ef4444"};
+//           background-color: ${side === "player" ? "#3b82f6" : "#ef4444"};
+//         ">
+//           ${
+//             tokenSource
+//               ? `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+//               : `<span>${monster.name.charAt(0)}</span>`
+//           }
+//         </div>
+//       </div>
+      
+//       <!-- Monster stats section -->
+//       <div class="monster-stats" style="
+//         padding: 8px;
+//         background: #f9fafb;
+//       ">
+//         <!-- HP Bar -->
+//         <div class="hp-bar-label" style="
+//           display: flex;
+//           justify-content: space-between;
+//           font-size: 0.8em;
+//           margin-bottom: 4px;
+//         ">
+//           <span>HP</span>
+//           <span>${monster.currentHP}/${monster.maxHP}</span>
+//         </div>
+        
+//         <div class="hp-bar-bg" style="
+//           height: 8px;
+//           background: #e0e0e0;
+//           border-radius: 4px;
+//           margin-bottom: 8px;
+//           overflow: hidden;
+//         ">
+//           <div class="hp-bar-fill ${hpBarColorClass}" style="
+//             height: 100%;
+//             width: ${hpPercent}%;
+//             border-radius: 4px;
+//             transition: width 0.3s ease;
+//           "></div>
+//         </div>
+        
+//         <!-- Stats Grid -->
+//         <div style="
+//           display: grid;
+//           grid-template-columns: 1fr 1fr;
+//           gap: 4px;
+//         ">
+//           <div class="stat-row" style="
+//             display: flex;
+//             justify-content: space-between;
+//             font-size: 0.8em;
+//             margin-bottom: 4px;
+//           ">
+//             <span>AC</span>
+//             <span>${monster.armorClass || monster.stats?.ac || 10}</span>
+//           </div>
+          
+//           <div class="stat-row" style="
+//             display: flex;
+//             justify-content: space-between;
+//             font-size: 0.8em;
+//             margin-bottom: 4px;
+//           ">
+//             <span>${isPlayer ? "EXP" : "CR"}</span>
+//             <span>${
+//               isPlayer
+//                 ? monster.experience
+//                   ? `${monster.experience}/${monster.experienceToNext}`
+//                   : "0/100"
+//                 : monster.cr || monster.basic?.cr || "?"
+//             }</span>
+//           </div>
+//         </div>
+//       </div>
+      
+//       ${
+//         isDefeated
+//           ? `
+//         <div class="defeated-indicator" style="
+//           position: absolute;
+//           top: 0;
+//           left: 0;
+//           right: 0;
+//           bottom: 0;
+//           display: flex;
+//           justify-content: center;
+//           align-items: center;
+//           background: rgba(0, 0, 0, 0.3);
+//           border-radius: 8px;
+//           color: white;
+//           font-size: 48px;
+//           z-index: 90; /* High but below active indicator */
+//         ">✕</div>
+//       `
+//           : ""
+//       }
+//     </div>
+//   `;
+
+//   // Add hover effects
+//   card.addEventListener('mouseenter', () => {
+//     // Only apply hover effects if not defeated
+//     if (!isDefeated) {
+//       card.style.transform = `rotate(${tiltAngle}deg) translateY(-5px) scale(1.02)`;
+//       card.style.boxShadow = '0 10px 15px rgba(0, 0, 0, 0.3)';
+//       card.style.zIndex = '10';
+//     }
+//   });
+  
+//   card.addEventListener('mouseleave', () => {
+//     card.style.transform = `rotate(${tiltAngle}deg)`;
+//     card.style.boxShadow = '';
+//     // Keep z-index higher if it's active
+//     card.style.zIndex = isActive ? '5' : '';
+//   });
+
+//   return card;
+// }
+
+// Updated createMonsterCard with equipment indicators
+
+// Updated createMonsterCard with token on the left side
 createMonsterCard(monster, side, index) {
   console.log(
     `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
@@ -1899,7 +2137,7 @@ createMonsterCard(monster, side, index) {
           : ""
       }
       
-      <!-- Header banner with monster name and type -->
+      <!-- Header banner with monster name and type - NOW SWAPPED: token left, info right -->
       <div class="monster-header" style="
         background: linear-gradient(135deg, ${typeColor}dd, ${typeColor});
         padding: 8px;
@@ -1909,10 +2147,33 @@ createMonsterCard(monster, side, index) {
         border-bottom: 1px solid #eee;
         color: white;
       ">
+        <!-- Monster image/token NOW ON LEFT -->
+        <div class="monster-image" style="
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 20px;
+          border: 2px solid ${side === "player" ? "#3b82f6" : "#ef4444"};
+          background-color: ${side === "player" ? "#3b82f6" : "#ef4444"};
+          margin-right: 8px;
+        ">
+          ${
+            tokenSource
+              ? `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+              : `<span>${monster.name.charAt(0)}</span>`
+          }
+        </div>
+        
+        <!-- Monster info NOW ON RIGHT -->
         <div class="monster-info" style="
           flex: 1;
           overflow: hidden;
-          margin-right: 8px;
         ">
           <div class="monster-name" style="
             font-weight: bold;
@@ -1928,28 +2189,6 @@ createMonsterCard(monster, side, index) {
           ">
             ${monster.size} ${monster.type || ""}
           </div>
-        </div>
-        
-        <!-- Monster image/token -->
-        <div class="monster-image" style="
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 20px;
-          border: 2px solid ${side === "player" ? "#3b82f6" : "#ef4444"};
-          background-color: ${side === "player" ? "#3b82f6" : "#ef4444"};
-        ">
-          ${
-            tokenSource
-              ? `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-              : `<span>${monster.name.charAt(0)}</span>`
-          }
         </div>
       </div>
       
@@ -1984,36 +2223,101 @@ createMonsterCard(monster, side, index) {
           "></div>
         </div>
         
-        <!-- Stats Grid -->
+        <!-- Stats and Equipment Row -->
         <div style="
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 4px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         ">
-          <div class="stat-row" style="
+          <!-- Stats (left side) -->
+          <div style="
             display: flex;
-            justify-content: space-between;
-            font-size: 0.8em;
-            margin-bottom: 4px;
+            gap: 10px;
           ">
-            <span>AC</span>
-            <span>${monster.armorClass || monster.stats?.ac || 10}</span>
+            <!-- AC -->
+            <div class="stat-display" style="
+              text-align: center;
+            ">
+              <div style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background-color: #f3f4f6;
+                border: 2px solid ${typeColor};
+                color: #374151;
+                font-weight: bold;
+                font-size: 0.75rem;
+                margin: 0 auto;
+              ">
+                ${monster.armorClass || monster.stats?.ac || 10}
+              </div>
+              <span style="font-size: 0.65rem; color: #6b7280;">AC</span>
+            </div>
+            
+            <!-- EXP/CR -->
+            <div class="stat-display" style="
+              text-align: center;
+            ">
+              <div style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background-color: #f3f4f6;
+                border: 2px solid ${side === "player" ? "#3b82f6" : "#ef4444"};
+                color: #374151;
+                font-weight: bold;
+                font-size: 0.75rem;
+                margin: 0 auto;
+              ">
+                ${isPlayer ? 
+                  (monster.level || 1) : 
+                  (monster.cr || monster.basic?.cr || "?")
+                }
+              </div>
+              <span style="font-size: 0.65rem; color: #6b7280;">${isPlayer ? "LVL" : "CR"}</span>
+            </div>
           </div>
           
-          <div class="stat-row" style="
+          <!-- Equipment icons (right side) -->
+          <div class="equipment-icons" style="
             display: flex;
-            justify-content: space-between;
-            font-size: 0.8em;
-            margin-bottom: 4px;
+            gap: 4px;
           ">
-            <span>${isPlayer ? "EXP" : "CR"}</span>
-            <span>${
-              isPlayer
-                ? monster.experience
-                  ? `${monster.experience}/${monster.experienceToNext}`
-                  : "0/100"
-                : monster.cr || monster.basic?.cr || "?"
-            }</span>
+            ${monster.equipment?.weapon ?
+              `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name || 'Weapon'}" style="
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #fee2e2;
+                color: #ef4444;
+                font-size: 0.7rem;
+                font-weight: bold;
+              "><i class="ra ra-sword"></i></div>` : ''
+            }
+            
+            ${monster.equipment?.armor ?
+              `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name || 'Armor'}" style="
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #dbeafe;
+                color: #3b82f6;
+                font-size: 0.7rem;
+                font-weight: bold;
+              "><i class="ra ra-helmet ra-fw"></i></div>` : ''
+            }
           </div>
         </div>
       </div>
@@ -2061,7 +2365,6 @@ createMonsterCard(monster, side, index) {
 
   return card;
 }
-
 
   renderMonsterGroup(monsters, side) {
     if (!monsters || monsters.length === 0) {

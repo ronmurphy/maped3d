@@ -25,6 +25,7 @@ class Scene3DController {
     this.pickupPrompt = null;
     this.inventoryDrawer = null;
     this.isInventoryShowing = false;
+    this.isPartyManagerOpen = false;
     this.stats = null; // FPS Counter
     this.showStats = false;
     this.isInitializingStats = false; // Add this flag
@@ -41,6 +42,8 @@ class Scene3DController {
     this.dayNightCycle = null;
     this.encounterPrompt = null;
     this.nearestEncounter = null;
+
+this.keyDebounceTimers = {};
 
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
@@ -1321,26 +1324,39 @@ class Scene3DController {
           this.addPlayerLight(!this.playerLight);
         }
         break;
-      case "KeyP": // P fshow PArty
-      if (window.partyManager) {
-        // Pause 3D controls while party manager is open
-        this.pauseControls();
-        
-        // Show party manager
-        window.partyManager.showPartyManager();
-        
-        // Resume controls when party manager closes
-        const checkForDialog = setInterval(() => {
-          const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
-          if (!dialog) {
-            this.resumeControls();
-            clearInterval(checkForDialog);
-          }
-        }, 100);
-      } else {
-        console.warn('Party Manager not available');
-      }
-      break;
+// Fixed KeyP handler with proper debounce
+case "KeyP": // P to show Party Manager
+  if (window.partyManager) {
+    const nowP = Date.now();
+    
+    // Use nowP in the condition, not nowL which is undefined
+    if (!event.repeat && (!this.lastKeyPresses.p || nowP - this.lastKeyPresses.p > 500)) {
+      // Update the lastKeyPresses.p, not lastKeyPresses.h
+      this.lastKeyPresses.p = nowP;
+      
+      console.log("Opening Party Manager");
+      
+      // Pause 3D controls while party manager is open
+      this.pauseControls();
+      
+      // Show party manager
+      window.partyManager.showPartyManager();
+      
+      // Resume controls when party manager closes
+      const checkForDialog = setInterval(() => {
+        const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+        if (!dialog) {
+          this.resumeControls();
+          clearInterval(checkForDialog);
+        }
+      }, 100);
+    } else {
+      console.log("Party Manager key debounced");
+    }
+  } else {
+    console.warn('Party Manager not available');
+  }
+  break;
       // case "KeyH": // H for Toggle lighting
       //   // Debounce key press (500ms cooldown)
       //   const now = Date.now();
