@@ -42,7 +42,9 @@ class Scene3DController {
     this.dayNightCycle = null;
     this.encounterPrompt = null;
     this.nearestEncounter = null;
-
+    this.movementVector = new THREE.Vector3();
+    this.lastFrameTime = performance.now();
+    this.deltaTime = 0;
     this.keyDebounceTimers = {};
 
     window.scene3D = this;
@@ -3936,6 +3938,172 @@ class Scene3DController {
   }
 
 
+
+  updateTimeBasedMovement() {
+    // Calculate time-based delta for smooth movement
+    const now = performance.now();
+    this.deltaTime = (now - this.lastFrameTime) / 1000; // Convert to seconds
+    this.lastFrameTime = now;
+    
+    // Cap deltaTime to avoid huge jumps after pauses or slow frames
+    const cappedDelta = Math.min(this.deltaTime, 0.1);
+    
+    // Calculate base speed adjusted for time (normalized to 60fps)
+    const timeAdjustedSpeed = this.moveState.speed * cappedDelta * 60;
+    
+    // Skip movement if paused
+    if (this._controlsPaused) {
+      return cappedDelta;
+    }
+    
+    let canMove = true;
+  
+    if (this.moveState.forward || this.moveState.backward) {
+      const direction = new THREE.Vector3();
+      this.camera.getWorldDirection(direction);
+      if (this.moveState.backward) direction.negate();
+  
+      canMove = this.physics.checkCollision(direction, timeAdjustedSpeed);
+    }
+  
+    if (canMove) {
+      if (this.moveState.forward) this.controls.moveForward(timeAdjustedSpeed);
+      if (this.moveState.backward) this.controls.moveForward(-timeAdjustedSpeed);
+    }
+  
+    if (this.moveState.left) this.controls.moveRight(-timeAdjustedSpeed);
+    if (this.moveState.right) this.controls.moveRight(timeAdjustedSpeed);
+    
+    // Return the delta time for other time-based calculations
+    return cappedDelta;
+  }
+
+  processInteractiveElements() {
+    const playerPosition = this.camera.position.clone();
+    let nearestTeleporter = null;
+    let nearestDoor = null;
+    let nearestSplashArt = null;
+    let nearestProp = null;
+    let nearestEncounter = null;
+    let shortestDistance = Infinity;
+    
+    // Check teleporters
+    this.teleporters.forEach(teleporter => {
+      const distance = playerPosition.distanceTo(teleporter.position);
+      if (distance < 2 && distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestTeleporter = teleporter;
+      }
+    });
+    
+    // Check doors
+    this.doors.forEach(door => {
+      const distance = playerPosition.distanceTo(door.position);
+      if (distance < 2 && distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestDoor = door;
+      }
+    });
+    
+    // Check splash art markers
+    this.markers.forEach(marker => {
+      if (marker.type === 'splash-art') {
+        const markerPos = new THREE.Vector3(
+          marker.x / 50 - this.boxWidth / 2,
+          marker.data.height || 1,
+          marker.y / 50 - this.boxDepth / 2
+        );
+        const distance = playerPosition.distanceTo(markerPos);
+        if (distance < 2 && distance < shortestDistance) {
+          shortestDistance = distance;
+          nearestSplashArt = marker;
+        }
+      }
+    });
+    
+    // Check props
+    this.scene.children.forEach(child => {
+      if (child.userData?.type === 'prop') {
+        const distance = playerPosition.distanceTo(child.position);
+        if (distance < 2 && distance < shortestDistance) {
+          shortestDistance = distance;
+          nearestProp = child;
+        }
+      }
+    });
+    
+    // Check encounters
+    if (!this.encounterCooldown && !this.activeEncounter) {
+      this.scene.children.forEach(object => {
+        if (object.userData && object.userData.type === 'encounter') {
+          const dist = playerPosition.distanceTo(object.position);
+          const minEncounterDist = 3; // Detection range
+          if (dist < minEncounterDist && (!nearestEncounter || dist < shortestDistance)) {
+            nearestEncounter = object;
+            shortestDistance = dist;
+          }
+        }
+      });
+    }
+    
+    // Update UI prompts based on nearest interactive element
+    this.updateTeleportPrompt(nearestTeleporter);
+    this.updateDoorPrompt(nearestDoor);
+    
+    // Update splash art prompt
+    if (nearestSplashArt && !this.activeSplashArt) {
+      const prompt = this.createSplashArtPrompt();
+      prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press E to inspect';
+      prompt.style.display = 'block';
+      this.nearestSplashArt = nearestSplashArt;
+    } else if (!nearestSplashArt && this.splashArtPrompt) {
+      this.splashArtPrompt.style.display = 'none';
+      this.nearestSplashArt = null;
+    }
+    
+    // Update pickup prompt
+    if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
+      const prompt = this.createPickupPrompt();
+      prompt.textContent = 'Press E to pick up';
+      prompt.style.display = 'block';
+      this.nearestProp = nearestProp;
+    } else if (this.pickupPrompt) {
+      this.pickupPrompt.style.display = 'none';
+      this.nearestProp = null;
+    }
+    
+    // Update encounter prompt
+    if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
+      const prompt = this.createEncounterPrompt();
+      prompt.textContent = 'Press E to approach monster';
+      prompt.style.display = 'block';
+      this.nearestEncounter = nearestEncounter;
+    } else if (!nearestEncounter && this.encounterPrompt) {
+      this.encounterPrompt.style.display = 'none';
+      this.nearestEncounter = null;
+    }
+  }
+  
+  // Helper method for animating effects
+  animateEffects(deltaTime) {
+    // Animate teleporter particles
+    this.scene.children.forEach(child => {
+      if (child instanceof THREE.Points && child.userData.animate) {
+        const positions = child.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i += 3) {
+          // Circular motion with time-based animation
+          const time = performance.now() * 0.001;
+          const radius = 0.5;
+          positions[i] = Math.cos(time + i) * radius;
+          positions[i + 1] = Math.sin(time * 0.5) * 0.2;  // Vertical wobble
+          positions[i + 2] = Math.sin(time + i) * radius;
+        }
+        child.geometry.attributes.position.needsUpdate = true;
+      }
+    });
+  }
+
+
   animate = () => {
     // Debugging to check if this is the wrapped version or not
     if (!this._animateDebugChecked) {
@@ -3968,24 +4136,26 @@ class Scene3DController {
     }
 
 
-    const currentSpeed = this.moveState.speed;
-    let canMove = true;
+    // const currentSpeed = this.moveState.speed;
+    // let canMove = true;
 
-    if (this.moveState.forward || this.moveState.backward) {
-      const direction = new THREE.Vector3();
-      this.camera.getWorldDirection(direction);
-      if (this.moveState.backward) direction.negate();
+    // if (this.moveState.forward || this.moveState.backward) {
+    //   const direction = new THREE.Vector3();
+    //   this.camera.getWorldDirection(direction);
+    //   if (this.moveState.backward) direction.negate();
 
-      canMove = this.physics.checkCollision(direction, currentSpeed);
-    }
+    //   canMove = this.physics.checkCollision(direction, currentSpeed);
+    // }
 
-    if (canMove) {
-      if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-      if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-    }
+    // if (canMove) {
+    //   if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+    //   if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+    // }
 
-    if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-    if (this.moveState.right) this.controls.moveRight(currentSpeed);
+    // if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+    // if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+    this.updateTimeBasedMovement();
 
     const playerPosition = this.camera.position.clone();
     let nearestTeleporter = null;
@@ -4150,6 +4320,223 @@ class Scene3DController {
     // this.animationFrameId = requestAnimationFrame(this.animate);
 
   };
+
+
+  // animate = () => {
+  //   // Debugging to check if this is the wrapped version or not
+  //   if (!this._animateDebugChecked) {
+  //     this._animateDebugChecked = true;
+  //     console.log('Animate function running, wrapped:', !!this._originalAnimate);
+  //   }
+
+  //   if (!this._dayNightDebugLogged && this.dayNightCycle) {
+  //     console.log('Day/Night cycle exists in animate:', this.dayNightCycle);
+  //     this._dayNightDebugLogged = true;
+  //   } else if (!this._dayNightMissingLogged && !this.dayNightCycle) {
+  //     console.log('Day/Night cycle missing in animate. Adding it now.');
+  //     this.initializeDayNightCycle();
+  //     this._dayNightMissingLogged = true;
+  //   }
+
+  //   if (this._controlsPaused) {
+  //     // Only render the scene, don't process movement
+
+  //     if (this.dayNightCycle) {
+  //       this.dayNightCycle.update();
+  //     }
+
+  //     this.renderer.render(this.scene, this.camera);
+  //     return;
+  //   }
+  //   // fps counter
+  //   if (this.stats && this.showStats) {
+  //     this.stats.begin();
+  //   }
+
+
+  //   const currentSpeed = this.moveState.speed;
+  //   let canMove = true;
+
+  //   if (this.moveState.forward || this.moveState.backward) {
+  //     const direction = new THREE.Vector3();
+  //     this.camera.getWorldDirection(direction);
+  //     if (this.moveState.backward) direction.negate();
+
+  //     canMove = this.physics.checkCollision(direction, currentSpeed);
+  //   }
+
+  //   if (canMove) {
+  //     if (this.moveState.forward) this.controls.moveForward(currentSpeed);
+  //     if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
+  //   }
+
+  //   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
+  //   if (this.moveState.right) this.controls.moveRight(currentSpeed);
+
+  //   const playerPosition = this.camera.position.clone();
+  //   let nearestTeleporter = null;
+  //   let shortestDistance = Infinity;
+
+  //   this.teleporters.forEach(teleporter => {
+  //     const distance = playerPosition.distanceTo(teleporter.position);
+  //     if (distance < 2 && distance < shortestDistance) {  // Within 2 units
+  //       shortestDistance = distance;
+  //       nearestTeleporter = teleporter;
+  //     }
+  //   });
+
+  //   // Show/hide teleport prompt based on proximity
+  //   this.updateTeleportPrompt(nearestTeleporter);
+
+  //   let nearestDoor = null;
+  //   shortestDistance = Infinity;
+
+  //   this.doors.forEach(door => {
+  //     const distance = playerPosition.distanceTo(door.position);
+  //     if (distance < 2 && distance < shortestDistance) { // Within 2 units
+  //       shortestDistance = distance;
+  //       nearestDoor = door;
+  //     }
+  //   });
+
+  //   // Show/hide door prompt based on proximity
+  //   this.updateDoorPrompt(nearestDoor);
+
+  //   // Animate teleporter particles
+  //   this.scene.children.forEach(child => {
+  //     if (child instanceof THREE.Points && child.userData.animate) {
+  //       const positions = child.geometry.attributes.position.array;
+  //       for (let i = 0; i < positions.length; i += 3) {
+  //         // Circular motion
+  //         const time = Date.now() * 0.001;
+  //         const radius = 0.5;
+  //         positions[i] = Math.cos(time + i) * radius;
+  //         positions[i + 1] = Math.sin(time * 0.5) * 0.2;  // Vertical wobble
+  //         positions[i + 2] = Math.sin(time + i) * radius;
+  //       }
+  //       child.geometry.attributes.position.needsUpdate = true;
+  //     }
+  //   });
+
+  //   // const playerPosition = this.camera.position.clone();
+  //   let nearestSplashArt = null;
+  //   // let shortestDistance = Infinity;
+
+  //   this.markers.forEach(marker => {
+  //     if (marker.type === 'splash-art') {
+  //       const markerPos = new THREE.Vector3(
+  //         marker.x / 50 - this.boxWidth / 2,
+  //         marker.data.height || 1,
+  //         marker.y / 50 - this.boxDepth / 2
+  //       );
+  //       const distance = playerPosition.distanceTo(markerPos);
+
+  //       if (distance < 2 && distance < shortestDistance) {
+  //         shortestDistance = distance;
+  //         nearestSplashArt = marker;
+  //       }
+  //     }
+  //   });
+
+  //   // Show/hide splash art prompt
+  //   if (nearestSplashArt && !this.activeSplashArt) {
+  //     const prompt = this.createSplashArtPrompt();
+  //     prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press E to inspect';
+  //     prompt.style.display = 'block';
+  //     this.nearestSplashArt = nearestSplashArt;
+  //   } else if (!nearestSplashArt && this.splashArtPrompt) {
+  //     this.splashArtPrompt.style.display = 'none';
+  //     this.nearestSplashArt = null;
+  //   }
+
+  //   // const playerPosition = this.camera.position.clone();
+  //   let nearestProp = null;
+
+  //   this.scene.children.forEach(child => {
+  //     if (child.userData?.type === 'prop') {
+  //       const distance = playerPosition.distanceTo(child.position);
+  //       if (distance < 2 && distance < shortestDistance) {
+  //         shortestDistance = distance;
+  //         nearestProp = child;
+  //       }
+  //     }
+  //   });
+
+  //   // Show/hide pickup prompt
+  //   if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
+  //     const prompt = this.createPickupPrompt();
+  //     prompt.textContent = 'Press E to pick up';
+  //     prompt.style.display = 'block';
+  //     this.nearestProp = nearestProp;
+  //   } else if (this.pickupPrompt) {
+  //     this.pickupPrompt.style.display = 'none';
+  //     this.nearestProp = null;
+  //   }
+
+  //   // // Find nearest encounter marker
+  //   let nearestEncounter = null;
+  //   let minEncounterDist = 3; // Detection range
+
+  //   // Only check for encounters if we're not in cooldown and don't have an active encounter
+  //   if (!this.encounterCooldown && !this.activeEncounter) {
+  //     // Loop through scene objects to find encounter markers
+  //     this.scene.children.forEach(object => {
+  //       if (object.userData && object.userData.type === 'encounter') {
+  //         const dist = playerPosition.distanceTo(object.position);
+  //         if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
+  //           nearestEncounter = object;
+  //         }
+  //       }
+  //     });
+  //   }
+
+  //   // Show or hide encounter prompt
+  //   if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
+  //     const prompt = this.createEncounterPrompt();
+  //     prompt.textContent = 'Press E to approach monster';
+  //     prompt.style.display = 'block';
+  //     this.nearestEncounter = nearestEncounter;
+  //   } else if (!nearestEncounter && this.encounterPrompt) {
+  //     this.encounterPrompt.style.display = 'none';
+  //     this.nearestEncounter = null;
+  //   }
+
+
+  //   // Update physics and camera height
+  //   this.camera.position.y = this.physics.update();
+  //   // original renderer code
+  //   // this.renderer.render(this.scene, this.camera);
+
+
+  //   if (this.playerLight) {
+  //     this.playerLight.position.copy(this.camera.position);
+  //   }
+
+  //   if (this.visualEffects) {
+  //     const time = performance.now() * 0.001;
+  //     const deltaTime = time - (this.lastTime || time);
+  //     this.lastTime = time;
+
+  //     this.visualEffects.update(deltaTime);
+  //   } //else {
+  //   // Fallback to standard rendering
+
+  //   if (this.dayNightCycle) {
+  //     this.dayNightCycle.update();
+  //   }
+
+  //   this.renderer.render(this.scene, this.camera);
+  //   //  }
+
+
+  //   if (this.stats && this.showStats) {
+  //     this.stats.end();
+  //   }
+
+  //   // this.animationFrameId = requestAnimationFrame(this.animate);
+
+  // };
+
 
 
   // Optional: Add dust particle effect when landing
