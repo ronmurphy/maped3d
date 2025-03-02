@@ -43,7 +43,7 @@ class Scene3DController {
     this.encounterPrompt = null;
     this.nearestEncounter = null;
 
-this.keyDebounceTimers = {};
+    this.keyDebounceTimers = {};
 
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
@@ -70,78 +70,12 @@ this.keyDebounceTimers = {};
     this.activeDoor = null;
   }
 
-  // initialize(container, width, height) {
-  //   // Scene
-  //   this.scene = new THREE.Scene();
-  //   this.scene.background = new THREE.Color(0x222222);
 
-  //   // Camera
-  //   this.camera = new THREE.PerspectiveCamera(
-  //     75,
-  //     width / height,
-  //     0.1,
-  //     1000
-  //   );
-  //   this.camera.position.set(0, 6, 50); // Adjusted starting position
-
-  //   // Renderer
-  //   this.renderer = new THREE.WebGLRenderer({ antialias: true });
-  //   this.renderer.setSize(availableWidth, window.innerHeight);
-  //   this.renderer.shadowMap.enabled = true;
-  //   this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-  //   this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  //   this.renderer.toneMappingExposure = 1.2;
-  //   this.renderer.setClearColor(0x222222);
-
-  //   this.loadPreferences();
-  //   if (this.preferences && this.preferences.showFps) {
-  //     this.showStats = true;
-  //     this.initStats();
-  //   }
-
-  //   // Initialize visual effects
-  //   if (!this.visualEffects) {
-  //     this.visualEffects = new VisualEffectsManager(this);
-  //     this.visualEffects.initPostProcessing();
-  //     // this.createDemoEffects();
-  //   }
-
-  //   if (!this.dayNightCycle) {
-  //     this.initializeDayNightCycle();
-  //   }
-  //   this.createPartyButton();
-
-  //   this.addPlayerLight();
-
-  //   container.appendChild(this.renderer.domElement);
-
-  //   // Controls
-  //   this.controls = new THREE.PointerLockControls(this.camera, container);
-
-  //   // Setup key handlers
-  //   this.keyHandlers.keydown = (e) =>
-  //     (this.keys[e.key.toLowerCase()] = true);
-  //   this.keyHandlers.keyup = (e) =>
-  //     (this.keys[e.key.toLowerCase()] = false);
-
-  //   document.addEventListener("keydown", this.keyHandlers.keydown);
-  //   document.addEventListener("keyup", this.keyHandlers.keyup);
-
-  //   this.isActive = true;
-
-  //   // this.monitorActualFPS();
-  //   const prefs = this.getPreferences();
-  //   if (prefs.fpsLimit) {
-  //     console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
-  //     this.setFPSLimit(prefs.fpsLimit);
-  //   }
-  // }
-
-    initialize(container, width, height) {
+  initialize(container, width, height) {
     // Initialize core Three.js components
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x222222);
-  
+
     // Create the renderer with proper width/height
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height);
@@ -150,7 +84,7 @@ this.keyDebounceTimers = {};
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
     this.renderer.setClearColor(0x222222);
-  
+
     // Create camera with correct aspect ratio
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -159,233 +93,69 @@ this.keyDebounceTimers = {};
       1000
     );
     this.camera.position.set(0, 2, 5);
-  
+
     // Create controls
     this.controls = new THREE.PointerLockControls(this.camera, container);
-  
+
     // Add renderer to container
     container.appendChild(this.renderer.domElement);
-  
+
     // Load preferences and initialize stats if needed
     this.loadPreferences();
     if (this.preferences && this.preferences.showFps) {
       this.showStats = true;
       this.initStats();
     }
-  
+
     // Initialize visual effects
     if (!this.visualEffects) {
       this.visualEffects = new VisualEffectsManager(this);
       this.visualEffects.initPostProcessing();
     }
-  
+
     // Initialize day/night cycle if not exists
     if (!this.dayNightCycle) {
       this.initializeDayNightCycle();
     }
-  
+
     // Add player light
     this.addPlayerLight();
-  
+
     // Setup key handlers
     this.keyHandlers.keydown = (e) => (this.keys[e.key.toLowerCase()] = true);
     this.keyHandlers.keyup = (e) => (this.keys[e.key.toLowerCase()] = false);
-  
+
     document.addEventListener("keydown", this.keyHandlers.keydown);
     document.addEventListener("keyup", this.keyHandlers.keyup);
-  
+
     this.isActive = true;
-  
+
     // Apply FPS limit if set in preferences
     const prefs = this.getPreferences();
     if (prefs.fpsLimit) {
       console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
       this.setFPSLimit(prefs.fpsLimit);
     }
-  
+
     // Schedule texture updates
     [100, 500, 1000].forEach(delay => {
       setTimeout(() => this.updateTexturesColorSpace(), delay);
     });
-  
+
     return true;
   }
 
-  // cleanup() {
-  //   this.isActive = false;
 
-  //   // Cancel animation frame first
-  //   if (this.animationFrameId) {
-  //     cancelAnimationFrame(this.animationFrameId);
-  //     this.animationFrameId = null;
-  //   }
-
-  //   // Clean up teleport prompt
-  //   if (this.teleportPrompt) {
-  //     this.teleportPrompt.remove();
-  //     this.teleportPrompt = null;
-  //   }
-  //   this.activeTeleporter = null;
-
-  //   // Clean up door prompt
-  //   if (this.doorPrompt) {
-  //     this.doorPrompt.remove();
-  //     this.doorPrompt = null;
-  //   }
-  //   this.activeDoor = null;
-
-  //   // Clean up FPS monitor if active
-  //   if (this._fpsMonitor && this._fpsMonitor.parentNode) {
-  //     this._fpsMonitor.parentNode.removeChild(this._fpsMonitor);
-  //     this._fpsMonitor = null;
-  //   }
-  //   this._fpsMonitorActive = false;
-
-  //   // Reset FPS limiter
-  //   this.fpsLimit = 0;
-  //   this.fpsInterval = 0;
-  //   this.lastFrameTime = 0;
-  //   if (this._originalAnimate) {
-  //     // Restore original animate function
-  //     this.animate = this._originalAnimate;
-  //     this._originalAnimate = null;
-  //   }
-
-  //   // Clean up any UI elements
-  //   document.querySelectorAll('.time-control-button, .flashlight-button').forEach(el => {
-  //     if (el.parentNode) el.parentNode.removeChild(el);
-  //   });
-
-  //   // Clean up day/night cycle
-  //   if (this.dayNightCycle) {
-  //     this.dayNightCycle.dispose();
-  //     this.dayNightCycle = null;
-  //   }
-
-  //   // Dispose of player light
-  //   if (this.playerLight) {
-  //     if (this.camera) this.camera.remove(this.playerLight);
-  //     this.playerLight.dispose();
-  //     this.playerLight = null;
-  //   }
-
-  //   // Clean up renderer
-  //   if (this.renderer) {
-  //     this.renderer.dispose();
-
-  //     // Also explicitly dispose of renderer's internal caches
-  //     if (this.renderer.info) {
-  //       console.log('Renderer memory before cleanup:', JSON.stringify(this.renderer.info.memory));
-  //     }
-
-  //     // Force texture disposal
-  //     THREE.Cache.clear();
-
-  //     if (this.renderer.domElement && this.renderer.domElement.parentNode) {
-  //       this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
-  //     }
-  //     this.renderer = null;
-  //   }
-
-  //   // Clean up controls
-  //   if (this.controls) {
-  //     this.controls.dispose();
-  //     this.controls = null;
-  //   }
-
-  //   // Remove event listeners
-  //   if (this.keyHandlers.keydown) {
-  //     document.removeEventListener("keydown", this.keyHandlers.keydown);
-  //   }
-  //   if (this.keyHandlers.keyup) {
-  //     document.removeEventListener("keyup", this.keyHandlers.keyup);
-  //   }
-
-  //   // Clean up all scene objects
-  //   if (this.scene) {
-  //     // Log scene object count before cleanup
-  //     let objectCount = 0;
-  //     this.scene.traverse(() => objectCount++);
-  //     console.log(`Cleaning up scene with ${objectCount} objects`);
-
-  //     // Dispose of all objects with geometries and materials
-  //     this.scene.traverse((object) => {
-  //       // Skip already disposed objects
-  //       if (!object.visible && object.userData && object.userData.__disposed) return;
-
-  //       if (object.geometry) {
-  //         object.geometry.dispose();
-  //       }
-
-  //       if (object.material) {
-  //         if (Array.isArray(object.material)) {
-  //           object.material.forEach(material => this.disposeMaterial(material));
-  //         } else {
-  //           this.disposeMaterial(object.material);
-  //         }
-  //       }
-
-  //       // Mark as disposed
-  //       if (object.userData) object.userData.__disposed = true;
-  //     });
-
-  //     // Clear all objects from scene
-  //     while (this.scene.children.length > 0) {
-  //       this.scene.remove(this.scene.children[0]);
-  //     }
-
-  //     this.scene = null;
-  //   }
-
-  //   // Clean up visual effects
-  //   if (this.visualEffects) {
-  //     this.visualEffects.dispose();
-  //     this.visualEffects = null;
-  //   }
-
-  //   // Clean up stats
-  //   if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
-  //     this.stats.dom.parentNode.removeChild(this.stats.dom);
-  //     this.stats = null;
-  //   }
-
-  //   // Remove quality indicator if it exists
-  //   if (this.qualityIndicator && this.qualityIndicator.parentNode) {
-  //     this.qualityIndicator.parentNode.removeChild(this.qualityIndicator);
-  //     this.qualityIndicator = null;
-  //   }
-
-  //   // Clear arrays
-  //   this.teleporters = [];
-  //   this.doors = [];
-  //   this.markers = [];
-
-  //   // Force garbage collection hint (not guaranteed but can help)
-  //   setTimeout(() => {
-  //     // This setTimeout helps ensure the cleanup has completed
-  //     // before potentially re-initializing the scene
-  //     console.log('Cleanup completed');
-
-  //     // In modern browsers, this can help suggest garbage collection
-  //     if (window.gc) window.gc();
-  //   }, 100);
-
-  //   // Call clear to reset all properties
-  //   this.clear();
-  // }
-
-  // Helper method to dispose of materials
-  
-    cleanup() {
+  cleanup() {
     console.log('Starting Scene3D cleanup...');
     this.isActive = false;
-  
+
     // Cancel any pending animation frames first
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
-  
+
     // Clean up UI elements
     [
       'teleportPrompt',
@@ -400,12 +170,12 @@ this.keyDebounceTimers = {};
         this[element] = null;
       }
     });
-  
+
     // Remove all event listeners
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
     window.removeEventListener('resize', this.handleResize);
-  
+
     // Clean up audio
     if (this.camera) {
       const listener = this.camera.children.find(child => child instanceof THREE.AudioListener);
@@ -414,38 +184,38 @@ this.keyDebounceTimers = {};
         listener.context.close();
       }
     }
-  
+
     // Clean up physics
     if (this.physics) {
       this.physics.cleanup();
       this.physics = null;
     }
-  
+
     // Clean up visual effects
     if (this.visualEffects) {
       this.visualEffects.dispose();
       this.visualEffects = null;
     }
-  
+
     // Clean up day/night cycle
     if (this.dayNightCycle) {
       this.dayNightCycle.dispose();
       this.dayNightCycle = null;
     }
-  
+
     // Clean up stats
     if (this.stats && this.stats.dom && this.stats.dom.parentNode) {
       this.stats.dom.parentNode.removeChild(this.stats.dom);
       this.stats = null;
     }
-  
+
     // Clean up controls
     if (this.controls) {
       this.controls.disconnect();
       this.controls.dispose();
       this.controls = null;
     }
-  
+
     // Clean up renderer
     if (this.renderer) {
       this.renderer.dispose();
@@ -454,7 +224,7 @@ this.keyDebounceTimers = {};
       }
       this.renderer = null;
     }
-  
+
     // Clean up scene
     if (this.scene) {
       this.scene.traverse((object) => {
@@ -472,29 +242,29 @@ this.keyDebounceTimers = {};
       this.scene = null;
     }
 
-  
+
     // Clear arrays and maps
     this.teleporters = [];
     this.doors = [];
     this.markers = [];
     this.inventory = new Map();
-  
+
     // Force texture cleanup
     THREE.Cache.clear();
 
     this.cleanupMiniMap();
-  
+
     // Suggest garbage collection
     setTimeout(() => {
       console.log('Cleanup completed');
       if (window.gc) window.gc();
     }, 100);
-  
+
     // Clear all remaining properties
     this.clear();
     console.log('Scene3D cleanup finished');
   }
-  
+
   disposeMaterial(material) {
     if (!material) return;
 
@@ -552,48 +322,6 @@ this.keyDebounceTimers = {};
 
     return null;
   }
-
-  // addDebugControls() {
-  //   const debugPanel = document.createElement('div');
-  //   debugPanel.style.cssText = `
-  //     position: fixed;
-  //     top: 10px;
-  //     right: 10px;
-  //     background: rgba(0, 0, 0, 0.7);
-  //     color: white;
-  //     padding: 5px;
-  //     border-radius: 4px;
-  //     z-index: 10000;
-  //     display: flex;
-  //     flex-direction: column;
-  //     gap: 5px;
-  //   `;
-
-  //   const forceCleanupBtn = document.createElement('button');
-  //   forceCleanupBtn.textContent = 'Force Cleanup';
-  //   forceCleanupBtn.style.cssText = `
-  //     padding: 5px 10px;
-  //     cursor: pointer;
-  //   `;
-
-  //   forceCleanupBtn.addEventListener('click', () => {
-  //     console.log('Performing force cleanup...');
-
-  //     // Force texture cleanup
-  //     THREE.Cache.clear();
-
-  //     // Suggest garbage collection
-  //     if (window.gc) window.gc();
-
-  //     // Log memory if available
-  //     if (window.performance && window.performance.memory) {
-  //       console.log('Memory after cleanup:', window.performance.memory);
-  //     }
-  //   });
-
-  //   debugPanel.appendChild(forceCleanupBtn);
-  //   document.body.appendChild(debugPanel);
-  // }
 
   safeUpdateTexture(texture, source = 'unknown') {
     if (!texture) {
@@ -1327,55 +1055,42 @@ this.keyDebounceTimers = {};
           this.addPlayerLight(!this.playerLight);
         }
         break;
-// Fixed KeyP handler with proper debounce
-case "KeyP": // P to show Party Manager
-  if (window.partyManager) {
-    const nowP = Date.now();
-    
-    // Use nowP in the condition, not nowL which is undefined
-    if (!event.repeat && (!this.lastKeyPresses.p || nowP - this.lastKeyPresses.p > 500)) {
-      // Update the lastKeyPresses.p, not lastKeyPresses.h
-      this.lastKeyPresses.p = nowP;
-      
-      console.log("Opening Party Manager");
-      
-      // Pause 3D controls while party manager is open
-      this.pauseControls();
-      
-      // Show party manager
-      window.partyManager.showPartyManager();
-      
-      // Resume controls when party manager closes
-      const checkForDialog = setInterval(() => {
-        const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
-        if (!dialog) {
-          this.resumeControls();
-          clearInterval(checkForDialog);
+      // Fixed KeyP handler with proper debounce
+      case "KeyP": // P to show Party Manager
+        if (window.partyManager) {
+          const nowP = Date.now();
+
+          // Use nowP in the condition, not nowL which is undefined
+          if (!event.repeat && (!this.lastKeyPresses.p || nowP - this.lastKeyPresses.p > 500)) {
+            // Update the lastKeyPresses.p, not lastKeyPresses.h
+            this.lastKeyPresses.p = nowP;
+
+            console.log("Opening Party Manager");
+
+            // Pause 3D controls while party manager is open
+            this.pauseControls();
+
+            // Show party manager
+            window.partyManager.showPartyManager();
+
+            // Resume controls when party manager closes
+            const checkForDialog = setInterval(() => {
+              const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+              if (!dialog) {
+                this.resumeControls();
+                clearInterval(checkForDialog);
+              }
+            }, 100);
+          } else {
+            console.log("Party Manager key debounced");
+          }
+        } else {
+          console.warn('Party Manager not available');
         }
-      }, 100);
-    } else {
-      console.log("Party Manager key debounced");
-    }
-  } else {
-    console.warn('Party Manager not available');
-  }
-  break;
-      // case "KeyH": // H for Toggle lighting
-      //   // Debounce key press (500ms cooldown)
-      //   const now = Date.now();
-      //   if (!event.repeat && (!this.lastKeyPresses.h || now - this.lastKeyPresses.h > 500)) {
-      //     this.lastKeyPresses.h = now;
-      //     this.setLightingEnabled(!this.lightingEnabled);
-      //     this.showNotification(`Advanced lighting ${this.lightingEnabled ? 'enabled' : 'disabled'}`);
-      //   }
-      //   break;
+        break;
+
       case "Backquote": // ` for FPS counter
-        // const nowG = Date.now();
-        // if (!event.repeat && (!this.lastKeyPresses.h || nowG - this.lastKeyPresses.h > 500)) {
-        //   this.lastKeyPresses.h = nowG;
-        //   this.showPreferencesDialog(); // this.showPreferencesDialog();
-        // }
-        // break;
+
         if (!event.repeat &&
           !(document.activeElement instanceof HTMLInputElement) &&
           !(document.activeElement instanceof HTMLTextAreaElement)) {
@@ -3277,29 +2992,29 @@ case "KeyP": // P to show Party Manager
 
   getInventoryItems() {
     console.log('Scene3DController.getInventoryItems called');
-    
+
     // Convert inventory Map to an array of usable items
     const items = [];
-    
+
     if (!this.inventory || !(this.inventory instanceof Map)) {
       console.warn('Scene3DController: Invalid inventory structure');
       return items;
     }
-    
+
     // Debug output
     console.log(`Processing ${this.inventory.size} inventory items`);
-    
+
     this.inventory.forEach((item, id) => {
       const prop = item.prop;
       if (!prop) {
         console.warn('Item missing prop data:', id);
         return;
       }
-      
+
       // Determine if this is equipment and what type
       let equipmentType = null;
       if (prop.name && (
-        prop.name.toLowerCase().includes('sword') || 
+        prop.name.toLowerCase().includes('sword') ||
         prop.name.toLowerCase().includes('axe') ||
         prop.name.toLowerCase().includes('dagger') ||
         prop.name.toLowerCase().includes('staff') ||
@@ -3308,9 +3023,9 @@ case "KeyP": // P to show Party Manager
         prop.name.toLowerCase().includes('mace')
       )) {
         equipmentType = 'weapon';
-      } 
+      }
       else if (prop.name && (
-        prop.name.toLowerCase().includes('armor') || 
+        prop.name.toLowerCase().includes('armor') ||
         prop.name.toLowerCase().includes('shield') ||
         prop.name.toLowerCase().includes('helmet') ||
         prop.name.toLowerCase().includes('robe') ||
@@ -3318,7 +3033,7 @@ case "KeyP": // P to show Party Manager
       )) {
         equipmentType = 'armor';
       }
-      
+
       // Only include items identified as equipment
       if (equipmentType) {
         // Make sure to use the original ID that's in the inventory Map
@@ -3333,26 +3048,26 @@ case "KeyP": // P to show Party Manager
           acBonus: equipmentType === 'armor' ? Math.ceil(Math.random() * 3) : 0,
           source: '3d-inventory'
         };
-        
+
         // Log the item we're adding
         console.log(`Adding inventory item to equipment: ${equipItem.name} with ID ${equipItem.id}`);
         items.push(equipItem);
       }
     });
-    
+
     console.log(`Prepared ${items.length} equipment items from 3D inventory`);
     return items;
   }
 
   logInventoryItems() {
     console.group('Scene3D Inventory Contents');
-    
+
     if (!this.inventory) {
       console.log('No inventory found');
       console.groupEnd();
       return;
     }
-    
+
     if (this.inventory instanceof Map) {
       console.log(`Inventory has ${this.inventory.size} items`);
       this.inventory.forEach((item, id) => {
@@ -3361,7 +3076,7 @@ case "KeyP": // P to show Party Manager
     } else {
       console.log('Inventory is not a Map:', this.inventory);
     }
-    
+
     console.groupEnd();
   }
 
@@ -3523,24 +3238,24 @@ case "KeyP": // P to show Party Manager
 
   removeFromInventory(itemId) {
     console.log('Scene3DController.removeFromInventory called for item:', itemId);
-    
+
     if (!this.inventory.has(itemId)) {
       console.warn('Item not found in inventory:', itemId);
       return false;
     }
-    
+
     // Get the item before removing it
     const item = this.inventory.get(itemId);
-    
+
     // Remove from DOM if element exists
     if (item.element && item.element.parentNode) {
       item.element.parentNode.removeChild(item.element);
     }
-    
+
     // Remove from inventory Map
     const result = this.inventory.delete(itemId);
     console.log(`Removed item ${itemId} from 3D inventory:`, result);
-    
+
     // If inventory drawer is open, update the empty message
     if (this.inventoryDrawer && this.isInventoryShowing) {
       const grid = this.inventoryDrawer.querySelector('.inventory-grid');
@@ -3551,7 +3266,7 @@ case "KeyP": // P to show Party Manager
         }
       }
     }
-    
+
     return true;
   }
 
@@ -3622,289 +3337,121 @@ case "KeyP": // P to show Party Manager
     this.showNotification(`Used ${item.prop.name || 'Item'}`);
   }
 
-  // showItemDetails(prop) {
-  //   console.log('Showing details for item:', prop);
 
-  //   // Create modal dialog for item details
-  //   const dialog = document.createElement('sl-dialog');
-  //   dialog.label = prop.name || 'Item Details';
-  //   dialog.style.setProperty('--sl-z-index-dialog', '4000');
+  showItemDetails(prop) {
+    console.log('Showing details for item:', prop);
 
-  //   const content = document.createElement('div');
-  //   content.style.cssText = `
-  //   display: flex;
-  //   flex-direction: column;
-  //   align-items: center;
-  //   padding: 16px;
-  // `;
+    // Create modal dialog for item details
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = prop.name || 'Item Details';
+    dialog.style.setProperty('--sl-z-index-dialog', '4000');
 
-  //   // Add image if available
-  //   if (prop.image) {
-  //     const img = document.createElement('img');
-  //     img.src = prop.image;
-  //     img.style.cssText = `
-  //     max-width: 200px;
-  //     max-height: 200px;
-  //     object-fit: contain;
-  //     margin-bottom: 16px;
-  //     border-radius: 8px;
-  //   `;
-  //     content.appendChild(img);
-  //   }
-
-  //   // Add description
-  //   const description = document.createElement('p');
-  //   description.textContent = prop.description || 'No description available.';
-  //   description.style.cssText = `
-  //   text-align: center;
-  //   margin-bottom: 16px;
-  //   line-height: 1.5;
-  // `;
-  //   content.appendChild(description);
-
-  //   // Add actions
-  //   const actions = document.createElement('div');
-  //   actions.style.cssText = `
-  //   display: flex;
-  //   gap: 8px;
-  //   justify-content: center;
-  //   flex-wrap: wrap;
-  // `;
-
-  //   // Use item button (regular)
-  //   const useButton = document.createElement('sl-button');
-  //   useButton.setAttribute('variant', 'primary');
-  //   useButton.textContent = 'Use Item';
-  //   useButton.addEventListener('click', () => {
-  //     dialog.hide();
-  //     this.useInventoryItem(prop.id);
-  //   });
-  //   actions.appendChild(useButton);
-
-  //   // Drop vertically
-  //   const dropButton = document.createElement('sl-button');
-  //   dropButton.setAttribute('variant', 'neutral');
-  //   dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
-  //   dropButton.addEventListener('click', () => {
-  //     dialog.hide();
-  //     this.dropInventoryItem(prop.id, 'vertical');
-  //   });
-  //   actions.appendChild(dropButton);
-
-  //   // Drop horizontally 
-  //   const dropHorizontalButton = document.createElement('sl-button');
-  //   dropHorizontalButton.setAttribute('variant', 'neutral');
-  //   dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
-  //   dropHorizontalButton.addEventListener('click', () => {
-  //     dialog.hide();
-  //     this.dropInventoryItem(prop.id, 'horizontal');
-  //   });
-  //   actions.appendChild(dropHorizontalButton);
-
-  //   // Place on wall (only show if wall is detected)
-  //   const wallInfo = this.checkWallInFront();
-  //   if (wallInfo.hit) {
-  //     const placeWallButton = document.createElement('sl-button');
-  //     placeWallButton.setAttribute('variant', 'neutral');
-  //     placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
-  //     placeWallButton.addEventListener('click', () => {
-  //       dialog.hide();
-  //       this.placeItemOnWall(prop.id, wallInfo);
-  //     });
-  //     actions.appendChild(placeWallButton);
-  //   }
-
-  //   content.appendChild(actions);
-  //   dialog.appendChild(content);
-
-  //   // Add to document and show
-  //   document.body.appendChild(dialog);
-  //   dialog.show();
-
-  //   }
-
-// Add this to Scene3DController's showItemDetails method to improve connection
-// This replaces or adds to the existing method
-
-showItemDetails(prop) {
-  console.log('Showing details for item:', prop);
-
-  // Create modal dialog for item details
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = prop.name || 'Item Details';
-  dialog.style.setProperty('--sl-z-index-dialog', '4000');
-
-  const content = document.createElement('div');
-  content.style.cssText = `
+    const content = document.createElement('div');
+    content.style.cssText = `
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 16px;
   `;
 
-  // Add image if available
-  if (prop.image) {
-    const img = document.createElement('img');
-    img.src = prop.image;
-    img.style.cssText = `
+    // Add image if available
+    if (prop.image) {
+      const img = document.createElement('img');
+      img.src = prop.image;
+      img.style.cssText = `
       max-width: 200px;
       max-height: 200px;
       object-fit: contain;
       margin-bottom: 16px;
       border-radius: 8px;
     `;
-    content.appendChild(img);
-  }
+      content.appendChild(img);
+    }
 
-  // Add description
-  const description = document.createElement('p');
-  description.textContent = prop.description || 'No description available.';
-  description.style.cssText = `
+    // Add description
+    const description = document.createElement('p');
+    description.textContent = prop.description || 'No description available.';
+    description.style.cssText = `
     text-align: center;
     margin-bottom: 16px;
     line-height: 1.5;
   `;
-  content.appendChild(description);
+    content.appendChild(description);
 
-  // Equipment detection - determine if this is equipment
-  const isWeapon = prop.name.toLowerCase().includes('sword') || 
-                 prop.name.toLowerCase().includes('axe') ||
-                 prop.name.toLowerCase().includes('dagger') ||
-                 prop.name.toLowerCase().includes('staff') ||
-                 prop.name.toLowerCase().includes('wand') ||
-                 prop.name.toLowerCase().includes('bow') ||
-                 prop.name.toLowerCase().includes('mace');
-                 
-  const isArmor = prop.name.toLowerCase().includes('armor') || 
-                prop.name.toLowerCase().includes('shield') ||
-                prop.name.toLowerCase().includes('helmet') ||
-                prop.name.toLowerCase().includes('robe') ||
-                prop.name.toLowerCase().includes('mail');
+    // Equipment detection - determine if this is equipment
+    const isWeapon = prop.name.toLowerCase().includes('sword') ||
+      prop.name.toLowerCase().includes('axe') ||
+      prop.name.toLowerCase().includes('dagger') ||
+      prop.name.toLowerCase().includes('staff') ||
+      prop.name.toLowerCase().includes('wand') ||
+      prop.name.toLowerCase().includes('bow') ||
+      prop.name.toLowerCase().includes('mace');
 
-  // If it's equipment, add "Equip to Party" button
-  // if (isWeapon || isArmor) {
-  //   const equipToPartyBtn = document.createElement('sl-button');
-  //   equipToPartyBtn.setAttribute('variant', 'primary');
-  //   equipToPartyBtn.innerHTML = '<span class="material-icons">people</span> Equip to Party Member';
-  //   equipToPartyBtn.style.marginBottom = '12px';
-    
-  //   equipToPartyBtn.addEventListener('click', () => {
-  //     dialog.hide();
-      
-  //     // Make sure we have PartyManager
-  //     if (window.partyManager) {
-  //       // Pause controls while PartyManager is open
-  //       this.pauseControls();
-        
-  //       // First, prepare the item for PartyManager
-  //       const itemForParty = {
-  //         id: prop.id || `item-${Date.now()}`,
-  //         name: prop.name,
-  //         type: isWeapon ? 'weapon' : 'armor',
-  //         image: prop.image,
-  //         // Add appropriate bonus based on item type
-  //         damageBonus: isWeapon ? Math.ceil(Math.random() * 3) : 0,
-  //         acBonus: isArmor ? Math.ceil(Math.random() * 3) : 0,
-  //         source: '3d-inventory'  // Mark source to identify where it came from
-  //       };
-        
-  //       console.log('Prepared item for PartyManager:', itemForParty);
-        
-  //       // Store this item so it can be accessed by PartyManager's equipItem method
-  //       if (!this._itemsForParty) {
-  //         this._itemsForParty = new Map();
-  //       }
-  //       this._itemsForParty.set(itemForParty.id, itemForParty);
-        
-  //       // Show PartyManager
-  //       window.partyManager.showPartyManager();
-        
-  //       // Wait a bit for PartyManager to initialize
-  //       setTimeout(() => {
-  //         // Let PartyManager know an item is waiting to be equipped
-  //         if (window.partyManager.notifyItemReadyToEquip) {
-  //           window.partyManager.notifyItemReadyToEquip(itemForParty);
-  //         } else {
-  //           console.warn('PartyManager does not have notifyItemReadyToEquip method');
-  //         }
-  //       }, 300);
-        
-  //       // Monitor for dialog close to restore controls
-  //       const checkForDialog = setInterval(() => {
-  //         const dialog = document.querySelector('.party-overlay');
-  //         if (!dialog) {
-  //           this.resumeControls();
-  //           clearInterval(checkForDialog);
-  //         }
-  //       }, 100);
-  //     } else {
-  //       console.warn('PartyManager not available');
-  //       this.showNotification('Party Manager not available', 'error');
-  //     }
-  //   });
-    
-  //   content.appendChild(equipToPartyBtn);
-  // }
+    const isArmor = prop.name.toLowerCase().includes('armor') ||
+      prop.name.toLowerCase().includes('shield') ||
+      prop.name.toLowerCase().includes('helmet') ||
+      prop.name.toLowerCase().includes('robe') ||
+      prop.name.toLowerCase().includes('mail');
 
-  // Add normal actions
-  const actions = document.createElement('div');
-  actions.style.cssText = `
+
+    const actions = document.createElement('div');
+    actions.style.cssText = `
     display: flex;
     gap: 8px;
     justify-content: center;
     flex-wrap: wrap;
   `;
 
-  // Use item button (regular)
-  const useButton = document.createElement('sl-button');
-  useButton.setAttribute('variant', 'primary');
-  useButton.textContent = 'Use Item';
-  useButton.addEventListener('click', () => {
-    dialog.hide();
-    this.useInventoryItem(prop.id);
-  });
-  actions.appendChild(useButton);
-
-  // Drop vertically
-  const dropButton = document.createElement('sl-button');
-  dropButton.setAttribute('variant', 'neutral');
-  dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
-  dropButton.addEventListener('click', () => {
-    dialog.hide();
-    this.dropInventoryItem(prop.id, 'vertical');
-  });
-  actions.appendChild(dropButton);
-
-  // Drop horizontally 
-  const dropHorizontalButton = document.createElement('sl-button');
-  dropHorizontalButton.setAttribute('variant', 'neutral');
-  dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
-  dropHorizontalButton.addEventListener('click', () => {
-    dialog.hide();
-    this.dropInventoryItem(prop.id, 'horizontal');
-  });
-  actions.appendChild(dropHorizontalButton);
-
-  // Place on wall (only show if wall is detected)
-  const wallInfo = this.checkWallInFront();
-  if (wallInfo.hit) {
-    const placeWallButton = document.createElement('sl-button');
-    placeWallButton.setAttribute('variant', 'neutral');
-    placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
-    placeWallButton.addEventListener('click', () => {
+    // Use item button (regular)
+    const useButton = document.createElement('sl-button');
+    useButton.setAttribute('variant', 'primary');
+    useButton.textContent = 'Use Item';
+    useButton.addEventListener('click', () => {
       dialog.hide();
-      this.placeItemOnWall(prop.id, wallInfo);
+      this.useInventoryItem(prop.id);
     });
-    actions.appendChild(placeWallButton);
+    actions.appendChild(useButton);
+
+    // Drop vertically
+    const dropButton = document.createElement('sl-button');
+    dropButton.setAttribute('variant', 'neutral');
+    dropButton.innerHTML = '<span class="material-icons">vertical_align_bottom</span> Drop';
+    dropButton.addEventListener('click', () => {
+      dialog.hide();
+      this.dropInventoryItem(prop.id, 'vertical');
+    });
+    actions.appendChild(dropButton);
+
+    // Drop horizontally 
+    const dropHorizontalButton = document.createElement('sl-button');
+    dropHorizontalButton.setAttribute('variant', 'neutral');
+    dropHorizontalButton.innerHTML = '<span class="material-icons">horizontal_rule</span> Lay Flat';
+    dropHorizontalButton.addEventListener('click', () => {
+      dialog.hide();
+      this.dropInventoryItem(prop.id, 'horizontal');
+    });
+    actions.appendChild(dropHorizontalButton);
+
+    // Place on wall (only show if wall is detected)
+    const wallInfo = this.checkWallInFront();
+    if (wallInfo.hit) {
+      const placeWallButton = document.createElement('sl-button');
+      placeWallButton.setAttribute('variant', 'neutral');
+      placeWallButton.innerHTML = '<span class="material-icons">push_pin</span> Hang on Wall';
+      placeWallButton.addEventListener('click', () => {
+        dialog.hide();
+        this.placeItemOnWall(prop.id, wallInfo);
+      });
+      actions.appendChild(placeWallButton);
+    }
+
+    content.appendChild(actions);
+    dialog.appendChild(content);
+
+    // Add to document and show
+    document.body.appendChild(dialog);
+    dialog.show();
   }
-
-  content.appendChild(actions);
-  dialog.appendChild(content);
-
-  // Add to document and show
-  document.body.appendChild(dialog);
-  dialog.show();
-}
 
   placeItemOnWall(itemId, wallInfo) {
     if (!this.inventory.has(itemId) || !wallInfo.hit) {
@@ -4281,52 +3828,6 @@ showItemDetails(prop) {
     };
   }
 
-// _createFPSLimitedAnimate() {
-//   // Store references
-//   const originalAnimate = this._originalAnimate;
-//   const self = this;
-
-//   return function limitedAnimateWrapper() {
-//     const now = performance.now();
-
-//     // Initialize lastFrameTime if needed
-//     if (!self.lastFrameTime) {
-//       self.lastFrameTime = now;
-//     }
-
-//     const elapsed = now - self.lastFrameTime;
-
-//     // Calculate FPS for speed adjustment
-//     const currentFPS = 1000 / elapsed;
-    
-//     // Calculate speed multiplier based on FPS
-//     // At 30 FPS, multiplier is 1.0
-//     // At 15 FPS, multiplier is 2.0
-//     // Cap at 2.0 to prevent extreme speeds
-//     const speedMultiplier = Math.min(30 / Math.max(currentFPS, 15), 2.0);
-    
-//     // Apply speed multiplier to movement
-//     const currentSpeed = self.moveState.speed * speedMultiplier;
-
-//     // Handle movement with adjusted speed
-//     if (self.moveState.forward) self.controls.moveForward(currentSpeed);
-//     if (self.moveState.backward) self.controls.moveForward(-currentSpeed);
-//     if (self.moveState.left) self.controls.moveRight(-currentSpeed);
-//     if (self.moveState.right) self.controls.moveRight(currentSpeed);
-
-//     // If enough time has elapsed, run the animation
-//     if (elapsed >= self.fpsInterval) {
-//       // Adjust lastFrameTime, accounting for any excess time
-//       self.lastFrameTime = now - (elapsed % self.fpsInterval);
-
-//       // Call the original animation function for rendering
-//       originalAnimate.call(self);
-//     }
-
-//     // Always schedule next frame
-//     self.animationFrameId = requestAnimationFrame(self.animate);
-//   };
-// }
 
   monitorActualFPS() {
     console.log('monitorActualFPS called');
@@ -4385,29 +3886,6 @@ showItemDetails(prop) {
     };
   }
 
-  // handleEncounter(marker) {
-  //   // Hide the prompt
-  //   if (this.encounterPrompt) {
-  //     this.encounterPrompt.style.display = 'none';
-  //   }
-    
-  //   console.log('Handling encounter:', marker);
-    
-  //   // Check if we have monster data
-  //   if (marker.userData && marker.userData.monster) {
-  //     console.log('Monster data found:', marker.userData.monster);
-      
-  //     // If we have a party manager, show recruitment dialog
-  //     if (window.partyManager) {
-  //       console.log('Showing recruitment dialog');
-  //       window.partyManager.showRecruitmentDialog(marker.userData.monster);
-  //     } else {
-  //       console.warn('Party manager not found, cannot handle encounter');
-  //     }
-  //   } else {
-  //     console.warn('No monster data found for encounter marker:', marker);
-  //   }
-  // }
 
   handleEncounter(marker) {
     // Prevent multiple encounters
@@ -4417,16 +3895,16 @@ showItemDetails(prop) {
     if (this.encounterPrompt) {
       this.encounterPrompt.style.display = 'none';
     }
-    
+
     console.log('Handling encounter:', marker);
-    
+
     // Set active encounter
     this.activeEncounter = marker;
-    
+
     // Check if we have monster data
     if (marker.userData && marker.userData.monster) {
       console.log('Monster data found:', marker.userData.monster);
-      
+
       // If we have a party manager, show recruitment dialog
       if (window.partyManager) {
 
@@ -4609,59 +4087,33 @@ showItemDetails(prop) {
       this.nearestProp = null;
     }
 
-// // Find nearest encounter marker
+    // // Find nearest encounter marker
+    let nearestEncounter = null;
+    let minEncounterDist = 3; // Detection range
 
-// let nearestEncounter = null;
-// let minEncounterDist = 3; // Detection range
-
-// // Loop through scene objects to find encounter markers
-// this.scene.children.forEach(object => {
-//   if (object.userData && object.userData.type === 'encounter') {
-//     const dist = playerPosition.distanceTo(object.position);
-//     if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
-//       nearestEncounter = object;
-//       minEncounterDist = dist;
-//     }
-//   }
-// });
-
-// // Show or hide encounter prompt
-// if (nearestEncounter && !this.activeSplashArt) {
-//   const prompt = this.createEncounterPrompt();
-//   prompt.textContent = 'Press E to approach monster';
-//   prompt.style.display = 'block';
-//   this.nearestEncounter = nearestEncounter;
-// } else if (!nearestEncounter && this.encounterPrompt) {
-//   this.encounterPrompt.style.display = 'none';
-//   this.nearestEncounter = null;
-// }
-
-let nearestEncounter = null;
-let minEncounterDist = 3; // Detection range
-
-// Only check for encounters if we're not in cooldown and don't have an active encounter
-if (!this.encounterCooldown && !this.activeEncounter) {
-  // Loop through scene objects to find encounter markers
-  this.scene.children.forEach(object => {
-    if (object.userData && object.userData.type === 'encounter') {
-      const dist = playerPosition.distanceTo(object.position);
-      if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
-        nearestEncounter = object;
-      }
+    // Only check for encounters if we're not in cooldown and don't have an active encounter
+    if (!this.encounterCooldown && !this.activeEncounter) {
+      // Loop through scene objects to find encounter markers
+      this.scene.children.forEach(object => {
+        if (object.userData && object.userData.type === 'encounter') {
+          const dist = playerPosition.distanceTo(object.position);
+          if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
+            nearestEncounter = object;
+          }
+        }
+      });
     }
-  });
-}
 
-// Show or hide encounter prompt
-if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
-  const prompt = this.createEncounterPrompt();
-  prompt.textContent = 'Press E to approach monster';
-  prompt.style.display = 'block';
-  this.nearestEncounter = nearestEncounter;
-} else if (!nearestEncounter && this.encounterPrompt) {
-  this.encounterPrompt.style.display = 'none';
-  this.nearestEncounter = null;
-}
+    // Show or hide encounter prompt
+    if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
+      const prompt = this.createEncounterPrompt();
+      prompt.textContent = 'Press E to approach monster';
+      prompt.style.display = 'block';
+      this.nearestEncounter = nearestEncounter;
+    } else if (!nearestEncounter && this.encounterPrompt) {
+      this.encounterPrompt.style.display = 'none';
+      this.nearestEncounter = null;
+    }
 
 
     // Update physics and camera height
@@ -4816,251 +4268,25 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
     }
   }
 
-  // async show3DView() {
 
-  //     // Create Scene3DController if it doesn't exist
-  // if (!this.scene3D) {
-  //   this.scene3D = new Scene3DController();
-  // }
-
-  //   const { drawer, container, progress } = this.setupDrawer();
-
-  //   progress.style.display = "block";
-  //   progress.value = 0;
-
-  //   const updateStatus = (percent) => {
-  //     progress.value = percent;
-  //     progress.innerHTML = `Processing... ${Math.round(percent)}%`;
-  //   };
-
-
-  //   const hasUrlTokens = this.markers.some(marker =>
-  //     marker.type === "encounter" &&
-  //     marker.data?.monster?.token?.url &&
-  //     !marker.data.monster.token.data?.startsWith('data:')
-  //   );
-
-  //   if (hasUrlTokens) {
-  //     // Show warning toast before proceeding
-  //     const toast = document.createElement('div');
-  //     toast.className = 'token-warning-toast';
-  //     toast.style.cssText = `
-  //         position: fixed;
-  //         top: 20px;
-  //         left: 50%;
-  //         transform: translateX(-50%);
-  //         background: rgba(244, 67, 54, 0.9);
-  //         color: white;
-  //         padding: 16px;
-  //         border-radius: 4px;
-  //         z-index: 10000;
-  //         max-width: 400px;
-  //         text-align: center;
-  //     `;
-
-  //     toast.innerHTML = `
-  //         <span class="material-icons" style="font-size: 24px; display: block; margin: 0 auto 8px auto;">warning</span>
-  //         <div>
-  //             <div style="font-weight: bold; margin-bottom: 8px;">3D Token Warning</div>
-  //             <div>Some monsters use URL-based tokens which won't display correctly in 3D view.</div>
-  //             <div style="margin-top: 8px;">Please update monsters in the Resource Manager first.</div>
-  //         </div>
-  //     `;
-
-  //     document.body.appendChild(toast);
-
-  //     // Auto-remove after showing for a bit
-  //     setTimeout(() => toast.remove(), 5000);
-  //   }
-
-  //   try {
-  //     drawer.show();
-
-  //     // Initialize core Three.js components
-  //     this.scene = new THREE.Scene();
-  //     this.scene.background = new THREE.Color(0x222222);
-
-  //     // Calculate dimensions
-  //     const sidebar = document.querySelector(".sidebar");
-  //     const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
-  //     const availableWidth = window.innerWidth - sidebarWidth;
-
-
-  //     // Create the renderer
-  //     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-  //     this.renderer.setSize(availableWidth, window.innerHeight);
-  //     this.renderer.shadowMap.enabled = true;
-  //     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-  //     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  //     this.renderer.toneMappingExposure = 1.2;
-  //     this.renderer.setClearColor(0x222222);
-
-  //     this.loadPreferences();
-  //     if (this.preferences && this.preferences.showFps) {
-  //       this.showStats = true;
-  //       this.initStats();
-  //     }
-
-  //     // Initialize visual effects
-  //     if (!this.visualEffects) {
-  //       this.visualEffects = new VisualEffectsManager(this);
-  //       this.visualEffects.initPostProcessing();
-  //       // this.createDemoEffects();
-  //     }
-
-
-
-  //     // Create camera
-  //     this.camera = new THREE.PerspectiveCamera(
-  //       75,
-  //       availableWidth / window.innerHeight,
-  //       0.1,
-  //       1000
-  //     );
-  //     this.camera.position.set(0, 2, 5);
-
-  //     // Create controls
-  //     this.controls = new THREE.PointerLockControls(this.camera, this.renderer.domElement);
-
-  //     // Add renderer to container
-  //     container.appendChild(this.renderer.domElement);
-
-
-
-  //     const { cleanup } = this.init3DScene(updateStatus);
-
-  //     // Initialize scene with components
-  //     // const { animate, controls, cleanup } = this.init3DScene(updateStatus);
-  //     const { animate, controls } = this.init3DScene(updateStatus);
-
-  //     // Initialize stats (but keep hidden by default)
-  //     this.showStats = false;
-  //     this.initStats();
-
-  //     [100, 500, 1000].forEach(delay => {
-  //       setTimeout(() => this.updateTexturesColorSpace(), delay);
-  //     });
-
-  //     // global error catch debuggin 
-  //     // const originalSet = Object.getOwnPropertyDescriptor(THREE.Texture.prototype, 'needsUpdate').set;
-
-  //     // Object.defineProperty(THREE.Texture.prototype, 'needsUpdate', {
-  //     //   set: function(value) {
-  //     //     if (value === true) {
-  //     //       const hasData = this.image && (this.image.width > 0 || this.image instanceof HTMLCanvasElement);
-  //     //       if (!hasData) {
-  //     //         console.warn('Texture marked for update but no image data found', new Error().stack);
-  //     //       }
-  //     //     }
-  //     //     originalSet.call(this, value);
-  //     //   }
-  //     // });
-
-  //     // Instructions overlay
-  //     const instructions = document.createElement("div");
-  //     instructions.style.cssText = `
-  //           position: absolute;
-  //           top: 50%;
-  //           left: 50%;
-  //           transform: translate(-50%, -50%);
-  //           background: rgba(0, 0, 0, 0.7);
-  //           color: white;
-  //           padding: 20px;
-  //           width: 75vw;
-  //           border-radius: 5px;
-  //           text-align: center;
-  //           pointer-events: none;
-  //       `;
-  //     instructions.innerHTML = `
-  //           Click to Start<br>
-  //           WASD or Arrow Keys to move<br>
-  //           Hold Shift or Right Mouse Button to sprint<br>
-  //           ~ to open Config<br>
-  //           | for inventory<br>
-  //           E as the Action key<br>
-  //           P for FPS stats<br>
-  //           ESC to exit
-  //       `;
-  //     container.appendChild(instructions);
-
-  //     this.createPartyButton();
-
-  //     // Controls event listeners
-  //     this.controls.addEventListener("lock", () => {
-  //       instructions.style.display = "none";
-  //     });
-
-  //     this.controls.addEventListener("unlock", () => {
-  //       instructions.style.display = "block";
-  //     });
-
-  //     this.updateInsideWallRoomState()
-
-  //     // Animation loop
-  //     let animationFrameId;
-  //     const animationLoop = () => {
-  //       if (drawer.open) {
-  //         animationFrameId = requestAnimationFrame(animationLoop);
-  //         this.animate();
-  //       }
-  //     };
-  //     animationLoop();
-
-  //     // Window resize handler
-  //     const handleResize = () => {
-  //       const sidebar = document.querySelector(".sidebar");
-  //       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
-  //       const availableWidth = window.innerWidth - sidebarWidth;
-
-  //       this.renderer.setSize(availableWidth, window.innerHeight);
-  //       this.camera.aspect = availableWidth / window.innerHeight;
-  //       this.camera.updateProjectionMatrix();
-  //     };
-
-  //     window.addEventListener('resize', handleResize);
-
-  //     // Cleanup on drawer close
-  //     drawer.addEventListener("sl-after-hide", () => {
-  //       cancelAnimationFrame(animationFrameId);
-  //       window.removeEventListener('resize', handleResize);
-  //       this.cleanup();
-  //       container.innerHTML = "";
-  //     }, { once: true });
-
-  //   } catch (error) {
-  //     console.error("Error creating 3D view:", error);
-  //     container.innerHTML = `
-  //           <div style="color: red; padding: 20px;">
-  //               Error creating 3D view: ${error.message}
-  //           </div>
-  //       `;
-  //   } finally {
-  //     progress.style.display = "none";
-  //   }
-  // }
-
-    async show3DView() {
-        // Expose this instance to the global scope for other systems to access
-  // window.scene3D = this;
-  // console.log('Set window.scene3D reference:', window.scene3D);
-  
+  async show3DView() {
     const { drawer, container, progress } = this.setupDrawer();
-  
+
     progress.style.display = "block";
     progress.value = 0;
-  
+
     const updateStatus = (percent) => {
       progress.value = percent;
       progress.innerHTML = `Processing... ${Math.round(percent)}%`;
     };
-  
+
     // Check for URL-based tokens
     const hasUrlTokens = this.markers.some(marker =>
       marker.type === "encounter" &&
       marker.data?.monster?.token?.url &&
       !marker.data.monster.token.data?.startsWith('data:')
     );
-  
+
     if (hasUrlTokens) {
       // Show warning toast
       const toast = document.createElement('div');
@@ -5078,7 +4304,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         max-width: 400px;
         text-align: center;
       `;
-  
+
       toast.innerHTML = `
         <span class="material-icons" style="font-size: 24px; display: block; margin: 0 auto 8px auto;">warning</span>
         <div>
@@ -5087,22 +4313,22 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
           <div style="margin-top: 8px;">Please update monsters in the Resource Manager first.</div>
         </div>
       `;
-  
+
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 5000);
     }
-  
+
     try {
       drawer.show();
-  
+
       // Calculate dimensions
       const sidebar = document.querySelector(".sidebar");
       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
       const availableWidth = window.innerWidth - sidebarWidth;
-  
+
       // Initialize the scene
       await this.initialize(container, availableWidth, window.innerHeight);
-  
+
       // Initialize with map data
       await this.initializeWithData({
         rooms: this.rooms,
@@ -5115,10 +4341,10 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         textureManager: this.textureManager,
         props: this.props
       });
-  
+
       // Process the scene
       await this.init3DScene(updateStatus);
-  
+
       // Instructions overlay
       const instructions = document.createElement("div");
       instructions.style.cssText = `
@@ -5145,16 +4371,16 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         ESC to exit
       `;
       container.appendChild(instructions);
-  
+
       // Controls event listeners
       this.controls.addEventListener("lock", () => {
         instructions.style.display = "none";
       });
-  
+
       this.controls.addEventListener("unlock", () => {
         instructions.style.display = "block";
       });
-  
+
       // Start animation loop
       const animate = () => {
         if (drawer.open) {
@@ -5163,26 +4389,26 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         }
       };
       animate();
-  
+
       // Window resize handler
       const handleResize = () => {
         const sidebar = document.querySelector(".sidebar");
         const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
         const availableWidth = window.innerWidth - sidebarWidth;
-        
+
         this.renderer.setSize(availableWidth, window.innerHeight);
         this.camera.aspect = availableWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
       };
       window.addEventListener('resize', handleResize);
-  
+
       // Cleanup on drawer close
       drawer.addEventListener("sl-after-hide", () => {
         window.removeEventListener('resize', handleResize);
         this.cleanup();
         container.innerHTML = "";
       }, { once: true });
-  
+
     } catch (error) {
       console.error("Error creating 3D view:", error);
       container.innerHTML = `
@@ -5934,7 +5160,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         z-index: 1000;
       `;
       document.body.appendChild(this.encounterPrompt);
-  
+
       // Add keypress listener for encounter interaction
       document.addEventListener('keydown', (e) => {
         if (e.code === 'KeyE' && this.nearestEncounter) {
@@ -6853,7 +6079,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
     console.log('Day/Night cycle initialized');
   }
 
-    // Add after createDayNightCycle() in Scene3DController.js
+  // Add after createDayNightCycle() in Scene3DController.js
   createPartyButton() {
     // Create party management button
     const partyButton = document.createElement('div');
@@ -6875,16 +6101,16 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
       cursor: pointer;
       z-index: 1000;
     `;
-  
+
     // Add click handler to show party manager
     partyButton.addEventListener('click', () => {
       if (window.partyManager) {
         // Pause 3D controls while party manager is open
         this.pauseControls();
-        
+
         // Show party manager
         window.partyManager.showPartyManager();
-        
+
         // Resume controls when party manager closes
         const checkForDialog = setInterval(() => {
           const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
@@ -6897,7 +6123,7 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
         console.warn('Party Manager not available');
       }
     });
-  
+
     // Add to 3D view
     const container = document.querySelector('.drawer-3d-view');
     if (container) {
@@ -6905,132 +6131,51 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
     }
   }
 
-  // Add this method to Scene3DController
-// initializePartyAndCombatSystems() {
-//   console.log('Initializing party and combat systems');
-  
-//   // Step 1: Load PartyManager first
-//   const loadPartyManager = () => {
-//     if (typeof PartyManager === 'undefined') {
-//       // Create script element for PartyManager
-//       const script = document.createElement('script');
-//       script.src = 'js/classes/PartyManager.js';
-      
-//       script.onload = () => {
-//         console.log('PartyManager script loaded');
-//         // Once PartyManager is loaded, load CombatSystem
-//         loadCombatSystem();
-//       };
-      
-//       script.onerror = (err) => {
-//         console.error('Could not load PartyManager script', err);
-//       };
-      
-//       document.head.appendChild(script);
-//     } else {
-//       // PartyManager already loaded, proceed to CombatSystem
-//       loadCombatSystem();
-//     }
-//   };
-  
-//   // Step 2: Load CombatSystem after PartyManager
-//   const loadCombatSystem = () => {
-//     if (typeof CombatSystem === 'undefined') {
-//       // Create script element for CombatSystem
-//       const script = document.createElement('script');
-//       script.src = 'js/classes/CombatSystem.js';
-      
-//       script.onload = () => {
-//         console.log('CombatSystem script loaded');
-//         // Once both scripts are loaded, initialize the systems
-//         this.createPartyAndCombatSystems();
-//       };
-      
-//       script.onerror = (err) => {
-//         console.error('Could not load CombatSystem script', err);
-//       };
-      
-//       document.head.appendChild(script);
-//     } else {
-//       // CombatSystem already loaded, initialize systems
-//       this.createPartyAndCombatSystems();
-//     }
-//   };
-  
-//   // Start the loading process
-//   loadPartyManager();
-// }
-
-// Add this method to create the systems once scripts are loaded
-// createPartyAndCombatSystems() {
-//   // If systems already exist globally, don't recreate them
-//   if (window.partyManager && window.combatSystem) {
-//     console.log('Party and combat systems already exist');
-//     return;
-//   }
-  
-//   console.log('Creating party and combat systems');
-  
-//   // Create party manager
-//   const partyManager = new PartyManager(this.resourceManager);
-//   window.partyManager = partyManager;
-  
-//   // Create combat system
-//   const combatSystem = new CombatSystem(partyManager, this.resourceManager);
-//   window.combatSystem = combatSystem;
-  
-//   console.log('Party and combat systems created and available globally');
-  
-//   // Load any saved party data
-//   if (typeof partyManager.loadParty === 'function') {
-//     partyManager.loadParty();
-//   }
-// }
-
-initializePartyAndCombatSystems() {
-  console.log('Initializing party and combat systems');
-  if (!window.partyManager) { // Add check to prevent double initialization
-    this.createPartyAndCombatSystems();
-  }
-}
-
-createPartyAndCombatSystems() {
-  console.log('Creating party and combat systems');
-  if (!window.partyManager) { // Add check to prevent double initialization
-    const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
-    if (resourceManager) {
-      const partyManager = new PartyManager(resourceManager);
-      const combatSystem = new CombatSystem(partyManager, resourceManager);
-      
-      window.partyManager = partyManager;
-      window.combatSystem = combatSystem;
-      
-      console.log('Party and combat systems created and available globally');
+  initializePartyAndCombatSystems() {
+    console.log('Initializing party and combat systems');
+    if (!window.partyManager) { // Add check to prevent double initialization
+      this.createPartyAndCombatSystems();
     }
   }
-}
-// Improved Mini-Map Implementation for Scene3DController
-// This version handles varying map sizes and ensures accurate player positioning
 
-createMiniMap() {
-  console.log('Creating improved mini-map');
+  createPartyAndCombatSystems() {
+    console.log('Creating party and combat systems');
+    if (!window.partyManager) { // Add check to prevent double initialization
+      const resourceManager = window.ResourceManager ? new window.ResourceManager() : null;
+      if (resourceManager) {
+        const partyManager = new PartyManager(resourceManager);
+        const combatSystem = new CombatSystem(partyManager, resourceManager);
 
-  // Only create once
-  if (this.miniMapContainer) {
-    console.log('Mini-map already exists');
-    return;
+        window.partyManager = partyManager;
+        window.combatSystem = combatSystem;
+
+        console.log('Party and combat systems created and available globally');
+      }
+    }
   }
 
-  // Check if we have the necessary map image
-  if (!this.baseImage || !this.baseImage.src) {
-    console.warn('No base image available for mini-map');
-    return;
-  }
+  // Improved Mini-Map Implementation for Scene3DController
+  // This version handles varying map sizes and ensures accurate player positioning
 
-  // Create minimap container with tilted card aesthetic
-  this.miniMapContainer = document.createElement('div');
-  this.miniMapContainer.className = 'mini-map-container';
-  this.miniMapContainer.style.cssText = `
+  createMiniMap() {
+    console.log('Creating improved mini-map');
+
+    // Only create once
+    if (this.miniMapContainer) {
+      console.log('Mini-map already exists');
+      return;
+    }
+
+    // Check if we have the necessary map image
+    if (!this.baseImage || !this.baseImage.src) {
+      console.warn('No base image available for mini-map');
+      return;
+    }
+
+    // Create minimap container with tilted card aesthetic
+    this.miniMapContainer = document.createElement('div');
+    this.miniMapContainer.className = 'mini-map-container';
+    this.miniMapContainer.style.cssText = `
     position: absolute;
     bottom: 20px;
     right: 20px;
@@ -7047,10 +6192,10 @@ createMiniMap() {
     user-select: none;
   `;
 
-  // Create map image container with overflow hidden
-  const mapViewport = document.createElement('div');
-  mapViewport.className = 'mini-map-viewport';
-  mapViewport.style.cssText = `
+    // Create map image container with overflow hidden
+    const mapViewport = document.createElement('div');
+    mapViewport.className = 'mini-map-viewport';
+    mapViewport.style.cssText = `
     position: relative;
     width: 100%;
     height: 100%;
@@ -7058,24 +6203,24 @@ createMiniMap() {
     border-radius: 8px;
   `;
 
-  // Store the map dimensions for accurate calculation
-  this.miniMapDimensions = {
-    worldWidth: this.boxWidth,
-    worldDepth: this.boxDepth,
-    imageWidth: this.baseImage.width,
-    imageHeight: this.baseImage.height,
-    viewportWidth: 180,
-    viewportHeight: 180
-  };
+    // Store the map dimensions for accurate calculation
+    this.miniMapDimensions = {
+      worldWidth: this.boxWidth,
+      worldDepth: this.boxDepth,
+      imageWidth: this.baseImage.width,
+      imageHeight: this.baseImage.height,
+      viewportWidth: 180,
+      viewportHeight: 180
+    };
 
-  // Calculate the scale factor between 3D world and image
-  this.miniMapDimensions.scaleX = this.miniMapDimensions.imageWidth / this.miniMapDimensions.worldWidth;
-  this.miniMapDimensions.scaleZ = this.miniMapDimensions.imageHeight / this.miniMapDimensions.worldDepth;
+    // Calculate the scale factor between 3D world and image
+    this.miniMapDimensions.scaleX = this.miniMapDimensions.imageWidth / this.miniMapDimensions.worldWidth;
+    this.miniMapDimensions.scaleZ = this.miniMapDimensions.imageHeight / this.miniMapDimensions.worldDepth;
 
-  // Create the map image element - sized to match the world scale exactly
-  this.miniMapImage = document.createElement('div');
-  this.miniMapImage.className = 'mini-map-image';
-  this.miniMapImage.style.cssText = `
+    // Create the map image element - sized to match the world scale exactly
+    this.miniMapImage = document.createElement('div');
+    this.miniMapImage.className = 'mini-map-image';
+    this.miniMapImage.style.cssText = `
     position: absolute;
     background-image: url(${this.baseImage.src});
     background-size: 100% 100%;
@@ -7085,10 +6230,10 @@ createMiniMap() {
     transition: transform 0.1s ease-out;
   `;
 
-  // Create player indicator
-  this.miniMapPlayer = document.createElement('div');
-  this.miniMapPlayer.className = 'mini-map-player';
-  this.miniMapPlayer.style.cssText = `
+    // Create player indicator
+    this.miniMapPlayer = document.createElement('div');
+    this.miniMapPlayer.className = 'mini-map-player';
+    this.miniMapPlayer.style.cssText = `
     position: absolute;
     width: 8px;
     height: 8px;
@@ -7101,10 +6246,10 @@ createMiniMap() {
     pointer-events: none;
   `;
 
-  // Direction indicator (shows which way player is facing)
-  this.miniMapDirection = document.createElement('div');
-  this.miniMapDirection.className = 'mini-map-direction';
-  this.miniMapDirection.style.cssText = `
+    // Direction indicator (shows which way player is facing)
+    this.miniMapDirection = document.createElement('div');
+    this.miniMapDirection.className = 'mini-map-direction';
+    this.miniMapDirection.style.cssText = `
     position: absolute;
     width: 0;
     height: 0;
@@ -7117,10 +6262,10 @@ createMiniMap() {
     pointer-events: none;
   `;
 
-  // Add border frame to emphasize the mini-map
-  const mapBorder = document.createElement('div');
-  mapBorder.className = 'mini-map-border';
-  mapBorder.style.cssText = `
+    // Add border frame to emphasize the mini-map
+    const mapBorder = document.createElement('div');
+    mapBorder.className = 'mini-map-border';
+    mapBorder.style.cssText = `
     position: absolute;
     top: 0;
     left: 0;
@@ -7132,19 +6277,19 @@ createMiniMap() {
     z-index: 12;
   `;
 
-  // Add compass elements
-  const directions = [
-    { letter: 'N', rotation: 0, top: '5px', left: '50%' },
-    { letter: 'E', rotation: 90, top: '50%', right: '5px' },
-    { letter: 'S', rotation: 180, bottom: '5px', left: '50%' },
-    { letter: 'W', rotation: 270, top: '50%', left: '5px' }
-  ];
+    // Add compass elements
+    const directions = [
+      { letter: 'N', rotation: 0, top: '5px', left: '50%' },
+      { letter: 'E', rotation: 90, top: '50%', right: '5px' },
+      { letter: 'S', rotation: 180, bottom: '5px', left: '50%' },
+      { letter: 'W', rotation: 270, top: '50%', left: '5px' }
+    ];
 
-  directions.forEach(dir => {
-    const dirMarker = document.createElement('div');
-    dirMarker.className = 'compass-marker';
-    dirMarker.textContent = dir.letter;
-    dirMarker.style.cssText = `
+    directions.forEach(dir => {
+      const dirMarker = document.createElement('div');
+      dirMarker.className = 'compass-marker';
+      dirMarker.textContent = dir.letter;
+      dirMarker.style.cssText = `
       position: absolute;
       font-size: 10px;
       font-weight: bold;
@@ -7158,13 +6303,13 @@ createMiniMap() {
       text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
       pointer-events: none;
     `;
-    mapViewport.appendChild(dirMarker);
-  });
+      mapViewport.appendChild(dirMarker);
+    });
 
-  // Add zoom buttons for adjustable mini-map
-  const zoomControls = document.createElement('div');
-  zoomControls.className = 'mini-map-zoom-controls';
-  zoomControls.style.cssText = `
+    // Add zoom buttons for adjustable mini-map
+    const zoomControls = document.createElement('div');
+    zoomControls.className = 'mini-map-zoom-controls';
+    zoomControls.style.cssText = `
     position: absolute;
     bottom: 5px;
     right: 5px;
@@ -7174,10 +6319,10 @@ createMiniMap() {
     z-index: 13;
   `;
 
-  const zoomInBtn = document.createElement('div');
-  zoomInBtn.className = 'mini-map-zoom-in';
-  zoomInBtn.innerHTML = '+';
-  zoomInBtn.style.cssText = `
+    const zoomInBtn = document.createElement('div');
+    zoomInBtn.className = 'mini-map-zoom-in';
+    zoomInBtn.innerHTML = '+';
+    zoomInBtn.style.cssText = `
     width: 18px;
     height: 18px;
     background: rgba(0, 0, 0, 0.6);
@@ -7192,10 +6337,10 @@ createMiniMap() {
     transition: background 0.2s;
   `;
 
-  const zoomOutBtn = document.createElement('div');
-  zoomOutBtn.className = 'mini-map-zoom-out';
-  zoomOutBtn.innerHTML = '-';
-  zoomOutBtn.style.cssText = `
+    const zoomOutBtn = document.createElement('div');
+    zoomOutBtn.className = 'mini-map-zoom-out';
+    zoomOutBtn.innerHTML = '-';
+    zoomOutBtn.style.cssText = `
     width: 18px;
     height: 18px;
     background: rgba(0, 0, 0, 0.6);
@@ -7210,36 +6355,36 @@ createMiniMap() {
     transition: background 0.2s;
   `;
 
-  zoomControls.appendChild(zoomInBtn);
-  zoomControls.appendChild(zoomOutBtn);
+    zoomControls.appendChild(zoomInBtn);
+    zoomControls.appendChild(zoomOutBtn);
 
-  // Zoom functionality
-  this.miniMapZoom = 1.0; // Default zoom level
-  const maxZoom = 4.0;
-  const minZoom = 0.5;
-  const zoomStep = 0.25;
+    // Zoom functionality
+    this.miniMapZoom = 1.0; // Default zoom level
+    const maxZoom = 4.0;
+    const minZoom = 0.5;
+    const zoomStep = 0.25;
 
-  zoomInBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (this.miniMapZoom < maxZoom) {
-      this.miniMapZoom += zoomStep;
-      this.updateMiniMap(true); // Force update
-    }
-  });
+    zoomInBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.miniMapZoom < maxZoom) {
+        this.miniMapZoom += zoomStep;
+        this.updateMiniMap(true); // Force update
+      }
+    });
 
-  zoomOutBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (this.miniMapZoom > minZoom) {
-      this.miniMapZoom -= zoomStep;
-      this.updateMiniMap(true); // Force update
-    }
-  });
+    zoomOutBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.miniMapZoom > minZoom) {
+        this.miniMapZoom -= zoomStep;
+        this.updateMiniMap(true); // Force update
+      }
+    });
 
-  // Add toggle/minimize button
-  const toggleButton = document.createElement('div');
-  toggleButton.className = 'mini-map-toggle';
-  toggleButton.innerHTML = '<span class="material-icons">map</span>';
-  toggleButton.style.cssText = `
+    // Add toggle/minimize button
+    const toggleButton = document.createElement('div');
+    toggleButton.className = 'mini-map-toggle';
+    toggleButton.innerHTML = '<span class="material-icons">map</span>';
+    toggleButton.style.cssText = `
     position: absolute;
     top: -10px;
     right: -10px;
@@ -7257,66 +6402,66 @@ createMiniMap() {
     transition: transform 0.2s ease;
   `;
 
-  // Toggle mini-map visibility
-  let isMinimized = false;
-  toggleButton.addEventListener('click', () => {
-    if (isMinimized) {
-      this.miniMapContainer.style.transform = 'rotate(-3deg)';
-      this.miniMapContainer.style.width = '180px';
-      this.miniMapContainer.style.height = '180px';
-      toggleButton.innerHTML = '<span class="material-icons">map</span>';
-    } else {
-      this.miniMapContainer.style.transform = 'rotate(-3deg) scale(0.5)';
-      this.miniMapContainer.style.width = '60px';
-      this.miniMapContainer.style.height = '60px';
-      toggleButton.innerHTML = '<span class="material-icons">zoom_out_map</span>';
-    }
-    isMinimized = !isMinimized;
-  });
+    // Toggle mini-map visibility
+    let isMinimized = false;
+    toggleButton.addEventListener('click', () => {
+      if (isMinimized) {
+        this.miniMapContainer.style.transform = 'rotate(-3deg)';
+        this.miniMapContainer.style.width = '180px';
+        this.miniMapContainer.style.height = '180px';
+        toggleButton.innerHTML = '<span class="material-icons">map</span>';
+      } else {
+        this.miniMapContainer.style.transform = 'rotate(-3deg) scale(0.5)';
+        this.miniMapContainer.style.width = '60px';
+        this.miniMapContainer.style.height = '60px';
+        toggleButton.innerHTML = '<span class="material-icons">zoom_out_map</span>';
+      }
+      isMinimized = !isMinimized;
+    });
 
-  // Add pan functionality using mouse drag
-  let isDragging = false;
-  let dragStart = { x: 0, y: 0 };
-  let currentOffset = { x: 0, y: 0 };
+    // Add pan functionality using mouse drag
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let currentOffset = { x: 0, y: 0 };
 
-  mapViewport.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    dragStart.x = e.clientX;
-    dragStart.y = e.clientY;
-    mapViewport.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
+    mapViewport.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStart.x = e.clientX;
+      dragStart.y = e.clientY;
+      mapViewport.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
 
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
-    
-    // Update current offset (will be applied in updateMiniMap)
-    currentOffset.x += dx;
-    currentOffset.y += dy;
-    
-    // Update drag start for next move
-    dragStart.x = e.clientX;
-    dragStart.y = e.clientY;
-    
-    // Force an update
-    this.updateMiniMap(true);
-  });
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
 
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      mapViewport.style.cursor = 'grab';
-    }
-  });
+      const dx = e.clientX - dragStart.x;
+      const dy = e.clientY - dragStart.y;
 
-  // Reset pan button
-  const resetPanBtn = document.createElement('div');
-  resetPanBtn.className = 'mini-map-reset';
-  resetPanBtn.innerHTML = '⟳';
-  resetPanBtn.style.cssText = `
+      // Update current offset (will be applied in updateMiniMap)
+      currentOffset.x += dx;
+      currentOffset.y += dy;
+
+      // Update drag start for next move
+      dragStart.x = e.clientX;
+      dragStart.y = e.clientY;
+
+      // Force an update
+      this.updateMiniMap(true);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        mapViewport.style.cursor = 'grab';
+      }
+    });
+
+    // Reset pan button
+    const resetPanBtn = document.createElement('div');
+    resetPanBtn.className = 'mini-map-reset';
+    resetPanBtn.innerHTML = '⟳';
+    resetPanBtn.style.cssText = `
     position: absolute;
     top: 5px;
     right: 5px;
@@ -7334,166 +6479,164 @@ createMiniMap() {
     z-index: 13;
   `;
 
-  resetPanBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    // Reset offset and center on player
-    currentOffset = { x: 0, y: 0 };
+    resetPanBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Reset offset and center on player
+      currentOffset = { x: 0, y: 0 };
+      this.updateMiniMap(true);
+    });
+
+    // Store the current offset for panning
+    this.miniMapOffset = currentOffset;
+
+    // Assemble the components
+    mapViewport.appendChild(this.miniMapImage);
+    mapViewport.appendChild(this.miniMapPlayer);
+    mapViewport.appendChild(this.miniMapDirection);
+    mapViewport.appendChild(mapBorder);
+    mapViewport.appendChild(zoomControls);
+    mapViewport.appendChild(resetPanBtn);
+    this.miniMapContainer.appendChild(mapViewport);
+    this.miniMapContainer.appendChild(toggleButton);
+
+    // Find where to add the mini-map
+    const container = document.querySelector('.drawer-3d-view');
+    if (container) {
+      container.appendChild(this.miniMapContainer);
+    } else {
+      document.body.appendChild(this.miniMapContainer);
+    }
+
+    // Add hover effect
+    this.miniMapContainer.addEventListener('mouseenter', () => {
+      if (!isMinimized) {
+        this.miniMapContainer.style.transform = 'rotate(-3deg) scale(1.05)';
+      }
+      mapViewport.style.cursor = 'grab';
+    });
+
+    this.miniMapContainer.addEventListener('mouseleave', () => {
+      if (!isMinimized) {
+        this.miniMapContainer.style.transform = 'rotate(-3deg)';
+      }
+      mapViewport.style.cursor = 'default';
+      isDragging = false;
+    });
+
+    // Initial update
     this.updateMiniMap(true);
-  });
 
-  // Store the current offset for panning
-  this.miniMapOffset = currentOffset;
+    // Schedule updates
+    this.miniMapUpdateInterval = setInterval(() => {
+      this.updateMiniMap();
+    }, 100);
 
-  // Assemble the components
-  mapViewport.appendChild(this.miniMapImage);
-  mapViewport.appendChild(this.miniMapPlayer);
-  mapViewport.appendChild(this.miniMapDirection);
-  mapViewport.appendChild(mapBorder);
-  mapViewport.appendChild(zoomControls);
-  mapViewport.appendChild(resetPanBtn);
-  this.miniMapContainer.appendChild(mapViewport);
-  this.miniMapContainer.appendChild(toggleButton);
-
-  // Find where to add the mini-map
-  const container = document.querySelector('.drawer-3d-view');
-  if (container) {
-    container.appendChild(this.miniMapContainer);
-  } else {
-    document.body.appendChild(this.miniMapContainer);
+    console.log('Improved mini-map created successfully');
   }
 
-  // Add hover effect
-  this.miniMapContainer.addEventListener('mouseenter', () => {
-    if (!isMinimized) {
-      this.miniMapContainer.style.transform = 'rotate(-3deg) scale(1.05)';
+  // Improved updateMiniMap method with better scaling and positioning
+  updateMiniMap(forceUpdate = false) {
+    if (!this.miniMapContainer || !this.camera) return;
+
+    // Skip updates if minimized and not forcing an update
+    if (this.miniMapContainer.style.width === '60px' && !forceUpdate) return;
+
+    // Get the viewport dimensions
+    const viewport = this.miniMapContainer.querySelector('.mini-map-viewport');
+    const viewportWidth = viewport.offsetWidth;
+    const viewportHeight = viewport.offsetHeight;
+
+    // Get player position in world coordinates (already converted from camera position)
+    const playerX = this.camera.position.x;
+    const playerZ = this.camera.position.z;
+
+    // Calculate the center of the 3D world
+    const worldCenterX = 0; // Assuming the center is at origin
+    const worldCenterZ = 0;
+
+    // Convert player position to map image coordinates
+    // Step 1: Convert from world coords to normalized coords (0-1)
+    // First adjust from world center to world corner
+    const normalizedX = (playerX + this.miniMapDimensions.worldWidth / 2) / this.miniMapDimensions.worldWidth;
+    const normalizedZ = (playerZ + this.miniMapDimensions.worldDepth / 2) / this.miniMapDimensions.worldDepth;
+
+    // Step 2: Convert normalized coords to pixel coords on the map image
+    const mapPixelX = normalizedX * this.miniMapDimensions.imageWidth;
+    const mapPixelZ = normalizedZ * this.miniMapDimensions.imageHeight;
+
+    // DEBUGGING: Log map coordinates and player world position
+    if (forceUpdate) {
+      console.log("World position:", { x: playerX, z: playerZ });
+      console.log("Normalized coordinates:", { x: normalizedX, z: normalizedZ });
+      console.log("Map pixel coordinates:", { x: mapPixelX, z: mapPixelZ });
     }
-    mapViewport.style.cursor = 'grab';
-  });
 
-  this.miniMapContainer.addEventListener('mouseleave', () => {
-    if (!isMinimized) {
-      this.miniMapContainer.style.transform = 'rotate(-3deg)';
+    // Calculate the image scale to account for zoom
+    const imageScale = Math.min(
+      viewportWidth / this.miniMapDimensions.imageWidth,
+      viewportHeight / this.miniMapDimensions.imageHeight
+    ) * this.miniMapZoom;
+
+    // Calculate the scaled image dimensions
+    const scaledImageWidth = this.miniMapDimensions.imageWidth * imageScale;
+    const scaledImageHeight = this.miniMapDimensions.imageHeight * imageScale;
+
+    // Calculate center offset for the image to position player at center
+    // Also include any user panning offset
+    let offsetX = (viewportWidth / 2) - (mapPixelX * imageScale) + this.miniMapOffset.x;
+    let offsetZ = (viewportHeight / 2) - (mapPixelZ * imageScale) + this.miniMapOffset.y;
+
+    // Apply scale and position to map image
+    this.miniMapImage.style.transform = `translate(${offsetX}px, ${offsetZ}px) scale(${imageScale})`;
+
+    // Update the player indicator position - always at viewport center unless panned
+    const playerPosX = viewportWidth / 2 - this.miniMapOffset.x;
+    const playerPosZ = viewportHeight / 2 - this.miniMapOffset.y;
+
+    this.miniMapPlayer.style.left = `${playerPosX}px`;
+    this.miniMapPlayer.style.top = `${playerPosZ}px`;
+
+    // Update the direction indicator
+    this.miniMapDirection.style.left = `${playerPosX}px`;
+    this.miniMapDirection.style.top = `${playerPosZ}px`;
+
+    // Get player rotation for the direction indicator
+    if (this.camera.rotation) {
+      // Convert to degrees and adjust
+      let degrees = -this.camera.rotation.y * (180 / Math.PI);
+      this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
+    } else if (this.controls && this.controls.getObject) {
+      // For PointerLockControls, we get rotation from camera quaternion
+      const direction = new THREE.Vector3(0, 0, -1);
+      direction.applyQuaternion(this.camera.quaternion);
+      const angle = Math.atan2(direction.x, direction.z);
+      let degrees = angle * (180 / Math.PI);
+      this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
     }
-    mapViewport.style.cursor = 'default';
-    isDragging = false;
-  });
-
-  // Initial update
-  this.updateMiniMap(true);
-
-  // Schedule updates
-  this.miniMapUpdateInterval = setInterval(() => {
-    this.updateMiniMap();
-  }, 100);
-
-  console.log('Improved mini-map created successfully');
-}
-
-// Improved updateMiniMap method with better scaling and positioning
-updateMiniMap(forceUpdate = false) {
-  if (!this.miniMapContainer || !this.camera) return;
-
-  // Skip updates if minimized and not forcing an update
-  if (this.miniMapContainer.style.width === '60px' && !forceUpdate) return;
-
-  // Get the viewport dimensions
-  const viewport = this.miniMapContainer.querySelector('.mini-map-viewport');
-  const viewportWidth = viewport.offsetWidth;
-  const viewportHeight = viewport.offsetHeight;
-
-  // Get player position in world coordinates (already converted from camera position)
-  const playerX = this.camera.position.x;
-  const playerZ = this.camera.position.z;
-
-  // Calculate the center of the 3D world
-  const worldCenterX = 0; // Assuming the center is at origin
-  const worldCenterZ = 0;
-
-  // Convert player position to map image coordinates
-  // Step 1: Convert from world coords to normalized coords (0-1)
-  // First adjust from world center to world corner
-  const normalizedX = (playerX + this.miniMapDimensions.worldWidth / 2) / this.miniMapDimensions.worldWidth;
-  const normalizedZ = (playerZ + this.miniMapDimensions.worldDepth / 2) / this.miniMapDimensions.worldDepth;
-
-  // Step 2: Convert normalized coords to pixel coords on the map image
-  const mapPixelX = normalizedX * this.miniMapDimensions.imageWidth;
-  const mapPixelZ = normalizedZ * this.miniMapDimensions.imageHeight;
-
-  // DEBUGGING: Log map coordinates and player world position
-  if (forceUpdate) {
-    console.log("World position:", { x: playerX, z: playerZ });
-    console.log("Normalized coordinates:", { x: normalizedX, z: normalizedZ });
-    console.log("Map pixel coordinates:", { x: mapPixelX, z: mapPixelZ });
   }
 
-  // Calculate the image scale to account for zoom
-  const imageScale = Math.min(
-    viewportWidth / this.miniMapDimensions.imageWidth,
-    viewportHeight / this.miniMapDimensions.imageHeight
-  ) * this.miniMapZoom;
+  // Clean up the mini-map resources
+  cleanupMiniMap() {
+    if (this.miniMapUpdateInterval) {
+      clearInterval(this.miniMapUpdateInterval);
+      this.miniMapUpdateInterval = null;
+    }
 
-  // Calculate the scaled image dimensions
-  const scaledImageWidth = this.miniMapDimensions.imageWidth * imageScale;
-  const scaledImageHeight = this.miniMapDimensions.imageHeight * imageScale;
+    // Remove event listeners
+    document.removeEventListener('mousemove', this._miniMapMouseMove);
+    document.removeEventListener('mouseup', this._miniMapMouseUp);
 
-  // Calculate center offset for the image to position player at center
-  // Also include any user panning offset
-  let offsetX = (viewportWidth / 2) - (mapPixelX * imageScale) + this.miniMapOffset.x;
-  let offsetZ = (viewportHeight / 2) - (mapPixelZ * imageScale) + this.miniMapOffset.y;
-
-  // Apply scale and position to map image
-  this.miniMapImage.style.transform = `translate(${offsetX}px, ${offsetZ}px) scale(${imageScale})`;
-
-  // Update the player indicator position - always at viewport center unless panned
-  const playerPosX = viewportWidth / 2 - this.miniMapOffset.x;
-  const playerPosZ = viewportHeight / 2 - this.miniMapOffset.y;
-  
-  this.miniMapPlayer.style.left = `${playerPosX}px`;
-  this.miniMapPlayer.style.top = `${playerPosZ}px`;
-
-  // Update the direction indicator
-  this.miniMapDirection.style.left = `${playerPosX}px`;
-  this.miniMapDirection.style.top = `${playerPosZ}px`;
-
-  // Get player rotation for the direction indicator
-  if (this.camera.rotation) {
-    // Convert to degrees and adjust
-    let degrees = -this.camera.rotation.y * (180 / Math.PI);
-    this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
-  } else if (this.controls && this.controls.getObject) {
-    // For PointerLockControls, we get rotation from camera quaternion
-    const direction = new THREE.Vector3(0, 0, -1);
-    direction.applyQuaternion(this.camera.quaternion);
-    const angle = Math.atan2(direction.x, direction.z);
-    let degrees = angle * (180 / Math.PI);
-    this.miniMapDirection.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
-  }
-}
-
-// Clean up the mini-map resources
-cleanupMiniMap() {
-  if (this.miniMapUpdateInterval) {
-    clearInterval(this.miniMapUpdateInterval);
-    this.miniMapUpdateInterval = null;
+    if (this.miniMapContainer && this.miniMapContainer.parentNode) {
+      this.miniMapContainer.parentNode.removeChild(this.miniMapContainer);
+      this.miniMapContainer = null;
+      this.miniMapImage = null;
+      this.miniMapPlayer = null;
+      this.miniMapDirection = null;
+      this.miniMapOffset = null;
+      this.miniMapDimensions = null;
+      this.miniMapZoom = null;
+    }
   }
 
-  // Remove event listeners
-  document.removeEventListener('mousemove', this._miniMapMouseMove);
-  document.removeEventListener('mouseup', this._miniMapMouseUp);
-
-  if (this.miniMapContainer && this.miniMapContainer.parentNode) {
-    this.miniMapContainer.parentNode.removeChild(this.miniMapContainer);
-    this.miniMapContainer = null;
-    this.miniMapImage = null;
-    this.miniMapPlayer = null;
-    this.miniMapDirection = null;
-    this.miniMapOffset = null;
-    this.miniMapDimensions = null;
-    this.miniMapZoom = null;
-  }
-}
-
-// Call this method in your initialize or init3DScene function
-// createMiniMap();
 
 }
