@@ -925,6 +925,57 @@ class PartyManager {
   box-sizing: border-box;
 }
 
+/* Add these to your createPartyManagerStyles method */
+
+/* Updated HP bar fill colors */
+.hp-bar-fill.high {
+  background: #10b981;
+}
+
+.hp-bar-fill.medium {
+  background: #f59e0b;
+}
+
+.hp-bar-fill.low {
+  background: #ef4444;
+}
+
+/* Animation for monster cards */
+@keyframes floatCard {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Special styling for relationships */
+.monster-relationships {
+  border-top: 1px solid rgba(0,0,0,0.05);
+  padding-top: 6px;
+  margin-top: 6px;
+}
+
+/* Styling for empty slots to match new card style */
+.empty-party-slot {
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 16px;
+  margin: 0 8px 16px 8px;
+  transform: rotate(-2deg);
+  transition: all 0.3s ease;
+}
+
+.empty-party-slot:hover {
+  transform: rotate(-2deg) translateY(-5px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
     `;
 
     return styleElement;
@@ -1979,7 +2030,466 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     }, 10);
   }
   
+  // OLD DESIGN, DO NOT DELETE
+  // createMonsterCard(monster, type, isAlt = false) {
+  //   // Calculate HP percentage
+  //   const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+  //   let hpColorClass = 'high';
+  //   if (hpPercent < 30) {
+  //     hpColorClass = 'low';
+  //   } else if (hpPercent < 70) {
+  //     hpColorClass = 'medium';
+  //   }
+
+  //   const bgColor = [monster.type.toLowerCase()];
+
+
+  //   // Get relationship data
+  //   const relationships = this.getMonstersWithAffinity(monster.id) || [];
+
+  //   // Create the card
+  //   const card = document.createElement('div');
+  //   card.className = `monster-card ${type}-party`;
+  //   if (isAlt) card.classList.add('alt');
+  //   card.setAttribute('data-monster-id', monster.id);
+
+  //   // Get token source
+  //   const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+  //   const typeColor = this.getMonsterTypeColor(monster.type);
+  //   const animation = this.getMonsterAnimation(monster.type, monster.name);
+  //   // Apply animation styles if applicable
+  //   let headerStyle = '';
+  //   if (animation.useAnimation) {
+  //     // Convert style object to inline CSS
+  //     headerStyle = Object.entries(animation.style)
+  //       .map(([key, value]) => `${key}: ${value};`)
+  //       .join(' ');
+  //   }
+
+  //   // Monster card content
+  //   card.innerHTML = `
+  //   <div class="monster-header" ${animation.useAnimation ? `style="${headerStyle}"` : ''}>
+  //       <div class="monster-avatar" style="background-color: ${bgColor}; position: relative;">
+  //         ${tokenSource ?
+  //       `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+  //       monster.name.charAt(0)
+  //     }
+  //         ${relationships.length > 0 ?
+  //       `<div class="relationship-indicator" style="position: absolute; top: -5px; right: -5px; background: #ff6b6b; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+  //             <span class="material-icons" style="font-size: 12px; color: white;">favorite</span>
+  //           </div>` :
+  //       ''}
+  //       </div>
+  //     <div class="monster-info">
+  //       <div class="monster-name" style="
+  //         background: linear-gradient(90deg, ${typeColor}50, transparent);
+  //         padding: 3px 8px;
+  //         border-radius: 4px;
+  //         color: #333;
+  //         font-weight: bold;
+  //         white-space: nowrap;
+  //         overflow: hidden;
+  //         text-overflow: ellipsis;
+  //       ">${monster.name}</div>
+  //       <div class="monster-type">
+  //         ${monster.size} ${monster.type}
+  //         <span class="monster-level-badge">${monster.level || 1}</span>
+  //       </div>
+  //     </div>
+  //   </div>
+      
+  //     <div class="monster-stats">
+  //       <!-- HP Bar -->
+  //       <div class="hp-bar-label">
+  //         <span>HP</span>
+  //         <span>${monster.currentHP}/${monster.maxHP}</span>
+  //       </div>
+  //       <div class="hp-bar-bg">
+  //         <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
+  //       </div>
+        
+  //       <!-- Footer with AC and equipment -->
+  //       <div class="monster-footer">
+  //         <div class="ac-display">
+  //           <span class="material-icons small" style="margin-right: 4px;">shield</span>
+  //           <span>${monster.armorClass}</span>
+  //         </div>
+          
+  //         <div class="equipment-icons">
+  //           ${monster.equipment?.weapon ?
+  //       `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
+  //               <span class="material-icons small">sports_martial_arts</span>
+  //             </div>` : ''
+  //     }
+  //           ${monster.equipment?.armor ?
+  //       `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
+  //               <span class="material-icons small">security</span>
+  //             </div>` : ''
+  //     }
+  //         </div>
+  //       </div>
+        
+  //       ${relationships.length > 0 ?
+  //       `<div class="monster-relationships" style="margin-top: 8px; font-size: 0.75rem; color: #666;">
+  //           <div style="display: flex; align-items: center; gap: 4px;">
+  //             <span class="material-icons" style="font-size: 14px; color: #ff6b6b;">favorite</span>
+  //             <span>Affinity with: ${relationships.map(r => {
+  //         // Find monster name
+  //         const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
+  //         return relatedMonster ? relatedMonster.name : '';
+  //       }).filter(Boolean).join(', ')}</span>
+  //           </div>
+  //         </div>` :
+  //       ''}
+  //     </div>
+  //   `;
+
+  //   const statsDiv = card.querySelector('.monster-stats');
+
+  //   return card;
+  // }
+
+  // createMonsterCard(monster, type, isAlt = false) {
+  //   // Calculate HP percentage
+  //   const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
+  //   let hpColorClass = 'high';
+  //   if (hpPercent < 30) {
+  //     hpColorClass = 'low';
+  //   } else if (hpPercent < 70) {
+  //     hpColorClass = 'medium';
+  //   }
   
+  //   // Get monster type color and background
+  //   const bgColor = this.getMonsterTypeColor(monster.type);
+  //   const lightBgColor = this.getLightVersionOfColor(bgColor);
+  
+  //   // Get relationship data
+  //   const relationships = this.getMonstersWithAffinity(monster.id) || [];
+  
+  //   // Calculate tilt angle based on monster ID (consistent per monster)
+  //   // This creates a random but consistent tilt between -5 and 5 degrees
+  //   const idNum = monster.id.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  //   const tiltAngle = ((idNum % 11) - 5) || (isAlt ? 3 : -3);
+  
+  //   // Create the card
+  //   const card = document.createElement('div');
+  //   card.className = `monster-card ${type}-party`;
+  //   card.setAttribute('data-monster-id', monster.id);
+  //   card.setAttribute('data-monster-type', monster.type);
+  
+  //   // Get token source
+  //   const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+    
+  //   // Get animation style
+  //   const animation = this.getMonsterAnimation(monster.type, monster.name);
+    
+  //   // Apply tilt to the whole card
+  //   card.style.transform = `rotate(${tiltAngle}deg)`;
+  //   card.style.transition = 'all 0.3s ease';
+  //   card.style.margin = '0 8px 16px 8px'; // Add some margin for the tilt
+    
+  //   // Add hover effect event listeners
+  //   card.addEventListener('mouseenter', () => {
+  //     card.style.transform = `rotate(${tiltAngle}deg) translateY(-5px)`;
+  //     card.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
+  //   });
+    
+  //   card.addEventListener('mouseleave', () => {
+  //     card.style.transform = `rotate(${tiltAngle}deg)`;
+  //     card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+  //   });
+  
+  //   // Monster card content - new tilted design with larger asymmetric token
+  //   card.innerHTML = `
+  //     <div class="card-base" style="
+  //       width: 200px;
+  //       background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+  //       border-radius: 12px;
+  //       overflow: hidden;
+  //       border: 1px solid ${bgColor};
+  //       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  //     ">
+  //       <!-- Top Banner -->
+  //       <div class="card-banner" style="
+  //         height: 50px;
+  //         position: relative;
+  //         display: flex;
+  //         align-items: center;
+  //         justify-content: flex-end;
+  //         padding: 0 16px;
+  //         background: linear-gradient(135deg, ${bgColor}dd, ${bgColor});
+  //         border-bottom: 3px solid ${bgColor};
+  //       ">
+  //         <!-- Level Badge -->
+  //         <div class="level-badge" style="
+  //           display: flex;
+  //           align-items: center;
+  //           justify-content: center;
+  //           width: 32px;
+  //           height: 32px;
+  //           border-radius: 50%;
+  //           background-color: white;
+  //           color: ${bgColor};
+  //           font-size: 14px;
+  //           font-weight: bold;
+  //           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  //           border: 2px solid ${bgColor};
+  //         ">
+  //           ${monster.level || 1}
+  //         </div>
+          
+  //         <!-- Decorative Elements -->
+  //         <div class="decorative-elements" style="
+  //           position: absolute;
+  //           inset: 0;
+  //           overflow: hidden;
+  //           opacity: 0.2;
+  //         ">
+  //           ${Array.from({ length: 5 }).map(() => {
+  //             const size = Math.floor(Math.random() * 6 + 3);
+  //             const top = Math.floor(Math.random() * 100);
+  //             const left = Math.floor(Math.random() * 100);
+  //             return `<div style="
+  //               position: absolute;
+  //               width: ${size}px;
+  //               height: ${size}px;
+  //               border-radius: 50%;
+  //               background-color: white;
+  //               top: ${top}%;
+  //               left: ${left}%;
+  //             "></div>`;
+  //           }).join('')}
+  //         </div>
+  //       </div>
+        
+  //       <!-- Monster Portrait Section - Asymmetrically positioned -->
+  //       <div class="portrait-section" style="
+  //         position: relative;
+  //         overflow: visible;
+  //         padding: 16px 16px 8px;
+  //         min-height: 60px;
+  //       ">
+  //         <!-- Large Token/Portrait -->
+  //         <div class="monster-avatar" style="
+  //           position: absolute;
+  //           z-index: 10;
+  //           top: -5px;
+  //           left: 10px;
+  //           width: 100px;
+  //           height: 100px;
+  //           transform: rotate(${-tiltAngle * 0.7}deg);
+  //           transition: transform 0.3s ease-out, filter 0.3s ease;
+  //           filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
+  //         ">
+  //           <!-- Token Circle with Border -->
+  //           <div style="
+  //             position: relative;
+  //             width: 100%;
+  //             height: 100%;
+  //             border-radius: 50%;
+  //             overflow: hidden;
+  //             border: 4px solid ${bgColor};
+  //             background-color: #e5e7eb;
+  //           ">
+  //             ${tokenSource ?
+  //               `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
+  //               `<div style="
+  //                 position: absolute;
+  //                 inset: 0;
+  //                 display: flex;
+  //                 align-items: center;
+  //                 justify-content: center;
+  //                 font-size: 60px;
+  //                 font-weight: bold;
+  //                 color: ${bgColor};
+  //               ">${monster.name.charAt(0)}</div>`
+  //             }
+              
+  //             <!-- Glare Effect -->
+  //             <div style="
+  //               position: absolute;
+  //               top: 0;
+  //               left: 25%;
+  //               right: 0;
+  //               height: 33%;
+  //               background-color: white;
+  //               opacity: 0.2;
+  //               transform: rotate(-45deg);
+  //               border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  //             "></div>
+  //           </div>
+  //         </div>
+          
+  //         <!-- Monster Info -->
+  //         <div class="monster-info" style="
+  //           margin-left: 100px;
+  //           min-height: 50px;
+  //         ">
+  //           <div class="monster-name" style="
+  //             font-weight: bold;
+  //             color: ${bgColor};
+  //             white-space: nowrap;
+  //             overflow: hidden;
+  //             text-overflow: ellipsis;
+  //             font-size: 0.9rem;
+  //             margin-bottom: 4px;
+  //           ">${monster.name}</div>
+            
+  //           <div class="monster-type" style="
+  //             display: inline-block;
+  //             padding: 2px 8px;
+  //             border-radius: 20px;
+  //             background-color: ${lightBgColor};
+  //             color: ${bgColor};
+  //             font-size: 0.75rem;
+  //           ">
+  //             ${monster.size} ${monster.type}
+  //           </div>
+  //         </div>
+  //       </div>
+        
+  //       <!-- Stats Section -->
+  //       <div class="monster-stats" style="
+  //         background-color: white;
+  //         padding: 12px;
+  //         border-top: 1px solid #f0f0f0;
+  //       ">
+  //         <!-- HP Bar -->
+  //         <div class="hp-bar-label" style="
+  //           display: flex; 
+  //           justify-content: space-between;
+  //           font-size: 0.75rem;
+  //           margin-bottom: 4px;
+  //           color: #666;
+  //         ">
+  //           <span>HP</span>
+  //           <span>${monster.currentHP}/${monster.maxHP}</span>
+  //         </div>
+          
+  //         <div class="hp-bar-bg" style="
+  //           height: 6px;
+  //           background: #e5e7eb;
+  //           border-radius: 3px;
+  //           overflow: hidden;
+  //           margin-bottom: 8px;
+  //         ">
+  //           <div class="hp-bar-fill ${hpColorClass}" style="
+  //             height: 100%;
+  //             width: ${hpPercent}%;
+  //             border-radius: 3px;
+  //             transition: width 0.3s ease;
+  //           "></div>
+  //         </div>
+          
+  //         <!-- Monster footer with AC and equipment -->
+  //         <div class="monster-footer" style="
+  //           display: flex;
+  //           font-size: 0.75rem;
+  //           color: #666;
+  //           justify-content: space-between;
+  //           align-items: center;
+  //         ">
+  //           <div class="ac-display" style="
+  //             display: flex;
+  //             align-items: center;
+  //           ">
+  //             <div style="
+  //               display: flex;
+  //               align-items: center;
+  //               justify-content: center;
+  //               width: 24px;
+  //               height: 24px;
+  //               border-radius: 50%;
+  //               background-color: #f3f4f6;
+  //               border: 2px solid ${bgColor};
+  //               color: #374151;
+  //               font-weight: bold;
+  //               font-size: 0.8rem;
+  //               margin-right: 4px;
+  //             ">
+  //               ${monster.armorClass}
+  //             </div>
+  //             <span style="font-size: 0.7rem; color: #6b7280;">AC</span>
+  //           </div>
+            
+  //           <!-- Equipment icons -->
+  //           <div class="equipment-icons" style="
+  //             display: flex;
+  //             gap: 4px;
+  //           ">
+  //             ${monster.equipment?.weapon ?
+  //               `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}" style="
+  //                 width: 20px;
+  //                 height: 20px;
+  //                 border-radius: 50%;
+  //                 display: flex;
+  //                 align-items: center;
+  //                 justify-content: center;
+  //                 background-color: #fee2e2;
+  //                 color: #ef4444;
+  //                 font-size: 0.7rem;
+  //                 font-weight: bold;
+  //               ">W</div>` : ''
+  //             }
+              
+  //             ${monster.equipment?.armor ?
+  //               `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}" style="
+  //                 width: 20px;
+  //                 height: 20px;
+  //                 border-radius: 50%;
+  //                 display: flex;
+  //                 align-items: center;
+  //                 justify-content: center;
+  //                 background-color: #dbeafe;
+  //                 color: #3b82f6;
+  //                 font-size: 0.7rem;
+  //                 font-weight: bold;
+  //               ">A</div>` : ''
+  //             }
+  //           </div>
+  //         </div>
+          
+  //         ${relationships.length > 0 ?
+  //           `<div class="monster-relationships" style="
+  //             margin-top: 8px; 
+  //             font-size: 0.75rem; 
+  //             color: #666;
+  //           ">
+  //             <div style="
+  //               display: flex; 
+  //               align-items: center; 
+  //               gap: 4px;
+  //             ">
+  //               <span class="material-icons" style="font-size: 14px; color: #ff6b6b;">favorite</span>
+  //               <span>Affinity with: ${relationships.map(r => {
+  //                 // Find monster name
+  //                 const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
+  //                 return relatedMonster ? relatedMonster.name : '';
+  //               }).filter(Boolean).join(', ')}</span>
+  //             </div>
+  //           </div>` : ''
+  //         }
+  //       </div>
+  //     </div>
+  //   `;
+  
+  //   // Also add a helper method for light color calculation
+  //   const cardBase = card.querySelector('.card-base');
+  //   const monsterAvatar = card.querySelector('.monster-avatar');
+    
+  //   card.addEventListener('mouseenter', () => {
+  //     monsterAvatar.style.transform = `rotate(${-tiltAngle * 0.7}deg) scale(1.05)`;
+  //     monsterAvatar.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.4))';
+  //   });
+    
+  //   card.addEventListener('mouseleave', () => {
+  //     monsterAvatar.style.transform = `rotate(${-tiltAngle * 0.7}deg)`;
+  //     monsterAvatar.style.filter = 'drop-shadow(0 0 4px rgba(0,0,0,0.2))';
+  //   });
+  
+  //   return card;
+  // }
+
   createMonsterCard(monster, type, isAlt = false) {
     // Calculate HP percentage
     const hpPercent = Math.floor((monster.currentHP / monster.maxHP) * 100);
@@ -1989,113 +2499,359 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     } else if (hpPercent < 70) {
       hpColorClass = 'medium';
     }
-
-    const bgColor = [monster.type.toLowerCase()];
-
-
+  
+    // Get monster type color and background
+    const bgColor = this.getMonsterTypeColor(monster.type);
+    const lightBgColor = this.getLightVersionOfColor(bgColor);
+  
     // Get relationship data
     const relationships = this.getMonstersWithAffinity(monster.id) || [];
-
+  
+    // Calculate tilt angle based on monster ID (consistent per monster)
+    // This creates a random but consistent tilt between -5 and 5 degrees
+    const idNum = monster.id.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const tiltAngle = ((idNum % 11) - 5) || (isAlt ? 3 : -3);
+  
     // Create the card
     const card = document.createElement('div');
     card.className = `monster-card ${type}-party`;
-    if (isAlt) card.classList.add('alt');
     card.setAttribute('data-monster-id', monster.id);
-
+    card.setAttribute('data-monster-type', monster.type);
+  
     // Get token source
     const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
-    const typeColor = this.getMonsterTypeColor(monster.type);
+    
+    // Get animation style
     const animation = this.getMonsterAnimation(monster.type, monster.name);
-    // Apply animation styles if applicable
-    let headerStyle = '';
-    if (animation.useAnimation) {
-      // Convert style object to inline CSS
-      headerStyle = Object.entries(animation.style)
-        .map(([key, value]) => `${key}: ${value};`)
-        .join(' ');
-    }
-
-    // Monster card content
+    
+    // Apply tilt to the whole card
+    card.style.transform = `rotate(${tiltAngle}deg)`;
+    card.style.transition = 'all 0.3s ease';
+    card.style.margin = '0 8px 16px 8px'; // Add some margin for the tilt
+    
+    // Add hover effect event listeners
+    card.addEventListener('mouseenter', () => {
+      card.style.transform = `rotate(${tiltAngle}deg) translateY(-5px)`;
+      card.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = `rotate(${tiltAngle}deg)`;
+      card.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+    });
+  
+    // Monster card content - new tilted design with larger asymmetric token
     card.innerHTML = `
-    <div class="monster-header" ${animation.useAnimation ? `style="${headerStyle}"` : ''}>
-        <div class="monster-avatar" style="background-color: ${bgColor}; position: relative;">
-          ${tokenSource ?
-        `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-        monster.name.charAt(0)
-      }
-          ${relationships.length > 0 ?
-        `<div class="relationship-indicator" style="position: absolute; top: -5px; right: -5px; background: #ff6b6b; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
-              <span class="material-icons" style="font-size: 12px; color: white;">favorite</span>
-            </div>` :
-        ''}
-        </div>
-      <div class="monster-info">
-        <div class="monster-name" style="
-          background: linear-gradient(90deg, ${typeColor}50, transparent);
-          padding: 3px 8px;
-          border-radius: 4px;
-          color: #333;
-          font-weight: bold;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        ">${monster.name}</div>
-        <div class="monster-type">
-          ${monster.size} ${monster.type}
-          <span class="monster-level-badge">${monster.level || 1}</span>
-        </div>
-      </div>
-    </div>
-      
-      <div class="monster-stats">
-        <!-- HP Bar -->
-        <div class="hp-bar-label">
-          <span>HP</span>
-          <span>${monster.currentHP}/${monster.maxHP}</span>
-        </div>
-        <div class="hp-bar-bg">
-          <div class="hp-bar-fill ${hpColorClass}" style="width: ${hpPercent}%;"></div>
-        </div>
-        
-        <!-- Footer with AC and equipment -->
-        <div class="monster-footer">
-          <div class="ac-display">
-            <span class="material-icons small" style="margin-right: 4px;">shield</span>
-            <span>${monster.armorClass}</span>
+      <div class="card-base" style="
+        width: 200px;
+        background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid ${bgColor};
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      ">
+        <!-- Top Banner with Monster Name and Level -->
+        <div class="card-banner" style="
+          height: 50px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          background: linear-gradient(135deg, ${bgColor}dd, ${bgColor});
+          border-bottom: 3px solid ${bgColor};
+        ">
+          <!-- Monster Name (Now on the left) -->
+          <div class="monster-name" style="
+            font-weight: bold;
+            color: white;
+            font-size: 1rem;
+            max-width: 130px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          ">${monster.name}</div>
+          
+          <!-- Level Badge (Stays on the right) -->
+          <div class="level-badge" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: white;
+            color: ${bgColor};
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 2px solid ${bgColor};
+          ">
+            ${monster.level || 1}
           </div>
           
-          <div class="equipment-icons">
-            ${monster.equipment?.weapon ?
-        `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}">
-                <span class="material-icons small">sports_martial_arts</span>
-              </div>` : ''
-      }
-            ${monster.equipment?.armor ?
-        `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}">
-                <span class="material-icons small">security</span>
-              </div>` : ''
-      }
+          <!-- Decorative Elements -->
+          <div class="decorative-elements" style="
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            opacity: 0.2;
+            z-index: 0;
+          ">
+            ${Array.from({ length: 5 }).map(() => {
+              const size = Math.floor(Math.random() * 6 + 3);
+              const top = Math.floor(Math.random() * 100);
+              const left = Math.floor(Math.random() * 100);
+              return `<div style="
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                background-color: white;
+                top: ${top}%;
+                left: ${left}%;
+              "></div>`;
+            }).join('')}
           </div>
         </div>
         
-        ${relationships.length > 0 ?
-        `<div class="monster-relationships" style="margin-top: 8px; font-size: 0.75rem; color: #666;">
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span class="material-icons" style="font-size: 14px; color: #ff6b6b;">favorite</span>
-              <span>Affinity with: ${relationships.map(r => {
-          // Find monster name
-          const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
-          return relatedMonster ? relatedMonster.name : '';
-        }).filter(Boolean).join(', ')}</span>
+        <!-- Monster Portrait Section - Asymmetrically positioned -->
+        <div class="portrait-section" style="
+          position: relative;
+          overflow: visible;
+          padding: 16px 16px 8px;
+          min-height: 60px;
+        ">
+          <!-- Large Token/Portrait -->
+          <div class="monster-avatar" style="
+            position: absolute;
+            z-index: 10;
+            top: -5px;
+            left: 10px;
+            width: 100px;
+            height: 100px;
+            transform: rotate(${-tiltAngle * 0.7}deg);
+            transition: transform 0.3s ease-out, filter 0.3s ease;
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
+          ">
+            <!-- Token Circle with Border -->
+            <div style="
+              position: relative;
+              width: 100%;
+              height: 100%;
+              border-radius: 50%;
+              overflow: hidden;
+              border: 4px solid ${bgColor};
+              background-color: #e5e7eb;
+            ">
+              ${tokenSource ?
+                `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                `<div style="
+                  position: absolute;
+                  inset: 0;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 60px;
+                  font-weight: bold;
+                  color: ${bgColor};
+                ">${monster.name.charAt(0)}</div>`
+              }
+              
+              <!-- Glare Effect -->
+              <div style="
+                position: absolute;
+                top: 0;
+                left: 25%;
+                right: 0;
+                height: 33%;
+                background-color: white;
+                opacity: 0.2;
+                transform: rotate(-45deg);
+                border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+              "></div>
             </div>
-          </div>` :
-        ''}
+          </div>
+          
+          <!-- Monster Type Info (Name was moved to top) -->
+          <div class="monster-info" style="
+            margin-left: 100px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+          ">
+            <div class="monster-type" style="
+              display: inline-block;
+              padding: 4px 10px;
+              border-radius: 20px;
+              background-color: ${lightBgColor};
+              color: ${bgColor};
+              font-size: 0.8rem;
+              font-weight: 500;
+            ">
+              ${monster.size} ${monster.type}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Stats Section -->
+        <div class="monster-stats" style="
+          background-color: white;
+          padding: 12px;
+          border-top: 1px solid #f0f0f0;
+        ">
+          <!-- HP Bar -->
+          <div class="hp-bar-label" style="
+            display: flex; 
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            color: #666;
+          ">
+            <span>HP</span>
+            <span>${monster.currentHP}/${monster.maxHP}</span>
+          </div>
+          
+          <div class="hp-bar-bg" style="
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+          ">
+            <div class="hp-bar-fill ${hpColorClass}" style="
+              height: 100%;
+              width: ${hpPercent}%;
+              border-radius: 3px;
+              transition: width 0.3s ease;
+            "></div>
+          </div>
+          
+          <!-- Monster footer with AC and equipment -->
+          <div class="monster-footer" style="
+            display: flex;
+            font-size: 0.75rem;
+            color: #666;
+            justify-content: space-between;
+            align-items: center;
+          ">
+            <div class="ac-display" style="
+              display: flex;
+              align-items: center;
+            ">
+              <div style="
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background-color: #f3f4f6;
+                border: 2px solid ${bgColor};
+                color: #374151;
+                font-weight: bold;
+                font-size: 0.8rem;
+                margin-right: 4px;
+              ">
+                ${monster.armorClass}
+              </div>
+              <span style="font-size: 0.7rem; color: #6b7280;">AC</span>
+            </div>
+            
+            <!-- Equipment icons -->
+            <div class="equipment-icons" style="
+              display: flex;
+              gap: 4px;
+            ">
+              ${monster.equipment?.weapon ?
+                `<div class="equipment-icon weapon-icon" title="${monster.equipment.weapon.name}" style="
+                  width: 20px;
+                  height: 20px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background-color: #fee2e2;
+                  color: #ef4444;
+                  font-size: 0.7rem;
+                  font-weight: bold;
+                ">W</div>` : ''
+              }
+              
+              ${monster.equipment?.armor ?
+                `<div class="equipment-icon armor-icon" title="${monster.equipment.armor.name}" style="
+                  width: 20px;
+                  height: 20px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  background-color: #dbeafe;
+                  color: #3b82f6;
+                  font-size: 0.7rem;
+                  font-weight: bold;
+                ">A</div>` : ''
+              }
+            </div>
+          </div>
+          
+          ${relationships.length > 0 ?
+            `<div class="monster-relationships" style="
+              margin-top: 8px; 
+              font-size: 0.75rem; 
+              color: #666;
+              border-top: 1px solid rgba(0,0,0,0.05);
+              padding-top: 6px;
+            ">
+              <div style="
+                display: flex; 
+                align-items: center; 
+                gap: 4px;
+              ">
+                <span class="material-icons" style="font-size: 14px; color: #ff6b6b;">favorite</span>
+                <span>Affinity with: ${relationships.map(r => {
+                  // Find monster name
+                  const relatedMonster = [...this.party.active, ...this.party.reserve].find(m => m.id === r.monsterId);
+                  return relatedMonster ? relatedMonster.name : '';
+                }).filter(Boolean).join(', ')}</span>
+              </div>
+            </div>` : ''
+          }
+        </div>
       </div>
     `;
-
-    const statsDiv = card.querySelector('.monster-stats');
-
+  
+    const cardBase = card.querySelector('.card-base');
+    const monsterAvatar = card.querySelector('.monster-avatar');
+    
+    card.addEventListener('mouseenter', () => {
+      monsterAvatar.style.transform = `rotate(${-tiltAngle * 0.7}deg) scale(1.05)`;
+      monsterAvatar.style.filter = 'drop-shadow(0 0 8px rgba(0,0,0,0.4))';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      monsterAvatar.style.transform = `rotate(${-tiltAngle * 0.7}deg)`;
+      monsterAvatar.style.filter = 'drop-shadow(0 0 4px rgba(0,0,0,0.2))';
+    });
+  
     return card;
+  }
+  
+  // Add this helper method to PartyManager to get lighter version of type colors
+  getLightVersionOfColor(hexColor) {
+    // Convert hex to RGB
+    let r = parseInt(hexColor.slice(1, 3), 16);
+    let g = parseInt(hexColor.slice(3, 5), 16);
+    let b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Lighten by mixing with white
+    r = Math.floor(r + (255 - r) * 0.8);
+    g = Math.floor(g + (255 - g) * 0.8);
+    b = Math.floor(b + (255 - b) * 0.8);
+    
+    // Convert back to hex
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   getMonsterTypeColor(type) {

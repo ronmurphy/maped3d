@@ -1203,6 +1203,77 @@ class CombatSystem {
   font-weight: bold;
   text-shadow: 0 0 2px black;
 }
+
+/* Add these styles to your createCombatStyles method */
+
+/* HP bar fill colors */
+.hp-bar-fill.high {
+  background: #10b981;
+}
+
+.hp-bar-fill.medium {
+  background: #f59e0b;
+}
+
+.hp-bar-fill.low {
+  background: #ef4444;
+}
+
+/* Combat monster card styling */
+.combat-monster {
+  position: relative;
+  margin: 4px;
+  transition: all 0.3s ease;
+}
+
+.combat-monster.enemy {
+  transform: rotate(4deg);
+}
+
+.combat-monster.player {
+  transform: rotate(-4deg);
+}
+
+/* Active animation */
+.combat-monster.active .active-indicator {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.1); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+/* Targeting states for combat cards */
+.combat-monster.targetable {
+  cursor: pointer;
+  animation: targetPulse 1.5s infinite;
+}
+
+@keyframes targetPulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Automatic targeting animation */
+.auto-targeted {
+  animation: auto-target-pulse 0.8s ease;
+}
+
+@keyframes auto-target-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Make enemy cards slightly smaller when multiple */
+.enemy-layout-duo .combat-monster,
+.enemy-layout-trio .combat-monster,
+.enemy-layout-quad .combat-monster {
+  width: 160px; /* Slightly smaller than the standard 180px */
+}
 `;
 
     return styleElement;
@@ -1754,70 +1825,187 @@ class CombatSystem {
     }, 10);
   }
 
-  // New method to create styled monster cards
-  createMonsterCard(monster, side, index) {
-    console.log(
-      `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
-    );
 
-    const isPlayer = side === "player";
-    const isActive = this.isMonsterActive(monster);
-    const isDefeated = monster.currentHP <= 0;
+// Updated createMonsterCard with fixed active indicator
+createMonsterCard(monster, side, index) {
+  console.log(
+    `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
+  );
 
-    // Calculate HP percentage
-    const hpPercent = (monster.currentHP / monster.maxHP) * 100;
-    let hpBarColorClass = "high";
-    if (hpPercent < 30) {
-      hpBarColorClass = "low";
-    } else if (hpPercent < 70) {
-      hpBarColorClass = "medium";
-    }
+  const isPlayer = side === "player";
+  const isActive = this.isMonsterActive(monster);
+  const isDefeated = monster.currentHP <= 0;
 
-    // Create card wrapper
-    const card = document.createElement("div");
-    card.className = `combat-monster ${side}`;
-    if (isActive) card.classList.add("active");
-    if (isDefeated) card.classList.add("defeated");
-    card.setAttribute("data-monster-id", monster.id);
+  // Calculate HP percentage
+  const hpPercent = (monster.currentHP / monster.maxHP) * 100;
+  let hpBarColorClass = "high";
+  if (hpPercent < 30) {
+    hpBarColorClass = "low";
+  } else if (hpPercent < 70) {
+    hpBarColorClass = "medium";
+  }
 
-    // Generate token or placeholder
-    const tokenSource = monster.token?.data || monster.token?.url || null;
+  // Get monster type color
+  const typeColor = this.getMonsterTypeColor(monster.type || "beast");
+  
+  // Calculate tilt angle based on monster ID (consistent per monster)
+  // Less tilt in combat (from -3 to 3 degrees) to keep the UI cleaner
+  const idHash = monster.id.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const tiltAngle = ((idHash % 7) - 3) * (side === "player" ? 1 : -1);
 
-    // Create card content
-    card.innerHTML = `
-      <div class="monster-header">
-        <div class="monster-image">
+  // Generate token or placeholder
+  const tokenSource = monster.token?.data || monster.token?.url || null;
+
+  // Create card wrapper
+  const card = document.createElement("div");
+  card.className = `combat-monster ${side}`;
+  if (isActive) card.classList.add("active");
+  if (isDefeated) card.classList.add("defeated");
+  card.setAttribute("data-monster-id", monster.id);
+  
+  // Apply tilt effect
+  card.style.transform = `rotate(${tiltAngle}deg)`;
+  card.style.transition = "all 0.3s ease";
+  
+  // Add card HTML content with the new design
+  card.innerHTML = `
+    <div class="monster-content" style="
+      position: relative;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      overflow: visible; /* Changed from hidden to visible to allow active indicator to be fully visible */
+      width: 180px;
+    ">
+      <!-- Active indicator - moved above header to ensure visibility -->
+      ${
+        isActive
+          ? `
+        <div class="active-indicator" style="
+          position: absolute;
+          top: -12px; /* Moved up slightly */
+          left: 50%;
+          transform: translateX(-50%);
+          background: #3b82f6;
+          color: white;
+          border-radius: 12px;
+          padding: 2px 8px;
+          font-size: 0.7em;
+          font-weight: bold;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          z-index: 100; /* Ensure it's above everything */
+        ">ACTIVE</div>
+      `
+          : ""
+      }
+      
+      <!-- Header banner with monster name and type -->
+      <div class="monster-header" style="
+        background: linear-gradient(135deg, ${typeColor}dd, ${typeColor});
+        padding: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        color: white;
+      ">
+        <div class="monster-info" style="
+          flex: 1;
+          overflow: hidden;
+          margin-right: 8px;
+        ">
+          <div class="monster-name" style="
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          ">${monster.name}</div>
+          
+          <div class="monster-type" style="
+            font-size: 0.8em;
+            opacity: 0.9;
+          ">
+            ${monster.size} ${monster.type || ""}
+          </div>
+        </div>
+        
+        <!-- Monster image/token -->
+        <div class="monster-image" style="
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 20px;
+          border: 2px solid ${side === "player" ? "#3b82f6" : "#ef4444"};
+          background-color: ${side === "player" ? "#3b82f6" : "#ef4444"};
+        ">
           ${
             tokenSource
               ? `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">`
               : `<span>${monster.name.charAt(0)}</span>`
           }
         </div>
-        <div class="monster-info">
-          <div class="monster-name">${monster.name}</div>
-          <div class="monster-type">
-            ${monster.size} ${monster.type} ${
-      isPlayer ? `• Lvl ${monster.level || 1}` : ""
-    }
-          </div>
-        </div>
       </div>
       
-      <div class="monster-stats">
-        <div class="hp-bar-label">
+      <!-- Monster stats section -->
+      <div class="monster-stats" style="
+        padding: 8px;
+        background: #f9fafb;
+      ">
+        <!-- HP Bar -->
+        <div class="hp-bar-label" style="
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.8em;
+          margin-bottom: 4px;
+        ">
           <span>HP</span>
           <span>${monster.currentHP}/${monster.maxHP}</span>
         </div>
-        <div class="hp-bar-bg">
-          <div class="hp-bar-fill ${hpBarColorClass}" style="width: ${hpPercent}%;"></div>
+        
+        <div class="hp-bar-bg" style="
+          height: 8px;
+          background: #e0e0e0;
+          border-radius: 4px;
+          margin-bottom: 8px;
+          overflow: hidden;
+        ">
+          <div class="hp-bar-fill ${hpBarColorClass}" style="
+            height: 100%;
+            width: ${hpPercent}%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+          "></div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-          <div class="stat-row">
+        <!-- Stats Grid -->
+        <div style="
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 4px;
+        ">
+          <div class="stat-row" style="
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+          ">
             <span>AC</span>
-            <span>${monster.armorClass || monster.stats.ac || 10}</span>
+            <span>${monster.armorClass || monster.stats?.ac || 10}</span>
           </div>
-          <div class="stat-row">
+          
+          <div class="stat-row" style="
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+          ">
             <span>${isPlayer ? "EXP" : "CR"}</span>
             <span>${
               isPlayer
@@ -1831,138 +2019,66 @@ class CombatSystem {
       </div>
       
       ${
-        isActive
-          ? `
-        <div class="active-indicator">ACTIVE</div>
-      `
-          : ""
-      }
-      
-      ${
         isDefeated
           ? `
-        <div class="defeated-indicator">✕</div>
+        <div class="defeated-indicator" style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 8px;
+          color: white;
+          font-size: 48px;
+          z-index: 90; /* High but below active indicator */
+        ">✕</div>
       `
           : ""
       }
-    `;
+    </div>
+  `;
 
-    console.log(`Card created for ${monster.name}`);
+  // Add hover effects
+  card.addEventListener('mouseenter', () => {
+    // Only apply hover effects if not defeated
+    if (!isDefeated) {
+      card.style.transform = `rotate(${tiltAngle}deg) translateY(-5px) scale(1.02)`;
+      card.style.boxShadow = '0 10px 15px rgba(0, 0, 0, 0.3)';
+      card.style.zIndex = '10';
+    }
+  });
+  
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = `rotate(${tiltAngle}deg)`;
+    card.style.boxShadow = '';
+    // Keep z-index higher if it's active
+    card.style.zIndex = isActive ? '5' : '';
+  });
 
-    return card;
-  }
+  return card;
+}
 
-  // Render a group of monsters (player or enemy)
+
   renderMonsterGroup(monsters, side) {
     if (!monsters || monsters.length === 0) {
       return `<div class="empty-party-message">No ${side} monsters</div>`;
     }
-
+  
     let html = "";
-
+  
     monsters.forEach((monster) => {
-      // Determine if this monster is active
-      const isActive = this.isMonsterActive(monster);
-      const isDefeated = monster.currentHP <= 0;
-
-      // Calculate HP percentage
-      const hpPercent = (monster.currentHP / monster.maxHP) * 100;
-      let hpBarColor = "#4CAF50"; // Green
-      if (hpPercent < 30) {
-        hpBarColor = "#F44336"; // Red
-      } else if (hpPercent < 70) {
-        hpBarColor = "#FF9800"; // Orange
-      }
-
-      // Apply styling based on status
-      let cardStyle = `
-        position: relative;
-        width: 150px;
-        background: white;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        padding: 8px;
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-      `;
-
-      if (isActive) {
-        cardStyle += `
-          box-shadow: 0 0 15px rgba(33, 150, 243, 0.8);
-          transform: translateY(-10px) scale(1.05);
-          z-index: 10;
-          border-color: #2196F3;
-        `;
-      }
-
-      if (isDefeated) {
-        cardStyle += `
-          opacity: 0.6;
-          filter: grayscale(100%);
-        `;
-      }
-
-      const tokenSource =
-        monster.token?.data ||
-        monster.token?.url ||
-        this.generateDefaultTokenImage(monster);
-
-      html += `
-        <div class="combat-monster ${side}" data-monster-id="${
-        monster.id
-      }" style="${cardStyle}">
-          <div class="monster-header" style="display: flex; align-items: center; margin-bottom: 8px;">
-            <div class="monster-image" style="width: 40px; height: 40px; margin-right: 8px;">
-              <img src="${tokenSource}" alt="${
-        monster.name
-      }" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
-            </div>
-            <div class="monster-info" style="flex: 1; overflow: hidden;">
-              <div class="monster-name" style="font-weight: bold; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${
-                monster.name
-              }</div>
-              <div class="monster-level" style="font-size: 0.8em;">Lvl ${
-                monster.level
-              }</div>
-            </div>
-          </div>
-          
-          <div class="monster-hp" style="margin-bottom: 8px;">
-            <div class="hp-label" style="display: flex; justify-content: space-between; font-size: 0.8em;">
-              <span>HP</span>
-              <span>${monster.currentHP}/${monster.maxHP}</span>
-            </div>
-            <div class="hp-bar-bg" style="height: 8px; background: #e0e0e0; border-radius: 4px;">
-              <div class="hp-bar-fill" style="height: 100%; width: ${hpPercent}%; background: ${hpBarColor}; border-radius: 4px;"></div>
-            </div>
-          </div>
-          
-          ${
-            isActive
-              ? `
-            <div class="active-indicator" style="position: absolute; top: -10px; left: calc(50% - 12px); background: #2196F3; color: white; border-radius: 12px; padding: 2px 6px; font-size: 0.7em; font-weight: bold;">
-              ACTIVE
-            </div>
-          `
-              : ""
-          }
-          
-          ${
-            isDefeated
-              ? `
-            <div class="defeated-indicator" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; pointer-events: none;">
-              <span class="material-icons" style="font-size: 48px; color: rgba(200, 0, 0, 0.7);">close</span>
-            </div>
-          `
-              : ""
-          }
-        </div>
-      `;
+      // Create the card using our new method to ensure consistent styling
+      const monsterCard = this.createMonsterCard(monster, side, 0);
+      html += monsterCard.outerHTML;
     });
-
+  
     return html;
   }
+
 
   getMonsterTypeColor(type) {
     const typeColors = {
@@ -2866,26 +2982,24 @@ class CombatSystem {
     return bonus;
   }
 
-
-  // Show target selection overlay
   markTargetableEnemies(monster, ability) {
     console.log(
       `Setting up targeting for ${monster.name} using ${ability.name}`
     );
-
+  
     // Find all enemy cards
     const enemyCards = Array.from(
       this.dialogContainer.querySelectorAll(".combat-monster.enemy")
     );
     console.log(`Found ${enemyCards.length} enemy cards for targeting`);
-
+  
     // Find viable targets (enemies with HP > 0)
     const viableTargets = [];
-
+  
     enemyCards.forEach((card) => {
       const enemyId = card.getAttribute("data-monster-id");
       const enemy = this.enemyParty.find((e) => e.id === enemyId);
-
+  
       if (enemy && enemy.currentHP > 0) {
         viableTargets.push({ card, enemy });
         console.log(
@@ -2893,17 +3007,17 @@ class CombatSystem {
         );
       }
     });
-
+  
     console.log(`Total viable targets: ${viableTargets.length}`);
-
+  
     // If there's only one viable target, auto-target it
     if (viableTargets.length === 1) {
       const { enemy, card } = viableTargets[0];
       console.log(`Auto-targeting single enemy: ${enemy.name}`);
-
+  
       // Create a quick highlight effect
       card.classList.add("auto-targeted");
-
+  
       // Create a temporary message
       const battleScene = this.dialogContainer.querySelector(".battle-scene");
       const autoMessage = document.createElement("div");
@@ -2911,74 +3025,96 @@ class CombatSystem {
       autoMessage.textContent = `Auto-targeting ${enemy.name}`;
       autoMessage.style.backgroundColor = "rgba(239, 68, 68, 0.8)";
       battleScene.appendChild(autoMessage);
-
+  
       // Remove the message and execute the ability after a short delay
       setTimeout(() => {
         autoMessage.classList.remove("fade-in");
         autoMessage.style.opacity = "0";
-
+  
         console.log(`Resolving ability ${ability.name} against ${enemy.name}`);
         this.resolveAbility(monster, ability, enemy);
-
+  
         // Move to next turn
         this.nextTurn();
-
+  
         // Clean up
         setTimeout(() => {
           autoMessage.remove();
           card.classList.remove("auto-targeted");
         }, 300);
       }, 800);
-
+  
       return;
     }
-
+  
     // If we have multiple targets, proceed with manual targeting
     console.log(
       `Setting up manual targeting for ${viableTargets.length} enemies`
     );
-
+  
     viableTargets.forEach(({ card, enemy }) => {
       // Add targetable class and hint
       card.classList.add("targetable");
-
+  
       // Add targeting hint
       const hint = document.createElement("div");
       hint.className = "targeting-hint";
       hint.textContent = `Click to target with ${ability.name}`;
+      hint.style.position = "absolute";
+      hint.style.top = "-30px";
+      hint.style.left = "50%";
+      hint.style.transform = "translateX(-50%)";
+      hint.style.background = "rgba(0, 0, 0, 0.7)";
+      hint.style.color = "white";
+      hint.style.padding = "4px 8px";
+      hint.style.borderRadius = "4px";
+      hint.style.fontSize = "0.8em";
+      hint.style.whiteSpace = "nowrap";
+      hint.style.pointerEvents = "none";
+      hint.style.opacity = "0";
+      hint.style.transition = "opacity 0.3s ease";
       card.appendChild(hint);
-
+      
+      // Show hint on hover
+      card.addEventListener('mouseenter', () => {
+        hint.style.opacity = "1";
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        hint.style.opacity = "0";
+      });
+  
       // Create new click handler
       const targetClickHandler = () => {
         console.log(`Target selected: ${enemy.name}`);
-
+  
         // Remove targeting from all cards
         enemyCards.forEach((c) => {
           c.classList.remove("targetable");
           const h = c.querySelector(".targeting-hint");
           if (h) h.remove();
-
+  
           // Important: Remove all previous click handlers
           c.removeEventListener("click", targetClickHandler);
         });
-
+  
         // Execute ability on the target
         this.resolveAbility(monster, ability, enemy);
-
+  
         // Move to next turn
         this.nextTurn();
-
+  
         // Remove battle notification if present
         const notification = this.dialogContainer.querySelector(
           ".battle-notification"
         );
         if (notification) notification.remove();
       };
-
+  
       // Add click handler
       card.addEventListener("click", targetClickHandler);
     });
-
+  
     // Add the targeting instruction message
     const battleScene = this.dialogContainer.querySelector(".battle-scene");
     const indicator = document.createElement("div");
@@ -2986,7 +3122,7 @@ class CombatSystem {
     indicator.textContent = "Select an enemy to target";
     indicator.style.backgroundColor = "rgba(239, 68, 68, 0.8)";
     battleScene.appendChild(indicator);
-
+  
     // Remove after a few seconds to avoid clutter
     setTimeout(() => {
       if (indicator && indicator.parentNode) {
@@ -2998,6 +3134,8 @@ class CombatSystem {
       }
     }, 3000);
   }
+
+
 
   showTargetSelection(monster, ability) {
     // Get valid targets (non-defeated enemies)
@@ -3469,26 +3607,56 @@ class CombatSystem {
     initiativeList.innerHTML = this.renderInitiativeList();
   }
 
-  // Update all combat displays
   updateCombatDisplay() {
+    console.log("Updating combat display");
+    
     // Update enemy display
     const enemyArea = this.dialogContainer.querySelector(".enemy-area");
     if (enemyArea) {
-      enemyArea.innerHTML = this.renderMonsterGroup(this.enemyParty, "enemy");
+      // Clear existing content
+      enemyArea.innerHTML = '';
+      
+      // Add active enemies directly to maintain styling
+      this.enemyParty.forEach((monster, index) => {
+        if (monster.currentHP > 0) {
+          const monsterCard = this.createMonsterCard(monster, "enemy", index);
+          enemyArea.appendChild(monsterCard);
+        }
+      });
+      
+      // Update class based on number of enemies
+      const activeEnemies = this.enemyParty.filter(m => m.currentHP > 0);
+      if (activeEnemies.length === 1) {
+        enemyArea.className = "enemy-area enemy-layout-single";
+      } else if (activeEnemies.length === 2) {
+        enemyArea.className = "enemy-area enemy-layout-duo";
+      } else if (activeEnemies.length === 3) {
+        enemyArea.className = "enemy-area enemy-layout-trio";
+      } else if (activeEnemies.length >= 4) {
+        enemyArea.className = "enemy-area enemy-layout-quad";
+      }
     }
-
+  
     // Update player display
     const playerArea = this.dialogContainer.querySelector(".player-area");
     if (playerArea) {
-      playerArea.innerHTML = this.renderMonsterGroup(
-        this.playerParty,
-        "player"
-      );
+      // Clear existing content
+      playerArea.innerHTML = '';
+      
+      // Add player monsters directly
+      this.playerParty.forEach((monster, index) => {
+        const monsterCard = this.createMonsterCard(monster, "player", index);
+        playerArea.appendChild(monsterCard);
+      });
     }
-
+  
     // Update initiative display
     this.updateInitiativeTracker();
+    
+    // Update defeated enemies row
+    this.updateDefeatedEnemiesRow();
   }
+  
 
   // Add entry to combat log
   addLogEntry(message, isRoundHeader = false) {
@@ -3729,109 +3897,6 @@ class CombatSystem {
     console.log("========== DATABASE SEARCH END ==========");
     return candidates;
   }
-
-  // generateDefaultEnemies(targetCR) {
-  //   // Basic set of default enemies with varying CRs
-  //   const defaultEnemies = [
-  //     {
-  //       id: `default_goblin_${Date.now()}`,
-  //       basic: {
-  //         name: "Goblin Scout",
-  //         type: "Humanoid",
-  //         size: "Small",
-  //         cr: "1/4"
-  //       },
-  //       abilities: {
-  //         str: { score: 8, modifier: -1 },
-  //         dex: { score: 14, modifier: 2 },
-  //         con: { score: 10, modifier: 0 },
-  //         int: { score: 10, modifier: 0 },
-  //         wis: { score: 8, modifier: -1 },
-  //         cha: { score: 8, modifier: -1 }
-  //       },
-  //       stats: {
-  //         ac: 15,
-  //         hp: { average: 7 }
-  //       }
-  //     },
-  //     {
-  //       id: `default_orc_${Date.now()}`,
-  //       basic: {
-  //         name: "Orc Warrior",
-  //         type: "Humanoid",
-  //         size: "Medium",
-  //         cr: "1/2"
-  //       },
-  //       abilities: {
-  //         str: { score: 16, modifier: 3 },
-  //         dex: { score: 12, modifier: 1 },
-  //         con: { score: 16, modifier: 3 },
-  //         int: { score: 7, modifier: -2 },
-  //         wis: { score: 11, modifier: 0 },
-  //         cha: { score: 10, modifier: 0 }
-  //       },
-  //       stats: {
-  //         ac: 13,
-  //         hp: { average: 15 }
-  //       }
-  //     },
-  //     {
-  //       id: `default_ogre_${Date.now()}`,
-  //       basic: {
-  //         name: "Ogre Brute",
-  //         type: "Giant",
-  //         size: "Large",
-  //         cr: "2"
-  //       },
-  //       abilities: {
-  //         str: { score: 19, modifier: 4 },
-  //         dex: { score: 8, modifier: -1 },
-  //         con: { score: 16, modifier: 3 },
-  //         int: { score: 5, modifier: -3 },
-  //         wis: { score: 7, modifier: -2 },
-  //         cha: { score: 7, modifier: -2 }
-  //       },
-  //       stats: {
-  //         ac: 11,
-  //         hp: { average: 59 }
-  //       }
-  //     }
-  //   ];
-
-  //   // Scale the enemies based on target CR
-  //   const scaledEnemies = defaultEnemies.map((enemy) => {
-  //     const enemyClone = JSON.parse(JSON.stringify(enemy));
-  //     const originalCr = this.parseCR(enemyClone.basic.cr);
-  //     const scaleRate = targetCR / originalCr;
-
-  //     // Only scale if significant difference
-  //     if (scaleRate > 1.5 || scaleRate < 0.67) {
-  //       // Scale HP based on CR
-  //       if (enemyClone.stats && enemyClone.stats.hp) {
-  //         enemyClone.stats.hp.average = Math.max(
-  //           1,
-  //           Math.floor(enemyClone.stats.hp.average * Math.sqrt(scaleRate))
-  //         );
-  //       }
-
-  //       // Scale CR
-  //       const newCR = Math.max(1 / 8, originalCr * scaleRate);
-  //       enemyClone.basic.cr = this.formatCR(newCR);
-
-  //       // Add scaling info to name
-  //       if (scaleRate > 1) {
-  //         enemyClone.basic.name = `Veteran ${enemyClone.basic.name}`;
-  //       } else if (scaleRate < 1) {
-  //         enemyClone.basic.name = `Young ${enemyClone.basic.name}`;
-  //       }
-  //     }
-
-  //     return enemyClone;
-  //   });
-
-  //   console.log(`Generated ${scaledEnemies.length} default enemies`);
-  //   return scaledEnemies;
-  // }
 
   // Helper methods for CR conversion
   parseCR(cr) {
@@ -4150,150 +4215,175 @@ class CombatSystem {
     return enemy;
   }
 
-  // Update enemy area rendering for multiple enemies
   updateEnemyArea(providedEnemyArea = null) {
     // Use provided area or find it
     const enemyArea =
       providedEnemyArea || this.dialogContainer.querySelector(".enemy-area");
-
+  
     if (!enemyArea) {
       console.error("Enemy area not found and not provided");
       return;
     }
-
+  
     // Remove any transitions temporarily to prevent race conditions
     enemyArea.style.transition = "none";
-
+  
     // Clear existing content
     enemyArea.innerHTML = "";
-
+  
     // Get active (non-defeated) enemies
     const activeEnemies = this.enemyParty.filter(
       (monster) => monster.currentHP > 0
     );
     const count = activeEnemies.length;
-
+  
+    // Update enemy area class based on count
+    if (count === 1) {
+      enemyArea.className = "enemy-area enemy-layout-single";
+    } else if (count === 2) {
+      enemyArea.className = "enemy-area enemy-layout-duo";
+    } else if (count === 3) {
+      enemyArea.className = "enemy-area enemy-layout-trio";
+    } else if (count >= 4) {
+      enemyArea.className = "enemy-area enemy-layout-quad";
+    }
+  
     // Add cards with explicit, fixed positioning
     if (count === 1) {
       // Single enemy - centered
       const monster = activeEnemies[0];
       const card = this.createMonsterCard(monster, "enemy", 0);
-
+  
       // Fixed position
       card.style.position = "absolute";
-      card.style.left = "calc(50% - 80px)"; // Half card width
+      card.style.left = "calc(50% - 90px)"; // Half card width
       card.style.top = "calc(50% - 100px)"; // Position in middle
-      card.style.transform = "rotate(4deg)";
+      // Don't override the tilt applied in createMonsterCard
       card.style.transition = "none"; // Prevent transitions
-
+  
       enemyArea.appendChild(card);
     } else if (count === 2) {
       // Two enemies - diagonal arrangement
       activeEnemies.forEach((monster, index) => {
         const card = this.createMonsterCard(monster, "enemy", index);
-
+  
         // Fixed position
         card.style.position = "absolute";
         card.style.transition = "none"; // Prevent transitions
-
+  
         if (index === 0) {
           // Top left
           card.style.left = "calc(35% - 80px)";
           card.style.top = "calc(35% - 100px)";
-          card.style.transform = "rotate(-5deg)";
+          // Keep the base tilt but add small adjustment
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt - 2}deg)`;
         } else {
           // Bottom right
           card.style.left = "calc(65% - 80px)";
           card.style.top = "calc(65% - 100px)";
-          card.style.transform = "rotate(5deg)";
+          // Keep the base tilt but add small adjustment
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt + 2}deg)`;
         }
-
+  
         enemyArea.appendChild(card);
       });
     } else if (count === 3) {
       // Three enemies - triangle arrangement
       activeEnemies.forEach((monster, index) => {
         const card = this.createMonsterCard(monster, "enemy", index);
-
+  
         // Fixed position
         card.style.position = "absolute";
         card.style.transition = "none"; // Prevent transitions
-
+  
         if (index === 0) {
           // Top center
           card.style.left = "calc(50% - 80px)";
           card.style.top = "20px";
-          card.style.transform = "rotate(0deg)";
           card.style.zIndex = "3";
         } else if (index === 1) {
           // Bottom left
           card.style.left = "calc(30% - 80px)";
           card.style.top = "130px";
-          card.style.transform = "rotate(-7deg)";
+          // Add extra tilt
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt - 3}deg)`;
           card.style.zIndex = "2";
         } else {
           // Bottom right
           card.style.left = "calc(70% - 80px)";
           card.style.top = "130px";
-          card.style.transform = "rotate(7deg)";
+          // Add extra tilt
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt + 3}deg)`;
           card.style.zIndex = "1";
         }
-
+  
         enemyArea.appendChild(card);
       });
     } else if (count >= 4) {
       // Four enemies - 2x2 grid
       activeEnemies.slice(0, 4).forEach((monster, index) => {
         const card = this.createMonsterCard(monster, "enemy", index);
-
+  
         // Fixed position
         card.style.position = "absolute";
         card.style.transition = "none"; // Prevent transitions
-
+  
         const row = Math.floor(index / 2);
         const col = index % 2;
-
+  
         // Position in grid
         if (row === 0 && col === 0) {
           // Top left
           card.style.left = "calc(30% - 80px)";
           card.style.top = "30px";
-          card.style.transform = "rotate(-5deg)";
+          // Add slight tilt adjustment
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt - 2}deg)`;
           card.style.zIndex = "4";
         } else if (row === 0 && col === 1) {
           // Top right
           card.style.left = "calc(70% - 80px)";
           card.style.top = "30px";
-          card.style.transform = "rotate(5deg)";
+          // Add slight tilt adjustment
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt + 2}deg)`;
           card.style.zIndex = "3";
         } else if (row === 1 && col === 0) {
           // Bottom left
           card.style.left = "calc(30% - 80px)";
           card.style.top = "150px";
-          card.style.transform = "rotate(-10deg)";
+          // Add slight tilt adjustment
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt - 5}deg)`;
           card.style.zIndex = "2";
         } else {
           // Bottom right
           card.style.left = "calc(70% - 80px)";
           card.style.top = "150px";
-          card.style.transform = "rotate(10deg)";
+          // Add slight tilt adjustment
+          const currentTilt = parseFloat(card.style.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+          card.style.transform = `rotate(${currentTilt + 5}deg)`;
           card.style.zIndex = "1";
         }
-
+  
         enemyArea.appendChild(card);
       });
     }
-
+  
     // Create the defeated enemy token row
     this.updateDefeatedEnemiesRow();
-
+  
     // Force a reflow to ensure all positions are applied immediately
     enemyArea.offsetHeight;
-
+  
     // Re-enable transitions after a delay
     setTimeout(() => {
       enemyArea.style.transition = "";
-
+  
       // Re-enable transitions on cards
       const cards = enemyArea.querySelectorAll(".combat-monster");
       cards.forEach((card) => {
@@ -4301,6 +4391,7 @@ class CombatSystem {
       });
     }, 50);
   }
+
 
   updateDefeatedEnemiesRow() {
     // Find the header area
