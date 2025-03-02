@@ -1,4 +1,4 @@
-window.DEBUG_MODE = true;
+// window.DEBUG_MODE = true;
 
 class Scene3DController {
   constructor() {
@@ -3761,69 +3761,69 @@ showItemDetails(prop) {
                 prop.name.toLowerCase().includes('mail');
 
   // If it's equipment, add "Equip to Party" button
-  if (isWeapon || isArmor) {
-    const equipToPartyBtn = document.createElement('sl-button');
-    equipToPartyBtn.setAttribute('variant', 'primary');
-    equipToPartyBtn.innerHTML = '<span class="material-icons">people</span> Equip to Party Member';
-    equipToPartyBtn.style.marginBottom = '12px';
+  // if (isWeapon || isArmor) {
+  //   const equipToPartyBtn = document.createElement('sl-button');
+  //   equipToPartyBtn.setAttribute('variant', 'primary');
+  //   equipToPartyBtn.innerHTML = '<span class="material-icons">people</span> Equip to Party Member';
+  //   equipToPartyBtn.style.marginBottom = '12px';
     
-    equipToPartyBtn.addEventListener('click', () => {
-      dialog.hide();
+  //   equipToPartyBtn.addEventListener('click', () => {
+  //     dialog.hide();
       
-      // Make sure we have PartyManager
-      if (window.partyManager) {
-        // Pause controls while PartyManager is open
-        this.pauseControls();
+  //     // Make sure we have PartyManager
+  //     if (window.partyManager) {
+  //       // Pause controls while PartyManager is open
+  //       this.pauseControls();
         
-        // First, prepare the item for PartyManager
-        const itemForParty = {
-          id: prop.id || `item-${Date.now()}`,
-          name: prop.name,
-          type: isWeapon ? 'weapon' : 'armor',
-          image: prop.image,
-          // Add appropriate bonus based on item type
-          damageBonus: isWeapon ? Math.ceil(Math.random() * 3) : 0,
-          acBonus: isArmor ? Math.ceil(Math.random() * 3) : 0,
-          source: '3d-inventory'  // Mark source to identify where it came from
-        };
+  //       // First, prepare the item for PartyManager
+  //       const itemForParty = {
+  //         id: prop.id || `item-${Date.now()}`,
+  //         name: prop.name,
+  //         type: isWeapon ? 'weapon' : 'armor',
+  //         image: prop.image,
+  //         // Add appropriate bonus based on item type
+  //         damageBonus: isWeapon ? Math.ceil(Math.random() * 3) : 0,
+  //         acBonus: isArmor ? Math.ceil(Math.random() * 3) : 0,
+  //         source: '3d-inventory'  // Mark source to identify where it came from
+  //       };
         
-        console.log('Prepared item for PartyManager:', itemForParty);
+  //       console.log('Prepared item for PartyManager:', itemForParty);
         
-        // Store this item so it can be accessed by PartyManager's equipItem method
-        if (!this._itemsForParty) {
-          this._itemsForParty = new Map();
-        }
-        this._itemsForParty.set(itemForParty.id, itemForParty);
+  //       // Store this item so it can be accessed by PartyManager's equipItem method
+  //       if (!this._itemsForParty) {
+  //         this._itemsForParty = new Map();
+  //       }
+  //       this._itemsForParty.set(itemForParty.id, itemForParty);
         
-        // Show PartyManager
-        window.partyManager.showPartyManager();
+  //       // Show PartyManager
+  //       window.partyManager.showPartyManager();
         
-        // Wait a bit for PartyManager to initialize
-        setTimeout(() => {
-          // Let PartyManager know an item is waiting to be equipped
-          if (window.partyManager.notifyItemReadyToEquip) {
-            window.partyManager.notifyItemReadyToEquip(itemForParty);
-          } else {
-            console.warn('PartyManager does not have notifyItemReadyToEquip method');
-          }
-        }, 300);
+  //       // Wait a bit for PartyManager to initialize
+  //       setTimeout(() => {
+  //         // Let PartyManager know an item is waiting to be equipped
+  //         if (window.partyManager.notifyItemReadyToEquip) {
+  //           window.partyManager.notifyItemReadyToEquip(itemForParty);
+  //         } else {
+  //           console.warn('PartyManager does not have notifyItemReadyToEquip method');
+  //         }
+  //       }, 300);
         
-        // Monitor for dialog close to restore controls
-        const checkForDialog = setInterval(() => {
-          const dialog = document.querySelector('.party-overlay');
-          if (!dialog) {
-            this.resumeControls();
-            clearInterval(checkForDialog);
-          }
-        }, 100);
-      } else {
-        console.warn('PartyManager not available');
-        this.showNotification('Party Manager not available', 'error');
-      }
-    });
+  //       // Monitor for dialog close to restore controls
+  //       const checkForDialog = setInterval(() => {
+  //         const dialog = document.querySelector('.party-overlay');
+  //         if (!dialog) {
+  //           this.resumeControls();
+  //           clearInterval(checkForDialog);
+  //         }
+  //       }, 100);
+  //     } else {
+  //       console.warn('PartyManager not available');
+  //       this.showNotification('Party Manager not available', 'error');
+  //     }
+  //   });
     
-    content.appendChild(equipToPartyBtn);
-  }
+  //   content.appendChild(equipToPartyBtn);
+  // }
 
   // Add normal actions
   const actions = document.createElement('div');

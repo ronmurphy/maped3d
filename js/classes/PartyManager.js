@@ -1,4 +1,4 @@
-window.DEBUG_MODE = true;
+// window.DEBUG_MODE = true;
 /**
  * PartyManager.js
  * Handles monster recruitment, party management, and monster progression
@@ -1484,351 +1484,6 @@ equipItem(monsterId, slot, itemId) {
   return true;
 }
 
-  debugEquipmentSystem() {
-    console.group('PartyManager Equipment System Debug');
-    
-    // Check Scene3D connection
-    console.log('Scene3D connection:', {
-      exists: !!this.scene3D,
-      hasGetMethod: this.scene3D && typeof this.scene3D.getInventoryItems === 'function',
-      hasRemoveMethod: this.scene3D && typeof this.scene3D.removeFromInventory === 'function'
-    });
-    
-    // Check for 3D items
-    if (this.scene3D && typeof this.scene3D.getInventoryItems === 'function') {
-      const items = this.scene3D.getInventoryItems();
-      console.log('Items from Scene3D inventory:', items);
-    }
-    
-    // Check local inventory
-    console.log('PartyManager weapon inventory:', this.inventory.weapons);
-    console.log('PartyManager armor inventory:', this.inventory.armor);
-    
-    // Check active monsters' equipment
-    console.log('Active monsters equipment:');
-    this.party.active.forEach(monster => {
-      console.log(`${monster.name}:`, {
-        weapon: monster.equipment.weapon,
-        armor: monster.equipment.armor
-      });
-    });
-    
-    // Test drawer construction
-    const testSlot = 'weapon';
-    const testEquipment = this.getPlaceholderEquipment(testSlot);
-    console.log(`Test getPlaceholderEquipment("${testSlot}"):`, testEquipment);
-    
-    console.groupEnd();
-    
-    return {
-      scene3dConnected: !!this.scene3D,
-      scene3dItemsCount: this.scene3D && typeof this.scene3D.getInventoryItems === 'function' 
-        ? this.scene3D.getInventoryItems().length 
-        : 'unknown',
-      localWeaponsCount: this.inventory.weapons.length,
-      localArmorCount: this.inventory.armor.length,
-      totalEquipmentOptions: testEquipment.length
-    };
-  }
-
-// Add this method to PartyManager class
-debugMonsterEquipment(monsterId) {
-  const monster = this.findMonster(monsterId);
-  if (!monster) {
-    console.error(`Monster with ID ${monsterId} not found for debugging`);
-    return;
-  }
-  
-  console.group(`Equipment Debug Info for ${monster.name}`);
-  
-  // Log basic monster info
-  console.log('Monster ID:', monster.id);
-  console.log('Monster name:', monster.name);
-  console.log('Monster level:', monster.level);
-  
-  // Check equipment slots
-  console.log('Weapon equipped:', !!monster.equipment.weapon);
-  if (monster.equipment.weapon) {
-    console.log('Weapon details:', {
-      id: monster.equipment.weapon.id,
-      name: monster.equipment.weapon.name,
-      damageBonus: monster.equipment.weapon.damageBonus,
-      source: monster.equipment.weapon.source,
-      hasImage: !!monster.equipment.weapon.image,
-      imageLength: monster.equipment.weapon.image ? monster.equipment.weapon.image.length : 0
-    });
-  }
-  
-  console.log('Armor equipped:', !!monster.equipment.armor);
-  if (monster.equipment.armor) {
-    console.log('Armor details:', {
-      id: monster.equipment.armor.id,
-      name: monster.equipment.armor.name,
-      acBonus: monster.equipment.armor.acBonus,
-      source: monster.equipment.armor.source,
-      hasImage: !!monster.equipment.armor.image,
-      imageLength: monster.equipment.armor.image ? monster.equipment.armor.image.length : 0
-    });
-  }
-  
-  // Check for UI elements
-  if (this.partyDialog) {
-    console.log('Party dialog exists');
-    const detailsPanel = this.partyDialog.querySelector('.party-details');
-    if (detailsPanel) {
-      console.log('Details panel exists');
-      const weaponSlot = detailsPanel.querySelector('.equipment-slot[data-slot="weapon"]');
-      const armorSlot = detailsPanel.querySelector('.equipment-slot[data-slot="armor"]');
-      
-      console.log('Weapon UI element exists:', !!weaponSlot);
-      console.log('Armor UI element exists:', !!armorSlot);
-      
-      if (weaponSlot) {
-        console.log('Weapon UI classes:', weaponSlot.className);
-        console.log('Weapon UI is showing as equipped:', weaponSlot.classList.contains('equipped'));
-        
-        // Check content
-        const weaponName = weaponSlot.querySelector('[style*="font-weight: 500;"]');
-        if (weaponName) {
-          console.log('Weapon name in UI:', weaponName.textContent);
-        } else {
-          console.log('Weapon name element not found in UI');
-        }
-      }
-    } else {
-      console.log('Details panel does not exist');
-    }
-  } else {
-    console.log('Party dialog does not exist');
-  }
-  
-  console.groupEnd();
-  
-  // Add debugging button to UI if possible
-  this.addDebugButton(monster);
-}
-
-// Add a debug button to the UI
-addDebugButton(monster) {
-  if (!this.partyDialog) return;
-  
-  // Check if debug button already exists
-  if (this.partyDialog.querySelector('.debug-equipment-btn')) return;
-  
-  const detailsPanel = this.partyDialog.querySelector('.party-details');
-  if (!detailsPanel) return;
-  
-  const debugBtn = document.createElement('button');
-  debugBtn.className = 'debug-equipment-btn';
-  debugBtn.textContent = 'Debug Equipment';
-  debugBtn.style.cssText = `
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #f44336;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 12px;
-    cursor: pointer;
-    z-index: 1000;
-  `;
-  
-  debugBtn.addEventListener('click', () => {
-    this.debugMonsterEquipment(monster.id);
-    this.forceRefreshEquipmentUI(monster);
-  });
-  
-  detailsPanel.appendChild(debugBtn);
-}
-
-// Add this method to PartyManager class
-// This allows Scene3DController to notify when an item is ready to equip
-notifyItemReadyToEquip(item) {
-  console.log('PartyManager notified of item ready to equip:', item);
-  
-  // Store the item temporarily
-  if (!this._pendingEquipItems) {
-    this._pendingEquipItems = [];
-  }
-  this._pendingEquipItems.push(item);
-  
-  // Show a notification to the user
-  this.showToast(`Select a monster to equip ${item.name}`, 'info');
-  
-  // Add a listener to monster cards to detect selection
-  this.setupEquipItemListeners();
-}
-
-// Add this helper method to PartyManager
-setupEquipItemListeners() {
-  if (!this.partyDialog || !this._pendingEquipItems || this._pendingEquipItems.length === 0) {
-    return;
-  }
-  
-  const item = this._pendingEquipItems[0]; // Get the first pending item
-  const monsterCards = this.partyDialog.querySelectorAll('.monster-card');
-  
-  // Add click listeners to all monster cards
-  monsterCards.forEach(card => {
-    // Remove any existing equip-item-listener to prevent duplicates
-    if (card._hasEquipItemListener) {
-      return; // Skip if already has listener
-    }
-    
-    // Create a new click handler specifically for equipment
-    const equipClickHandler = (e) => {
-      // Get the monster ID
-      const monsterId = card.getAttribute('data-monster-id');
-      if (!monsterId) return;
-      
-      // Find the monster
-      const monster = this.findMonster(monsterId);
-      if (!monster) return;
-      
-      // Show confirmation dialog
-      this.showEquipConfirmation(monster, item);
-      
-      // Remove this special listener after a selection is made
-      monsterCards.forEach(c => {
-        c.removeEventListener('click', c._equipClickHandler);
-        delete c._equipClickHandler;
-        delete c._hasEquipItemListener;
-      });
-      
-      // Prevent further handling of this click
-      e.stopPropagation();
-    };
-    
-    // Store the handler reference so we can remove it later
-    card._equipClickHandler = equipClickHandler;
-    card._hasEquipItemListener = true;
-    
-    // Add the listener
-    card.addEventListener('click', equipClickHandler);
-  });
-}
-
-// Add this helper to show equipment confirmation
-showEquipConfirmation(monster, item) {
-  // Create confirmation dialog
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = `Equip ${item.name}`;
-  
-  const content = document.createElement('div');
-  content.style.cssText = `
-    padding: 16px;
-    text-align: center;
-  `;
-  
-  // Add item image if available
-  if (item.image) {
-    const img = document.createElement('img');
-    img.src = item.image;
-    img.style.cssText = `
-      max-width: 100px;
-      max-height: 100px;
-      object-fit: contain;
-      margin-bottom: 16px;
-      border-radius: 4px;
-    `;
-    content.appendChild(img);
-  }
-  
-  content.innerHTML += `
-    <p>Do you want to equip <strong>${item.name}</strong> to <strong>${monster.name}</strong>?</p>
-  `;
-  
-  // Add information about bonuses
-  if (item.type === 'weapon' && item.damageBonus) {
-    content.innerHTML += `<p>This weapon adds <strong>+${item.damageBonus} damage</strong>.</p>`;
-  } else if (item.type === 'armor' && item.acBonus) {
-    content.innerHTML += `<p>This armor adds <strong>+${item.acBonus} AC</strong>.</p>`;
-  }
-  
-  // Add buttons
-  const footer = document.createElement('div');
-  footer.style.cssText = `
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 16px;
-  `;
-  
-  const confirmBtn = document.createElement('sl-button');
-  confirmBtn.setAttribute('variant', 'primary');
-  confirmBtn.textContent = 'Equip';
-  confirmBtn.addEventListener('click', () => {
-    // Perform the equip
-    const slot = item.type; // 'weapon' or 'armor'
-    const success = this.equipItem(monster.id, slot, item.id);
-    
-    if (success) {
-      this.showToast(`Equipped ${item.name} to ${monster.name}`, 'success');
-      
-      // Remove from pending items
-      if (this._pendingEquipItems) {
-        this._pendingEquipItems = this._pendingEquipItems.filter(i => i.id !== item.id);
-      }
-      
-      // Find and update monster details view if it's currently displayed
-      const detailsPanel = this.partyDialog?.querySelector('.party-details');
-      if (detailsPanel) {
-        const currentMonsterDetails = detailsPanel.querySelector('.monster-details');
-        if (currentMonsterDetails) {
-          // Refresh the details view for this monster
-          detailsPanel.innerHTML = '';
-          const detailView = this.createMonsterDetailView(monster);
-          detailsPanel.appendChild(detailView);
-        }
-      }
-    } else {
-      this.showToast(`Failed to equip ${item.name}`, 'error');
-    }
-    
-    dialog.hide();
-  });
-  
-  const cancelBtn = document.createElement('sl-button');
-  cancelBtn.setAttribute('variant', 'neutral');
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => {
-    dialog.hide();
-  });
-  
-  footer.appendChild(cancelBtn);
-  footer.appendChild(confirmBtn);
-  
-  content.appendChild(footer);
-  dialog.appendChild(content);
-  
-  // Add to document and show
-  document.body.appendChild(dialog);
-  dialog.show();
-}
-
-// Add this function to force refresh the UI
-forceRefreshEquipmentUI(monster) {
-  if (!this.partyDialog) return;
-  
-  const detailsPanel = this.partyDialog.querySelector('.party-details');
-  if (!detailsPanel) return;
-  
-  console.log("Force refreshing equipment UI for", monster.name);
-  
-  // Completely rebuild the details view
-  detailsPanel.innerHTML = '';
-  const detailView = this.createMonsterDetailView(monster);
-  detailsPanel.appendChild(detailView);
-  
-  // Add the debug button back
-  this.addDebugButton(monster);
-  
-  // Show a notification
-  this.showToast("Equipment display forcibly refreshed", "info");
-}
-
 // Unequip item from monster
 unequipItem(monsterId, slot) {
   const monster = this.findMonster(monsterId);
@@ -2121,18 +1776,6 @@ unequipItem(monsterId, slot) {
       // Position relative is required for contained drawers
   container.style.position = 'relative';
   
-    // Create header -- alt material icon is 'groups' or 'pets'
-    // const header = document.createElement('div');
-    // header.className = 'party-header';
-    // header.innerHTML = `
-    //   <div style="display: flex; align-items: center;">
-    //     <span class="material-icons" style="margin-right: 8px;">pets</span>
-    //     <h1 style="margin: 0; font-size: 1.25rem;">Monster Party</h1>
-    //   </div>
-    //   <button class="close-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s;">
-    //     <span class="material-icons">close</span>
-    //   </button>
-    // `;
 
         const header = document.createElement('div');
     header.className = 'party-header';
@@ -2145,21 +1788,6 @@ unequipItem(monsterId, slot) {
         <span class="material-icons">close</span>
       </button>
     `;
-
-//     header.innerHTML = `
-//   <div style="display: flex; align-items: center;">
-//     <span class="material-icons" style="margin-right: 8px;">pets</span>
-//     <h1 style="margin: 0; font-size: 1.25rem;">Monster Party</h1>
-//   </div>
-//   <div>
-//     <button class="test-save-btn" style="background: #4338ca; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-right: 8px; cursor: pointer;">
-//       Test Save/Load
-//     </button>
-//     <button class="close-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s;">
-//       <span class="material-icons">close</span>
-//     </button>
-//   </div>
-// `;
   
     // Create content area (sidebar + details)
     const content = document.createElement('div');
@@ -3613,16 +3241,6 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
       });
     };
 
-
-
-    // // Handle Escape key to close dialog
-    // const handleKeyDown = (e) => {
-    //   if (e.key === 'Escape') {
-    //     closeButton.click();
-    //     document.removeEventListener('keydown', handleKeyDown);
-    //   }
-    // };
-    // document.addEventListener('keydown', handleKeyDown);
   }
 
   // Refresh party dialog when data changes
@@ -4153,10 +3771,6 @@ showEquipmentDialog(monster, selectedSlot = 'weapon') {
             </div>
             <div>
               <div style="font-weight: 500;">${item.name}</div>
-              ${item.source === '3d-inventory' ? 
-                `<div style="font-size: 0.8rem; color: #10b981;">From World (ID: ${item.id})</div>` : 
-                ''
-              }
               ${item.damageBonus ?
                 `<div style="font-size: 0.9rem; color: #ef4444;">+${item.damageBonus} damage</div>` :
                 ''
@@ -4298,24 +3912,6 @@ connectToSceneInventory() {
     return [];
   }
 
-  // getPlaceholderEquipment(type) {
-  //   // Generate starter equipment if we don't have any
-  //   if (!this.inventory || 
-  //       !this.inventory.weapons ||
-  //       !this.inventory.armor ||
-  //       this.inventory.weapons.length === 0 ||
-  //       this.inventory.armor.length === 0) {
-  //     this.generateStarterEquipment();
-  //   }
-    
-  //   if (type === 'weapon') {
-  //     return this.inventory.weapons || [];
-  //   } else if (type === 'armor') {
-  //     return this.inventory.armor || [];
-  //   }
-  
-  //   return [];
-  // }
 
   getPlaceholderEquipment(type) {
     console.log(`PartyManager.getPlaceholderEquipment(${type}) called`);
@@ -4532,23 +4128,8 @@ connectToSceneInventory() {
     const type = recruitMonster.data.basic?.type || 'Unknown';
     const cr = recruitMonster.data.basic?.cr || '?';
 
-    // Get color for monster type
-    // const typeColors = {
-    //   Beast: '#4f46e5',
-    //   Dragon: '#c026d3',
-    //   Elemental: '#ef4444',
-    //   Monstrosity: '#65a30d',
-    //   Construct: '#a16207',
-    //   Undead: '#6b7280',
-    //   Fey: '#06b6d4',
-    //   Giant: '#b45309'
-    // };
-
-    // const bgColor = typeColors[type] || '#6b7280';
-    // const bgColor = [type] // || '#6b7280';
     const bgColor = this.getMonsterTypeColor(type);
-    // console.log('mon',type);
-    // console.log('bg',bgColor);
+
 
     // Create content
     const content = document.createElement('div');
@@ -4917,99 +4498,6 @@ connectToSceneInventory() {
       }
     </style>
   `;
-
-    // Replace the problematic diceContainer.innerHTML code with this:
-    // diceContainer.innerHTML = `
-    // <div id="d20-dice-container" style="
-    //     width: 100px;
-    //     height: 100px;
-    //     position: relative;
-    //     perspective: 600px;
-    // ">
-    //     <div id="d20-dice" style="
-    //         width: 100%;
-    //         height: 100%;
-    //         position: absolute;
-    //         transform-style: preserve-3d;
-    //         transition: transform 1s ease-out;
-    //     ">
-    //         <div style="
-    //             position: absolute;
-    //             width: 64px;
-    //             height: 64px;
-    //             background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    //             border: 2px solid white;
-    //             top: 50%;
-    //             left: 50%;
-    //             transform: translate(-50%, -50%);
-    //             clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-    //             display: flex;
-    //             align-items: center;
-    //             justify-content: center;
-    //             font-size: 24px;
-    //             color: white;
-    //             font-weight: bold;
-    //             text-shadow: 0 0 5px rgba(0,0,0,0.5);
-    //         ">
-    //             20
-    //         </div>
-    //     </div>
-    // </div>`;
-
-    // // Add a small delay to ensure the DOM is updated
-    // setTimeout(() => {
-    //   // Look for the dice element within the diceContainer instead of the entire document
-    //   const diceElement = diceContainer.querySelector('#d20-dice');
-
-    //   // Check if element exists to prevent errors
-    //   if (diceElement) {
-    //     // Initial position
-    //     diceElement.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.5)';
-    //     diceElement.style.opacity = '0.5';
-
-    //     // Animation timing variables
-    //     const duration = 1000; // 1 second
-    //     const startTime = performance.now();
-
-    //     // Animation function
-    //     function animateDice(currentTime) {
-    //         const elapsed = currentTime - startTime;
-    //         const progress = Math.min(elapsed / duration, 1);
-
-    //         // Calculate rotation based on progress
-    //         const rotateX = progress * 720; 
-    //         const rotateY = progress * 360;
-    //         const rotateZ = progress * 180;
-
-    //         // Calculate scale - grows in middle, then settles
-    //         let scale;
-    //         if (progress < 0.5) {
-    //             // Scale up to 1.2
-    //             scale = 0.5 + (progress * 1.4);
-    //         } else {
-    //             // Scale down to 1.0
-    //             scale = 1.2 - ((progress - 0.5) * 0.4);
-    //         }
-
-    //         // Calculate opacity - increases to 1
-    //         const opacity = 0.5 + (progress * 0.5);
-
-    //         // Apply transforms
-    //         diceElement.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
-    //         diceElement.style.opacity = opacity;
-
-    //         // Continue animation if not complete
-    //         if (progress < 1) {
-    //             requestAnimationFrame(animateDice);
-    //         }
-    //     }
-
-    //     // Start animation
-    //     requestAnimationFrame(animateDice);
-    //   } else {
-    //     console.warn('Could not find dice element for animation');
-    //   }
-    // }, 10); // Small delay to allow DOM to update
 
     // Create result message container (hidden initially)
     const resultMessage = document.createElement('div');
@@ -5976,47 +5464,6 @@ connectToSceneInventory() {
   /**
    * Saving & Loading
    */
-
-  // Save party data to localStorage
-  // saveParty() {
-  //   try {
-  //     const partyData = {
-  //       active: this.party.active,
-  //       reserve: this.party.reserve,
-  //       maxActive: this.party.maxActive,
-  //       maxTotal: this.party.maxTotal
-  //     };
-
-  //     localStorage.setItem('partyData', JSON.stringify(partyData));
-  //     console.log('Party data saved');
-  //     return true;
-  //   } catch (error) {
-  //     console.error('Error saving party data:', error);
-  //     return false;
-  //   }
-  // }
-
-  // // Load party data from localStorage
-  // loadParty() {
-  //   try {
-  //     const savedData = localStorage.getItem('partyData');
-  //     if (savedData) {
-  //       const partyData = JSON.parse(savedData);
-
-  //       this.party.active = partyData.active || [];
-  //       this.party.reserve = partyData.reserve || [];
-  //       this.party.maxActive = partyData.maxActive || 4;
-  //       this.party.maxTotal = partyData.maxTotal || 20;
-
-  //       console.log('Party data loaded');
-  //       return true;
-  //     }
-  //   } catch (error) {
-  //     console.error('Error loading party data:', error);
-  //   }
-
-  //   return false;
-  // }
 
   // Add to saveParty method
 saveParty() {
