@@ -46,6 +46,9 @@ class Scene3DController {
     this.lastFrameTime = performance.now();
     this.deltaTime = 0;
     this.keyDebounceTimers = {};
+    this.gameState = 'initializing'; // Current game state
+    this._ignoreNextLock = false;    // Flag to prevent event cascades
+    this._ignoreNextUnlock = false;  // Flag to prevent event cascades
 
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
@@ -445,7 +448,90 @@ class Scene3DController {
     material.dispose();
   }
 
+<<<<<<< HEAD
   monitorMemory() {
+=======
+  setGameState(state) {
+    const prevState = this.gameState || 'initializing';
+    console.log(`Game state changing: ${prevState} → ${state}`);
+    
+    this.gameState = state;
+    
+    switch (state) {
+      case 'paused':
+        // Ensure controls are unlocked (mouse is free)
+        if (this.controls && this.controls.isLocked) {
+          console.log('Unlocking controls for pause state');
+          this._ignoreNextUnlock = true;
+          this.controls.unlock();
+        }
+        
+        // Pause all systems
+        this._controlsPaused = true;
+        break;
+        
+      case 'playing':
+        // Resume all systems
+        this._controlsPaused = false;
+        break;
+        
+      case 'exiting':
+        // Clean transition when exiting game
+        this._controlsPaused = true;
+        break;
+    }
+  }
+
+  modifyControlsListeners() {
+    if (!this.controls) return;
+    
+    // Store original event handlers
+    if (!this._originalLockHandler) {
+      this._originalLockHandler = this.controls.onLock;
+    }
+    if (!this._originalUnlockHandler) {
+      this._originalUnlockHandler = this.controls.onUnlock;
+    }
+    
+    // Override lock handler
+    this.controls.onLock = () => {
+      console.log('Controls locked');
+      
+      // Only set playing state if not ignored
+      if (!this._ignoreNextLock && this.gameState !== 'playing') {
+        this.setGameState('playing');
+      }
+      
+      // Clear ignore flag
+      this._ignoreNextLock = false;
+      
+      // Call original handler if it exists
+      if (this._originalLockHandler) {
+        this._originalLockHandler.call(this.controls);
+      }
+    };
+    
+    // Override unlock handler
+    this.controls.onUnlock = () => {
+      console.log('Controls unlocked');
+      
+      // Only pause if not ignored
+      if (!this._ignoreNextUnlock && this.gameState !== 'paused') {
+        this.setGameState('paused');
+      }
+      
+      // Clear ignore flag
+      this._ignoreNextUnlock = false;
+      
+      // Call original handler if it exists
+      if (this._originalUnlockHandler) {
+        this._originalUnlockHandler.call(this.controls);
+      }
+    };
+  }
+
+    monitorMemory() {
+>>>>>>> 26cb99b6a7892ba41f600d5434ea7403bb9a62e8
     if (window.performance && window.performance.memory) {
       const memStats = document.createElement('div');
       memStats.style.cssText = `
@@ -4721,6 +4807,12 @@ class Scene3DController {
       this.controls.addEventListener("unlock", () => {
         instructions.style.display = "block";
       });
+
+      // Call this after initializing controls in show3DView
+this.modifyControlsListeners();
+
+// Set initial game state (typically 'playing' or 'initializing')
+this.gameState = 'initializing';
 
       // Start animation loop
       const animate = () => {
