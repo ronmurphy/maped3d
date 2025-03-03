@@ -4456,6 +4456,8 @@ class Scene3DController {
       this.playerLight.position.copy(this.camera.position);
     }
 
+    this.updateObjectVisibility();
+
     if (this.visualEffects) {
       const time = performance.now() * 0.001;
       const deltaTime = time - (this.lastTime || time);
@@ -5899,6 +5901,69 @@ class Scene3DController {
       }, 300);
     }
   }
+
+  // Add this method to your Scene3DController class
+updateObjectVisibility() {
+  if (!this.camera) return;
+  
+  const playerPos = this.camera.position;
+  const nearDistance = 20;  // Objects within this range get full detail
+  const farDistance = 40;   // Objects beyond this get simplified or hidden
+  
+  this.scene.traverse(object => {
+    // Skip non-mesh objects or those set to always show
+    if (!object.isMesh || object.userData.alwaysShow) return;
+    
+    // Skip walls and other essential objects
+    if (object.userData && (object.userData.isWall || object.userData.isEssential)) {
+      return;
+    }
+    
+    const distance = playerPos.distanceTo(object.position);
+    
+    // Objects close to player get full detail
+    if (distance < nearDistance) {
+      object.visible = true;
+      // Restore original material if it exists
+      if (object.userData.originalMaterial) {
+        object.material = object.userData.originalMaterial;
+        delete object.userData.originalMaterial;
+      }
+    }
+    // Objects at medium distance get simplified
+    else if (distance < farDistance) {
+      object.visible = true;
+      
+      // If it's a complex object, use a simpler material
+      if (object.material && object.material.isMeshStandardMaterial) {
+        // Store original material if not already stored
+        if (!object.userData.originalMaterial) {
+          object.userData.originalMaterial = object.material;
+          
+          // Create a simplified material (cheaper to render)
+          const simpleMaterial = new THREE.MeshBasicMaterial({
+            color: object.material.color ? object.material.color.clone() : 0xcccccc,
+            map: object.material.map,
+            transparent: object.material.transparent,
+            opacity: object.material.opacity
+          });
+          
+          object.material = simpleMaterial;
+        }
+      }
+    }
+    // Very distant objects can be hidden
+    else {
+      // Don't hide essential objects
+      if (!object.userData || 
+          (object.userData.type !== 'wall' && 
+           object.userData.type !== 'prop' && 
+           object.userData.type !== 'door')) {
+        object.visible = false;
+      }
+    }
+  });
+}
 
   detectHardwareCapabilities(callback) {
     console.log("Starting hardware capability detection");
