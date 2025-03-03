@@ -448,9 +448,6 @@ class Scene3DController {
     material.dispose();
   }
 
-<<<<<<< HEAD
-  monitorMemory() {
-=======
   setGameState(state) {
     const prevState = this.gameState || 'initializing';
     console.log(`Game state changing: ${prevState} → ${state}`);
@@ -531,7 +528,6 @@ class Scene3DController {
   }
 
     monitorMemory() {
->>>>>>> 26cb99b6a7892ba41f600d5434ea7403bb9a62e8
     if (window.performance && window.performance.memory) {
       const memStats = document.createElement('div');
       memStats.style.cssText = `
