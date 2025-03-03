@@ -103,11 +103,19 @@ class Scene3DController {
     // Add renderer to container
     container.appendChild(this.renderer.domElement);
 
-    // Load preferences and initialize stats if needed
+
     this.loadPreferences();
     if (this.preferences && this.preferences.showFps) {
       this.showStats = true;
       this.initStats();
+      
+      // Explicitly make sure memory stats is visible if showStats is true
+      if (this.memStats) {
+        this.memStats.style.display = 'block';
+      }
+
+      this.updateQualityIndicator();
+
     }
 
     // Initialize visual effects
@@ -437,61 +445,43 @@ class Scene3DController {
     material.dispose();
   }
 
-  // disposeMaterial(material) {
-  //   if (!material) return;
-
-  //   // Dispose of material
-  //   Object.keys(material).forEach(prop => {
-  //     if (!material[prop]) return;
-  //     if (material[prop]?.isTexture) {
-  //       material[prop].dispose();
-  //     }
-  //   });
-
-  //   if (material.map) material.map.dispose();
-  //   if (material.lightMap) material.lightMap.dispose();
-  //   if (material.bumpMap) material.bumpMap.dispose();
-  //   if (material.normalMap) material.normalMap.dispose();
-  //   if (material.specularMap) material.specularMap.dispose();
-  //   if (material.envMap) material.envMap.dispose();
-
-  //   material.dispose();
-  // }
-
-  // Add this to your Scene3DController class
-  monitorMemory() {
+    monitorMemory() {
     if (window.performance && window.performance.memory) {
       const memStats = document.createElement('div');
       memStats.style.cssText = `
-      position: fixed;
-      top: 40px;
-      left: 48px;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-family: monospace;
-      z-index: 10000;
-    `;
+        position: fixed;
+        top: 56px;
+        left: 100px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        z-index: 1000;
+      `;
+      
+      // Set initial display state based on showStats
+      memStats.style.display = this.showStats ? 'block' : 'none';
+      
       document.body.appendChild(memStats);
-
+  
       const updateMemStats = () => {
         if (!memStats.parentNode) return;
-
+  
         const memory = window.performance.memory;
         const usedHeapSize = (memory.usedJSHeapSize / 1048576).toFixed(2);
         const totalHeapSize = (memory.totalJSHeapSize / 1048576).toFixed(2);
-
+  
         memStats.textContent = `Mem: ${usedHeapSize}MB / ${totalHeapSize}MB`;
-
+  
         setTimeout(updateMemStats, 1000);
       };
-
+  
       updateMemStats();
-
+  
       return memStats;
     }
-
+  
     return null;
   }
 
@@ -593,16 +583,16 @@ class Scene3DController {
         try {
           this.stats = new Stats();
           this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-
+          
           // Style the stats panel
           this.stats.dom.style.position = 'absolute';
           this.stats.dom.style.top = '56px';
           this.stats.dom.style.left = '10px';
           this.stats.dom.style.zIndex = '1000';
-
+          
           // Important: Set display AFTER creating dom element
           this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-
+          
           // Add to DOM
           const container = document.querySelector('.drawer-3d-view');
           if (container) {
@@ -610,7 +600,15 @@ class Scene3DController {
           } else {
             document.body.appendChild(this.stats.dom);
           }
+          
           this.updateQualityIndicator();
+          this.memStats = this.monitorMemory();
+          
+          // Explicitly set memStats visibility to match showStats
+          if (this.memStats && this.showStats) {
+            this.memStats.style.display = 'block';
+          }
+          
           console.log('FPS counter initialized (using Stats.js)');
         } catch (err) {
           console.error('Error initializing Stats panel:', err);
@@ -706,56 +704,6 @@ class Scene3DController {
     }
   }
 
-
-  // toggleStats() {
-  //   // Debounce toggling
-  //   const now = Date.now();
-  //   if (now - this.lastStatsToggle < 500) {
-  //     return;
-  //   }
-  //   this.lastStatsToggle = now;
-
-  //   // Initialize if needed
-  //   if (!this.stats && !this.isInitializingStats) {
-  //     // Toggle visibility
-  //     this.showStats = !this.showStats;
-
-  //     // Initialize stats
-  //     this.initStats();
-
-  //     // Save preference if we have preferences
-  //     if (this.preferences) {
-  //       this.preferences.showFps = this.showStats;
-  //       localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-  //     }
-
-  //           this.qualityIndicator.style.display = 'block';
-
-  //     return;
-  //   }
-
-  //   // Toggle visibility
-  //   this.showStats = !this.showStats;
-
-  //   // Update both the stats panel and quality indicator
-  //   if (this.stats && this.stats.dom) {
-  //     this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-  //   }
-
-  //   if (this.qualityIndicator) {
-  //     this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
-  //   }
-
-  //   // Save preference if we have preferences
-  //   if (this.preferences) {
-  //     this.preferences.showFps = this.showStats;
-  //     localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-  //   }
-
-  //   console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
-  // }
-
-  // This is a fixed version of the toggleStats method
 toggleStats() {
   // Debounce toggling
   const now = Date.now();
@@ -783,6 +731,11 @@ toggleStats() {
 
   if (this.qualityIndicator) {
     this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+  }
+
+  // Also toggle memory stats visibility
+  if (this.memStats) {
+    this.memStats.style.display = this.showStats ? 'block' : 'none';
   }
 
   // Save preference if we have preferences
@@ -846,69 +799,6 @@ updateQualityIndicator() {
   return this.qualityIndicator;
 }
 
-
-  // createStatsPanel() {
-  //   this.stats = new Stats();
-
-  //   // Configure stats panel
-  //   this.stats.dom.style.position = 'absolute';
-  //   this.stats.dom.style.top = '10px';
-  //   this.stats.dom.style.left = '10px';
-  //   this.stats.dom.style.zIndex = '1000';
-
-  //   // Get quality level from preferences if not set directly
-  //   const qualityLevel = this.qualityLevel ||
-  //     (this.preferences?.detectedQuality) ||
-  //     (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : 'medium');
-
-  //   // Always add quality indicator as a separate element
-  //   const qualityIndicator = document.createElement('div');
-  //   qualityIndicator.className = 'quality-level'; // quality-level-indicator
-  //   qualityIndicator.style.cssText = `
-  //   position: absolute;
-  //   top: 48px; /* Position below the FPS counter */
-  //   left: 10px;
-  //   background: rgba(0, 0, 0, 0.5);
-  //   color: white;
-  //   padding: 5px 10px;
-  //   font-family: monospace;
-  //   font-size: 12px;
-  //   z-index: 1000;
-  //   border-radius: 3px;
-  //   width: 60px;
-  //   text-align: center;
-  // `;
-
-  //   // Set color based on quality level
-  //   const levelColors = {
-  //     high: '#4CAF50',
-  //     medium: '#2196F3',
-  //     low: '#FF9800'
-  //   };
-
-  //   qualityIndicator.textContent = qualityLevel.toUpperCase();
-  //   qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
-
-  //   // Store reference to quality indicator
-  //   this.qualityIndicator = qualityIndicator;
-
-  //   // Set initial visibility based on preferences
-  //   this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-  //   qualityIndicator.style.display = this.showStats ? 'block' : 'none';
-
-  //   // Add panels to DOM
-  //   const container = document.querySelector('.drawer-3d-view');
-  //   if (container) {
-  //     container.appendChild(this.stats.dom);
-  //     container.appendChild(qualityIndicator);
-  //   } else {
-  //     document.body.appendChild(this.stats.dom);
-  //     document.body.appendChild(qualityIndicator);
-  //   }
-
-  //   console.log('FPS counter initialized with quality level:', qualityLevel);
-  // }
-
   createStatsPanel() {
     this.stats = new Stats();
   
@@ -920,10 +810,11 @@ updateQualityIndicator() {
   
     // Always add quality indicator too
     this.updateQualityIndicator();
+    this.memStats = this.monitorMemory();
   
     // Set initial visibility based on preferences
     this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-    
+    this.memStats.style.display = this.showStats ? 'block' : 'none';
     // Add stats panel to DOM
     const container = document.querySelector('.drawer-3d-view');
     if (container) {
@@ -4593,236 +4484,16 @@ updateQualityIndicator() {
     }
 
     this.renderer.render(this.scene, this.camera);
-    //  }
 
 
     if (this.stats && this.showStats) {
       this.stats.end();
     }
 
-    // this.animationFrameId = requestAnimationFrame(this.animate);
 
   };
 
-
-  // animate = () => {
-  //   // Debugging to check if this is the wrapped version or not
-  //   if (!this._animateDebugChecked) {
-  //     this._animateDebugChecked = true;
-  //     console.log('Animate function running, wrapped:', !!this._originalAnimate);
-  //   }
-
-  //   if (!this._dayNightDebugLogged && this.dayNightCycle) {
-  //     console.log('Day/Night cycle exists in animate:', this.dayNightCycle);
-  //     this._dayNightDebugLogged = true;
-  //   } else if (!this._dayNightMissingLogged && !this.dayNightCycle) {
-  //     console.log('Day/Night cycle missing in animate. Adding it now.');
-  //     this.initializeDayNightCycle();
-  //     this._dayNightMissingLogged = true;
-  //   }
-
-  //   if (this._controlsPaused) {
-  //     // Only render the scene, don't process movement
-
-  //     if (this.dayNightCycle) {
-  //       this.dayNightCycle.update();
-  //     }
-
-  //     this.renderer.render(this.scene, this.camera);
-  //     return;
-  //   }
-  //   // fps counter
-  //   if (this.stats && this.showStats) {
-  //     this.stats.begin();
-  //   }
-
-
-  //   const currentSpeed = this.moveState.speed;
-  //   let canMove = true;
-
-  //   if (this.moveState.forward || this.moveState.backward) {
-  //     const direction = new THREE.Vector3();
-  //     this.camera.getWorldDirection(direction);
-  //     if (this.moveState.backward) direction.negate();
-
-  //     canMove = this.physics.checkCollision(direction, currentSpeed);
-  //   }
-
-  //   if (canMove) {
-  //     if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-  //     if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-  //   }
-
-  //   if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-  //   if (this.moveState.right) this.controls.moveRight(currentSpeed);
-
-  //   const playerPosition = this.camera.position.clone();
-  //   let nearestTeleporter = null;
-  //   let shortestDistance = Infinity;
-
-  //   this.teleporters.forEach(teleporter => {
-  //     const distance = playerPosition.distanceTo(teleporter.position);
-  //     if (distance < 2 && distance < shortestDistance) {  // Within 2 units
-  //       shortestDistance = distance;
-  //       nearestTeleporter = teleporter;
-  //     }
-  //   });
-
-  //   // Show/hide teleport prompt based on proximity
-  //   this.updateTeleportPrompt(nearestTeleporter);
-
-  //   let nearestDoor = null;
-  //   shortestDistance = Infinity;
-
-  //   this.doors.forEach(door => {
-  //     const distance = playerPosition.distanceTo(door.position);
-  //     if (distance < 2 && distance < shortestDistance) { // Within 2 units
-  //       shortestDistance = distance;
-  //       nearestDoor = door;
-  //     }
-  //   });
-
-  //   // Show/hide door prompt based on proximity
-  //   this.updateDoorPrompt(nearestDoor);
-
-  //   // Animate teleporter particles
-  //   this.scene.children.forEach(child => {
-  //     if (child instanceof THREE.Points && child.userData.animate) {
-  //       const positions = child.geometry.attributes.position.array;
-  //       for (let i = 0; i < positions.length; i += 3) {
-  //         // Circular motion
-  //         const time = Date.now() * 0.001;
-  //         const radius = 0.5;
-  //         positions[i] = Math.cos(time + i) * radius;
-  //         positions[i + 1] = Math.sin(time * 0.5) * 0.2;  // Vertical wobble
-  //         positions[i + 2] = Math.sin(time + i) * radius;
-  //       }
-  //       child.geometry.attributes.position.needsUpdate = true;
-  //     }
-  //   });
-
-  //   // const playerPosition = this.camera.position.clone();
-  //   let nearestSplashArt = null;
-  //   // let shortestDistance = Infinity;
-
-  //   this.markers.forEach(marker => {
-  //     if (marker.type === 'splash-art') {
-  //       const markerPos = new THREE.Vector3(
-  //         marker.x / 50 - this.boxWidth / 2,
-  //         marker.data.height || 1,
-  //         marker.y / 50 - this.boxDepth / 2
-  //       );
-  //       const distance = playerPosition.distanceTo(markerPos);
-
-  //       if (distance < 2 && distance < shortestDistance) {
-  //         shortestDistance = distance;
-  //         nearestSplashArt = marker;
-  //       }
-  //     }
-  //   });
-
-  //   // Show/hide splash art prompt
-  //   if (nearestSplashArt && !this.activeSplashArt) {
-  //     const prompt = this.createSplashArtPrompt();
-  //     prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press E to inspect';
-  //     prompt.style.display = 'block';
-  //     this.nearestSplashArt = nearestSplashArt;
-  //   } else if (!nearestSplashArt && this.splashArtPrompt) {
-  //     this.splashArtPrompt.style.display = 'none';
-  //     this.nearestSplashArt = null;
-  //   }
-
-  //   // const playerPosition = this.camera.position.clone();
-  //   let nearestProp = null;
-
-  //   this.scene.children.forEach(child => {
-  //     if (child.userData?.type === 'prop') {
-  //       const distance = playerPosition.distanceTo(child.position);
-  //       if (distance < 2 && distance < shortestDistance) {
-  //         shortestDistance = distance;
-  //         nearestProp = child;
-  //       }
-  //     }
-  //   });
-
-  //   // Show/hide pickup prompt
-  //   if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
-  //     const prompt = this.createPickupPrompt();
-  //     prompt.textContent = 'Press E to pick up';
-  //     prompt.style.display = 'block';
-  //     this.nearestProp = nearestProp;
-  //   } else if (this.pickupPrompt) {
-  //     this.pickupPrompt.style.display = 'none';
-  //     this.nearestProp = null;
-  //   }
-
-  //   // // Find nearest encounter marker
-  //   let nearestEncounter = null;
-  //   let minEncounterDist = 3; // Detection range
-
-  //   // Only check for encounters if we're not in cooldown and don't have an active encounter
-  //   if (!this.encounterCooldown && !this.activeEncounter) {
-  //     // Loop through scene objects to find encounter markers
-  //     this.scene.children.forEach(object => {
-  //       if (object.userData && object.userData.type === 'encounter') {
-  //         const dist = playerPosition.distanceTo(object.position);
-  //         if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
-  //           nearestEncounter = object;
-  //         }
-  //       }
-  //     });
-  //   }
-
-  //   // Show or hide encounter prompt
-  //   if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
-  //     const prompt = this.createEncounterPrompt();
-  //     prompt.textContent = 'Press E to approach monster';
-  //     prompt.style.display = 'block';
-  //     this.nearestEncounter = nearestEncounter;
-  //   } else if (!nearestEncounter && this.encounterPrompt) {
-  //     this.encounterPrompt.style.display = 'none';
-  //     this.nearestEncounter = null;
-  //   }
-
-
-  //   // Update physics and camera height
-  //   this.camera.position.y = this.physics.update();
-  //   // original renderer code
-  //   // this.renderer.render(this.scene, this.camera);
-
-
-  //   if (this.playerLight) {
-  //     this.playerLight.position.copy(this.camera.position);
-  //   }
-
-  //   if (this.visualEffects) {
-  //     const time = performance.now() * 0.001;
-  //     const deltaTime = time - (this.lastTime || time);
-  //     this.lastTime = time;
-
-  //     this.visualEffects.update(deltaTime);
-  //   } //else {
-  //   // Fallback to standard rendering
-
-  //   if (this.dayNightCycle) {
-  //     this.dayNightCycle.update();
-  //   }
-
-  //   this.renderer.render(this.scene, this.camera);
-  //   //  }
-
-
-  //   if (this.stats && this.showStats) {
-  //     this.stats.end();
-  //   }
-
-  //   // this.animationFrameId = requestAnimationFrame(this.animate);
-
-  // };
-
-
-
-  // Optional: Add dust particle effect when landing
+  
   createLandingEffect(position) {
     // Create a particle system for dust effect
     const particleCount = 20;
@@ -5789,28 +5460,6 @@ updateQualityIndicator() {
       }, 150);
     });
   }
-
-  // createEncounterPrompt() {
-  //   if (!this.encounterPrompt) {
-  //     this.encounterPrompt = document.createElement('div');
-  //     this.encounterPrompt.style.cssText = `
-  //         position: fixed;
-  //         top: 50%;
-  //         left: 50%;
-  //         transform: translate(-50%, -50%);
-  //         background: rgba(0, 0, 0, 0.8);
-  //         color: white;
-  //         padding: 15px 20px;
-  //         border-radius: 5px;
-  //         display: none;
-  //         font-family: Arial, sans-serif;
-  //         pointer-events: none;
-  //         z-index: 1000;
-  //     `;
-  //     document.body.appendChild(this.encounterPrompt);
-  //   }
-  //   return this.encounterPrompt;
-  // }
 
   createEncounterPrompt() {
     if (!this.encounterPrompt) {
