@@ -1591,3 +1591,14 @@ sl-tooltip {
   align-items: center;
   justify-content: center;
 }
+
+.quality-level {
+	position: absolute;
+	top: 48px;
+	right: 0px;
+	background: rgba(0, 0, 0, 0.5);
+	color: rgb(76, 175, 80);
+	padding: 2px 5px;
+	font-size: 10px;
+	border-radius: 0px 0px 0px 3px;
+}

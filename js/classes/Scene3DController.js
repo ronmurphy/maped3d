@@ -82,6 +82,7 @@ class Scene3DController {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height);
     this.renderer.shadowMap.enabled = true;
+    this.optimizeRenderer();
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
@@ -277,6 +278,15 @@ class Scene3DController {
       if (this.dayNightCycle.dispose) this.dayNightCycle.dispose();
       this.dayNightCycle = null;
     }
+
+    if (this.lightSources) {
+      this.lightSources.clear();
+      this.lightSources = null;
+    }
+    if (this.lightSourcesContainer) {
+      this.scene.remove(this.lightSourcesContainer);
+      this.lightSourcesContainer = null;
+    }
   
     // Clean up stats with proper checks
     if (this.stats) {
@@ -427,26 +437,26 @@ class Scene3DController {
     material.dispose();
   }
 
-  disposeMaterial(material) {
-    if (!material) return;
+  // disposeMaterial(material) {
+  //   if (!material) return;
 
-    // Dispose of material
-    Object.keys(material).forEach(prop => {
-      if (!material[prop]) return;
-      if (material[prop]?.isTexture) {
-        material[prop].dispose();
-      }
-    });
+  //   // Dispose of material
+  //   Object.keys(material).forEach(prop => {
+  //     if (!material[prop]) return;
+  //     if (material[prop]?.isTexture) {
+  //       material[prop].dispose();
+  //     }
+  //   });
 
-    if (material.map) material.map.dispose();
-    if (material.lightMap) material.lightMap.dispose();
-    if (material.bumpMap) material.bumpMap.dispose();
-    if (material.normalMap) material.normalMap.dispose();
-    if (material.specularMap) material.specularMap.dispose();
-    if (material.envMap) material.envMap.dispose();
+  //   if (material.map) material.map.dispose();
+  //   if (material.lightMap) material.lightMap.dispose();
+  //   if (material.bumpMap) material.bumpMap.dispose();
+  //   if (material.normalMap) material.normalMap.dispose();
+  //   if (material.specularMap) material.specularMap.dispose();
+  //   if (material.envMap) material.envMap.dispose();
 
-    material.dispose();
-  }
+  //   material.dispose();
+  // }
 
   // Add this to your Scene3DController class
   monitorMemory() {
@@ -600,11 +610,13 @@ class Scene3DController {
           } else {
             document.body.appendChild(this.stats.dom);
           }
-
+          this.updateQualityIndicator();
           console.log('FPS counter initialized (using Stats.js)');
         } catch (err) {
           console.error('Error initializing Stats panel:', err);
           this.createSimpleFPSCounter(); // Fallback to simple counter
+          this.updateQualityIndicator();
+
         } finally {
           this.isInitializingStats = false; // Reset flag when done
         }
@@ -695,113 +707,232 @@ class Scene3DController {
   }
 
 
-  toggleStats() {
-    // Debounce toggling
-    const now = Date.now();
-    if (now - this.lastStatsToggle < 500) {
-      return;
-    }
-    this.lastStatsToggle = now;
+  // toggleStats() {
+  //   // Debounce toggling
+  //   const now = Date.now();
+  //   if (now - this.lastStatsToggle < 500) {
+  //     return;
+  //   }
+  //   this.lastStatsToggle = now;
 
-    // Initialize if needed
-    if (!this.stats && !this.isInitializingStats) {
-      // Toggle visibility
-      this.showStats = !this.showStats;
+  //   // Initialize if needed
+  //   if (!this.stats && !this.isInitializingStats) {
+  //     // Toggle visibility
+  //     this.showStats = !this.showStats;
 
-      // Initialize stats
-      this.initStats();
+  //     // Initialize stats
+  //     this.initStats();
 
-      // Save preference if we have preferences
-      if (this.preferences) {
-        this.preferences.showFps = this.showStats;
-        localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-      }
+  //     // Save preference if we have preferences
+  //     if (this.preferences) {
+  //       this.preferences.showFps = this.showStats;
+  //       localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+  //     }
 
-      return;
-    }
+  //           this.qualityIndicator.style.display = 'block';
 
-    // Toggle visibility
-    this.showStats = !this.showStats;
+  //     return;
+  //   }
 
-    // Update both the stats panel and quality indicator
-    if (this.stats && this.stats.dom) {
-      this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-    }
+  //   // Toggle visibility
+  //   this.showStats = !this.showStats;
 
-    if (this.qualityIndicator) {
-      this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
-    }
+  //   // Update both the stats panel and quality indicator
+  //   if (this.stats && this.stats.dom) {
+  //     this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+  //   }
 
-    // Save preference if we have preferences
-    if (this.preferences) {
-      this.preferences.showFps = this.showStats;
-      localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-    }
+  //   if (this.qualityIndicator) {
+  //     this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+  //   }
 
-    console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
+  //   // Save preference if we have preferences
+  //   if (this.preferences) {
+  //     this.preferences.showFps = this.showStats;
+  //     localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+  //   }
+
+  //   console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
+  // }
+
+  // This is a fixed version of the toggleStats method
+toggleStats() {
+  // Debounce toggling
+  const now = Date.now();
+  if (now - this.lastStatsToggle < 500) {
+    return;
+  }
+  this.lastStatsToggle = now;
+
+  // Toggle visibility
+  this.showStats = !this.showStats;
+  
+  // Initialize if needed
+  if (!this.stats && !this.isInitializingStats) {
+    // Initialize stats panel
+    this.initStats();
+  }
+  
+  // Create or update quality indicator
+  this.updateQualityIndicator();
+  
+  // Update both the stats panel and quality indicator visibility
+  if (this.stats && this.stats.dom) {
+    this.stats.dom.style.display = this.showStats ? 'block' : 'none';
   }
 
+  if (this.qualityIndicator) {
+    this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+  }
+
+  // Save preference if we have preferences
+  if (this.preferences) {
+    this.preferences.showFps = this.showStats;
+    localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+  }
+
+  console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
+}
+
+// New helper method to create/update quality indicator
+updateQualityIndicator() {
+  // Get current quality level - check all possible sources
+  const qualityLevel = this.qualityLevel || 
+    (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : null) ||
+    this.preferences?.detectedQuality || 'medium';
+  
+  // Create quality indicator if it doesn't exist
+  if (!this.qualityIndicator) {
+    this.qualityIndicator = document.createElement('div');
+    this.qualityIndicator.className = 'quality-level-indicator';
+    this.qualityIndicator.style.cssText = `
+      position: absolute;
+      top: 48px; /* Position below the FPS counter */
+      left: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      padding: 5px 10px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 1000;
+      border-radius: 3px;
+      width: 60px;
+      text-align: center;
+    `;
+    
+    // Add to DOM
+    const container = document.querySelector('.drawer-3d-view');
+    if (container) {
+      container.appendChild(this.qualityIndicator);
+    } else {
+      document.body.appendChild(this.qualityIndicator);
+    }
+  }
+  
+  // Set color based on quality level
+  const levelColors = {
+    high: '#4CAF50',   // Green
+    medium: '#2196F3', // Blue
+    low: '#FF9800'     // Orange
+  };
+  
+  // Update content and style
+  this.qualityIndicator.textContent = qualityLevel.toUpperCase();
+  this.qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
+  
+  // Set initial visibility
+  this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+  
+  return this.qualityIndicator;
+}
+
+
+  // createStatsPanel() {
+  //   this.stats = new Stats();
+
+  //   // Configure stats panel
+  //   this.stats.dom.style.position = 'absolute';
+  //   this.stats.dom.style.top = '10px';
+  //   this.stats.dom.style.left = '10px';
+  //   this.stats.dom.style.zIndex = '1000';
+
+  //   // Get quality level from preferences if not set directly
+  //   const qualityLevel = this.qualityLevel ||
+  //     (this.preferences?.detectedQuality) ||
+  //     (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : 'medium');
+
+  //   // Always add quality indicator as a separate element
+  //   const qualityIndicator = document.createElement('div');
+  //   qualityIndicator.className = 'quality-level'; // quality-level-indicator
+  //   qualityIndicator.style.cssText = `
+  //   position: absolute;
+  //   top: 48px; /* Position below the FPS counter */
+  //   left: 10px;
+  //   background: rgba(0, 0, 0, 0.5);
+  //   color: white;
+  //   padding: 5px 10px;
+  //   font-family: monospace;
+  //   font-size: 12px;
+  //   z-index: 1000;
+  //   border-radius: 3px;
+  //   width: 60px;
+  //   text-align: center;
+  // `;
+
+  //   // Set color based on quality level
+  //   const levelColors = {
+  //     high: '#4CAF50',
+  //     medium: '#2196F3',
+  //     low: '#FF9800'
+  //   };
+
+  //   qualityIndicator.textContent = qualityLevel.toUpperCase();
+  //   qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
+
+  //   // Store reference to quality indicator
+  //   this.qualityIndicator = qualityIndicator;
+
+  //   // Set initial visibility based on preferences
+  //   this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+  //   qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+
+  //   // Add panels to DOM
+  //   const container = document.querySelector('.drawer-3d-view');
+  //   if (container) {
+  //     container.appendChild(this.stats.dom);
+  //     container.appendChild(qualityIndicator);
+  //   } else {
+  //     document.body.appendChild(this.stats.dom);
+  //     document.body.appendChild(qualityIndicator);
+  //   }
+
+  //   console.log('FPS counter initialized with quality level:', qualityLevel);
+  // }
 
   createStatsPanel() {
     this.stats = new Stats();
-
+  
     // Configure stats panel
     this.stats.dom.style.position = 'absolute';
     this.stats.dom.style.top = '10px';
     this.stats.dom.style.left = '10px';
     this.stats.dom.style.zIndex = '1000';
-
-    // Get quality level from preferences if not set directly
-    const qualityLevel = this.qualityLevel ||
-      (this.preferences?.detectedQuality) ||
-      (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : 'medium');
-
-    // Always add quality indicator as a separate element
-    const qualityIndicator = document.createElement('div');
-    qualityIndicator.className = 'quality-level-indicator';
-    qualityIndicator.style.cssText = `
-    position: absolute;
-    top: 48px; /* Position below the FPS counter */
-    left: 10px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    padding: 5px 10px;
-    font-family: monospace;
-    font-size: 12px;
-    z-index: 1000;
-    border-radius: 3px;
-    width: 60px;
-    text-align: center;
-  `;
-
-    // Set color based on quality level
-    const levelColors = {
-      high: '#4CAF50',
-      medium: '#2196F3',
-      low: '#FF9800'
-    };
-
-    qualityIndicator.textContent = qualityLevel.toUpperCase();
-    qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
-
-    // Store reference to quality indicator
-    this.qualityIndicator = qualityIndicator;
-
+  
+    // Always add quality indicator too
+    this.updateQualityIndicator();
+  
     // Set initial visibility based on preferences
     this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-    qualityIndicator.style.display = this.showStats ? 'block' : 'none';
-
-    // Add panels to DOM
+    
+    // Add stats panel to DOM
     const container = document.querySelector('.drawer-3d-view');
     if (container) {
       container.appendChild(this.stats.dom);
-      container.appendChild(qualityIndicator);
     } else {
       document.body.appendChild(this.stats.dom);
-      document.body.appendChild(qualityIndicator);
     }
-
-    console.log('FPS counter initialized with quality level:', qualityLevel);
+  
+    console.log('FPS counter initialized with quality level:', this.qualityLevel || 'medium');
   }
 
   initializeWithData(data) {
@@ -2713,6 +2844,9 @@ class Scene3DController {
     // Process all markers (encounter tokens, props, teleporters, doors, etc.)
     await this.processAllMarkers();
 
+    this.autoDetectLightSources();
+
+
     const wallTextureRoom = this.rooms.find(
       (room) => room.name === "WallTexture"
     );
@@ -4295,26 +4429,6 @@ class Scene3DController {
       this.stats.begin();
     }
 
-
-    // const currentSpeed = this.moveState.speed;
-    // let canMove = true;
-
-    // if (this.moveState.forward || this.moveState.backward) {
-    //   const direction = new THREE.Vector3();
-    //   this.camera.getWorldDirection(direction);
-    //   if (this.moveState.backward) direction.negate();
-
-    //   canMove = this.physics.checkCollision(direction, currentSpeed);
-    // }
-
-    // if (canMove) {
-    //   if (this.moveState.forward) this.controls.moveForward(currentSpeed);
-    //   if (this.moveState.backward) this.controls.moveForward(-currentSpeed);
-    // }
-
-    // if (this.moveState.left) this.controls.moveRight(-currentSpeed);
-    // if (this.moveState.right) this.controls.moveRight(currentSpeed);
-
     this.updateTimeBasedMovement();
 
     const playerPosition = this.camera.position.clone();
@@ -4456,7 +4570,14 @@ class Scene3DController {
       this.playerLight.position.copy(this.camera.position);
     }
 
+
+    this.updateAutoLightSources(this.deltaTime || 0.016);
+
+    // rendering distance baised upon hardware levels
     this.updateObjectVisibility();
+
+    // Optimize particle systems
+    this.optimizeParticleSystems();
 
     if (this.visualEffects) {
       const time = performance.now() * 0.001;
@@ -5902,6 +6023,117 @@ class Scene3DController {
     }
   }
 
+  // Add this method to Scene3DController
+optimizeRenderer() {
+  if (!this.renderer) {
+    console.warn('Cannot optimize renderer: not initialized');
+    return false;
+  }
+  
+  console.log('Optimizing WebGL renderer...');
+  
+  // Enable object sorting for correct transparency
+  this.renderer.sortObjects = true;
+  
+  // Disable physically correct lights for better performance
+  if (this.renderer.physicallyCorrectLights !== undefined) {
+    this.renderer.physicallyCorrectLights = false;
+  }
+  
+  // Optimize shadow map settings if enabled
+  if (this.renderer.shadowMap.enabled) {
+    // Use basic shadow maps for performance
+    this.renderer.shadowMap.type = THREE.BasicShadowMap;
+    
+    // Limit shadow map size on lower-end devices
+    if (this.isMobileOrLowEndDevice()) {
+      this.renderer.shadowMap.autoUpdate = false; // Update only when needed
+      this.renderer.shadowMap.needsUpdate = true; // Initial update
+    }
+  }
+  
+  // Set appropriate pixel ratio based on device
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  let targetPixelRatio = devicePixelRatio;
+  
+  // Get current quality level
+  const qualityLevel = this.qualityLevel || 'medium';
+  
+  // Adjust pixel ratio based on quality setting
+  switch (qualityLevel) {
+    case 'high':
+      // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
+      targetPixelRatio = Math.min(devicePixelRatio, 2.5);
+      break;
+    case 'medium':
+      // Cap at 1.5 for medium quality
+      targetPixelRatio = Math.min(devicePixelRatio, 1.5);
+      break;
+    case 'low':
+      // Use 1.0 for low quality (no supersampling)
+      targetPixelRatio = 1.0;
+      break;
+    default:
+      // Default to medium behavior
+      targetPixelRatio = Math.min(devicePixelRatio, 1.5);
+  }
+  
+  // Apply the calculated pixel ratio
+  if (this.renderer.getPixelRatio() !== targetPixelRatio) {
+    console.log(`Setting renderer pixel ratio: ${this.renderer.getPixelRatio()} → ${targetPixelRatio}`);
+    this.renderer.setPixelRatio(targetPixelRatio);
+  }
+  
+  // Optimize precision based on device
+  if (this.isMobileOrLowEndDevice()) {
+    if (this.renderer.outputColorSpace !== THREE.LinearSRGBColorSpace) {
+      this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+    }
+  }
+  
+  // Set appropriate tone mapping
+  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  this.renderer.toneMappingExposure = 1.0;
+  
+  console.log('Renderer optimization complete');
+  return true;
+}
+
+// Helper method to detect mobile/low-end devices
+isMobileOrLowEndDevice() {
+  // Check for mobile user agent
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  // Check for low memory (if available)
+  const isLowMemory = navigator.deviceMemory !== undefined && navigator.deviceMemory < 4;
+  
+  // Check for low CPU cores (if available)
+  const isLowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency < 4;
+  
+  // Check for known low-end GPU (this is a simplified version)
+  let isLowEndGPU = false;
+  try {
+    if (this.renderer) {
+      const gl = this.renderer.getContext();
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        // Check for integrated graphics or known low-end GPUs
+        isLowEndGPU = renderer && (
+          renderer.includes('Intel') || 
+          renderer.includes('Intel(R)') ||
+          renderer.includes('HD Graphics') ||
+          renderer.includes('UHD Graphics')
+        );
+      }
+    }
+  } catch (e) {
+    console.warn('Could not detect GPU info:', e);
+  }
+  
+  return isMobile || isLowMemory || isLowCPU || isLowEndGPU;
+}
+
   // Add this method to your Scene3DController class
 updateObjectVisibility() {
   if (!this.camera) return;
@@ -6416,7 +6648,7 @@ updateObjectVisibility() {
         qualityIndicator.className = 'quality-level';
         qualityIndicator.style.cssText = `
         position: absolute;
-        top: 0;
+        top: 48px;
         right: 0;
         background: rgba(0,0,0,0.5);
         color: white;
@@ -6439,6 +6671,8 @@ updateObjectVisibility() {
     }
 
     console.log(`Quality level set to: ${level}`);
+    this.optimizeRenderer();
+    this.updateQualityIndicator();
     return level;
   }
 
@@ -6470,6 +6704,184 @@ updateObjectVisibility() {
       }
     });
   }
+
+  // Add this method to Scene3DController
+optimizeParticleSystems() {
+  if (!this.scene) return;
+  
+  // Maximum number of active particles based on quality level
+  const qualityLevel = this.qualityLevel || 'medium';
+  const maxParticles = {
+    high: 1000,
+    medium: 500,
+    low: 200
+  }[qualityLevel] || 500;
+  
+  // Current count of particles
+  let currentParticleCount = 0;
+  
+  // Track all particle systems
+  const particleSystems = [];
+  
+  // Find all particle systems in the scene
+  this.scene.traverse(object => {
+    // Check if it's a particle system (Points object)
+    if (object instanceof THREE.Points) {
+      particleSystems.push(object);
+      
+      // Add tracking properties if not already there
+      if (object.userData.particleImportance === undefined) {
+        // Assign importance based on proximity to camera or special effects
+        // Higher = more important to gameplay
+        if (object.userData.isTeleporter) {
+          object.userData.particleImportance = 10; // Teleporters are critical
+        } else if (object.userData.isEffect) {
+          object.userData.particleImportance = 5;  // Visual effects are medium importance
+        } else {
+          object.userData.particleImportance = 1;  // Default ambient particles
+        }
+      }
+      
+      // Count current particles if the system is visible
+      if (object.visible && object.geometry) {
+        currentParticleCount += object.geometry.attributes.position.count;
+      }
+    }
+  });
+  
+  // If we're under the limit, nothing to do
+  if (currentParticleCount <= maxParticles || particleSystems.length === 0) {
+    return;
+  }
+  
+  console.log(`Optimizing particles: ${currentParticleCount} → ${maxParticles} (limit for ${qualityLevel} quality)`);
+  
+  // Sort particle systems by importance (lowest first)
+  particleSystems.sort((a, b) => {
+    return (a.userData.particleImportance || 0) - (b.userData.particleImportance || 0);
+  });
+  
+  // Calculate distance to camera for each system for secondary sorting
+  const cameraPosition = this.camera.position;
+  particleSystems.forEach(system => {
+    system.userData.distanceToCamera = system.position.distanceTo(cameraPosition);
+  });
+  
+  // Start reducing particles from least important systems
+  let remainingBudget = maxParticles;
+  
+  // First pass - completely disable least important distant systems
+  for (let i = 0; i < particleSystems.length; i++) {
+    const system = particleSystems[i];
+    
+    // Skip critical systems
+    if (system.userData.particleImportance >= 10) continue;
+    
+    // For lowest importance, distant systems, hide completely
+    if (system.userData.particleImportance <= 1 && 
+        system.userData.distanceToCamera > 30) {
+      system.visible = false;
+      continue;
+    }
+    
+    // For medium importance distant systems, reduce particles
+    if (system.userData.particleImportance <= 5 && 
+        system.userData.distanceToCamera > 20) {
+      // Cut particles in half for distant medium importance
+      if (system.geometry && system.geometry.attributes.position) {
+        const origCount = system.geometry.attributes.position.count;
+        const newCount = Math.floor(origCount / 2);
+        
+        // Store original count if not already stored
+        if (system.userData.originalParticleCount === undefined) {
+          system.userData.originalParticleCount = origCount;
+        }
+        
+        // Reduce visible count
+        system.geometry.setDrawRange(0, newCount);
+        system.geometry.attributes.position.needsUpdate = true;
+        
+        // Subtract from budget
+        remainingBudget -= newCount;
+      }
+      continue;
+    }
+    
+    // Keep high importance and nearby systems at full count
+    if (system.geometry && system.geometry.attributes.position) {
+      remainingBudget -= system.geometry.attributes.position.count;
+    }
+  }
+  
+  // If we're still over budget, start reducing more aggressively
+  if (remainingBudget < 0) {
+    // Second pass - reduce even important systems
+    for (let i = 0; i < particleSystems.length; i++) {
+      const system = particleSystems[i];
+      
+      // Skip already hidden systems
+      if (!system.visible) continue;
+      
+      // Skip critical systems even now
+      if (system.userData.particleImportance >= 10) continue;
+      
+      if (system.geometry && system.geometry.attributes.position) {
+        const currentCount = system.geometry.drawRange.count || 
+                             system.geometry.attributes.position.count;
+        
+        // Reduce by 25% more
+        const newCount = Math.floor(currentCount * 0.75);
+        system.geometry.setDrawRange(0, newCount);
+        system.geometry.attributes.position.needsUpdate = true;
+        
+        // Update budget
+        remainingBudget += (currentCount - newCount);
+        
+        // If we're back under budget, we can stop
+        if (remainingBudget >= 0) break;
+      }
+    }
+  }
+  
+  // Final pass - restore particles for any systems that can fit in the budget
+  if (remainingBudget > 0) {
+    // Sort by importance (highest first this time)
+    particleSystems.sort((a, b) => {
+      return (b.userData.particleImportance || 0) - (a.userData.particleImportance || 0);
+    });
+    
+    // Restore particles where possible
+    for (let i = 0; i < particleSystems.length; i++) {
+      const system = particleSystems[i];
+      
+      // Skip systems without stored original count
+      if (system.userData.originalParticleCount === undefined) continue;
+      
+      // Check if we can restore some or all particles
+      if (system.geometry && system.geometry.attributes.position) {
+        const currentCount = system.geometry.drawRange.count || 
+                             system.geometry.attributes.position.count;
+        const originalCount = system.userData.originalParticleCount;
+        
+        // Can we restore some particles?
+        if (currentCount < originalCount) {
+          // How many can we add back?
+          const addBack = Math.min(remainingBudget, originalCount - currentCount);
+          if (addBack > 0) {
+            const newCount = currentCount + addBack;
+            system.geometry.setDrawRange(0, newCount);
+            system.geometry.attributes.position.needsUpdate = true;
+            
+            remainingBudget -= addBack;
+          }
+        }
+        
+        // If budget is exhausted, stop
+        if (remainingBudget <= 0) break;
+      }
+    }
+  }
+}
 
   // Example: Adding torches to your scene
   initializeTorches() {
@@ -6615,6 +7027,273 @@ updateObjectVisibility() {
 
     // Store the setting
     this.lightingEnabled = enabled;
+  }
+
+  autoDetectLightSources() {
+    if (!this.scene) return;
+    
+    console.log('Auto-detecting light sources from prop names...');
+    
+    // Create a container for lights
+    if (!this.lightSourcesContainer) {
+      this.lightSourcesContainer = new THREE.Group();
+      this.lightSourcesContainer.name = 'lightSources';
+      this.scene.add(this.lightSourcesContainer);
+    }
+    
+    // Track all light sources
+    if (!this.lightSources) {
+      this.lightSources = new Map();
+    }
+    
+    // Keywords that suggest light emission
+    const lightKeywords = [
+      { words: ['fire', 'torch', 'flame', 'candle', 'lantern', 'campfire'], 
+        color: 0xff6600, intensity: 1.5, distance: 8, decay: 2 },
+      { words: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'], 
+        color: 0x66ccff, intensity: 1.2, distance: 6, decay: 1.5 },
+      { words: ['lava', 'magma', 'ember'], 
+        color: 0xff3300, intensity: 1.3, distance: 7, decay: 2 }
+    ];
+    
+    // Look for props in the scene
+    let lightSourceCount = 0;
+    this.scene.traverse(object => {
+      // Skip objects that aren't props or already have lights
+      if (!object.userData || object.userData.type !== 'prop' || object.userData.hasLight) {
+        return;
+      }
+      
+      // Get the prop name
+      const propName = object.userData.name ? object.userData.name.toLowerCase() : '';
+      if (!propName) return;
+      
+      // Check if prop name contains any light keywords
+      for (const category of lightKeywords) {
+        if (category.words.some(word => propName.includes(word))) {
+          console.log(`Auto-detected light source: "${propName}"`);
+          
+          // Create a light source for this prop
+          const light = new THREE.PointLight(
+            category.color,
+            category.intensity,
+            category.distance,
+            category.decay
+          );
+          
+          // Position the light at or slightly above the prop
+          light.position.copy(object.position);
+          // Move up slightly if not already above ground
+          if (light.position.y < 1.5) {
+            light.position.y += 0.5;
+          }
+          
+          // Add light to scene
+          this.lightSourcesContainer.add(light);
+          
+          // Mark this prop as having a light
+          object.userData.hasLight = true;
+          
+          // Store reference to this light
+          this.lightSources.set(object.uuid, {
+            light,
+            prop: object,
+            originalIntensity: category.intensity,
+            originalDistance: category.distance
+          });
+          
+          // Create glow effect
+          this.createFireGlowEffect(object, category.color);
+          
+          lightSourceCount++;
+          break; // Stop after first match
+        }
+      }
+    });
+    
+    console.log(`Auto-detected ${lightSourceCount} light sources from prop names`);
+  }
+  
+  // Create fire glow effect for auto-detected props
+  createFireGlowEffect(prop, color = 0xff6600) {
+    // Skip if lighting effects are disabled
+    if (this.preferences && this.preferences.disableLighting) return;
+    
+    // Create emissive material for the prop if it has a standard material
+    if (prop.material && prop.material.isMeshStandardMaterial) {
+      // Store original material properties
+      if (!prop.userData.originalEmissive) {
+        prop.userData.originalEmissive = prop.material.emissive.clone();
+        prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
+      }
+      
+      // Make the prop itself glow a bit
+      prop.material.emissive = new THREE.Color(color);
+      prop.material.emissiveIntensity = 0.5;
+    }
+    
+    // Create glowing particle effect
+    const particleCount = 15;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    
+    // Convert color to RGB components
+    const colorObj = new THREE.Color(color);
+    const r = colorObj.r;
+    const g = colorObj.g;
+    const b = colorObj.b;
+    
+    // Create random particles around the prop
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      
+      // Position particles in small sphere around the prop's upper part
+      const radius = 0.3;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      
+      positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i3 + 1] = 0.2 + Math.random() * 0.2; // Slightly above
+      positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+      
+      // Colors - base color with some variation
+      colors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
+      colors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
+      colors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
+      
+      // Random sizes
+      sizes[i] = 0.05 + Math.random() * 0.15;
+    }
+    
+    // Create geometry and set attributes
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    
+    // Create shader material for better looking particles
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        color: { value: new THREE.Color(color) }
+      },
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        uniform float time;
+        
+        void main() {
+          vColor = color;
+          
+          // Animate position
+          vec3 pos = position;
+          pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
+          pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
+          pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
+          
+          vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        
+        void main() {
+          // Create circular particle
+          float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+          if (r > 0.5) discard;
+          
+          // Smooth edge and fade center for glow effect
+          float alpha = 0.9 * (1.0 - r * 1.9);
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+      blending: THREE.AdditiveBlending,
+      depthTest: true,
+      depthWrite: false,
+      transparent: true,
+      vertexColors: true
+    });
+    
+    // Create particle system
+    const particles = new THREE.Points(geometry, material);
+    particles.position.copy(prop.position);
+    
+    // Store time value for animation
+    particles.userData = {
+      type: 'effect',
+      timeOffset: Math.random() * 1000,
+      originalPosition: prop.position.clone()
+    };
+    
+    // Add to scene
+    this.scene.add(particles);
+    
+    // Store reference
+    if (!prop.userData.effects) prop.userData.effects = [];
+    prop.userData.effects.push(particles);
+    
+    return particles;
+  }
+  
+  // Update auto-detected light sources
+  updateAutoLightSources(deltaTime) {
+    if (!this.lightSources || this.lightSources.size === 0) return;
+    
+    const time = performance.now() * 0.001;
+    const playerPos = this.camera.position.clone();
+    
+    // Update each light
+    this.lightSources.forEach((data, id) => {
+      const { light, prop, originalIntensity } = data;
+      
+      // Skip if light was removed
+      if (!light || !light.parent) return;
+      
+      // Calculate distance to player
+      const distance = playerPos.distanceTo(light.position);
+      
+      // Dynamic intensity based on distance
+      const maxDistance = 30;
+      const fullFadeDistance = 50;
+      
+      if (distance <= maxDistance) {
+        // Full intensity when within reasonable range
+        light.intensity = originalIntensity * (0.85 + Math.sin(time * 3) * 0.15); // Flicker effect
+      } else if (distance <= fullFadeDistance) {
+        // Fade out with distance
+        const fadeRatio = 1 - ((distance - maxDistance) / (fullFadeDistance - maxDistance));
+        light.intensity = originalIntensity * fadeRatio;
+      } else {
+        // Turn off light completely when far away
+        light.intensity = 0;
+      }
+      
+      // Update any particle effects
+      if (prop && prop.userData && prop.userData.effects) {
+        prop.userData.effects.forEach(effect => {
+          if (effect && effect.material && effect.material.uniforms) {
+            // Update time uniform for animation
+            effect.material.uniforms.time.value = time;
+            
+            // Make particles fade with distance similar to the light
+            if (distance > maxDistance) {
+              if (effect.material.opacity !== undefined) {
+                const fadeRatio = 1 - ((distance - maxDistance) / (fullFadeDistance - maxDistance));
+                effect.material.opacity = Math.max(0, fadeRatio);
+              }
+            } else {
+              if (effect.material.opacity !== undefined) {
+                effect.material.opacity = 1.0;
+              }
+            }
+          }
+        });
+      }
+    });
   }
 
   initializeDayNightCycle() {

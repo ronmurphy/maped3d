@@ -6413,51 +6413,6 @@ applyEditorPreferences(prefs) {
   console.log('Editor preferences applied:', prefs);
 }
 
-// Apply current preferences to the application
-// applyPreferences() {
-//   const prefs = this.getPreferences();
-  
-//   // Apply quality level
-//   const qualityLevel = prefs.qualityPreset === 'auto' ? 
-//     prefs.detectedQuality || 'medium' : prefs.qualityPreset;
-  
-//   this.setQualityLevel(qualityLevel, {
-//     shadows: prefs.shadowsEnabled,
-//     antialias: prefs.antialiasEnabled, 
-//     highQualityTextures: prefs.hqTextures,
-//     ambientOcclusion: prefs.ambientOcclusion
-//   });
-  
-//   // Apply lighting toggle
-//   this.setLightingEnabled(!prefs.disableLighting);
-  
-//   // Apply FPS counter visibility
-//   if (prefs.showFps && !this.showStats) {
-//     this.toggleStats();
-//   } else if (!prefs.showFps && this.showStats) {
-//     this.toggleStats();
-//   }
-  
-//   // Apply FPS limit
-//   this.setFPSLimit(prefs.fpsLimit);
-  
-//   // Apply movement speed
-//   if (this.moveState) {
-//     this.moveState.baseSpeed = 0.025 * (prefs.movementSpeed || 1.0);
-//     this.moveState.speed = this.moveState.sprint ? 
-//       this.moveState.baseSpeed * 2 : this.moveState.baseSpeed;
-//   }
-  
-//   // Apply day/night cycle settings if applicable
-//   if (this.dayNightCycle && prefs.timeOfDay !== undefined) {
-//     this.dayNightCycle.setTime(prefs.timeOfDay);
-//     if (prefs.autoPlayDayNight) {
-//       this.dayNightCycle.start();
-//     } else {
-//       this.dayNightCycle.pause();
-//     }
-//   }
-// }
 
 // Modify the applyPreferences method
 applyPreferences() {
