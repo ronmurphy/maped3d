@@ -110,7 +110,7 @@ class Scene3DController {
     if (this.preferences && this.preferences.showFps) {
       this.showStats = true;
       this.initStats();
-      
+
       // Explicitly make sure memory stats is visible if showStats is true
       if (this.memStats) {
         this.memStats.style.display = 'block';
@@ -162,25 +162,25 @@ class Scene3DController {
   cleanup() {
     console.log('Starting enhanced Scene3D cleanup...');
     this.isActive = false;
-  
+
     // Cancel any pending animation frames first
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
-    
+
     // Stop all timers and intervals
     if (this.miniMapUpdateInterval) {
       clearInterval(this.miniMapUpdateInterval);
       this.miniMapUpdateInterval = null;
     }
-  
+
     // Clean up UI elements with proper checks
     const uiElements = [
-      'teleportPrompt', 'doorPrompt', 'encounterPrompt', 'pickupPrompt', 
+      'teleportPrompt', 'doorPrompt', 'encounterPrompt', 'pickupPrompt',
       'splashArtPrompt', 'inventoryDrawer', 'qualityIndicator'
     ];
-    
+
     uiElements.forEach(element => {
       if (this[element]) {
         if (this[element].remove) this[element].remove();
@@ -188,7 +188,7 @@ class Scene3DController {
         this[element] = null;
       }
     });
-  
+
     // Remove all event listeners with named functions
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
@@ -200,14 +200,14 @@ class Scene3DController {
       this._gameMenu.dispose();
       this._gameMenu = null;
     }
-    
+  
     // Clean up renderer DOM element - critical for WebGL context release
     if (this.renderer) {
       console.log('Disposing of renderer...');
-      
+
       // Force immediate renderer disposal
       this.renderer.dispose();
-      
+
       // Dispose of all render targets
       if (this.renderer.renderTargets) {
         Object.keys(this.renderer.renderTargets).forEach(key => {
@@ -215,28 +215,28 @@ class Scene3DController {
           delete this.renderer.renderTargets[key];
         });
       }
-      
+
       // Remove DOM element
       if (this.renderer.domElement) {
         if (this.renderer.domElement.parentNode) {
           this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
         }
       }
-      
+
       // Force context loss (important for WebGL resource cleanup)
       if (this.renderer.forceContextLoss) {
         this.renderer.forceContextLoss();
       }
-      
+
       // Force context release
       const gl = this.renderer.getContext();
       if (gl && gl.getExtension('WEBGL_lose_context')) {
         gl.getExtension('WEBGL_lose_context').loseContext();
       }
-      
+
       this.renderer = null;
     }
-  
+
     // Clean up audio with better checks
     if (this.camera) {
       // Find and dispose of audio listener
@@ -247,7 +247,7 @@ class Scene3DController {
         if (listener.context && listener.context.close) {
           listener.context.close();
         }
-        
+
         // Dispose of all audio sources
         this.scene.traverse(object => {
           if (object.isAudio) {
@@ -263,7 +263,7 @@ class Scene3DController {
         });
       }
     }
-  
+
     // Clean up specific sounds
     ['doorSound', 'jumpSound'].forEach(sound => {
       if (this[sound]) {
@@ -272,21 +272,21 @@ class Scene3DController {
         this[sound] = null;
       }
     });
-  
+
     // Clean up physics with proper checks
     if (this.physics) {
       console.log('Cleaning up physics...');
       if (this.physics.cleanup) this.physics.cleanup();
       this.physics = null;
     }
-  
+
     // Clean up visual effects
     if (this.visualEffects) {
       console.log('Cleaning up visual effects...');
       if (this.visualEffects.dispose) this.visualEffects.dispose();
       this.visualEffects = null;
     }
-  
+
     // Clean up day/night cycle
     if (this.dayNightCycle) {
       console.log('Cleaning up day/night cycle...');
@@ -302,7 +302,7 @@ class Scene3DController {
       this.scene.remove(this.lightSourcesContainer);
       this.lightSourcesContainer = null;
     }
-  
+
     // Clean up stats with proper checks
     if (this.stats) {
       console.log('Cleaning up stats...');
@@ -311,7 +311,7 @@ class Scene3DController {
       }
       this.stats = null;
     }
-  
+
     // Clean up controls
     if (this.controls) {
       console.log('Cleaning up controls...');
@@ -319,7 +319,7 @@ class Scene3DController {
       if (this.controls.dispose) this.controls.dispose();
       this.controls = null;
     }
-  
+
     // Dispose all geometries, materials, and textures in the scene
     console.log('Disposing scene objects...');
     if (this.scene) {
@@ -328,13 +328,13 @@ class Scene3DController {
         if (object._listeners) {
           object._listeners = {};
         }
-        
+
         // Dispose geometry with safety checks
         if (object.geometry) {
           object.geometry.dispose();
           object.geometry = null;
         }
-        
+
         // Dispose material(s) thoroughly
         if (object.material) {
           if (Array.isArray(object.material)) {
@@ -345,21 +345,21 @@ class Scene3DController {
           object.material = null;
         }
       });
-      
+
       // Clear the scene
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
       }
-      
+
       this.scene = null;
     }
-  
+
     // Explicit cleanup of memory-heavy components
     if (this.baseImage) {
       this.baseImage.src = '';
       this.baseImage = null;
     }
-  
+
     // Clear arrays and maps with proper nullifying
     console.log('Clearing data structures...');
     this.teleporters = [];
@@ -369,7 +369,7 @@ class Scene3DController {
       this.inventory.clear();
       this.inventory = null;
     }
-  
+
     // Clear all references to objects
     this.nearestSplashArt = null;
     this.activeSplashArt = null;
@@ -378,76 +378,76 @@ class Scene3DController {
     this.activeTeleporter = null;
     this.activeDoor = null;
     this.playerLight = null;
-  
+
     // Clear cached objects in Three.js
     THREE.Cache.clear();
-  
+
     // Clean up mini-map
     this.cleanupMiniMap();
-  
+
     // Clean up any potential circular references
     this.movementVector = null;
     this.frustum = null;
     this.projScreenMatrix = null;
     this.particlePool = null;
-  
+
     // Clear all remaining properties
     this.clear();
-    
+
     // Explicitly request garbage collection when available
     console.log('Cleanup complete, requesting garbage collection...');
     setTimeout(() => {
       if (window.gc) window.gc();
     }, 300);
-  
+
     // Force another garbage collection attempt after a delay
     setTimeout(() => {
       if (window.gc) window.gc();
       console.log('Final cleanup completed');
     }, 1000);
   }
-  
+
   // Enhanced method to thoroughly dispose of materials including all textures
   disposeMaterial(material) {
     if (!material) return;
-  
+
     // Dispose all texture properties
     const textureProps = [
       'map', 'lightMap', 'bumpMap', 'normalMap', 'displacementMap', 'specularMap',
       'emissiveMap', 'metalnessMap', 'roughnessMap', 'alphaMap', 'aoMap', 'envMap',
       'matcap', 'gradientMap'
     ];
-    
+
     textureProps.forEach(prop => {
       if (material[prop]) {
         material[prop].dispose();
         material[prop] = null;
       }
     });
-  
+
     // Check for custom properties
     if (material.userData) {
       Object.keys(material.userData).forEach(key => {
-        if (material.userData[key] && 
-            material.userData[key].isTexture) {
+        if (material.userData[key] &&
+          material.userData[key].isTexture) {
           material.userData[key].dispose();
           material.userData[key] = null;
         }
       });
     }
-  
+
     // Also dispose any MeshStandardMaterial specific fields
     if (material.isMeshStandardMaterial) {
       if (material.envMap) {
         material.envMap.dispose();
         material.envMap = null;
       }
-      
+
       if (material.onBeforeCompile) {
         material.onBeforeCompile = null;
       }
     }
-  
+
     // Dispose the material itself
     material.dispose();
   }
@@ -545,29 +545,29 @@ class Scene3DController {
         font-family: monospace;
         z-index: 1000;
       `;
-      
+
       // Set initial display state based on showStats
       memStats.style.display = this.showStats ? 'block' : 'none';
-      
+
       document.body.appendChild(memStats);
-  
+
       const updateMemStats = () => {
         if (!memStats.parentNode) return;
-  
+
         const memory = window.performance.memory;
         const usedHeapSize = (memory.usedJSHeapSize / 1048576).toFixed(2);
         const totalHeapSize = (memory.totalJSHeapSize / 1048576).toFixed(2);
-  
+
         memStats.textContent = `Mem: ${usedHeapSize}MB / ${totalHeapSize}MB`;
-  
+
         setTimeout(updateMemStats, 1000);
       };
-  
+
       updateMemStats();
-  
+
       return memStats;
     }
-  
+
     return null;
   }
 
@@ -669,16 +669,16 @@ class Scene3DController {
         try {
           this.stats = new Stats();
           this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-          
+
           // Style the stats panel
           this.stats.dom.style.position = 'absolute';
           this.stats.dom.style.top = '56px';
           this.stats.dom.style.left = '10px';
           this.stats.dom.style.zIndex = '1000';
-          
+
           // Important: Set display AFTER creating dom element
           this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-          
+
           // Add to DOM
           const container = document.querySelector('.drawer-3d-view');
           if (container) {
@@ -686,15 +686,15 @@ class Scene3DController {
           } else {
             document.body.appendChild(this.stats.dom);
           }
-          
+
           this.updateQualityIndicator();
           this.memStats = this.monitorMemory();
-          
+
           // Explicitly set memStats visibility to match showStats
           if (this.memStats && this.showStats) {
             this.memStats.style.display = 'block';
           }
-          
+
           console.log('FPS counter initialized (using Stats.js)');
         } catch (err) {
           console.error('Error initializing Stats panel:', err);
@@ -790,61 +790,61 @@ class Scene3DController {
     }
   }
 
-toggleStats() {
-  // Debounce toggling
-  const now = Date.now();
-  if (now - this.lastStatsToggle < 500) {
-    return;
-  }
-  this.lastStatsToggle = now;
+  toggleStats() {
+    // Debounce toggling
+    const now = Date.now();
+    if (now - this.lastStatsToggle < 500) {
+      return;
+    }
+    this.lastStatsToggle = now;
 
-  // Toggle visibility
-  this.showStats = !this.showStats;
-  
-  // Initialize if needed
-  if (!this.stats && !this.isInitializingStats) {
-    // Initialize stats panel
-    this.initStats();
-  }
-  
-  // Create or update quality indicator
-  this.updateQualityIndicator();
-  
-  // Update both the stats panel and quality indicator visibility
-  if (this.stats && this.stats.dom) {
-    this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+    // Toggle visibility
+    this.showStats = !this.showStats;
+
+    // Initialize if needed
+    if (!this.stats && !this.isInitializingStats) {
+      // Initialize stats panel
+      this.initStats();
+    }
+
+    // Create or update quality indicator
+    this.updateQualityIndicator();
+
+    // Update both the stats panel and quality indicator visibility
+    if (this.stats && this.stats.dom) {
+      this.stats.dom.style.display = this.showStats ? 'block' : 'none';
+    }
+
+    if (this.qualityIndicator) {
+      this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+    }
+
+    // Also toggle memory stats visibility
+    if (this.memStats) {
+      this.memStats.style.display = this.showStats ? 'block' : 'none';
+    }
+
+    // Save preference if we have preferences
+    if (this.preferences) {
+      this.preferences.showFps = this.showStats;
+      localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+    }
+
+    console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
   }
 
-  if (this.qualityIndicator) {
-    this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
-  }
+  // New helper method to create/update quality indicator
+  updateQualityIndicator() {
+    // Get current quality level - check all possible sources
+    const qualityLevel = this.qualityLevel ||
+      (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : null) ||
+      this.preferences?.detectedQuality || 'medium';
 
-  // Also toggle memory stats visibility
-  if (this.memStats) {
-    this.memStats.style.display = this.showStats ? 'block' : 'none';
-  }
-
-  // Save preference if we have preferences
-  if (this.preferences) {
-    this.preferences.showFps = this.showStats;
-    localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
-  }
-
-  console.log(`FPS counter ${this.showStats ? 'shown' : 'hidden'} with quality level: ${this.qualityLevel || 'not set'}`);
-}
-
-// New helper method to create/update quality indicator
-updateQualityIndicator() {
-  // Get current quality level - check all possible sources
-  const qualityLevel = this.qualityLevel || 
-    (this.preferences?.qualityPreset !== 'auto' ? this.preferences?.qualityPreset : null) ||
-    this.preferences?.detectedQuality || 'medium';
-  
-  // Create quality indicator if it doesn't exist
-  if (!this.qualityIndicator) {
-    this.qualityIndicator = document.createElement('div');
-    this.qualityIndicator.className = 'quality-level-indicator';
-    this.qualityIndicator.style.cssText = `
+    // Create quality indicator if it doesn't exist
+    if (!this.qualityIndicator) {
+      this.qualityIndicator = document.createElement('div');
+      this.qualityIndicator.className = 'quality-level-indicator';
+      this.qualityIndicator.style.cssText = `
       position: absolute;
       top: 48px; /* Position below the FPS counter */
       left: 10px;
@@ -858,46 +858,46 @@ updateQualityIndicator() {
       width: 60px;
       text-align: center;
     `;
-    
-    // Add to DOM
-    const container = document.querySelector('.drawer-3d-view');
-    if (container) {
-      container.appendChild(this.qualityIndicator);
-    } else {
-      document.body.appendChild(this.qualityIndicator);
+
+      // Add to DOM
+      const container = document.querySelector('.drawer-3d-view');
+      if (container) {
+        container.appendChild(this.qualityIndicator);
+      } else {
+        document.body.appendChild(this.qualityIndicator);
+      }
     }
+
+    // Set color based on quality level
+    const levelColors = {
+      high: '#4CAF50',   // Green
+      medium: '#2196F3', // Blue
+      low: '#FF9800'     // Orange
+    };
+
+    // Update content and style
+    this.qualityIndicator.textContent = qualityLevel.toUpperCase();
+    this.qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
+
+    // Set initial visibility
+    this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
+
+    return this.qualityIndicator;
   }
-  
-  // Set color based on quality level
-  const levelColors = {
-    high: '#4CAF50',   // Green
-    medium: '#2196F3', // Blue
-    low: '#FF9800'     // Orange
-  };
-  
-  // Update content and style
-  this.qualityIndicator.textContent = qualityLevel.toUpperCase();
-  this.qualityIndicator.style.color = levelColors[qualityLevel] || 'white';
-  
-  // Set initial visibility
-  this.qualityIndicator.style.display = this.showStats ? 'block' : 'none';
-  
-  return this.qualityIndicator;
-}
 
   createStatsPanel() {
     this.stats = new Stats();
-  
+
     // Configure stats panel
     this.stats.dom.style.position = 'absolute';
     this.stats.dom.style.top = '10px';
     this.stats.dom.style.left = '10px';
     this.stats.dom.style.zIndex = '1000';
-  
+
     // Always add quality indicator too
     this.updateQualityIndicator();
     this.memStats = this.monitorMemory();
-  
+
     // Set initial visibility based on preferences
     this.stats.dom.style.display = this.showStats ? 'block' : 'none';
     this.memStats.style.display = this.showStats ? 'block' : 'none';
@@ -908,7 +908,7 @@ updateQualityIndicator() {
     } else {
       document.body.appendChild(this.stats.dom);
     }
-  
+
     console.log('FPS counter initialized with quality level:', this.qualityLevel || 'medium');
   }
 
@@ -4215,36 +4215,36 @@ updateQualityIndicator() {
     const now = performance.now();
     this.deltaTime = (now - this.lastFrameTime) / 1000; // Convert to seconds
     this.lastFrameTime = now;
-    
+
     // Cap deltaTime to avoid huge jumps after pauses or slow frames
     const cappedDelta = Math.min(this.deltaTime, 0.1);
-    
+
     // Calculate base speed adjusted for time (normalized to 60fps)
     const timeAdjustedSpeed = this.moveState.speed * cappedDelta * 60;
-    
+
     // Skip movement if paused
     if (this._controlsPaused) {
       return cappedDelta;
     }
-    
+
     let canMove = true;
-  
+
     if (this.moveState.forward || this.moveState.backward) {
       const direction = new THREE.Vector3();
       this.camera.getWorldDirection(direction);
       if (this.moveState.backward) direction.negate();
-  
+
       canMove = this.physics.checkCollision(direction, timeAdjustedSpeed);
     }
-  
+
     if (canMove) {
       if (this.moveState.forward) this.controls.moveForward(timeAdjustedSpeed);
       if (this.moveState.backward) this.controls.moveForward(-timeAdjustedSpeed);
     }
-  
+
     if (this.moveState.left) this.controls.moveRight(-timeAdjustedSpeed);
     if (this.moveState.right) this.controls.moveRight(timeAdjustedSpeed);
-    
+
     // Return the delta time for other time-based calculations
     return cappedDelta;
   }
@@ -4257,7 +4257,7 @@ updateQualityIndicator() {
     let nearestProp = null;
     let nearestEncounter = null;
     let shortestDistance = Infinity;
-    
+
     // Check teleporters
     this.teleporters.forEach(teleporter => {
       const distance = playerPosition.distanceTo(teleporter.position);
@@ -4266,7 +4266,7 @@ updateQualityIndicator() {
         nearestTeleporter = teleporter;
       }
     });
-    
+
     // Check doors
     this.doors.forEach(door => {
       const distance = playerPosition.distanceTo(door.position);
@@ -4275,7 +4275,7 @@ updateQualityIndicator() {
         nearestDoor = door;
       }
     });
-    
+
     // Check splash art markers
     this.markers.forEach(marker => {
       if (marker.type === 'splash-art') {
@@ -4291,7 +4291,7 @@ updateQualityIndicator() {
         }
       }
     });
-    
+
     // Check props
     this.scene.children.forEach(child => {
       if (child.userData?.type === 'prop') {
@@ -4302,7 +4302,7 @@ updateQualityIndicator() {
         }
       }
     });
-    
+
     // Check encounters
     if (!this.encounterCooldown && !this.activeEncounter) {
       this.scene.children.forEach(object => {
@@ -4316,11 +4316,11 @@ updateQualityIndicator() {
         }
       });
     }
-    
+
     // Update UI prompts based on nearest interactive element
     this.updateTeleportPrompt(nearestTeleporter);
     this.updateDoorPrompt(nearestDoor);
-    
+
     // Update splash art prompt
     if (nearestSplashArt && !this.activeSplashArt) {
       const prompt = this.createSplashArtPrompt();
@@ -4331,7 +4331,7 @@ updateQualityIndicator() {
       this.splashArtPrompt.style.display = 'none';
       this.nearestSplashArt = null;
     }
-    
+
     // Update pickup prompt
     if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
       const prompt = this.createPickupPrompt();
@@ -4342,7 +4342,7 @@ updateQualityIndicator() {
       this.pickupPrompt.style.display = 'none';
       this.nearestProp = null;
     }
-    
+
     // Update encounter prompt
     if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
       const prompt = this.createEncounterPrompt();
@@ -4354,7 +4354,7 @@ updateQualityIndicator() {
       this.nearestEncounter = null;
     }
   }
-  
+
   // Helper method for animating effects
   animateEffects(deltaTime) {
     // Animate teleporter particles
@@ -4579,7 +4579,7 @@ updateQualityIndicator() {
 
   };
 
-  
+
   createLandingEffect(position) {
     // Create a particle system for dust effect
     const particleCount = 20;
@@ -5783,178 +5783,178 @@ this.gameState = 'initializing';
   }
 
   // Add this method to Scene3DController
-optimizeRenderer() {
-  if (!this.renderer) {
-    console.warn('Cannot optimize renderer: not initialized');
-    return false;
-  }
-  
-  console.log('Optimizing WebGL renderer...');
-  
-  // Enable object sorting for correct transparency
-  this.renderer.sortObjects = true;
-  
-  // Disable physically correct lights for better performance
-  if (this.renderer.physicallyCorrectLights !== undefined) {
-    this.renderer.physicallyCorrectLights = false;
-  }
-  
-  // Optimize shadow map settings if enabled
-  if (this.renderer.shadowMap.enabled) {
-    // Use basic shadow maps for performance
-    this.renderer.shadowMap.type = THREE.BasicShadowMap;
-    
-    // Limit shadow map size on lower-end devices
+  optimizeRenderer() {
+    if (!this.renderer) {
+      console.warn('Cannot optimize renderer: not initialized');
+      return false;
+    }
+
+    console.log('Optimizing WebGL renderer...');
+
+    // Enable object sorting for correct transparency
+    this.renderer.sortObjects = true;
+
+    // Disable physically correct lights for better performance
+    if (this.renderer.physicallyCorrectLights !== undefined) {
+      this.renderer.physicallyCorrectLights = false;
+    }
+
+    // Optimize shadow map settings if enabled
+    if (this.renderer.shadowMap.enabled) {
+      // Use basic shadow maps for performance
+      this.renderer.shadowMap.type = THREE.BasicShadowMap;
+
+      // Limit shadow map size on lower-end devices
+      if (this.isMobileOrLowEndDevice()) {
+        this.renderer.shadowMap.autoUpdate = false; // Update only when needed
+        this.renderer.shadowMap.needsUpdate = true; // Initial update
+      }
+    }
+
+    // Set appropriate pixel ratio based on device
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    let targetPixelRatio = devicePixelRatio;
+
+    // Get current quality level
+    const qualityLevel = this.qualityLevel || 'medium';
+
+    // Adjust pixel ratio based on quality setting
+    switch (qualityLevel) {
+      case 'high':
+        // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
+        targetPixelRatio = Math.min(devicePixelRatio, 2.5);
+        break;
+      case 'medium':
+        // Cap at 1.5 for medium quality
+        targetPixelRatio = Math.min(devicePixelRatio, 1.5);
+        break;
+      case 'low':
+        // Use 1.0 for low quality (no supersampling)
+        targetPixelRatio = 1.0;
+        break;
+      default:
+        // Default to medium behavior
+        targetPixelRatio = Math.min(devicePixelRatio, 1.5);
+    }
+
+    // Apply the calculated pixel ratio
+    if (this.renderer.getPixelRatio() !== targetPixelRatio) {
+      console.log(`Setting renderer pixel ratio: ${this.renderer.getPixelRatio()} → ${targetPixelRatio}`);
+      this.renderer.setPixelRatio(targetPixelRatio);
+    }
+
+    // Optimize precision based on device
     if (this.isMobileOrLowEndDevice()) {
-      this.renderer.shadowMap.autoUpdate = false; // Update only when needed
-      this.renderer.shadowMap.needsUpdate = true; // Initial update
-    }
-  }
-  
-  // Set appropriate pixel ratio based on device
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  let targetPixelRatio = devicePixelRatio;
-  
-  // Get current quality level
-  const qualityLevel = this.qualityLevel || 'medium';
-  
-  // Adjust pixel ratio based on quality setting
-  switch (qualityLevel) {
-    case 'high':
-      // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
-      targetPixelRatio = Math.min(devicePixelRatio, 2.5);
-      break;
-    case 'medium':
-      // Cap at 1.5 for medium quality
-      targetPixelRatio = Math.min(devicePixelRatio, 1.5);
-      break;
-    case 'low':
-      // Use 1.0 for low quality (no supersampling)
-      targetPixelRatio = 1.0;
-      break;
-    default:
-      // Default to medium behavior
-      targetPixelRatio = Math.min(devicePixelRatio, 1.5);
-  }
-  
-  // Apply the calculated pixel ratio
-  if (this.renderer.getPixelRatio() !== targetPixelRatio) {
-    console.log(`Setting renderer pixel ratio: ${this.renderer.getPixelRatio()} → ${targetPixelRatio}`);
-    this.renderer.setPixelRatio(targetPixelRatio);
-  }
-  
-  // Optimize precision based on device
-  if (this.isMobileOrLowEndDevice()) {
-    if (this.renderer.outputColorSpace !== THREE.LinearSRGBColorSpace) {
-      this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    }
-  }
-  
-  // Set appropriate tone mapping
-  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  this.renderer.toneMappingExposure = 1.0;
-  
-  console.log('Renderer optimization complete');
-  return true;
-}
-
-// Helper method to detect mobile/low-end devices
-isMobileOrLowEndDevice() {
-  // Check for mobile user agent
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  
-  // Check for low memory (if available)
-  const isLowMemory = navigator.deviceMemory !== undefined && navigator.deviceMemory < 4;
-  
-  // Check for low CPU cores (if available)
-  const isLowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency < 4;
-  
-  // Check for known low-end GPU (this is a simplified version)
-  let isLowEndGPU = false;
-  try {
-    if (this.renderer) {
-      const gl = this.renderer.getContext();
-      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-      if (debugInfo) {
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-        // Check for integrated graphics or known low-end GPUs
-        isLowEndGPU = renderer && (
-          renderer.includes('Intel') || 
-          renderer.includes('Intel(R)') ||
-          renderer.includes('HD Graphics') ||
-          renderer.includes('UHD Graphics')
-        );
+      if (this.renderer.outputColorSpace !== THREE.LinearSRGBColorSpace) {
+        this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       }
     }
-  } catch (e) {
-    console.warn('Could not detect GPU info:', e);
-  }
-  
-  return isMobile || isLowMemory || isLowCPU || isLowEndGPU;
-}
 
-  // Add this method to your Scene3DController class
-updateObjectVisibility() {
-  if (!this.camera) return;
-  
-  const playerPos = this.camera.position;
-  const nearDistance = 20;  // Objects within this range get full detail
-  const farDistance = 40;   // Objects beyond this get simplified or hidden
-  
-  this.scene.traverse(object => {
-    // Skip non-mesh objects or those set to always show
-    if (!object.isMesh || object.userData.alwaysShow) return;
-    
-    // Skip walls and other essential objects
-    if (object.userData && (object.userData.isWall || object.userData.isEssential)) {
-      return;
-    }
-    
-    const distance = playerPos.distanceTo(object.position);
-    
-    // Objects close to player get full detail
-    if (distance < nearDistance) {
-      object.visible = true;
-      // Restore original material if it exists
-      if (object.userData.originalMaterial) {
-        object.material = object.userData.originalMaterial;
-        delete object.userData.originalMaterial;
-      }
-    }
-    // Objects at medium distance get simplified
-    else if (distance < farDistance) {
-      object.visible = true;
-      
-      // If it's a complex object, use a simpler material
-      if (object.material && object.material.isMeshStandardMaterial) {
-        // Store original material if not already stored
-        if (!object.userData.originalMaterial) {
-          object.userData.originalMaterial = object.material;
-          
-          // Create a simplified material (cheaper to render)
-          const simpleMaterial = new THREE.MeshBasicMaterial({
-            color: object.material.color ? object.material.color.clone() : 0xcccccc,
-            map: object.material.map,
-            transparent: object.material.transparent,
-            opacity: object.material.opacity
-          });
-          
-          object.material = simpleMaterial;
+    // Set appropriate tone mapping
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.0;
+
+    console.log('Renderer optimization complete');
+    return true;
+  }
+
+  // Helper method to detect mobile/low-end devices
+  isMobileOrLowEndDevice() {
+    // Check for mobile user agent
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // Check for low memory (if available)
+    const isLowMemory = navigator.deviceMemory !== undefined && navigator.deviceMemory < 4;
+
+    // Check for low CPU cores (if available)
+    const isLowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency < 4;
+
+    // Check for known low-end GPU (this is a simplified version)
+    let isLowEndGPU = false;
+    try {
+      if (this.renderer) {
+        const gl = this.renderer.getContext();
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          // Check for integrated graphics or known low-end GPUs
+          isLowEndGPU = renderer && (
+            renderer.includes('Intel') ||
+            renderer.includes('Intel(R)') ||
+            renderer.includes('HD Graphics') ||
+            renderer.includes('UHD Graphics')
+          );
         }
       }
+    } catch (e) {
+      console.warn('Could not detect GPU info:', e);
     }
-    // Very distant objects can be hidden
-    else {
-      // Don't hide essential objects
-      if (!object.userData || 
-          (object.userData.type !== 'wall' && 
-           object.userData.type !== 'prop' && 
-           object.userData.type !== 'door')) {
-        object.visible = false;
+
+    return isMobile || isLowMemory || isLowCPU || isLowEndGPU;
+  }
+
+  // Add this method to your Scene3DController class
+  updateObjectVisibility() {
+    if (!this.camera) return;
+
+    const playerPos = this.camera.position;
+    const nearDistance = 20;  // Objects within this range get full detail
+    const farDistance = 40;   // Objects beyond this get simplified or hidden
+
+    this.scene.traverse(object => {
+      // Skip non-mesh objects or those set to always show
+      if (!object.isMesh || object.userData.alwaysShow) return;
+
+      // Skip walls and other essential objects
+      if (object.userData && (object.userData.isWall || object.userData.isEssential)) {
+        return;
       }
-    }
-  });
-}
+
+      const distance = playerPos.distanceTo(object.position);
+
+      // Objects close to player get full detail
+      if (distance < nearDistance) {
+        object.visible = true;
+        // Restore original material if it exists
+        if (object.userData.originalMaterial) {
+          object.material = object.userData.originalMaterial;
+          delete object.userData.originalMaterial;
+        }
+      }
+      // Objects at medium distance get simplified
+      else if (distance < farDistance) {
+        object.visible = true;
+
+        // If it's a complex object, use a simpler material
+        if (object.material && object.material.isMeshStandardMaterial) {
+          // Store original material if not already stored
+          if (!object.userData.originalMaterial) {
+            object.userData.originalMaterial = object.material;
+
+            // Create a simplified material (cheaper to render)
+            const simpleMaterial = new THREE.MeshBasicMaterial({
+              color: object.material.color ? object.material.color.clone() : 0xcccccc,
+              map: object.material.map,
+              transparent: object.material.transparent,
+              opacity: object.material.opacity
+            });
+
+            object.material = simpleMaterial;
+          }
+        }
+      }
+      // Very distant objects can be hidden
+      else {
+        // Don't hide essential objects
+        if (!object.userData ||
+          (object.userData.type !== 'wall' &&
+            object.userData.type !== 'prop' &&
+            object.userData.type !== 'door')) {
+          object.visible = false;
+        }
+      }
+    });
+  }
 
   detectHardwareCapabilities(callback) {
     console.log("Starting hardware capability detection");
@@ -6465,182 +6465,182 @@ updateObjectVisibility() {
   }
 
   // Add this method to Scene3DController
-optimizeParticleSystems() {
-  if (!this.scene) return;
-  
-  // Maximum number of active particles based on quality level
-  const qualityLevel = this.qualityLevel || 'medium';
-  const maxParticles = {
-    high: 1000,
-    medium: 500,
-    low: 200
-  }[qualityLevel] || 500;
-  
-  // Current count of particles
-  let currentParticleCount = 0;
-  
-  // Track all particle systems
-  const particleSystems = [];
-  
-  // Find all particle systems in the scene
-  this.scene.traverse(object => {
-    // Check if it's a particle system (Points object)
-    if (object instanceof THREE.Points) {
-      particleSystems.push(object);
-      
-      // Add tracking properties if not already there
-      if (object.userData.particleImportance === undefined) {
-        // Assign importance based on proximity to camera or special effects
-        // Higher = more important to gameplay
-        if (object.userData.isTeleporter) {
-          object.userData.particleImportance = 10; // Teleporters are critical
-        } else if (object.userData.isEffect) {
-          object.userData.particleImportance = 5;  // Visual effects are medium importance
-        } else {
-          object.userData.particleImportance = 1;  // Default ambient particles
-        }
-      }
-      
-      // Count current particles if the system is visible
-      if (object.visible && object.geometry) {
-        currentParticleCount += object.geometry.attributes.position.count;
-      }
-    }
-  });
-  
-  // If we're under the limit, nothing to do
-  if (currentParticleCount <= maxParticles || particleSystems.length === 0) {
-    return;
-  }
-  
-  console.log(`Optimizing particles: ${currentParticleCount} → ${maxParticles} (limit for ${qualityLevel} quality)`);
-  
-  // Sort particle systems by importance (lowest first)
-  particleSystems.sort((a, b) => {
-    return (a.userData.particleImportance || 0) - (b.userData.particleImportance || 0);
-  });
-  
-  // Calculate distance to camera for each system for secondary sorting
-  const cameraPosition = this.camera.position;
-  particleSystems.forEach(system => {
-    system.userData.distanceToCamera = system.position.distanceTo(cameraPosition);
-  });
-  
-  // Start reducing particles from least important systems
-  let remainingBudget = maxParticles;
-  
-  // First pass - completely disable least important distant systems
-  for (let i = 0; i < particleSystems.length; i++) {
-    const system = particleSystems[i];
-    
-    // Skip critical systems
-    if (system.userData.particleImportance >= 10) continue;
-    
-    // For lowest importance, distant systems, hide completely
-    if (system.userData.particleImportance <= 1 && 
-        system.userData.distanceToCamera > 30) {
-      system.visible = false;
-      continue;
-    }
-    
-    // For medium importance distant systems, reduce particles
-    if (system.userData.particleImportance <= 5 && 
-        system.userData.distanceToCamera > 20) {
-      // Cut particles in half for distant medium importance
-      if (system.geometry && system.geometry.attributes.position) {
-        const origCount = system.geometry.attributes.position.count;
-        const newCount = Math.floor(origCount / 2);
-        
-        // Store original count if not already stored
-        if (system.userData.originalParticleCount === undefined) {
-          system.userData.originalParticleCount = origCount;
-        }
-        
-        // Reduce visible count
-        system.geometry.setDrawRange(0, newCount);
-        system.geometry.attributes.position.needsUpdate = true;
-        
-        // Subtract from budget
-        remainingBudget -= newCount;
-      }
-      continue;
-    }
-    
-    // Keep high importance and nearby systems at full count
-    if (system.geometry && system.geometry.attributes.position) {
-      remainingBudget -= system.geometry.attributes.position.count;
-    }
-  }
-  
-  // If we're still over budget, start reducing more aggressively
-  if (remainingBudget < 0) {
-    // Second pass - reduce even important systems
-    for (let i = 0; i < particleSystems.length; i++) {
-      const system = particleSystems[i];
-      
-      // Skip already hidden systems
-      if (!system.visible) continue;
-      
-      // Skip critical systems even now
-      if (system.userData.particleImportance >= 10) continue;
-      
-      if (system.geometry && system.geometry.attributes.position) {
-        const currentCount = system.geometry.drawRange.count || 
-                             system.geometry.attributes.position.count;
-        
-        // Reduce by 25% more
-        const newCount = Math.floor(currentCount * 0.75);
-        system.geometry.setDrawRange(0, newCount);
-        system.geometry.attributes.position.needsUpdate = true;
-        
-        // Update budget
-        remainingBudget += (currentCount - newCount);
-        
-        // If we're back under budget, we can stop
-        if (remainingBudget >= 0) break;
-      }
-    }
-  }
-  
-  // Final pass - restore particles for any systems that can fit in the budget
-  if (remainingBudget > 0) {
-    // Sort by importance (highest first this time)
-    particleSystems.sort((a, b) => {
-      return (b.userData.particleImportance || 0) - (a.userData.particleImportance || 0);
-    });
-    
-    // Restore particles where possible
-    for (let i = 0; i < particleSystems.length; i++) {
-      const system = particleSystems[i];
-      
-      // Skip systems without stored original count
-      if (system.userData.originalParticleCount === undefined) continue;
-      
-      // Check if we can restore some or all particles
-      if (system.geometry && system.geometry.attributes.position) {
-        const currentCount = system.geometry.drawRange.count || 
-                             system.geometry.attributes.position.count;
-        const originalCount = system.userData.originalParticleCount;
-        
-        // Can we restore some particles?
-        if (currentCount < originalCount) {
-          // How many can we add back?
-          const addBack = Math.min(remainingBudget, originalCount - currentCount);
-          if (addBack > 0) {
-            const newCount = currentCount + addBack;
-            system.geometry.setDrawRange(0, newCount);
-            system.geometry.attributes.position.needsUpdate = true;
-            
-            remainingBudget -= addBack;
+  optimizeParticleSystems() {
+    if (!this.scene) return;
+
+    // Maximum number of active particles based on quality level
+    const qualityLevel = this.qualityLevel || 'medium';
+    const maxParticles = {
+      high: 1000,
+      medium: 500,
+      low: 200
+    }[qualityLevel] || 500;
+
+    // Current count of particles
+    let currentParticleCount = 0;
+
+    // Track all particle systems
+    const particleSystems = [];
+
+    // Find all particle systems in the scene
+    this.scene.traverse(object => {
+      // Check if it's a particle system (Points object)
+      if (object instanceof THREE.Points) {
+        particleSystems.push(object);
+
+        // Add tracking properties if not already there
+        if (object.userData.particleImportance === undefined) {
+          // Assign importance based on proximity to camera or special effects
+          // Higher = more important to gameplay
+          if (object.userData.isTeleporter) {
+            object.userData.particleImportance = 10; // Teleporters are critical
+          } else if (object.userData.isEffect) {
+            object.userData.particleImportance = 5;  // Visual effects are medium importance
+          } else {
+            object.userData.particleImportance = 1;  // Default ambient particles
           }
         }
-        
-        // If budget is exhausted, stop
-        if (remainingBudget <= 0) break;
+
+        // Count current particles if the system is visible
+        if (object.visible && object.geometry) {
+          currentParticleCount += object.geometry.attributes.position.count;
+        }
+      }
+    });
+
+    // If we're under the limit, nothing to do
+    if (currentParticleCount <= maxParticles || particleSystems.length === 0) {
+      return;
+    }
+
+    console.log(`Optimizing particles: ${currentParticleCount} → ${maxParticles} (limit for ${qualityLevel} quality)`);
+
+    // Sort particle systems by importance (lowest first)
+    particleSystems.sort((a, b) => {
+      return (a.userData.particleImportance || 0) - (b.userData.particleImportance || 0);
+    });
+
+    // Calculate distance to camera for each system for secondary sorting
+    const cameraPosition = this.camera.position;
+    particleSystems.forEach(system => {
+      system.userData.distanceToCamera = system.position.distanceTo(cameraPosition);
+    });
+
+    // Start reducing particles from least important systems
+    let remainingBudget = maxParticles;
+
+    // First pass - completely disable least important distant systems
+    for (let i = 0; i < particleSystems.length; i++) {
+      const system = particleSystems[i];
+
+      // Skip critical systems
+      if (system.userData.particleImportance >= 10) continue;
+
+      // For lowest importance, distant systems, hide completely
+      if (system.userData.particleImportance <= 1 &&
+        system.userData.distanceToCamera > 30) {
+        system.visible = false;
+        continue;
+      }
+
+      // For medium importance distant systems, reduce particles
+      if (system.userData.particleImportance <= 5 &&
+        system.userData.distanceToCamera > 20) {
+        // Cut particles in half for distant medium importance
+        if (system.geometry && system.geometry.attributes.position) {
+          const origCount = system.geometry.attributes.position.count;
+          const newCount = Math.floor(origCount / 2);
+
+          // Store original count if not already stored
+          if (system.userData.originalParticleCount === undefined) {
+            system.userData.originalParticleCount = origCount;
+          }
+
+          // Reduce visible count
+          system.geometry.setDrawRange(0, newCount);
+          system.geometry.attributes.position.needsUpdate = true;
+
+          // Subtract from budget
+          remainingBudget -= newCount;
+        }
+        continue;
+      }
+
+      // Keep high importance and nearby systems at full count
+      if (system.geometry && system.geometry.attributes.position) {
+        remainingBudget -= system.geometry.attributes.position.count;
+      }
+    }
+
+    // If we're still over budget, start reducing more aggressively
+    if (remainingBudget < 0) {
+      // Second pass - reduce even important systems
+      for (let i = 0; i < particleSystems.length; i++) {
+        const system = particleSystems[i];
+
+        // Skip already hidden systems
+        if (!system.visible) continue;
+
+        // Skip critical systems even now
+        if (system.userData.particleImportance >= 10) continue;
+
+        if (system.geometry && system.geometry.attributes.position) {
+          const currentCount = system.geometry.drawRange.count ||
+            system.geometry.attributes.position.count;
+
+          // Reduce by 25% more
+          const newCount = Math.floor(currentCount * 0.75);
+          system.geometry.setDrawRange(0, newCount);
+          system.geometry.attributes.position.needsUpdate = true;
+
+          // Update budget
+          remainingBudget += (currentCount - newCount);
+
+          // If we're back under budget, we can stop
+          if (remainingBudget >= 0) break;
+        }
+      }
+    }
+
+    // Final pass - restore particles for any systems that can fit in the budget
+    if (remainingBudget > 0) {
+      // Sort by importance (highest first this time)
+      particleSystems.sort((a, b) => {
+        return (b.userData.particleImportance || 0) - (a.userData.particleImportance || 0);
+      });
+
+      // Restore particles where possible
+      for (let i = 0; i < particleSystems.length; i++) {
+        const system = particleSystems[i];
+
+        // Skip systems without stored original count
+        if (system.userData.originalParticleCount === undefined) continue;
+
+        // Check if we can restore some or all particles
+        if (system.geometry && system.geometry.attributes.position) {
+          const currentCount = system.geometry.drawRange.count ||
+            system.geometry.attributes.position.count;
+          const originalCount = system.userData.originalParticleCount;
+
+          // Can we restore some particles?
+          if (currentCount < originalCount) {
+            // How many can we add back?
+            const addBack = Math.min(remainingBudget, originalCount - currentCount);
+            if (addBack > 0) {
+              const newCount = currentCount + addBack;
+              system.geometry.setDrawRange(0, newCount);
+              system.geometry.attributes.position.needsUpdate = true;
+
+              remainingBudget -= addBack;
+            }
+          }
+
+          // If budget is exhausted, stop
+          if (remainingBudget <= 0) break;
+        }
       }
     }
   }
-}
 
   // Example: Adding torches to your scene
   initializeTorches() {
@@ -6790,31 +6790,40 @@ optimizeParticleSystems() {
 
   autoDetectLightSources() {
     if (!this.scene) return;
-    
+
     console.log('Auto-detecting light sources from prop names...');
-    
+
     // Create a container for lights
     if (!this.lightSourcesContainer) {
       this.lightSourcesContainer = new THREE.Group();
       this.lightSourcesContainer.name = 'lightSources';
       this.scene.add(this.lightSourcesContainer);
     }
-    
+
     // Track all light sources
     if (!this.lightSources) {
       this.lightSources = new Map();
     }
-    
+
     // Keywords that suggest light emission
     const lightKeywords = [
-      { words: ['fire', 'torch', 'flame', 'candle', 'lantern', 'campfire'], 
-        color: 0xff6600, intensity: 1.5, distance: 8, decay: 2 },
-      { words: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'], 
-        color: 0x66ccff, intensity: 1.2, distance: 6, decay: 1.5 },
-      { words: ['lava', 'magma', 'ember'], 
-        color: 0xff3300, intensity: 1.3, distance: 7, decay: 2 }
+      {
+        words: ['fire', 'torch', 'flame', 'candle', 'lantern', 'campfire'],
+        color: 0xff6600, intensity: 1.5, distance: 8, decay: 2
+      },
+      {
+        words: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
+        color: 0x66ccff, intensity: 1.2, distance: 6, decay: 1.5
+      },
+      {
+        words: ['lava', 'magma', 'ember'],
+        color: 0xff3300, intensity: 1.3, distance: 7, decay: 2
+      },      {
+        words: ['radiant', 'holy'],
+        color: 0xffe599, intensity: 1.2, distance: 6, decay: 1.5
+      },
     ];
-    
+
     // Look for props in the scene
     let lightSourceCount = 0;
     this.scene.traverse(object => {
@@ -6822,16 +6831,16 @@ optimizeParticleSystems() {
       if (!object.userData || object.userData.type !== 'prop' || object.userData.hasLight) {
         return;
       }
-      
+
       // Get the prop name
       const propName = object.userData.name ? object.userData.name.toLowerCase() : '';
       if (!propName) return;
-      
+
       // Check if prop name contains any light keywords
       for (const category of lightKeywords) {
         if (category.words.some(word => propName.includes(word))) {
           console.log(`Auto-detected light source: "${propName}"`);
-          
+
           // Create a light source for this prop
           const light = new THREE.PointLight(
             category.color,
@@ -6839,20 +6848,20 @@ optimizeParticleSystems() {
             category.distance,
             category.decay
           );
-          
+
           // Position the light at or slightly above the prop
           light.position.copy(object.position);
           // Move up slightly if not already above ground
           if (light.position.y < 1.5) {
             light.position.y += 0.5;
           }
-          
+
           // Add light to scene
           this.lightSourcesContainer.add(light);
-          
+
           // Mark this prop as having a light
           object.userData.hasLight = true;
-          
+
           // Store reference to this light
           this.lightSources.set(object.uuid, {
             light,
@@ -6860,24 +6869,24 @@ optimizeParticleSystems() {
             originalIntensity: category.intensity,
             originalDistance: category.distance
           });
-          
+
           // Create glow effect
           this.createFireGlowEffect(object, category.color);
-          
+
           lightSourceCount++;
           break; // Stop after first match
         }
       }
     });
-    
+
     console.log(`Auto-detected ${lightSourceCount} light sources from prop names`);
   }
-  
+
   // Create fire glow effect for auto-detected props
   createFireGlowEffect(prop, color = 0xff6600) {
     // Skip if lighting effects are disabled
     if (this.preferences && this.preferences.disableLighting) return;
-    
+
     // Create emissive material for the prop if it has a standard material
     if (prop.material && prop.material.isMeshStandardMaterial) {
       // Store original material properties
@@ -6885,140 +6894,141 @@ optimizeParticleSystems() {
         prop.userData.originalEmissive = prop.material.emissive.clone();
         prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
       }
-      
+
       // Make the prop itself glow a bit
       prop.material.emissive = new THREE.Color(color);
       prop.material.emissiveIntensity = 0.5;
     }
-    
+
     // Create glowing particle effect
     const particleCount = 15;
     const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3); // Renamed to avoid conflict
     const sizes = new Float32Array(particleCount);
-    
+
     // Convert color to RGB components
     const colorObj = new THREE.Color(color);
     const r = colorObj.r;
     const g = colorObj.g;
     const b = colorObj.b;
-    
+
     // Create random particles around the prop
     for (let i = 0; i < particleCount; i++) {
       const i3 = i * 3;
-      
+
       // Position particles in small sphere around the prop's upper part
       const radius = 0.3;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
-      
+
       positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i3 + 1] = 0.2 + Math.random() * 0.2; // Slightly above
       positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
-      
+
       // Colors - base color with some variation
-      colors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
-      colors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
-      colors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
-      
+      particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
+      particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
+      particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
+
       // Random sizes
       sizes[i] = 0.05 + Math.random() * 0.15;
     }
-    
+
     // Create geometry and set attributes
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3)); // Renamed attribute
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    
+
     // Create shader material for better looking particles
     const material = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(color) }
+        baseColor: { value: new THREE.Color(color) }
       },
       vertexShader: `
-        attribute float size;
-        attribute vec3 color;
-        varying vec3 vColor;
-        uniform float time;
+      attribute float size;
+      attribute vec3 particleColor; // Renamed attribute
+      varying vec3 vColor;
+      uniform float time;
+      
+      void main() {
+        vColor = particleColor; // Use renamed attribute
         
-        void main() {
-          vColor = color;
-          
-          // Animate position
-          vec3 pos = position;
-          pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
-          pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
-          pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
-          
-          vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-          gl_PointSize = size * (300.0 / -mvPosition.z);
-          gl_Position = projectionMatrix * mvPosition;
-        }
-      `,
+        // Animate position
+        vec3 pos = position;
+        pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
+        pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
+        pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
+        
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
       fragmentShader: `
-        varying vec3 vColor;
+      varying vec3 vColor;
+      
+      void main() {
+        // Create circular particle
+        float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if (r > 0.5) discard;
         
-        void main() {
-          // Create circular particle
-          float r = distance(gl_PointCoord, vec2(0.5, 0.5));
-          if (r > 0.5) discard;
-          
-          // Smooth edge and fade center for glow effect
-          float alpha = 0.9 * (1.0 - r * 1.9);
-          gl_FragColor = vec4(vColor, alpha);
-        }
-      `,
+        // Smooth edge and fade center for glow effect
+        float alpha = 0.9 * (1.0 - r * 1.9);
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `,
       blending: THREE.AdditiveBlending,
       depthTest: true,
       depthWrite: false,
       transparent: true,
       vertexColors: true
     });
-    
+
     // Create particle system
     const particles = new THREE.Points(geometry, material);
     particles.position.copy(prop.position);
-    
+
     // Store time value for animation
     particles.userData = {
       type: 'effect',
       timeOffset: Math.random() * 1000,
       originalPosition: prop.position.clone()
     };
-    
+
     // Add to scene
     this.scene.add(particles);
-    
+
     // Store reference
     if (!prop.userData.effects) prop.userData.effects = [];
     prop.userData.effects.push(particles);
-    
+
     return particles;
   }
-  
+
+
   // Update auto-detected light sources
   updateAutoLightSources(deltaTime) {
     if (!this.lightSources || this.lightSources.size === 0) return;
-    
+
     const time = performance.now() * 0.001;
     const playerPos = this.camera.position.clone();
-    
+
     // Update each light
     this.lightSources.forEach((data, id) => {
       const { light, prop, originalIntensity } = data;
-      
+
       // Skip if light was removed
       if (!light || !light.parent) return;
-      
+
       // Calculate distance to player
       const distance = playerPos.distanceTo(light.position);
-      
+
       // Dynamic intensity based on distance
       const maxDistance = 30;
       const fullFadeDistance = 50;
-      
+
       if (distance <= maxDistance) {
         // Full intensity when within reasonable range
         light.intensity = originalIntensity * (0.85 + Math.sin(time * 3) * 0.15); // Flicker effect
@@ -7030,14 +7040,14 @@ optimizeParticleSystems() {
         // Turn off light completely when far away
         light.intensity = 0;
       }
-      
+
       // Update any particle effects
       if (prop && prop.userData && prop.userData.effects) {
         prop.userData.effects.forEach(effect => {
           if (effect && effect.material && effect.material.uniforms) {
             // Update time uniform for animation
             effect.material.uniforms.time.value = time;
-            
+
             // Make particles fade with distance similar to the light
             if (distance > maxDistance) {
               if (effect.material.opacity !== undefined) {
