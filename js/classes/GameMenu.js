@@ -1,3 +1,7 @@
+/**
+ * GameMenu - A class to handle the in-game menu system with card-based UI
+ * Provides start menu, save/load functionality, settings, and help screens
+ */
 class GameMenu {
     constructor(scene3D, container) {
       // Store reference to the Scene3DController
@@ -944,6 +948,10 @@ class GameMenu {
             <div>Sprint</div>
           </div>
           <div style="display: flex; align-items: center;">
+            <div style="background: #2d3748; color: white; padding: 4px 8px; border-radius: 4px; min-width: 80px; text-align: center; font-family: monospace; margin-right: 12px;">Space</div>
+            <div>Jump</div>
+          </div>
+          <div style="display: flex; align-items: center;">
             <div style="background: #2d3748; color: white; padding: 4px 8px; border-radius: 4px; min-width: 80px; text-align: center; font-family: monospace; margin-right: 12px;">E</div>
             <div>Interact with objects and NPCs</div>
           </div>
@@ -954,10 +962,6 @@ class GameMenu {
           <div style="display: flex; align-items: center;">
             <div style="background: #2d3748; color: white; padding: 4px 8px; border-radius: 4px; min-width: 80px; text-align: center; font-family: monospace; margin-right: 12px;">P</div>
             <div>Party Manager</div>
-          </div>
-          <div style="display: flex; align-items: center;">
-            <div style="background: #2d3748; color: white; padding: 4px 8px; border-radius: 4px; min-width: 80px; text-align: center; font-family: monospace; margin-right: 12px;">Space</div>
-            <div>Jump</div>
           </div>
           <div style="display: flex; align-items: center;">
             <div style="background: #2d3748; color: white; padding: 4px 8px; border-radius: 4px; min-width: 80px; text-align: center; font-family: monospace; margin-right: 12px;">ESC</div>
@@ -1094,6 +1098,114 @@ class GameMenu {
       this.menuContainer.appendChild(backButton);
     }
     
+    // Helper method to capture a screenshot thumbnail from the current scene
+    // captureScreenshot(width = 200, height = 120) {
+    //   if (!this.scene3D || !this.scene3D.renderer) {
+    //     console.error("Cannot capture screenshot: renderer not available");
+    //     return null;
+    //   }
+      
+    //   try {
+    //     // Create a small canvas for the thumbnail
+    //     const canvas = document.createElement('canvas');
+    //     canvas.width = width;
+    //     canvas.height = height;
+    //     const context = canvas.getContext('2d');
+        
+    //     // Get the original renderer canvas
+    //     const rendererCanvas = this.scene3D.renderer.domElement;
+        
+    //     // Draw the current frame to our thumbnail canvas, resizing it
+    //     context.drawImage(rendererCanvas, 0, 0, width, height);
+        
+    //     // Convert to base64 data URL (JPEG for smaller size)
+    //     return canvas.toDataURL('image/jpeg', 0.7);
+    //   } catch (error) {
+    //     console.error("Error capturing screenshot:", error);
+    //     return null;
+    //   }
+
+      
+    // }
+    
+// Helper method to capture a screenshot thumbnail from the current scene
+captureScreenshot(width = 200, height = 120) {
+    if (!this.scene3D || !this.scene3D.renderer || !this.scene3D.scene || !this.scene3D.camera) {
+      console.error("Cannot capture screenshot: renderer not available");
+      return null;
+    }
+    
+    try {
+      // First, make sure we render the latest state of the scene
+      this.scene3D.renderer.render(this.scene3D.scene, this.scene3D.camera);
+      
+      // Get the original renderer canvas
+      const rendererCanvas = this.scene3D.renderer.domElement;
+      
+      // Create a temp canvas for the screenshot at desired dimensions
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      const tempContext = tempCanvas.getContext('2d');
+      
+      // Draw the current frame to our screenshot canvas, resizing it
+      // The renderer canvas might be transparent, so fill with black first
+      tempContext.fillStyle = '#000000';
+      tempContext.fillRect(0, 0, width, height);
+      tempContext.drawImage(rendererCanvas, 0, 0, width, height);
+      
+      // Convert to data URL (use JPEG for smaller size)
+      const screenshotDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
+      
+      // Debug info
+      console.log("Screenshot captured successfully:", 
+                   `Renderer Canvas: ${rendererCanvas.width}x${rendererCanvas.height}`, 
+                   `Screenshot: ${width}x${height}`);
+      
+      return screenshotDataUrl;
+    } catch (error) {
+      console.error("Error capturing screenshot:", error);
+      return null;
+    }
+  }
+
+    // Helper method to get active party token images
+    getActivePartyTokens(maxTokens = 3) {
+      const tokens = [];
+      
+      try {
+        // Check if party manager exists and has active party
+        if (window.partyManager && window.partyManager.party && 
+            window.partyManager.party.active && 
+            window.partyManager.party.active.length > 0) {
+              
+          // Get up to maxTokens active party members
+          for (let i = 0; i < Math.min(maxTokens, window.partyManager.party.active.length); i++) {
+            const monster = window.partyManager.party.active[i];
+            if (monster) {
+              // Get token image source - could be data URL or image path
+              const tokenSource = monster.token?.data || 
+                                 (typeof monster.token === 'string' ? monster.token : null);
+              
+              if (tokenSource) {
+                tokens.push({
+                  id: monster.id,
+                  name: monster.name,
+                  tokenSource: tokenSource,
+                  level: monster.level || 1,
+                  type: monster.type || 'unknown'
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error getting party tokens:", error);
+      }
+      
+      return tokens;
+    }
+    
     // Create a save slot card
     createSaveSlot(slotNumber, savedData) {
       // Generate a random tilt for the card
@@ -1114,10 +1226,35 @@ class GameMenu {
         transform-style: preserve-3d;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        position: relative;
+        width: 100%;
       `;
       
-      // Left side with slot info
+      // If we have a screenshot, use it as a background
+      if (savedData && savedData.screenshot) {
+        const bgOverlay = document.createElement('div');
+        bgOverlay.style.cssText = `
+          position: absolute;
+          inset: 0;
+          background-image: url(${savedData.screenshot});
+          background-size: cover;
+          background-position: center;
+          opacity: 0.15;
+          filter: blur(2px);
+          z-index: 0;
+        `;
+        slotCard.appendChild(bgOverlay);
+      }
+      
+      // Left side with slot info and screenshot
       const slotInfo = document.createElement('div');
+      slotInfo.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        z-index: 1;
+        flex: 1;
+      `;
       
       // Slot title
       const slotTitle = document.createElement('div');
@@ -1135,16 +1272,125 @@ class GameMenu {
       slotDetails.style.cssText = `
         color: #a0aec0;
         font-size: 14px;
+        margin-bottom: 10px;
       `;
       
       if (savedData) {
         const saveDate = new Date(savedData.timestamp);
-        slotDetails.textContent = `${savedData.locationName} • ${saveDate.toLocaleString()}`;
+        slotDetails.textContent = `${savedData.locationName || 'Unknown Location'} • ${saveDate.toLocaleString()}`;
       } else {
         slotDetails.textContent = 'Empty slot';
       }
       
       slotInfo.appendChild(slotDetails);
+      
+      // Add screenshot if available
+      if (savedData && savedData.screenshot) {
+        const screenshotContainer = document.createElement('div');
+        screenshotContainer.style.cssText = `
+          width: 200px;
+          height: 120px;
+          border-radius: 6px;
+          overflow: hidden;
+          margin-bottom: 10px;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          transition: transform 0.3s ease;
+        `;
+        
+        const screenshot = document.createElement('img');
+        screenshot.src = savedData.screenshot;
+        screenshot.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        `;
+        
+        screenshotContainer.appendChild(screenshot);
+        slotInfo.appendChild(screenshotContainer);
+      }
+      
+      // Add party tokens if available
+      if (savedData && savedData.partyTokens && savedData.partyTokens.length > 0) {
+        const partyContainer = document.createElement('div');
+        partyContainer.style.cssText = `
+          display: flex;
+          gap: 8px;
+          margin-top: 8px;
+        `;
+        
+        savedData.partyTokens.forEach(token => {
+          const tokenContainer = document.createElement('div');
+          tokenContainer.style.cssText = `
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #4299e1;
+            background-color: #2d3748;
+            position: relative;
+            transition: transform 0.2s ease;
+          `;
+          
+          // Token image
+          if (token.tokenSource) {
+            const tokenImg = document.createElement('img');
+            tokenImg.src = token.tokenSource;
+            tokenImg.style.cssText = `
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            `;
+            tokenContainer.appendChild(tokenImg);
+          } else {
+            // Fallback if no token image
+            tokenContainer.textContent = token.name.charAt(0);
+            tokenContainer.style.display = 'flex';
+            tokenContainer.style.alignItems = 'center';
+            tokenContainer.style.justifyContent = 'center';
+            tokenContainer.style.color = 'white';
+            tokenContainer.style.fontWeight = 'bold';
+          }
+          
+          // Level badge
+          const levelBadge = document.createElement('div');
+          levelBadge.textContent = token.level || 1;
+          levelBadge.style.cssText = `
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background-color: #4299e1;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 1px solid white;
+          `;
+          tokenContainer.appendChild(levelBadge);
+          
+          // Hover effect
+          tokenContainer.addEventListener('mouseenter', () => {
+            tokenContainer.style.transform = 'scale(1.15)';
+          });
+          
+          tokenContainer.addEventListener('mouseleave', () => {
+            tokenContainer.style.transform = 'scale(1)';
+          });
+          
+          // Add tooltip
+          tokenContainer.title = `${token.name} (Lvl ${token.level})`;
+          
+          partyContainer.appendChild(tokenContainer);
+        });
+        
+        slotInfo.appendChild(partyContainer);
+      }
+      
       slotCard.appendChild(slotInfo);
       
       // Right side with save button
@@ -1159,6 +1405,8 @@ class GameMenu {
         font-size: 14px;
         cursor: pointer;
         transition: background 0.2s ease;
+        z-index: 1;
+        margin-left: 16px;
       `;
       
       saveButton.addEventListener('mouseover', () => {
@@ -1180,11 +1428,23 @@ class GameMenu {
       slotCard.addEventListener('mouseenter', () => {
         slotCard.style.transform = `rotate(${tiltAngle}deg) scale(1.03) translateY(-5px)`;
         slotCard.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.4)';
+        
+        // Enhance screenshot on hover if it exists
+        const screenshot = slotCard.querySelector('img');
+        if (screenshot) {
+          screenshot.style.transform = 'scale(1.05)';
+        }
       });
       
       slotCard.addEventListener('mouseleave', () => {
         slotCard.style.transform = `rotate(${tiltAngle}deg)`;
         slotCard.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        
+        // Reset screenshot
+        const screenshot = slotCard.querySelector('img');
+        if (screenshot) {
+          screenshot.style.transform = 'scale(1)';
+        }
       });
       
       return slotCard;
@@ -1272,10 +1532,35 @@ class GameMenu {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         opacity: ${savedData ? '1' : '0.7'};
+        overflow: hidden;
+        position: relative;
+        width: 100%;
       `;
       
-      // Left side with slot info
+      // If we have a screenshot, use it as a background
+      if (savedData && savedData.screenshot) {
+        const bgOverlay = document.createElement('div');
+        bgOverlay.style.cssText = `
+          position: absolute;
+          inset: 0;
+          background-image: url(${savedData.screenshot});
+          background-size: cover;
+          background-position: center;
+          opacity: 0.15;
+          filter: blur(2px);
+          z-index: 0;
+        `;
+        slotCard.appendChild(bgOverlay);
+      }
+      
+      // Left side with slot info and screenshot
       const slotInfo = document.createElement('div');
+      slotInfo.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        z-index: 1;
+        flex: 1;
+      `;
       
       // Slot title
       const slotTitle = document.createElement('div');
@@ -1293,16 +1578,125 @@ class GameMenu {
       slotDetails.style.cssText = `
         color: #a0aec0;
         font-size: 14px;
+        margin-bottom: 10px;
       `;
       
       if (savedData) {
         const saveDate = new Date(savedData.timestamp);
-        slotDetails.textContent = `${savedData.locationName} • ${saveDate.toLocaleString()}`;
+        slotDetails.textContent = `${savedData.locationName || 'Unknown Location'} • ${saveDate.toLocaleString()}`;
       } else {
         slotDetails.textContent = 'Empty slot';
       }
       
       slotInfo.appendChild(slotDetails);
+      
+      // Add screenshot if available
+      if (savedData && savedData.screenshot) {
+        const screenshotContainer = document.createElement('div');
+        screenshotContainer.style.cssText = `
+          width: 200px;
+          height: 120px;
+          border-radius: 6px;
+          overflow: hidden;
+          margin-bottom: 10px;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          transition: transform 0.3s ease;
+        `;
+        
+        const screenshot = document.createElement('img');
+        screenshot.src = savedData.screenshot;
+        screenshot.style.cssText = `
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        `;
+        
+        screenshotContainer.appendChild(screenshot);
+        slotInfo.appendChild(screenshotContainer);
+      }
+      
+      // Add party tokens if available
+      if (savedData && savedData.partyTokens && savedData.partyTokens.length > 0) {
+        const partyContainer = document.createElement('div');
+        partyContainer.style.cssText = `
+          display: flex;
+          gap: 8px;
+          margin-top: 8px;
+        `;
+        
+        savedData.partyTokens.forEach(token => {
+          const tokenContainer = document.createElement('div');
+          tokenContainer.style.cssText = `
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #4299e1;
+            background-color: #2d3748;
+            position: relative;
+            transition: transform 0.2s ease;
+          `;
+          
+          // Token image
+          if (token.tokenSource) {
+            const tokenImg = document.createElement('img');
+            tokenImg.src = token.tokenSource;
+            tokenImg.style.cssText = `
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            `;
+            tokenContainer.appendChild(tokenImg);
+          } else {
+            // Fallback if no token image
+            tokenContainer.textContent = token.name.charAt(0);
+            tokenContainer.style.display = 'flex';
+            tokenContainer.style.alignItems = 'center';
+            tokenContainer.style.justifyContent = 'center';
+            tokenContainer.style.color = 'white';
+            tokenContainer.style.fontWeight = 'bold';
+          }
+          
+          // Level badge
+          const levelBadge = document.createElement('div');
+          levelBadge.textContent = token.level || 1;
+          levelBadge.style.cssText = `
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background-color: #4299e1;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 1px solid white;
+          `;
+          tokenContainer.appendChild(levelBadge);
+          
+          // Hover effect
+          tokenContainer.addEventListener('mouseenter', () => {
+            tokenContainer.style.transform = 'scale(1.15)';
+          });
+          
+          tokenContainer.addEventListener('mouseleave', () => {
+            tokenContainer.style.transform = 'scale(1)';
+          });
+          
+          // Add tooltip
+          tokenContainer.title = `${token.name} (Lvl ${token.level})`;
+          
+          partyContainer.appendChild(tokenContainer);
+        });
+        
+        slotInfo.appendChild(partyContainer);
+      }
+      
       slotCard.appendChild(slotInfo);
       
       // Right side with load button (only if there's saved data)
@@ -1318,6 +1712,8 @@ class GameMenu {
           font-size: 14px;
           cursor: pointer;
           transition: background 0.2s ease;
+          z-index: 1;
+          margin-left: 16px;
         `;
         
         loadButton.addEventListener('mouseover', () => {
@@ -1344,11 +1740,23 @@ class GameMenu {
         slotCard.addEventListener('mouseenter', () => {
           slotCard.style.transform = `rotate(${tiltAngle}deg) scale(1.03) translateY(-5px)`;
           slotCard.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.4)';
+          
+          // Enhance screenshot on hover if it exists
+          const screenshot = slotCard.querySelector('img');
+          if (screenshot) {
+            screenshot.style.transform = 'scale(1.05)';
+          }
         });
         
         slotCard.addEventListener('mouseleave', () => {
           slotCard.style.transform = `rotate(${tiltAngle}deg)`;
           slotCard.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+          
+          // Reset screenshot
+          const screenshot = slotCard.querySelector('img');
+          if (screenshot) {
+            screenshot.style.transform = 'scale(1)';
+          }
         });
       }
       
@@ -1368,10 +1776,26 @@ class GameMenu {
     
     // Save the current game state
     saveGame(slotNumber) {
+      console.log(`Saving game to slot ${slotNumber}`);
+      
+      // Try to get current location name
+      let locationName = 'Current Location';
+      if (this.scene3D.currentLocation) {
+        locationName = this.scene3D.currentLocation;
+      }
+      
+      // Capture a screenshot thumbnail
+      const screenshot = this.captureScreenshot(200, 120);
+      
+      // Get active party tokens
+      const partyTokens = this.getActivePartyTokens(3);
+      
       // Create a save game object
       const saveData = {
         timestamp: Date.now(),
-        locationName: 'Current Location', // This would ideally come from the game state
+        locationName: locationName,
+        screenshot: screenshot,
+        partyTokens: partyTokens,
         playerPosition: this.scene3D.camera ? {
           x: this.scene3D.camera.position.x,
           y: this.scene3D.camera.position.y,
@@ -1382,8 +1806,12 @@ class GameMenu {
           y: this.scene3D.camera.rotation.y,
           z: this.scene3D.camera.rotation.z
         } : null,
+        // Game state flags
+        gameStarted: true,
+        initialMenu: false,
         // Add other game state data as needed
-        inventory: Array.from(this.scene3D.inventory || [])
+        inventory: this.scene3D.inventory ? 
+          Array.from(this.scene3D.inventory.entries()) : []
       };
       
       // Save to localStorage
@@ -1507,6 +1935,43 @@ class GameMenu {
       }, 3000);
     }
     
+    // Open the party manager
+    openPartyManager() {
+      console.log("Opening Party Manager");
+      
+      // Pause controls first to prevent 3D world from moving in background
+      if (this.scene3D && this.scene3D.pauseControls) {
+        this.scene3D.pauseControls();
+      }
+      
+      // Hide the menu
+      this.hide();
+      
+      // Show the party manager if available
+      if (window.partyManager) {
+        window.partyManager.showPartyManager();
+        
+        // Set up an interval to check when the party manager closes
+        // so we can resume controls
+        const checkForDialog = setInterval(() => {
+          const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+          if (!dialog) {
+            if (this.scene3D && this.scene3D.resumeControls) {
+              this.scene3D.resumeControls();
+            }
+            clearInterval(checkForDialog);
+          }
+        }, 100);
+      } else {
+        this.showNotification('Party Manager not available', 'error');
+        
+        // Resume controls even if party manager failed to open
+        if (this.scene3D && this.scene3D.resumeControls) {
+          this.scene3D.resumeControls();
+        }
+      }
+    }
+    
     // Show exit confirmation
     confirmExit() {
       // Create container for the modal
@@ -1628,43 +2093,6 @@ class GameMenu {
       modal.appendChild(buttonsContainer);
       modalOverlay.appendChild(modal);
       document.body.appendChild(modalOverlay);
-    }
-    
-    // Open the party manager
-    openPartyManager() {
-      console.log("Opening Party Manager");
-      
-      // Pause controls first to prevent 3D world from moving in background
-      if (this.scene3D && this.scene3D.pauseControls) {
-        this.scene3D.pauseControls();
-      }
-      
-      // Hide the menu
-      this.hide();
-      
-      // Show the party manager if available
-      if (window.partyManager) {
-        window.partyManager.showPartyManager();
-        
-        // Set up an interval to check when the party manager closes
-        // so we can resume controls
-        const checkForDialog = setInterval(() => {
-          const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
-          if (!dialog) {
-            if (this.scene3D && this.scene3D.resumeControls) {
-              this.scene3D.resumeControls();
-            }
-            clearInterval(checkForDialog);
-          }
-        }, 100);
-      } else {
-        this.showNotification('Party Manager not available', 'error');
-        
-        // Resume controls even if party manager failed to open
-        if (this.scene3D && this.scene3D.resumeControls) {
-          this.scene3D.resumeControls();
-        }
-      }
     }
     
     // Clean up the menu system
