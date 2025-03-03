@@ -49,10 +49,9 @@ class Scene3DController {
     this.gameState = 'initializing'; // Current game state
     this._ignoreNextLock = false;    // Flag to prevent event cascades
     this._ignoreNextUnlock = false;  // Flag to prevent event cascades
-
+    this.gameStarted = false;
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
-
     this.setupInventorySystem();
     // this.initializePartyAndCombatSystems();
     this.clear();
@@ -197,6 +196,11 @@ class Scene3DController {
     document.removeEventListener("keyup", this.keyHandlers.keyup);
     window.removeEventListener('resize', this.handleResize);
   
+    if (this._gameMenu) {
+      this._gameMenu.dispose();
+      this._gameMenu = null;
+    }
+    
     // Clean up renderer DOM element - critical for WebGL context release
     if (this.renderer) {
       console.log('Disposing of renderer...');
@@ -4769,40 +4773,58 @@ updateQualityIndicator() {
       await this.init3DScene(updateStatus);
 
       // Instructions overlay
-      const instructions = document.createElement("div");
-      instructions.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 20px;
-        width: 75vw;
-        border-radius: 5px;
-        text-align: center;
-        pointer-events: none;
-      `;
-      instructions.innerHTML = `
-        Click to Start<br>
-        WASD or Arrow Keys to move<br>
-        Hold Shift or Right Mouse Button to sprint<br>
-        ~ to show FPS<br>
-        I for inventory<br>
-        E as the Action key<br>
-        P for Party Manager<br>
-        ESC to exit
-      `;
-      container.appendChild(instructions);
+      // const instructions = document.createElement("div");
+      // instructions.style.cssText = `
+      //   position: absolute;
+      //   top: 50%;
+      //   left: 50%;
+      //   transform: translate(-50%, -50%);
+      //   background: rgba(0, 0, 0, 0.7);
+      //   color: white;
+      //   padding: 20px;
+      //   width: 75vw;
+      //   border-radius: 5px;
+      //   text-align: center;
+      //   pointer-events: none;
+      // `;
+      // instructions.innerHTML = `
+      //   Click to Start<br>
+      //   WASD or Arrow Keys to move<br>
+      //   Hold Shift or Right Mouse Button to sprint<br>
+      //   ~ to show FPS<br>
+      //   I for inventory<br>
+      //   E as the Action key<br>
+      //   P for Party Manager<br>
+      //   ESC to exit
+      // `;
+      // container.appendChild(instructions);
 
       // Controls event listeners
-      this.controls.addEventListener("lock", () => {
-        instructions.style.display = "none";
-      });
+      // this.controls.addEventListener("lock", () => {
+      //   instructions.style.display = "none";
+      // });
 
-      this.controls.addEventListener("unlock", () => {
-        instructions.style.display = "block";
+      // this.controls.addEventListener("unlock", () => {
+      //   instructions.style.display = "block";
+      // });
+
+      const gameMenu = new GameMenu(this, container);
+
+      // Update control event listeners:
+      this.controls.addEventListener("lock", () => {
+        // Hide menu if visible when controls are locked
+        if (gameMenu && gameMenu.isVisible) {
+          gameMenu.hide();
+        }
       });
+      
+      this.controls.addEventListener("unlock", () => {
+        // Don't automatically show menu on unlock
+        // GameMenu handles showing itself via ESC key
+      });
+      
+      // Store reference to game menu for cleanup
+      this._gameMenu = gameMenu;
 
       // Call this after initializing controls in show3DView
 this.modifyControlsListeners();
