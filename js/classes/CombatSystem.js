@@ -3101,6 +3101,24 @@ parseComboAbilityId(abilityName) {
   return { isCombo: false };
 }
 
+ensureMonsterIdFormat(id) {
+  // Check if the ID already has the 'monster_' prefix
+  if (typeof id === 'string' && !id.includes('monster_')) {
+    return `monster_${id}`;
+  }
+  return id; // Return as is if it already has the prefix or isn't a string
+}
+
+// Then add this method to handle combo ID formatting
+formatComboId(comboInfo) {
+  // Add proper prefix to monster IDs
+  const monster1Id = this.ensureMonsterIdFormat(comboInfo.monster1Id);
+  const monster2Id = this.ensureMonsterIdFormat(comboInfo.monster2Id);
+  
+  // Return properly formatted combo ID
+  return `combo_${monster1Id}_${monster2Id}`;
+}
+
 
   // Use a monster's ability
   useMonsterAbility(abilityName) {
@@ -3118,11 +3136,11 @@ parseComboAbilityId(abilityName) {
       // }
 
       const comboInfo = this.parseComboAbilityId(abilityName);
-if (comboInfo.isCombo) {
-  // Convert to the standard format for consistency
-  const standardComboId = `combo_${comboInfo.monster1Id}_${comboInfo.monster2Id}`;
-  return this.useComboAbility(standardComboId, currentMonster);
-}
+      if (comboInfo.isCombo) {
+        // Convert to the standard format for consistency
+        const standardComboId = this.formatComboId(comboInfo);
+        return this.useComboAbility(standardComboId, currentMonster);
+      }
     
 
     // // Find the ability
@@ -5106,86 +5124,179 @@ if (comboInfo.isCombo) {
   }
 
   // Add this method to your CombatSystem class
-  useComboAbility(comboId, activeMonster) {
-    console.log(`Processing combo ability: ${comboId}`);
+// useComboAbility(comboId, activeMonster) {
+//   console.log(`Processing combo ability: ${comboId}`);
+  
+//   // Parse the combo ID to get monster IDs
+//   const comboIdParts = comboId.split('_');
+//   if (comboIdParts.length < 3) {
+//     console.error(`Invalid combo ID format: ${comboId}`);
+//     return false;
+//   }
+  
+//   const monster1Id = comboIdParts[1];
+//   const monster2Id = comboIdParts[2];
+  
+//   console.log(`Looking for monsters with IDs: ${monster1Id} and ${monster2Id}`);
+//   console.log(`Active monster ID: ${activeMonster.id}`);
+//   console.log(`Current player party has ${this.playerParty.length} monsters with IDs: ${this.playerParty.map(m => m.id).join(', ')}`);
+  
+//   // First, identify the partner monster - this is the one that's not the active monster
+//   // Since we know the active monster is valid and in combat, we only need to find the partner
+//   let partnerMonster;
+  
+//   // Find the partner monster - it must be one of the IDs from the combo
+//   if (monster1Id === activeMonster.id || String(monster1Id) === String(activeMonster.id)) {
+//     // Monster 2 is the partner
+//     partnerMonster = this.playerParty.find(m => 
+//       m.id === monster2Id || String(m.id) === String(monster2Id)
+//     );
+//   } else {
+//     // Monster 1 is the partner
+//     partnerMonster = this.playerParty.find(m => 
+//       m.id === monster1Id || String(m.id) === String(monster1Id)
+//     );
+//   }
+  
+//   if (!partnerMonster) {
+//     console.error(`Could not find partner monster in the player party. Active monster: ${activeMonster.name}, IDs from combo: ${monster1Id}, ${monster2Id}`);
+//     return false;
+//   }
+  
+//   // Get all available combo abilities
+//   const availableCombos = this.getAvailableComboAbilities();
+//   console.log(`Available combos: ${availableCombos.length}`);
+  
+//   // Find this specific combo
+//   const combo = availableCombos.find(c => {
+//     const comboMonsterIds = c.monsters.map(m => m.id);
+//     return comboMonsterIds.includes(activeMonster.id) && 
+//            comboMonsterIds.includes(partnerMonster.id);
+//   });
+  
+//   if (!combo) {
+//     console.error(`Combo ability not found for monsters ${activeMonster.name} and ${partnerMonster.name}`);
+//     return false;
+//   }
+  
+//   console.log(`Found combo: ${combo.name} (${combo.type})`);
+  
+//   // Process based on combo type
+//   switch (combo.type) {
+//     case 'attack':
+//       // Show target selection for attack combos
+//       this.showComboTargetSelection(activeMonster, partnerMonster, combo);
+//       return true;
     
-    // Parse the combo ID to get monster IDs
-    const comboIdParts = comboId.split('_');
-    if (comboIdParts.length < 3) {
-      console.error(`Invalid combo ID format: ${comboId}`);
-      return false;
-    }
+//     case 'area':
+//       // Area combos affect all enemies
+//       this.resolveComboAreaAbility(activeMonster, partnerMonster, combo);
+//       return true;
     
-    const monster1Id = comboIdParts[1];
-    const monster2Id = comboIdParts[2];
+//     case 'buff':
+//       // Buff combos affect all allies
+//       this.resolveComboBuffAbility(activeMonster, partnerMonster, combo);
+//       return true;
     
-    console.log(`Looking for monsters with IDs: ${monster1Id} and ${monster2Id}`);
-    console.log(`Active monster ID: ${activeMonster.id}`);
-    console.log(`Current player party has ${this.playerParty.length} monsters with IDs: ${this.playerParty.map(m => m.id).join(', ')}`);
+//     default:
+//       // Default to attack behavior
+//       this.showComboTargetSelection(activeMonster, partnerMonster, combo);
+//       return true;
+//   }
+// }
+
+useComboAbility(comboId, activeMonster) {
+  console.log(`Processing combo ability: ${comboId}`);
+  
+  // First, check if the combo ID has double underscores from formatting
+  if (comboId.includes('_monster_')) {
+    // We have the monster_ prefix in the string, need to parse carefully
+    const regex = /combo_(monster_\d+)_(monster_\d+)/;
+    const match = comboId.match(regex);
     
-    // First, identify the partner monster - this is the one that's not the active monster
-    // Since we know the active monster is valid and in combat, we only need to find the partner
-    let partnerMonster;
-    
-    // Find the partner monster - it must be one of the IDs from the combo
-    if (monster1Id === activeMonster.id || String(monster1Id) === String(activeMonster.id)) {
-      // Monster 2 is the partner
-      partnerMonster = this.playerParty.find(m => 
-        m.id === monster2Id || String(m.id) === String(monster2Id)
-      );
-    } else {
-      // Monster 1 is the partner
-      partnerMonster = this.playerParty.find(m => 
-        m.id === monster1Id || String(m.id) === String(monster1Id)
-      );
-    }
-    
-    if (!partnerMonster) {
-      console.error(`Could not find partner monster in the player party. Active monster: ${activeMonster.name}, IDs from combo: ${monster1Id}, ${monster2Id}`);
-      return false;
-    }
-    
-    // Get all available combo abilities
-    const availableCombos = this.getAvailableComboAbilities();
-    console.log(`Available combos: ${availableCombos.length}`);
-    
-    // Find this specific combo
-    const combo = availableCombos.find(c => {
-      const comboMonsterIds = c.monsters.map(m => m.id);
-      return comboMonsterIds.includes(activeMonster.id) && 
-             comboMonsterIds.includes(partnerMonster.id);
-    });
-    
-    if (!combo) {
-      console.error(`Combo ability not found for monsters ${activeMonster.name} and ${partnerMonster.name}`);
-      return false;
-    }
-    
-    console.log(`Found combo: ${combo.name} (${combo.type})`);
-    
-    // Process based on combo type
-    switch (combo.type) {
-      case 'attack':
-        // Show target selection for attack combos
-        this.showComboTargetSelection(activeMonster, partnerMonster, combo);
-        return true;
+    if (match && match.length >= 3) {
+      // Successfully extracted the full monster IDs
+      const monster1Id = match[1];
+      const monster2Id = match[2];
       
-      case 'area':
-        // Area combos affect all enemies
-        this.resolveComboAreaAbility(activeMonster, partnerMonster, combo);
-        return true;
+      console.log(`Looking for monsters with IDs: ${monster1Id} and ${monster2Id}`);
+      console.log(`Active monster ID: ${activeMonster.id}`);
+      console.log(`Current player party has ${this.playerParty.length} monsters with IDs: ${this.playerParty.map(m => m.id).join(', ')}`);
       
-      case 'buff':
-        // Buff combos affect all allies
-        this.resolveComboBuffAbility(activeMonster, partnerMonster, combo);
-        return true;
+      // First, identify the partner monster - this is the one that's not the active monster
+      let partnerMonster;
       
-      default:
-        // Default to attack behavior
-        this.showComboTargetSelection(activeMonster, partnerMonster, combo);
-        return true;
+      if (monster1Id === activeMonster.id) {
+        // Monster 2 is the partner
+        partnerMonster = this.playerParty.find(m => m.id === monster2Id);
+      } else if (monster2Id === activeMonster.id) {
+        // Monster 1 is the partner
+        partnerMonster = this.playerParty.find(m => m.id === monster1Id);
+      } else {
+        // If active monster doesn't match either ID, try to find both monsters
+        const monster1 = this.playerParty.find(m => m.id === monster1Id);
+        const monster2 = this.playerParty.find(m => m.id === monster2Id);
+        
+        // Use whichever one isn't the active monster
+        if (monster1 && monster1.id !== activeMonster.id) {
+          partnerMonster = monster1;
+        } else if (monster2 && monster2.id !== activeMonster.id) {
+          partnerMonster = monster2;
+        }
+      }
+      
+      if (!partnerMonster) {
+        console.error(`Could not find partner monster in the player party. Active monster: ${activeMonster.name}, IDs from combo: ${monster1Id}, ${monster2Id}`);
+        return false;
+      }
+      
+      // Get all available combo abilities
+      const availableCombos = this.getAvailableComboAbilities();
+      console.log(`Available combos: ${availableCombos.length}`);
+      
+      // Find this specific combo
+      const combo = availableCombos.find(c => {
+        const comboMonsterIds = c.monsters.map(m => m.id);
+        return comboMonsterIds.includes(activeMonster.id) && 
+               comboMonsterIds.includes(partnerMonster.id);
+      });
+      
+      if (!combo) {
+        console.error(`Combo ability not found for monsters ${activeMonster.name} and ${partnerMonster.name}`);
+        return false;
+      }
+      
+      console.log(`Found combo: ${combo.name} (${combo.type})`);
+      
+      // Process based on combo type
+      switch (combo.type) {
+        case 'attack':
+          // Show target selection for attack combos
+          this.showComboTargetSelection(activeMonster, partnerMonster, combo);
+          return true;
+        
+        case 'area':
+          // Area combos affect all enemies
+          this.resolveComboAreaAbility(activeMonster, partnerMonster, combo);
+          return true;
+        
+        case 'buff':
+          // Buff combos affect all allies
+          this.resolveComboBuffAbility(activeMonster, partnerMonster, combo);
+          return true;
+        
+        default:
+          // Default to attack behavior
+          this.showComboTargetSelection(activeMonster, partnerMonster, combo);
+          return true;
+      }
     }
   }
+  
+  // If we get here, something went wrong with the parsing
+  console.error(`Invalid combo ID format: ${comboId}`);
+  return false;
+}
   
   // Resolve a combo attack ability against a single target
   resolveComboAttackAbility(activeMonster, partnerMonster, combo, target) {
