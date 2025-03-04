@@ -572,7 +572,7 @@ class GameMenu {
         padding: 5px 10px;
       `;
       
-      ['Auto', 'Low', 'Medium', 'High'].forEach(level => {
+      ['Auto', 'Low', 'Medium', 'High', 'Ultra'].forEach(level => {
         const option = document.createElement('option');
         option.value = level.toLowerCase();
         option.textContent = level;
