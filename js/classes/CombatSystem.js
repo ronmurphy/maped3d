@@ -1569,6 +1569,14 @@ class CombatSystem {
       this.playerParty.map((p) => p.name).join(", ")
     );
 
+    console.log("=== COMBAT PARTY DEBUG ===");
+this.playerParty.forEach(monster => {
+  console.log(`Monster: ${monster.name}, Type: ${monster.type}, Normalized Type: ${this.getNormalizedType(monster.type)}`);
+});
+console.log("=========================");
+
+console.log("Available Combo Keys:", Object.keys(this.comboAbilities).join(", "));
+
     // Handle enemy setup
     console.log(
       "Enemy parameter type:",
@@ -2392,187 +2400,375 @@ createMonsterCard(monster, side, index) {
   }
 
 
-  renderActionBar(monster) {
-    if (!monster || monster.currentHP <= 0) {
-      return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>This monster is defeated</em></div>';
-    }
+//   renderActionBar(monster) {
+//     if (!monster || monster.currentHP <= 0) {
+//       return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>This monster is defeated</em></div>';
+//     }
   
-    let html = `<div class="abilities-container">`;
+//     let html = `<div class="abilities-container">`;
   
-    // Check if it's a player monster and if we should show combo abilities
-    const isPlayerMonster = this.playerParty.some(m => m.id === monster.id);
+//     // Check if it's a player monster and if we should show combo abilities
+//     const isPlayerMonster = this.playerParty.some(m => m.id === monster.id);
     
-    // Check for combo abilities
-    const availableCombos = [];
+//     // Check for combo abilities
+//     const availableCombos = [];
     
-    if (isPlayerMonster && this.partyManager) {
-      // Get combo abilities for this monster
-      const allCombos = this.getAvailableComboAbilities();
+//     if (isPlayerMonster && this.partyManager) {
+//       // Get combo abilities for this monster
+//       const allCombos = this.getAvailableComboAbilities();
+
+//       console.log("ALL AVAILABLE COMBOS FOR ACTION BAR:", allCombos.map(c => c.name));
+
+// // If filtering is happening, add before and after logs:
+// console.log("BEFORE FILTERING:", allCombos.map(c => c.name));
+
       
-      // Filter to only those involving this monster
-      const monsterCombos = allCombos.filter(combo => 
-        combo.monsters.some(m => m.id === monster.id)
-      );
+//       // Filter to only those involving this monster
+//       const monsterCombos = allCombos.filter(combo => 
+//         combo.monsters.some(m => m.id === monster.id)
+//       );
       
-      if (monsterCombos.length > 0) {
-        // Add combos to the available abilities
-        availableCombos.push(...monsterCombos);
-      }
-    }
+//       if (monsterCombos.length > 0) {
+//         // Add combos to the available abilities
+//         availableCombos.push(...monsterCombos);
+//       }
+//     }
+// // // [filtering code]
+// // console.log("AFTER FILTERING:", filteredCombos.map(c => c.name));
+
   
-    // First show combo abilities if available (at the top)
-    if (availableCombos.length > 0) {
-      html += `<div class="combo-abilities-header" style="
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-        padding: 4px 8px;
-        background: rgba(255, 215, 0, 0.1);
-        border-radius: 8px;
-      ">
-        <span class="material-icons" style="margin-right: 8px; color:rgb(231, 24, 24);">auto_awesome</span>
-        <span style="color:rgb(252, 127, 77); font-weight: 500;">Combo Abilities</span>
-      </div>
+//     // First show combo abilities if available (at the top)
+//     if (availableCombos.length > 0) {
+//       html += `<div class="combo-abilities-header" style="
+//         display: flex;
+//         align-items: center;
+//         margin-bottom: 8px;
+//         padding: 4px 8px;
+//         background: rgba(255, 215, 0, 0.1);
+//         border-radius: 8px;
+//       ">
+//         <span class="material-icons" style="margin-right: 8px; color:rgb(231, 24, 24);">auto_awesome</span>
+//         <span style="color:rgb(252, 127, 77); font-weight: 500;">Combo Abilities</span>
+//       </div>
       
-      <div class="combo-abilities" style="
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-      ">`;
+//       <div class="combo-abilities" style="
+//         display: flex;
+//         flex-wrap: wrap;
+//         gap: 8px;
+//         margin-bottom: 12px;
+//       ">`;
+
+//       console.log(`Action bar for ${monster.name} (${monster.id})`);
+// console.log(`All available combos: ${this.getAvailableComboAbilities().map(c => c.name).join(', ')}`);
+// console.log(`Combos being shown in action bar: ${availableCombos.map(c => c.name).join(', ')}`);
+// console.log(`Combos filtered for this monster: ${availableCombos.filter(c => 
+//   c.monsters.some(m => m.id === monster.id)
+// ).map(c => c.name).join(', ')}`);
       
-      // Add each combo ability
-      availableCombos.forEach(combo => {
-        const partnerMonster = combo.monsters.find(m => m.id !== monster.id);
+//       // Add each combo ability
+//       availableCombos.forEach(combo => {
+//         const partnerMonster = combo.monsters.find(m => m.id !== monster.id);
         
-        html += `
-          <button class="ability-btn combo" data-ability="${combo.id}" style="
-            display: flex;
-            align-items: center;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid ${combo.color}50;
-            background: ${combo.color}15;
-            color: ${combo.color};
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-          ">
-            <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${combo.icon || 'auto_awesome'}</span>
-            <div style="flex: 1; text-align: left;">
-              <div style="font-weight: 500;">${combo.name}</div>
-              <div style="font-size: 0.75rem; opacity: 0.9;">With: ${partnerMonster.name}</div>
-            </div>
-            ${combo.damage ? `
-              <div style="
-                margin-left: 8px;
-                padding: 2px 6px;
-                border-radius: 12px;
-                background: ${combo.color}30;
-                font-size: 0.75rem;
-                font-weight: 500;
-              ">${combo.damage}</div>
-            ` : ''}
+//         html += `
+//           <button class="ability-btn combo" data-ability="${combo.id}" style="
+//             display: flex;
+//             align-items: center;
+//             padding: 8px 12px;
+//             border-radius: 8px;
+//             cursor: pointer;
+//             border: 1px solid ${combo.color}50;
+//             background: ${combo.color}15;
+//             color: ${combo.color};
+//             transition: all 0.2s ease;
+//             position: relative;
+//             overflow: hidden;
+//           ">
+//             <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${combo.icon || 'auto_awesome'}</span>
+//             <div style="flex: 1; text-align: left;">
+//               <div style="font-weight: 500;">${combo.name}</div>
+//               <div style="font-size: 0.75rem; opacity: 0.9;">With: ${partnerMonster.name}</div>
+//             </div>
+//             ${combo.damage ? `
+//               <div style="
+//                 margin-left: 8px;
+//                 padding: 2px 6px;
+//                 border-radius: 12px;
+//                 background: ${combo.color}30;
+//                 font-size: 0.75rem;
+//                 font-weight: 500;
+//               ">${combo.damage}</div>
+//             ` : ''}
             
-            <!-- Sparkle animation effect in background -->
-            <div class="sparkle-bg" style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background-image: radial-gradient(circle, ${combo.color}20 1px, transparent 1px);
-              background-size: 12px 12px;
-              pointer-events: none;
-              opacity: 0.5;
-            "></div>
-          </button>
-        `;
-      });
+//             <!-- Sparkle animation effect in background -->
+//             <div class="sparkle-bg" style="
+//               position: absolute;
+//               top: 0;
+//               left: 0;
+//               right: 0;
+//               bottom: 0;
+//               background-image: radial-gradient(circle, ${combo.color}20 1px, transparent 1px);
+//               background-size: 12px 12px;
+//               pointer-events: none;
+//               opacity: 0.5;
+//             "></div>
+//           </button>
+//         `;
+//       });
       
-      html += `</div>
+//       html += `</div>
       
-      <div class="regular-abilities-header" style="
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-        padding: 4px 8px;
-      ">
-        <span class="material-icons" style="margin-right: 8px; color: #9ca3af; font-size: 16px;">play_arrow</span>
-        <span style="color: #9ca3af; font-size: 0.9rem;">Regular Abilities</span>
-      </div>`;
-    }
+//       <div class="regular-abilities-header" style="
+//         display: flex;
+//         align-items: center;
+//         margin-bottom: 8px;
+//         padding: 4px 8px;
+//       ">
+//         <span class="material-icons" style="margin-right: 8px; color: #9ca3af; font-size: 16px;">play_arrow</span>
+//         <span style="color: #9ca3af; font-size: 0.9rem;">Regular Abilities</span>
+//       </div>`;
+//     }
   
-    // Add regular abilities
-    if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
-      html += '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>No abilities available</em></div>';
-    } else {
-      html += `<div class="regular-abilities" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+//     // Add regular abilities
+//     if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
+//       html += '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>No abilities available</em></div>';
+//     } else {
+//       html += `<div class="regular-abilities" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
       
-      // Add abilities with icons
-      monster.monsterAbilities.forEach((ability) => {
-        // Determine icon based on ability type
-        let icon = 'sports_martial_arts'; // Default for attack
+//       // Add abilities with icons
+//       monster.monsterAbilities.forEach((ability) => {
+//         // Determine icon based on ability type
+//         let icon = 'sports_martial_arts'; // Default for attack
   
-        switch (ability.type) {
-          case 'attack':
-            icon = 'sports_martial_arts';
-            break;
-          case 'area':
-            icon = 'blur_circular';
-            break;
-          case 'buff':
-            icon = 'upgrade';
-            break;
-          case 'debuff':
-            icon = 'threat';
-            break;
-          case 'defense':
-            icon = 'shield';
-            break;
-          case 'healing':
-            icon = 'healing';
-            break;
-          case 'reaction':
-            icon = 'autorenew';
-            break;
-          case 'support':
-            icon = 'group';
-            break;
-        }
+//         switch (ability.type) {
+//           case 'attack':
+//             icon = 'sports_martial_arts';
+//             break;
+//           case 'area':
+//             icon = 'blur_circular';
+//             break;
+//           case 'buff':
+//             icon = 'upgrade';
+//             break;
+//           case 'debuff':
+//             icon = 'threat';
+//             break;
+//           case 'defense':
+//             icon = 'shield';
+//             break;
+//           case 'healing':
+//             icon = 'healing';
+//             break;
+//           case 'reaction':
+//             icon = 'autorenew';
+//             break;
+//           case 'support':
+//             icon = 'group';
+//             break;
+//         }
   
-        html += `
-          <button class="ability-btn ${ability.type}" data-ability="${ability.name.replace(/\s+/g, "_")}">
-            <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
-            <span>${ability.name}</span>
-            ${ability.damage ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>` : ''}
-          </button>
-        `;
-      });
+//         html += `
+//           <button class="ability-btn ${ability.type}" data-ability="${ability.name.replace(/\s+/g, "_")}">
+//             <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
+//             <span>${ability.name}</span>
+//             ${ability.damage ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>` : ''}
+//           </button>
+//         `;
+//       });
       
-      html += `</div>`;
-    }
+//       html += `</div>`;
+//     }
   
-    // Close abilities container
-    html += `</div>`;
+//     // Close abilities container
+//     html += `</div>`;
   
-    // Add utility buttons
-    html += `
-      <div class="utility-buttons">
-        <button class="utility-btn use-item-btn">
-          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">inventory_2</span>
-          Use Item
-        </button>
-        <button class="utility-btn skip-turn-btn">
-          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">skip_next</span>
-          Skip Turn
-        </button>
-      </div>
-    `;
+//     // Add utility buttons
+//     html += `
+//       <div class="utility-buttons">
+//         <button class="utility-btn use-item-btn">
+//           <span class="material-icons" style="margin-right: 8px; font-size: 18px;">inventory_2</span>
+//           Use Item
+//         </button>
+//         <button class="utility-btn skip-turn-btn">
+//           <span class="material-icons" style="margin-right: 8px; font-size: 18px;">skip_next</span>
+//           Skip Turn
+//         </button>
+//       </div>
+//     `;
   
-    return html;
+//     return html;
+//   }
+
+renderActionBar(monster) {
+  if (!monster || monster.currentHP <= 0) {
+    return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>This monster is defeated</em></div>';
   }
+
+  let html = `<div class="abilities-container">`;
+
+  // Check if it's a player monster and if we should show combo abilities
+  const isPlayerMonster = this.playerParty.some(m => m.id === monster.id);
+
+  // Get all available combos
+  const allAvailableCombos = this.getAvailableComboAbilities();
+  
+  // Filter for just this monster's combos
+  const availableCombos = allAvailableCombos.filter(combo => 
+    combo.monsters.some(m => m.id === monster.id)
+  );
+  
+  // Show combo abilities if available
+  if (isPlayerMonster && availableCombos.length > 0) {
+    html += `<div class="combo-abilities-header" style="
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 8px;
+    ">
+      <span class="material-icons" style="margin-right: 8px; color:rgb(231, 24, 24);">auto_awesome</span>
+      <span style="color:rgb(252, 127, 77); font-weight: 500;">Combo Abilities</span>
+    </div>
+    
+    <div class="combo-abilities" style="
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    ">`;
+    
+    // Add each combo ability
+    availableCombos.forEach(combo => {
+      const partnerMonster = combo.monsters.find(m => m.id !== monster.id);
+      
+      html += `
+        <button class="ability-btn combo" data-ability="${combo.id}" style="
+          display: flex;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          border: 1px solid ${combo.color}50;
+          background: ${combo.color}15;
+          color: ${combo.color};
+          transition: all 0.2s ease;
+          position: relative;
+          overflow: hidden;
+        ">
+          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${combo.icon || 'auto_awesome'}</span>
+          <div style="flex: 1; text-align: left;">
+            <div style="font-weight: 500;">${combo.name}</div>
+            <div style="font-size: 0.75rem; opacity: 0.9;">With: ${partnerMonster.name}</div>
+          </div>
+          ${combo.damage ? `
+            <div style="
+              margin-left: 8px;
+              padding: 2px 6px;
+              border-radius: 12px;
+              background: ${combo.color}30;
+              font-size: 0.75rem;
+              font-weight: 500;
+            ">${combo.damage}</div>
+          ` : ''}
+          
+          <!-- Sparkle animation effect in background -->
+          <div class="sparkle-bg" style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(circle, ${combo.color}20 1px, transparent 1px);
+            background-size: 12px 12px;
+            pointer-events: none;
+            opacity: 0.5;
+          "></div>
+        </button>
+      `;
+    });
+    
+    html += `</div>
+    
+    <div class="regular-abilities-header" style="
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+    ">
+      <span class="material-icons" style="margin-right: 8px; color: #9ca3af; font-size: 16px;">play_arrow</span>
+      <span style="color: #9ca3af; font-size: 0.9rem;">Regular Abilities</span>
+    </div>`;
+  }
+
+  // Add regular abilities
+  if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
+    html += '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>No abilities available</em></div>';
+  } else {
+    html += `<div class="regular-abilities" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+    
+    // Add abilities with icons
+    monster.monsterAbilities.forEach((ability) => {
+      // Determine icon based on ability type
+      let icon = 'sports_martial_arts'; // Default for attack
+
+      switch (ability.type) {
+        case 'attack':
+          icon = 'sports_martial_arts';
+          break;
+        case 'area':
+          icon = 'blur_circular';
+          break;
+        case 'buff':
+          icon = 'upgrade';
+          break;
+        case 'debuff':
+          icon = 'threat';
+          break;
+        case 'defense':
+          icon = 'shield';
+          break;
+        case 'healing':
+          icon = 'healing';
+          break;
+        case 'reaction':
+          icon = 'autorenew';
+          break;
+        case 'support':
+          icon = 'group';
+          break;
+      }
+
+      html += `
+        <button class="ability-btn ${ability.type}" data-ability="${ability.name.replace(/\s+/g, "_")}">
+          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
+          <span>${ability.name}</span>
+          ${ability.damage ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>` : ''}
+        </button>
+      `;
+    });
+    
+    html += `</div>`;
+  }
+
+  // Close abilities container
+  html += `</div>`;
+
+  // Add utility buttons
+  html += `
+    <div class="utility-buttons">
+      <button class="utility-btn use-item-btn">
+        <span class="material-icons" style="margin-right: 8px; font-size: 18px;">inventory_2</span>
+        Use Item
+      </button>
+      <button class="utility-btn skip-turn-btn">
+        <span class="material-icons" style="margin-right: 8px; font-size: 18px;">skip_next</span>
+        Skip Turn
+      </button>
+    </div>
+  `;
+
+  return html;
+}
 
   setupCombatEventListeners() {
     // Skip button
@@ -4913,7 +5109,40 @@ formatComboId(comboInfo) {
     };
     
     console.log("Combo abilities system initialized");
+    // Add at the end of initializeComboSystem method
+console.log("=== COMBO ABILITIES DEBUG ===");
+console.log("Combo abilities initialized with keys:", Object.keys(this.comboAbilities));
+console.log("Looking for Undead-Fiend combo...");
+console.log("Direct access test:", this.comboAbilities["Undead-Fiend"]);
+console.log("Case insensitive test:", this.comboAbilities["undead-fiend"] || 
+                                     this.comboAbilities["UNDEAD-FIEND"] || 
+                                     this.comboAbilities["Undead-FIEND"]);
+console.log("Reverse order test:", this.comboAbilities["Fiend-Undead"]);
+console.log("========================");
   }
+
+  // Add this function to extract base type without size prefix
+getNormalizedType(typeString) {
+  if (!typeString) return '';
+  
+  // Common size prefixes to remove
+  const sizePrefixes = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
+  
+  // Convert to lowercase for consistent comparison
+  const lowercaseType = typeString.toLowerCase();
+  
+  // Check if type starts with any size prefix
+  for (const prefix of sizePrefixes) {
+    if (lowercaseType.startsWith(prefix + ' ')) {
+      // Return everything after the prefix + space, with first letter capitalized
+      const baseType = typeString.substring(prefix.length + 1);
+      return baseType.charAt(0).toUpperCase() + baseType.slice(1);
+    }
+  }
+  
+  // If no prefix found, return the original with first letter capitalized
+  return typeString.charAt(0).toUpperCase() + typeString.slice(1);
+}
   
   // Check for available combo abilities based on active party members
   getAvailableComboAbilities() {
@@ -4942,45 +5171,87 @@ formatComboId(comboInfo) {
         if (monster2.currentHP <= 0) continue;
         
         // Get monster types
-        const type1 = monster1.type;
-        const type2 = monster2.type;
+        // const type1 = monster1.type;
+        // const type2 = monster2.type;
         
+        const type1 = this.getNormalizedType(monster1.type);
+        const type2 = this.getNormalizedType(monster2.type);
+
         // Generate keys for both possible orders
         const comboKey1 = `${type1}-${type2}`;
         const comboKey2 = `${type2}-${type1}`;
+
+        console.log(`Checking combo for monsters: ${monster1.name} (${type1}) and ${monster2.name} (${type2})`);
+
+// After generating combo keys:
+console.log(`Combo keys to check: ${comboKey1}, ${comboKey2}`);
         
         // Check if a combo ability exists for these types
-        const comboAbility = this.comboAbilities[comboKey1] || this.comboAbilities[comboKey2];
+        // const comboAbility = this.comboAbilities[comboKey1] || this.comboAbilities[comboKey2];
         
-        if (comboAbility) {
-          // Check if the monsters have the required affinity level
-          const affinityScore = this.partyManager.getCombatModifier(monster1.id, monster2.id);
-          let affinityLevel;
+        // if (comboAbility) {
+        //   // Check if the monsters have the required affinity level
+        //   const affinityScore = this.partyManager.getCombatModifier(monster1.id, monster2.id);
+        //   let affinityLevel;
           
-          // Convert numeric bonus to affinity level
-          if (affinityScore >= 7) affinityLevel = 'High';
-          else if (affinityScore >= 5) affinityLevel = 'Medium';
-          else if (affinityScore > 0) affinityLevel = 'Low';
-          else affinityLevel = 'None';
+        //   // Convert numeric bonus to affinity level
+        //   if (affinityScore >= 7) affinityLevel = 'High';
+        //   else if (affinityScore >= 5) affinityLevel = 'Medium';
+        //   else if (affinityScore > 0) affinityLevel = 'Low';
+        //   else affinityLevel = 'None';
           
-          const requiredLevel = comboAbility.requiredAffinity;
+        //   const requiredLevel = comboAbility.requiredAffinity;
           
-          // Convert levels to numeric for comparison
-          const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'None': 0 };
+        //   // Convert levels to numeric for comparison
+        //   const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'None': 0 };
           
-          if (levelValues[affinityLevel] >= levelValues[requiredLevel]) {
-            // This combo is available - create a copy with the monsters
-            const combo = {
-              ...comboAbility,
-              id: `combo_${monster1.id}_${monster2.id}`,
-              monsters: [monster1, monster2]
-            };
+        //   if (levelValues[affinityLevel] >= levelValues[requiredLevel]) {
+        //     // This combo is available - create a copy with the monsters
+        //     const combo = {
+        //       ...comboAbility,
+        //       id: `combo_${monster1.id}_${monster2.id}`,
+        //       monsters: [monster1, monster2]
+        //     };
             
-            availableCombos.push(combo);
-            console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
-          }
-        }
+        //     availableCombos.push(combo);
+        //     console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
+        //   }
+        // }
+
+// Replace the combo lookup code with this more verbose version
+console.log(`Checking for combo with keys: ${comboKey1} or ${comboKey2}`);
+let comboAbility = null;
+
+// Try direct access
+if (this.comboAbilities[comboKey1]) {
+  comboAbility = this.comboAbilities[comboKey1];
+  console.log(`Found combo using key: ${comboKey1}`);
+} else if (this.comboAbilities[comboKey2]) {
+  comboAbility = this.comboAbilities[comboKey2];
+  console.log(`Found combo using key: ${comboKey2}`);
+} else {
+  // Try case-insensitive search
+  const keys = Object.keys(this.comboAbilities);
+  console.log(`Available combo keys: ${keys.join(', ')}`);
+  
+  const matchingKey = keys.find(key => 
+    key.toLowerCase() === comboKey1.toLowerCase() || 
+    key.toLowerCase() === comboKey2.toLowerCase()
+  );
+  
+  if (matchingKey) {
+    comboAbility = this.comboAbilities[matchingKey];
+    console.log(`Found combo using case-insensitive key: ${matchingKey}`);
+  } else {
+    console.log(`No combo found for ${comboKey1} or ${comboKey2}`);
+  }
+}
+
+
       }
+
+
+
     }
     
     return availableCombos;

@@ -6817,63 +6817,28 @@ testSaveLoad() {
   return true;
 }
 
-// getAvailableComboAbilities() {
-//   // Make sure the combo system is initialized
-//   if (!this.comboAbilities) {
-//     this.initializeComboSystem();
-//   }
+
+getNormalizedType(typeString) {
+  if (!typeString) return '';
   
-//   const activeMonsters = this.party.active;
-//   const availableCombos = [];
+  // Common size prefixes to remove
+  const sizePrefixes = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
   
-//   // Check each pair of monsters
-//   for (let i = 0; i < activeMonsters.length; i++) {
-//     for (let j = i + 1; j < activeMonsters.length; j++) {
-//       const monster1 = activeMonsters[i];
-//       const monster2 = activeMonsters[j];
-      
-//       // Get monster types
-//       const type1 = monster1.type || monster1.data?.basic?.type || '';
-//       const type2 = monster2.type || monster2.data?.basic?.type || '';
-      
-//       if (!type1 || !type2) continue;
-      
-//       // Create both possible type combinations to check
-//       const typePair1 = `${type1}-${type2}`;
-//       const typePair2 = `${type2}-${type1}`;
-      
-//       // Check if there's a combo defined for these types
-//       let combo = this.comboAbilities[typePair1] || this.comboAbilities[typePair2];
-      
-//       if (combo) {
-//         // Check if the monsters have the required affinity
-//         const affinityScore = this.calculateAffinity(monster1, monster2);
-//         const affinityLevel = this.getAffinityLevel(affinityScore);
-        
-//         // Convert levels to numeric for comparison
-//         const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'Neutral': 0 };
-//         const requiredLevel = levelValues[combo.requiredAffinity] || 0;
-//         const currentLevel = levelValues[affinityLevel] || 0;
-        
-//         if (currentLevel >= requiredLevel) {
-//           // Create a copy of the combo with the specific monsters
-//           const availableCombo = {
-//             ...combo,
-//             monsters: [monster1, monster2],
-//             id: `combo_${monster1.id}_${monster2.id}`
-//           };
-          
-//           availableCombos.push(availableCombo);
-//           console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
-//         } else {
-//           console.log(`${monster1.name} and ${monster2.name} have types matching ${combo.name} but insufficient affinity (need ${combo.requiredAffinity}, have ${affinityLevel})`);
-//         }
-//       }
-//     }
-//   }
+  // Convert to lowercase for consistent comparison
+  const lowercaseType = typeString.toLowerCase();
   
-//   return availableCombos;
-// }
+  // Check if type starts with any size prefix
+  for (const prefix of sizePrefixes) {
+    if (lowercaseType.startsWith(prefix + ' ')) {
+      // Return everything after the prefix + space, with first letter capitalized
+      const baseType = typeString.substring(prefix.length + 1);
+      return baseType.charAt(0).toUpperCase() + baseType.slice(1);
+    }
+  }
+  
+  // If no prefix found, return the original with first letter capitalized
+  return typeString.charAt(0).toUpperCase() + typeString.slice(1);
+}
 
 getAvailableComboAbilities() {
   // Make sure the combo system is initialized
@@ -6890,10 +6855,13 @@ getAvailableComboAbilities() {
       const monster1 = activeMonsters[i];
       const monster2 = activeMonsters[j];
       
+
+      // const type1 = monster1.type || monster1.data?.basic?.type || '';
+      // const type2 = monster2.type || monster2.data?.basic?.type || '';
+
       // Get monster types
-      const type1 = monster1.type || monster1.data?.basic?.type || '';
-      const type2 = monster2.type || monster2.data?.basic?.type || '';
-      
+      const type1 = this.getNormalizedType(monster1.type || monster1.basic?.type || '');
+      const type2 = this.getNormalizedType(monster2.type || monster2.basic?.type || '');
       if (!type1 || !type2) continue;
       
       // Create both possible type combinations to check
