@@ -1541,20 +1541,20 @@ class CombatSystem {
 
   async initiateCombat(enemies) {
     this.refreshComboCache();
-    console.log("========== COMBAT INITIALIZATION ==========");
+    // console.log("========== COMBAT INITIALIZATION ==========");
     if (this.inCombat) {
-      console.warn("Already in combat");
+      // console.warn("Already in combat");
       return false;
     }
 
     // Check if player has active monsters
-    console.log(
-      "Checking player party:",
-      this.partyManager.party.active.length,
-      "active monsters"
-    );
+    // console.log(
+    //   "Checking player party:",
+    //   this.partyManager.party.active.length,
+    //   "active monsters"
+    // );
     if (!this.partyManager.party.active.length) {
-      console.log("No active monsters in party, showing dialog");
+      // console.log("No active monsters in party, showing dialog");
       this.showNeedMonstersDialog();
       return false;
     }
@@ -1564,40 +1564,40 @@ class CombatSystem {
 
     // Setup player party
     this.playerParty = [...this.partyManager.party.active];
-    console.log(`Player party: ${this.playerParty.length} monsters`);
-    console.log(
-      "Player names:",
-      this.playerParty.map((p) => p.name).join(", ")
-    );
+    // console.log(`Player party: ${this.playerParty.length} monsters`);
+    // console.log(
+    //   "Player names:",
+    //   this.playerParty.map((p) => p.name).join(", ")
+    // );
 
-    console.log("=== COMBAT PARTY DEBUG ===");
-this.playerParty.forEach(monster => {
-  console.log(`Monster: ${monster.name}, Type: ${monster.type}, Normalized Type: ${this.getNormalizedType(monster.type)}`);
-});
-console.log("=========================");
+//     console.log("=== COMBAT PARTY DEBUG ===");
+// this.playerParty.forEach(monster => {
+//   console.log(`Monster: ${monster.name}, Type: ${monster.type}, Normalized Type: ${this.getNormalizedType(monster.type)}`);
+// });
+// console.log("=========================");
 
-console.log("Available Combo Keys:", Object.keys(this.comboAbilities).join(", "));
+// console.log("Available Combo Keys:", Object.keys(this.comboAbilities).join(", "));
 
     // Handle enemy setup
-    console.log(
-      "Enemy parameter type:",
-      enemies
-        ? Array.isArray(enemies)
-          ? "Array"
-          : typeof enemies
-        : "undefined"
-    );
+    // console.log(
+    //   "Enemy parameter type:",
+    //   enemies
+    //     ? Array.isArray(enemies)
+    //       ? "Array"
+    //       : typeof enemies
+    //     : "undefined"
+    // );
 
     if (Array.isArray(enemies) && enemies.length > 0) {
-      console.log(`Using provided enemy list: ${enemies.length} enemies`);
+      // console.log(`Using provided enemy list: ${enemies.length} enemies`);
       this.enemyParty = enemies.map((enemy) =>
         this.prepareEnemyForCombat(enemy)
       );
     } else if (enemies) {
-      console.log("Single enemy provided, wrapping in array");
+      // console.log("Single enemy provided, wrapping in array");
       this.enemyParty = [this.prepareEnemyForCombat(enemies)];
     } else {
-      console.log("No enemies provided, generating random enemy party");
+      // console.log("No enemies provided, generating random enemy party");
 
       try {
         // Generate random enemies asynchronously
@@ -1609,7 +1609,7 @@ console.log("Available Combo Keys:", Object.keys(this.comboAbilities).join(", ")
           this.enemyParty = generatedEnemies;
         } else {
           // Fallback to a default enemy if generation failed
-          console.log("Enemy generation failed, using default enemy");
+          // console.log("Enemy generation failed, using default enemy");
           const defaultEnemy = this.generateDefaultEnemies(1)[0];
           this.enemyParty = [this.prepareEnemyForCombat(defaultEnemy)];
         }
@@ -1621,22 +1621,22 @@ console.log("Available Combo Keys:", Object.keys(this.comboAbilities).join(", ")
       }
     }
 
-    console.log(`Final enemy party: ${this.enemyParty.length} monsters`);
-    console.log("Enemy names:", this.enemyParty.map((e) => e.name).join(", "));
+    // console.log(`Final enemy party: ${this.enemyParty.length} monsters`);
+    // console.log("Enemy names:", this.enemyParty.map((e) => e.name).join(", "));
 
     // Roll initiative
     this.rollInitiative();
-    console.log(
-      "Initiative order:",
-      this.initiativeOrder
-        .map((c) => `${c.monster.name} (${c.initiative})`)
-        .join(", ")
-    );
+    // console.log(
+    //   "Initiative order:",
+    //   this.initiativeOrder
+    //     .map((c) => `${c.monster.name} (${c.initiative})`)
+    //     .join(", ")
+    // );
 
     // Show combat UI
-    console.log("Showing combat interface");
+    // console.log("Showing combat interface");
     this.showCombatInterface();
-    console.log("========== COMBAT INITIALIZATION COMPLETE ==========");
+    // console.log("========== COMBAT INITIALIZATION COMPLETE ==========");
 
     return true;
   }
@@ -2399,48 +2399,6 @@ createMonsterCard(monster, side, index) {
 
     return html;
   }
-
-  // debug testing
-  // renderActionBar(monster) {
-  //   console.log(`=== ACTION BAR DEBUG ===`);
-  //   console.log(`Rendering action bar for: ${monster.name} (ID: ${monster.id})`);
-    
-  //   if (!monster || monster.currentHP <= 0) {
-  //     console.log(`Monster defeated, not showing abilities`);
-  //     return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>This monster is defeated</em></div>';
-  //   }
-  
-  //   let html = `<div class="abilities-container">`;
-  
-  //   // Check if it's a player monster
-  //   const isPlayerMonster = this.playerParty.some(m => m.id === monster.id);
-  //   console.log(`Is player monster? ${isPlayerMonster}`);
-  //   console.log(`Player party IDs: ${this.playerParty.map(m => m.id).join(', ')}`);
-  
-  //   // Get all available combos
-  //   const allAvailableCombos = this.getAvailableComboAbilities();
-  //   console.log(`Total combos found: ${allAvailableCombos.length}`);
-  //   console.log(`Combo details:`, allAvailableCombos);
-    
-  //   // Detailed filter check
-  //   console.log(`Filter check for each combo:`);
-  //   allAvailableCombos.forEach(combo => {
-  //     const hasMonster = combo.monsters && combo.monsters.some(m => m.id === monster.id);
-  //     const monsterIds = combo.monsters ? combo.monsters.map(m => m.id).join(', ') : 'No monsters';
-  //     console.log(`Combo: ${combo.name}, Has monster? ${hasMonster}, Monster IDs: ${monsterIds}`);
-  //   });
-    
-  //   // Filter for this monster's combos
-  //   const availableCombos = allAvailableCombos.filter(combo => 
-  //     combo.monsters && combo.monsters.some(m => m.id === monster.id)
-  //   );
-  //   console.log(`Filtered combos count: ${availableCombos.length}`);
-  //   console.log(`=== END ACTION BAR DEBUG ===`);
-    
-  //   // Rest of the method as before...
-
-
-  // }
 
 // actual code do not delete
 renderActionBar(monster) {
@@ -4170,23 +4128,23 @@ formatComboId(comboInfo) {
 
   getEnemiesFromManager(targetCR, manager = null) {
     const mm = manager || this.monsterManager;
-    console.log("========== DATABASE SEARCH START ==========");
-    console.log(`Manager provided: ${!!manager}, Using: ${!!mm}`);
+    // console.log("========== DATABASE SEARCH START ==========");
+    // console.log(`Manager provided: ${!!manager}, Using: ${!!mm}`);
 
-    if (!mm || !mm.monsterDatabase) {
-      console.warn("No monster database available for enemy selection");
-      console.log("MonsterManager:", mm);
-      console.log("Database:", mm?.monsterDatabase);
-      console.log("========== DATABASE SEARCH END (FAILED) ==========");
-      return [];
-    }
+    // if (!mm || !mm.monsterDatabase) {
+    //   console.warn("No monster database available for enemy selection");
+    //   console.log("MonsterManager:", mm);
+    //   console.log("Database:", mm?.monsterDatabase);
+    //   console.log("========== DATABASE SEARCH END (FAILED) ==========");
+    //   return [];
+    // }
 
-    console.log(`Searching for enemies with target CR ~${targetCR}`);
+    // console.log(`Searching for enemies with target CR ~${targetCR}`);
 
     // Get CR range (50% below to 25% above target)
     const minCR = targetCR * 0.5;
     const maxCR = targetCR * 1.25;
-    console.log(`CR Range: ${minCR} to ${maxCR}`);
+    // console.log(`CR Range: ${minCR} to ${maxCR}`);
 
     // Search the database for monsters in CR range
     const candidates = [];
@@ -4194,16 +4152,16 @@ formatComboId(comboInfo) {
     try {
       // Get all monsters from database
       const allMonsters = Array.from(mm.monsterDatabase.values());
-      console.log(`Total monsters in database: ${allMonsters.length}`);
-      console.log(
-        "Sample monster from DB:",
-        allMonsters.length > 0
-          ? JSON.stringify(allMonsters[0].basic || allMonsters[0]).substring(
-              0,
-              100
-            ) + "..."
-          : "None"
-      );
+      // console.log(`Total monsters in database: ${allMonsters.length}`);
+      // console.log(
+      //   "Sample monster from DB:",
+      //   allMonsters.length > 0
+      //     ? JSON.stringify(allMonsters[0].basic || allMonsters[0]).substring(
+      //         0,
+      //         100
+      //       ) + "..."
+      //     : "None"
+      // );
 
       let noBasicCount = 0;
       let noCRCount = 0;
@@ -4245,30 +4203,30 @@ formatComboId(comboInfo) {
         }
       }
 
-      console.log("Database search stats:");
-      console.log(`- Monsters missing 'basic': ${noBasicCount}`);
-      console.log(`- Monsters missing CR: ${noCRCount}`);
-      console.log(`- Monsters with invalid CR: ${invalidCRCount}`);
-      console.log(`- Monsters in CR range: ${inRangeCount}`);
+      // console.log("Database search stats:");
+      // console.log(`- Monsters missing 'basic': ${noBasicCount}`);
+      // console.log(`- Monsters missing CR: ${noCRCount}`);
+      // console.log(`- Monsters with invalid CR: ${invalidCRCount}`);
+      // console.log(`- Monsters in CR range: ${inRangeCount}`);
 
-      if (candidates.length > 0) {
-        console.log(
-          "Sample candidate monster:",
-          JSON.stringify(candidates[0].basic || candidates[0]).substring(
-            0,
-            100
-          ) + "..."
-        );
-      }
+      // if (candidates.length > 0) {
+      //   console.log(
+      //     "Sample candidate monster:",
+      //     JSON.stringify(candidates[0].basic || candidates[0]).substring(
+      //       0,
+      //       100
+      //     ) + "..."
+      //   );
+      // }
 
-      console.log(
-        `Found ${candidates.length} suitable enemies in CR range ${minCR} - ${maxCR}`
-      );
+      // console.log(
+      //   `Found ${candidates.length} suitable enemies in CR range ${minCR} - ${maxCR}`
+      // );
     } catch (error) {
       console.error("Error searching monster database:", error);
     }
 
-    console.log("========== DATABASE SEARCH END ==========");
+    // console.log("========== DATABASE SEARCH END ==========");
     return candidates;
   }
 
@@ -4297,13 +4255,13 @@ formatComboId(comboInfo) {
   }
 
   async generateEnemyParty(playerParty) {
-    console.log("========== ENEMY PARTY GENERATION START ==========");
+    // console.log("========== ENEMY PARTY GENERATION START ==========");
 
     // Get player party strength metrics
     const partySize = playerParty.length;
     const averageLevel =
       playerParty.reduce((sum, monster) => sum + monster.level, 0) / partySize;
-    console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
+    // console.log(`Party size: ${partySize}, Average level: ${averageLevel}`);
 
     // Determine number of enemies with fairer scaling
     let enemyCount;
@@ -4315,7 +4273,7 @@ formatComboId(comboInfo) {
       // For 2-player party: 1-2 enemies, biased toward 1
       const roll = Math.random();
       enemyCount = roll < 0.7 ? 1 : 2;
-      console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
+      // console.log(`2-player party roll: ${roll} -> ${enemyCount} enemies`);
     } else {
       // For 3+ player party: scale enemies more aggressively
       // Maximum of 3 enemies regardless of party size
@@ -4324,7 +4282,7 @@ formatComboId(comboInfo) {
       // Weight toward more enemies for larger parties
       const weights = [0.2, 0.3, 0.5]; // Weights for 1, 2, or 3 enemies
       const roll = Math.random();
-      console.log(`3+ player party roll: ${roll}`);
+      // console.log(`3+ player party roll: ${roll}`);
 
       if (roll < weights[0]) {
         enemyCount = 1;
@@ -4333,12 +4291,12 @@ formatComboId(comboInfo) {
       } else {
         enemyCount = maxEnemies;
       }
-      console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
+      // console.log(`Roll result: ${roll} -> ${enemyCount} enemies`);
     }
 
-    console.log(
-      `Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`
-    );
+    // console.log(
+    //   `Generating enemy party with ${enemyCount} monsters for player party of ${partySize}`
+    // );
 
     // Calculate target CR
     const targetCR = averageLevel * 0.75;
@@ -4353,28 +4311,28 @@ formatComboId(comboInfo) {
     try {
       // Make sure we have a connection
       if (this.monsterDatabase && this.monsterDatabase.monsters) {
-        console.log("MonsterDatabase type:", typeof this.monsterDatabase);
-        console.log(
-          "MonsterDatabase has monsters property:",
-          !!this.monsterDatabase.monsters
-        );
+        // console.log("MonsterDatabase type:", typeof this.monsterDatabase);
+        // console.log(
+        //   "MonsterDatabase has monsters property:",
+        //   !!this.monsterDatabase.monsters
+        // );
 
         // Get all monsters from database
         let allMonsters = [];
 
         // MonsterManager's database is an object with a 'monsters' property (not a Map)
         if (this.monsterDatabase && this.monsterDatabase.monsters) {
-          console.log("Accessing via monsterDatabase.monsters object");
+          // console.log("Accessing via monsterDatabase.monsters object");
           allMonsters = Object.values(this.monsterDatabase.monsters);
         }
 
-        console.log(`Got ${allMonsters.length} total monsters from database`);
+        // console.log(`Got ${allMonsters.length} total monsters from database`);
 
         // Filter by CR range - USE MORE FLEXIBLE RANGE
         const minCR = Math.max(0.125, targetCR * 0.5); // Minimum CR of 1/8
         const maxCR = Math.min(30, targetCR * 2); // More generous upper bound
 
-        console.log(`Initial CR range: ${minCR} to ${maxCR}`);
+        // console.log(`Initial CR range: ${minCR} to ${maxCR}`);
 
         potentialEnemies = allMonsters.filter((monster) => {
           // Check if monster has basic data
@@ -4395,17 +4353,17 @@ formatComboId(comboInfo) {
           return !isNaN(crValue) && crValue >= minCR && crValue <= maxCR;
         });
 
-        console.log(
-          `Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`
-        );
+        // console.log(
+        //   `Found ${potentialEnemies.length} monsters within CR range ${minCR} to ${maxCR}`
+        // );
 
         // If we find few monsters, retry with even wider range
         if (potentialEnemies.length < enemyCount) {
-          console.log("Too few monsters found, expanding CR range further");
+          // console.log("Too few monsters found, expanding CR range further");
           const widerMinCR = Math.max(0.125, targetCR * 0.25); // Very low minimum
           const widerMaxCR = Math.min(30, targetCR * 3); // Very high maximum
 
-          console.log(`Expanded CR range: ${widerMinCR} to ${widerMaxCR}`);
+          // console.log(`Expanded CR range: ${widerMinCR} to ${widerMaxCR}`);
 
           potentialEnemies = allMonsters.filter((monster) => {
             if (!monster.basic || !monster.basic.cr) return false;
@@ -4426,14 +4384,14 @@ formatComboId(comboInfo) {
             );
           });
 
-          console.log(
-            `With expanded range ${widerMinCR} to ${widerMaxCR}, found ${potentialEnemies.length} monsters`
-          );
+          // console.log(
+          //   `With expanded range ${widerMinCR} to ${widerMaxCR}, found ${potentialEnemies.length} monsters`
+          // );
         }
 
         // Log found monster CRs to help debug
         if (potentialEnemies.length > 0) {
-          console.log("Found monsters with following CRs:");
+          // console.log("Found monsters with following CRs:");
           const crValues = potentialEnemies.map((m) => m.basic.cr);
           const uniqueCRs = [...new Set(crValues)].sort((a, b) => {
             // Convert both to numbers for comparison
@@ -4450,29 +4408,29 @@ formatComboId(comboInfo) {
 
         // If still no monsters, grab a random selection
         if (potentialEnemies.length < enemyCount && allMonsters.length > 0) {
-          console.log(
-            "Still insufficient monsters, selecting random monsters from full database"
-          );
+          // console.log(
+          //   "Still insufficient monsters, selecting random monsters from full database"
+          // );
           // Just randomly select from all available monsters
           potentialEnemies = [...allMonsters]
             .sort(() => Math.random() - 0.5)
             .slice(0, Math.min(10, allMonsters.length));
-          console.log(
-            `Selected ${potentialEnemies.length} random monsters from full database`
-          );
+          // console.log(
+          //   `Selected ${potentialEnemies.length} random monsters from full database`
+          // );
         }
       }
     } catch (error) {
-      console.error("Error accessing monster database:", error);
+      // console.error("Error accessing monster database:", error);
     }
 
     // If we don't have enough monsters, use default enemies
     if (!potentialEnemies || potentialEnemies.length < enemyCount) {
-      console.log(
-        "Using default enemy templates - not enough monsters in database"
-      );
+      // console.log(
+      //   "Using default enemy templates - not enough monsters in database"
+      // );
       potentialEnemies = this.generateDefaultEnemies(targetCR);
-      console.log(`Generated ${potentialEnemies.length} default enemies`);
+      // console.log(`Generated ${potentialEnemies.length} default enemies`);
     }
 
     // Select random enemies from potential pool
@@ -4482,11 +4440,11 @@ formatComboId(comboInfo) {
         const randomIndex = Math.floor(Math.random() * potentialEnemies.length);
         const enemy = potentialEnemies.splice(randomIndex, 1)[0];
 
-        console.log(
-          `Selected enemy ${i + 1}: ${
-            enemy.basic ? enemy.basic.name : enemy.name
-          }`
-        );
+        // console.log(
+        //   `Selected enemy ${i + 1}: ${
+        //     enemy.basic ? enemy.basic.name : enemy.name
+        //   }`
+        // );
 
         // Prepare enemy for combat
         const combatEnemy = this.prepareEnemyForCombat(enemy, targetCR);
@@ -4494,37 +4452,37 @@ formatComboId(comboInfo) {
       }
     }
 
-    console.log(`Final enemy party size: ${selectedEnemies.length}`);
-    console.log(
-      `Enemy names: ${selectedEnemies.map((e) => e.name).join(", ")}`
-    );
-    console.log("========== ENEMY PARTY GENERATION END ==========");
+    // console.log(`Final enemy party size: ${selectedEnemies.length}`);
+    // console.log(
+    //   `Enemy names: ${selectedEnemies.map((e) => e.name).join(", ")}`
+    // );
+    // console.log("========== ENEMY PARTY GENERATION END ==========");
 
     return selectedEnemies;
   }
 
   // Add this async connection method
   async establishAsyncConnections() {
-    console.log("CombatSystem: Establishing async connections");
+    // console.log("CombatSystem: Establishing async connections");
 
     if (!this.monsterManager || !this.monsterDatabase) {
-      console.log("CombatSystem: No active connections, trying to establish");
+      // console.log("CombatSystem: No active connections, trying to establish");
 
       // Try connection through PartyManager first
       if (this.partyManager && this.partyManager.monsterManager) {
         this.monsterManager = this.partyManager.monsterManager;
         this.monsterDatabase = this.partyManager.monsterDatabase;
-        console.log("CombatSystem: Connected via PartyManager");
+        // console.log("CombatSystem: Connected via PartyManager");
       }
       // If that fails, try direct connection
       else {
         this.monsterManager = new MonsterManager(this);
-        console.log("CombatSystem: Created new MonsterManager instance");
+        // console.log("CombatSystem: Created new MonsterManager instance");
 
         // Wait for database to load
         try {
           this.monsterDatabase = await this.monsterManager.loadDatabase();
-          console.log("CombatSystem: Loaded database asynchronously");
+          // console.log("CombatSystem: Loaded database asynchronously");
         } catch (error) {
           console.error("CombatSystem: Failed to load database:", error);
         }
@@ -4541,15 +4499,15 @@ formatComboId(comboInfo) {
   }
 
   prepareEnemyForCombat(enemy, targetCR) {
-    console.log("========== PREPARING ENEMY FOR COMBAT ==========");
-    console.log(
-      "Enemy before preparation:",
-      enemy.basic ? enemy.basic.name : enemy.name
-    );
+    // console.log("========== PREPARING ENEMY FOR COMBAT ==========");
+    // console.log(
+    //   "Enemy before preparation:",
+    //   enemy.basic ? enemy.basic.name : enemy.name
+    // );
 
     // If it's already in combat format, return as is
     if (enemy.currentHP && enemy.maxHP && enemy.monsterAbilities) {
-      console.log("Enemy already in combat format");
+      // console.log("Enemy already in combat format");
       return enemy;
     }
 
@@ -4575,17 +4533,17 @@ formatComboId(comboInfo) {
         Math.random() * 1000
       )}`;
 
-      console.log("Enemy after preparation:", preparedEnemy.name);
-      console.log(`HP: ${preparedEnemy.currentHP}/${preparedEnemy.maxHP}`);
-      console.log(`Abilities: ${preparedEnemy.monsterAbilities?.length || 0}`);
-      console.log("========== ENEMY PREPARATION COMPLETE ==========");
+      // console.log("Enemy after preparation:", preparedEnemy.name);
+      // console.log(`HP: ${preparedEnemy.currentHP}/${preparedEnemy.maxHP}`);
+      // console.log(`Abilities: ${preparedEnemy.monsterAbilities?.length || 0}`);
+      // console.log("========== ENEMY PREPARATION COMPLETE ==========");
 
       return preparedEnemy;
     }
 
     // Fallback if no party manager
     console.log("No PartyManager available, returning unprepared enemy");
-    console.log("========== ENEMY PREPARATION FAILED ==========");
+    // console.log("========== ENEMY PREPARATION FAILED ==========");
     return enemy;
   }
 
@@ -4595,7 +4553,7 @@ formatComboId(comboInfo) {
       providedEnemyArea || this.dialogContainer.querySelector(".enemy-area");
   
     if (!enemyArea) {
-      console.error("Enemy area not found and not provided");
+      // console.error("Enemy area not found and not provided");
       return;
     }
   
@@ -4990,11 +4948,11 @@ getNormalizedType(typeString) {
 }
   
 getAvailableComboAbilities() {
-  console.log("getAvailableComboAbilities called");
+  // console.log("getAvailableComboAbilities called");
   
   // Cache the results if already computed
   if (this._cachedComboAbilities && this._cachedComboAbilities.length > 0) {
-    console.log(`Returning ${this._cachedComboAbilities.length} cached combos`);
+    // console.log(`Returning ${this._cachedComboAbilities.length} cached combos`);
     return this._cachedComboAbilities;
   }
   
@@ -5011,19 +4969,19 @@ getAvailableComboAbilities() {
       const type1 = this.getNormalizedType(monster1.type);
       const type2 = this.getNormalizedType(monster2.type);
       
-      console.log(`Checking combo for monsters: ${monster1.name} (${type1}) and ${monster2.name} (${type2})`);
+      // console.log(`Checking combo for monsters: ${monster1.name} (${type1}) and ${monster2.name} (${type2})`);
       
       // Generate keys for both possible orders
       const comboKey1 = `${type1}-${type2}`;
       const comboKey2 = `${type2}-${type1}`;
       
-      console.log(`Combo keys to check: ${comboKey1}, ${comboKey2}`);
+      // console.log(`Combo keys to check: ${comboKey1}, ${comboKey2}`);
       
       // Check if a combo ability exists
       const comboAbilityTemplate = this.comboAbilities[comboKey1] || this.comboAbilities[comboKey2];
       
       if (comboAbilityTemplate) {
-        console.log(`Found combo: ${comboAbilityTemplate.name} for ${comboKey1} or ${comboKey2}`);
+        // console.log(`Found combo: ${comboAbilityTemplate.name} for ${comboKey1} or ${comboKey2}`);
         
         // Create a specific instance of this combo for these monsters
         const comboAbility = {
@@ -5033,20 +4991,20 @@ getAvailableComboAbilities() {
         };
         
         availableCombos.push(comboAbility);
-        console.log(`Added combo: ${comboAbility.name} with ID ${comboAbility.id}`);
+        // console.log(`Added combo: ${comboAbility.name} with ID ${comboAbility.id}`);
       }
     }
   }
   
   // Cache the results for future calls
   this._cachedComboAbilities = availableCombos;
-  console.log(`Cached ${availableCombos.length} combos for future use`);
+  // console.log(`Cached ${availableCombos.length} combos for future use`);
   
   return availableCombos;
 }
 
 refreshComboCache() {
-  console.log("Clearing combo cache");
+  // console.log("Clearing combo cache");
   this._cachedComboAbilities = null;
 }
 
@@ -5187,88 +5145,6 @@ refreshComboCache() {
       }
     }, 3000);
   }
-
-  // Add this method to your CombatSystem class
-// useComboAbility(comboId, activeMonster) {
-//   console.log(`Processing combo ability: ${comboId}`);
-  
-//   // Parse the combo ID to get monster IDs
-//   const comboIdParts = comboId.split('_');
-//   if (comboIdParts.length < 3) {
-//     console.error(`Invalid combo ID format: ${comboId}`);
-//     return false;
-//   }
-  
-//   const monster1Id = comboIdParts[1];
-//   const monster2Id = comboIdParts[2];
-  
-//   console.log(`Looking for monsters with IDs: ${monster1Id} and ${monster2Id}`);
-//   console.log(`Active monster ID: ${activeMonster.id}`);
-//   console.log(`Current player party has ${this.playerParty.length} monsters with IDs: ${this.playerParty.map(m => m.id).join(', ')}`);
-  
-//   // First, identify the partner monster - this is the one that's not the active monster
-//   // Since we know the active monster is valid and in combat, we only need to find the partner
-//   let partnerMonster;
-  
-//   // Find the partner monster - it must be one of the IDs from the combo
-//   if (monster1Id === activeMonster.id || String(monster1Id) === String(activeMonster.id)) {
-//     // Monster 2 is the partner
-//     partnerMonster = this.playerParty.find(m => 
-//       m.id === monster2Id || String(m.id) === String(monster2Id)
-//     );
-//   } else {
-//     // Monster 1 is the partner
-//     partnerMonster = this.playerParty.find(m => 
-//       m.id === monster1Id || String(m.id) === String(monster1Id)
-//     );
-//   }
-  
-//   if (!partnerMonster) {
-//     console.error(`Could not find partner monster in the player party. Active monster: ${activeMonster.name}, IDs from combo: ${monster1Id}, ${monster2Id}`);
-//     return false;
-//   }
-  
-//   // Get all available combo abilities
-//   const availableCombos = this.getAvailableComboAbilities();
-//   console.log(`Available combos: ${availableCombos.length}`);
-  
-//   // Find this specific combo
-//   const combo = availableCombos.find(c => {
-//     const comboMonsterIds = c.monsters.map(m => m.id);
-//     return comboMonsterIds.includes(activeMonster.id) && 
-//            comboMonsterIds.includes(partnerMonster.id);
-//   });
-  
-//   if (!combo) {
-//     console.error(`Combo ability not found for monsters ${activeMonster.name} and ${partnerMonster.name}`);
-//     return false;
-//   }
-  
-//   console.log(`Found combo: ${combo.name} (${combo.type})`);
-  
-//   // Process based on combo type
-//   switch (combo.type) {
-//     case 'attack':
-//       // Show target selection for attack combos
-//       this.showComboTargetSelection(activeMonster, partnerMonster, combo);
-//       return true;
-    
-//     case 'area':
-//       // Area combos affect all enemies
-//       this.resolveComboAreaAbility(activeMonster, partnerMonster, combo);
-//       return true;
-    
-//     case 'buff':
-//       // Buff combos affect all allies
-//       this.resolveComboBuffAbility(activeMonster, partnerMonster, combo);
-//       return true;
-    
-//     default:
-//       // Default to attack behavior
-//       this.showComboTargetSelection(activeMonster, partnerMonster, combo);
-//       return true;
-//   }
-// }
 
 useComboAbility(comboId, activeMonster) {
   console.log(`Processing combo ability: ${comboId}`);
