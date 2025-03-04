@@ -4911,17 +4911,17 @@ formatComboId(comboInfo) {
       // More combinations can be added
     };
     
-    console.log("Combo abilities system initialized");
-    // Add at the end of initializeComboSystem method
-console.log("=== COMBO ABILITIES DEBUG ===");
-console.log("Combo abilities initialized with keys:", Object.keys(this.comboAbilities));
-console.log("Looking for Undead-Fiend combo...");
-console.log("Direct access test:", this.comboAbilities["Undead-Fiend"]);
-console.log("Case insensitive test:", this.comboAbilities["undead-fiend"] || 
-                                     this.comboAbilities["UNDEAD-FIEND"] || 
-                                     this.comboAbilities["Undead-FIEND"]);
-console.log("Reverse order test:", this.comboAbilities["Fiend-Undead"]);
-console.log("========================");
+//     console.log("Combo abilities system initialized");
+//     // Add at the end of initializeComboSystem method
+// console.log("=== COMBO ABILITIES DEBUG ===");
+// console.log("Combo abilities initialized with keys:", Object.keys(this.comboAbilities));
+// console.log("Looking for Undead-Fiend combo...");
+// console.log("Direct access test:", this.comboAbilities["Undead-Fiend"]);
+// console.log("Case insensitive test:", this.comboAbilities["undead-fiend"] || 
+//                                      this.comboAbilities["UNDEAD-FIEND"] || 
+//                                      this.comboAbilities["Undead-FIEND"]);
+// console.log("Reverse order test:", this.comboAbilities["Fiend-Undead"]);
+// console.log("========================");
   }
 
   // Add this function to extract base type without size prefix

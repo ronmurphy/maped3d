@@ -870,6 +870,7 @@ class Scene3DController {
 
     // Set color based on quality level
     const levelColors = {
+      ultra: '#9C27B0',  // Purple
       high: '#4CAF50',   // Green
       medium: '#2196F3', // Blue
       low: '#FF9800'     // Orange
@@ -4220,7 +4221,21 @@ class Scene3DController {
     const cappedDelta = Math.min(this.deltaTime, 0.1);
 
     // Calculate base speed adjusted for time (normalized to 60fps)
+    //prefs.fpsLimit
+
+    // const prefs = this.getPreferences();
+    // if (prefs.fpsLimit) {
+    //   console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
+    //   this.setFPSLimit(prefs.fpsLimit);
+    //       if (this.fpsLimit) {
+    //   const timeAdjustedSpeed = this.moveState.speed * cappedDelta * prefs.fpsLimit;
+    // } else {
+
     const timeAdjustedSpeed = this.moveState.speed * cappedDelta * 60;
+    // }
+    // }
+
+
 
     // Skip movement if paused
     if (this._controlsPaused) {
@@ -5819,19 +5834,56 @@ this.gameState = 'initializing';
     const qualityLevel = this.qualityLevel || 'medium';
 
     // Adjust pixel ratio based on quality setting
+    // switch (qualityLevel) {
+    //   case 'ultra':
+    //     // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
+    //     targetPixelRatio = Math.min(devicePixelRatio, 2.5);
+    //     this.renderer.physicallyCorrectLights = true;
+    //     break;
+    //   case 'high':
+    //     // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
+    //     targetPixelRatio = Math.min(devicePixelRatio, 2.5);
+    //     break;
+    //   case 'medium':
+    //     // Cap at 1.5 for medium quality
+    //     targetPixelRatio = Math.min(devicePixelRatio, 1.5);
+    //     break;
+    //   case 'low':
+    //     // Use 1.0 for low quality (no supersampling)
+    //     targetPixelRatio = 1.0;
+    //     break;
+    //   default:
+    //     // Default to medium behavior
+    //     targetPixelRatio = Math.min(devicePixelRatio, 1.5);
+    // }
+
+        // In optimizeRenderer method, update the pixel ratio section:
     switch (qualityLevel) {
-      case 'high':
-        // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
-        targetPixelRatio = Math.min(devicePixelRatio, 2.5);
+      case 'ultra':
+        // Ultra uses native device pixel ratio with no cap for maximum sharpness
+        targetPixelRatio = devicePixelRatio;
+        // Enable physically correct lights for ultra quality
+        if (this.renderer.physicallyCorrectLights !== undefined) {
+          this.renderer.physicallyCorrectLights = true;
+        }
+        // Use higher quality shadow maps
+        if (this.renderer.shadowMap.enabled) {
+          this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        }
         break;
+        
+      case 'high':
+        targetPixelRatio = Math.min(devicePixelRatio, 2);
+        break;
+        
       case 'medium':
-        // Cap at 1.5 for medium quality
         targetPixelRatio = Math.min(devicePixelRatio, 1.5);
         break;
+        
       case 'low':
-        // Use 1.0 for low quality (no supersampling)
-        targetPixelRatio = 1.0;
+        targetPixelRatio = Math.min(devicePixelRatio, 1);
         break;
+        
       default:
         // Default to medium behavior
         targetPixelRatio = Math.min(devicePixelRatio, 1.5);
@@ -6058,7 +6110,7 @@ this.gameState = 'initializing';
       }
 
       // Run for 3 seconds total
-      if (totalTime < 3000) {
+      if (totalTime < 6000) {
         requestAnimationFrame(animateTest);
       } else {
         // Clean up test objects
@@ -6073,7 +6125,17 @@ this.gameState = 'initializing';
         // Determine quality level
         let qualityLevel = 'medium'; // Default
 
-        if (medianFPS >= 55) {
+        // if (medianFPS >= 55) {
+        //   qualityLevel = 'high';
+        // } else if (medianFPS >= 30) {
+        //   qualityLevel = 'medium';
+        // } else {
+        //   qualityLevel = 'low';
+        // }
+
+        if (medianFPS >= 99) {
+          qualityLevel = 'ultra';
+        } else if (medianFPS >= 59) {
           qualityLevel = 'high';
         } else if (medianFPS >= 30) {
           qualityLevel = 'medium';
@@ -6113,329 +6175,469 @@ this.gameState = 'initializing';
   }
 
 
-  setQualityLevel(level, options = {}) {
-    const settings = {
-      shadows: options.shadows !== undefined ? options.shadows : true,
-      antialias: options.antialias !== undefined ? options.antialias : true,
-      highQualityTextures: options.highQualityTextures !== undefined ? options.highQualityTextures : true,
-      ambientOcclusion: options.ambientOcclusion !== undefined ? options.ambientOcclusion : false
-    };
+  // setQualityLevel(level, options = {}) {
+  //   const settings = {
+  //     shadows: options.shadows !== undefined ? options.shadows : true,
+  //     antialias: options.antialias !== undefined ? options.antialias : true,
+  //     highQualityTextures: options.highQualityTextures !== undefined ? options.highQualityTextures : true,
+  //     ambientOcclusion: options.ambientOcclusion !== undefined ? options.ambientOcclusion : false
+  //   };
 
-    this.qualityLevel = level;
+  //   this.qualityLevel = level;
 
-    if (this.visualEffects) {
-      this.visualEffects.applyQualityLevel(level);
-    }
+  //   if (this.visualEffects) {
+  //     this.visualEffects.applyQualityLevel(level);
+  //   }
 
-    // Apply quality settings
-    switch (level) {
-      case 'high':
-        // Renderer settings
-        this.renderer.shadowMap.enabled = settings.shadows;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Highest quality shadows
-        this.renderer.setPixelRatio(window.devicePixelRatio); // Full device pixel ratio
+  //   // Apply quality settings
+  //   switch (level) {
+  //     case 'high':
+  //       // Renderer settings
+  //       this.renderer.shadowMap.enabled = settings.shadows;
+  //       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Highest quality shadows
+  //       this.renderer.setPixelRatio(window.devicePixelRatio); // Full device pixel ratio
 
-        // Texture settings
-        this.textureMultiplier = 1.0; // Full resolution textures
+  //       // Texture settings
+  //       this.textureMultiplier = 1.0; // Full resolution textures
 
-        // View distance settings
-        this.renderDistance = 100; // Long view distance
+  //       // View distance settings
+  //       this.renderDistance = 100; // Long view distance
 
-        // Materials quality
-        this.scene.traverse(obj => {
-          if (obj.material) {
-            // Enable all material features
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach(mat => {
-                if (mat.isMeshStandardMaterial) {
-                  mat.envMapIntensity = 1.0;
-                  mat.roughness = mat.userData?.originalRoughness || mat.roughness;
-                  mat.metalness = mat.userData?.originalMetalness || mat.metalness;
-                }
-              });
-            } else if (obj.material.isMeshStandardMaterial) {
-              obj.material.envMapIntensity = 1.0;
-              obj.material.roughness = obj.material.userData?.originalRoughness || obj.material.roughness;
-              obj.material.metalness = obj.material.userData?.originalMetalness || obj.material.metalness;
-            }
-          }
-        });
+  //       // Materials quality
+  //       this.scene.traverse(obj => {
+  //         if (obj.material) {
+  //           // Enable all material features
+  //           if (Array.isArray(obj.material)) {
+  //             obj.material.forEach(mat => {
+  //               if (mat.isMeshStandardMaterial) {
+  //                 mat.envMapIntensity = 1.0;
+  //                 mat.roughness = mat.userData?.originalRoughness || mat.roughness;
+  //                 mat.metalness = mat.userData?.originalMetalness || mat.metalness;
+  //               }
+  //             });
+  //           } else if (obj.material.isMeshStandardMaterial) {
+  //             obj.material.envMapIntensity = 1.0;
+  //             obj.material.roughness = obj.material.userData?.originalRoughness || obj.material.roughness;
+  //             obj.material.metalness = obj.material.userData?.originalMetalness || obj.material.metalness;
+  //           }
+  //         }
+  //       });
 
-        // Lighting quality
-        this.scene.traverse(obj => {
-          if (obj.isLight) {
-            obj.castShadow = settings.shadows;
-            if (obj.shadow) {
-              obj.shadow.mapSize.width = 2048;
-              obj.shadow.mapSize.height = 2048;
-              obj.shadow.bias = -0.0001;
-            }
-          }
-        });
+  //       // Lighting quality
+  //       this.scene.traverse(obj => {
+  //         if (obj.isLight) {
+  //           obj.castShadow = settings.shadows;
+  //           if (obj.shadow) {
+  //             obj.shadow.mapSize.width = 2048;
+  //             obj.shadow.mapSize.height = 2048;
+  //             obj.shadow.bias = -0.0001;
+  //           }
+  //         }
+  //       });
 
-        // Set maximum anisotropy for textures (reduces blur at angles)
-        const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy();
-        this.scene.traverse(obj => {
-          if (obj.material) {
-            const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-            materials.forEach(mat => {
-              if (mat.map) {
-                mat.map.anisotropy = maxAnisotropy;
-                mat.map.needsUpdate = true;
-              }
-            });
-          }
-        });
-
-
-        if (this.visualEffects) {
-          this.visualEffects.applyQualityLevel(level);
-        }
+  //       // Set maximum anisotropy for textures (reduces blur at angles)
+  //       const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy();
+  //       this.scene.traverse(obj => {
+  //         if (obj.material) {
+  //           const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+  //           materials.forEach(mat => {
+  //             if (mat.map) {
+  //               mat.map.anisotropy = maxAnisotropy;
+  //               mat.map.needsUpdate = true;
+  //             }
+  //           });
+  //         }
+  //       });
 
 
-        // Physics quality
-        this.physics.simulationDetail = 2; // Higher detail physics
-        this.physics.maxSimulationSteps = 10; // More physics steps
+  //       if (this.visualEffects) {
+  //         this.visualEffects.applyQualityLevel(level);
+  //       }
 
-        break;
 
-      case 'medium':
-        // Renderer settings
-        this.renderer.shadowMap.enabled = settings.shadows;
-        this.renderer.shadowMap.type = THREE.PCFShadowMap; // Medium quality shadows
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped device pixel ratio
+  //       // Physics quality
+  //       this.physics.simulationDetail = 2; // Higher detail physics
+  //       this.physics.maxSimulationSteps = 10; // More physics steps
 
-        // Texture settings
-        this.textureMultiplier = 0.75; // 75% resolution textures
+  //       break;
 
-        // View distance settings
-        this.renderDistance = 60; // Medium view distance
+  //     case 'medium':
+  //       // Renderer settings
+  //       this.renderer.shadowMap.enabled = settings.shadows;
+  //       this.renderer.shadowMap.type = THREE.PCFShadowMap; // Medium quality shadows
+  //       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped device pixel ratio
 
-        // Materials quality
-        this.scene.traverse(obj => {
-          if (obj.material) {
-            // Medium material features
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach(mat => {
-                if (mat.isMeshStandardMaterial) {
-                  // Store original values if first time
-                  if (!mat.userData) mat.userData = {};
-                  if (mat.userData.originalRoughness === undefined)
-                    mat.userData.originalRoughness = mat.roughness;
-                  if (mat.userData.originalMetalness === undefined)
-                    mat.userData.originalMetalness = mat.metalness;
+  //       // Texture settings
+  //       this.textureMultiplier = 0.75; // 75% resolution textures
 
-                  mat.envMapIntensity = 0.7;
-                  mat.roughness = Math.min(0.95, mat.userData.originalRoughness * 1.2); // Increase roughness
-                  mat.metalness = mat.userData.originalMetalness * 0.9; // Decrease metalness
-                }
-              });
-            } else if (obj.material.isMeshStandardMaterial) {
-              // Store original values if first time
-              if (!obj.material.userData) obj.material.userData = {};
-              if (obj.material.userData.originalRoughness === undefined)
-                obj.material.userData.originalRoughness = obj.material.roughness;
-              if (obj.material.userData.originalMetalness === undefined)
-                obj.material.userData.originalMetalness = obj.material.metalness;
+  //       // View distance settings
+  //       this.renderDistance = 60; // Medium view distance
 
-              obj.material.envMapIntensity = 0.7;
-              obj.material.roughness = Math.min(0.95, obj.material.userData.originalRoughness * 1.2);
-              obj.material.metalness = obj.material.userData.originalMetalness * 0.9;
-            }
-          }
-        });
+  //       // Materials quality
+  //       this.scene.traverse(obj => {
+  //         if (obj.material) {
+  //           // Medium material features
+  //           if (Array.isArray(obj.material)) {
+  //             obj.material.forEach(mat => {
+  //               if (mat.isMeshStandardMaterial) {
+  //                 // Store original values if first time
+  //                 if (!mat.userData) mat.userData = {};
+  //                 if (mat.userData.originalRoughness === undefined)
+  //                   mat.userData.originalRoughness = mat.roughness;
+  //                 if (mat.userData.originalMetalness === undefined)
+  //                   mat.userData.originalMetalness = mat.metalness;
 
-        // Lighting quality
-        this.scene.traverse(obj => {
-          if (obj.isLight) {
-            obj.castShadow = settings.shadows;
-            if (obj.shadow) {
-              obj.shadow.mapSize.width = 1024;
-              obj.shadow.mapSize.height = 1024;
-              obj.shadow.bias = -0.0005;
-            }
-          }
-        });
+  //                 mat.envMapIntensity = 0.7;
+  //                 mat.roughness = Math.min(0.95, mat.userData.originalRoughness * 1.2); // Increase roughness
+  //                 mat.metalness = mat.userData.originalMetalness * 0.9; // Decrease metalness
+  //               }
+  //             });
+  //           } else if (obj.material.isMeshStandardMaterial) {
+  //             // Store original values if first time
+  //             if (!obj.material.userData) obj.material.userData = {};
+  //             if (obj.material.userData.originalRoughness === undefined)
+  //               obj.material.userData.originalRoughness = obj.material.roughness;
+  //             if (obj.material.userData.originalMetalness === undefined)
+  //               obj.material.userData.originalMetalness = obj.material.metalness;
 
-        // Medium anisotropy for textures
-        const medAnisotropy = Math.max(4, Math.floor(this.renderer.capabilities.getMaxAnisotropy() / 2));
-        this.scene.traverse(obj => {
-          if (obj.material) {
-            const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-            materials.forEach(mat => {
-              if (mat.map) {
-                mat.map.anisotropy = medAnisotropy;
-                mat.map.needsUpdate = true;
-              }
-            });
-          }
-        });
+  //             obj.material.envMapIntensity = 0.7;
+  //             obj.material.roughness = Math.min(0.95, obj.material.userData.originalRoughness * 1.2);
+  //             obj.material.metalness = obj.material.userData.originalMetalness * 0.9;
+  //           }
+  //         }
+  //       });
 
-        // Medium bloom if available
-        // if (this.bloomPass) {
-        //   this.bloomPass.enabled = true;
-        //   this.bloomPass.strength = 0.5;
-        //   this.bloomPass.radius = 0.35;
-        //   this.bloomPass.threshold = 0.9;
-        // }
+  //       // Lighting quality
+  //       this.scene.traverse(obj => {
+  //         if (obj.isLight) {
+  //           obj.castShadow = settings.shadows;
+  //           if (obj.shadow) {
+  //             obj.shadow.mapSize.width = 1024;
+  //             obj.shadow.mapSize.height = 1024;
+  //             obj.shadow.bias = -0.0005;
+  //           }
+  //         }
+  //       });
 
-        if (this.visualEffects) {
-          this.visualEffects.applyQualityLevel(level);
-        }
+  //       // Medium anisotropy for textures
+  //       const medAnisotropy = Math.max(4, Math.floor(this.renderer.capabilities.getMaxAnisotropy() / 2));
+  //       this.scene.traverse(obj => {
+  //         if (obj.material) {
+  //           const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+  //           materials.forEach(mat => {
+  //             if (mat.map) {
+  //               mat.map.anisotropy = medAnisotropy;
+  //               mat.map.needsUpdate = true;
+  //             }
+  //           });
+  //         }
+  //       });
 
-        // Physics quality
-        this.physics.simulationDetail = 1; // Medium detail physics
-        this.physics.maxSimulationSteps = 6; // Fewer physics steps
+  //       // Medium bloom if available
+  //       // if (this.bloomPass) {
+  //       //   this.bloomPass.enabled = true;
+  //       //   this.bloomPass.strength = 0.5;
+  //       //   this.bloomPass.radius = 0.35;
+  //       //   this.bloomPass.threshold = 0.9;
+  //       // }
 
-        break;
+  //       if (this.visualEffects) {
+  //         this.visualEffects.applyQualityLevel(level);
+  //       }
 
-      case 'low':
-        // Renderer settings
-        this.renderer.shadowMap.enabled = settings.shadows && this.renderer.capabilities.maxShadowMapSize > 1024;
-        this.renderer.shadowMap.type = THREE.BasicShadowMap; // Simple shadows
-        this.renderer.setPixelRatio(1); // Minimum pixel ratio
+  //       // Physics quality
+  //       this.physics.simulationDetail = 1; // Medium detail physics
+  //       this.physics.maxSimulationSteps = 6; // Fewer physics steps
 
-        // Texture settings
-        this.textureMultiplier = 0.5; // 50% resolution textures
+  //       break;
 
-        // View distance settings
-        this.renderDistance = 40; // Short view distance
+  //     case 'low':
+  //       // Renderer settings
+  //       this.renderer.shadowMap.enabled = settings.shadows && this.renderer.capabilities.maxShadowMapSize > 1024;
+  //       this.renderer.shadowMap.type = THREE.BasicShadowMap; // Simple shadows
+  //       this.renderer.setPixelRatio(1); // Minimum pixel ratio
 
-        // Materials quality
-        this.scene.traverse(obj => {
-          if (obj.material) {
-            // Simplify materials
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach(mat => {
-                if (mat.isMeshStandardMaterial) {
-                  // Store original values if first time
-                  if (!mat.userData) mat.userData = {};
-                  if (mat.userData.originalRoughness === undefined)
-                    mat.userData.originalRoughness = mat.roughness;
-                  if (mat.userData.originalMetalness === undefined)
-                    mat.userData.originalMetalness = mat.metalness;
+  //       // Texture settings
+  //       this.textureMultiplier = 0.5; // 50% resolution textures
 
-                  mat.envMapIntensity = 0.3;
-                  mat.roughness = Math.min(1.0, mat.userData.originalRoughness * 1.5); // Max roughness
-                  mat.metalness = mat.userData.originalMetalness * 0.7; // Minimal metalness
-                }
-              });
-            } else if (obj.material.isMeshStandardMaterial) {
-              // Store original values if first time
-              if (!obj.material.userData) obj.material.userData = {};
-              if (obj.material.userData.originalRoughness === undefined)
-                obj.material.userData.originalRoughness = obj.material.roughness;
-              if (obj.material.userData.originalMetalness === undefined)
-                obj.material.userData.originalMetalness = obj.material.metalness;
+  //       // View distance settings
+  //       this.renderDistance = 40; // Short view distance
 
-              obj.material.envMapIntensity = 0.3;
-              obj.material.roughness = Math.min(1.0, obj.material.userData.originalRoughness * 1.5);
-              obj.material.metalness = obj.material.userData.originalMetalness * 0.7;
-            }
+  //       // Materials quality
+  //       this.scene.traverse(obj => {
+  //         if (obj.material) {
+  //           // Simplify materials
+  //           if (Array.isArray(obj.material)) {
+  //             obj.material.forEach(mat => {
+  //               if (mat.isMeshStandardMaterial) {
+  //                 // Store original values if first time
+  //                 if (!mat.userData) mat.userData = {};
+  //                 if (mat.userData.originalRoughness === undefined)
+  //                   mat.userData.originalRoughness = mat.roughness;
+  //                 if (mat.userData.originalMetalness === undefined)
+  //                   mat.userData.originalMetalness = mat.metalness;
 
-            // Disable normal maps on low quality
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach(mat => {
-                if (mat.normalMap) {
-                  mat.normalScale.set(0, 0); // Disable normal map effect
-                }
-              });
-            } else if (obj.material.normalMap) {
-              obj.material.normalScale.set(0, 0);
-            }
-          }
-        });
+  //                 mat.envMapIntensity = 0.3;
+  //                 mat.roughness = Math.min(1.0, mat.userData.originalRoughness * 1.5); // Max roughness
+  //                 mat.metalness = mat.userData.originalMetalness * 0.7; // Minimal metalness
+  //               }
+  //             });
+  //           } else if (obj.material.isMeshStandardMaterial) {
+  //             // Store original values if first time
+  //             if (!obj.material.userData) obj.material.userData = {};
+  //             if (obj.material.userData.originalRoughness === undefined)
+  //               obj.material.userData.originalRoughness = obj.material.roughness;
+  //             if (obj.material.userData.originalMetalness === undefined)
+  //               obj.material.userData.originalMetalness = obj.material.metalness;
 
-        // Lighting quality
-        this.scene.traverse(obj => {
-          if (obj.isLight) {
-            obj.castShadow = settings.shadows;
-            if (obj.shadow) {
-              obj.shadow.mapSize.width = 512;
-              obj.shadow.mapSize.height = 512;
-              obj.shadow.bias = -0.001;
-            }
+  //             obj.material.envMapIntensity = 0.3;
+  //             obj.material.roughness = Math.min(1.0, obj.material.userData.originalRoughness * 1.5);
+  //             obj.material.metalness = obj.material.userData.originalMetalness * 0.7;
+  //           }
 
-            // Reduce light intensity for point and spot lights
-            if (obj.isPointLight || obj.isSpotLight) {
-              if (!obj.userData) obj.userData = {};
-              if (obj.userData.originalIntensity === undefined)
-                obj.userData.originalIntensity = obj.intensity;
-              obj.intensity = obj.userData.originalIntensity * 0.8;
-            }
-          }
-        });
+  //           // Disable normal maps on low quality
+  //           if (Array.isArray(obj.material)) {
+  //             obj.material.forEach(mat => {
+  //               if (mat.normalMap) {
+  //                 mat.normalScale.set(0, 0); // Disable normal map effect
+  //               }
+  //             });
+  //           } else if (obj.material.normalMap) {
+  //             obj.material.normalScale.set(0, 0);
+  //           }
+  //         }
+  //       });
 
-        // Low anisotropy for textures
-        this.scene.traverse(obj => {
-          if (obj.material) {
-            const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-            materials.forEach(mat => {
-              if (mat.map) {
-                mat.map.anisotropy = 1; // Lowest possible value
-                mat.map.needsUpdate = true;
-              }
-            });
-          }
-        });
+  //       // Lighting quality
+  //       this.scene.traverse(obj => {
+  //         if (obj.isLight) {
+  //           obj.castShadow = settings.shadows;
+  //           if (obj.shadow) {
+  //             obj.shadow.mapSize.width = 512;
+  //             obj.shadow.mapSize.height = 512;
+  //             obj.shadow.bias = -0.001;
+  //           }
 
-        // Disable bloom for performance
-        // if (this.bloomPass) {
-        //   this.bloomPass.enabled = false;
-        // }
+  //           // Reduce light intensity for point and spot lights
+  //           if (obj.isPointLight || obj.isSpotLight) {
+  //             if (!obj.userData) obj.userData = {};
+  //             if (obj.userData.originalIntensity === undefined)
+  //               obj.userData.originalIntensity = obj.intensity;
+  //             obj.intensity = obj.userData.originalIntensity * 0.8;
+  //           }
+  //         }
+  //       });
 
-        if (this.visualEffects) {
-          this.visualEffects.applyQualityLevel(level);
-        }
+  //       // Low anisotropy for textures
+  //       this.scene.traverse(obj => {
+  //         if (obj.material) {
+  //           const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+  //           materials.forEach(mat => {
+  //             if (mat.map) {
+  //               mat.map.anisotropy = 1; // Lowest possible value
+  //               mat.map.needsUpdate = true;
+  //             }
+  //           });
+  //         }
+  //       });
 
-        // Physics quality
-        this.physics.simulationDetail = 0; // Lowest detail physics
-        this.physics.maxSimulationSteps = 3; // Minimal physics steps
+  //       // Disable bloom for performance
+  //       // if (this.bloomPass) {
+  //       //   this.bloomPass.enabled = false;
+  //       // }
 
-        break;
-    }
+  //       if (this.visualEffects) {
+  //         this.visualEffects.applyQualityLevel(level);
+  //       }
 
-    // Update render distance
-    this.updateRenderDistance();
+  //       // Physics quality
+  //       this.physics.simulationDetail = 0; // Lowest detail physics
+  //       this.physics.maxSimulationSteps = 3; // Minimal physics steps
 
-    // Update FPS counter to show quality level
-    if (this.stats && this.stats.dom) {
-      // Add or update quality indicator
-      let qualityIndicator = this.stats.dom.querySelector('.quality-level');
-      if (!qualityIndicator) {
-        qualityIndicator = document.createElement('div');
-        qualityIndicator.className = 'quality-level';
-        qualityIndicator.style.cssText = `
-        position: absolute;
-        top: 48px;
-        right: 0;
-        background: rgba(0,0,0,0.5);
-        color: white;
-        padding: 2px 5px;
-        font-size: 10px;
-        border-radius: 0 0 0 3px;
-      `;
-        this.stats.dom.appendChild(qualityIndicator);
-      }
+  //       break;
+  //   }
 
-      // Set color based on quality level
-      const levelColors = {
-        high: '#4CAF50',
-        medium: '#2196F3',
-        low: '#FF9800'
-      };
+  //   // Update render distance
+  //   this.updateRenderDistance();
 
-      qualityIndicator.textContent = level.toUpperCase();
-      qualityIndicator.style.color = levelColors[level] || 'white';
-    }
+  //   // Update FPS counter to show quality level
+  //   if (this.stats && this.stats.dom) {
+  //     // Add or update quality indicator
+  //     let qualityIndicator = this.stats.dom.querySelector('.quality-level');
+  //     if (!qualityIndicator) {
+  //       qualityIndicator = document.createElement('div');
+  //       qualityIndicator.className = 'quality-level';
+  //       qualityIndicator.style.cssText = `
+  //       position: absolute;
+  //       top: 48px;
+  //       right: 0;
+  //       background: rgba(0,0,0,0.5);
+  //       color: white;
+  //       padding: 2px 5px;
+  //       font-size: 10px;
+  //       border-radius: 0 0 0 3px;
+  //     `;
+  //       this.stats.dom.appendChild(qualityIndicator);
+  //     }
 
-    console.log(`Quality level set to: ${level}`);
-    this.optimizeRenderer();
-    this.updateQualityIndicator();
-    return level;
-  }
+  //     // Set color based on quality level
+  //     const levelColors = {
+  //       ultra: '#f7f7e1',
+  //       high: '#4CAF50',
+  //       medium: '#2196F3',
+  //       low: '#FF9800'
+  //     };
+
+  //     qualityIndicator.textContent = level.toUpperCase();
+  //     qualityIndicator.style.color = levelColors[level] || 'white';
+  //   }
+
+  //   console.log(`Quality level set to: ${level}`);
+  //   this.optimizeRenderer();
+  //   this.updateQualityIndicator();
+  //   return level;
+  // }
 
   // Add this helper method to implement render distance
+  
+  
+setQualityLevel(level, options = {}) {
+  console.log(`Setting quality level to: ${level}`);
+  
+  // Store the quality level
+  this.qualityLevel = level;
+  
+  // Default options
+  const settings = {
+    shadows: options.shadows !== undefined ? options.shadows : (level !== 'low'),
+    antialias: options.antialias !== undefined ? options.antialias : (level !== 'low'),
+    highQualityTextures: options.highQualityTextures !== undefined ? options.highQualityTextures : (level === 'high' || level === 'ultra'),
+    ambientOcclusion: options.ambientOcclusion !== undefined ? options.ambientOcclusion : (level === 'high' || level === 'ultra')
+  };
+  
+  // Apply settings based on quality level
+  switch (level) {
+    case 'ultra':
+      // Ultra-specific settings
+      this.renderDistance = 150; // Extended render distance
+      this.textureMultiplier = 2.0; // Higher resolution textures
+      this.physics.simulationDetail = 3; // Highest physics detail
+      this.physics.maxSimulationSteps = 12; // More physics steps
+      
+      // Enable advanced rendering features for ultra - WITH SAFETY CHECKS
+      if (this.visualEffects) {
+        // Only call methods if they exist
+        if (typeof this.visualEffects.setEffectQuality === 'function') {
+          this.visualEffects.setEffectQuality('ultra');
+        }
+        
+        // Check for specific effect methods
+        if (typeof this.visualEffects.setBloomIntensity === 'function') {
+          this.visualEffects.setBloomIntensity(1.5);
+        }
+      }
+      
+      // Day/night cycle enhancements
+      if (this.dayNightCycle) {
+        if (typeof this.dayNightCycle.setQuality === 'function') {
+          this.dayNightCycle.setQuality('ultra');
+        }
+        
+        // Check for volumetric lighting method
+        if (typeof this.dayNightCycle.enableVolumetricLighting === 'function') {
+          this.dayNightCycle.enableVolumetricLighting(true);
+        }
+        
+        // Check for shadow quality method
+        if (typeof this.dayNightCycle.setShadowQuality === 'function') {
+          this.dayNightCycle.setShadowQuality('ultra');
+        }
+      }
+      break;
+      
+    case 'high':
+      this.renderDistance = 100;
+      this.textureMultiplier = 1.5;
+      this.physics.simulationDetail = 2;
+      this.physics.maxSimulationSteps = 10;
+      
+      // WITH SAFETY CHECKS
+      if (this.visualEffects && typeof this.visualEffects.setEffectQuality === 'function') {
+        this.visualEffects.setEffectQuality('high');
+      }
+      
+      if (this.dayNightCycle) {
+        if (typeof this.dayNightCycle.setQuality === 'function') {
+          this.dayNightCycle.setQuality('high');
+        }
+        if (typeof this.dayNightCycle.setShadowQuality === 'function') {
+          this.dayNightCycle.setShadowQuality('high');
+        }
+      }
+      break;
+      
+    case 'medium':
+      // Medium settings
+      this.renderDistance = 80;
+      this.textureMultiplier = 1.0;
+      this.physics.simulationDetail = 1;
+      this.physics.maxSimulationSteps = 8;
+      
+      if (this.visualEffects && typeof this.visualEffects.setEffectQuality === 'function') {
+        this.visualEffects.setEffectQuality('medium');
+      }
+      
+      if (this.dayNightCycle && typeof this.dayNightCycle.setQuality === 'function') {
+        this.dayNightCycle.setQuality('medium');
+      }
+      break;
+      
+    case 'low':
+      // Low settings for performance
+      this.renderDistance = 50;
+      this.textureMultiplier = 0.75;
+      this.physics.simulationDetail = 0;
+      this.physics.maxSimulationSteps = 5;
+      
+      if (this.visualEffects && typeof this.visualEffects.setEffectQuality === 'function') {
+        this.visualEffects.setEffectQuality('low');
+      }
+      
+      if (this.dayNightCycle && typeof this.dayNightCycle.setQuality === 'function') {
+        this.dayNightCycle.setQuality('low');
+      }
+      break;
+  }
+  
+  // Update the renderer with new quality settings
+  this.optimizeRenderer();
+  
+  // Apply shadow settings if renderer exists
+  if (this.renderer) {
+    this.renderer.shadowMap.enabled = settings.shadows;
+    if (settings.shadows) {
+      this.renderer.shadowMap.type = level === 'ultra' ? 
+        THREE.PCFSoftShadowMap : 
+        (level === 'high' ? THREE.PCFShadowMap : THREE.BasicShadowMap);
+    }
+  }
+  
+  // Update all textures based on quality
+  this.updateTexturesForQualityLevel(level);
+  
+  // Update object visibility with new render distance
+  if (typeof this.updateObjectVisibility === 'function') {
+    this.updateObjectVisibility();
+  }
+  
+  // Update quality indicator if available
+  if (this.showStats) {
+    this.updateQualityIndicator();
+  }
+  
+  console.log(`Quality level set to: ${level} with render distance: ${this.renderDistance}`);
+}
+  
   updateRenderDistance() {
     const distance = this.renderDistance || 50;
 
@@ -6464,6 +6666,130 @@ this.gameState = 'initializing';
     });
   }
 
+  // Add this helper method for ultra quality particle enhancements
+enhanceParticleSystem(particleSystem, scaleFactor) {
+  if (!particleSystem || !particleSystem.geometry) return;
+  
+  // Save current attributes
+  const oldPositions = particleSystem.geometry.getAttribute('position').array;
+  const oldColors = particleSystem.geometry.getAttribute('color')?.array;
+  const oldSizes = particleSystem.geometry.getAttribute('size')?.array;
+  
+  // Calculate new particle count
+  const oldCount = oldPositions.length / 3;
+  const newCount = Math.floor(oldCount * scaleFactor);
+  const additionalCount = newCount - oldCount;
+  
+  if (additionalCount <= 0) return;
+  
+  // Create new attribute arrays
+  const newPositions = new Float32Array(newCount * 3);
+  let newColors = null;
+  let newSizes = null;
+  
+  if (oldColors) {
+    newColors = new Float32Array(newCount * 3);
+  }
+  
+  if (oldSizes) {
+    newSizes = new Float32Array(newCount);
+  }
+  
+  // Copy existing particles
+  newPositions.set(oldPositions);
+  if (oldColors) newColors.set(oldColors);
+  if (oldSizes) newSizes.set(oldSizes);
+  
+  // Add new particles with similar properties to existing ones
+  for (let i = 0; i < additionalCount; i++) {
+    // Pick a random existing particle to copy from
+    const sourceIdx = Math.floor(Math.random() * oldCount);
+    const targetIdx = oldCount + i;
+    
+    // Copy position with some variation
+    newPositions[targetIdx * 3] = oldPositions[sourceIdx * 3] + (Math.random() - 0.5) * 0.1;
+    newPositions[targetIdx * 3 + 1] = oldPositions[sourceIdx * 3 + 1] + (Math.random() - 0.5) * 0.1;
+    newPositions[targetIdx * 3 + 2] = oldPositions[sourceIdx * 3 + 2] + (Math.random() - 0.5) * 0.1;
+    
+    // Copy color if exists
+    if (newColors) {
+      newColors[targetIdx * 3] = oldColors[sourceIdx * 3];
+      newColors[targetIdx * 3 + 1] = oldColors[sourceIdx * 3 + 1];
+      newColors[targetIdx * 3 + 2] = oldColors[sourceIdx * 3 + 2];
+    }
+    
+    // Copy size if exists
+    if (newSizes) {
+      newSizes[targetIdx] = oldSizes[sourceIdx] * (0.8 + Math.random() * 0.4); // Some size variation
+    }
+  }
+  
+  // Create new geometry with enhanced attributes
+  const newGeometry = new THREE.BufferGeometry();
+  newGeometry.setAttribute('position', new THREE.Float32BufferAttribute(newPositions, 3));
+  if (newColors) {
+    newGeometry.setAttribute('color', new THREE.Float32BufferAttribute(newColors, 3));
+  }
+  if (newSizes) {
+    newGeometry.setAttribute('size', new THREE.Float32BufferAttribute(newSizes, 1));
+  }
+  
+  // Keep any other attributes from the original
+  for (const key in particleSystem.geometry.attributes) {
+    if (!['position', 'color', 'size'].includes(key)) {
+      newGeometry.setAttribute(key, particleSystem.geometry.attributes[key]);
+    }
+  }
+  
+  // Replace geometry
+  particleSystem.geometry.dispose();
+  particleSystem.geometry = newGeometry;
+}
+
+// Helper to update textures based on quality level
+updateTexturesForQualityLevel(level) {
+  const textureScale = level === 'ultra' ? 2.0 : 
+                        level === 'high' ? 1.5 : 
+                        level === 'medium' ? 1.0 : 0.5;
+  
+  // Update all materials in scene with texture settings
+  this.scene.traverse(object => {
+    if (!object.material) return;
+    
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    
+    materials.forEach(material => {
+      // Skip materials without textures
+      if (!material.map) return;
+      
+      // Adjust anisotropy based on quality
+      const renderer = this.renderer;
+      if (renderer && material.map) {
+        const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+        
+        if (level === 'ultra') {
+          material.map.anisotropy = maxAnisotropy;
+        } else if (level === 'high') {
+          material.map.anisotropy = maxAnisotropy / 2;
+        } else if (level === 'medium') {
+          material.map.anisotropy = maxAnisotropy / 4;
+        } else {
+          material.map.anisotropy = 1; // No anisotropic filtering for low
+        }
+        
+        // Update mipmapping
+        if (level === 'ultra' || level === 'high') {
+          material.map.minFilter = THREE.LinearMipmapLinearFilter;
+        } else {
+          material.map.minFilter = THREE.LinearMipmapNearestFilter;
+        }
+        
+        material.map.needsUpdate = true;
+      }
+    });
+  });
+}
+
   // Add this method to Scene3DController
   optimizeParticleSystems() {
     if (!this.scene) return;
@@ -6471,6 +6797,7 @@ this.gameState = 'initializing';
     // Maximum number of active particles based on quality level
     const qualityLevel = this.qualityLevel || 'medium';
     const maxParticles = {
+      ultra: 1500,
       high: 1000,
       medium: 500,
       low: 200
@@ -7065,23 +7392,99 @@ this.gameState = 'initializing';
     });
   }
 
-  initializeDayNightCycle() {
+  // initializeDayNightCycle() {
+  //   // Load the DayNightCycle script dynamically if not already loaded
+  //   if (typeof DayNightCycle === 'undefined') {
+  //     // Create script element
+  //     const script = document.createElement('script');
+  //     script.src = 'js/classes/day-night-cycle.js';
+
+  //     script.onload = () => {
+  //       // Create the cycle when script is loaded
+  //       this.createDayNightCycle();
+  //       this.createPartyButton();
+  //     };
+
+  //     script.onerror = (err) => {
+  //       console.error('Could not load day-night cycle script', err);
+  //     };
+
+  //     document.head.appendChild(script);
+  //   } else {
+  //     // Script is already loaded, create directly
+  //     this.createDayNightCycle();
+  //     this.createPartyButton();
+  //   }
+  // }
+
+
+
+  // Helper method to create the cycle
+  // createDayNightCycle() {
+  //   // Create the cycle
+  //   this.dayNightCycle = new DayNightCycle(this);
+
+  //   // Start with appropriate time based on preference or default to noon
+  //   const startTime = this.preferences?.timeOfDay || 12;
+  //   this.dayNightCycle.setTime(startTime);
+
+  //   // Start cycle if auto-play is enabled in preferences
+  //   if (this.preferences?.autoPlayDayNight) {
+  //     this.dayNightCycle.start();
+  //   }
+
+  //   // Create lighting controls in UI
+  //   const dayNightButton = document.createElement('div');
+  //   dayNightButton.className = 'time-control-button';
+  //   dayNightButton.setAttribute('data-tooltip', 'Day/Night Cycle');
+  //   dayNightButton.innerHTML = `<span class="material-icons">brightness_4</span>`;
+  //   dayNightButton.style.cssText = `
+  //   position: absolute;
+  //   top: 100px;
+  //   right: 10px;
+  //   background: rgba(0, 0, 0, 0.5);
+  //   color: white;
+  //   border-radius: 50%;
+  //   width: 40px;
+  //   height: 40px;
+  //   display: flex;
+  //   align-items: center;
+  //   justify-content: center;
+  //   cursor: pointer;
+  //   z-index: 1000;
+  // `;
+
+  //   // Add click handler to show controls
+  //   dayNightButton.addEventListener('click', () => {
+  //     this.dayNightCycle.showControls();
+  //   });
+
+  //   // Add to 3D view
+  //   const container = document.querySelector('.drawer-3d-view');
+  //   if (container) {
+  //     container.appendChild(dayNightButton);
+  //   }
+
+  //   console.log('Day/Night cycle initialized');
+  // }
+
+    initializeDayNightCycle() {
     // Load the DayNightCycle script dynamically if not already loaded
     if (typeof DayNightCycle === 'undefined') {
       // Create script element
       const script = document.createElement('script');
       script.src = 'js/classes/day-night-cycle.js';
-
+  
       script.onload = () => {
         // Create the cycle when script is loaded
         this.createDayNightCycle();
         this.createPartyButton();
       };
-
+  
       script.onerror = (err) => {
         console.error('Could not load day-night cycle script', err);
       };
-
+  
       document.head.appendChild(script);
     } else {
       // Script is already loaded, create directly
@@ -7089,53 +7492,65 @@ this.gameState = 'initializing';
       this.createPartyButton();
     }
   }
-
+  
   // Helper method to create the cycle
   createDayNightCycle() {
     // Create the cycle
     this.dayNightCycle = new DayNightCycle(this);
-
-    // Start with appropriate time based on preference or default to noon
+  
+    // Set default time from preferences or default to noon
     const startTime = this.preferences?.timeOfDay || 12;
     this.dayNightCycle.setTime(startTime);
-
-    // Start cycle if auto-play is enabled in preferences
-    if (this.preferences?.autoPlayDayNight) {
+    
+    // Check if we have a stored preference for auto-play
+    // If we don't have a preference yet, default to TRUE (enabled)
+    const shouldAutoStart = this.preferences?.autoPlayDayNight !== undefined ? 
+      this.preferences.autoPlayDayNight : true;
+    
+    // Start cycle based on the above logic 
+    if (shouldAutoStart) {
+      console.log('Auto-starting day-night cycle by default');
       this.dayNightCycle.start();
+      
+      // Update preferences to remember this setting
+      if (this.preferences) {
+        this.preferences.autoPlayDayNight = true;
+        localStorage.setItem('appPreferences', JSON.stringify(this.preferences));
+      }
     }
-
+  
     // Create lighting controls in UI
     const dayNightButton = document.createElement('div');
     dayNightButton.className = 'time-control-button';
     dayNightButton.setAttribute('data-tooltip', 'Day/Night Cycle');
     dayNightButton.innerHTML = `<span class="material-icons">brightness_4</span>`;
     dayNightButton.style.cssText = `
-    position: absolute;
-    top: 100px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 1000;
-  `;
-
+      position: absolute;
+      top: 100px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1000;
+    `;
+  
     // Add click handler to show controls
     dayNightButton.addEventListener('click', () => {
       this.dayNightCycle.showControls();
     });
-
+  
     // Add to 3D view
     const container = document.querySelector('.drawer-3d-view');
     if (container) {
       container.appendChild(dayNightButton);
     }
-
+  
     console.log('Day/Night cycle initialized');
   }
 

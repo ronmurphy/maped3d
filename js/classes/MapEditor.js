@@ -6061,24 +6061,25 @@ showPreferencesDialog() {
             Running performance test...
           </div>
         </div>
-        
+
         <div style="margin-top: 8px; padding: 8px; background: #fff8e1; border-left: 3px solid #FFC107; color: #795548; font-size: 0.9em;">
           <strong>Note:</strong> For best results, run this test in 3D view mode. Changes will be applied when you enter 3D view.
         </div>
       </div>
-      
+
       <sl-divider></sl-divider>
-      
+
       <div>
-        <sl-select id="qualityPreset" label="Quality Preset" value="auto">
-          <sl-option value="auto">Automatic (Based on Test)</sl-option>
-          <sl-option value="low">Low</sl-option>
-          <sl-option value="medium">Medium</sl-option>
-          <sl-option value="high">High</sl-option>
-        </sl-select>
+<sl-select id="qualityPreset" label="Quality Preset" value="auto">
+  <sl-option value="auto">Automatic (Based on Test)</sl-option>
+  <sl-option value="ultra">Ultra</sl-option>
+  <sl-option value="high">High</sl-option>
+  <sl-option value="medium">Medium</sl-option>
+  <sl-option value="low">Low</sl-option>
+</sl-select>
       </div>
     </div>
-    
+
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
       <sl-switch id="shadowsEnabled" checked>Shadows</sl-switch>
       <sl-switch id="antialiasEnabled" checked>Anti-Aliasing</sl-switch>
@@ -6089,6 +6090,7 @@ showPreferencesDialog() {
         <div style="margin-bottom: 16px;">
       <sl-select id="fpsLimit" label="FPS Limit" value="${this.fpsLimit || 0}">
         <sl-option value="0">No Limit</sl-option>
+        <sl-option value="60">90 FPS</sl-option>
         <sl-option value="60">60 FPS</sl-option>
         <sl-option value="30">30 FPS</sl-option>
         <sl-option value="15">15 FPS</sl-option>
@@ -6200,9 +6202,10 @@ environmentSection.innerHTML = `
       // Update UI with result
       qualityLevelSpan.textContent = result.qualityLevel.charAt(0).toUpperCase() + result.qualityLevel.slice(1);
       qualityLevelSpan.style.color = {
-        low: '#FF9800',
+        ultra: '#9C27B0', // Use purple for ultra quality
+        high: '#4CAF50',
         medium: '#2196F3',
-        high: '#4CAF50'
+        low: '#FF9800'
       }[result.qualityLevel] || '#4CAF50';
       
       // Update quality preset dropdown
@@ -6259,9 +6262,10 @@ loadPreferencesIntoDialog(dialog) {
     const qualityLevelSpan = dialog.querySelector('#qualityLevel');
     qualityLevelSpan.textContent = prefs.detectedQuality.charAt(0).toUpperCase() + prefs.detectedQuality.slice(1);
     qualityLevelSpan.style.color = {
-      low: '#FF9800',
+      ultra: '#9C27B0', // Use purple for ultra quality
+      high: '#4CAF50',
       medium: '#2196F3',
-      high: '#4CAF50'
+      low: '#FF9800'
     }[prefs.detectedQuality] || '#4CAF50';
   }
 }
