@@ -46,9 +46,11 @@ class PartyManager {
     this.activeTab = 'active';
     this.starterCheckPerformed = false;
     this.initializeRelationshipSystem();
-this.initializeComboSystem();
+    this.initializeComboSystem();
 
-      // Try to connect to Scene3DController
+
+
+    // Try to connect to Scene3DController
       let connectionAttempts = 0;
       const tryConnect = () => {
         connectionAttempts++;
@@ -3180,70 +3182,6 @@ contentHtml += this.createComboAbilitiesSection(monster);
 
     content.innerHTML = contentHtml;
 
-  // ADD DEBUGGING CODE HERE - Monitor abilities container sizing
-// In PartyManager.js, update the debugging code
-// setTimeout(() => {
-//   const abilitiesContainer = content.querySelector('.abilities-container');
-//   const monsterAbilities = content.querySelector('.monster-abilities');
-  
-//   if (abilitiesContainer && monsterAbilities) {
-//     console.log("[LAYOUT DEBUG] Initial abilities container size:", {
-//       containerWidth: abilitiesContainer.offsetWidth,
-//       containerHeight: abilitiesContainer.offsetHeight,
-//       abilitiesWidth: monsterAbilities.offsetWidth,
-//       abilitiesHeight: monsterAbilities.offsetHeight,
-//       containerStyleWidth: window.getComputedStyle(abilitiesContainer).width,
-//       abilitiesStyleWidth: window.getComputedStyle(monsterAbilities).width,
-//       parentWidth: abilitiesContainer.parentElement.offsetWidth
-//     });
-    
-//     // Create ResizeObserver to monitor for size changes
-//     const resizeObserver = new ResizeObserver(entries => {
-//       for (const entry of entries) {
-//         console.log("[LAYOUT DEBUG] Container size changed:", {
-//           element: entry.target.className,
-//           width: entry.contentRect.width,
-//           height: entry.contentRect.height
-//         });
-        
-//         // Check layout direction based on width
-//         if (entry.target.classList.contains('monster-abilities')) {
-//           const gridComputedStyle = window.getComputedStyle(entry.target);
-//           console.log("[LAYOUT DEBUG] Grid template:", {
-//             columns: gridComputedStyle.gridTemplateColumns,
-//             rows: gridComputedStyle.gridTemplateRows
-//           });
-          
-//           // Check if layout became column instead of row
-//           if (gridComputedStyle.gridTemplateColumns.split(' ').length === 1) {
-//             console.warn("[LAYOUT DEBUG] Layout changed to single column!");
-//             console.log("[LAYOUT DEBUG] Container hierarchy:", {
-//               parent: entry.target.parentElement.className,
-//               parentWidth: entry.target.parentElement.offsetWidth,
-//               grandparent: entry.target.parentElement.parentElement.className,
-//               grandparentWidth: entry.target.parentElement.parentElement.offsetWidth
-//             });
-//           }
-//         }
-//       }
-//     });
-    
-//     // Observe both containers
-//     resizeObserver.observe(abilitiesContainer);
-//     resizeObserver.observe(monsterAbilities);
-    
-//     // Store observer in a property so it's not garbage collected
-//     if (!this._resizeObservers) this._resizeObservers = [];
-//     this._resizeObservers.push(resizeObserver);
-    
-//     // Removed problematic getEventListeners call
-//   } else {
-//     console.warn("[LAYOUT DEBUG] Could not find abilities containers");
-//   }
-// }, 100);
-
-
-
     const equipmentSlots = content.querySelectorAll('.equipment-slot');
     equipmentSlots.forEach(slot => {
       slot.addEventListener('mouseenter', () => {
@@ -3274,9 +3212,6 @@ contentHtml += this.createComboAbilitiesSection(monster);
         }
       });
     }
-
-
-
     // Assemble the view
     detailsView.appendChild(header);
     detailsView.appendChild(content);
@@ -5323,11 +5258,21 @@ connectToSceneInventory() {
     }
   }
 
+  // hasAvailableCombo(monsterId) {
+  //   // Get all available combos
+  //   const availableCombos = this.getAvailableComboAbilities ? 
+  //     this.getAvailableComboAbilities() : 
+  //     (this.partyManager?.getAvailableComboAbilities ? this.partyManager.getAvailableComboAbilities() : []);
+      
+  //   // Check if any combo includes this monster
+  //   return availableCombos?.some(combo => 
+  //     combo.monsters.some(m => m.id === monsterId)
+  //   ) || false;
+  // }
+
   hasAvailableCombo(monsterId) {
     // Get all available combos
-    const availableCombos = this.getAvailableComboAbilities ? 
-      this.getAvailableComboAbilities() : 
-      (this.partyManager?.getAvailableComboAbilities ? this.partyManager.getAvailableComboAbilities() : []);
+    const availableCombos = this.getAvailableComboAbilities();
       
     // Check if any combo includes this monster
     return availableCombos?.some(combo => 
@@ -5347,104 +5292,6 @@ connectToSceneInventory() {
     ) || [];
   }
 
-  // createComboAbilitiesSection(monster) {
-  //   // Get combos for this monster
-  //   const monsterCombos = this.getMonsterCombos(monster.id);
-    
-  //   // If no combos, return nothing
-  //   if (!monsterCombos || monsterCombos.length === 0) {
-  //     return '';
-  //   }
-    
-  //   // Create the combo abilities section HTML
-  //   let html = `
-  //   <div class="details-section">
-  //     <div class="details-section-title" style="display: flex; align-items: center;">
-  //       <span class="material-icons" style="font-size: 20px; margin-right: 8px; color: #4ade80;">group</span>
-  //       Combo Abilities
-  //     </div>
-  //     <div class="abilities-container" style="
-  //       background: #f0f9f0;
-  //       border-radius: 12px;
-  //       padding: 16px;
-  //       border: 1px solid #d1fae5;
-  //       width: 100%;
-  //       box-sizing: border-box;
-  //     ">
-  //       <div class="monster-abilities combo-abilities" style="
-  //         display: grid;
-  //         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  //         gap: 12px;
-  //         width: 100%;
-  //       ">
-  //   `;
-    
-  //   // Add each combo ability
-  //   monsterCombos.forEach(combo => {
-  //     // Find the partner monster
-  //     const partner = combo.monsters.find(m => m.id !== monster.id);
-      
-  //     // Background color based on combo type
-  //     let bgColor = 'rgba(74, 222, 128, 0.1)';
-  //     let iconColor = '#4ade80';
-  //     let icon = 'group';
-      
-  //     // Customize based on combo type
-  //     switch (combo.type) {
-  //       case 'attack':
-  //         bgColor = 'rgba(239, 68, 68, 0.1)';
-  //         iconColor = '#ef4444';
-  //         icon = 'sports_martial_arts';
-  //         break;
-  //       case 'area':
-  //         bgColor = 'rgba(245, 158, 11, 0.1)';
-  //         iconColor = '#f59e0b';
-  //         icon = 'blur_circular';
-  //         break;
-  //       case 'buff':
-  //         bgColor = 'rgba(16, 185, 129, 0.1)'; 
-  //         iconColor = '#10b981';
-  //         icon = 'upgrade';
-  //         break;
-  //     }
-      
-  //     html += `
-  //       <div class="ability-card combo-card" style="background: ${bgColor}; position: relative;">
-  //         <div class="ability-header">
-  //           <div class="ability-icon" style="color: ${iconColor};">
-  //             <span class="material-icons small">${icon}</span>
-  //           </div>
-  //           <div class="ability-title-row">
-  //             <div class="ability-title">${combo.name}</div>
-  //             ${combo.damage ? `<div class="ability-damage" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">${combo.damage}</div>` : ''}
-  //           </div>
-  //         </div>
-  //         <div class="ability-description">${combo.description || 'No description available.'}</div>
-          
-  //         <!-- Partner indicator -->
-  //         <div style="
-  //           display: flex;
-  //           align-items: center;
-  //           margin-top: 8px;
-  //           padding-top: 4px;
-  //           border-top: 1px solid rgba(0,0,0,0.05);
-  //           font-size: 0.75rem;
-  //         ">
-  //           <span class="material-icons" style="font-size: 12px; margin-right: 4px; color: ${iconColor};">people</span>
-  //           <span>With: ${partner ? partner.name : 'another monster'}</span>
-  //         </div>
-  //       </div>
-  //     `;
-  //   });
-    
-  //   html += `
-  //       </div>
-  //     </div>
-  //   </div>
-  //   `;
-    
-  //   return html;
-  // }
 
   createComboAbilitiesSection(monster) {
     // Get combos for this monster
@@ -6970,8 +6817,12 @@ testSaveLoad() {
   return true;
 }
 
-// Add this method to PartyManager class
 // getAvailableComboAbilities() {
+//   // Make sure the combo system is initialized
+//   if (!this.comboAbilities) {
+//     this.initializeComboSystem();
+//   }
+  
 //   const activeMonsters = this.party.active;
 //   const availableCombos = [];
   
@@ -6982,49 +6833,41 @@ testSaveLoad() {
 //       const monster2 = activeMonsters[j];
       
 //       // Get monster types
-//       const type1 = monster1.type || monster1.data?.basic?.type;
-//       const type2 = monster2.type || monster2.data?.basic?.type;
+//       const type1 = monster1.type || monster1.data?.basic?.type || '';
+//       const type2 = monster2.type || monster2.data?.basic?.type || '';
       
-//       // Check for beast-humanoid combo (Hunter's Bond)
-//       if ((type1 === 'Beast' && type2 === 'Humanoid') || 
-//           (type1 === 'Humanoid' && type2 === 'Beast')) {
-//         availableCombos.push({
-//           name: "Hunter's Bond",
-//           description: "Perfect coordination between beast and humanoid, granting extra attacks and improved accuracy.",
-//           type: "buff",
-//           damage: null,
-//           color: "#4ade80",
-//           icon: "group",
-//           monsters: [monster1, monster2]
-//         });
-//         console.log(`Found available combo: Hunter's Bond between ${monster1.name} and ${monster2.name}`);
-//       }
+//       if (!type1 || !type2) continue;
       
-//       // Add more combos based on types
-//       // Beast-Beast (Pack Tactics)
-//       if (type1 === 'Beast' && type2 === 'Beast') {
-//         availableCombos.push({
-//           name: "Pack Tactics",
-//           description: "Coordinated attacks that grant advantage and additional effects.",
-//           type: "attack",
-//           damage: "2d6",
-//           color: "#ef4444",
-//           icon: "sports_martial_arts",
-//           monsters: [monster1, monster2]
-//         });
-//       }
+//       // Create both possible type combinations to check
+//       const typePair1 = `${type1}-${type2}`;
+//       const typePair2 = `${type2}-${type1}`;
       
-//       // Elemental-Elemental (Elemental Fusion)
-//       if (type1 === 'Elemental' && type2 === 'Elemental') {
-//         availableCombos.push({
-//           name: "Elemental Fusion",
-//           description: "Combine elemental powers for devastating area effects.",
-//           type: "area",
-//           damage: "3d6",
-//           color: "#f59e0b",
-//           icon: "blur_circular",
-//           monsters: [monster1, monster2]
-//         });
+//       // Check if there's a combo defined for these types
+//       let combo = this.comboAbilities[typePair1] || this.comboAbilities[typePair2];
+      
+//       if (combo) {
+//         // Check if the monsters have the required affinity
+//         const affinityScore = this.calculateAffinity(monster1, monster2);
+//         const affinityLevel = this.getAffinityLevel(affinityScore);
+        
+//         // Convert levels to numeric for comparison
+//         const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'Neutral': 0 };
+//         const requiredLevel = levelValues[combo.requiredAffinity] || 0;
+//         const currentLevel = levelValues[affinityLevel] || 0;
+        
+//         if (currentLevel >= requiredLevel) {
+//           // Create a copy of the combo with the specific monsters
+//           const availableCombo = {
+//             ...combo,
+//             monsters: [monster1, monster2],
+//             id: `combo_${monster1.id}_${monster2.id}`
+//           };
+          
+//           availableCombos.push(availableCombo);
+//           console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
+//         } else {
+//           console.log(`${monster1.name} and ${monster2.name} have types matching ${combo.name} but insufficient affinity (need ${combo.requiredAffinity}, have ${affinityLevel})`);
+//         }
 //       }
 //     }
 //   }
@@ -7061,28 +6904,15 @@ getAvailableComboAbilities() {
       let combo = this.comboAbilities[typePair1] || this.comboAbilities[typePair2];
       
       if (combo) {
-        // Check if the monsters have the required affinity
-        const affinityScore = this.calculateAffinity(monster1, monster2);
-        const affinityLevel = this.getAffinityLevel(affinityScore);
+        // Create a copy of the combo with the specific monsters
+        const availableCombo = {
+          ...combo,
+          monsters: [monster1, monster2],
+          id: `combo_${monster1.id}_${monster2.id}`
+        };
         
-        // Convert levels to numeric for comparison
-        const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'Neutral': 0 };
-        const requiredLevel = levelValues[combo.requiredAffinity] || 0;
-        const currentLevel = levelValues[affinityLevel] || 0;
-        
-        if (currentLevel >= requiredLevel) {
-          // Create a copy of the combo with the specific monsters
-          const availableCombo = {
-            ...combo,
-            monsters: [monster1, monster2],
-            id: `combo_${monster1.id}_${monster2.id}`
-          };
-          
-          availableCombos.push(availableCombo);
-          console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
-        } else {
-          console.log(`${monster1.name} and ${monster2.name} have types matching ${combo.name} but insufficient affinity (need ${combo.requiredAffinity}, have ${affinityLevel})`);
-        }
+        availableCombos.push(availableCombo);
+        console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
       }
     }
   }
