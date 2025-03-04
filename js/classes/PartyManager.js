@@ -1943,7 +1943,9 @@ if (testBtn) {
         </p>
       </div>
     `;
-  
+    
+    this.renderPartyAffinityVisualization(detailsPanel);
+
     // Assemble the UI
     sidebar.appendChild(tabButtons);
     sidebar.appendChild(partyList);
@@ -3916,6 +3918,10 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
           </p>
         </div>
       `;
+
+      this.renderPartyAffinityVisualization(detailsPanel);
+
+
       } else {
         // Find the monster
         const monster = this.findMonster(monsterId);
@@ -6547,5 +6553,398 @@ testSaveLoad() {
     return this.relationshipMap.get(monsterId) || [];
   }
 
+  renderPartyAffinityVisualization(detailsPanel) {
+  // Only show visualization if we have at least 2 active monsters
+  if (!this.party.active || this.party.active.length < 2) {
+    console.log("Not enough active monsters for affinity visualization");
+    return false;
+  }
+
+  console.log(`Creating affinity visualization for ${this.party.active.length} active monsters`);
+
+  // Create container for the affinity visualization
+  const affinityContainer = document.createElement('div');
+  affinityContainer.className = 'affinity-visualization';
+  affinityContainer.style.cssText = `
+    padding: 24px 16px;
+    margin-top: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  `;
+
+  // Add heading
+  const heading = document.createElement('h3');
+  heading.style.cssText = `
+    margin: 0 0 16px 0;
+    font-size: 1.2rem;
+    text-align: center;
+    color: white;
+  `;
+  heading.innerHTML = `Party Affinity Network`;
+  affinityContainer.appendChild(heading);
+
+  // Add explanation text
+  const explanation = document.createElement('p');
+  explanation.style.cssText = `
+    margin: 0 0 24px 0;
+    font-size: 0.9rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  `;
+  explanation.innerHTML = `Monsters with matching types form affinities that provide combat bonuses. Stronger affinities provide greater bonuses when monsters fight together.`;
+  affinityContainer.appendChild(explanation);
+
+  // Calculate total party affinity bonus
+  let totalPartyBonus = 0;
+  let affinityPairs = [];
+
+  // Find all affinity relationships between active monsters
+  for (let i = 0; i < this.party.active.length; i++) {
+    const monster1 = this.party.active[i];
+    
+    for (let j = i + 1; j < this.party.active.length; j++) {
+      const monster2 = this.party.active[j];
+      
+      const bonus = this.getCombatModifier(monster1.id, monster2.id);
+      if (bonus !== 0) {
+        totalPartyBonus += bonus;
+        
+        // Get affinity level
+        const relationships = this.relationshipMap.get(monster1.id) || [];
+        const relationship = relationships.find(r => r.monsterId === monster2.id);
+        const affinityLevel = relationship ? relationship.level : 'None';
+        
+        affinityPairs.push({
+          monster1,
+          monster2,
+          bonus,
+          affinityLevel
+        });
+      }
+    }
+  }
+
+  console.log(`Found ${affinityPairs.length} affinity pairs with total bonus: ${totalPartyBonus}`);
+
+  // Create affinity network visualization
+  const networkContainer = document.createElement('div');
+  networkContainer.style.cssText = `
+    position: relative;
+    height: 280px;
+    margin-bottom: 24px;
+    width: 100%;
+  `;
+
+  // Function to get a color based on affinity level
+  const getAffinityColor = (level) => {
+    switch(level) {
+      case 'High': return '#4ade80'; // Green
+      case 'Medium': return '#60a5fa'; // Blue
+      case 'Low': return '#a78bfa'; // Purple
+      default: return '#d1d5db'; // Gray
+    }
+  };
+
+  // Add networkContainer to DOM early so we can get its dimensions
+  affinityContainer.appendChild(networkContainer);
+  
+  // Create SVG for connection lines
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  `;
+  networkContainer.appendChild(svg);
+
+  // Add this to detailsPanel first so we can get proper sizing
+  detailsPanel.appendChild(affinityContainer);
+
+  // Now use requestAnimationFrame to ensure DOM is updated before calculating positions
+  requestAnimationFrame(() => {
+    const activeMonsters = this.party.active;
+    
+    // Now we can safely get the container width
+    const containerWidth = networkContainer.offsetWidth || 500; // Fallback to 500 if still 0
+    console.log(`Network container width: ${containerWidth}px`);
+    
+    // Position active monsters in a circle with fixed values if needed
+    const radius = Math.min(120, containerWidth / 3);
+    const centerX = containerWidth / 2;
+    const centerY = 140;
+    
+    console.log(`Positioning monsters in circle: radius=${radius}, centerX=${centerX}, centerY=${centerY}`);
+    
+    // Create monster cards
+    activeMonsters.forEach((monster, index) => {
+      const angle = (index / activeMonsters.length) * Math.PI * 2;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      
+      console.log(`Monster ${index}: angle=${angle.toFixed(2)}, x=${x.toFixed(0)}, y=${y.toFixed(0)}`);
+
+      // Create card container with relative position for the absolute positioned card inside
+      const cardContainer = document.createElement('div');
+      cardContainer.className = 'network-monster-container';
+      cardContainer.style.cssText = `
+        position: absolute;
+        left: ${x - 50}px;
+        top: ${y - 50}px;
+        width: 100px;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 5;
+      `;
+
+      // Calculate tilt angle based on position
+      const tiltAngle = (Math.sin(angle) * 10);
+
+      // Create monster card
+      const miniCard = document.createElement('div');
+      miniCard.className = 'network-monster-card';
+      miniCard.setAttribute('data-monster-id', monster.id);
+      miniCard.style.cssText = `
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transform: rotate(${tiltAngle}deg);
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+      `;
+
+      // Add monster icon/avatar
+      const avatarBgColor = this.getMonsterTypeColor(monster.type);
+      const tokenSource = monster.token?.data || (typeof monster.token === 'string' ? monster.token : null);
+
+      const avatar = document.createElement('div');
+      avatar.style.cssText = `
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: ${avatarBgColor};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 6px;
+        border: 2px solid ${avatarBgColor};
+        color: white;
+        font-weight: bold;
+      `;
+
+      if (tokenSource) {
+        avatar.innerHTML = `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      } else {
+        avatar.textContent = monster.name.charAt(0);
+      }
+
+      // Add monster name
+      const name = document.createElement('div');
+      name.style.cssText = `
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-align: center;
+        color: #333;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      `;
+      name.textContent = monster.name;
+
+      // Add monster type badge
+      const typeBadge = document.createElement('div');
+      typeBadge.style.cssText = `
+        font-size: 0.6rem;
+        padding: 1px 6px;
+        background-color: ${avatarBgColor};
+        color: white;
+        border-radius: 20px;
+        position: absolute;
+        bottom: 4px;
+      `;
+      typeBadge.textContent = monster.type;
+
+      // Hover effect
+      miniCard.addEventListener('mouseenter', () => {
+        miniCard.style.transform = `rotate(${tiltAngle}deg) scale(1.1)`;
+        miniCard.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.4)';
+      });
+
+      miniCard.addEventListener('mouseleave', () => {
+        miniCard.style.transform = `rotate(${tiltAngle}deg)`;
+        miniCard.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+      });
+
+      // Click handler to show monster details
+      miniCard.addEventListener('click', () => {
+        // Find the monster card in the side panel and click it
+        const monsterCard = document.querySelector(`.monster-card[data-monster-id="${monster.id}"]`);
+        if (monsterCard) {
+          monsterCard.click();
+        }
+      });
+
+      // Assemble card
+      miniCard.appendChild(avatar);
+      miniCard.appendChild(name);
+      miniCard.appendChild(typeBadge);
+      cardContainer.appendChild(miniCard);
+      networkContainer.appendChild(cardContainer);
+
+      // Store position for drawing connection lines
+      monster.networkPosition = { x, y };
+    });
+
+    // Now draw connection lines
+    affinityPairs.forEach(pair => {
+      if (!pair.monster1.networkPosition || !pair.monster2.networkPosition) return;
+
+      const x1 = pair.monster1.networkPosition.x;
+      const y1 = pair.monster1.networkPosition.y;
+      const x2 = pair.monster2.networkPosition.x;
+      const y2 = pair.monster2.networkPosition.y;
+
+      // Draw connection line
+      const lineColor = getAffinityColor(pair.affinityLevel);
+      const lineWidth = pair.bonus > 5 ? 3 : (pair.bonus > 3 ? 2 : 1);
+      
+      // Calculate midpoint for the bonus badge
+      const midX = (x1 + x2) / 2;
+      const midY = (y1 + y2) / 2;
+      
+      // Draw the line with gradient
+      const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+      const gradientId = `affinity-gradient-${pair.monster1.id}-${pair.monster2.id}`;
+      gradient.setAttribute('id', gradientId);
+      gradient.setAttribute('x1', '0%');
+      gradient.setAttribute('y1', '0%');
+      gradient.setAttribute('x2', '100%');
+      gradient.setAttribute('y2', '100%');
+      
+      const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stop1.setAttribute('offset', '0%');
+      stop1.setAttribute('stop-color', lineColor);
+      stop1.setAttribute('stop-opacity', '0.4');
+      
+      const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stop2.setAttribute('offset', '50%');
+      stop2.setAttribute('stop-color', lineColor);
+      stop2.setAttribute('stop-opacity', '1');
+      
+      const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stop3.setAttribute('offset', '100%');
+      stop3.setAttribute('stop-color', lineColor);
+      stop3.setAttribute('stop-opacity', '0.4');
+      
+      gradient.appendChild(stop1);
+      gradient.appendChild(stop2);
+      gradient.appendChild(stop3);
+      
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+      
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1);
+      line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2);
+      line.setAttribute('y2', y2);
+      line.setAttribute('stroke', `url(#${gradientId})`);
+      line.setAttribute('stroke-width', lineWidth);
+      line.setAttribute('stroke-dasharray', '4 2');
+      
+      svg.appendChild(line);
+      
+      // Add affinity bonus badge
+      const bonusBadge = document.createElement('div');
+      bonusBadge.className = 'affinity-bonus-badge';
+      bonusBadge.style.cssText = `
+        position: absolute;
+        left: ${midX - 15}px;
+        top: ${midY - 10}px;
+        background: ${lineColor};
+        color: white;
+        border-radius: 20px;
+        padding: 2px 6px;
+        font-size: 0.65rem;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      `;
+      bonusBadge.innerHTML = `
+        <span class="material-icons" style="font-size: 10px;">add</span>${pair.bonus}
+      `;
+      
+      networkContainer.appendChild(bonusBadge);
+    });
+  });
+
+  // Add total party bonus summary
+  const partyBonusContainer = document.createElement('div');
+  partyBonusContainer.className = 'party-bonus-summary';
+  partyBonusContainer.style.cssText = `
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+  `;
+
+  const bonusIcon = document.createElement('div');
+  bonusIcon.style.cssText = `
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ade80, #60a5fa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+  `;
+  bonusIcon.innerHTML = `<span class="material-icons" style="font-size: 24px; color: white;">group</span>`;
+
+  const bonusText = document.createElement('div');
+  bonusText.style.cssText = `
+    flex: 1;
+  `;
+  bonusText.innerHTML = `
+    <div style="font-weight: bold; color: white;">Total Party Bonus</div>
+    <div style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+      Your party has a <strong style="color: ${totalPartyBonus > 0 ? '#4ade80' : '#f87171'};">+${totalPartyBonus}</strong> combat bonus from monster affinities
+    </div>
+  `;
+
+  partyBonusContainer.appendChild(bonusIcon);
+  partyBonusContainer.appendChild(bonusText);
+  affinityContainer.appendChild(partyBonusContainer);
+  
+  return true;
+}
 
 }

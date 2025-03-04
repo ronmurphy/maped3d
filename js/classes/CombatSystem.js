@@ -58,6 +58,9 @@ class CombatSystem {
     this.combatOverlay = null;
     this.dialogContainer = null;
 
+    // combo system
+    this.initializeComboSystem();
+
     console.log("Combat System initialized");
   }
 
@@ -1825,246 +1828,6 @@ class CombatSystem {
     }, 10);
   }
 
-
-// Updated createMonsterCard with fixed active indicator
-// createMonsterCard(monster, side, index) {
-//   console.log(
-//     `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
-//   );
-
-//   const isPlayer = side === "player";
-//   const isActive = this.isMonsterActive(monster);
-//   const isDefeated = monster.currentHP <= 0;
-
-//   // Calculate HP percentage
-//   const hpPercent = (monster.currentHP / monster.maxHP) * 100;
-//   let hpBarColorClass = "high";
-//   if (hpPercent < 30) {
-//     hpBarColorClass = "low";
-//   } else if (hpPercent < 70) {
-//     hpBarColorClass = "medium";
-//   }
-
-//   // Get monster type color
-//   const typeColor = this.getMonsterTypeColor(monster.type || "beast");
-  
-//   // Calculate tilt angle based on monster ID (consistent per monster)
-//   // Less tilt in combat (from -3 to 3 degrees) to keep the UI cleaner
-//   const idHash = monster.id.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-//   const tiltAngle = ((idHash % 7) - 3) * (side === "player" ? 1 : -1);
-
-//   // Generate token or placeholder
-//   const tokenSource = monster.token?.data || monster.token?.url || null;
-
-//   // Create card wrapper
-//   const card = document.createElement("div");
-//   card.className = `combat-monster ${side}`;
-//   if (isActive) card.classList.add("active");
-//   if (isDefeated) card.classList.add("defeated");
-//   card.setAttribute("data-monster-id", monster.id);
-  
-//   // Apply tilt effect
-//   card.style.transform = `rotate(${tiltAngle}deg)`;
-//   card.style.transition = "all 0.3s ease";
-  
-//   // Add card HTML content with the new design
-//   card.innerHTML = `
-//     <div class="monster-content" style="
-//       position: relative;
-//       background: white;
-//       border-radius: 8px;
-//       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-//       overflow: visible; /* Changed from hidden to visible to allow active indicator to be fully visible */
-//       width: 180px;
-//     ">
-//       <!-- Active indicator - moved above header to ensure visibility -->
-//       ${
-//         isActive
-//           ? `
-//         <div class="active-indicator" style="
-//           position: absolute;
-//           top: -12px; /* Moved up slightly */
-//           left: 50%;
-//           transform: translateX(-50%);
-//           background: #3b82f6;
-//           color: white;
-//           border-radius: 12px;
-//           padding: 2px 8px;
-//           font-size: 0.7em;
-//           font-weight: bold;
-//           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-//           z-index: 100; /* Ensure it's above everything */
-//         ">ACTIVE</div>
-//       `
-//           : ""
-//       }
-      
-//       <!-- Header banner with monster name and type -->
-//       <div class="monster-header" style="
-//         background: linear-gradient(135deg, ${typeColor}dd, ${typeColor});
-//         padding: 8px;
-//         display: flex;
-//         justify-content: space-between;
-//         align-items: center;
-//         border-bottom: 1px solid #eee;
-//         color: white;
-//       ">
-//         <div class="monster-info" style="
-//           flex: 1;
-//           overflow: hidden;
-//           margin-right: 8px;
-//         ">
-//           <div class="monster-name" style="
-//             font-weight: bold;
-//             white-space: nowrap;
-//             overflow: hidden;
-//             text-overflow: ellipsis;
-//             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-//           ">${monster.name}</div>
-          
-//           <div class="monster-type" style="
-//             font-size: 0.8em;
-//             opacity: 0.9;
-//           ">
-//             ${monster.size} ${monster.type || ""}
-//           </div>
-//         </div>
-        
-//         <!-- Monster image/token -->
-//         <div class="monster-image" style="
-//           width: 48px;
-//           height: 48px;
-//           border-radius: 50%;
-//           overflow: hidden;
-//           display: flex;
-//           align-items: center;
-//           justify-content: center;
-//           color: white;
-//           font-weight: bold;
-//           font-size: 20px;
-//           border: 2px solid ${side === "player" ? "#3b82f6" : "#ef4444"};
-//           background-color: ${side === "player" ? "#3b82f6" : "#ef4444"};
-//         ">
-//           ${
-//             tokenSource
-//               ? `<img src="${tokenSource}" alt="${monster.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-//               : `<span>${monster.name.charAt(0)}</span>`
-//           }
-//         </div>
-//       </div>
-      
-//       <!-- Monster stats section -->
-//       <div class="monster-stats" style="
-//         padding: 8px;
-//         background: #f9fafb;
-//       ">
-//         <!-- HP Bar -->
-//         <div class="hp-bar-label" style="
-//           display: flex;
-//           justify-content: space-between;
-//           font-size: 0.8em;
-//           margin-bottom: 4px;
-//         ">
-//           <span>HP</span>
-//           <span>${monster.currentHP}/${monster.maxHP}</span>
-//         </div>
-        
-//         <div class="hp-bar-bg" style="
-//           height: 8px;
-//           background: #e0e0e0;
-//           border-radius: 4px;
-//           margin-bottom: 8px;
-//           overflow: hidden;
-//         ">
-//           <div class="hp-bar-fill ${hpBarColorClass}" style="
-//             height: 100%;
-//             width: ${hpPercent}%;
-//             border-radius: 4px;
-//             transition: width 0.3s ease;
-//           "></div>
-//         </div>
-        
-//         <!-- Stats Grid -->
-//         <div style="
-//           display: grid;
-//           grid-template-columns: 1fr 1fr;
-//           gap: 4px;
-//         ">
-//           <div class="stat-row" style="
-//             display: flex;
-//             justify-content: space-between;
-//             font-size: 0.8em;
-//             margin-bottom: 4px;
-//           ">
-//             <span>AC</span>
-//             <span>${monster.armorClass || monster.stats?.ac || 10}</span>
-//           </div>
-          
-//           <div class="stat-row" style="
-//             display: flex;
-//             justify-content: space-between;
-//             font-size: 0.8em;
-//             margin-bottom: 4px;
-//           ">
-//             <span>${isPlayer ? "EXP" : "CR"}</span>
-//             <span>${
-//               isPlayer
-//                 ? monster.experience
-//                   ? `${monster.experience}/${monster.experienceToNext}`
-//                   : "0/100"
-//                 : monster.cr || monster.basic?.cr || "?"
-//             }</span>
-//           </div>
-//         </div>
-//       </div>
-      
-//       ${
-//         isDefeated
-//           ? `
-//         <div class="defeated-indicator" style="
-//           position: absolute;
-//           top: 0;
-//           left: 0;
-//           right: 0;
-//           bottom: 0;
-//           display: flex;
-//           justify-content: center;
-//           align-items: center;
-//           background: rgba(0, 0, 0, 0.3);
-//           border-radius: 8px;
-//           color: white;
-//           font-size: 48px;
-//           z-index: 90; /* High but below active indicator */
-//         ">✕</div>
-//       `
-//           : ""
-//       }
-//     </div>
-//   `;
-
-//   // Add hover effects
-//   card.addEventListener('mouseenter', () => {
-//     // Only apply hover effects if not defeated
-//     if (!isDefeated) {
-//       card.style.transform = `rotate(${tiltAngle}deg) translateY(-5px) scale(1.02)`;
-//       card.style.boxShadow = '0 10px 15px rgba(0, 0, 0, 0.3)';
-//       card.style.zIndex = '10';
-//     }
-//   });
-  
-//   card.addEventListener('mouseleave', () => {
-//     card.style.transform = `rotate(${tiltAngle}deg)`;
-//     card.style.boxShadow = '';
-//     // Keep z-index higher if it's active
-//     card.style.zIndex = isActive ? '5' : '';
-//   });
-
-//   return card;
-// }
-
-// Updated createMonsterCard with equipment indicators
-
-// Updated createMonsterCard with token on the left side
 createMonsterCard(monster, side, index) {
   console.log(
     `Creating monster card: ${monster.name}, type: ${side}, index: ${index}`
@@ -2627,67 +2390,174 @@ createMonsterCard(monster, side, index) {
     return html;
   }
 
+
   renderActionBar(monster) {
     if (!monster || monster.currentHP <= 0) {
       return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>This monster is defeated</em></div>';
     }
-
-    if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
-      return '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>No abilities available</em></div>';
-    }
-
+  
     let html = `<div class="abilities-container">`;
-
-    // Add abilities with icons
-    monster.monsterAbilities.forEach((ability) => {
-      // Determine icon based on ability type
-      let icon = "sports_martial_arts"; // Default for attack
-
-      switch (ability.type) {
-        case "attack":
-          icon = "sports_martial_arts";
-          break;
-        case "area":
-          icon = "blur_circular";
-          break;
-        case "buff":
-          icon = "upgrade";
-          break;
-        case "debuff":
-          icon = "threat";
-          break;
-        case "defense":
-          icon = "shield";
-          break;
-        case "healing":
-          icon = "healing";
-          break;
-        case "reaction":
-          icon = "autorenew";
-          break;
-        case "support":
-          icon = "group";
-          break;
+  
+    // Check if it's a player monster and if we should show combo abilities
+    const isPlayerMonster = this.playerParty.some(m => m.id === monster.id);
+    
+    // Check for combo abilities
+    const availableCombos = [];
+    
+    if (isPlayerMonster && this.partyManager) {
+      // Get combo abilities for this monster
+      const allCombos = this.getAvailableComboAbilities();
+      
+      // Filter to only those involving this monster
+      const monsterCombos = allCombos.filter(combo => 
+        combo.monsters.some(m => m.id === monster.id)
+      );
+      
+      if (monsterCombos.length > 0) {
+        // Add combos to the available abilities
+        availableCombos.push(...monsterCombos);
       }
-
-      html += `
-        <button class="ability-btn ${
-          ability.type
-        }" data-ability="${ability.name.replace(/\s+/g, "_")}">
-          <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
-          <span>${ability.name}</span>
-          ${
-            ability.damage
-              ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>`
-              : ""
-          }
-        </button>
-      `;
-    });
-
+    }
+  
+    // First show combo abilities if available (at the top)
+    if (availableCombos.length > 0) {
+      html += `<div class="combo-abilities-header" style="
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 4px 8px;
+        background: rgba(255, 215, 0, 0.1);
+        border-radius: 8px;
+      ">
+        <span class="material-icons" style="margin-right: 8px; color:rgb(231, 24, 24);">auto_awesome</span>
+        <span style="color:rgb(252, 127, 77); font-weight: 500;">Combo Abilities</span>
+      </div>
+      
+      <div class="combo-abilities" style="
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      ">`;
+      
+      // Add each combo ability
+      availableCombos.forEach(combo => {
+        const partnerMonster = combo.monsters.find(m => m.id !== monster.id);
+        
+        html += `
+          <button class="ability-btn combo" data-ability="${combo.id}" style="
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid ${combo.color}50;
+            background: ${combo.color}15;
+            color: ${combo.color};
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+          ">
+            <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${combo.icon || 'auto_awesome'}</span>
+            <div style="flex: 1; text-align: left;">
+              <div style="font-weight: 500;">${combo.name}</div>
+              <div style="font-size: 0.75rem; opacity: 0.9;">With: ${partnerMonster.name}</div>
+            </div>
+            ${combo.damage ? `
+              <div style="
+                margin-left: 8px;
+                padding: 2px 6px;
+                border-radius: 12px;
+                background: ${combo.color}30;
+                font-size: 0.75rem;
+                font-weight: 500;
+              ">${combo.damage}</div>
+            ` : ''}
+            
+            <!-- Sparkle animation effect in background -->
+            <div class="sparkle-bg" style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background-image: radial-gradient(circle, ${combo.color}20 1px, transparent 1px);
+              background-size: 12px 12px;
+              pointer-events: none;
+              opacity: 0.5;
+            "></div>
+          </button>
+        `;
+      });
+      
+      html += `</div>
+      
+      <div class="regular-abilities-header" style="
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 4px 8px;
+      ">
+        <span class="material-icons" style="margin-right: 8px; color: #9ca3af; font-size: 16px;">play_arrow</span>
+        <span style="color: #9ca3af; font-size: 0.9rem;">Regular Abilities</span>
+      </div>`;
+    }
+  
+    // Add regular abilities
+    if (!monster.monsterAbilities || monster.monsterAbilities.length === 0) {
+      html += '<div style="text-align: center; color: rgba(255, 255, 255, 0.7);"><em>No abilities available</em></div>';
+    } else {
+      html += `<div class="regular-abilities" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+      
+      // Add abilities with icons
+      monster.monsterAbilities.forEach((ability) => {
+        // Determine icon based on ability type
+        let icon = 'sports_martial_arts'; // Default for attack
+  
+        switch (ability.type) {
+          case 'attack':
+            icon = 'sports_martial_arts';
+            break;
+          case 'area':
+            icon = 'blur_circular';
+            break;
+          case 'buff':
+            icon = 'upgrade';
+            break;
+          case 'debuff':
+            icon = 'threat';
+            break;
+          case 'defense':
+            icon = 'shield';
+            break;
+          case 'healing':
+            icon = 'healing';
+            break;
+          case 'reaction':
+            icon = 'autorenew';
+            break;
+          case 'support':
+            icon = 'group';
+            break;
+        }
+  
+        html += `
+          <button class="ability-btn ${ability.type}" data-ability="${ability.name.replace(/\s+/g, "_")}">
+            <span class="material-icons" style="margin-right: 8px; font-size: 18px;">${icon}</span>
+            <span>${ability.name}</span>
+            ${ability.damage ? `<span style="margin-left: 8px; color: #ef4444; font-size: 0.8em;">${ability.damage}</span>` : ''}
+          </button>
+        `;
+      });
+      
+      html += `</div>`;
+    }
+  
+    // Close abilities container
+    html += `</div>`;
+  
     // Add utility buttons
     html += `
-      </div>
       <div class="utility-buttons">
         <button class="utility-btn use-item-btn">
           <span class="material-icons" style="margin-right: 8px; font-size: 18px;">inventory_2</span>
@@ -2699,7 +2569,7 @@ createMonsterCard(monster, side, index) {
         </button>
       </div>
     `;
-
+  
     return html;
   }
 
@@ -2713,7 +2583,7 @@ createMonsterCard(monster, side, index) {
       });
     }
 
-    // Ability buttons
+
     const abilityBtns = this.dialogContainer.querySelectorAll(".ability-btn");
     abilityBtns.forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -3203,14 +3073,21 @@ getWeaponDiceNotation(weaponName) {
 
   // Use a monster's ability
   useMonsterAbility(abilityName) {
-    console.log(`Attempting to use ability: ${abilityName}`);
-    const currentMonster = this.getCurrentMonster();
-    if (!currentMonster) {
-      console.error("No active monster found for ability use");
-      return false;
-    }
 
-    // Find the ability
+      console.log(`Attempting to use ability: ${abilityName}`);
+      const currentMonster = this.getCurrentMonster();
+      if (!currentMonster) {
+        console.error("No active monster found for ability use");
+        return false;
+      }
+    
+      // Check if this is a combo ability (combo IDs start with "combo_")
+      if (abilityName.startsWith('combo_')) {
+        return this.useComboAbility(abilityName, currentMonster);
+      }
+    
+
+    // // Find the ability
     const ability = currentMonster.monsterAbilities.find(
       (a) => a.name === abilityName
     );
@@ -3849,24 +3726,6 @@ getWeaponDiceNotation(weaponName) {
     return damage;
   }
 
-  // calculateAbilityDamage(ability, attacker = null, target = null) {
-  //   // Base damage calculation
-  //   let damage = this.originalCalculateAbilityDamage(ability);
-
-  //   // Only apply relationship bonus if both attacker and target are provided
-  //   if (attacker && target) {
-  //     const relationshipBonus = this.applyRelationshipBonuses(attacker, target);
-
-  //     // Apply bonus to damage
-  //     if (relationshipBonus > 0) {
-  //       damage += Math.floor(relationshipBonus / 3);
-  //     }
-  //   }
-
-  //   return damage;
-  // }
-
-    // In the calculateAbilityDamage method, replace the weapon damage calculation
   
   calculateAbilityDamage(ability, attacker = null, target = null) {
     // Base damage calculation
@@ -4889,4 +4748,700 @@ getWeaponDiceNotation(weaponName) {
     const currentCombatant = this.initiativeOrder[this.currentTurn];
     return currentCombatant && currentCombatant.monster.id === monster.id;
   }
+
+  initializeComboSystem() {
+    // Define combo abilities between monster types
+    this.comboAbilities = {
+      'Dragon-Celestial': {
+        name: 'Divine Flames',
+        description: 'A powerful combination of holy fire that deals extra damage and heals allies',
+        type: 'area',
+        damage: '3d8+6', // Higher damage than standard abilities
+        healing: '2d6',   // Also provides healing to allies
+        requiredAffinity: 'High',
+        icon: 'local_fire_department',
+        color: '#FFD700' // Gold color
+      },
+      'Fey-Plant': {
+        name: 'Nature\'s Blessing',
+        description: 'Enhances the party with natural energy, boosting defense and healing',
+        type: 'buff',
+        healing: '2d8',
+        defensiveBonus: 3, // Adds temporary AC to all allies
+        duration: 3,      // Lasts 3 rounds
+        requiredAffinity: 'High',
+        icon: 'eco',
+        color: '#4ADE80' // Green color
+      },
+      'Beast-Humanoid': {
+        name: 'Hunter\'s Bond',
+        description: 'Perfect coordination between beast and master, granting devastating precision',
+        type: 'attack',
+        damage: '2d12+6', // Higher single-target damage
+        criticalRange: 19, // Crits on 19-20
+        requiredAffinity: 'High',
+        icon: 'pets',
+        color: '#60A5FA' // Blue color
+      },
+      'Undead-Fiend': {
+        name: 'Unholy Pact',
+        description: 'A terrifying combination of undeath and demonic energy that drains life',
+        type: 'attack',
+        damage: '2d10+4',
+        lifeSteal: true,  // Heals attacker for 50% of damage
+        requiredAffinity: 'High',
+        icon: 'blood_count',
+        color: '#EC4899' // Pink color
+      },
+      'Elemental-Elemental': {
+        name: 'Elemental Fusion',
+        description: 'Combines elemental powers for devastating area effects',
+        type: 'area',
+        damage: '4d6',
+        requiredAffinity: 'High',
+        icon: 'storm',
+        color: '#F59E0B' // Amber color
+      },
+      'Construct-Humanoid': {
+        name: 'Master\'s Command',
+        description: 'Perfect synchronization between creator and creation',
+        type: 'buff',
+        attackBonus: 4,
+        duration: 2,
+        requiredAffinity: 'Medium',
+        icon: 'precision_manufacturing',
+        color: '#6B7280' // Gray color
+      },
+      'Fiend-Beast': {
+        name: 'Corrupted Claws',
+        description: 'Infuses a beast with fiendish energy for a devastating attack',
+        type: 'attack',
+        damage: '3d6+8',
+        effectDescription: 'Target suffers ongoing damage',
+        requiredAffinity: 'Medium',
+        icon: 'front_hand',
+        color: '#DC2626' // Red color
+      },
+      'Dragon-Dragon': {
+        name: 'Twin Dragon Breath',
+        description: 'Two dragons combine their breath attacks into a devastating blast',
+        type: 'area',
+        damage: '5d8',
+        requiredAffinity: 'Low', // Even dragons with low affinity can do this
+        icon: 'flourescent',
+        color: '#FF4444' // Bright red
+      },
+      'Celestial-Humanoid': {
+        name: 'Divine Intervention',
+        description: 'A celestial bestows divine protection upon its allies',
+        type: 'buff',
+        healing: '3d6',
+        defensiveBonus: 2,
+        duration: 3,
+        requiredAffinity: 'Medium',
+        icon: 'shield',
+        color: '#FBBF24' // Yellow color
+      },
+      'Fey-Humanoid': {
+        name: 'Enchanted Strike',
+        description: 'Fey magic enhances a humanoid\'s attack with ancient power',
+        type: 'attack',
+        damage: '2d8+6',
+        effectDescription: 'Target is stunned for 1 turn',
+        requiredAffinity: 'Medium',
+        icon: 'auto_awesome',
+        color: '#A78BFA' // Purple color
+      }
+      // More combinations can be added
+    };
+    
+    console.log("Combo abilities system initialized");
+  }
+  
+  // Check for available combo abilities based on active party members
+  getAvailableComboAbilities() {
+    // Ensure the partyManager is available
+    if (!this.partyManager || !this.partyManager.relationshipMap) {
+      console.warn("Can't check for combo abilities - no party relationship data available");
+      return [];
+    }
+  
+    const availableCombos = [];
+    
+    // Get all player monsters in combat
+    const playerMonsters = this.playerParty;
+    
+    // Check each pair of active player monsters
+    for (let i = 0; i < playerMonsters.length; i++) {
+      const monster1 = playerMonsters[i];
+      
+      // Skip defeated monsters
+      if (monster1.currentHP <= 0) continue;
+      
+      for (let j = i + 1; j < playerMonsters.length; j++) {
+        const monster2 = playerMonsters[j];
+        
+        // Skip defeated monsters
+        if (monster2.currentHP <= 0) continue;
+        
+        // Get monster types
+        const type1 = monster1.type;
+        const type2 = monster2.type;
+        
+        // Generate keys for both possible orders
+        const comboKey1 = `${type1}-${type2}`;
+        const comboKey2 = `${type2}-${type1}`;
+        
+        // Check if a combo ability exists for these types
+        const comboAbility = this.comboAbilities[comboKey1] || this.comboAbilities[comboKey2];
+        
+        if (comboAbility) {
+          // Check if the monsters have the required affinity level
+          const affinityScore = this.partyManager.getCombatModifier(monster1.id, monster2.id);
+          let affinityLevel;
+          
+          // Convert numeric bonus to affinity level
+          if (affinityScore >= 7) affinityLevel = 'High';
+          else if (affinityScore >= 5) affinityLevel = 'Medium';
+          else if (affinityScore > 0) affinityLevel = 'Low';
+          else affinityLevel = 'None';
+          
+          const requiredLevel = comboAbility.requiredAffinity;
+          
+          // Convert levels to numeric for comparison
+          const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'None': 0 };
+          
+          if (levelValues[affinityLevel] >= levelValues[requiredLevel]) {
+            // This combo is available - create a copy with the monsters
+            const combo = {
+              ...comboAbility,
+              id: `combo_${monster1.id}_${monster2.id}`,
+              monsters: [monster1, monster2]
+            };
+            
+            availableCombos.push(combo);
+            console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
+          }
+        }
+      }
+    }
+    
+    return availableCombos;
+  }
+
+  showComboTargetSelection(activeMonster, partnerMonster, combo) {
+    console.log(`Setting up targeting for ${combo.name} combo ability`);
+    
+    // Find all enemy cards
+    const enemyCards = Array.from(
+      this.dialogContainer.querySelectorAll(".combat-monster.enemy")
+    );
+    
+    // Find viable targets (enemies with HP > 0)
+    const viableTargets = [];
+    
+    enemyCards.forEach((card) => {
+      const enemyId = card.getAttribute("data-monster-id");
+      const enemy = this.enemyParty.find((e) => e.id === enemyId);
+    
+      if (enemy && enemy.currentHP > 0) {
+        viableTargets.push({ card, enemy });
+      }
+    });
+    
+    // If there's only one viable target, auto-target it
+    if (viableTargets.length === 1) {
+      const { enemy, card } = viableTargets[0];
+      
+      // Create a quick highlight effect
+      card.classList.add("auto-targeted");
+    
+      // Create a temporary message
+      const battleScene = this.dialogContainer.querySelector(".battle-scene");
+      const autoMessage = document.createElement("div");
+      autoMessage.className = "battle-notification fade-in";
+      autoMessage.textContent = `Auto-targeting ${enemy.name} with ${combo.name}`;
+      autoMessage.style.backgroundColor = `${combo.color}cc`;
+      battleScene.appendChild(autoMessage);
+    
+      // Remove the message and execute the ability after a short delay
+      setTimeout(() => {
+        autoMessage.classList.remove("fade-in");
+        autoMessage.style.opacity = "0";
+    
+        // Resolve the combo ability
+        this.resolveComboAttackAbility(activeMonster, partnerMonster, combo, enemy);
+    
+        // Move to next turn
+        this.nextTurn();
+    
+        // Clean up
+        setTimeout(() => {
+          autoMessage.remove();
+          card.classList.remove("auto-targeted");
+        }, 300);
+      }, 800);
+    
+      return;
+    }
+    
+    // If we have multiple targets, proceed with manual targeting
+    viableTargets.forEach(({ card, enemy }) => {
+      // Add targetable class and hint
+      card.classList.add("targetable");
+    
+      // Add targeting hint
+      const hint = document.createElement("div");
+      hint.className = "targeting-hint";
+      hint.textContent = `Click to target with ${combo.name}`;
+      hint.style.position = "absolute";
+      hint.style.top = "-30px";
+      hint.style.left = "50%";
+      hint.style.transform = "translateX(-50%)";
+      hint.style.background = `${combo.color}cc`;
+      hint.style.color = "white";
+      hint.style.padding = "4px 8px";
+      hint.style.borderRadius = "4px";
+      hint.style.fontSize = "0.8em";
+      hint.style.whiteSpace = "nowrap";
+      hint.style.pointerEvents = "none";
+      hint.style.opacity = "0";
+      hint.style.transition = "opacity 0.3s ease";
+      card.appendChild(hint);
+      
+      // Show hint on hover
+      card.addEventListener('mouseenter', () => {
+        hint.style.opacity = "1";
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        hint.style.opacity = "0";
+      });
+    
+      // Create new click handler
+      const targetClickHandler = () => {
+        // Remove targeting from all cards
+        enemyCards.forEach((c) => {
+          c.classList.remove("targetable");
+          const h = c.querySelector(".targeting-hint");
+          if (h) h.remove();
+    
+          // Important: Remove all previous click handlers
+          c.removeEventListener("click", targetClickHandler);
+        });
+    
+        // Execute combo ability on the target
+        this.resolveComboAttackAbility(activeMonster, partnerMonster, combo, enemy);
+    
+        // Move to next turn
+        this.nextTurn();
+    
+        // Remove battle notification if present
+        const notification = this.dialogContainer.querySelector(
+          ".battle-notification"
+        );
+        if (notification) notification.remove();
+      };
+    
+      // Add click handler
+      card.addEventListener("click", targetClickHandler);
+    });
+    
+    // Add the targeting instruction message
+    const battleScene = this.dialogContainer.querySelector(".battle-scene");
+    const indicator = document.createElement("div");
+    indicator.className = "battle-notification fade-in";
+    indicator.textContent = `Select an enemy for ${combo.name}`;
+    indicator.style.backgroundColor = `${combo.color}cc`;
+    battleScene.appendChild(indicator);
+    
+    // Remove after a few seconds to avoid clutter
+    setTimeout(() => {
+      if (indicator && indicator.parentNode) {
+        indicator.classList.remove("fade-in");
+        indicator.style.opacity = "0";
+        setTimeout(() => {
+          if (indicator.parentNode) indicator.remove();
+        }, 300);
+      }
+    }, 3000);
+  }
+  
+  // Resolve a combo attack ability against a single target
+  resolveComboAttackAbility(activeMonster, partnerMonster, combo, target) {
+    console.log(`Resolving combo attack: ${combo.name} against ${target.name}`);
+    
+    // Create a special combo animation
+    this.showComboAnimation(activeMonster, partnerMonster, combo);
+    
+    // Calculate damage - combo abilities use their own damage formula
+    let damage = 0;
+    
+    // Parse damage formula (e.g., "3d8+6")
+    if (combo.damage) {
+      const damageFormula = combo.damage;
+      
+      // Check if it has dice notation
+      if (damageFormula.includes("d")) {
+        const parts = damageFormula.split("+");
+        const diceNotation = parts[0];
+        const modifier = parts.length > 1 ? parseInt(parts[1]) : 0;
+        
+        const [numDice, dieSize] = diceNotation.split("d").map((n) => parseInt(n));
+        
+        // Roll the dice
+        for (let i = 0; i < numDice; i++) {
+          damage += this.rollDice(dieSize);
+        }
+        
+        // Add modifier
+        damage += modifier;
+      } else {
+        // Fixed damage
+        damage = parseInt(damageFormula);
+      }
+      
+      // Add the combined level of both monsters to the damage
+      const levelBonus = Math.floor((activeMonster.level + partnerMonster.level) / 3);
+      damage += levelBonus;
+      
+      console.log(`Calculated combo damage: ${damage} (including level bonus of +${levelBonus})`);
+    }
+    
+    // Apply damage
+    this.applyDamage(target, damage, activeMonster, false);
+    
+    // Log the combo use with both monster names
+    this.addLogEntry(`${activeMonster.name} and ${partnerMonster.name} used ${combo.name} on ${target.name} for ${damage} damage!`);
+    
+    // Handle life steal if applicable
+    if (combo.lifeSteal) {
+      const healAmount = Math.floor(damage * 0.5); // 50% of damage
+      
+      // Heal both monsters that participated in the combo
+      activeMonster.currentHP = Math.min(activeMonster.maxHP, activeMonster.currentHP + healAmount);
+      partnerMonster.currentHP = Math.min(partnerMonster.maxHP, partnerMonster.currentHP + healAmount);
+      
+      this.addLogEntry(`The attack drained life, healing both monsters for ${healAmount} HP!`);
+      this.updateCombatDisplay();
+    }
+    
+    // Handle any other special effects
+    if (combo.effectDescription) {
+      this.addLogEntry(combo.effectDescription);
+    }
+  }
+  
+  // Resolve a combo area ability against all enemies
+  resolveComboAreaAbility(activeMonster, partnerMonster, combo) {
+    console.log(`Resolving combo area ability: ${combo.name}`);
+    
+    // Create combo animation
+    this.showComboAnimation(activeMonster, partnerMonster, combo);
+    
+    // Calculate base damage
+    let baseDamage = 0;
+    
+    // Parse damage formula
+    if (combo.damage) {
+      const damageFormula = combo.damage;
+      
+      // Check if it has dice notation
+      if (damageFormula.includes("d")) {
+        const parts = damageFormula.split("+");
+        const diceNotation = parts[0];
+        const modifier = parts.length > 1 ? parseInt(parts[1]) : 0;
+        
+        const [numDice, dieSize] = diceNotation.split("d").map((n) => parseInt(n));
+        
+        // Roll the dice
+        for (let i = 0; i < numDice; i++) {
+          baseDamage += this.rollDice(dieSize);
+        }
+        
+        // Add modifier
+        baseDamage += modifier;
+      } else {
+        // Fixed damage
+        baseDamage = parseInt(damageFormula);
+      }
+    }
+    
+    // Apply to all enemies
+    let totalDamage = 0;
+    let targetCount = 0;
+    
+    // Get all active enemies
+    const activeEnemies = this.enemyParty.filter(enemy => enemy.currentHP > 0);
+    
+    // Apply damage to each enemy
+    activeEnemies.forEach(enemy => {
+      // Small variation in damage for each target (+/- 20%)
+      const damageVariation = 0.8 + (Math.random() * 0.4); // 0.8 to 1.2
+      const damage = Math.floor(baseDamage * damageVariation);
+      
+      // Apply damage
+      this.applyDamage(enemy, damage, activeMonster, false);
+      
+      totalDamage += damage;
+      targetCount++;
+    });
+    
+    // Log the combo use
+    this.addLogEntry(`${activeMonster.name} and ${partnerMonster.name} used ${combo.name}, dealing ${totalDamage} total damage to ${targetCount} enemies!`);
+    
+    // Apply healing to allies if applicable
+    if (combo.healing) {
+      this.applyComboHealing(activeMonster, partnerMonster, combo);
+    }
+    
+    // Move to next turn
+    this.nextTurn();
+  }
+  
+  // Resolve a combo buff ability on allies
+  resolveComboBuffAbility(activeMonster, partnerMonster, combo) {
+    console.log(`Resolving combo buff ability: ${combo.name}`);
+    
+    // Create combo animation
+    this.showComboAnimation(activeMonster, partnerMonster, combo);
+    
+    // Apply healing to allies if applicable
+    if (combo.healing) {
+      this.applyComboHealing(activeMonster, partnerMonster, combo);
+    }
+    
+    // Apply defensive bonus if applicable
+    if (combo.defensiveBonus) {
+      this.addLogEntry(`${combo.name} increases everyone's defense by ${combo.defensiveBonus}!`);
+    }
+    
+    // Apply attack bonus if applicable
+    if (combo.attackBonus) {
+      this.addLogEntry(`${combo.name} increases everyone's attack by ${combo.attackBonus}!`);
+    }
+    
+    // Log duration if applicable
+    if (combo.duration) {
+      this.addLogEntry(`The effect will last for ${combo.duration} turns.`);
+    }
+    
+    // Move to next turn
+    this.nextTurn();
+  }
+  
+  // Apply healing from a combo ability to player party
+  applyComboHealing(activeMonster, partnerMonster, combo) {
+    if (!combo.healing) return;
+    
+    console.log(`Applying combo healing from ${combo.name}`);
+    
+    // Calculate healing amount
+    let healingBase = 0;
+    
+    // Parse healing formula
+    const healingFormula = combo.healing;
+    
+    // Check if it has dice notation
+    if (healingFormula.includes("d")) {
+      const parts = healingFormula.split("+");
+      const diceNotation = parts[0];
+      const modifier = parts.length > 1 ? parseInt(parts[1]) : 0;
+      
+      const [numDice, dieSize] = diceNotation.split("d").map((n) => parseInt(n));
+      
+      // Roll the dice
+      for (let i = 0; i < numDice; i++) {
+        healingBase += this.rollDice(dieSize);
+      }
+      
+      // Add modifier
+      healingBase += modifier;
+    } else {
+      // Fixed healing
+      healingBase = parseInt(healingFormula);
+    }
+    
+    // Apply healing to all player monsters
+    this.playerParty.forEach(monster => {
+      // Skip dead monsters
+      if (monster.currentHP <= 0) return;
+      
+      // Apply healing
+      const originalHP = monster.currentHP;
+      monster.currentHP = Math.min(monster.maxHP, monster.currentHP + healingBase);
+      const actualHealing = monster.currentHP - originalHP;
+      
+      if (actualHealing > 0) {
+        // Only log if actual healing occurred
+        this.addLogEntry(`${monster.name} was healed for ${actualHealing} HP.`);
+      }
+    });
+    
+    // Update combat display
+    this.updateCombatDisplay();
+  }
+  
+  // Show a special animation when a combo ability is used
+  showComboAnimation(monster1, monster2, combo) {
+    console.log(`Showing combo animation for ${combo.name}`);
+    
+    const battleScene = this.dialogContainer.querySelector(".battle-scene");
+    
+    // Create animation overlay
+    const animationOverlay = document.createElement('div');
+    animationOverlay.className = 'combo-animation-overlay';
+    animationOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 100;
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    `;
+    
+    // Create animation container
+    const animation = document.createElement('div');
+    animation.className = 'combo-animation';
+    animation.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
+    `;
+    
+    // Create animation content
+    animation.innerHTML = `
+      <div class="combo-flash" style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: ${combo.color}; 
+        opacity: 0;
+        animation: comboFlash 0.5s ease-out;
+      "></div>
+      <div class="combo-title" style="
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 10px ${combo.color}, 0 0 20px ${combo.color}, 0 0 30px ${combo.color};
+        margin-bottom: 16px;
+        transform: scale(0.8);
+        opacity: 0;
+        animation: comboTextAppear 0.5s ease-out 0.2s forwards;
+      ">
+        ${combo.name}
+      </div>
+      <div class="combo-monsters" style="
+        display: flex;
+        align-items: center;
+        transform: scale(0.8);
+        opacity: 0;
+        animation: comboMonstersAppear 0.5s ease-out 0.4s forwards;
+      ">
+        <div class="combo-monster" style="text-align: center; margin-right: 20px;">
+          <div style="
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: ${this.getMonsterTypeColor(monster1.type)};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            border: 2px solid white;
+            box-shadow: 0 0 10px ${combo.color};
+          ">
+            ${monster1.token?.data ? 
+              `<img src="${monster1.token.data}" alt="${monster1.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+              `<span style="color: white; font-weight: bold; font-size: 24px;">${monster1.name.charAt(0)}</span>`
+            }
+          </div>
+          <div style="color: white; font-size: 0.9rem; text-shadow: 0 0 5px rgba(0,0,0,0.5);">
+            ${monster1.name}
+          </div>
+        </div>
+        
+        <div class="combo-plus" style="
+          margin: 0 20px;
+          font-size: 2rem;
+          color: white;
+          text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        ">+</div>
+        
+        <div class="combo-monster" style="text-align: center; margin-left: 20px;">
+          <div style="
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: ${this.getMonsterTypeColor(monster2.type)};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            border: 2px solid white;
+            box-shadow: 0 0 10px ${combo.color};
+          ">
+            ${monster2.token?.data ? 
+              `<img src="${monster2.token.data}" alt="${monster2.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
+              `<span style="color: white; font-weight: bold; font-size: 24px;">${monster2.name.charAt(0)}</span>`
+            }
+          </div>
+          <div style="color: white; font-size: 0.9rem; text-shadow: 0 0 5px rgba(0,0,0,0.5);">
+            ${monster2.name}
+          </div>
+        </div>
+      </div>
+      
+      <style>
+        @keyframes comboFlash {
+          0% { opacity: 0.8; }
+          100% { opacity: 0; }
+        }
+        
+        @keyframes comboTextAppear {
+          0% { opacity: 0; transform: scale(0.8); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes comboMonstersAppear {
+          0% { opacity: 0; transform: scale(0.8); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      </style>
+    `;
+    
+    // Add animation to overlay
+    animationOverlay.appendChild(animation);
+    
+    // Add overlay to battle scene
+    battleScene.appendChild(animationOverlay);
+    
+    // Trigger animation
+    setTimeout(() => {
+      animation.style.transform = 'scale(1)';
+      animation.style.opacity = '1';
+      
+      // Remove after animation completes
+      setTimeout(() => {
+        animation.style.transform = 'scale(1.1)';
+        animation.style.opacity = '0';
+        
+        setTimeout(() => {
+          animationOverlay.remove();
+        }, 500);
+      }, 2500);
+    }, 100);
+  }
+
+
 }
