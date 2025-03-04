@@ -46,6 +46,7 @@ class PartyManager {
     this.activeTab = 'active';
     this.starterCheckPerformed = false;
     this.initializeRelationshipSystem();
+this.initializeComboSystem();
 
       // Try to connect to Scene3DController
       let connectionAttempts = 0;
@@ -5346,6 +5347,105 @@ connectToSceneInventory() {
     ) || [];
   }
 
+  // createComboAbilitiesSection(monster) {
+  //   // Get combos for this monster
+  //   const monsterCombos = this.getMonsterCombos(monster.id);
+    
+  //   // If no combos, return nothing
+  //   if (!monsterCombos || monsterCombos.length === 0) {
+  //     return '';
+  //   }
+    
+  //   // Create the combo abilities section HTML
+  //   let html = `
+  //   <div class="details-section">
+  //     <div class="details-section-title" style="display: flex; align-items: center;">
+  //       <span class="material-icons" style="font-size: 20px; margin-right: 8px; color: #4ade80;">group</span>
+  //       Combo Abilities
+  //     </div>
+  //     <div class="abilities-container" style="
+  //       background: #f0f9f0;
+  //       border-radius: 12px;
+  //       padding: 16px;
+  //       border: 1px solid #d1fae5;
+  //       width: 100%;
+  //       box-sizing: border-box;
+  //     ">
+  //       <div class="monster-abilities combo-abilities" style="
+  //         display: grid;
+  //         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  //         gap: 12px;
+  //         width: 100%;
+  //       ">
+  //   `;
+    
+  //   // Add each combo ability
+  //   monsterCombos.forEach(combo => {
+  //     // Find the partner monster
+  //     const partner = combo.monsters.find(m => m.id !== monster.id);
+      
+  //     // Background color based on combo type
+  //     let bgColor = 'rgba(74, 222, 128, 0.1)';
+  //     let iconColor = '#4ade80';
+  //     let icon = 'group';
+      
+  //     // Customize based on combo type
+  //     switch (combo.type) {
+  //       case 'attack':
+  //         bgColor = 'rgba(239, 68, 68, 0.1)';
+  //         iconColor = '#ef4444';
+  //         icon = 'sports_martial_arts';
+  //         break;
+  //       case 'area':
+  //         bgColor = 'rgba(245, 158, 11, 0.1)';
+  //         iconColor = '#f59e0b';
+  //         icon = 'blur_circular';
+  //         break;
+  //       case 'buff':
+  //         bgColor = 'rgba(16, 185, 129, 0.1)'; 
+  //         iconColor = '#10b981';
+  //         icon = 'upgrade';
+  //         break;
+  //     }
+      
+  //     html += `
+  //       <div class="ability-card combo-card" style="background: ${bgColor}; position: relative;">
+  //         <div class="ability-header">
+  //           <div class="ability-icon" style="color: ${iconColor};">
+  //             <span class="material-icons small">${icon}</span>
+  //           </div>
+  //           <div class="ability-title-row">
+  //             <div class="ability-title">${combo.name}</div>
+  //             ${combo.damage ? `<div class="ability-damage" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">${combo.damage}</div>` : ''}
+  //           </div>
+  //         </div>
+  //         <div class="ability-description">${combo.description || 'No description available.'}</div>
+          
+  //         <!-- Partner indicator -->
+  //         <div style="
+  //           display: flex;
+  //           align-items: center;
+  //           margin-top: 8px;
+  //           padding-top: 4px;
+  //           border-top: 1px solid rgba(0,0,0,0.05);
+  //           font-size: 0.75rem;
+  //         ">
+  //           <span class="material-icons" style="font-size: 12px; margin-right: 4px; color: ${iconColor};">people</span>
+  //           <span>With: ${partner ? partner.name : 'another monster'}</span>
+  //         </div>
+  //       </div>
+  //     `;
+  //   });
+    
+  //   html += `
+  //       </div>
+  //     </div>
+  //   </div>
+  //   `;
+    
+  //   return html;
+  // }
+
   createComboAbilitiesSection(monster) {
     // Get combos for this monster
     const monsterCombos = this.getMonsterCombos(monster.id);
@@ -5383,28 +5483,61 @@ connectToSceneInventory() {
       // Find the partner monster
       const partner = combo.monsters.find(m => m.id !== monster.id);
       
-      // Background color based on combo type
-      let bgColor = 'rgba(74, 222, 128, 0.1)';
-      let iconColor = '#4ade80';
-      let icon = 'group';
+      // Background color based on combo type or defined color
+      const bgColor = combo.color ? 
+        `${combo.color}1A` : // Convert hex to rgba with 0.1 opacity
+        (combo.type === 'attack' ? 'rgba(239, 68, 68, 0.1)' : 
+         combo.type === 'area' ? 'rgba(245, 158, 11, 0.1)' : 
+         combo.type === 'buff' ? 'rgba(16, 185, 129, 0.1)' : 
+         'rgba(74, 222, 128, 0.1)');
       
-      // Customize based on combo type
-      switch (combo.type) {
-        case 'attack':
-          bgColor = 'rgba(239, 68, 68, 0.1)';
-          iconColor = '#ef4444';
-          icon = 'sports_martial_arts';
-          break;
-        case 'area':
-          bgColor = 'rgba(245, 158, 11, 0.1)';
-          iconColor = '#f59e0b';
-          icon = 'blur_circular';
-          break;
-        case 'buff':
-          bgColor = 'rgba(16, 185, 129, 0.1)'; 
-          iconColor = '#10b981';
-          icon = 'upgrade';
-          break;
+      // Text color based on combo type or defined color
+      const iconColor = combo.color || 
+        (combo.type === 'attack' ? '#ef4444' : 
+         combo.type === 'area' ? '#f59e0b' : 
+         combo.type === 'buff' ? '#10b981' : 
+         '#4ade80');
+      
+      // Icon based on combo type or defined icon
+      const icon = combo.icon || 
+        (combo.type === 'attack' ? 'sports_martial_arts' : 
+         combo.type === 'area' ? 'blur_circular' : 
+         combo.type === 'buff' ? 'upgrade' : 
+         'group');
+      
+      let detailsText = '';
+      
+      // Add combat details based on combo properties
+      if (combo.damage) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #ef4444;">Damage: ${combo.damage}</div>`;
+      }
+      
+      if (combo.healing) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #10b981;">Healing: ${combo.healing}</div>`;
+      }
+      
+      if (combo.duration) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #6b7280;">Duration: ${combo.duration} turns</div>`;
+      }
+      
+      if (combo.defensiveBonus) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #3b82f6;">Defense Bonus: +${combo.defensiveBonus}</div>`;
+      }
+      
+      if (combo.attackBonus) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #ef4444;">Attack Bonus: +${combo.attackBonus}</div>`;
+      }
+      
+      if (combo.effectDescription) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #8b5cf6;">${combo.effectDescription}</div>`;
+      }
+      
+      if (combo.lifeSteal) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #ec4899;">Life Steal: Heals for 50% of damage</div>`;
+      }
+      
+      if (combo.criticalRange) {
+        detailsText += `<div style="margin-top: 4px; font-size: 0.8rem; color: #f59e0b;">Critical on: ${combo.criticalRange}-20</div>`;
       }
       
       html += `
@@ -5419,6 +5552,8 @@ connectToSceneInventory() {
             </div>
           </div>
           <div class="ability-description">${combo.description || 'No description available.'}</div>
+          
+          ${detailsText}
           
           <!-- Partner indicator -->
           <div style="
@@ -6205,6 +6340,115 @@ testSaveLoad() {
     console.log('Relationship system initialized');
   }
 
+  initializeComboSystem() {
+    // Define combo abilities between monster types
+    this.comboAbilities = {
+      'Dragon-Celestial': {
+        name: 'Divine Flames',
+        description: 'A powerful combination of holy fire that deals extra damage and heals allies',
+        type: 'area',
+        damage: '3d8+6', // Higher damage than standard abilities
+        healing: '2d6',   // Also provides healing to allies
+        requiredAffinity: 'High',
+        icon: 'local_fire_department',
+        color: '#FFD700' // Gold color
+      },
+      'Fey-Plant': {
+        name: 'Nature\'s Blessing',
+        description: 'Enhances the party with natural energy, boosting defense and healing',
+        type: 'buff',
+        healing: '2d8',
+        defensiveBonus: 3, // Adds temporary AC to all allies
+        duration: 3,      // Lasts 3 rounds
+        requiredAffinity: 'High',
+        icon: 'eco',
+        color: '#4ADE80' // Green color
+      },
+      'Beast-Humanoid': {
+        name: 'Hunter\'s Bond',
+        description: 'Perfect coordination between beast and master, granting devastating precision',
+        type: 'attack',
+        damage: '2d12+6', // Higher single-target damage
+        criticalRange: 19, // Crits on 19-20
+        requiredAffinity: 'High',
+        icon: 'pets',
+        color: '#60A5FA' // Blue color
+      },
+      'Undead-Fiend': {
+        name: 'Unholy Pact',
+        description: 'A terrifying combination of undeath and demonic energy that drains life',
+        type: 'attack',
+        damage: '2d10+4',
+        lifeSteal: true,  // Heals attacker for 50% of damage
+        requiredAffinity: 'High',
+        icon: 'blood_count',
+        color: '#EC4899' // Pink color
+      },
+      'Elemental-Elemental': {
+        name: 'Elemental Fusion',
+        description: 'Combines elemental powers for devastating area effects',
+        type: 'area',
+        damage: '4d6',
+        requiredAffinity: 'High',
+        icon: 'storm',
+        color: '#F59E0B' // Amber color
+      },
+      'Construct-Humanoid': {
+        name: 'Master\'s Command',
+        description: 'Perfect synchronization between creator and creation',
+        type: 'buff',
+        attackBonus: 4,
+        duration: 2,
+        requiredAffinity: 'Medium',
+        icon: 'precision_manufacturing',
+        color: '#6B7280' // Gray color
+      },
+      'Fiend-Beast': {
+        name: 'Corrupted Claws',
+        description: 'Infuses a beast with fiendish energy for a devastating attack',
+        type: 'attack',
+        damage: '3d6+8',
+        effectDescription: 'Target suffers ongoing damage',
+        requiredAffinity: 'Medium',
+        icon: 'front_hand',
+        color: '#DC2626' // Red color
+      },
+      'Dragon-Dragon': {
+        name: 'Twin Dragon Breath',
+        description: 'Two dragons combine their breath attacks into a devastating blast',
+        type: 'area',
+        damage: '5d8',
+        requiredAffinity: 'Low', // Even dragons with low affinity can do this
+        icon: 'flourescent',
+        color: '#FF4444' // Bright red
+      },
+      'Celestial-Humanoid': {
+        name: 'Divine Intervention',
+        description: 'A celestial bestows divine protection upon its allies',
+        type: 'buff',
+        healing: '3d6',
+        defensiveBonus: 2,
+        duration: 3,
+        requiredAffinity: 'Medium',
+        icon: 'shield',
+        color: '#FBBF24' // Yellow color
+      },
+      'Fey-Humanoid': {
+        name: 'Enchanted Strike',
+        description: 'Fey magic enhances a humanoid\'s attack with ancient power',
+        type: 'attack',
+        damage: '2d8+6',
+        effectDescription: 'Target is stunned for 1 turn',
+        requiredAffinity: 'Medium',
+        icon: 'auto_awesome',
+        color: '#A78BFA' // Purple color
+      }
+      // More combinations can be added
+    };
+    
+    console.log("Combo abilities system initialized");
+  }
+
   // Calculate and update relationships between party members
   updatePartyRelationships() {
     // Collection of all monsters
@@ -6727,7 +6971,73 @@ testSaveLoad() {
 }
 
 // Add this method to PartyManager class
+// getAvailableComboAbilities() {
+//   const activeMonsters = this.party.active;
+//   const availableCombos = [];
+  
+//   // Check each pair of monsters
+//   for (let i = 0; i < activeMonsters.length; i++) {
+//     for (let j = i + 1; j < activeMonsters.length; j++) {
+//       const monster1 = activeMonsters[i];
+//       const monster2 = activeMonsters[j];
+      
+//       // Get monster types
+//       const type1 = monster1.type || monster1.data?.basic?.type;
+//       const type2 = monster2.type || monster2.data?.basic?.type;
+      
+//       // Check for beast-humanoid combo (Hunter's Bond)
+//       if ((type1 === 'Beast' && type2 === 'Humanoid') || 
+//           (type1 === 'Humanoid' && type2 === 'Beast')) {
+//         availableCombos.push({
+//           name: "Hunter's Bond",
+//           description: "Perfect coordination between beast and humanoid, granting extra attacks and improved accuracy.",
+//           type: "buff",
+//           damage: null,
+//           color: "#4ade80",
+//           icon: "group",
+//           monsters: [monster1, monster2]
+//         });
+//         console.log(`Found available combo: Hunter's Bond between ${monster1.name} and ${monster2.name}`);
+//       }
+      
+//       // Add more combos based on types
+//       // Beast-Beast (Pack Tactics)
+//       if (type1 === 'Beast' && type2 === 'Beast') {
+//         availableCombos.push({
+//           name: "Pack Tactics",
+//           description: "Coordinated attacks that grant advantage and additional effects.",
+//           type: "attack",
+//           damage: "2d6",
+//           color: "#ef4444",
+//           icon: "sports_martial_arts",
+//           monsters: [monster1, monster2]
+//         });
+//       }
+      
+//       // Elemental-Elemental (Elemental Fusion)
+//       if (type1 === 'Elemental' && type2 === 'Elemental') {
+//         availableCombos.push({
+//           name: "Elemental Fusion",
+//           description: "Combine elemental powers for devastating area effects.",
+//           type: "area",
+//           damage: "3d6",
+//           color: "#f59e0b",
+//           icon: "blur_circular",
+//           monsters: [monster1, monster2]
+//         });
+//       }
+//     }
+//   }
+  
+//   return availableCombos;
+// }
+
 getAvailableComboAbilities() {
+  // Make sure the combo system is initialized
+  if (!this.comboAbilities) {
+    this.initializeComboSystem();
+  }
+  
   const activeMonsters = this.party.active;
   const availableCombos = [];
   
@@ -6738,49 +7048,41 @@ getAvailableComboAbilities() {
       const monster2 = activeMonsters[j];
       
       // Get monster types
-      const type1 = monster1.type || monster1.data?.basic?.type;
-      const type2 = monster2.type || monster2.data?.basic?.type;
+      const type1 = monster1.type || monster1.data?.basic?.type || '';
+      const type2 = monster2.type || monster2.data?.basic?.type || '';
       
-      // Check for beast-humanoid combo (Hunter's Bond)
-      if ((type1 === 'Beast' && type2 === 'Humanoid') || 
-          (type1 === 'Humanoid' && type2 === 'Beast')) {
-        availableCombos.push({
-          name: "Hunter's Bond",
-          description: "Perfect coordination between beast and humanoid, granting extra attacks and improved accuracy.",
-          type: "buff",
-          damage: null,
-          color: "#4ade80",
-          icon: "group",
-          monsters: [monster1, monster2]
-        });
-        console.log(`Found available combo: Hunter's Bond between ${monster1.name} and ${monster2.name}`);
-      }
+      if (!type1 || !type2) continue;
       
-      // Add more combos based on types
-      // Beast-Beast (Pack Tactics)
-      if (type1 === 'Beast' && type2 === 'Beast') {
-        availableCombos.push({
-          name: "Pack Tactics",
-          description: "Coordinated attacks that grant advantage and additional effects.",
-          type: "attack",
-          damage: "2d6",
-          color: "#ef4444",
-          icon: "sports_martial_arts",
-          monsters: [monster1, monster2]
-        });
-      }
+      // Create both possible type combinations to check
+      const typePair1 = `${type1}-${type2}`;
+      const typePair2 = `${type2}-${type1}`;
       
-      // Elemental-Elemental (Elemental Fusion)
-      if (type1 === 'Elemental' && type2 === 'Elemental') {
-        availableCombos.push({
-          name: "Elemental Fusion",
-          description: "Combine elemental powers for devastating area effects.",
-          type: "area",
-          damage: "3d6",
-          color: "#f59e0b",
-          icon: "blur_circular",
-          monsters: [monster1, monster2]
-        });
+      // Check if there's a combo defined for these types
+      let combo = this.comboAbilities[typePair1] || this.comboAbilities[typePair2];
+      
+      if (combo) {
+        // Check if the monsters have the required affinity
+        const affinityScore = this.calculateAffinity(monster1, monster2);
+        const affinityLevel = this.getAffinityLevel(affinityScore);
+        
+        // Convert levels to numeric for comparison
+        const levelValues = { 'High': 3, 'Medium': 2, 'Low': 1, 'Neutral': 0 };
+        const requiredLevel = levelValues[combo.requiredAffinity] || 0;
+        const currentLevel = levelValues[affinityLevel] || 0;
+        
+        if (currentLevel >= requiredLevel) {
+          // Create a copy of the combo with the specific monsters
+          const availableCombo = {
+            ...combo,
+            monsters: [monster1, monster2],
+            id: `combo_${monster1.id}_${monster2.id}`
+          };
+          
+          availableCombos.push(availableCombo);
+          console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
+        } else {
+          console.log(`${monster1.name} and ${monster2.name} have types matching ${combo.name} but insufficient affinity (need ${combo.requiredAffinity}, have ${affinityLevel})`);
+        }
       }
     }
   }
