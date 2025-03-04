@@ -59,6 +59,7 @@ class CombatSystem {
     this.dialogContainer = null;
 
     // combo system
+    this.addCombatAnimations();
     this.initializeComboSystem();
 
     console.log("Combat System initialized");
@@ -5674,5 +5675,83 @@ useComboAbility(comboId, activeMonster) {
     }, 100);
   }
 
+  // Add to CombatSystem.js
+addCombatAnimations() {
+  // Attack animation
+  this.animateAttack = (attackerCard, targetCard) => {
+    // Clone the attacker card for animation
+    const clone = attackerCard.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.zIndex = '1000';
+    clone.style.opacity = '0.8';
+    clone.style.pointerEvents = 'none';
+    
+    // Get positions
+    const attackerRect = attackerCard.getBoundingClientRect();
+    const targetRect = targetCard.getBoundingClientRect();
+    const battleScene = this.dialogContainer.querySelector('.battle-scene');
+    const battleSceneRect = battleScene.getBoundingClientRect();
+    
+    // Position clone at source
+    clone.style.top = (attackerRect.top - battleSceneRect.top) + 'px';
+    clone.style.left = (attackerRect.left - battleSceneRect.left) + 'px';
+    clone.style.width = attackerRect.width + 'px';
+    clone.style.height = attackerRect.height + 'px';
+    
+    // Add to scene
+    battleScene.appendChild(clone);
+    
+    // Calculate target position
+    const targetX = targetRect.left - battleSceneRect.left + (targetRect.width / 2) - (attackerRect.width / 2);
+    const targetY = targetRect.top - battleSceneRect.top + (targetRect.height / 2) - (attackerRect.height / 2);
+    
+    // Animate!
+    setTimeout(() => {
+      clone.style.transition = 'all 0.3s ease-in-out';
+      clone.style.transform = 'scale(1.1)';
+      
+      setTimeout(() => {
+        clone.style.transition = 'all 0.2s ease-in';
+        clone.style.transform = 'scale(0.9)';
+        clone.style.top = targetY + 'px';
+        clone.style.left = targetX + 'px';
+        
+        // Flash target
+        targetCard.style.boxShadow = '0 0 20px #ff0000';
+        targetCard.style.transform = 'scale(1.05)';
+        
+        setTimeout(() => {
+          // Reset target
+          targetCard.style.boxShadow = '';
+          targetCard.style.transform = '';
+          
+          // Remove clone
+          clone.remove();
+        }, 300);
+      }, 200);
+    }, 10);
+  };
+  
+  // Modify resolveAbility to use animation
+  const originalResolveAbility = this.resolveAbility;
+  this.resolveAbility = (monster, ability, target) => {
+    // Find cards
+    const attackerCard = this.dialogContainer.querySelector(`.combat-monster[data-monster-id="${monster.id}"]`);
+    const targetCard = this.dialogContainer.querySelector(`.combat-monster[data-monster-id="${target.id}"]`);
+    
+    // Animate if cards found and it's an attack
+    if (attackerCard && targetCard && ability.type === 'attack') {
+      this.animateAttack(attackerCard, targetCard);
+      
+      // Delay the actual resolution slightly for animation
+      setTimeout(() => {
+        originalResolveAbility.call(this, monster, ability, target);
+      }, 500);
+    } else {
+      // No animation, just resolve
+      originalResolveAbility.call(this, monster, ability, target);
+    }
+  };
+}
 
 }
