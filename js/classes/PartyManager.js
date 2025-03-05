@@ -1035,7 +1035,9 @@ class PartyManager {
     // Add gameplay properties
     const partyMonster = {
       id: base.id || `monster_${Date.now()}`,
-      name: customName || base.basic?.name || monster.name || 'Unknown Monster',
+      name: base.basic?.name || monster.name || 'Unknown Monster',
+      // Add displayName property that's initially equal to the regular name
+      displayName: base.displayName || base.basic?.name || monster.name || 'Unknown Monster',
       type: base.basic?.type || 'Unknown',
       size: base.basic?.size || 'Medium',
       cr: base.basic?.cr || '0',
@@ -2070,7 +2072,8 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     // This creates a random but consistent tilt between -5 and 5 degrees
     const idNum = monster.id.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
     const tiltAngle = ((idNum % 11) - 5) || (isAlt ? 3 : -3);
-  
+    const displayName = monster.displayName || monster.name;
+
     // Create the card
     const card = document.createElement('div');
     card.className = `monster-card ${type}-party`;
@@ -2130,7 +2133,7 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
             overflow: hidden;
             text-overflow: ellipsis;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-          ">${monster.name}</div>
+          ">${displayName}</div>
           
           <!-- Level Badge (Stays on the right) -->
           <div class="level-badge" style="
@@ -4320,70 +4323,6 @@ connectToSceneInventory() {
     return this.inventory;
   }
 
-  // Render equipment list for dialog
-  // renderEquipmentList(items, monster, slot) {
-  //   // If no items, show message
-  //   if (!items || items.length === 0) {
-  //     return `
-  //       <div style="text-align: center; padding: 20px;">
-  //         <span class="material-icons" style="font-size: 36px; opacity: 0.5;">inventory_2</span>
-  //         <p>No ${slot}s available</p>
-  //       </div>
-  //     `;
-  //   }
-
-  //   // Get currently equipped item
-  //   const equippedItem = monster.equipment[slot];
-
-  //   // Build html for equipment list
-  //   let html = `
-  //     <div class="equipment-list" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
-  //       <!-- Option to unequip -->
-  //       <div class="equipment-item" data-item-id="none" data-slot="${slot}" style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease;">
-  //         <span class="material-icons" style="margin-right: 16px; color: #F44336;">remove_circle</span>
-  //         <div style="flex: 1;">
-  //           <div style="font-weight: bold;">Remove ${slot}</div>
-  //           <div style="color: #666; font-size: 0.9em;">Unequip current ${slot}</div>
-  //         </div>
-  //       </div>
-  //   `;
-
-  //   // Add each item
-  //   items.forEach(item => {
-  //     // Check if this is the equipped item
-  //     const isEquipped = equippedItem && equippedItem.id === item.id;
-
-  //     html += `
-  //       <div class="equipment-item ${isEquipped ? 'equipped' : ''}" 
-  //            data-item-id="${item.id}" 
-  //            data-slot="${slot}" 
-  //            style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; ${isEquipped ? 'background: #e3f2fd; border-color: #2196F3;' : ''}">
-  //         <div class="item-icon" style="margin-right: 16px;">
-  //           ${item.icon ? `<img src="${item.icon}" alt="${item.name}" style="width: 40px; height: 40px;">` :
-  //         `<span class="material-icons" style="font-size: 40px; color: #607D8B;">${slot === 'weapon' ? 'sports_martial_arts' : 'security'}</span>`}
-  //         </div>
-  //         <div style="flex: 1;">
-  //           <div style="font-weight: bold; display: flex; align-items: center;">
-  //             ${item.name}
-  //             ${isEquipped ? `<span class="material-icons" style="margin-left: 8px; color: #2196F3; font-size: 16px;">check_circle</span>` : ''}
-  //           </div>
-  //           <div style="color: #666; font-size: 0.9em;">${item.description || ''}</div>
-  //           ${item.damageBonus || item.acBonus ? `
-  //             <div style="color: #388E3C; margin-top: 4px; font-size: 0.9em;">
-  //               ${item.damageBonus ? `+${item.damageBonus} damage` : ''}
-  //               ${item.acBonus ? `+${item.acBonus} AC` : ''}
-  //             </div>
-  //           ` : ''}
-  //         </div>
-  //       </div>
-  //     `;
-  //   });
-
-  //   html += `</div>`;
-  //   return html;
-  // }
-
-  // Updated Modified showRecruitmentDialog method to use createMonsterCard
   showRecruitmentDialog(monster, encounterMarker = null) {
     // Reset attempt counter logic - keep this part
     if (!this.recruitmentAttempts.currentMarker || 
@@ -4976,9 +4915,13 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
     // Add event listeners after dice animation finishes
     setTimeout(() => {
       if (success) {
-        // Add monster to party
-        this.addMonster(monster);
-    
+        // Only add monster if not using the gift approach
+        if (approach !== 'gift') {
+          // For negotiate/impress, add monster to party
+          this.addMonster(monster);
+        } else {
+          console.log("Skipping monster addition for gift approach - already handled in handleGiftRecruitmentAttempt");
+        }    
         // Continue button
         resultContent.querySelector('.continue-btn').addEventListener('click', () => {
           // Close overlay
@@ -5045,69 +4988,6 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
       }
     }, 1000);  // Wait for dice animation
   }
-
-  /**
-   * Equipment/Inventory Helpers
-   */
-
-  // Get available equipment
-  // getAvailableEquipment(type) {
-  //   // This would normally get equipment from inventory
-  //   // For now, we'll return sample items
-
-  //   if (type === 'weapon') {
-  //     return [
-  //       {
-  //         id: 'sword1',
-  //         name: 'Iron Sword',
-  //         description: 'A simple but sturdy iron sword',
-  //         damageBonus: 1,
-  //         icon: 'icons/weapons/sword.png'
-  //       },
-  //       {
-  //         id: 'axe1',
-  //         name: 'Battle Axe',
-  //         description: 'A heavy axe that deals devastating blows',
-  //         damageBonus: 2,
-  //         icon: 'icons/weapons/axe.png'
-  //       },
-  //       {
-  //         id: 'wand1',
-  //         name: 'Magic Wand',
-  //         description: 'A wooden wand with magical properties',
-  //         damageBonus: 1,
-  //         icon: 'icons/weapons/wand.png'
-  //       }
-  //     ];
-  //   } else if (type === 'armor') {
-  //     return [
-  //       {
-  //         id: 'leather1',
-  //         name: 'Leather Armor',
-  //         description: 'Simple protection made from tanned hide',
-  //         acBonus: 1,
-  //         icon: 'icons/armor/leather.png'
-  //       },
-  //       {
-  //         id: 'chain1',
-  //         name: 'Chain Mail',
-  //         description: 'Interlocking metal rings provide good protection',
-  //         acBonus: 3,
-  //         icon: 'icons/armor/chainmail.png'
-  //       },
-  //       {
-  //         id: 'scale1',
-  //         name: 'Scale Armor',
-  //         description: 'Overlapping metal scales for flexible defense',
-  //         acBonus: 2,
-  //         icon: 'icons/armor/scale.png'
-  //       }
-  //     ];
-  //   }
-
-  //   return [];
-  // }
-
 
   /**
    * Starter Monsters
@@ -7094,34 +6974,6 @@ console.log(`Found ${availableItems.length} unique items for gifts`);
   
   const itemsGrid = content.querySelector('.gift-items-grid');
   
-  // Add each item to grid
-  // availableItems.forEach(item => {
-  //   // Determine gift type for preference logic
-  //   let giftType = 'misc';
-    
-  //   if (item.type === 'weapon') {
-  //     giftType = 'weapon';
-  //   } else if (item.type === 'armor') {
-  //     giftType = 'armor';
-  //   } else if (item.name.toLowerCase().includes('potion')) {
-  //     giftType = 'potion';
-  //   } else if (item.name.toLowerCase().includes('food') || 
-  //             item.name.toLowerCase().includes('fruit') || 
-  //             item.name.toLowerCase().includes('meat')) {
-  //     giftType = 'food';
-  //   } else if (item.name.toLowerCase().includes('gem') || 
-  //             item.name.toLowerCase().includes('gold') || 
-  //             item.name.toLowerCase().includes('jewelry')) {
-  //     giftType = 'treasure';
-  //   } else if (item.name.toLowerCase().includes('chest') || 
-  //             item.name.toLowerCase().includes('box')) {
-  //     giftType = 'chest';
-  //   }
-    
-  //   // Get effectiveness for this gift type and monster type
-  //   const effectiveness = this.getGiftEffectiveness(giftType, monsterType);
-    
-
   availableItems.forEach(item => {
     // Determine gift type for preference logic
     const giftType = this.determineGiftType(item);
@@ -7891,89 +7743,7 @@ getMonsterName(monster) {
          "Unknown Monster";
 }
 
-// 7. Method to handle recruitment attempt with gift modifier
-// handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effectiveness, recruitmentOverlay) {
-//   // Increase current attempt count
-//   this.recruitmentAttempts.currentCount++;
-  
-//   console.log(`Gift recruitment attempt ${this.recruitmentAttempts.currentCount}/${this.recruitmentAttempts.maxAttempts}`);
-//   console.log(`Base chance modifier: ${chanceModifier}`);
-  
-//   // Determine success chance based on monster type and approach
-//   let successChance = 0.5;  // Base 50% chance
-  
-//   // Apply the gift modifier
-//   successChance += chanceModifier;
-  
-//   // Cap success chance
-//   successChance = Math.max(0.1, Math.min(0.9, successChance));
-  
-//   console.log(`Final success chance: ${successChance.toFixed(2)}`);
-  
-//   // Roll for success
-//   const roll = Math.random();
-//   const success = roll <= successChance;
-  
-//   console.log(`Gift recruitment roll: ${roll.toFixed(2)} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
 
-//   // If successful, add extra logic for naming the monster and keeping/renaming the item
-//   if (success) {
-//     // Generate a name for the monster
-//     const monsterName = this.generateMonsterName(monster);
-//     console.log(`Generated name for monster: ${monsterName}`);
-    
-//     // Close the recruitment dialog first
-//     if (recruitmentOverlay) {
-//       recruitmentOverlay.style.opacity = '0';
-//       const dialogContainer = recruitmentOverlay.querySelector('.party-container');
-//       if (dialogContainer) {
-//         dialogContainer.style.transform = 'scale(0.95)';
-//       }
-//       setTimeout(() => {
-//         if (recruitmentOverlay.parentNode) {
-//           recruitmentOverlay.parentNode.removeChild(recruitmentOverlay);
-//         }
-//       }, 300);
-//     }
-    
-//     // Add the monster to party with its new name
-//     const newMonster = this.prepareMonster(monster);
-//     newMonster.name = monsterName;
-    
-//     // If the monster is a humanoid and the gift was a usable item (weapon/armor), equip it
-//     const monsterType = monster.basic?.type || monster.type || '';
-//     if (monsterType === 'Humanoid' && (giftType === 'weapon' || giftType === 'armor')) {
-//       // Create a copy of the item with a personalized name
-//       const personalizedItem = JSON.parse(JSON.stringify(giftedItem));
-//       personalizedItem.name = `${monsterName}'s ${giftedItem.name}`;
-      
-//       // Equip the item to the monster
-//       newMonster.equipment = newMonster.equipment || {};
-//       newMonster.equipment[giftType] = personalizedItem;
-      
-//       // Update stats based on equipment
-//       this.updateMonsterStats(newMonster);
-      
-//       console.log(`Equipped personalized ${giftType} to ${monsterName}: ${personalizedItem.name}`);
-//     }
-    
-//     // Add to party
-//     this.addMonster(newMonster);
-//     console.log(`Added ${monsterName} to party`);
-    
-//     // Remove the encounter marker if success
-//     this.removeEncounterMarker();
-//   }
-  
-//   // Show result with dice animation
-//   this.showRecruitmentResult(monster, success, 'gift', recruitmentOverlay, {
-//     itemName: giftedItem.name,
-//     monsterName: success ? this.generateMonsterName(monster) : null,
-//     effectiveness: effectiveness.effectiveness
-//   });
-// }
-
-// Method to handle recruitment attempt with gift modifier
 handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effectiveness, recruitmentOverlay) {
   // Increase current attempt count
   this.recruitmentAttempts.currentCount++;
@@ -8038,8 +7808,10 @@ handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effe
     // Create the monster properly using the party's existing method
     const newMonster = this.prepareMonster(monsterData);
     
-    // Make sure the monster's name is set
-    newMonster.name = monsterName;
+    // // Make sure the monster's name is set
+    // newMonster.name = monsterName;
+
+    newMonster.displayName = monsterName;
     
     // If the monster is a humanoid and the gift was a usable item (weapon/armor), equip it
     const monsterType = this.getMonsterType(newMonster);
@@ -8067,7 +7839,8 @@ console.log(`Set monster name to: ${monsterName}, result: ${newMonster.name}`);
     // Add to party
     this.addMonster(newMonster);
     console.log(`Added ${monsterName} to party with type: ${this.getMonsterType(newMonster)}`);
-    
+    console.log(`Added ${monsterName} (${newMonster.name}) to party`);
+
     // Remove the encounter marker if success
     this.removeEncounterMarker();
   }
