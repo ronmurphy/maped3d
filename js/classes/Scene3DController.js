@@ -1374,7 +1374,7 @@ class Scene3DController {
       case "ShiftLeft":
         this.moveState.shiftHeld = true;
         this.moveState.sprint = true;
-        this.moveState.speed = 0.05;
+        this.moveState.speed = 0.09; // 0.05 - running speed
         break;
       case "Space":
         // Initiate jump if not already jumping
@@ -1481,7 +1481,7 @@ class Scene3DController {
       if (e.button === 2) {
         this.moveState.mouseRightDown = true;
         this.moveState.sprint = true;
-        this.moveState.speed = 0.05;
+        this.moveState.speed = 0.09; // 0.05 - running speed
       }
     });
 
@@ -4188,7 +4188,7 @@ class Scene3DController {
         window.partyManager.showRecruitmentDialog(marker.userData.monster, marker);
 
 
-        
+
 
         // Add dialog close handler
         const cleanup = () => {
@@ -6113,8 +6113,8 @@ this.gameState = 'initializing';
         });
       }
 
-      // Run for 3 seconds total
-      if (totalTime < 6000) {
+      // Run for 5 seconds total
+      if (totalTime < 5000) {
         requestAnimationFrame(animateTest);
       } else {
         // Clean up test objects
