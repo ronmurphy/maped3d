@@ -1028,14 +1028,14 @@ class PartyManager {
   }
 
   // Prepare a monster for party by adding additional properties needed for game
-  prepareMonster(monster) {
+  prepareMonster(monster, customName = null) {
     // Clone base monster data
     const base = JSON.parse(JSON.stringify(monster.data || monster));
 
     // Add gameplay properties
     const partyMonster = {
       id: base.id || `monster_${Date.now()}`,
-      name: base.basic?.name || monster.name || 'Unknown Monster',
+      name: customName || base.basic?.name || monster.name || 'Unknown Monster',
       type: base.basic?.type || 'Unknown',
       size: base.basic?.size || 'Medium',
       cr: base.basic?.cr || '0',
@@ -2428,6 +2428,20 @@ dismissDrawer.querySelector('.confirm-dismiss-btn').addEventListener('click', ()
     // Convert back to hex
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
+
+  // Helper method to reliably get monster type
+getMonsterType(monster) {
+  // Try various paths to find the monster type
+  let monsterType = 
+    monster.type || 
+    (monster.basic && monster.basic.type) || 
+    (monster.data && monster.data.basic && monster.data.basic.type);
+  
+  // If nothing found, fall back to "Unknown"
+  return monsterType ? 
+    (monsterType.charAt(0).toUpperCase() + monsterType.slice(1).toLowerCase()) : 
+    'Unknown';
+}
 
   getMonsterTypeColor(type) {
     const typeColors = {
@@ -6874,6 +6888,8 @@ getAvailableComboAbilities() {
   return availableCombos;
 }
 
+
+
 // Add this to the createGiftDrawer method
 createGiftDrawer() {
   const giftDrawer = document.createElement('sl-drawer');
@@ -6916,7 +6932,10 @@ createGiftDrawer() {
 
 showGiftSelection(monster, recruitmentOverlay) {
   console.log("Opening gift selection for", monster.name || monster.basic?.name || "monster");
-  
+  console.log("Monster-Type:", monster.type);
+  const mType = this.getMonsterType(monster)
+  console.log("getMonsterType:", mType);
+
   // Make sure dialogContainer is properly set
   if (!this.dialogContainer) {
     console.error("Dialog container not found!");
@@ -7044,7 +7063,7 @@ console.log(`Found ${availableItems.length} unique items for gifts`);
   
   // Populate gift drawer
   const content = this.giftDrawer.querySelector('.gift-drawer-content');
-  const monsterType = monster.basic?.type || monster.type || 'Unknown';
+  const monsterType = this.getMonsterType(monster)
   
   if (availableItems.length === 0) {
     // No items case
@@ -7076,32 +7095,43 @@ console.log(`Found ${availableItems.length} unique items for gifts`);
   const itemsGrid = content.querySelector('.gift-items-grid');
   
   // Add each item to grid
+  // availableItems.forEach(item => {
+  //   // Determine gift type for preference logic
+  //   let giftType = 'misc';
+    
+  //   if (item.type === 'weapon') {
+  //     giftType = 'weapon';
+  //   } else if (item.type === 'armor') {
+  //     giftType = 'armor';
+  //   } else if (item.name.toLowerCase().includes('potion')) {
+  //     giftType = 'potion';
+  //   } else if (item.name.toLowerCase().includes('food') || 
+  //             item.name.toLowerCase().includes('fruit') || 
+  //             item.name.toLowerCase().includes('meat')) {
+  //     giftType = 'food';
+  //   } else if (item.name.toLowerCase().includes('gem') || 
+  //             item.name.toLowerCase().includes('gold') || 
+  //             item.name.toLowerCase().includes('jewelry')) {
+  //     giftType = 'treasure';
+  //   } else if (item.name.toLowerCase().includes('chest') || 
+  //             item.name.toLowerCase().includes('box')) {
+  //     giftType = 'chest';
+  //   }
+    
+  //   // Get effectiveness for this gift type and monster type
+  //   const effectiveness = this.getGiftEffectiveness(giftType, monsterType);
+    
+
   availableItems.forEach(item => {
     // Determine gift type for preference logic
-    let giftType = 'misc';
-    
-    if (item.type === 'weapon') {
-      giftType = 'weapon';
-    } else if (item.type === 'armor') {
-      giftType = 'armor';
-    } else if (item.name.toLowerCase().includes('potion')) {
-      giftType = 'potion';
-    } else if (item.name.toLowerCase().includes('food') || 
-              item.name.toLowerCase().includes('fruit') || 
-              item.name.toLowerCase().includes('meat')) {
-      giftType = 'food';
-    } else if (item.name.toLowerCase().includes('gem') || 
-              item.name.toLowerCase().includes('gold') || 
-              item.name.toLowerCase().includes('jewelry')) {
-      giftType = 'treasure';
-    } else if (item.name.toLowerCase().includes('chest') || 
-              item.name.toLowerCase().includes('box')) {
-      giftType = 'chest';
-    }
+    const giftType = this.determineGiftType(item);
+    console.log(`Item: ${item.name}, Detected type: ${giftType}`);
     
     // Get effectiveness for this gift type and monster type
+    const monsterType = this.getMonsterType(monster)
     const effectiveness = this.getGiftEffectiveness(giftType, monsterType);
-    
+    console.log(`  -> Effectiveness for ${monsterType}: ${effectiveness.effectiveness} (${effectiveness.modifier})`);
+ 
     // Determine color based on effectiveness
     let effectColor = '#6B7280'; // Default gray
     switch (effectiveness.effectiveness) {
@@ -7289,78 +7319,103 @@ determineItemType(item) {
 determineGiftType(item) {
   if (!item) return 'misc';
   
+  // Normalize name and type
   const name = (item.name || '').toLowerCase();
   const type = (item.type || '').toLowerCase();
   
-  // Primary type detection
-  if (type === 'weapon' || name.includes('sword') || name.includes('axe') || 
-      name.includes('dagger') || name.includes('mace') || name.includes('hammer') ||
-      name.includes('bow') || name.includes('staff')) {
-    return 'weapon';
-  }
+  console.log(`Determining gift type for: "${name}"`);
   
-  if (type === 'armor' || name.includes('armor') || name.includes('shield') || 
-      name.includes('helmet') || name.includes('plate') || name.includes('mail') ||
-      name.includes('gauntlet') || name.includes('boot')) {
-    return 'armor';
-  }
-  
-  // Consumables
-  if (name.includes('potion') || name.includes('elixir') || name.includes('vial') || 
-      name.includes('flask') || name.includes('brew') || name.includes('tonic')) {
-    return 'potion';
-  }
-  
-  if (name.includes('food') || name.includes('fruit') || name.includes('meat') || 
-      name.includes('bread') || name.includes('fish') || name.includes('cheese') ||
-      name.includes('stew') || name.includes('cake')) {
-    return 'food';
-  }
-  
-  // Valuable materials - check these before generic containers
-  if (name.includes('gem') || name.includes('jewel') || name.includes('crystal') || 
-      name.includes('diamond') || name.includes('emerald') || name.includes('ruby') ||
-      name.includes('sapphire') || name.includes('pearl') || name.includes('treasure')) {
-    return 'gem';  // New specific category for gems
-  }
-  
+  // TREASURE DETECTION - Check first for precious materials (highest priority)
   if (name.includes('gold') || name.includes('golden') || name.includes('silver') ||
-      name.includes('platinum') || name.includes('coin') || name.includes('wealth') ||
+      name.includes('platinum') || name.includes('treasure') || name.includes('coin') ||
       name.includes('crown') || name.includes('jewelry')) {
+    console.log(`  -> Contains treasure keywords (gold, silver, etc)`);
     return 'treasure';  // Precious metals category
   }
   
-  // Metal items if not already categorized as weapons/armor
-  if ((name.includes('iron') || name.includes('steel') || name.includes('bronze') ||
-       name.includes('copper') || name.includes('metal')) && 
-      !(type === 'weapon' || type === 'armor')) {
+  // GEM DETECTION
+  if (name.includes('gem') || name.includes('jewel') || name.includes('crystal') || 
+      name.includes('diamond') || name.includes('emerald') || name.includes('ruby') ||
+      name.includes('sapphire') || name.includes('pearl')) {
+    console.log(`  -> Contains gem keywords`);
+    return 'gem';
+  }
+  
+  // MAGIC DETECTION
+  if (name.includes('magic') || name.includes('enchanted') || name.includes('arcane') ||
+      name.includes('mystic') || name.includes('spell') || name.includes('rune') ||
+      name.includes('scroll')) {
+    console.log(`  -> Contains magic keywords`);
+    return 'magic';
+  }
+  
+  // NATURE DETECTION
+  if (name.includes('flower') || name.includes('plant') || name.includes('leaf') ||
+      name.includes('branch') || name.includes('seed') || name.includes('herb') ||
+      name.includes('wood') || name.includes('natural')) {
+    console.log(`  -> Contains nature keywords`);
+    return 'nature';
+  }
+  
+  // WEAPON DETECTION
+  if (type === 'weapon' || name.includes('sword') || name.includes('axe') || 
+      name.includes('dagger') || name.includes('mace') || name.includes('hammer') ||
+      name.includes('bow') || name.includes('staff') || name.includes('spear') ||
+      name.includes('blade')) {
+    console.log(`  -> Contains weapon keywords`);
+    return 'weapon';
+  }
+  
+  // ARMOR DETECTION
+  if (type === 'armor' || name.includes('armor') || name.includes('shield') || 
+      name.includes('helmet') || name.includes('plate') || name.includes('mail') ||
+      name.includes('gauntlet') || name.includes('boot')) {
+    console.log(`  -> Contains armor keywords`);
+    return 'armor';
+  }
+  
+  // POTION DETECTION  
+  if (name.includes('potion') || name.includes('elixir') || name.includes('vial') || 
+      name.includes('flask') || name.includes('brew') || name.includes('tonic')) {
+    console.log(`  -> Contains potion keywords`);
+    return 'potion';
+  }
+  
+  // FOOD DETECTION
+  if (name.includes('food') || name.includes('fruit') || name.includes('meat') || 
+      name.includes('bread') || name.includes('fish') || name.includes('cheese') ||
+      name.includes('stew') || name.includes('cake') || name.includes('berry') ||
+      name.includes('apple') || name.includes('vegetable')) {
+    console.log(`  -> Contains food keywords`);
+    return 'food';
+  }
+  
+  // METAL DETECTION (if not already categorized as weapons/armor)
+  if (name.includes('iron') || name.includes('steel') || name.includes('bronze') ||
+      name.includes('copper') || name.includes('metal')) {
+    console.log(`  -> Contains metal keywords`);
     return 'metal';  // New category for metal items
   }
   
-  // Containers
+  // CHEST DETECTION - After materials so "Gold Chest" becomes treasure not chest
   if (name.includes('chest') || name.includes('box') || name.includes('crate') || 
       name.includes('container') || name.includes('coffer')) {
+    console.log(`  -> Contains chest keywords`);
     return 'chest';
   }
   
-  // Magic items
-  if (name.includes('magic') || name.includes('enchanted') || name.includes('arcane') ||
-      name.includes('mystic') || name.includes('spell') || name.includes('rune')) {
-    return 'magic';  // New category for magical items
-  }
-  
-  // Nature items
-  if (name.includes('flower') || name.includes('plant') || name.includes('leaf') ||
-      name.includes('branch') || name.includes('seed') || name.includes('herb')) {
-    return 'nature';  // New category for nature items
-  }
-  
+  console.log(`  -> No specific keywords found, using default: misc`);
   return 'misc';
 }
 
-
 getGiftEffectiveness(giftType, monsterType) {
-  // Gift preferences by monster type
+  // Normalize types to ensure consistent comparisons
+  const normalizedGiftType = giftType.toLowerCase();
+  const normalizedMonsterType = monsterType.charAt(0).toUpperCase() + monsterType.slice(1).toLowerCase();
+  
+  console.log(`Checking effectiveness of ${normalizedGiftType} for ${normalizedMonsterType}`);
+  
+  // Gift preferences by monster type - KEEP ALL YOUR EXISTING PREFERENCES
   const preferences = {
     'Beast': {
       'food': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The beast excitedly devours the food offering!" },
@@ -7442,17 +7497,33 @@ getGiftEffectiveness(giftType, monsterType) {
   // Default values if monster type or gift type not found
   const defaultResponse = { effectiveness: 'Neutral', modifier: 0, reaction: "The creature seems indifferent to your offering." };
   
+  // Log what types we found
+  console.log(`Available monster types: ${Object.keys(preferences).join(', ')}`);
+  console.log(`Looking for: ${normalizedMonsterType}`);
+  
   // Check if we have preferences for this monster type
-  const monsterPreferences = preferences[monsterType] || {};
+  const monsterPreferences = preferences[normalizedMonsterType] || {};
+  
+  if (!monsterPreferences || Object.keys(monsterPreferences).length === 0) {
+    console.log(`No preferences found for monster type: ${normalizedMonsterType}`);
+  } else {
+    console.log(`Found preferences for ${normalizedMonsterType}, gift types: ${Object.keys(monsterPreferences).join(', ')}`);
+  }
+  
+  // Check for the gift type preference
+  const preference = monsterPreferences[normalizedGiftType];
+  if (!preference) {
+    console.log(`No specific preference for ${normalizedGiftType}`);
+  }
   
   // Return preference for this gift type, or default if not found
-  return monsterPreferences[giftType] || defaultResponse;
+  return monsterPreferences[normalizedGiftType] || defaultResponse;
 }
 
-// 3. Method to populate the gift drawer with items from inventory
 populateGiftDrawer(drawer, monster) {
   const content = drawer.querySelector('.gift-drawer-content');
   const monsterType = monster.basic?.type || monster.type || 'Unknown';
+  
   
   content.innerHTML = `
     <div style="margin-bottom: 16px;">
@@ -7821,6 +7892,88 @@ getMonsterName(monster) {
 }
 
 // 7. Method to handle recruitment attempt with gift modifier
+// handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effectiveness, recruitmentOverlay) {
+//   // Increase current attempt count
+//   this.recruitmentAttempts.currentCount++;
+  
+//   console.log(`Gift recruitment attempt ${this.recruitmentAttempts.currentCount}/${this.recruitmentAttempts.maxAttempts}`);
+//   console.log(`Base chance modifier: ${chanceModifier}`);
+  
+//   // Determine success chance based on monster type and approach
+//   let successChance = 0.5;  // Base 50% chance
+  
+//   // Apply the gift modifier
+//   successChance += chanceModifier;
+  
+//   // Cap success chance
+//   successChance = Math.max(0.1, Math.min(0.9, successChance));
+  
+//   console.log(`Final success chance: ${successChance.toFixed(2)}`);
+  
+//   // Roll for success
+//   const roll = Math.random();
+//   const success = roll <= successChance;
+  
+//   console.log(`Gift recruitment roll: ${roll.toFixed(2)} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
+
+//   // If successful, add extra logic for naming the monster and keeping/renaming the item
+//   if (success) {
+//     // Generate a name for the monster
+//     const monsterName = this.generateMonsterName(monster);
+//     console.log(`Generated name for monster: ${monsterName}`);
+    
+//     // Close the recruitment dialog first
+//     if (recruitmentOverlay) {
+//       recruitmentOverlay.style.opacity = '0';
+//       const dialogContainer = recruitmentOverlay.querySelector('.party-container');
+//       if (dialogContainer) {
+//         dialogContainer.style.transform = 'scale(0.95)';
+//       }
+//       setTimeout(() => {
+//         if (recruitmentOverlay.parentNode) {
+//           recruitmentOverlay.parentNode.removeChild(recruitmentOverlay);
+//         }
+//       }, 300);
+//     }
+    
+//     // Add the monster to party with its new name
+//     const newMonster = this.prepareMonster(monster);
+//     newMonster.name = monsterName;
+    
+//     // If the monster is a humanoid and the gift was a usable item (weapon/armor), equip it
+//     const monsterType = monster.basic?.type || monster.type || '';
+//     if (monsterType === 'Humanoid' && (giftType === 'weapon' || giftType === 'armor')) {
+//       // Create a copy of the item with a personalized name
+//       const personalizedItem = JSON.parse(JSON.stringify(giftedItem));
+//       personalizedItem.name = `${monsterName}'s ${giftedItem.name}`;
+      
+//       // Equip the item to the monster
+//       newMonster.equipment = newMonster.equipment || {};
+//       newMonster.equipment[giftType] = personalizedItem;
+      
+//       // Update stats based on equipment
+//       this.updateMonsterStats(newMonster);
+      
+//       console.log(`Equipped personalized ${giftType} to ${monsterName}: ${personalizedItem.name}`);
+//     }
+    
+//     // Add to party
+//     this.addMonster(newMonster);
+//     console.log(`Added ${monsterName} to party`);
+    
+//     // Remove the encounter marker if success
+//     this.removeEncounterMarker();
+//   }
+  
+//   // Show result with dice animation
+//   this.showRecruitmentResult(monster, success, 'gift', recruitmentOverlay, {
+//     itemName: giftedItem.name,
+//     monsterName: success ? this.generateMonsterName(monster) : null,
+//     effectiveness: effectiveness.effectiveness
+//   });
+// }
+
+// Method to handle recruitment attempt with gift modifier
 handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effectiveness, recruitmentOverlay) {
   // Increase current attempt count
   this.recruitmentAttempts.currentCount++;
@@ -7844,8 +7997,8 @@ handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effe
   const success = roll <= successChance;
   
   console.log(`Gift recruitment roll: ${roll.toFixed(2)} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
-
-  // If successful, add extra logic for naming the monster and keeping/renaming the item
+  
+  // If successful, add monster to party
   if (success) {
     // Generate a name for the monster
     const monsterName = this.generateMonsterName(monster);
@@ -7865,12 +8018,31 @@ handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effe
       }, 300);
     }
     
-    // Add the monster to party with its new name
-    const newMonster = this.prepareMonster(monster);
+    // Create a proper copy of the monster for the party
+    // First determine what format we're dealing with to ensure we get all needed data
+    let monsterData;
+    
+    if (monster.data) {
+      // If monster has a data property, use that as the base
+      monsterData = JSON.parse(JSON.stringify(monster.data));
+    } else {
+      // Otherwise use the monster object directly
+      monsterData = JSON.parse(JSON.stringify(monster));
+    }
+    
+    // Update the name in all relevant places
+    if (monsterData.basic) {
+      monsterData.basic.name = monsterName;
+    }
+    
+    // Create the monster properly using the party's existing method
+    const newMonster = this.prepareMonster(monsterData);
+    
+    // Make sure the monster's name is set
     newMonster.name = monsterName;
     
     // If the monster is a humanoid and the gift was a usable item (weapon/armor), equip it
-    const monsterType = monster.basic?.type || monster.type || '';
+    const monsterType = this.getMonsterType(newMonster);
     if (monsterType === 'Humanoid' && (giftType === 'weapon' || giftType === 'armor')) {
       // Create a copy of the item with a personalized name
       const personalizedItem = JSON.parse(JSON.stringify(giftedItem));
@@ -7885,10 +8057,16 @@ handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effe
       
       console.log(`Equipped personalized ${giftType} to ${monsterName}: ${personalizedItem.name}`);
     }
-    
+    // In handleGiftRecruitmentAttempt
+// const newMonster = this.prepareMonster(monsterData);
+
+// Force the name to be set after preparation
+newMonster.name = monsterName;
+console.log(`Set monster name to: ${monsterName}, result: ${newMonster.name}`);
+
     // Add to party
     this.addMonster(newMonster);
-    console.log(`Added ${monsterName} to party`);
+    console.log(`Added ${monsterName} to party with type: ${this.getMonsterType(newMonster)}`);
     
     // Remove the encounter marker if success
     this.removeEncounterMarker();
