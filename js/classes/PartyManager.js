@@ -6807,10 +6807,6 @@ getAvailableComboAbilities() {
     for (let j = i + 1; j < activeMonsters.length; j++) {
       const monster1 = activeMonsters[i];
       const monster2 = activeMonsters[j];
-      
-
-      // const type1 = monster1.type || monster1.data?.basic?.type || '';
-      // const type2 = monster2.type || monster2.data?.basic?.type || '';
 
       // Get monster types
       const type1 = this.getNormalizedType(monster1.type || monster1.basic?.type || '');
@@ -6833,7 +6829,7 @@ getAvailableComboAbilities() {
         };
         
         availableCombos.push(availableCombo);
-        console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
+        // console.log(`Found available combo: ${combo.name} between ${monster1.name} and ${monster2.name}`);
       }
     }
   }
