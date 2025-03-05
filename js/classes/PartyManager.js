@@ -41,6 +41,13 @@ class PartyManager {
       misc: []
     };
 
+    this.recruitmentAttempts = {
+      currentCount: 0,
+      maxAttempts: 3,
+      currentMarker: null,
+      currentMonster: null
+    };
+
     // Variables for UI elements
     this.partyDialog = null;
     this.activeTab = 'active';
@@ -3293,101 +3300,11 @@ contentHtml += this.createComboAbilitiesSection(monster);
     return html;
   }
 
-  // Render a monster card
+
+    // Update this method to use createMonsterCard internally
   renderMonsterCard(monster, location) {
-    // Format HP as fraction and percentage
-    const hpPercent = (monster.currentHP / monster.maxHP) * 100;
-    let hpBarColor = '#4CAF50';  // Green
-    if (hpPercent < 30) {
-      hpBarColor = '#F44336';  // Red
-    } else if (hpPercent < 70) {
-      hpBarColor = '#FF9800';  // Orange
-    }
-
-    const tokenSource = monster.token?.data || monster.token?.url || null;
-
-
-    // Equipment icons
-    const weaponIcon = monster.equipment.weapon ?
-      `<img src="${monster.equipment.weapon.icon}" alt="${monster.equipment.weapon.name}" title="${monster.equipment.weapon.name}" style="width: 24px; height: 24px;">` :
-      `<span class="material-icons" style="opacity: 0.3;">add</span>`;
-
-    const armorIcon = monster.equipment.armor ?
-      `<img src="${monster.equipment.armor.icon}" alt="${monster.equipment.armor.name}" title="${monster.equipment.armor.name}" style="width: 24px; height: 24px;">` :
-      `<span class="material-icons" style="opacity: 0.3;">add</span>`;
-
-    return `
-      <div class="monster-card" data-monster-id="${monster.id}" style="...">
-        <div class="monster-header" style="...">
-          <div class="monster-image" style="width: 64px; height: 64px; margin-right: 10px;">
-            <img src="${tokenSource || this.generateDefaultTokenImage(monster)}" 
-                 alt="${monster.name}" 
-                 style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
-          </div>
-          <div class="monster-info" style="flex: 1;">
-            <div class="monster-name" style="font-weight: bold; font-size: 1.1em;">${monster.name}</div>
-            <div class="monster-type" style="color: #666; font-size: 0.9em;">${monster.size} ${monster.type}</div>
-            <div class="monster-level" style="margin-top: 4px;">Level ${monster.level}</div>
-          </div>
-        </div>
-        
-        <!-- Monster stats -->
-        <div class="monster-stats" style="padding: 10px;">
-          <!-- HP Bar -->
-          <div class="hp-bar-label" style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-            <span>HP</span>
-            <span>${monster.currentHP}/${monster.maxHP}</span>
-          </div>
-          <div class="hp-bar-bg" style="height: 8px; background: #e0e0e0; border-radius: 4px; margin-bottom: 10px;">
-            <div class="hp-bar-fill" style="height: 100%; width: ${hpPercent}%; background: ${hpBarColor}; border-radius: 4px;"></div>
-          </div>
-          
-          <!-- Other stats -->
-          <div class="stat-row" style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span>AC</span>
-            <span>${monster.armorClass}</span>
-          </div>
-          <div class="stat-row" style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span>CR</span>
-            <span>${monster.cr}</span>
-          </div>
-          
-          <!-- Equipment -->
-          <div class="equipment" style="display: flex; justify-content: space-between; margin-top: 8px;">
-            <div class="equipment-slot weapon" data-slot="weapon" data-monster-id="${monster.id}" style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
-              <span class="material-icons" style="font-size: 16px;">sports_martial_arts</span>
-              ${weaponIcon}
-            </div>
-            <div class="equipment-slot armor" data-slot="armor" data-monster-id="${monster.id}" style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
-              <span class="material-icons" style="font-size: 16px;">security</span>
-              ${armorIcon}
-            </div>
-          </div>
-        </div>
-        
-        <!-- Action buttons -->
-        <div class="monster-actions" style="display: flex; padding: 8px; background: #f9f9f9; border-top: 1px solid #eee;">
-          ${location === 'active' ? `
-            <sl-button class="move-to-reserve" size="small" data-monster-id="${monster.id}">
-              <span class="material-icons" style="font-size: 16px;">arrow_downward</span>
-              To Reserve
-            </sl-button>
-          ` : `
-            <sl-button class="move-to-active" size="small" data-monster-id="${monster.id}" ?disabled="${this.party.active.length >= this.party.maxActive}">
-              <span class="material-icons" style="font-size: 16px;">arrow_upward</span>
-              To Active
-            </sl-button>
-          `}
-          <div style="flex: 1;"></div>
-          <sl-button class="view-details" size="small" data-monster-id="${monster.id}">
-            <span class="material-icons" style="font-size: 16px;">info</span>
-          </sl-button>
-          <sl-button class="equip-monster" size="small" data-monster-id="${monster.id}">
-            <span class="material-icons" style="font-size: 16px;">build</span>
-          </sl-button>
-        </div>
-      </div>
-    `;
+    // Just pass through to createMonsterCard for consistency
+    return this.createMonsterCard(monster, location);
   }
 
   generateDefaultTokenImage(monster) {
@@ -4452,299 +4369,246 @@ connectToSceneInventory() {
     return html;
   }
 
-  // Updated showRecruitmentDialog method
-  showRecruitmentDialog(monster) {
-
+  // Updated Modified showRecruitmentDialog method to use createMonsterCard
+  showRecruitmentDialog(monster, encounterMarker = null) {
+    // Reset attempt counter logic - keep this part
+    if (!this.recruitmentAttempts.currentMarker || 
+        this.recruitmentAttempts.currentMarker !== encounterMarker) {
+      console.log("New encounter - resetting attempt counter");
+      this.recruitmentAttempts.currentCount = 0;
+      this.recruitmentAttempts.currentMarker = encounterMarker;
+      this.recruitmentAttempts.currentMonster = monster;
+    } else {
+      console.log(`Continuing encounter - attempt ${this.recruitmentAttempts.currentCount}/${this.recruitmentAttempts.maxAttempts}`);
+    }
+  
     if (document.querySelector('.party-overlay')) {
       document.querySelector('.party-overlay').remove();
     }
-
+  
     // Create monster from bestiary data if needed
     const recruitMonster = monster.data ? monster : { data: monster };
-
+    
+    // Convert to a format compatible with createMonsterCard
+    const cardMonster = this.prepareMonster(recruitMonster);
+  
     // Create overlay and dialog
     const overlay = document.createElement('div');
     overlay.className = 'party-overlay';
     overlay.style.opacity = '0';
-
+  
     const dialogContainer = document.createElement('div');
     dialogContainer.className = 'party-container';
     dialogContainer.style.maxWidth = '700px';
     dialogContainer.style.transform = 'scale(0.95)';
-
+  
     // Create header
     const header = document.createElement('div');
     header.className = 'party-header';
     header.innerHTML = `
-    <div style="text-align: center; width: 100%;">
-      <h1 style="margin: 0; font-size: 1.5rem;">Monster Encounter</h1>
-    </div>
-    <button class="close-dialog-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%;">
-      <span class="material-icons">close</span>
-    </button>
-  `;
-
-    // Get monster info
-    const name = recruitMonster.data.basic?.name || 'Unknown Monster';
-    const size = recruitMonster.data.basic?.size || 'Medium';
-    const type = recruitMonster.data.basic?.type || 'Unknown';
-    const cr = recruitMonster.data.basic?.cr || '?';
-
-    const bgColor = this.getMonsterTypeColor(type);
-
-
+      <div style="text-align: center; width: 100%;">
+        <h1 style="margin: 0; font-size: 1.5rem;">Monster Encounter</h1>
+      </div>
+      <button class="close-dialog-btn" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%;">
+        <span class="material-icons">close</span>
+      </button>
+    `;
+  
     // Create content
     const content = document.createElement('div');
     content.className = 'recruitment-content';
     content.style.padding = '24px';
     content.style.color = 'white';
-
-    content.innerHTML = `
-    <!-- Monster presentation section -->
-    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 32px;">
-      <!-- Tilted monster card -->
-      <div class="monster-card" style="
-        width: 220px;
-        background: white;
-        color: #333;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        transform: rotate(-5deg);
-        margin-right: 24px;
-      ">
-        <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0;">
-          <div style="
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: ${bgColor};
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            margin-right: 12px;
-          ">
-            ${recruitMonster.data.token?.data ?
-        `<img src="${recruitMonster.data.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-        name.charAt(0)
-      }
+  
+    // Create presentation section
+    const presentationSection = document.createElement('div');
+    presentationSection.style.cssText = `
+      display: flex;
+      align-items: center; 
+      justify-content: center; 
+      margin-bottom: 32px;
+    `;
+  
+    // Create monster card using the standardized method
+    const monsterCard = this.createMonsterCard(cardMonster, 'encounter', true);
+    monsterCard.style.marginRight = '24px';
+  
+    // Create description
+    const description = document.createElement('div');
+    description.style.maxWidth = '350px';
+    description.innerHTML = `
+      <h2 style="margin: 0 0 16px 0; font-size: 1.3rem;">You've encountered a ${cardMonster.name}!</h2>
+      <p style="margin-bottom: 16px; opacity: 0.9;">This creature appears to be watching you cautiously. Different approaches might work better depending on the monster's nature.</p>
+      <p style="font-style: italic; opacity: 0.8;">How will you approach this ${cardMonster.type.toLowerCase()}?</p>
+    `;
+  
+    // Assemble presentation section
+    presentationSection.appendChild(monsterCard);
+    presentationSection.appendChild(description);
+  
+    // Create approach options
+    const approachSection = document.createElement('div');
+    approachSection.innerHTML = `
+      <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; text-align: center;">Choose Your Approach</h3>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+        <button class="approach-btn negotiate" style="
+          background: rgba(59, 130, 246, 0.15);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          padding: 16px;
+          border-radius: 8px;
+          color: white;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        ">
+          <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+            <span class="material-icons" style="font-size: 36px; color: #3b82f6; margin-bottom: 8px;">chat</span>
+            <span style="font-weight: bold; font-size: 1.1rem;">Negotiate</span>
           </div>
-          <div>
-            <div style="font-weight: bold; font-size: 1.1rem;">${name}</div>
-            <div style="font-size: 0.8rem; color: #666;">
-              ${size} ${type}
-              <span style="
-                background: #e0e7ff;
-                color: #4338ca;
-                font-size: 0.7rem;
-                padding: 1px 4px;
-                border-radius: 4px;
-                margin-left: 4px;
-              ">CR ${cr}</span>
-            </div>
+          <div style="font-size: 0.9rem; opacity: 0.9;">
+            Try to convince the monster to join your party through conversation and diplomacy.
           </div>
-        </div>
+        </button>
         
-        <div style="padding: 12px;">
-          <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
-            <span>HP</span>
-            <span>${recruitMonster.data.stats?.hp?.average || '?'}</span>
+        <button class="approach-btn impress" style="
+          background: rgba(245, 158, 11, 0.15);
+          border: 1px solid rgba(245, 158, 11, 0.3);
+          padding: 16px;
+          border-radius: 8px;
+          color: white;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        ">
+          <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+            <span class="material-icons" style="font-size: 36px; color: #f59e0b; margin-bottom: 8px;">fitness_center</span>
+            <span style="font-weight: bold; font-size: 1.1rem;">Impress</span>
           </div>
-          
-          <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
-            <span>AC</span>
-            <span>${recruitMonster.data.stats?.ac || '?'}</span>
+          <div style="font-size: 0.9rem; opacity: 0.9;">
+            Demonstrate your strength and capabilities to gain the monster's respect.
           </div>
-          
-          ${recruitMonster.data.abilities ? `
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; font-size: 0.8rem;">
-              <div>
-                <div style="font-weight: bold;">STR</div>
-                <div>${recruitMonster.data.abilities.str?.score || '?'}</div>
-              </div>
-              <div>
-                <div style="font-weight: bold;">DEX</div>
-                <div>${recruitMonster.data.abilities.dex?.score || '?'}</div>
-              </div>
-              <div>
-                <div style="font-weight: bold;">CON</div>
-                <div>${recruitMonster.data.abilities.con?.score || '?'}</div>
-              </div>
-            </div>
-          ` : ''}
-        </div>
+        </button>
+        
+        <button class="approach-btn gift" style="
+          background: rgba(168, 85, 247, 0.15);
+          border: 1px solid rgba(168, 85, 247, 0.3);
+          padding: 16px;
+          border-radius: 8px;
+          color: white;
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        ">
+          <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+            <span class="material-icons" style="font-size: 36px; color: #a855f7; margin-bottom: 8px;">card_giftcard</span>
+            <span style="font-weight: bold; font-size: 1.1rem;">Offer Gift</span>
+          </div>
+          <div style="font-size: 0.9rem; opacity: 0.9;">
+            Give the monster a gift as a token of friendship and goodwill.
+          </div>
+        </button>
       </div>
       
-      <!-- Encounter description -->
-      <div style="max-width: 350px;">
-        <h2 style="margin: 0 0 16px 0; font-size: 1.3rem;">You've encountered a ${name}!</h2>
-        <p style="margin-bottom: 16px; opacity: 0.9;">This creature appears to be watching you cautiously. Different approaches might work better depending on the monster's nature.</p>
-        <p style="font-style: italic; opacity: 0.8;">How will you approach this ${type.toLowerCase()}?</p>
+      <!-- Alternative options -->
+      <div style="display: flex; justify-content: center; gap: 16px;">
+        <button class="approach-btn fight" style="
+          background: rgba(239, 68, 68, 0.2);
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          transition: all 0.2s ease;
+        ">
+          <span class="material-icons" style="margin-right: 8px;">swords</span>
+          Fight
+        </button>
+        
+        <button class="approach-btn flee" style="
+          background: rgba(107, 114, 128, 0.2);
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          transition: all 0.2s ease;
+        ">
+          <span class="material-icons" style="margin-right: 8px;">directions_run</span>
+          Flee
+        </button>
       </div>
-    </div>
-    
-    <!-- Approach options -->
-    <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; text-align: center;">Choose Your Approach</h3>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-      <button class="approach-btn negotiate" style="
-        background: rgba(59, 130, 246, 0.15);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        padding: 16px;
-        border-radius: 8px;
-        color: white;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      ">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
-          <span class="material-icons" style="font-size: 36px; color: #3b82f6; margin-bottom: 8px;">chat</span>
-          <span style="font-weight: bold; font-size: 1.1rem;">Negotiate</span>
-        </div>
-        <div style="font-size: 0.9rem; opacity: 0.9;">
-          Try to convince the monster to join your party through conversation and diplomacy.
-        </div>
-      </button>
-      
-      <button class="approach-btn impress" style="
-        background: rgba(245, 158, 11, 0.15);
-        border: 1px solid rgba(245, 158, 11, 0.3);
-        padding: 16px;
-        border-radius: 8px;
-        color: white;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      ">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
-          <span class="material-icons" style="font-size: 36px; color: #f59e0b; margin-bottom: 8px;">fitness_center</span>
-          <span style="font-weight: bold; font-size: 1.1rem;">Impress</span>
-        </div>
-        <div style="font-size: 0.9rem; opacity: 0.9;">
-          Demonstrate your strength and capabilities to gain the monster's respect.
-        </div>
-      </button>
-      
-      <button class="approach-btn gift" style="
-        background: rgba(168, 85, 247, 0.15);
-        border: 1px solid rgba(168, 85, 247, 0.3);
-        padding: 16px;
-        border-radius: 8px;
-        color: white;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      ">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
-          <span class="material-icons" style="font-size: 36px; color: #a855f7; margin-bottom: 8px;">card_giftcard</span>
-          <span style="font-weight: bold; font-size: 1.1rem;">Offer Gift</span>
-        </div>
-        <div style="font-size: 0.9rem; opacity: 0.9;">
-          Give the monster a gift as a token of friendship and goodwill.
-        </div>
-      </button>
-    </div>
-    
-    <!-- Alternative options -->
-    <div style="display: flex; justify-content: center; gap: 16px;">
-      <button class="approach-btn fight" style="
-        background: rgba(239, 68, 68, 0.2);
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        color: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        transition: all 0.2s ease;
-      ">
-        <span class="material-icons" style="margin-right: 8px;">swords</span>
-        Fight
-      </button>
-      
-      <button class="approach-btn flee" style="
-        background: rgba(107, 114, 128, 0.2);
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        color: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        transition: all 0.2s ease;
-      ">
-        <span class="material-icons" style="margin-right: 8px;">directions_run</span>
-        Flee
-      </button>
-    </div>
-  `;
-
+    `;
+  
     // Assemble dialog
+    content.appendChild(presentationSection);
+    content.appendChild(approachSection);
     dialogContainer.appendChild(header);
     dialogContainer.appendChild(content);
     overlay.appendChild(dialogContainer);
     document.body.appendChild(overlay);
-
-    // Add hover effects to approach buttons
+  
+    // Add hover effects to approach buttons - keep this part
     const approachButtons = overlay.querySelectorAll('.approach-btn');
     approachButtons.forEach(button => {
       // Get current background
       const computedStyle = window.getComputedStyle(button);
       const bgColor = computedStyle.backgroundColor;
-
+  
       // Create hover color (more opaque)
       const color = bgColor.replace('0.15', '0.25').replace('0.2', '0.3');
-
+  
       // Add hover effect
       button.addEventListener('mouseenter', () => {
         button.style.backgroundColor = color;
         button.style.transform = 'translateY(-2px)';
       });
-
+  
       button.addEventListener('mouseleave', () => {
         button.style.backgroundColor = bgColor;
         button.style.transform = '';
       });
     });
-
-    // Add event listeners for buttons
+  
+    // Add event listeners for buttons - keep this part
     overlay.querySelector('.close-dialog-btn').addEventListener('click', () => {
       overlay.style.opacity = '0';
       dialogContainer.style.transform = 'scale(0.95)';
       setTimeout(() => overlay.remove(), 300);
     });
-
+  
     overlay.querySelector('.negotiate').addEventListener('click', () => {
       this.handleRecruitmentAttempt(recruitMonster, 'negotiate', overlay);
     });
-
+  
     overlay.querySelector('.impress').addEventListener('click', () => {
       this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
     });
-
+  
     overlay.querySelector('.gift').addEventListener('click', () => {
       this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
     });
-
+  
     overlay.querySelector('.fight').addEventListener('click', () => {
       overlay.style.opacity = '0';
       dialogContainer.style.transform = 'scale(0.95)';
       setTimeout(() => {
         overlay.remove();
         if (window.combatSystem) {
-          // window.combatSystem.initiateCombat([recruitMonster]);
           window.combatSystem.initiateCombat();
         }
       }, 300);
     });
-
+  
     overlay.querySelector('.flee').addEventListener('click', () => {
       overlay.style.opacity = '0';
       dialogContainer.style.transform = 'scale(0.95)';
       setTimeout(() => overlay.remove(), 300);
     });
-
+  
     // Animate in
     setTimeout(() => {
       overlay.style.opacity = '1';
@@ -4755,6 +4619,14 @@ connectToSceneInventory() {
 
   // Handle recruitment attempt
   handleRecruitmentAttempt(monster, approach, overlay) {
+
+    //`Attempt: 1/${this.recruitmentAttempts.maxAttempts}`;
+
+    this.recruitmentAttempts.currentCount++;
+
+    console.log(`Recruitment attempt: ${this.recruitmentAttempts.currentCount}/${this.recruitmentAttempts.maxAttempts}`);
+
+
     // Determine success chance based on monster type and approach
     let successChance = 0.5;  // Base 50% chance
 
@@ -4801,15 +4673,100 @@ connectToSceneInventory() {
     // Show result with dice animation
     this.showRecruitmentResult(monster, success, approach, overlay);
 
+     
+  // Check if we've reached max attempts
+  if (!success && this.recruitmentAttempts.currentCount >= this.recruitmentAttempts.maxAttempts) {
+    // Failed all attempts - close dialog after showing result
+    setTimeout(() => {
+      this.closeRecruitmentDialog(overlay);
+      this.removeEncounterMarker();
+    }, 3000); // Give time to see the final failure message
+  }
+
     return success;
   }
 
+// First, add the missing closeRecruitmentDialog method
+closeRecruitmentDialog(overlay) {
+  if (overlay) {
+    overlay.style.opacity = '0';
+    const dialogContainer = overlay.querySelector('.party-container');
+    if (dialogContainer) {
+      dialogContainer.style.transform = 'scale(0.95)';
+    }
+    
+    setTimeout(() => {
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    }, 300);
+  }
+}
+
+// Then, update removeEncounterMarker to properly handle Sprite objects
+removeEncounterMarker() {
+  if (!this.recruitmentAttempts.currentMarker) {
+    console.log("No marker to remove");
+    return;
+  }
+  
+  // Reference to the current marker
+  const marker = this.recruitmentAttempts.currentMarker;
+  
+  console.log(`Removing encounter marker after recruitment interaction:`, marker);
+  console.log(`Marker details:`, {
+    id: marker.id,
+    type: marker.type,
+    position: marker.position ? `(${marker.position.x}, ${marker.position.y}, ${marker.position.z})` : 'No position',
+    userData: marker.userData
+  });
+  
+  // If we have access to Scene3D, remove the marker
+  if (window.scene3D) {
+    // Since marker is a Sprite, we can remove it directly from the scene
+    if (marker.parent) {
+      console.log(`Removing sprite directly from its parent`);
+      marker.parent.remove(marker);
+    }
+    
+    // ALSO need to remove it from the markers array by ID
+    if (window.scene3D.markers) {
+      // Iterate through all markers to find matching encounter markers
+      const monsterName = marker.userData?.monster?.basic?.name;
+      
+      if (monsterName) {
+        console.log(`Looking for marker with monster name: ${monsterName}`);
+        
+        // Filter out markers with matching monster name
+        const initialCount = window.scene3D.markers.length;
+        window.scene3D.markers = window.scene3D.markers.filter(m => {
+          if (m.type === "encounter" && 
+              m.data && m.data.monster && 
+              m.data.monster.basic && 
+              m.data.monster.basic.name === monsterName) {
+            console.log(`Found and removing marker for ${monsterName}`);
+            return false; // remove this marker
+          }
+          return true; // keep other markers
+        });
+        
+        console.log(`Removed ${initialCount - window.scene3D.markers.length} markers from markers array`);
+      }
+    }
+    
+    console.log(`Encounter marker removal processing complete`);
+  } else {
+    console.warn('No window.scene3D available - cannot remove marker from scene');
+  }
+  
+  // Clear current marker reference
+  this.recruitmentAttempts.currentMarker = null;
+  this.recruitmentAttempts.currentMonster = null;
+}
+
   // Show recruitment result with animation
   showRecruitmentResult(monster, success, approach, overlay) {
-    // Hide previous content
-    //   const dialogContainer = overlay.querySelector('.recruitment-dialog');
-    //   const content = overlay.querySelector('.recruitment-content');
-    //   content.innerHTML = '';
+
 
     const dialogContainer = overlay.querySelector('.party-container');
 
@@ -4891,6 +4848,13 @@ connectToSceneInventory() {
           break;
       }
 
+        // Add warning about attempts remaining
+  if (this.recruitmentAttempts.currentCount < this.recruitmentAttempts.maxAttempts) {
+    approachMessage += ` (${this.recruitmentAttempts.maxAttempts - this.recruitmentAttempts.currentCount} attempts remaining)`;
+  } else {
+    approachMessage += ' The monster is no longer interested and leaves...';
+  }
+
       resultMessage.innerHTML = `
       <span class="material-icons" style="font-size: 48px; color: ${iconColor}; margin-bottom: 16px;">${icon}</span>
       <h2 style="margin: 0 0 8px 0; color: #388E3C;">Success!</h2>
@@ -4902,7 +4866,7 @@ connectToSceneInventory() {
       message = `${monster.data.basic?.name} refused to join your party.`;
       icon = 'cancel';
       iconColor = '#F44336';
-
+console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
       // Additional flavor based on approach
       let approachMessage = '';
       switch (approach) {
@@ -4917,16 +4881,39 @@ connectToSceneInventory() {
           break;
       }
 
-      resultMessage.innerHTML = `
-      <span class="material-icons" style="font-size: 48px; color: ${iconColor}; margin-bottom: 16px;">${icon}</span>
-      <h2 style="margin: 0 0 8px 0; color: #D32F2F;">Failure!</h2>
-      <p style="margin: 0 0 16px 0; font-size: 1.2em;">${message}</p>
-      <p style="color: #666;">${approachMessage}</p>
-      <div style="display: flex; gap: 16px; margin-top: 24px;">
-        <sl-button class="fight-btn" variant="danger">Fight</sl-button>
-        <sl-button class="flee-btn" variant="neutral">Flee</sl-button>
-      </div>
-    `;
+
+        // Check if we still have attempts left
+        const attemptsRemaining = this.recruitmentAttempts.maxAttempts - this.recruitmentAttempts.currentCount;
+        const isLastAttempt = attemptsRemaining <= 0;
+    
+        // Add message about remaining attempts
+        if (!isLastAttempt) {
+          approachMessage += ` (${attemptsRemaining} attempts remaining)`;
+        } else {
+          approachMessage += ' The monster is no longer interested in joining.';
+        }
+    
+        // Different buttons based on remaining attempts
+        const buttonsHTML = !isLastAttempt ? 
+          `<div style="display: flex; gap: 16px; margin-top: 24px;">
+            <sl-button class="try-again-btn" variant="primary">Try Again</sl-button>
+            <sl-button class="fight-btn" variant="danger">Fight</sl-button>
+            <sl-button class="flee-btn" variant="neutral">Flee</sl-button>
+          </div>` :
+          `<div style="display: flex; gap: 16px; margin-top: 24px;">
+            <sl-button class="fight-btn" variant="danger">Fight</sl-button>
+            <sl-button class="flee-btn" variant="neutral">Flee</sl-button>
+          </div>`;
+    
+        resultMessage.innerHTML = `
+          <span class="material-icons" style="font-size: 48px; color: ${iconColor}; margin-bottom: 16px;">${icon}</span>
+          <h2 style="margin: 0 0 8px 0; color: #D32F2F;">Failure!</h2>
+          <p style="margin: 0 0 16px 0; font-size: 1.2em;">${message}</p>
+          <p style="color: #666;">${approachMessage}</p>
+          ${buttonsHTML}
+        `;
+
+
     }
 
     // Assemble result content
@@ -4934,51 +4921,74 @@ connectToSceneInventory() {
     resultContent.appendChild(resultMessage);
     content.appendChild(resultContent);
 
+
     // Add event listeners after dice animation finishes
     setTimeout(() => {
       if (success) {
         // Add monster to party
         this.addMonster(monster);
-
+    
         // Continue button
         resultContent.querySelector('.continue-btn').addEventListener('click', () => {
           // Close overlay
           overlay.style.opacity = '0';
           dialogContainer.style.transform = 'scale(0.95)';
-
           setTimeout(() => {
             overlay.remove();
             this.recruitmentOverlay = null;
+            
+            // IMPORTANT: Also remove the encounter marker on success
+            this.removeEncounterMarker();
           }, 300);
         });
       } else {
+        // Try again button (only present if attempts remain)
+        const tryAgainBtn = resultContent.querySelector('.try-again-btn');
+        if (tryAgainBtn) {
+          tryAgainBtn.addEventListener('click', () => {
+            // Show recruitment dialog again
+            this.showRecruitmentDialog(monster.data || monster, this.recruitmentAttempts.currentMarker);
+          });
+        }
+  
         // Fight button
         resultContent.querySelector('.fight-btn').addEventListener('click', () => {
           // Close overlay
           overlay.style.opacity = '0';
           dialogContainer.style.transform = 'scale(0.95)';
-
+  
           setTimeout(() => {
             overlay.remove();
-
+  
             // Trigger combat with this monster
             if (window.combatSystem) {
               window.combatSystem.initiateCombat([monster]);
             } else {
               console.warn('Combat system not available');
             }
+            
+            // Since we've used up the recruitment chance (fought instead),
+            // remove the marker if this was the last attempt
+            if (this.recruitmentAttempts.currentCount >= this.recruitmentAttempts.maxAttempts) {
+              this.removeEncounterMarker();
+            }
           }, 300);
         });
-
-        // Flee button
+  
+        // Flee button - always removes the marker if it was the last attempt
         resultContent.querySelector('.flee-btn').addEventListener('click', () => {
           // Close overlay
           overlay.style.opacity = '0';
           dialogContainer.style.transform = 'scale(0.95)';
-
+  
           setTimeout(() => {
             overlay.remove();
             this.recruitmentOverlay = null;
+            
+            // Remove the encounter marker if this was the last attempt
+            if (this.recruitmentAttempts.currentCount >= this.recruitmentAttempts.maxAttempts) {
+              this.removeEncounterMarker();
+            }
           }, 300);
         });
       }
@@ -5073,30 +5083,48 @@ connectToSceneInventory() {
     }
   }
 
-  // Make checkForStarterMonster async
+
+    // Update checkForStarterMonster to use the new method
   async checkForStarterMonster() {
     try {
       // Await the result from getEligibleStarterMonsters
       const eligibleMonsters = await this.getEligibleStarterMonsters();
-
+  
       // If we don't have any eligible monsters, just exit
       if (!eligibleMonsters || eligibleMonsters.length === 0) {
         console.warn('No eligible starter monsters found in bestiary');
         return;
       }
-
+  
       // Pick 3 random monsters from eligible list
       const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
-
-      // Show starter selection dialog
-      this.showStarterMonsterDialog(starterChoices);
+  
+      // Use the improved showStarterSelection method instead
+      this.showStarterSelection(starterChoices);
     } catch (error) {
       console.error('Error getting starter monsters:', error);
       // Fallback to defaults as a last resort
       const defaultMonsters = this.createDefaultStarterMonsters();
       const starterChoices = this.getRandomStarters(defaultMonsters, 3);
-      this.showStarterMonsterDialog(starterChoices);
+      // Use the improved showStarterSelection method here too
+      this.showStarterSelection(starterChoices);
     }
+  }
+  
+  // Update offerStarterMonster to use the new method too
+  offerStarterMonster() {
+    const eligibleMonsters = this.getEligibleStarterMonsters();
+  
+    if (eligibleMonsters.length === 0) {
+      console.warn('No eligible starter monsters found in bestiary');
+      return;
+    }
+  
+    // Pick 3 random monsters from eligible list
+    const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
+  
+    // Use the improved showStarterSelection method
+    this.showStarterSelection(starterChoices);
   }
 
   // Find eligible starter monsters from bestiary
@@ -5258,17 +5286,7 @@ connectToSceneInventory() {
     }
   }
 
-  // hasAvailableCombo(monsterId) {
-  //   // Get all available combos
-  //   const availableCombos = this.getAvailableComboAbilities ? 
-  //     this.getAvailableComboAbilities() : 
-  //     (this.partyManager?.getAvailableComboAbilities ? this.partyManager.getAvailableComboAbilities() : []);
-      
-  //   // Check if any combo includes this monster
-  //   return availableCombos?.some(combo => 
-  //     combo.monsters.some(m => m.id === monsterId)
-  //   ) || false;
-  // }
+
 
   hasAvailableCombo(monsterId) {
     // Get all available combos
@@ -5720,6 +5738,163 @@ connectToSceneInventory() {
 
     // Show starter selection dialog
     this.showStarterMonsterDialog(starterChoices);
+  }
+
+    // Replace the starter monster selection dialog with this improved version
+  showStarterSelection(starterMonsters) {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'party-overlay';
+    overlay.style.opacity = '0';
+  
+    // Create container
+    const container = document.createElement('div');
+    container.className = 'party-container';
+    container.style.maxWidth = '900px';
+    container.style.transform = 'scale(0.95)';
+    
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'party-header';
+    header.innerHTML = `
+      <div style="display: flex; align-items: center;">
+        <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px;">
+        <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
+      </div>
+    `;
+  
+    // Create content
+    const content = document.createElement('div');
+    content.style.padding = '24px';
+    content.style.color = 'white';
+    content.innerHTML = `
+      <p style="margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
+        Select your first monster companion to begin your adventure!
+      </p>
+      <div class="starter-monsters-grid" style="
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 24px;
+        justify-content: center;
+      "></div>
+    `;
+  
+    // Assemble
+    container.appendChild(header);
+    container.appendChild(content);
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+  
+    // Add monsters to grid using createMonsterCard method
+    const grid = content.querySelector('.starter-monsters-grid');
+    
+    starterMonsters.forEach((monster, index) => {
+      // Use the existing createMonsterCard method to ensure consistency
+      const card = this.createMonsterCard(monster, 'starter', index % 2 !== 0);
+      
+      // Wrap the card in a container for better selection styling
+      const cardContainer = document.createElement('div');
+      cardContainer.className = 'starter-card-container';
+      cardContainer.style.cssText = `
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      `;
+      
+      // Add selection indicator that's initially hidden
+      const selectionIndicator = document.createElement('div');
+      selectionIndicator.className = 'selection-indicator';
+      selectionIndicator.innerHTML = `
+        <span class="material-icons" style="font-size: 36px; color: #4ade80;">check_circle</span>
+      `;
+      selectionIndicator.style.cssText = `
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.3s ease;
+        z-index: 10;
+      `;
+      
+      // Add click handler
+      cardContainer.addEventListener('click', () => {
+        // Reset all cards
+        document.querySelectorAll('.starter-card-container').forEach(c => {
+          c.style.transform = '';
+          c.style.boxShadow = '';
+          c.querySelector('.selection-indicator').style.opacity = '0';
+          c.querySelector('.selection-indicator').style.transform = 'scale(0.8)';
+        });
+        
+        // Highlight selected
+        cardContainer.style.transform = 'translateY(-8px)';
+        cardContainer.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
+        selectionIndicator.style.opacity = '1';
+        selectionIndicator.style.transform = 'scale(1)';
+        
+        // Store selection
+        this.selectedStarterMonster = monster;
+        
+        // Enable confirm button
+        const confirmBtn = document.querySelector('.confirm-starter-btn');
+        if (confirmBtn) {
+          confirmBtn.removeAttribute('disabled');
+        }
+      });
+      
+      // Add elements to DOM
+      cardContainer.appendChild(card);
+      cardContainer.appendChild(selectionIndicator);
+      grid.appendChild(cardContainer);
+    });
+  
+    // Add confirm button
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      display: flex;
+      justify-content: center;
+      margin-top: 32px;
+    `;
+    
+    const confirmButton = document.createElement('sl-button');
+    confirmButton.className = 'confirm-starter-btn';
+    confirmButton.setAttribute('variant', 'primary');
+    confirmButton.setAttribute('size', 'large');
+    confirmButton.setAttribute('disabled', '');
+    confirmButton.innerHTML = `
+      <span class="material-icons" style="margin-right: 8px;">pets</span>
+      Choose This Monster
+    `;
+    
+    confirmButton.addEventListener('click', () => {
+      if (this.selectedStarterMonster) {
+        this.addMonster(this.selectedStarterMonster);
+
+
+        // Save party
+        this.saveParty();
+    this.refreshPartyDialog();
+        // Animate out and close
+        overlay.style.opacity = '0';
+        container.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          overlay.remove();
+        }, 300);
+      }
+    });
+    
+    buttonContainer.appendChild(confirmButton);
+    content.appendChild(buttonContainer);
+  
+    // Animate in
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      container.style.transform = 'scale(1)';
+    }, 10);
   }
 
   // Show starter monster selection dialog with our styled UI

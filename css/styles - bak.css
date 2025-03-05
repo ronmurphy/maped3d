@@ -1,3 +1,4 @@
+
 :root {
     --app-height: 100vh;
     --header-height: 48px;
@@ -45,10 +46,6 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
 }
 
 .sidebar {
@@ -68,31 +65,26 @@ body {
     padding: 16px;
     flex-shrink: 0;
     overflow: hidden;
-    z-index: 10;
 }
 
 .tool-section {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     flex-shrink: 0;
-    padding-bottom: 4px;
 }
 
 .tool-section-title {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     color: #888;
     margin-bottom: 4px;
     padding: 0 8px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
 }
 
 .tool-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    padding: 0 4px;
-    margin-bottom: 4px;
+    gap: 4px;
+    padding: 0 8px;
 }
 
 .tool-button {
@@ -103,15 +95,15 @@ body {
     background: var(--primary-bg);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 4px;
+    padding: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
-    height: 36px;
+    height: 32px;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    width: 36px;
+    width: 32px;
     position: relative;
 }
 
@@ -171,26 +163,21 @@ body {
     border-radius: 3px;
     padding: 4px;
     cursor: pointer;
-    transition: background-color 0.2s, border-left 0.2s;
+    transition: all 0.2s ease;
     flex-shrink: 0;
     margin-bottom: 2px;
     border: 1px solid transparent;
-    border-left: 3px solid transparent;
 }
 
 .layer-item:hover {
     background: #468e2c;
     border-color: rgb(255, 255, 255);
-    background-color: rgba(180, 180, 180, 0.25) !important;
-    border-left: 3px solid #aaa !important;
 }
 
 .layer-item.selected {
     background: #505050;
     border: 1px solid #666;
     border-color: rgba(255, 255, 255, 0.2);
-    background-color: rgba(66, 135, 245, 0.15) !important;
-    border-left: 3px solid #4287f5 !important;
 }
 
 .layer-item.editing {
@@ -290,10 +277,10 @@ body {
 }
 
 .tool-button .material-icons {
-    font-size: 18px;
+    font-size: 20px;
     margin-bottom: 0;
     color: #fff;
-    margin-right: 0;
+    margin-right: 8px;
 }
 
 .tool-button:hover .material-icons {
@@ -813,13 +800,12 @@ sl-input::part(form-control-label) {
 .tool-divider {
     height: 1px;
     background: var(--border-color);
-    margin: 6px 4px;
-    opacity: 0.3;
+    margin: 8px 8px;
+    opacity: 0.5;
 }
 
 .marker-tools {
     grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: min-content;
 }
 
 .room-block.wall-room {
@@ -957,11 +943,10 @@ sl-input::part(form-control-label) {
 }
 
 .layer-folder {
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 4px;
-    transition: box-shadow 0.2s;
-    overflow: hidden;
+    border-radius: 3px;
+    transition: background-color 0.2s;
 }
 
 .folder-header {
@@ -970,12 +955,10 @@ sl-input::part(form-control-label) {
     padding: 4px 6px;
     cursor: pointer;
     user-select: none;
-    transition: background-color 0.2s;
 }
 
 .folder-header:hover {
     background: rgba(255, 255, 255, 0.1);
-    background-color: rgba(180, 180, 180, 0.2);
 }
 
 .folder-toggle {
@@ -1006,12 +989,10 @@ sl-input::part(form-control-label) {
 }
 
 .folder-content {
-    padding-left: 8px;
+    padding-left: 24px;
     min-height: 10px;
     padding: 2px 0 2px 12px;
     transition: background-color 0.2s;
-    border-left: 1px solid #eee;
-    margin-left: 12px;
 }
 
 .folder-content.drag-over {
@@ -1094,20 +1075,16 @@ sl-input::part(form-control-label) {
     gap: 4px;
 }
 
+/* Make header buttons more compact if needed */
 .header sl-button-group sl-button::part(base) {
-    padding: 0;
+    padding: 0.3rem;
     width: 48px;
     height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.header sl-button-group sl-button .material-icons {
+  }
+  
+  .header sl-button-group sl-button .material-icons {
     font-size: 24px;
-    margin: 0;
-    padding: 0;
-}
+  }
 
 .header-title:hover {
     color: var(--sl-color-primary-500);
@@ -1182,46 +1159,41 @@ sl-input::part(form-control-label) {
 }
 
 .dock-point {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background: #666;
-    border: 2px solid #888;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
-    transition: all 0.2s;
-}
+            position: absolute;
+            width: 16px;  
+            height: 16px;
+            background: #666;
+            border: 2px solid #888;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-.dock-point:hover {
-    background: var(--sl-color-primary-600);
-    transform: translate(-50%, -50%) scale(1.2);
-}
+        .dock-point:hover {
+            background: var(--sl-color-primary-600);
+            transform: translate(-50%, -50%) scale(1.2);
+        }
 
-.dock-point.active {
-    background: var(--sl-color-primary-600);
-    box-shadow: 0 0 0 4px rgba(var(--sl-color-primary-600), 0.3);
-}
+        .dock-point.active {
+            background: var(--sl-color-primary-600);
+            box-shadow: 0 0 0 4px rgba(var(--sl-color-primary-600), 0.3);
+        }
 
-.room-option {
-    transition: all 0.2s ease;
-    cursor: pointer;
-    padding: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #666;
-    border-radius: 4px;
-}
+        .room-option {
+            transition: all 0.2s;
+        }
 
-.room-option:hover {
-    background: #444;
-}
+        .room-option:hover {
+            background: #444;
+        }
 
-.room-option.selected {
-    border-color: var(--sl-color-primary-600);
-    background: #333;
-}
+        .room-option.selected {
+            border-color: var(--sl-color-primary-600);
+            background: #333;
+        }
 
-.dock-preview {
+        .dock-preview {
     border: 1px solid #444;
     position: relative;
     min-height: 500px;
@@ -1235,6 +1207,24 @@ sl-input::part(form-control-label) {
     flex-direction: column;
     justify-content: space-between;
     padding: 20px;
+}
+
+.room-option {
+    cursor: pointer;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.room-option:hover {
+    background: #444;
+}
+
+.room-option.selected {
+    border-color: var(--sl-color-primary-600);
+    background: #333;
 }
 
 .room-option img {
@@ -1323,56 +1313,69 @@ sl-radio[checked] {
     overflow: hidden;
 }
 
-sl-tooltip {
-    --z-index: 100;
+/* Update the sidebar-content z-index */
+.sidebar-content {
+    flex: 0 0 auto;
+    overflow-y: auto;
+    padding: 16px;
+    flex-shrink: 0;
+    overflow: hidden;
+    z-index: 10; /* Lower z-index */
 }
 
+/* Add or update tooltip z-index */
+sl-tooltip {
+    --z-index: 100; /* Higher z-index */
+}
+
+/* Style for prop markers */
 .marker-prop {
     position: absolute;
     z-index: 50;
     transform: translate(-50%, -50%);
     cursor: pointer;
     pointer-events: all;
-}
-
-.marker-prop:hover .prop-visual {
+  }
+  
+  .marker-prop:hover .prop-visual {
     border-color: #2196F3 !important;
     box-shadow: 0 0 8px rgba(33, 150, 243, 0.6);
-}
-
-.marker-prop.editing {
+  }
+  
+  .marker-prop.editing {
     z-index: 100;
-}
-
-.marker-prop.editing .prop-visual {
+  }
+  
+  .marker-prop.editing .prop-visual {
     border: 2px dashed #f44336 !important;
-}
-
-.prop-visual {
+  }
+  
+  .prop-visual {
     transition: all 0.2s ease;
     background-color: rgba(255, 255, 255, 0.1);
     border: 2px solid #4CAF50;
     border-radius: 4px;
     pointer-events: all;
-}
-
-.prop-texture-option {
+  }
+  
+  /* Add this to existing CSS for context menu */
+  .prop-texture-option {
     cursor: pointer;
     border: 2px solid transparent;
     padding: 4px;
     border-radius: 4px;
     transition: all 0.2s ease;
-}
-
-.prop-texture-option:hover {
+  }
+  
+  .prop-texture-option:hover {
     background-color: rgba(33, 150, 243, 0.1);
-}
-
-.prop-texture-option.selected {
+  }
+  
+  .prop-texture-option.selected {
     border-color: var(--sl-color-primary-600);
-}
-
-.prop-controls {
+  }
+  
+  .prop-controls {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1380,25 +1383,28 @@ sl-tooltip {
     background: #f5f5f5;
     border-radius: 4px;
     margin-top: 12px;
-}
-
-.prop-control-row {
+  }
+  
+  .prop-control-row {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.prop-control-row label {
+  }
+  
+  .prop-control-row label {
     min-width: 80px;
-}
+  }
 
+  /* Add to your CSS for props */
 .prop-visual.horizontal-prop {
+    /* Add a subtle indicator to show it's horizontal */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     border-color: #2196F3 !important;
     border-style: dashed !important;
-}
-
-.prop-visual.horizontal-prop::after {
+  }
+  
+  /* Add small horizontal icon */
+  .prop-visual.horizontal-prop::after {
     content: "";
     position: absolute;
     top: -5px;
@@ -1409,9 +1415,9 @@ sl-tooltip {
     border-radius: 50%;
     border: 2px solid white;
     box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
+  }
 
-.teleport-prompt {
+  .teleport-prompt {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -1425,9 +1431,9 @@ sl-tooltip {
     z-index: 1000;
     text-align: center;
     transition: opacity 0.2s ease;
-}
-
-.teleport-flash {
+  }
+  
+  .teleport-flash {
     position: fixed;
     top: 0;
     left: 0;
@@ -1438,40 +1444,161 @@ sl-tooltip {
     pointer-events: none;
     transition: opacity 0.3s ease;
     z-index: 9999;
+  }
+
+ .selected-in-canvas {
+   outline: 3px solid rgba(66, 135, 245, 0.7) !important;
+   outline-offset: 2px;
+   z-index: 100 !important;
 }
 
-.selected-in-canvas {
-    outline: 3px solid rgba(66, 135, 245, 0.7) !important;
-    outline-offset: 2px;
-    z-index: 100 !important;
-}
-
-.layer-item:nth-child(even) {
+.layer-item {
+    transition: background-color 0.2s, border-left 0.2s;
+    border-left: 3px solid transparent;
+  }
+  
+  .layer-item:hover {
+    background-color: rgba(180, 180, 180, 0.25) !important;
+    border-left: 3px solid #aaa !important;
+  }
+  
+  .layer-item.selected {
+    background-color: rgba(66, 135, 245, 0.15) !important;
+    border-left: 3px solid #4287f5 !important;
+  }
+  
+  /* Alternating row colors for better visual separation */
+  .layer-item:nth-child(even) {
     background-color: rgba(0, 0, 0, 0.03);
-}
-
-.layer-item:nth-child(odd) {
+  }
+  
+  .layer-item:nth-child(odd) {
     background-color: rgba(0, 0, 0, 0.01);
-}
-
-.layer-folder:hover {
+  }
+  
+  .folder-header {
+    transition: background-color 0.2s;
+  }
+  
+  .folder-header:hover {
+    background-color: rgba(180, 180, 180, 0.2);
+  }
+  
+  /* Improved folder styling */
+  .layer-folder {
+    margin-bottom: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  
+  .layer-folder:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .folder-content {
+    padding-left: 8px;
+    border-left: 1px solid #eee;
+    margin-left: 12px;
+  }
+
+ /* First, ensure the header has position: relative */
+.header {
+  position: relative;
+  /* Keep your existing header styles */
 }
 
+/* Now position the title absolutely in the center */
+.header-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  /* Other existing styles for the title */
+}
+
+/* More compact and balanced tool grid */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;  /* Equal gap in both directions */
+  padding: 0 4px; /* Reduced horizontal padding */
+  margin-bottom: 4px; /* Add bottom margin for separation */
+}
+
+/* Make tools more compact */
+.tool-button {
+  height: 36px;
+  width: 36px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* For the marker tools specifically, use a more compact layout */
+.marker-tools {
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: min-content;
+}
+
+/* Make the icons slightly smaller but maintain visibility */
+.tool-button .material-icons {
+  font-size: 18px;
+  margin-right: 0;
+}
+
+/* Add proper section spacing */
+.tool-section {
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+}
+
+/* Make the section titles more compact */
+.tool-section-title {
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Better divider */
+.tool-divider {
+  margin: 6px 4px;
+  opacity: 0.3;
+}
+
+/* Better centering for header buttons */
+.header sl-button-group sl-button::part(base) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 48px;
+  height: 48px;
+}
+
+/* Remove any margins from the material icons in header buttons */
+.header sl-button-group sl-button .material-icons {
+  font-size: 24px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fix for any potential vertical alignment issues in the icon */
 .header sl-button-group sl-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .quality-level {
-    position: absolute;
-    top: 48px;
-    right: 0px;
-    background: rgba(0, 0, 0, 0.5);
-    color: rgb(76, 175, 80);
-    padding: 2px 5px;
-    font-size: 10px;
-    border-radius: 0px 0px 0px 3px;
+	position: absolute;
+	top: 48px;
+	right: 0px;
+	background: rgba(0, 0, 0, 0.5);
+	color: rgb(76, 175, 80);
+	padding: 2px 5px;
+	font-size: 10px;
+	border-radius: 0px 0px 0px 3px;
 }
-

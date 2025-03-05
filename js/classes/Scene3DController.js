@@ -4184,7 +4184,11 @@ class Scene3DController {
 
         this.pauseControls();
 
-        window.partyManager.showRecruitmentDialog(marker.userData.monster);
+        // window.partyManager.showRecruitmentDialog(marker.userData.monster);
+        window.partyManager.showRecruitmentDialog(marker.userData.monster, marker);
+
+
+        
 
         // Add dialog close handler
         const cleanup = () => {
