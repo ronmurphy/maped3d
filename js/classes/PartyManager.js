@@ -4307,67 +4307,67 @@ connectToSceneInventory() {
   }
 
   // Render equipment list for dialog
-  renderEquipmentList(items, monster, slot) {
-    // If no items, show message
-    if (!items || items.length === 0) {
-      return `
-        <div style="text-align: center; padding: 20px;">
-          <span class="material-icons" style="font-size: 36px; opacity: 0.5;">inventory_2</span>
-          <p>No ${slot}s available</p>
-        </div>
-      `;
-    }
+  // renderEquipmentList(items, monster, slot) {
+  //   // If no items, show message
+  //   if (!items || items.length === 0) {
+  //     return `
+  //       <div style="text-align: center; padding: 20px;">
+  //         <span class="material-icons" style="font-size: 36px; opacity: 0.5;">inventory_2</span>
+  //         <p>No ${slot}s available</p>
+  //       </div>
+  //     `;
+  //   }
 
-    // Get currently equipped item
-    const equippedItem = monster.equipment[slot];
+  //   // Get currently equipped item
+  //   const equippedItem = monster.equipment[slot];
 
-    // Build html for equipment list
-    let html = `
-      <div class="equipment-list" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
-        <!-- Option to unequip -->
-        <div class="equipment-item" data-item-id="none" data-slot="${slot}" style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease;">
-          <span class="material-icons" style="margin-right: 16px; color: #F44336;">remove_circle</span>
-          <div style="flex: 1;">
-            <div style="font-weight: bold;">Remove ${slot}</div>
-            <div style="color: #666; font-size: 0.9em;">Unequip current ${slot}</div>
-          </div>
-        </div>
-    `;
+  //   // Build html for equipment list
+  //   let html = `
+  //     <div class="equipment-list" style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+  //       <!-- Option to unequip -->
+  //       <div class="equipment-item" data-item-id="none" data-slot="${slot}" style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease;">
+  //         <span class="material-icons" style="margin-right: 16px; color: #F44336;">remove_circle</span>
+  //         <div style="flex: 1;">
+  //           <div style="font-weight: bold;">Remove ${slot}</div>
+  //           <div style="color: #666; font-size: 0.9em;">Unequip current ${slot}</div>
+  //         </div>
+  //       </div>
+  //   `;
 
-    // Add each item
-    items.forEach(item => {
-      // Check if this is the equipped item
-      const isEquipped = equippedItem && equippedItem.id === item.id;
+  //   // Add each item
+  //   items.forEach(item => {
+  //     // Check if this is the equipped item
+  //     const isEquipped = equippedItem && equippedItem.id === item.id;
 
-      html += `
-        <div class="equipment-item ${isEquipped ? 'equipped' : ''}" 
-             data-item-id="${item.id}" 
-             data-slot="${slot}" 
-             style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; ${isEquipped ? 'background: #e3f2fd; border-color: #2196F3;' : ''}">
-          <div class="item-icon" style="margin-right: 16px;">
-            ${item.icon ? `<img src="${item.icon}" alt="${item.name}" style="width: 40px; height: 40px;">` :
-          `<span class="material-icons" style="font-size: 40px; color: #607D8B;">${slot === 'weapon' ? 'sports_martial_arts' : 'security'}</span>`}
-          </div>
-          <div style="flex: 1;">
-            <div style="font-weight: bold; display: flex; align-items: center;">
-              ${item.name}
-              ${isEquipped ? `<span class="material-icons" style="margin-left: 8px; color: #2196F3; font-size: 16px;">check_circle</span>` : ''}
-            </div>
-            <div style="color: #666; font-size: 0.9em;">${item.description || ''}</div>
-            ${item.damageBonus || item.acBonus ? `
-              <div style="color: #388E3C; margin-top: 4px; font-size: 0.9em;">
-                ${item.damageBonus ? `+${item.damageBonus} damage` : ''}
-                ${item.acBonus ? `+${item.acBonus} AC` : ''}
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    });
+  //     html += `
+  //       <div class="equipment-item ${isEquipped ? 'equipped' : ''}" 
+  //            data-item-id="${item.id}" 
+  //            data-slot="${slot}" 
+  //            style="display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; ${isEquipped ? 'background: #e3f2fd; border-color: #2196F3;' : ''}">
+  //         <div class="item-icon" style="margin-right: 16px;">
+  //           ${item.icon ? `<img src="${item.icon}" alt="${item.name}" style="width: 40px; height: 40px;">` :
+  //         `<span class="material-icons" style="font-size: 40px; color: #607D8B;">${slot === 'weapon' ? 'sports_martial_arts' : 'security'}</span>`}
+  //         </div>
+  //         <div style="flex: 1;">
+  //           <div style="font-weight: bold; display: flex; align-items: center;">
+  //             ${item.name}
+  //             ${isEquipped ? `<span class="material-icons" style="margin-left: 8px; color: #2196F3; font-size: 16px;">check_circle</span>` : ''}
+  //           </div>
+  //           <div style="color: #666; font-size: 0.9em;">${item.description || ''}</div>
+  //           ${item.damageBonus || item.acBonus ? `
+  //             <div style="color: #388E3C; margin-top: 4px; font-size: 0.9em;">
+  //               ${item.damageBonus ? `+${item.damageBonus} damage` : ''}
+  //               ${item.acBonus ? `+${item.acBonus} AC` : ''}
+  //             </div>
+  //           ` : ''}
+  //         </div>
+  //       </div>
+  //     `;
+  //   });
 
-    html += `</div>`;
-    return html;
-  }
+  //   html += `</div>`;
+  //   return html;
+  // }
 
   // Updated Modified showRecruitmentDialog method to use createMonsterCard
   showRecruitmentDialog(monster, encounterMarker = null) {
@@ -5037,62 +5037,62 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
    */
 
   // Get available equipment
-  getAvailableEquipment(type) {
-    // This would normally get equipment from inventory
-    // For now, we'll return sample items
+  // getAvailableEquipment(type) {
+  //   // This would normally get equipment from inventory
+  //   // For now, we'll return sample items
 
-    if (type === 'weapon') {
-      return [
-        {
-          id: 'sword1',
-          name: 'Iron Sword',
-          description: 'A simple but sturdy iron sword',
-          damageBonus: 1,
-          icon: 'icons/weapons/sword.png'
-        },
-        {
-          id: 'axe1',
-          name: 'Battle Axe',
-          description: 'A heavy axe that deals devastating blows',
-          damageBonus: 2,
-          icon: 'icons/weapons/axe.png'
-        },
-        {
-          id: 'wand1',
-          name: 'Magic Wand',
-          description: 'A wooden wand with magical properties',
-          damageBonus: 1,
-          icon: 'icons/weapons/wand.png'
-        }
-      ];
-    } else if (type === 'armor') {
-      return [
-        {
-          id: 'leather1',
-          name: 'Leather Armor',
-          description: 'Simple protection made from tanned hide',
-          acBonus: 1,
-          icon: 'icons/armor/leather.png'
-        },
-        {
-          id: 'chain1',
-          name: 'Chain Mail',
-          description: 'Interlocking metal rings provide good protection',
-          acBonus: 3,
-          icon: 'icons/armor/chainmail.png'
-        },
-        {
-          id: 'scale1',
-          name: 'Scale Armor',
-          description: 'Overlapping metal scales for flexible defense',
-          acBonus: 2,
-          icon: 'icons/armor/scale.png'
-        }
-      ];
-    }
+  //   if (type === 'weapon') {
+  //     return [
+  //       {
+  //         id: 'sword1',
+  //         name: 'Iron Sword',
+  //         description: 'A simple but sturdy iron sword',
+  //         damageBonus: 1,
+  //         icon: 'icons/weapons/sword.png'
+  //       },
+  //       {
+  //         id: 'axe1',
+  //         name: 'Battle Axe',
+  //         description: 'A heavy axe that deals devastating blows',
+  //         damageBonus: 2,
+  //         icon: 'icons/weapons/axe.png'
+  //       },
+  //       {
+  //         id: 'wand1',
+  //         name: 'Magic Wand',
+  //         description: 'A wooden wand with magical properties',
+  //         damageBonus: 1,
+  //         icon: 'icons/weapons/wand.png'
+  //       }
+  //     ];
+  //   } else if (type === 'armor') {
+  //     return [
+  //       {
+  //         id: 'leather1',
+  //         name: 'Leather Armor',
+  //         description: 'Simple protection made from tanned hide',
+  //         acBonus: 1,
+  //         icon: 'icons/armor/leather.png'
+  //       },
+  //       {
+  //         id: 'chain1',
+  //         name: 'Chain Mail',
+  //         description: 'Interlocking metal rings provide good protection',
+  //         acBonus: 3,
+  //         icon: 'icons/armor/chainmail.png'
+  //       },
+  //       {
+  //         id: 'scale1',
+  //         name: 'Scale Armor',
+  //         description: 'Overlapping metal scales for flexible defense',
+  //         acBonus: 2,
+  //         icon: 'icons/armor/scale.png'
+  //       }
+  //     ];
+  //   }
 
-    return [];
-  }
+  //   return [];
+  // }
 
 
   /**
@@ -6931,94 +6931,102 @@ showGiftSelection(monster, recruitmentOverlay) {
   }
   
   // Get items directly from Scene3D inventory
-  let availableItems = [];
-  
-  // Add items from own inventory first
-  if (this.inventory) {
-    if (this.inventory.weapons) {
-      availableItems = [...availableItems, ...this.inventory.weapons.map(item => ({
+  const uniqueItems = new Map();
+
+// Get items from various sources
+if (this.inventory) {
+  if (this.inventory.weapons) {
+    this.inventory.weapons.forEach(item => {
+      uniqueItems.set(item.id, {
         ...item,
         type: 'weapon',
         source: 'local-inventory'
-      }))];
-    }
-    
-    if (this.inventory.armor) {
-      availableItems = [...availableItems, ...this.inventory.armor.map(item => ({
+      });
+    });
+  }
+  
+  if (this.inventory.armor) {
+    this.inventory.armor.forEach(item => {
+      uniqueItems.set(item.id, {
         ...item,
         type: 'armor',
         source: 'local-inventory'
-      }))];
-    }
-    
-    if (this.inventory.misc) {
-      availableItems = [...availableItems, ...this.inventory.misc.map(item => ({
+      });
+    });
+  }
+  
+  if (this.inventory.misc) {
+    this.inventory.misc.forEach(item => {
+      uniqueItems.set(item.id, {
         ...item,
         type: 'misc',
         source: 'local-inventory'
-      }))];
-    }
+      });
+    });
   }
+}
+
+// Scene3D inventory
+if (this.scene3D) {
+  console.log("Checking Scene3D inventory for props");
   
-  // Get Scene3D inventory items - directly access props if possible
-  if (this.scene3D) {
-    try {
-      console.log("Checking Scene3D inventory for props");
+  try {
+    // Try direct inventory access
+    if (this.scene3D.inventory && this.scene3D.inventory.size > 0) {
+      console.log(`Found ${this.scene3D.inventory.size} items in direct inventory access`);
       
-      // Check if we can access the inventory directly
-      if (this.scene3D.inventory && this.scene3D.inventory.size > 0) {
-        console.log(`Found ${this.scene3D.inventory.size} items in direct inventory access`);
-        
-        // Convert Map to array if needed
-        let sceneItems = [];
-        if (this.scene3D.inventory instanceof Map) {
-          // Convert Map entries to array of props
-          this.scene3D.inventory.forEach((value, key) => {
-            if (value && value.prop) {
-              sceneItems.push({
+      if (this.scene3D.inventory instanceof Map) {
+        this.scene3D.inventory.forEach((value, key) => {
+          if (value && value.prop) {
+            // Only add if we don't already have this item
+            if (!uniqueItems.has(key)) {
+              uniqueItems.set(key, {
                 id: key,
                 name: value.prop.name || "Unknown Item",
                 type: this.determineItemType(value.prop),
+                image: value.prop.image || null,
                 description: value.prop.description || "",
                 source: '3d-inventory'
               });
             }
-          });
-        }
-        
-        if (sceneItems.length > 0) {
-          console.log(`Processed ${sceneItems.length} items from inventory Map`);
-          availableItems = [...availableItems, ...sceneItems];
-        }
+          }
+        });
       }
-      
-      // If we couldn't get items from direct access, try getInventoryItems
-      if (typeof this.scene3D.getInventoryItems === 'function') {
-        console.log("Getting items from Scene3D.getInventoryItems()");
-        const inventoryItems = this.scene3D.getInventoryItems();
-        
-        if (inventoryItems && inventoryItems.length > 0) {
-          console.log(`Found ${inventoryItems.length} items from getInventoryItems`);
-          
-          // Process each item to ensure it has required properties
-          const processedItems = inventoryItems.map(item => ({
-            id: item.id || `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-            name: item.name || item.prop?.name || "Unknown Item",
-            type: item.type || this.determineItemType(item),
-            image: item.image || item.prop?.image || null,
-            description: item.description || item.prop?.description || "",
-            source: '3d-inventory'
-          }));
-          
-          availableItems = [...availableItems, ...processedItems];
-        }
-      }
-    } catch (error) {
-      console.error('Error accessing Scene3D inventory:', error);
     }
+    
+    // Try getInventoryItems if available
+    if (typeof this.scene3D.getInventoryItems === 'function') {
+      console.log("Getting items from Scene3D.getInventoryItems()");
+      const inventoryItems = this.scene3D.getInventoryItems();
+      
+      if (inventoryItems && inventoryItems.length > 0) {
+        console.log(`Found ${inventoryItems.length} items from getInventoryItems`);
+        
+        inventoryItems.forEach(item => {
+          const itemId = item.id || `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          
+          // Only add if we don't already have this item
+          if (!uniqueItems.has(itemId)) {
+            uniqueItems.set(itemId, {
+              id: itemId,
+              name: item.name || item.prop?.name || "Unknown Item",
+              type: item.type || this.determineItemType(item),
+              image: item.image || item.prop?.image || null,
+              description: item.description || item.prop?.description || "",
+              source: '3d-inventory'
+            });
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error accessing Scene3D inventory:', error);
   }
-  
-  console.log(`Found ${availableItems.length} items for gifts`);
+}
+
+// Convert Map values to array
+const availableItems = Array.from(uniqueItems.values());
+console.log(`Found ${availableItems.length} unique items for gifts`);
   
   // If no items found, use placeholder equipment as fallback
   if (availableItems.length === 0) {
@@ -7136,53 +7144,68 @@ showGiftSelection(monster, recruitmentOverlay) {
     if (icon === 'swords') icon = 'hardware'; // Fallback for swords
     if (icon === 'diamond') icon = 'diamond'; // Fallback for diamond
     
-    itemCard.innerHTML = `
-      <div style="padding: 12px; border-bottom: 1px solid #f0f0f0; position: relative;">
-        <div style="
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          background: ${effectColor}20;
-          color: ${effectColor};
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 0.7rem;
-          font-weight: 500;
-        ">${effectiveness.effectiveness}</div>
-        
-        <div style="margin-top: 6px; display: flex; gap: 12px; align-items: center;">
-          <div style="
-            width: 40px;
-            height: 40px;
-            background: ${effectColor}10;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">
-            <span class="material-icons" style="color: ${effectColor};">${icon}</span>
-          </div>
-          <div style="flex: 1;">
-            <div style="font-weight: 500; color: #111; margin-bottom: 2px;">${item.name}</div>
-            <div style="font-size: 0.8rem; color: #666;">${giftType.charAt(0).toUpperCase() + giftType.slice(1)}</div>
-          </div>
-        </div>
+// In showGiftSelection, update the item card creation:
+
+itemCard.innerHTML = `
+  <div style="padding: 12px; position: relative;">
+    <!-- Effectiveness badge in top right -->
+    <div style="
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: ${effectColor}40;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    ">${effectiveness.effectiveness}</div>
+    
+    <!-- Item image/icon centered -->
+    <div style="display: flex; flex-direction: column; align-items: center; padding-top: 8px; margin-bottom: 8px;">
+      <div style="
+        width: 50px;
+        height: 50px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        overflow: hidden;
+      ">
+        ${item.image ? 
+          `<img src="${item.image}" alt="${item.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">` : 
+          `<span class="material-icons" style="color: white; font-size: 32px;">${this.getGiftIcon(giftType)}</span>`
+        }
       </div>
       
-      <div style="padding: 12px; background: #f9fafb; font-size: 0.85rem; color: #374151;">
-        <div style="margin-bottom: 4px; font-style: italic; color: #4B5563;">"${effectiveness.reaction}"</div>
-        <div style="margin-top: 8px; font-size: 0.75rem; color: #6B7280;">
-          ${effectiveness.modifier > 0 ? 
-            `<span style="color: ${effectColor};">+${Math.round(effectiveness.modifier * 100)}% recruitment chance</span>` : 
-            effectiveness.modifier < 0 ? 
-            `<span style="color: ${effectColor};">${Math.round(effectiveness.modifier * 100)}% recruitment chance</span>` :
-            `No effect on recruitment chance`
-          }
-        </div>
-      </div>
-    `;
+      <!-- Item name -->
+      <div style="font-weight: 500; color: ${effectColor}40; text-align: center; margin-bottom: 4px;">${item.name}</div>
+    </div>
+    
+    <!-- Item type at bottom -->
+    <div style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(0, 0, 0, 0.2);
+      padding: 4px 8px;
+      border-radius: 12px;
+      margin-top: 4px;
+    ">
+      <span class="material-icons" style="font-size: 12px; margin-right: 4px;">${this.getGiftIcon(giftType)}</span>
+      ${giftType.charAt(0).toUpperCase() + giftType.slice(1)}
+    </div>
+  </div>
+`;
+
     
     // Add hover effect
+
+
     itemCard.addEventListener('mouseenter', () => {
       itemCard.style.transform = 'translateY(-2px)';
       itemCard.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
@@ -7215,6 +7238,27 @@ showGiftSelection(monster, recruitmentOverlay) {
   }, 50);
 }
 
+// Add this method to the PartyManager class
+getGiftIcon(giftType = '') {
+  switch ((giftType || '').toLowerCase()) {
+    case 'weapon':
+      return 'sports_martial_arts';
+    case 'armor':
+      return 'shield';
+    case 'potion':
+      return 'science';
+    case 'food':
+      return 'restaurant';
+    case 'treasure':
+      return 'diamond';
+    case 'chest':
+      return 'inventory_2';
+    case 'misc':
+    default:
+      return 'card_giftcard';
+  }
+}
+
 determineItemType(item) {
   const name = (item.name || item.prop?.name || '').toLowerCase();
   
@@ -7241,72 +7285,157 @@ determineItemType(item) {
   return 'misc';
 }
 
+
+determineGiftType(item) {
+  if (!item) return 'misc';
+  
+  const name = (item.name || '').toLowerCase();
+  const type = (item.type || '').toLowerCase();
+  
+  // Primary type detection
+  if (type === 'weapon' || name.includes('sword') || name.includes('axe') || 
+      name.includes('dagger') || name.includes('mace') || name.includes('hammer') ||
+      name.includes('bow') || name.includes('staff')) {
+    return 'weapon';
+  }
+  
+  if (type === 'armor' || name.includes('armor') || name.includes('shield') || 
+      name.includes('helmet') || name.includes('plate') || name.includes('mail') ||
+      name.includes('gauntlet') || name.includes('boot')) {
+    return 'armor';
+  }
+  
+  // Consumables
+  if (name.includes('potion') || name.includes('elixir') || name.includes('vial') || 
+      name.includes('flask') || name.includes('brew') || name.includes('tonic')) {
+    return 'potion';
+  }
+  
+  if (name.includes('food') || name.includes('fruit') || name.includes('meat') || 
+      name.includes('bread') || name.includes('fish') || name.includes('cheese') ||
+      name.includes('stew') || name.includes('cake')) {
+    return 'food';
+  }
+  
+  // Valuable materials - check these before generic containers
+  if (name.includes('gem') || name.includes('jewel') || name.includes('crystal') || 
+      name.includes('diamond') || name.includes('emerald') || name.includes('ruby') ||
+      name.includes('sapphire') || name.includes('pearl') || name.includes('treasure')) {
+    return 'gem';  // New specific category for gems
+  }
+  
+  if (name.includes('gold') || name.includes('golden') || name.includes('silver') ||
+      name.includes('platinum') || name.includes('coin') || name.includes('wealth') ||
+      name.includes('crown') || name.includes('jewelry')) {
+    return 'treasure';  // Precious metals category
+  }
+  
+  // Metal items if not already categorized as weapons/armor
+  if ((name.includes('iron') || name.includes('steel') || name.includes('bronze') ||
+       name.includes('copper') || name.includes('metal')) && 
+      !(type === 'weapon' || type === 'armor')) {
+    return 'metal';  // New category for metal items
+  }
+  
+  // Containers
+  if (name.includes('chest') || name.includes('box') || name.includes('crate') || 
+      name.includes('container') || name.includes('coffer')) {
+    return 'chest';
+  }
+  
+  // Magic items
+  if (name.includes('magic') || name.includes('enchanted') || name.includes('arcane') ||
+      name.includes('mystic') || name.includes('spell') || name.includes('rune')) {
+    return 'magic';  // New category for magical items
+  }
+  
+  // Nature items
+  if (name.includes('flower') || name.includes('plant') || name.includes('leaf') ||
+      name.includes('branch') || name.includes('seed') || name.includes('herb')) {
+    return 'nature';  // New category for nature items
+  }
+  
+  return 'misc';
+}
+
+
 getGiftEffectiveness(giftType, monsterType) {
   // Gift preferences by monster type
   const preferences = {
     'Beast': {
       'food': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The beast excitedly devours the food offering!" },
+      'nature': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The beast seems very comfortable with this natural gift!" },
       'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The beast sniffs the potion curiously." },
+      'metal': { effectiveness: 'Poor', modifier: -0.15, reaction: "The beast eyes the metal object suspiciously." },
       'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The beast growls at the weapon, unsure of its purpose." },
       'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The beast has no use for armor and seems confused." },
       'treasure': { effectiveness: 'Neutral', modifier: 0, reaction: "The beast shows little interest in the shiny object." },
       'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The beast is curious about what's inside." }
     },
     'Dragon': {
+      'gem': { effectiveness: 'Perfect', modifier: 0.3, reaction: "The dragon's eyes gleam with delight at the sparkling gem!" },
+      'treasure': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The dragon's eyes gleam at the sight of gold treasure!" },
+      'metal': { effectiveness: 'Good', modifier: 0.15, reaction: "The dragon appreciates the metallic offering for its hoard." },
       'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The dragon appreciates the snack, though it's hardly a feast." },
       'potion': { effectiveness: 'Neutral', modifier: 0, reaction: "The dragon examines the potion with mild interest." },
       'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The dragon scoffs at your puny weapon." },
       'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The dragon has no need for armor with its scales." },
-      'treasure': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The dragon's eyes gleam at the sight of treasure!" },
-      'chest': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The dragon eagerly eyes what appears to be a new addition to its hoard." }
+      'chest': { effectiveness: 'Good', modifier: 0.15, reaction: "The dragon eagerly eyes what appears to be a new addition to its hoard." }
     },
     'Humanoid': {
-      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid gratefully accepts the food." },
-      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid recognizes the potion's value." },
       'weapon': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The humanoid examines the weapon with great interest!" },
       'armor': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The humanoid tries on the armor, impressed by its quality!" },
+      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid gratefully accepts the food." },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid recognizes the potion's value." },
       'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid's eyes light up at the valuable gift." },
-      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid is intrigued by the mysterious chest." }
+      'gem': { effectiveness: 'Good', modifier: 0.15, reaction: "The humanoid examines the gem with appreciation." },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid is intrigued by the mysterious chest." },
+      'metal': { effectiveness: 'Neutral', modifier: 0, reaction: "The humanoid examines the metal object with mild interest." }
     },
     'Undead': {
-      'food': { effectiveness: 'Insulting', modifier: -0.3, reaction: "The undead has no need for food and is offended by the offering." },
-      'potion': { effectiveness: 'Poor', modifier: -0.15, reaction: "The potion has little effect on the undead's condition." },
+      'magic': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The undead is strongly drawn to the magical energies!" },
+      'gem': { effectiveness: 'Good', modifier: 0.15, reaction: "The undead is mesmerized by the gem's sparkle." },
       'weapon': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead appreciates the weapon's destructive potential." },
       'armor': { effectiveness: 'Neutral', modifier: 0, reaction: "The undead shows little interest in protection." },
       'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead is drawn to the former possessions of the living." },
-      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead is curious about what souls might be trapped inside." }
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead is curious about what souls might be trapped inside." },
+      'food': { effectiveness: 'Insulting', modifier: -0.3, reaction: "The undead has no need for food and is offended by the offering." },
+      'nature': { effectiveness: 'Poor', modifier: -0.2, reaction: "The undead recoils from the living essence of nature." }
     },
     'Fey': {
-      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The fey creature nibbles delicately at the offering." },
+      'nature': { effectiveness: 'Perfect', modifier: 0.3, reaction: "The fey is delighted by this gift from nature!" },
+      'magic': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fey is entranced by the magical energies!" },
       'potion': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fey is delighted by the magical concoction!" },
+      'gem': { effectiveness: 'Good', modifier: 0.15, reaction: "The fey is captivated by the gem's natural beauty." },
+      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The fey creature nibbles delicately at the offering." },
+      'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The fey is attracted to the shiny bauble." },
+      'metal': { effectiveness: 'Poor', modifier: -0.1, reaction: "The fey seems uncomfortable with the worked metal." },
       'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fey creature recoils from the crude implement of war." },
       'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fey has no interest in heavy, restrictive armor." },
-      'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The fey is attracted to the shiny bauble." },
-      'chest': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fey is excited by the mystery and potential mischief!" }
+      'chest': { effectiveness: 'Good', modifier: 0.15, reaction: "The fey is excited by the mystery and potential mischief!" }
     },
     'Fiend': {
-      'food': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fiend scorns your mundane offering." },
-      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend is intrigued by the potion's properties." },
-      'weapon': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend appreciates instruments of violence." },
-      'armor': { effectiveness: 'Neutral', modifier: 0, reaction: "The fiend has little need for physical protection." },
+      'gem': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fiend's eyes burn with desire for the gem!" },
       'treasure': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fiend covets the valuable treasure!" },
-      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend wonders what secrets might be contained within." }
+      'magic': { effectiveness: 'Good', modifier: 0.15, reaction: "The fiend is intrigued by the magical properties." },
+      'weapon': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend appreciates instruments of violence." },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend is intrigued by the potion's properties." },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend wonders what secrets might be contained within." },
+      'armor': { effectiveness: 'Neutral', modifier: 0, reaction: "The fiend has little need for physical protection." },
+      'food': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fiend scorns your mundane offering." },
+      'nature': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fiend is repulsed by the purity of nature." }
     },
     'Elemental': {
-      'food': { effectiveness: 'Insulting', modifier: -0.3, reaction: "The elemental has no physical form to consume food." },
+      'gem': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The elemental resonates with the crystal's energy!" },
+      'nature': { effectiveness: 'Good', modifier: 0.15, reaction: "The elemental is drawn to the natural energies." },
+      'magic': { effectiveness: 'Good', modifier: 0.15, reaction: "The elemental is attracted to the magical essence." },
       'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The elemental is drawn to the elemental essence within the potion." },
+      'metal': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental shows mild interest in the raw material." },
+      'treasure': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental shows no interest in material wealth." },
+      'chest': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental regards the chest with indifference." },
       'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The elemental has no need for physical weapons." },
       'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The elemental's form cannot wear armor." },
-      'treasure': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental shows no interest in material wealth." },
-      'chest': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental regards the chest with indifference." }
-    },
-    'Celestial': {
-      'food': { effectiveness: 'Neutral', modifier: 0, reaction: "The celestial acknowledges your humble offering." },
-      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The celestial recognizes the healing properties." },
-      'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The celestial looks upon the weapon with disapproval." },
-      'armor': { effectiveness: 'Good', modifier: 0.1, reaction: "The celestial appreciates the protection it offers." },
-      'treasure': { effectiveness: 'Poor', modifier: -0.15, reaction: "The celestial has no interest in material wealth." },
-      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The celestial is curious about your mysterious gift." }
+      'food': { effectiveness: 'Insulting', modifier: -0.3, reaction: "The elemental has no physical form to consume food." }
     }
   };
   
@@ -7502,6 +7631,7 @@ populateGiftDrawer(drawer, monster) {
     itemsGrid.appendChild(itemCard);
   });
 }
+
 
 // Handle gift selection
 // In selectGift function
