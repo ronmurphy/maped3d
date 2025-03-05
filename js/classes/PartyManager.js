@@ -5152,7 +5152,7 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
           const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
 
           if (isEligible) {
-            console.log(`Found eligible starter: ${monster.basic.name} (CR ${cr})`);
+            // console.log(`Found eligible starter: ${monster.basic.name} (CR ${cr})`);
             eligibleMonsters.push(this.formatMonsterForParty(monster));
           }
         } catch (error) {
@@ -5163,11 +5163,11 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
       console.warn("No direct database access available");
     }
 
-    console.log(`Found ${eligibleMonsters.length} eligible starter monsters`);
+    // console.log(`Found ${eligibleMonsters.length} eligible starter monsters`);
 
     // If no eligible monsters found, create default starter monsters
     if (eligibleMonsters.length === 0) {
-      console.log("No eligible monsters found, creating defaults");
+      // console.log("No eligible monsters found, creating defaults");
       return this.createDefaultStarterMonsters();
     }
 
@@ -5181,14 +5181,14 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
 
     // First try ResourceManager's bestiary
     if (resourceManager?.resources?.bestiary?.size > 0) {
-      console.log(`Checking ${resourceManager.resources.bestiary.size} monsters in ResourceManager`);
+      // console.log(`Checking ${resourceManager.resources.bestiary.size} monsters in ResourceManager`);
 
       resourceManager.resources.bestiary.forEach(monster => {
         try {
           // Calculate XP from CR if needed
           const xp = this.getMonsterXP(monster);
           if (xp <= MAX_STARTER_XP && xp > 0) {
-            console.log(`Found eligible starter: ${monster.name} (XP: ${xp})`);
+            // console.log(`Found eligible starter: ${monster.name} (XP: ${xp})`);
             eligibleMonsters.push(this.formatMonsterForParty(monster));
           }
         } catch (error) {
@@ -5198,7 +5198,7 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
     }
     // Then try direct database access as fallback
     else if (monsterDatabase?.monsters) {
-      console.log(`Checking ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
+      // console.log(`Checking ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
 
       Object.values(monsterDatabase.monsters).forEach(monster => {
         try {
@@ -5212,7 +5212,7 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
           else if (cr === "1/8") xp = 25;
 
           if (xp <= MAX_STARTER_XP && xp > 0) {
-            console.log(`Found eligible starter: ${monster.basic.name} (CR: ${cr}, XP: ${xp})`);
+            // console.log(`Found eligible starter: ${monster.basic.name} (CR: ${cr}, XP: ${xp})`);
             eligibleMonsters.push(this.formatMonsterForParty(monster));
           }
         } catch (error) {
@@ -5221,7 +5221,7 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
       });
     }
 
-    console.log(`Found ${eligibleMonsters.length} eligible starter monsters on attempt ${attempt + 1}`);
+    // console.log(`Found ${eligibleMonsters.length} eligible starter monsters on attempt ${attempt + 1}`);
 
     // If no monsters found and we have retries left, try again with delay
     if (eligibleMonsters.length === 0 && attempt < maxAttempts - 1) {
@@ -5762,15 +5762,16 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
         <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
       </div>
     `;
-  
+
     // Create content
     const content = document.createElement('div');
     content.style.padding = '24px';
     content.style.color = 'white';
     content.innerHTML = `
       <p style="margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
-        Select your first monster companion to begin your adventure!
-      </p>
+      <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
+      <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
+       </p>
       <div class="starter-monsters-grid" style="
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -5896,229 +5897,6 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
       container.style.transform = 'scale(1)';
     }, 10);
   }
-
-  // Show starter monster selection dialog with our styled UI
-  showStarterMonsterDialog(starterChoices) {
-    // Create dialog
-    const overlay = document.createElement('div');
-    overlay.className = 'party-overlay';
-    overlay.style.opacity = '0';
-
-    const container = document.createElement('div');
-    container.className = 'party-container';
-    container.style.transform = 'scale(0.95)';
-    container.style.maxWidth = '800px';
-
-    // Create header
-    const header = document.createElement('div');
-    header.className = 'party-header';
-    header.innerHTML = `
-    <div style="text-align: center; width: 100%;">
-      <h1 style="margin: 0; font-size: 1.5rem;">Choose Your Starter Monster</h1>
-    </div>
-  `;
-
-    // Create content
-    const content = document.createElement('div');
-    content.style.padding = '24px';
-    content.style.color = 'white';
-
-    // Introduction text
-    content.innerHTML = `
-    <div style="text-align: center; margin-bottom: 24px;">
-      <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
-      <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
-    </div>
-    
-    <div class="starter-choices" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 32px;">
-      ${starterChoices.map((monster, index) => {
-      // Get monster data
-      const monsterData = monster.data || monster;
-      const name = monsterData.name || monsterData.basic?.name || 'Unknown Monster';
-      const type = monsterData.type || monsterData.basic?.type || 'Unknown';
-      const size = monsterData.size || monsterData.basic?.size || 'Medium';
-      const cr = monsterData.cr || monsterData.basic?.cr || '?';
-
-      const bgColor = this.getMonsterTypeColor(type);
-
-
-      return `
-          <div class="monster-card starter-card" data-monster-index="${index}" style="
-            width: 200px;
-            background: white;
-            color: #333;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-            transform: rotate(${index % 2 === 0 ? -5 : 5}deg);
-            transition: all 0.2s ease;
-          ">
-            <div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0;">
-              <div style="
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background-color: ${bgColor};
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: bold;
-                margin-right: 12px;
-              ">
-                ${monster.token?.data ?
-          `<img src="${monster.token.data}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` :
-          name.charAt(0)
-        }
-              </div>
-              <div>
-                <div style="font-weight: bold;">${name}</div>
-                <div style="font-size: 0.8rem; color: #666;">
-                  ${size} ${type}
-                  <span style="
-                    background: #e0e7ff;
-                    color: #4338ca;
-                    font-size: 0.7rem;
-                    padding: 1px 4px;
-                    border-radius: 4px;
-                    margin-left: 4px;
-                  ">CR ${cr}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div style="padding: 12px;">
-              <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Characteristics</div>
-              
-              <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
-                <span>HP</span>
-                <span>${monsterData.stats?.hp?.average || '?'}</span>
-              </div>
-              
-              <div style="margin-bottom: 8px; display: flex; justify-content: space-between;">
-                <span>AC</span>
-                <span>${monsterData.stats?.ac || '?'}</span>
-              </div>
-              
-              ${monsterData.abilities ? `
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; font-size: 0.8rem;">
-                  <div>
-                    <div style="font-weight: bold;">STR</div>
-                    <div>${monsterData.abilities.str?.score || '?'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: bold;">DEX</div>
-                    <div>${monsterData.abilities.dex?.score || '?'}</div>
-                  </div>
-                  <div>
-                    <div style="font-weight: bold;">CON</div>
-                    <div>${monsterData.abilities.con?.score || '?'}</div>
-                  </div>
-                </div>
-              ` : ''}
-            </div>
-            
-            <div style="padding: 12px; background: rgba(0,0,0,0.05); text-align: center;">
-              <button class="select-starter-btn" style="
-                padding: 8px 16px;
-                background: #4f46e5;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-              ">
-                Choose
-              </button>
-            </div>
-          </div>
-        `;
-    }).join('')}
-    </div>
-  `;
-
-
-
-    // Assemble dialog
-    container.appendChild(header);
-    container.appendChild(content);
-    overlay.appendChild(container);
-
-    // Add a close/cancel button
-    const closeButton = document.createElement('button');
-    closeButton.className = 'close-dialog-btn';
-    closeButton.style.position = 'absolute';
-    closeButton.style.top = '16px';
-    closeButton.style.right = '16px';
-    closeButton.style.background = 'none';
-    closeButton.style.border = 'none';
-    closeButton.style.color = 'white';
-    closeButton.style.cursor = 'pointer';
-    closeButton.innerHTML = '<span class="material-icons">close</span>';
-
-    closeButton.addEventListener('click', () => {
-      // Reset the check flag so we can show the party manager
-      this.starterCheckPerformed = false;
-
-      // Close the dialog
-      overlay.style.opacity = '0';
-      container.style.transform = 'scale(0.95)';
-      setTimeout(() => overlay.remove(), 300);
-    });
-
-    container.appendChild(closeButton);
-
-    document.body.appendChild(overlay);
-
-    // Add event listeners for card selection
-    const starterCards = overlay.querySelectorAll('.starter-card');
-    starterCards.forEach(card => {
-      // Add hover effect
-      card.addEventListener('mouseenter', () => {
-        card.style.transform = `rotate(0deg) scale(1.05)`;
-        card.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.4)';
-      });
-
-      card.addEventListener('mouseleave', () => {
-        const index = parseInt(card.getAttribute('data-monster-index'));
-        card.style.transform = `rotate(${index % 2 === 0 ? -5 : 5}deg)`;
-        card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-      });
-
-      // Selection handler
-      card.addEventListener('click', () => {
-        const index = parseInt(card.getAttribute('data-monster-index'));
-        const selectedMonster = starterChoices[index];
-
-        // Add the monster to party
-        this.addMonster(selectedMonster);
-
-        // Save party
-        this.saveParty();
-    this.refreshPartyDialog();
-        // Close dialog
-        overlay.style.opacity = '0';
-        container.style.transform = 'scale(0.95)';
-
-        setTimeout(() => {
-          overlay.remove();
-
-          // Show confirmation
-          this.showToast('Starter monster added to your party!', 'success');
-        }, 300);
-      });
-    });
-
-    // Animate in
-    setTimeout(() => {
-      overlay.style.opacity = '1';
-      container.style.transform = 'scale(1)';
-    }, 10);
-
-
-  }
-
-
 
   /**
    * Helper UI Methods
