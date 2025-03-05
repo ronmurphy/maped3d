@@ -4489,25 +4489,26 @@ connectToSceneInventory() {
           </div>
         </button>
         
-        <button class="approach-btn gift" style="
-          background: rgba(168, 85, 247, 0.15);
-          border: 1px solid rgba(168, 85, 247, 0.3);
-          padding: 16px;
-          border-radius: 8px;
-          color: white;
-          text-align: left;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        ">
-          <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
-            <span class="material-icons" style="font-size: 36px; color: #a855f7; margin-bottom: 8px;">card_giftcard</span>
-            <span style="font-weight: bold; font-size: 1.1rem;">Offer Gift</span>
-          </div>
-          <div style="font-size: 0.9rem; opacity: 0.9;">
-            Give the monster a gift as a token of friendship and goodwill.
-          </div>
-        </button>
+    <!-- Gift button - ADD THIS -->
+    <button class="approach-btn gift" style="
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      padding: 16px;
+      border-radius: 8px;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    ">
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 12px;">
+        <span class="material-icons" style="font-size: 36px; color: #a855f7; margin-bottom: 8px;">card_giftcard</span>
+        <span style="font-weight: bold; font-size: 1.1rem;">Offer Gift</span>
       </div>
+      <div style="font-size: 0.9rem; opacity: 0.9;">
+        Give the monster a gift as a token of friendship and goodwill.
+      </div>
+    </button>
+  </div>
       
       <!-- Alternative options -->
       <div style="display: flex; justify-content: center; gap: 16px;">
@@ -4588,10 +4589,30 @@ connectToSceneInventory() {
       this.handleRecruitmentAttempt(recruitMonster, 'impress', overlay);
     });
   
-    overlay.querySelector('.gift').addEventListener('click', () => {
-      this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
-    });
+    // overlay.querySelector('.gift').addEventListener('click', () => {
+    //   this.handleRecruitmentAttempt(recruitMonster, 'gift', overlay);
+    // });
   
+    overlay.querySelector('.gift').addEventListener('click', () => {
+      console.log("Gift button clicked");
+      
+      // Always clean up and recreate the drawer - this is key to fixing the issue
+      if (this.giftDrawer) {
+        // Remove existing drawer if it exists
+        if (this.giftDrawer.parentNode) {
+          this.giftDrawer.parentNode.removeChild(this.giftDrawer);
+        }
+        this.giftDrawer = null;
+      }
+      
+      // Create a fresh drawer
+      this.giftDrawer = this.createGiftDrawer();
+      dialogContainer.appendChild(this.giftDrawer);
+      
+      // Show gift selection dialog
+      this.showGiftSelection(recruitMonster, overlay);
+    });
+
     overlay.querySelector('.fight').addEventListener('click', () => {
       overlay.style.opacity = '0';
       dialogContainer.style.transform = 'scale(0.95)';
@@ -4765,8 +4786,9 @@ removeEncounterMarker() {
 }
 
   // Show recruitment result with animation
-  showRecruitmentResult(monster, success, approach, overlay) {
+  // showRecruitmentResult(monster, success, approach, overlay) {
 
+  showRecruitmentResult(monster, success, approach, overlay, extraData = {}) {
 
     const dialogContainer = overlay.querySelector('.party-container');
 
@@ -4844,9 +4866,24 @@ removeEncounterMarker() {
           approachMessage = 'The monster was impressed by your display of strength.';
           break;
         case 'gift':
-          approachMessage = 'Your gift was well-received.';
-          break;
-      }
+          const extraInfo = extraData || {}; // This line was causing the error
+          const itemName = extraInfo.itemName || 'your gift';
+          const newName = extraInfo.monsterName;
+          const effectiveness = extraInfo.effectiveness || '';
+          
+          if (effectiveness === 'Perfect') {
+            approachMessage = `The ${monster.name} was thrilled by ${itemName}! `;
+          } else if (effectiveness === 'Good') {
+            approachMessage = `The ${monster.name} appreciated ${itemName}. `;
+          } else {
+            approachMessage = `The ${monster.name} accepted ${itemName}. `;
+          }
+          
+          if (newName) {
+            approachMessage += `You've named your new companion ${newName}.`;
+          }
+            break;
+        }
 
         // Add warning about attempts remaining
   if (this.recruitmentAttempts.currentCount < this.recruitmentAttempts.maxAttempts) {
@@ -6835,6 +6872,954 @@ getAvailableComboAbilities() {
   }
   
   return availableCombos;
+}
+
+// Add this to the createGiftDrawer method
+createGiftDrawer() {
+  const giftDrawer = document.createElement('sl-drawer');
+  giftDrawer.label = "Choose a Gift";
+  giftDrawer.placement = "end"; 
+  giftDrawer.setAttribute('contained', ''); 
+  giftDrawer.style.setProperty('--size', '50%');
+  
+  giftDrawer.innerHTML = `
+    <div class="gift-drawer-content">
+      <!-- Content will be populated when opened -->
+    </div>
+    <div slot="footer">
+      <sl-button variant="neutral" class="close-drawer-btn">Cancel</sl-button>
+    </div>
+  `;
+  
+  // Add close button handler
+  giftDrawer.querySelector('.close-drawer-btn').addEventListener('click', () => {
+    console.log("Close drawer button clicked");
+    giftDrawer.hide();
+  });
+  
+  // Add cleanup event
+  giftDrawer.addEventListener('sl-after-hide', () => {
+    console.log("Drawer closed event - performing cleanup");
+    
+    // Clear content to prevent memory issues
+    const content = giftDrawer.querySelector('.gift-drawer-content');
+    if (content) {
+      // Remove all event listeners by replacing the element
+      const newContent = document.createElement('div');
+      newContent.className = 'gift-drawer-content';
+      content.parentNode.replaceChild(newContent, content);
+    }
+  });
+  
+  return giftDrawer;
+}
+
+showGiftSelection(monster, recruitmentOverlay) {
+  console.log("Opening gift selection for", monster.name || monster.basic?.name || "monster");
+  
+  // Make sure dialogContainer is properly set
+  if (!this.dialogContainer) {
+    console.error("Dialog container not found!");
+    return;
+  }
+  
+  // Create the drawer if it doesn't exist yet
+  if (!this.giftDrawer) {
+    console.log("Creating new gift drawer");
+    this.giftDrawer = this.createGiftDrawer();
+    this.dialogContainer.appendChild(this.giftDrawer);
+  }
+  
+  // Get items directly from Scene3D inventory
+  let availableItems = [];
+  
+  // Add items from own inventory first
+  if (this.inventory) {
+    if (this.inventory.weapons) {
+      availableItems = [...availableItems, ...this.inventory.weapons.map(item => ({
+        ...item,
+        type: 'weapon',
+        source: 'local-inventory'
+      }))];
+    }
+    
+    if (this.inventory.armor) {
+      availableItems = [...availableItems, ...this.inventory.armor.map(item => ({
+        ...item,
+        type: 'armor',
+        source: 'local-inventory'
+      }))];
+    }
+    
+    if (this.inventory.misc) {
+      availableItems = [...availableItems, ...this.inventory.misc.map(item => ({
+        ...item,
+        type: 'misc',
+        source: 'local-inventory'
+      }))];
+    }
+  }
+  
+  // Get Scene3D inventory items - directly access props if possible
+  if (this.scene3D) {
+    try {
+      console.log("Checking Scene3D inventory for props");
+      
+      // Check if we can access the inventory directly
+      if (this.scene3D.inventory && this.scene3D.inventory.size > 0) {
+        console.log(`Found ${this.scene3D.inventory.size} items in direct inventory access`);
+        
+        // Convert Map to array if needed
+        let sceneItems = [];
+        if (this.scene3D.inventory instanceof Map) {
+          // Convert Map entries to array of props
+          this.scene3D.inventory.forEach((value, key) => {
+            if (value && value.prop) {
+              sceneItems.push({
+                id: key,
+                name: value.prop.name || "Unknown Item",
+                type: this.determineItemType(value.prop),
+                description: value.prop.description || "",
+                source: '3d-inventory'
+              });
+            }
+          });
+        }
+        
+        if (sceneItems.length > 0) {
+          console.log(`Processed ${sceneItems.length} items from inventory Map`);
+          availableItems = [...availableItems, ...sceneItems];
+        }
+      }
+      
+      // If we couldn't get items from direct access, try getInventoryItems
+      if (typeof this.scene3D.getInventoryItems === 'function') {
+        console.log("Getting items from Scene3D.getInventoryItems()");
+        const inventoryItems = this.scene3D.getInventoryItems();
+        
+        if (inventoryItems && inventoryItems.length > 0) {
+          console.log(`Found ${inventoryItems.length} items from getInventoryItems`);
+          
+          // Process each item to ensure it has required properties
+          const processedItems = inventoryItems.map(item => ({
+            id: item.id || `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            name: item.name || item.prop?.name || "Unknown Item",
+            type: item.type || this.determineItemType(item),
+            image: item.image || item.prop?.image || null,
+            description: item.description || item.prop?.description || "",
+            source: '3d-inventory'
+          }));
+          
+          availableItems = [...availableItems, ...processedItems];
+        }
+      }
+    } catch (error) {
+      console.error('Error accessing Scene3D inventory:', error);
+    }
+  }
+  
+  console.log(`Found ${availableItems.length} items for gifts`);
+  
+  // If no items found, use placeholder equipment as fallback
+  if (availableItems.length === 0) {
+    console.log("No items found, falling back to placeholder equipment");
+    const weapons = this.getPlaceholderEquipment('weapon');
+    const armor = this.getPlaceholderEquipment('armor');
+    
+    availableItems = [
+      ...weapons.map(item => ({...item, type: 'weapon'})),
+      ...armor.map(item => ({...item, type: 'armor'}))
+    ];
+  }
+  
+  console.log(`Found ${availableItems.length} total items to offer as gifts`);
+  
+  // Populate gift drawer
+  const content = this.giftDrawer.querySelector('.gift-drawer-content');
+  const monsterType = monster.basic?.type || monster.type || 'Unknown';
+  
+  if (availableItems.length === 0) {
+    // No items case
+    content.innerHTML = `
+      <div style="padding: 32px; text-align: center;">
+        <span class="material-icons" style="font-size: 48px; color: #9ca3af; margin-bottom: 16px;">inventory_2</span>
+        <h3 style="margin: 0 0 8px 0; color: #374151;">No Items Available</h3>
+        <p style="color: #6b7280; margin: 0;">You don't have any items in your inventory to offer as gifts.</p>
+      </div>
+    `;
+  } else {
+    // Has items case - show gift selection UI
+    content.innerHTML = `
+    <div style="padding: 16px;">
+      <h2 style="margin-top: 0; color: #111827;">Choose a Gift for ${this.getMonsterName(monster)}</h2>
+      <p style="color: #4b5563;">The right gift can greatly increase your chances of recruiting this ${monsterType.toLowerCase()}.</p>
+    
+        <div class="gift-items-grid" style="
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 16px;
+          margin-top: 16px;
+        ">
+          <!-- Gift items will be inserted here -->
+        </div>
+      </div>
+    `;
+  
+  const itemsGrid = content.querySelector('.gift-items-grid');
+  
+  // Add each item to grid
+  availableItems.forEach(item => {
+    // Determine gift type for preference logic
+    let giftType = 'misc';
+    
+    if (item.type === 'weapon') {
+      giftType = 'weapon';
+    } else if (item.type === 'armor') {
+      giftType = 'armor';
+    } else if (item.name.toLowerCase().includes('potion')) {
+      giftType = 'potion';
+    } else if (item.name.toLowerCase().includes('food') || 
+              item.name.toLowerCase().includes('fruit') || 
+              item.name.toLowerCase().includes('meat')) {
+      giftType = 'food';
+    } else if (item.name.toLowerCase().includes('gem') || 
+              item.name.toLowerCase().includes('gold') || 
+              item.name.toLowerCase().includes('jewelry')) {
+      giftType = 'treasure';
+    } else if (item.name.toLowerCase().includes('chest') || 
+              item.name.toLowerCase().includes('box')) {
+      giftType = 'chest';
+    }
+    
+    // Get effectiveness for this gift type and monster type
+    const effectiveness = this.getGiftEffectiveness(giftType, monsterType);
+    
+    // Determine color based on effectiveness
+    let effectColor = '#6B7280'; // Default gray
+    switch (effectiveness.effectiveness) {
+      case 'Perfect': effectColor = '#10B981'; break; // Green
+      case 'Good': effectColor = '#3B82F6'; break; // Blue
+      case 'Neutral': effectColor = '#6B7280'; break; // Gray
+      case 'Poor': effectColor = '#F59E0B'; break; // Amber
+      case 'Insulting': effectColor = '#EF4444'; break; // Red
+    }
+    
+    // Create item card
+    const itemCard = document.createElement('div');
+    itemCard.className = 'gift-item';
+    itemCard.dataset.itemId = item.id;
+    itemCard.dataset.giftType = giftType;
+    itemCard.dataset.modifier = effectiveness.modifier;
+    itemCard.dataset.reaction = effectiveness.reaction;
+    
+    itemCard.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    `;
+    
+    // Get appropriate icon
+    let icon = 'inventory_2'; // Default
+    switch (giftType) {
+      case 'weapon': icon = 'swords'; break;
+      case 'armor': icon = 'shield'; break;
+      case 'potion': icon = 'science'; break;
+      case 'food': icon = 'restaurant'; break;
+      case 'treasure': icon = 'diamond'; break;
+      case 'chest': icon = 'inventory_2'; break;
+    }
+    
+    // If the icon system doesn't have the specific icon, fallback to material icons
+    if (icon === 'swords') icon = 'hardware'; // Fallback for swords
+    if (icon === 'diamond') icon = 'diamond'; // Fallback for diamond
+    
+    itemCard.innerHTML = `
+      <div style="padding: 12px; border-bottom: 1px solid #f0f0f0; position: relative;">
+        <div style="
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: ${effectColor}20;
+          color: ${effectColor};
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 0.7rem;
+          font-weight: 500;
+        ">${effectiveness.effectiveness}</div>
+        
+        <div style="margin-top: 6px; display: flex; gap: 12px; align-items: center;">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: ${effectColor}10;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <span class="material-icons" style="color: ${effectColor};">${icon}</span>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 500; color: #111; margin-bottom: 2px;">${item.name}</div>
+            <div style="font-size: 0.8rem; color: #666;">${giftType.charAt(0).toUpperCase() + giftType.slice(1)}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="padding: 12px; background: #f9fafb; font-size: 0.85rem; color: #374151;">
+        <div style="margin-bottom: 4px; font-style: italic; color: #4B5563;">"${effectiveness.reaction}"</div>
+        <div style="margin-top: 8px; font-size: 0.75rem; color: #6B7280;">
+          ${effectiveness.modifier > 0 ? 
+            `<span style="color: ${effectColor};">+${Math.round(effectiveness.modifier * 100)}% recruitment chance</span>` : 
+            effectiveness.modifier < 0 ? 
+            `<span style="color: ${effectColor};">${Math.round(effectiveness.modifier * 100)}% recruitment chance</span>` :
+            `No effect on recruitment chance`
+          }
+        </div>
+      </div>
+    `;
+    
+    // Add hover effect
+    itemCard.addEventListener('mouseenter', () => {
+      itemCard.style.transform = 'translateY(-2px)';
+      itemCard.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+    });
+    
+    itemCard.addEventListener('mouseleave', () => {
+      itemCard.style.transform = '';
+      itemCard.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+    });
+    
+    // Add click handler
+    itemCard.addEventListener('click', () => {
+      // Process gift selection
+      this.selectGift(item, giftType, effectiveness, monster, recruitmentOverlay);
+    });
+    
+    itemsGrid.appendChild(itemCard);
+  });
+}
+  
+  // Show the drawer
+  console.log("About to show the gift drawer");
+  setTimeout(() => {
+    if (this.giftDrawer && typeof this.giftDrawer.show === 'function') {
+      this.giftDrawer.show();
+      console.log("Gift drawer show() called");
+    } else {
+      console.error("Gift drawer or show() method not available");
+    }
+  }, 50);
+}
+
+determineItemType(item) {
+  const name = (item.name || item.prop?.name || '').toLowerCase();
+  
+  if (name.includes('sword') || name.includes('axe') || name.includes('dagger') || 
+      name.includes('mace') || name.includes('staff') || name.includes('bow') ||
+      name.includes('weapon')) {
+    return 'weapon';
+  }
+  
+  if (name.includes('armor') || name.includes('shield') || name.includes('helmet') || 
+      name.includes('gloves') || name.includes('boots') || name.includes('cloak')) {
+    return 'armor'; 
+  }
+  
+  if (name.includes('potion') || name.includes('elixir') || name.includes('vial')) {
+    return 'potion';
+  }
+  
+  if (name.includes('food') || name.includes('fruit') || name.includes('meat') || 
+      name.includes('bread') || name.includes('fish')) {
+    return 'food';
+  }
+  
+  return 'misc';
+}
+
+getGiftEffectiveness(giftType, monsterType) {
+  // Gift preferences by monster type
+  const preferences = {
+    'Beast': {
+      'food': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The beast excitedly devours the food offering!" },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The beast sniffs the potion curiously." },
+      'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The beast growls at the weapon, unsure of its purpose." },
+      'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The beast has no use for armor and seems confused." },
+      'treasure': { effectiveness: 'Neutral', modifier: 0, reaction: "The beast shows little interest in the shiny object." },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The beast is curious about what's inside." }
+    },
+    'Dragon': {
+      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The dragon appreciates the snack, though it's hardly a feast." },
+      'potion': { effectiveness: 'Neutral', modifier: 0, reaction: "The dragon examines the potion with mild interest." },
+      'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The dragon scoffs at your puny weapon." },
+      'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The dragon has no need for armor with its scales." },
+      'treasure': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The dragon's eyes gleam at the sight of treasure!" },
+      'chest': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The dragon eagerly eyes what appears to be a new addition to its hoard." }
+    },
+    'Humanoid': {
+      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid gratefully accepts the food." },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid recognizes the potion's value." },
+      'weapon': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The humanoid examines the weapon with great interest!" },
+      'armor': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The humanoid tries on the armor, impressed by its quality!" },
+      'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid's eyes light up at the valuable gift." },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The humanoid is intrigued by the mysterious chest." }
+    },
+    'Undead': {
+      'food': { effectiveness: 'Insulting', modifier: -0.3, reaction: "The undead has no need for food and is offended by the offering." },
+      'potion': { effectiveness: 'Poor', modifier: -0.15, reaction: "The potion has little effect on the undead's condition." },
+      'weapon': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead appreciates the weapon's destructive potential." },
+      'armor': { effectiveness: 'Neutral', modifier: 0, reaction: "The undead shows little interest in protection." },
+      'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead is drawn to the former possessions of the living." },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The undead is curious about what souls might be trapped inside." }
+    },
+    'Fey': {
+      'food': { effectiveness: 'Good', modifier: 0.1, reaction: "The fey creature nibbles delicately at the offering." },
+      'potion': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fey is delighted by the magical concoction!" },
+      'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fey creature recoils from the crude implement of war." },
+      'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fey has no interest in heavy, restrictive armor." },
+      'treasure': { effectiveness: 'Good', modifier: 0.1, reaction: "The fey is attracted to the shiny bauble." },
+      'chest': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fey is excited by the mystery and potential mischief!" }
+    },
+    'Fiend': {
+      'food': { effectiveness: 'Poor', modifier: -0.15, reaction: "The fiend scorns your mundane offering." },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend is intrigued by the potion's properties." },
+      'weapon': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend appreciates instruments of violence." },
+      'armor': { effectiveness: 'Neutral', modifier: 0, reaction: "The fiend has little need for physical protection." },
+      'treasure': { effectiveness: 'Perfect', modifier: 0.25, reaction: "The fiend covets the valuable treasure!" },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The fiend wonders what secrets might be contained within." }
+    },
+    'Elemental': {
+      'food': { effectiveness: 'Insulting', modifier: -0.3, reaction: "The elemental has no physical form to consume food." },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The elemental is drawn to the elemental essence within the potion." },
+      'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The elemental has no need for physical weapons." },
+      'armor': { effectiveness: 'Poor', modifier: -0.15, reaction: "The elemental's form cannot wear armor." },
+      'treasure': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental shows no interest in material wealth." },
+      'chest': { effectiveness: 'Neutral', modifier: 0, reaction: "The elemental regards the chest with indifference." }
+    },
+    'Celestial': {
+      'food': { effectiveness: 'Neutral', modifier: 0, reaction: "The celestial acknowledges your humble offering." },
+      'potion': { effectiveness: 'Good', modifier: 0.1, reaction: "The celestial recognizes the healing properties." },
+      'weapon': { effectiveness: 'Poor', modifier: -0.15, reaction: "The celestial looks upon the weapon with disapproval." },
+      'armor': { effectiveness: 'Good', modifier: 0.1, reaction: "The celestial appreciates the protection it offers." },
+      'treasure': { effectiveness: 'Poor', modifier: -0.15, reaction: "The celestial has no interest in material wealth." },
+      'chest': { effectiveness: 'Good', modifier: 0.1, reaction: "The celestial is curious about your mysterious gift." }
+    }
+  };
+  
+  // Default values if monster type or gift type not found
+  const defaultResponse = { effectiveness: 'Neutral', modifier: 0, reaction: "The creature seems indifferent to your offering." };
+  
+  // Check if we have preferences for this monster type
+  const monsterPreferences = preferences[monsterType] || {};
+  
+  // Return preference for this gift type, or default if not found
+  return monsterPreferences[giftType] || defaultResponse;
+}
+
+// 3. Method to populate the gift drawer with items from inventory
+populateGiftDrawer(drawer, monster) {
+  const content = drawer.querySelector('.gift-drawer-content');
+  const monsterType = monster.basic?.type || monster.type || 'Unknown';
+  
+  content.innerHTML = `
+    <div style="margin-bottom: 16px;">
+      <h2 style="margin-top: 0;">Choose a Gift for ${monster.basic?.name || monster.name}</h2>
+      <p>The right gift can greatly increase your chances of recruiting this ${monsterType.toLowerCase()}.</p>
+    </div>
+    
+    <div class="gift-items-grid" style="
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    ">
+      <!-- Items will be inserted here -->
+    </div>
+  `;
+  
+  const itemsGrid = content.querySelector('.gift-items-grid');
+  
+  // Get available items - combine weapons, armor and misc items
+  const availableItems = [
+    ...(this.inventory.weapons || []).map(item => ({ ...item, type: 'weapon' })),
+    ...(this.inventory.armor || []).map(item => ({ ...item, type: 'armor' })),
+    ...(this.inventory.misc || []).map(item => ({ ...item }))
+  ];
+  
+  // Add items from Scene3D inventory if available
+  if (this.scene3D && typeof this.scene3D.getInventoryItems === 'function') {
+    try {
+      const sceneItems = this.scene3D.getInventoryItems();
+      if (sceneItems && sceneItems.length) {
+        availableItems.push(...sceneItems);
+      }
+    } catch (error) {
+      console.error('Error getting inventory items from Scene3D:', error);
+    }
+  }
+  
+  // If no items available
+  if (availableItems.length === 0) {
+    itemsGrid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 32px; color: #666;">
+        <span class="material-icons" style="font-size: 48px; margin-bottom: 16px;">inventory_2</span>
+        <p>You don't have any items to offer as gifts.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Categorize items for gift preferences
+  availableItems.forEach(item => {
+    // Determine gift type for preference calculation
+    let giftType = 'misc';
+    
+    if (item.type === 'weapon') {
+      giftType = 'weapon';
+    } else if (item.type === 'armor') {
+      giftType = 'armor';
+    } else if (item.name.toLowerCase().includes('potion')) {
+      giftType = 'potion';
+    } else if (item.name.toLowerCase().includes('food') || 
+               item.name.toLowerCase().includes('fruit') || 
+               item.name.toLowerCase().includes('meat')) {
+      giftType = 'food';
+    } else if (item.name.toLowerCase().includes('gem') || 
+               item.name.toLowerCase().includes('gold') || 
+               item.name.toLowerCase().includes('jewelry')) {
+      giftType = 'treasure';
+    } else if (item.name.toLowerCase().includes('chest') || 
+               item.name.toLowerCase().includes('box')) {
+      giftType = 'chest';
+    }
+    
+    // Get effectiveness of this gift for this monster type
+    const effectiveness = this.getGiftEffectiveness(giftType, monsterType);
+    
+    // Determine color based on effectiveness
+    let effectColor = '#6B7280'; // Default gray
+    switch (effectiveness.effectiveness) {
+      case 'Perfect': effectColor = '#10B981'; break; // Green
+      case 'Good': effectColor = '#3B82F6'; break; // Blue
+      case 'Neutral': effectColor = '#6B7280'; break; // Gray
+      case 'Poor': effectColor = '#F59E0B'; break; // Amber
+      case 'Insulting': effectColor = '#EF4444'; break; // Red
+    }
+    
+    // Icon based on item type
+    let icon = 'inventory_2'; // Default
+    switch (giftType) {
+      case 'weapon': icon = 'swords'; break;
+      case 'armor': icon = 'shield'; break;
+      case 'potion': icon = 'science'; break;
+      case 'food': icon = 'restaurant'; break;
+      case 'treasure': icon = 'diamond'; break;
+      case 'chest': icon = 'inventory_2'; break;
+    }
+    
+    // Create item card
+    const itemCard = document.createElement('div');
+    itemCard.className = 'gift-item';
+    itemCard.dataset.itemId = item.id;
+    itemCard.dataset.giftType = giftType;
+    itemCard.dataset.modifier = effectiveness.modifier;
+    itemCard.dataset.reaction = effectiveness.reaction;
+    
+    itemCard.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    `;
+    
+    itemCard.innerHTML = `
+      <div style="padding: 12px; border-bottom: 1px solid #f0f0f0; position: relative;">
+        <div style="
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: ${effectColor}20;
+          color: ${effectColor};
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 0.7rem;
+          font-weight: 500;
+        ">${effectiveness.effectiveness}</div>
+        
+        <div style="margin-top: 6px; display: flex; gap: 12px; align-items: center;">
+          <div style="
+            width: 40px;
+            height: 40px;
+            background: ${effectColor}10;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <span class="material-icons" style="color: ${effectColor};">${icon}</span>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 500; color: #111; margin-bottom: 2px;">${item.name}</div>
+            <div style="font-size: 0.8rem; color: #666;">${giftType.charAt(0).toUpperCase() + giftType.slice(1)}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="padding: 12px; background: #f9fafb; font-size: 0.85rem; color: #374151;">
+        <div style="margin-bottom: 4px; font-style: italic; color: #4B5563;">"${effectiveness.reaction}"</div>
+        <div style="margin-top: 8px; font-size: 0.75rem; color: #6B7280;">
+          ${effectiveness.modifier > 0 ? 
+            `<span style="color: ${effectColor};">+${Math.round(effectiveness.modifier * 100)}% recruitment chance</span>` : 
+            effectiveness.modifier < 0 ? 
+            `<span style="color: ${effectColor};">${Math.round(effectiveness.modifier * 100)}% recruitment chance</span>` :
+            `No effect on recruitment chance`
+          }
+        </div>
+      </div>
+    `;
+    
+    // Add hover effects
+    itemCard.addEventListener('mouseenter', () => {
+      itemCard.style.transform = 'translateY(-2px)';
+      itemCard.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    });
+    
+    itemCard.addEventListener('mouseleave', () => {
+      itemCard.style.transform = '';
+      itemCard.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+    });
+    
+    // Add click handler to select this gift
+    itemCard.addEventListener('click', () => {
+      this.selectGift(item, giftType, effectiveness, monster, drawer);
+    });
+    
+    itemsGrid.appendChild(itemCard);
+  });
+}
+
+// Handle gift selection
+// In selectGift function
+selectGift(item, giftType, effectiveness, monster, recruitmentOverlay) {
+  console.log(`Selected gift: ${item.name} for ${this.getMonsterName(monster)}`);
+  
+  // If effectiveness wasn't provided, determine it now
+  if (!effectiveness) {
+    const monsterType = monster.basic?.type || monster.type || 'Unknown';
+    giftType = giftType || this.determineGiftType(item);
+    effectiveness = this.getGiftEffectiveness(giftType, monsterType);
+    console.log(`Determined gift effectiveness: ${effectiveness.effectiveness}`);
+  }
+  
+  // Close and clean up the drawer
+  if (this.giftDrawer) {
+    this.giftDrawer.hide();
+    
+    // Schedule removal after hide animation
+    setTimeout(() => {
+      if (this.giftDrawer && this.giftDrawer.parentNode) {
+        this.giftDrawer.parentNode.removeChild(this.giftDrawer);
+        this.giftDrawer = null;
+      }
+    }, 350); // Slightly longer than hide animation duration
+  }
+  
+  // Show gift offering dialog and process results
+  this.offerGift(item, giftType, effectiveness, monster, recruitmentOverlay);
+}
+
+// Show gift offering and handle result
+offerGift(item, giftType, effectiveness, monster, recruitmentOverlay) {
+  // Create a dialog overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'gift-offering-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+  
+  const container = document.createElement('div');
+  container.className = 'gift-offering-container';
+  container.style.cssText = `
+    background: linear-gradient(135deg, #4338ca, #6d28d9);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 500px;
+    padding: 24px;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    color: white;
+    text-align: center;
+  `;
+  
+  // Determine effectiveness color
+  let effectColor = '#6B7280'; // Default gray
+  switch (effectiveness.effectiveness) {
+    case 'Perfect': effectColor = '#10B981'; break; // Green
+    case 'Good': effectColor = '#3B82F6'; break; // Blue
+    case 'Neutral': effectColor = '#6B7280'; break; // Gray
+    case 'Poor': effectColor = '#F59E0B'; break; // Amber
+    case 'Insulting': effectColor = '#EF4444'; break; // Red
+  }
+  
+  container.innerHTML = `
+    <div style="font-size: 36px; margin-bottom: 16px;">🎁</div>
+    <h2 style="margin: 0 0 8px 0; font-size: 1.5rem;">You offer ${item.name} to the ${monster.basic?.name || monster.name}</h2>
+    
+    <div style="
+      background: rgba(255, 255, 255, 0.1);
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px 0;
+      text-align: left;
+    ">
+      <div style="
+        display: inline-block;
+        padding: 4px 10px;
+        background: ${effectColor}20;
+        color: ${effectColor};
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 8px;
+      ">${effectiveness.effectiveness} Gift</div>
+      
+      <p style="margin: 8px 0; font-style: italic;">
+        "${effectiveness.reaction}"
+      </p>
+    </div>
+    
+    <p>The ${monster.basic?.type || monster.type} ${effectiveness.modifier > 0 ? 'appreciates' : effectiveness.modifier < 0 ? 'dislikes' : 'acknowledges'} your gift.</p>
+    
+    <button class="continue-btn" style="
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 16px;
+    ">Continue</button>
+  `;
+  
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+  
+  // Animate in
+  setTimeout(() => {
+    overlay.style.opacity = '1';
+    container.style.transform = 'scale(1)';
+  }, 10);
+  
+  // Add close button handler
+  container.querySelector('.continue-btn').addEventListener('click', () => {
+    // Close dialog
+    overlay.style.opacity = '0';
+    container.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+      overlay.remove();
+      
+      // Remove item from inventory
+      this.removeGiftFromInventory(item);
+      
+      // Apply the effectiveness modifier and continue recruitment
+      // Make sure to pass the effectiveness object
+      this.handleGiftRecruitmentAttempt(monster, effectiveness.modifier, item, giftType, effectiveness, recruitmentOverlay);
+    }, 300);
+  });
+}
+
+removeGiftFromInventory(item) {
+  console.log(`Removing ${item.name} (${item.id}) from inventory`);
+  
+  // If it's from Scene3D inventory
+  if (item.source === '3d-inventory' && this.scene3D && typeof this.scene3D.removeFromInventory === 'function') {
+    console.log(`Removing from Scene3D inventory: ${item.id}`);
+    this.scene3D.removeFromInventory(item.id);
+    return true;
+  }
+  
+  // If it's from local inventory
+  if (this.inventory) {
+    if (item.type === 'weapon' && this.inventory.weapons) {
+      console.log(`Removing weapon from local inventory: ${item.id}`);
+      this.inventory.weapons = this.inventory.weapons.filter(w => w.id !== item.id);
+      return true;
+    } 
+    
+    if (item.type === 'armor' && this.inventory.armor) {
+      console.log(`Removing armor from local inventory: ${item.id}`);
+      this.inventory.armor = this.inventory.armor.filter(a => a.id !== item.id);
+      return true;
+    }
+    
+    if (this.inventory.misc) {
+      console.log(`Removing misc item from local inventory: ${item.id}`);
+      this.inventory.misc = this.inventory.misc.filter(m => m.id !== item.id);
+      return true;
+    }
+  }
+  
+  console.warn(`Could not remove item ${item.name} (${item.id}) from inventory`);
+  return false;
+}
+
+getMonsterName(monster) {
+  // Try various paths to get the monster name
+  return monster.name || 
+         monster.basic?.name || 
+         (monster.data && monster.data.basic?.name) || 
+         "Unknown Monster";
+}
+
+// 7. Method to handle recruitment attempt with gift modifier
+handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effectiveness, recruitmentOverlay) {
+  // Increase current attempt count
+  this.recruitmentAttempts.currentCount++;
+  
+  console.log(`Gift recruitment attempt ${this.recruitmentAttempts.currentCount}/${this.recruitmentAttempts.maxAttempts}`);
+  console.log(`Base chance modifier: ${chanceModifier}`);
+  
+  // Determine success chance based on monster type and approach
+  let successChance = 0.5;  // Base 50% chance
+  
+  // Apply the gift modifier
+  successChance += chanceModifier;
+  
+  // Cap success chance
+  successChance = Math.max(0.1, Math.min(0.9, successChance));
+  
+  console.log(`Final success chance: ${successChance.toFixed(2)}`);
+  
+  // Roll for success
+  const roll = Math.random();
+  const success = roll <= successChance;
+  
+  console.log(`Gift recruitment roll: ${roll.toFixed(2)} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
+
+  // If successful, add extra logic for naming the monster and keeping/renaming the item
+  if (success) {
+    // Generate a name for the monster
+    const monsterName = this.generateMonsterName(monster);
+    console.log(`Generated name for monster: ${monsterName}`);
+    
+    // Close the recruitment dialog first
+    if (recruitmentOverlay) {
+      recruitmentOverlay.style.opacity = '0';
+      const dialogContainer = recruitmentOverlay.querySelector('.party-container');
+      if (dialogContainer) {
+        dialogContainer.style.transform = 'scale(0.95)';
+      }
+      setTimeout(() => {
+        if (recruitmentOverlay.parentNode) {
+          recruitmentOverlay.parentNode.removeChild(recruitmentOverlay);
+        }
+      }, 300);
+    }
+    
+    // Add the monster to party with its new name
+    const newMonster = this.prepareMonster(monster);
+    newMonster.name = monsterName;
+    
+    // If the monster is a humanoid and the gift was a usable item (weapon/armor), equip it
+    const monsterType = monster.basic?.type || monster.type || '';
+    if (monsterType === 'Humanoid' && (giftType === 'weapon' || giftType === 'armor')) {
+      // Create a copy of the item with a personalized name
+      const personalizedItem = JSON.parse(JSON.stringify(giftedItem));
+      personalizedItem.name = `${monsterName}'s ${giftedItem.name}`;
+      
+      // Equip the item to the monster
+      newMonster.equipment = newMonster.equipment || {};
+      newMonster.equipment[giftType] = personalizedItem;
+      
+      // Update stats based on equipment
+      this.updateMonsterStats(newMonster);
+      
+      console.log(`Equipped personalized ${giftType} to ${monsterName}: ${personalizedItem.name}`);
+    }
+    
+    // Add to party
+    this.addMonster(newMonster);
+    console.log(`Added ${monsterName} to party`);
+    
+    // Remove the encounter marker if success
+    this.removeEncounterMarker();
+  }
+  
+  // Show result with dice animation
+  this.showRecruitmentResult(monster, success, 'gift', recruitmentOverlay, {
+    itemName: giftedItem.name,
+    monsterName: success ? this.generateMonsterName(monster) : null,
+    effectiveness: effectiveness.effectiveness
+  });
+}
+
+// 8. Method to generate a random name for the monster based on type
+generateMonsterName(monster) {
+  const monsterType = monster.basic?.type || monster.type || 'Unknown';
+  
+  const namesByType = {
+    'Beast': [
+      'Fang', 'Shadow', 'Whisper', 'Storm', 'Thunder', 'Frost', 'Blaze', 'Thorn',
+      'Swift', 'Midnight', 'Ghost', 'Timber', 'Sage', 'Echo', 'Flint', 'River'
+    ],
+    'Dragon': [
+      'Drakor', 'Fafnir', 'Saphira', 'Vermithrax', 'Glaurung', 'Ancalagon',
+      'Falkor', 'Smaug', 'Ember', 'Scorch', 'Tiamat', 'Bahamut', 'Aurelion'
+    ],
+    'Undead': [
+      'Mortis', 'Grimm', 'Bane', 'Shroud', 'Dread', 'Scourge', 'Wraith',
+      'Doom', 'Haunt', 'Grave', 'Rot', 'Shade', 'Crypt', 'Mournful'
+    ],
+    'Humanoid': [
+      'Thorin', 'Elara', 'Garrick', 'Lirael', 'Thorne', 'Isolde', 'Darian',
+      'Lyra', 'Kaspar', 'Thalia', 'Rook', 'Serena', 'Valor', 'Elysia'
+    ],
+    'Fiend': [
+      'Maloch', 'Lilith', 'Abaddon', 'Mephistopheles', 'Baphomet', 'Asmodeus',
+      'Belial', 'Dagon', 'Pazuzu', 'Izrial', 'Xaphan', 'Vetis', 'Naberius'
+    ],
+    'Fey': [
+      'Puck', 'Titania', 'Oberon', 'Ariel', 'Mab', 'Cobweb', 'Peaseblossom',
+      'Robin', 'Quince', 'Thistle', 'Willow', 'Bramble', 'Gossamer', 'Drift'
+    ],
+    'Elemental': [
+      'Ignis', 'Aquilo', 'Terran', 'Zephyr', 'Frost', 'Ember', 'Gust',
+      'Quake', 'Spark', 'Torrent', 'Avalanche', 'Squall', 'Cinder'
+    ],
+    'Celestial': [
+      'Seraphim', 'Auriel', 'Cassiel', 'Raziel', 'Uriel', 'Gabriel', 'Raphael',
+      'Sariel', 'Azrael', 'Chamuel', 'Jophiel', 'Zadkiel', 'Metatron'
+    ]
+  };
+  
+  // Get appropriate name list or use generic names
+  const nameList = namesByType[monsterType] || [
+    'Gizmo', 'Patch', 'Nimble', 'Quirk', 'Sparkle', 'Wisp', 'Echo', 'Flicker',
+    'Glimmer', 'Rune', 'Zephyr', 'Pebble', 'Drift', 'Sprout', 'Flare'
+  ];
+  
+  // Get random name from list
+  const randomIndex = Math.floor(Math.random() * nameList.length);
+  return nameList[randomIndex];
 }
 
 }
