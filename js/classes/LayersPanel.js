@@ -1216,6 +1216,7 @@ class LayersPanel {
 async showRenameDialog(room) {
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Area Properties';
+    dialog.style.setProperty('--width', '550px');  // Make dialog a bit wider for tabs
 
     // Force type to wall
     room.type = 'wall';
@@ -1230,198 +1231,233 @@ async showRenameDialog(room) {
 
     dialog.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 16px;">
-            <sl-input 
-                id="roomNameInput" 
-                value="${room.name}" 
-                label="Area Name"
-            ></sl-input>
+            <!-- Top section - always visible -->
+            <div class="basic-info">
+                <sl-input 
+                    id="roomNameInput" 
+                    value="${room.name}" 
+                    label="Area Name"
+                ></sl-input>
 
-            <!-- Folder Selection -->
-            <sl-select 
-                id="folderSelect" 
-                label="Folder"
-                value="${currentFolder ? currentFolder.id : ''}"
-            >
-                <sl-option value="">No Folder</sl-option>
-                ${this.folders.map(folder => `
-                    <sl-option value="${folder.id}">${folder.name}</sl-option>
-                `).join('')}
-            </sl-select>
-
-            ${hasTextures ? `
-              <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                  <div style="margin-bottom: 16px;">
-                      <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
-                      
-                      <!-- Modified to show checkbox for regular wall -->
-                      <div style="display: flex; flex-direction: column; gap: 12px;">
-                          <!-- Wall Height Selector -->
-                          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                              <sl-checkbox id="isRegularWall" 
-                                  ${room.isRegularWall ? 'checked' : ''}
-                                  ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
-                                  Regular Wall (Full Height)
-                              </sl-checkbox>
-                          </div>
-                          
-                          <!-- Block height slider - disabled when isRegularWall is checked -->
-                          <sl-range 
-                              id="blockHeight" 
-                              label="Height" 
-                              min="0" max="101" 
-                              step="1" 
-                              tooltip="top" 
-                              value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
-                              help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
-                              style="margin-bottom: 16px;"
-                              ${room.isRegularWall ? 'disabled' : ''}
-                          ></sl-range>
-                      </div>
-          
-                      <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
-                      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
-                          ${Array.from(wallTextures.entries()).map(([id, texture]) => `
-                              <div class="texture-option" data-texture-id="${id}" 
-                                  style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'
-            }; padding: 4px; border-radius: 4px; position: relative;">
-                                  <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-                                  <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
-                                  ${assignedTextureId === id ? `
-                                      <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
-                                          background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
-                                          check_circle
-                                      </span>
-                                  ` : ''}
-                              </div>
-                          `).join('')}
-                      </div>
-                  </div>
-              </div>
-          ` : ''}
-
-            <!-- Slope Configuration Section -->
-            <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Slope Configuration</label>
-                    
-                    <sl-checkbox id="isSlope" ${room.isSlope ? 'checked' : ''}>
-                        Make this area a slope
-                    </sl-checkbox>
-                    
-                    <div id="slopeConfigContainer" style="margin-top: 12px; ${room.isSlope ? '' : 'display: none;'}">
-                        <!-- Visual slope direction selector -->
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; margin-bottom: 8px;">Slope Direction:</label>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto); gap: 8px; place-items: center;">
-                                <!-- Top row -->
-                                <div></div>
-                                <div>
-                                    <sl-checkbox class="direction-checkbox" value="north" 
-                                        ${room.slopeDirection === 'north' ? 'checked' : ''}>
-                                        <span class="material-icons">arrow_upward</span>
-                                    </sl-checkbox>
-                                </div>
-                                <div></div>
-                                
-                                <!-- Middle row -->
-                                <div>
-                                    <sl-checkbox class="direction-checkbox" value="west" 
-                                        ${room.slopeDirection === 'west' ? 'checked' : ''}>
-                                        <span class="material-icons">arrow_back</span>
-                                    </sl-checkbox>
-                                </div>
-                                <div class="shape-preview" style="
-                                    width: 80px; 
-                                    height: 80px; 
-                                    background: #555;
-                                    border-radius: ${room.shape === 'circle' ? '50%' : room.shape === 'polygon' ? '10%' : '0'};
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    color: white;
-                                    font-size: 12px;
-                                ">
-                                    ${room.name}
-                                </div>
-                                <div>
-                                    <sl-checkbox class="direction-checkbox" value="east" 
-                                        ${room.slopeDirection === 'east' ? 'checked' : ''}>
-                                        <span class="material-icons">arrow_forward</span>
-                                    </sl-checkbox>
-                                </div>
-                                
-                                <!-- Bottom row -->
-                                <div></div>
-                                <div>
-                                    <sl-checkbox class="direction-checkbox" value="south" 
-                                        ${room.slopeDirection === 'south' ? 'checked' : ''}>
-                                        <span class="material-icons">arrow_downward</span>
-                                    </sl-checkbox>
-                                </div>
-                                <div></div>
+                <!-- Folder Selection -->
+                <div style="margin-top: 16px;">
+                    <sl-select 
+                        id="folderSelect" 
+                        label="Folder"
+                        value="${currentFolder ? currentFolder.id : ''}"
+                    >
+                        <sl-option value="">No Folder</sl-option>
+                        ${this.folders.map(folder => `
+                            <sl-option value="${folder.id}">${folder.name}</sl-option>
+                        `).join('')}
+                    </sl-select>
+                </div>
+                
+                <!-- Legacy Wall Texture Option -->
+                ${room.shape === 'rectangle' ? `
+                    <div style="margin-top: 12px;">
+                        <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
+                            Set as Wall Texture Source
+                        </sl-checkbox>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <!-- Tabbed content -->
+            <sl-tab-group>
+                <!-- Wall Properties Tab -->
+                <sl-tab slot="nav" panel="wall-properties">
+                    <span class="material-icons" style="margin-right: 8px;">texture</span>
+                    Wall Properties
+                </sl-tab>
+                
+                <!-- Slope Tab -->
+                <sl-tab slot="nav" panel="slope-config">
+                    <span class="material-icons" style="margin-right: 8px;">trending_up</span>
+                    Slope
+                </sl-tab>
+                
+                <!-- Wall Properties Panel -->
+                <sl-tab-panel name="wall-properties">
+                    <div style="padding: 8px 0;">
+                        <!-- Modified to show checkbox for regular wall -->
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Wall Height Selector -->
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <sl-checkbox id="isRegularWall" 
+                                    ${room.isRegularWall ? 'checked' : ''}
+                                    ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
+                                    Regular Wall (Full Height)
+                                </sl-checkbox>
                             </div>
-                            <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
-                                The arrow indicates the uphill direction of the slope.
-                            </p>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-                            <!-- Start Height -->
-                            <sl-input 
-                                id="slopeStartHeight" 
-                                type="number" 
-                                label="Start Height" 
-                                min="0" 
-                                max="5"
-                                step="0.5"
-                                value="${room.slopeStartHeight || '0'}"
-                                help-text="Units in blocks"
-                            ></sl-input>
                             
-                            <!-- End Height -->
-                            <sl-input 
-                                id="slopeEndHeight" 
-                                type="number" 
-                                label="End Height" 
-                                min="0" 
-                                max="5"
-                                step="0.5"
-                                value="${room.slopeEndHeight || '1'}"
-                                help-text="Units in blocks"
-                            ></sl-input>
+                            <!-- Block height slider - disabled when isRegularWall is checked -->
+                            <sl-range 
+                                id="blockHeight" 
+                                label="Height" 
+                                min="0" max="101" 
+                                step="1" 
+                                tooltip="top" 
+                                value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
+                                help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
+                                style="margin-bottom: 16px;"
+                                ${room.isRegularWall ? 'disabled' : ''}
+                            ></sl-range>
                         </div>
                         
-                        <!-- Visual diagram that updates based on selected direction -->
-                        <div id="slopeVisualizerContainer" style="margin-top: 16px; height: 100px; background: #333; border-radius: 4px; position: relative; overflow: hidden;">
-                            <div id="slopeVisualizer" style="width: 100%; height: 100%; position: relative;">
-                                <!-- The slope diagram will be updated by JavaScript -->
-                                <div id="slopeStartPoint" style="position: absolute; top: 70%; left: 10%; width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
-                                <div id="slopeEndPoint" style="position: absolute; top: 30%; left: 90%; width: 10px; height: 10px; background: #F44336; border-radius: 50%;"></div>
-                                <div id="slopeLine" style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: white; transform-origin: left center;"></div>
-                                
-                                <div style="position: absolute; bottom: 5px; left: 5px; font-size: 10px; color: white; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 2px;">Start</div>
-                                <div style="position: absolute; bottom: 5px; right: 5px; font-size: 10px; color: white; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 2px;">End</div>
+                        ${hasTextures ? `
+                            <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; max-height: 250px; overflow-y: auto;">
+                                ${Array.from(wallTextures.entries()).map(([id, texture]) => `
+                                    <div class="texture-option" data-texture-id="${id}" 
+                                        style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'
+                                    }; padding: 4px; border-radius: 4px; position: relative;">
+                                        <img src="${texture.data}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 2px;">
+                                        <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
+                                        ${assignedTextureId === id ? `
+                                            <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                                background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                                check_circle
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
                             </div>
+                        ` : `
+                            <div style="padding: 20px; text-align: center; color: #666; background: #f5f5f5; border-radius: 4px;">
+                                <span class="material-icons" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;">texture_disabled</span>
+                                <p>No wall textures available</p>
+                            </div>
+                        `}
+                    </div>
+                </sl-tab-panel>
+                
+                <!-- Slope Configuration Panel -->
+                <sl-tab-panel name="slope-config">
+                    <div style="padding: 8px 0;">
+                        <sl-checkbox id="isSlope" ${room.isSlope ? 'checked' : ''}>
+                            Make this area a slope
+                        </sl-checkbox>
+                        
+                        <div id="slopeConfigContainer" style="margin-top: 12px; ${room.isSlope ? '' : 'display: none;'}">
+                            <!-- Visual slope direction selector -->
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px;">Slope Direction:</label>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto); gap: 8px; place-items: center;">
+                                    <!-- Top row -->
+                                    <div></div>
+                                    <div>
+                                        <sl-checkbox class="direction-checkbox" value="north" 
+                                            ${room.slopeDirection === 'north' ? 'checked' : ''}>
+                                            <span class="material-icons">arrow_upward</span>
+                                        </sl-checkbox>
+                                    </div>
+                                    <div></div>
+                                    
+                                    <!-- Middle row -->
+                                    <div>
+                                        <sl-checkbox class="direction-checkbox" value="west" 
+                                            ${room.slopeDirection === 'west' ? 'checked' : ''}>
+                                            <span class="material-icons">arrow_back</span>
+                                        </sl-checkbox>
+                                    </div>
+                                    <div class="shape-preview" style="
+                                        width: 80px; 
+                                        height: 80px; 
+                                        background: #555;
+                                        border-radius: ${room.shape === 'circle' ? '50%' : room.shape === 'polygon' ? '10%' : '0'};
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        color: white;
+                                        font-size: 12px;
+                                    ">
+                                        ${room.name}
+                                    </div>
+                                    <div>
+                                        <sl-checkbox class="direction-checkbox" value="east" 
+                                            ${room.slopeDirection === 'east' ? 'checked' : ''}>
+                                            <span class="material-icons">arrow_forward</span>
+                                        </sl-checkbox>
+                                    </div>
+                                    
+                                    <!-- Bottom row -->
+                                    <div></div>
+                                    <div>
+                                        <sl-checkbox class="direction-checkbox" value="south" 
+                                            ${room.slopeDirection === 'south' ? 'checked' : ''}>
+                                            <span class="material-icons">arrow_downward</span>
+                                        </sl-checkbox>
+                                    </div>
+                                    <div></div>
+                                </div>
+                                <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+                                    The arrow indicates the uphill direction of the slope.
+                                </p>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;">
+                                <!-- Start Height -->
+                                <sl-input 
+                                    id="slopeStartHeight" 
+                                    type="number" 
+                                    label="Start Height" 
+                                    min="0" 
+                                    max="5"
+                                    step="0.5"
+                                    value="${room.slopeStartHeight || '0'}"
+                                    help-text="Units in blocks"
+                                ></sl-input>
+                                
+                                <!-- End Height -->
+                                <sl-input 
+                                    id="slopeEndHeight" 
+                                    type="number" 
+                                    label="End Height" 
+                                    min="0" 
+                                    max="5"
+                                    step="0.5"
+                                    value="${room.slopeEndHeight || '1'}"
+                                    help-text="Units in blocks"
+                                ></sl-input>
+                            </div>
+                            
+                            <!-- Visual diagram that updates based on selected direction -->
+                            <div id="slopeVisualizerContainer" style="margin-top: 16px; height: 100px; background: #333; border-radius: 4px; position: relative; overflow: hidden;">
+                                <div id="slopeVisualizer" style="width: 100%; height: 100%; position: relative;">
+                                    <!-- The slope diagram will be updated by JavaScript -->
+                                    <div id="slopeStartPoint" style="position: absolute; top: 70%; left: 10%; width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
+                                    <div id="slopeEndPoint" style="position: absolute; top: 30%; left: 90%; width: 10px; height: 10px; background: #F44336; border-radius: 50%;"></div>
+                                    <div id="slopeLine" style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: white; transform-origin: left center;"></div>
+                                    
+                                    <div style="position: absolute; bottom: 5px; left: 5px; font-size: 10px; color: white; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 2px;">Start</div>
+                                    <div style="position: absolute; bottom: 5px; right: 5px; font-size: 10px; color: white; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 2px;">End</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Informational alert about slopes -->
+                            <sl-alert type="info" open style="margin-top: 16px;">
+                                <span slot="icon" class="material-icons">info</span>
+                                <strong>About Slopes</strong><br>
+                                Slopes allow players to move between different elevations in 3D view. 
+                                The arrow direction indicates which side is higher.
+                            </sl-alert>
+                        </div>
+                        
+                        <div id="slopeDisabledMessage" style="display: ${room.isSlope ? 'none' : 'block'}; margin-top: 16px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 4px;">
+                            <span class="material-icons" style="font-size: 48px; color: #666; margin-bottom: 8px;">trending_flat</span>
+                            <p>Enable "Make this area a slope" to configure slope properties.</p>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Legacy Wall Texture Option -->
-            ${room.shape === 'rectangle' ? `
-                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                    <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
-                        Set as Wall Texture Source
-                    </sl-checkbox>
-                </div>
-            ` : ''}
+                </sl-tab-panel>
+            </sl-tab-group>
         </div>
         
-    <div slot="footer">
-        <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
-        <sl-button variant="primary" class="save-btn">Save</sl-button>
-    </div>
-`;
+        <div slot="footer">
+            <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+            <sl-button variant="primary" class="save-btn">Save</sl-button>
+        </div>
+    `;
 
     document.body.appendChild(dialog);
 
@@ -1437,6 +1473,7 @@ async showRenameDialog(room) {
         // Slope control elements
         const isSlopeCheckbox = dialog.querySelector('#isSlope');
         const slopeConfigContainer = dialog.querySelector('#slopeConfigContainer');
+        const slopeDisabledMessage = dialog.querySelector('#slopeDisabledMessage');
         const directionCheckboxes = dialog.querySelectorAll('.direction-checkbox');
         const slopeStartHeightInput = dialog.querySelector('#slopeStartHeight');
         const slopeEndHeightInput = dialog.querySelector('#slopeEndHeight');
@@ -1461,6 +1498,10 @@ async showRenameDialog(room) {
             isSlopeCheckbox.addEventListener('click', () => {
                 if (slopeConfigContainer) {
                     slopeConfigContainer.style.display = isSlopeCheckbox.checked ? 'block' : 'none';
+                }
+                
+                if (slopeDisabledMessage) {
+                    slopeDisabledMessage.style.display = isSlopeCheckbox.checked ? 'none' : 'block';
                 }
                 
                 // When slope is enabled, regular wall should be disabled
@@ -1657,6 +1698,7 @@ async showRenameDialog(room) {
                     if (isSlopeCheckbox) {
                         isSlopeCheckbox.checked = false;
                         if (slopeConfigContainer) slopeConfigContainer.style.display = 'none';
+                        if (slopeDisabledMessage) slopeDisabledMessage.style.display = 'block';
                     }
                 } else {
                     blockHeightSlider.disabled = false;
