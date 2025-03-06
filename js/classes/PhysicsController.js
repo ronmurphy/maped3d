@@ -18,6 +18,7 @@ class PhysicsController {
         this.jumpSpeed = 0.09; // Initial upward velocity - increased for higher jumps
         this.jumpVelocity = 0;
         this.gravity = 0.004; // Gravity pulling player down
+        this.fallVelocity = 0;
         this.jumpStartHeight = 0; // Track where jump started from
         this.lastJumpCheck = 0; // Track last time we checked for landing surfaces
         this.jumpCheckInterval = 5; // Check every 5 frames
@@ -630,109 +631,253 @@ if (this.onTopOfWall) {
         }
         
 
-        update() {
-            this.jumpFrameCount++;
+        // update() {
+        //     this.jumpFrameCount++;
             
+        //     // Check what surface we're on
+        //     this.checkWalkingSurface();
+            
+        //     // Special handling for wall tops to ensure stable movement
+        //     if (this.onTopOfWall && !this.isJumping && !this.isFalling) {
+        //         // Force player to stay exactly at wall height + player height
+        //         return this.wallTopHeight + this.playerHeight;
+        //     }
+            
+        //     // Handle jumping physics
+        //     if (this.isJumping) {
+        //         // Apply jump velocity and gravity
+        //         this.currentGroundHeight += this.jumpVelocity;
+        //         this.jumpVelocity -= this.gravity;
+                
+        //         // Enhanced landing detection during jump
+        //         if (this.jumpFrameCount % this.jumpCheckInterval === 0) {
+        //             const landingSurface = this.checkForLandingSurfaces();
+        //             if (landingSurface) {
+        //                 const hitPoint = landingSurface.point.y;
+        //                 const heightDiff = hitPoint - this.currentGroundHeight;
+                        
+        //                 // If we're close to a landing surface above us, snap to it
+        //                 if (heightDiff > 0 && heightDiff < 0.2 && this.jumpVelocity > 0) {
+        //                     this.currentGroundHeight = hitPoint;
+        //                     this.isJumping = false;
+                            
+        //                     if (this.debug) {
+        //                         console.log(`Landed on surface during ascent at height: ${hitPoint.toFixed(2)}`);
+        //                     }
+        //                     return this.currentGroundHeight + this.playerHeight;
+        //                 }
+        //             }
+        //         }
+                
+        //         // Check if reached apex and starting to fall
+        //         if (this.jumpVelocity <= 0) {
+        //             // Transition from jumping to falling
+        //             if (this.debug) {
+        //                 console.log(`Jump apex reached at height: ${
+        //                     (this.currentGroundHeight - this.jumpStartHeight).toFixed(2)}`);
+        //             }
+        //             this.isJumping = false;
+        //             this.isFalling = true;
+        //         }
+        //     }
+            
+        //     // Handle falling (either from jump or walking off edge)
+        //     else if (this.isFalling) {
+        //         // More frequent landing checks during falling
+        //         if (this.jumpFrameCount % 3 === 0) {
+        //             const landingSurface = this.checkForLandingSurfaces();
+                    
+        //             if (landingSurface) {
+        //                 const hitPoint = landingSurface.point.y;
+        //                 const distanceToGround = this.currentGroundHeight - hitPoint;
+                        
+        //                 // Enhanced landing detection - allow landing when very close
+        //                 if (Math.abs(distanceToGround) <= 0.15) {
+        //                     // Close enough to land
+        //                     this.isFalling = false;
+        //                     this.currentGroundHeight = hitPoint;
+                            
+        //                     if (this.debug) {
+        //                         console.log(`Landed precisely at height: ${hitPoint.toFixed(2)}`);
+        //                     }
+                            
+        //                     return this.currentGroundHeight + this.playerHeight;
+        //                 }
+        //                 // Landing on surface below current position
+        //                 else if (distanceToGround > 0 && distanceToGround <= this.fallSpeed * 2) {
+        //                     this.isFalling = false;
+        //                     this.currentGroundHeight = hitPoint;
+                            
+        //                     if (this.debug) {
+        //                         console.log(`Landed on surface below at height: ${hitPoint.toFixed(2)}`);
+        //                     }
+                            
+        //                     return this.currentGroundHeight + this.playerHeight;
+        //                 }
+        //             }
+        //         }
+                
+        //         // Regular falling - apply fall speed
+        //         this.currentGroundHeight -= this.fallSpeed;
+                
+        //         // Prevent falling below absolute ground
+        //         if (this.currentGroundHeight < 0) {
+        //             this.currentGroundHeight = 0;
+        //             this.isFalling = false;
+                    
+        //             if (this.debug) {
+        //                 console.log("Landed on absolute ground");
+        //             }
+        //         }
+        //     }
+            
+        //     // Return the camera Y position
+        //     return this.currentGroundHeight + this.playerHeight;
+        // }
+
+        update(deltaTime = 0.016) { // Default to ~60fps if no value passed
+            this.jumpFrameCount++;
+          
             // Check what surface we're on
             this.checkWalkingSurface();
-            
+          
             // Special handling for wall tops to ensure stable movement
             if (this.onTopOfWall && !this.isJumping && !this.isFalling) {
-                // Force player to stay exactly at wall height + player height
-                return this.wallTopHeight + this.playerHeight;
+              // Force player to stay exactly at wall height + player height
+              return this.wallTopHeight + this.playerHeight;
             }
-            
+          
             // Handle jumping physics
             if (this.isJumping) {
-                // Apply jump velocity and gravity
-                this.currentGroundHeight += this.jumpVelocity;
-                this.jumpVelocity -= this.gravity;
-                
-                // Enhanced landing detection during jump
-                if (this.jumpFrameCount % this.jumpCheckInterval === 0) {
-                    const landingSurface = this.checkForLandingSurfaces();
-                    if (landingSurface) {
-                        const hitPoint = landingSurface.point.y;
-                        const heightDiff = hitPoint - this.currentGroundHeight;
-                        
-                        // If we're close to a landing surface above us, snap to it
-                        if (heightDiff > 0 && heightDiff < 0.2 && this.jumpVelocity > 0) {
-                            this.currentGroundHeight = hitPoint;
-                            this.isJumping = false;
-                            
-                            if (this.debug) {
-                                console.log(`Landed on surface during ascent at height: ${hitPoint.toFixed(2)}`);
-                            }
-                            return this.currentGroundHeight + this.playerHeight;
-                        }
-                    }
-                }
-                
-                // Check if reached apex and starting to fall
-                if (this.jumpVelocity <= 0) {
-                    // Transition from jumping to falling
-                    if (this.debug) {
-                        console.log(`Jump apex reached at height: ${
-                            (this.currentGroundHeight - this.jumpStartHeight).toFixed(2)}`);
-                    }
+              // Apply jump velocity and gravity with deltaTime
+              this.jumpVelocity -= this.gravity * deltaTime * 60;
+              this.currentGroundHeight += this.jumpVelocity * deltaTime * 60;
+          
+              // Enhanced landing detection during jump
+              if (this.jumpFrameCount % this.jumpCheckInterval === 0) {
+                const landingSurface = this.checkForLandingSurfaces();
+                if (landingSurface) {
+                  const hitPoint = landingSurface.point.y;
+                  const heightDiff = hitPoint - this.currentGroundHeight;
+          
+                  // If we're close to a landing surface above us, snap to it
+                  if (heightDiff > 0 && heightDiff < 0.2 && this.jumpVelocity > 0) {
+                    this.currentGroundHeight = hitPoint;
                     this.isJumping = false;
-                    this.isFalling = true;
+          
+                    if (this.debug) {
+                      console.log(`Landed on surface during ascent at height: ${hitPoint.toFixed(2)}`);
+                    }
+                    return this.currentGroundHeight + this.playerHeight;
+                  }
                 }
+              }
+          
+              // Check if reached apex and starting to fall
+              if (this.jumpVelocity <= 0) {
+                // Transition from jumping to falling
+                if (this.debug) {
+                  console.log(`Jump apex reached at height: ${(this.currentGroundHeight - this.jumpStartHeight).toFixed(2)}`);
+                }
+                this.isJumping = false;
+                this.isFalling = true;
+                
+                // Initialize fall velocity when transitioning from jump to fall
+                this.fallVelocity = 0;
+              }
             }
-            
+          
             // Handle falling (either from jump or walking off edge)
             else if (this.isFalling) {
-                // More frequent landing checks during falling
-                if (this.jumpFrameCount % 3 === 0) {
-                    const landingSurface = this.checkForLandingSurfaces();
-                    
-                    if (landingSurface) {
-                        const hitPoint = landingSurface.point.y;
-                        const distanceToGround = this.currentGroundHeight - hitPoint;
-                        
-                        // Enhanced landing detection - allow landing when very close
-                        if (Math.abs(distanceToGround) <= 0.15) {
-                            // Close enough to land
-                            this.isFalling = false;
-                            this.currentGroundHeight = hitPoint;
-                            
-                            if (this.debug) {
-                                console.log(`Landed precisely at height: ${hitPoint.toFixed(2)}`);
-                            }
-                            
-                            return this.currentGroundHeight + this.playerHeight;
-                        }
-                        // Landing on surface below current position
-                        else if (distanceToGround > 0 && distanceToGround <= this.fallSpeed * 2) {
-                            this.isFalling = false;
-                            this.currentGroundHeight = hitPoint;
-                            
-                            if (this.debug) {
-                                console.log(`Landed on surface below at height: ${hitPoint.toFixed(2)}`);
-                            }
-                            
-                            return this.currentGroundHeight + this.playerHeight;
-                        }
-                    }
-                }
-                
-                // Regular falling - apply fall speed
-                this.currentGroundHeight -= this.fallSpeed;
-                
-                // Prevent falling below absolute ground
-                if (this.currentGroundHeight < 0) {
-                    this.currentGroundHeight = 0;
+              // Initialize fallVelocity if not already set
+              if (this.fallVelocity === undefined) {
+                this.fallVelocity = this.fallSpeed;
+              }
+              
+              // Increase fall velocity (accelerate due to gravity)
+              this.fallVelocity += this.gravity * deltaTime * 60;
+              
+              // Apply terminal velocity limit (around 53 m/s for humans, but scaled for game)
+              const terminalVelocity = 2.0; // Adjust to feel right in game world
+              this.fallVelocity = Math.min(this.fallVelocity, terminalVelocity);
+              
+              // Move by velocity * time
+              const fallDistance = this.fallVelocity * deltaTime * 60;
+              this.currentGroundHeight -= fallDistance;
+              
+              // More frequent landing checks during falling
+              if (this.jumpFrameCount % 3 === 0) {
+                const landingSurface = this.checkForLandingSurfaces();
+          
+                if (landingSurface) {
+                  const hitPoint = landingSurface.point.y;
+                  const distanceToGround = this.currentGroundHeight - hitPoint;
+          
+                  // Enhanced landing detection - allow landing when very close
+                  if (Math.abs(distanceToGround) <= 0.15) {
+                    // Close enough to land
                     this.isFalling = false;
-                    
+                    this.currentGroundHeight = hitPoint;
+                    // Reset fall velocity on landing
+                    this.fallVelocity = 0;
+          
                     if (this.debug) {
-                        console.log("Landed on absolute ground");
+                      console.log(`Landed precisely at height: ${hitPoint.toFixed(2)}`);
                     }
+          
+                    return this.currentGroundHeight + this.playerHeight;
+                  }
+                  // Landing on surface below current position
+                  else if (distanceToGround > 0 && distanceToGround <= fallDistance * 2) {
+                    this.isFalling = false;
+                    this.currentGroundHeight = hitPoint;
+                    // Reset fall velocity on landing
+                    this.fallVelocity = 0;
+          
+                    if (this.debug) {
+                      console.log(`Landed on surface below at height: ${hitPoint.toFixed(2)}`);
+                    }
+          
+                    return this.currentGroundHeight + this.playerHeight;
+                  }
                 }
+              }
+          
+              // Prevent falling below absolute ground
+              if (this.currentGroundHeight < 0) {
+                this.currentGroundHeight = 0;
+                this.isFalling = false;
+                // Reset fall velocity on landing
+                this.fallVelocity = 0;
+          
+                if (this.debug) {
+                  console.log("Landed on absolute ground");
+                }
+              }
             }
-            
+          
             // Return the camera Y position
             return this.currentGroundHeight + this.playerHeight;
-        }
+          }
 
+        // In PhysicsController, add this helper method:
+findCollidableObjects() {
+    const objects = [];
+    // First add direct scene children
+    this.scene3D.scene.children.forEach(obj => {
+      if (obj.userData?.isWall || obj.userData?.isRaisedBlock) {
+        objects.push(obj);
+      }
+      // Then check children of groups
+      if (obj.children) {
+        obj.children.forEach(child => {
+          if (child.userData?.isWall || child.userData?.isRaisedBlock) {
+            objects.push(child);
+          }
+        });
+      }
+    });
+    return objects;
+  }
 
 }

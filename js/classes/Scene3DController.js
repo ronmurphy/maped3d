@@ -4557,7 +4557,8 @@ class Scene3DController {
 
 
     // Update physics and camera height
-    this.camera.position.y = this.physics.update();
+    // this.camera.position.y = this.physics.update();
+    this.camera.position.y = this.physics.update(this.deltaTime || 0.016);
     // original renderer code
     // this.renderer.render(this.scene, this.camera);
 
