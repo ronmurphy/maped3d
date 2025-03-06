@@ -969,22 +969,266 @@ class LayersPanel {
 
 
 
-    async showRenameDialog(room) {
-        const dialog = document.createElement('sl-dialog');
-        dialog.label = 'Area Properties';
+//     async showRenameDialog(room) {
+//         const dialog = document.createElement('sl-dialog');
+//         dialog.label = 'Area Properties';
 
-        // Force type to wall
-        room.type = 'wall';
+//         // Force type to wall
+//         room.type = 'wall';
 
-        const assignedTextureId = this.editor.resourceManager?.textureAssignments?.get(room.id)?.textureId;
-        const wallTextures = this.editor.resourceManager?.resources.textures.walls;
-        const hasTextures = wallTextures && wallTextures.size > 0;
-        const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
+//         const assignedTextureId = this.editor.resourceManager?.textureAssignments?.get(room.id)?.textureId;
+//         const wallTextures = this.editor.resourceManager?.resources.textures.walls;
+//         const hasTextures = wallTextures && wallTextures.size > 0;
+//         const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
 
-        // Check for legacy texture setting
-        const isLegacyTexture = room.name === "WallTexture";
+//         // Check for legacy texture setting
+//         const isLegacyTexture = room.name === "WallTexture";
 
-        dialog.innerHTML = `
+//         dialog.innerHTML = `
+//         <div style="display: flex; flex-direction: column; gap: 16px;">
+//             <sl-input 
+//                 id="roomNameInput" 
+//                 value="${room.name}" 
+//                 label="Area Name"
+//             ></sl-input>
+
+//             <!-- Folder Selection -->
+//             <sl-select 
+//                 id="folderSelect" 
+//                 label="Folder"
+//                 value="${currentFolder ? currentFolder.id : ''}"
+//             >
+//                 <sl-option value="">No Folder</sl-option>
+//                 ${this.folders.map(folder => `
+//                     <sl-option value="${folder.id}">${folder.name}</sl-option>
+//                 `).join('')}
+//             </sl-select>
+
+//             ${hasTextures ? `
+//               <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+//                   <div style="margin-bottom: 16px;">
+//                       <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
+                      
+//                       <!-- Modified to show checkbox for regular wall -->
+//                       <div style="display: flex; flex-direction: column; gap: 12px;">
+//                           <!-- Wall Height Selector -->
+//                           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+//                               <sl-checkbox id="isRegularWall" 
+//                                   ${room.isRegularWall ? 'checked' : ''}
+//                                   ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
+//                                   Regular Wall (Full Height)
+//                               </sl-checkbox>
+//                           </div>
+                          
+//                           <!-- Block height slider - disabled when isRegularWall is checked -->
+//                           <sl-range 
+//                               id="blockHeight" 
+//                               label="Height" 
+//                               min="0" max="101" 
+//                               step="1" 
+//                               tooltip="top" 
+//                               value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
+//                               help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
+//                               style="margin-bottom: 16px;"
+//                               ${room.isRegularWall ? 'disabled' : ''}
+//                           ></sl-range>
+//                       </div>
+          
+//                       <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
+//                       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+//                           ${Array.from(wallTextures.entries()).map(([id, texture]) => `
+//                               <div class="texture-option" data-texture-id="${id}" 
+//                                   style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'
+//             }; padding: 4px; border-radius: 4px; position: relative;">
+//                                   <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+//                                   <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
+//                                   ${assignedTextureId === id ? `
+//                                       <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+//                                           background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+//                                           check_circle
+//                                       </span>
+//                                   ` : ''}
+//                               </div>
+//                           `).join('')}
+//                       </div>
+//                   </div>
+//               </div>
+//           ` : ''}
+
+//             <!-- Legacy Wall Texture Option -->
+//             ${room.shape === 'rectangle' ? `
+//                 <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+//                     <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
+//                         Set as Wall Texture Source
+//                     </sl-checkbox>
+//                 </div>
+//             ` : ''}
+//         </div>
+        
+// <-- Dock/Undock position holder -->
+    
+//     <div slot="footer">
+//         <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+//         <sl-button variant="primary" class="save-btn">Save</sl-button>
+//     </div>
+// `;
+
+
+//         // <div style="margin-top: 16px;">
+//         //     <sl-button class="dock-room-btn" variant="neutral" style="width: 100%;">
+//         //         <span class="material-icons" style="margin-right: 8px;">link</span>
+//         //         Dock to Another Room
+//         //     </sl-button>
+//         // </div>
+
+//         document.body.appendChild(dialog);
+
+//         return new Promise((resolve) => {
+//             const nameInput = dialog.querySelector('#roomNameInput');
+//             const folderSelect = dialog.querySelector('#folderSelect');
+//             const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
+//             const saveBtn = dialog.querySelector('.save-btn');
+//             const cancelBtn = dialog.querySelector('.cancel-btn');
+//             const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
+
+//             const textureOptions = dialog.querySelectorAll('.texture-option');
+//             textureOptions.forEach(option => {
+//                 option.addEventListener('click', () => {
+//                     textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
+//                     option.style.border = '2px solid var(--sl-color-primary-600)';
+//                     dialog.selectedTextureId = option.dataset.textureId;
+//                 });
+//             });
+
+
+//             const blockHeightSlider = dialog.querySelector('#blockHeight');
+//             if (blockHeightSlider) {
+//                 // Set initial value if room is a raised block
+//                 if (room.isRaisedBlock && room.blockHeight) {
+//                     blockHeightSlider.value = Math.round(room.blockHeight * 2);
+//                 }
+
+//                 blockHeightSlider.addEventListener('sl-input', (e) => {
+//                     // Update label while sliding
+//                     const value = parseInt(e.target.value);
+//                     const height = value / 2;
+//                     blockHeightSlider.label = `Block Height: ${height} ${height === 1 ? 'block' : 'blocks'}`;
+
+//                     // Handle Prop- naming as slider moves
+//                     const currentName = nameInput.value.trim();
+//                     if (value > 0) {  // If any height is set
+//                         if (currentName.startsWith("Wall")) {
+//                             nameInput.value = currentName.replace("Wall", "Prop");
+//                         } else if (!currentName.startsWith("Prop-")) {
+//                             nameInput.value = `Prop-${currentName}`;
+//                         }
+//                     } else {  // If height is 0
+//                         if (currentName.startsWith("Prop-")) {
+//                             nameInput.value = currentName.substring(5);  // Remove Prop- prefix
+//                         }
+//                     }
+//                 });
+//             }
+
+
+//             if (isRegularWallCheckbox && blockHeightSlider) {
+//                 isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+//                     if (e.target.checked) {
+//                         blockHeightSlider.disabled = true;
+//                         blockHeightSlider.value = 0; // Set height to 0 for regular walls
+//                     } else {
+//                         blockHeightSlider.disabled = false;
+//                     }
+//                 });
+//             }
+
+//             const handleSave = () => {
+//                 const newName = nameInput.value.trim();
+//                 if (newName) {
+//                     room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
+
+
+//                     // Handle wall type settings
+//                     if (isRegularWallCheckbox && isRegularWallCheckbox.checked) {
+//                         // Regular wall settings
+//                         room.isRegularWall = true;
+//                         room.isRaisedBlock = false;
+//                         room.blockHeight = 0;
+//                         room.type = 'wall';
+//                     } else if (blockHeightSlider) {
+//                         // Raised block settings
+//                         room.isRegularWall = false;
+//                         const blockHeight = parseInt(blockHeightSlider.value) / 2;
+//                         room.isRaisedBlock = blockHeight > 0;
+//                         room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+//                     }
+
+
+
+//                     if (dialog.selectedTextureId && this.editor.resourceManager) {
+//                         this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
+//                     }
+
+//                     // Handle folder assignment
+//                     if (folderSelect.value) {
+//                         this.folders.forEach(folder => {
+//                             folder.rooms = folder.rooms.filter(r => r.id !== room.id);
+//                         });
+//                         const newFolder = this.folders.find(f => f.id === parseInt(folderSelect.value));
+//                         if (newFolder) {
+//                             newFolder.rooms.push(room);
+//                         }
+//                     }
+
+//                     this.updateLayersList();
+//                     dialog.hide();
+//                     resolve(true);
+//                 }
+//             };
+
+//             saveBtn.addEventListener('click', handleSave);
+//             cancelBtn.addEventListener('click', () => {
+//                 dialog.hide();
+//                 resolve(false);
+//             });
+
+//             const dockBtn = dialog.querySelector('.dock-room-btn');
+//             if (dockBtn) {
+//                 dockBtn.addEventListener('click', () => {
+//                     dialog.hide();
+//                     this.showDockDialog(room);
+//                 });
+//             }
+
+//             const undockBtn = dialog.querySelector('.undock-room-btn');
+//             if (undockBtn) {
+//                 undockBtn.addEventListener('click', () => {
+//                     this.editor.undockRoom(room);
+//                     dialog.hide();
+//                 });
+//             }
+
+//             dialog.addEventListener('sl-after-hide', () => dialog.remove());
+//             dialog.show();
+//         });
+//     }
+
+async showRenameDialog(room) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Area Properties';
+
+    // Force type to wall
+    room.type = 'wall';
+
+    const assignedTextureId = this.editor.resourceManager?.textureAssignments?.get(room.id)?.textureId;
+    const wallTextures = this.editor.resourceManager?.resources.textures.walls;
+    const hasTextures = wallTextures && wallTextures.size > 0;
+    const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
+
+    // Check for legacy texture setting
+    const isLegacyTexture = room.name === "WallTexture";
+
+    dialog.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 16px;">
             <sl-input 
                 id="roomNameInput" 
@@ -1055,6 +1299,114 @@ class LayersPanel {
               </div>
           ` : ''}
 
+            <!-- Slope Configuration Section -->
+            <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Slope Configuration</label>
+                    
+                    <sl-checkbox id="isSlope" ${room.isSlope ? 'checked' : ''}>
+                        Make this area a slope
+                    </sl-checkbox>
+                    
+                    <div id="slopeConfigContainer" style="margin-top: 12px; ${room.isSlope ? '' : 'display: none;'}">
+                        <!-- Visual slope direction selector -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 8px;">Slope Direction:</label>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto); gap: 8px; place-items: center;">
+                                <!-- Top row -->
+                                <div></div>
+                                <div>
+                                    <sl-checkbox class="direction-checkbox" value="north" 
+                                        ${room.slopeDirection === 'north' ? 'checked' : ''}>
+                                        <span class="material-icons">arrow_upward</span>
+                                    </sl-checkbox>
+                                </div>
+                                <div></div>
+                                
+                                <!-- Middle row -->
+                                <div>
+                                    <sl-checkbox class="direction-checkbox" value="west" 
+                                        ${room.slopeDirection === 'west' ? 'checked' : ''}>
+                                        <span class="material-icons">arrow_back</span>
+                                    </sl-checkbox>
+                                </div>
+                                <div class="shape-preview" style="
+                                    width: 80px; 
+                                    height: 80px; 
+                                    background: #555;
+                                    border-radius: ${room.shape === 'circle' ? '50%' : room.shape === 'polygon' ? '10%' : '0'};
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    color: white;
+                                    font-size: 12px;
+                                ">
+                                    ${room.name}
+                                </div>
+                                <div>
+                                    <sl-checkbox class="direction-checkbox" value="east" 
+                                        ${room.slopeDirection === 'east' ? 'checked' : ''}>
+                                        <span class="material-icons">arrow_forward</span>
+                                    </sl-checkbox>
+                                </div>
+                                
+                                <!-- Bottom row -->
+                                <div></div>
+                                <div>
+                                    <sl-checkbox class="direction-checkbox" value="south" 
+                                        ${room.slopeDirection === 'south' ? 'checked' : ''}>
+                                        <span class="material-icons">arrow_downward</span>
+                                    </sl-checkbox>
+                                </div>
+                                <div></div>
+                            </div>
+                            <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
+                                The arrow indicates the uphill direction of the slope.
+                            </p>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                            <!-- Start Height -->
+                            <sl-input 
+                                id="slopeStartHeight" 
+                                type="number" 
+                                label="Start Height" 
+                                min="0" 
+                                max="5"
+                                step="0.5"
+                                value="${room.slopeStartHeight || '0'}"
+                                help-text="Units in blocks"
+                            ></sl-input>
+                            
+                            <!-- End Height -->
+                            <sl-input 
+                                id="slopeEndHeight" 
+                                type="number" 
+                                label="End Height" 
+                                min="0" 
+                                max="5"
+                                step="0.5"
+                                value="${room.slopeEndHeight || '1'}"
+                                help-text="Units in blocks"
+                            ></sl-input>
+                        </div>
+                        
+                        <!-- Visual diagram that updates based on selected direction -->
+                        <div id="slopeVisualizerContainer" style="margin-top: 16px; height: 100px; background: #333; border-radius: 4px; position: relative; overflow: hidden;">
+                            <div id="slopeVisualizer" style="width: 100%; height: 100%; position: relative;">
+                                <!-- The slope diagram will be updated by JavaScript -->
+                                <div id="slopeStartPoint" style="position: absolute; top: 70%; left: 10%; width: 10px; height: 10px; background: #4CAF50; border-radius: 50%;"></div>
+                                <div id="slopeEndPoint" style="position: absolute; top: 30%; left: 90%; width: 10px; height: 10px; background: #F44336; border-radius: 50%;"></div>
+                                <div id="slopeLine" style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: white; transform-origin: left center;"></div>
+                                
+                                <div style="position: absolute; bottom: 5px; left: 5px; font-size: 10px; color: white; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 2px;">Start</div>
+                                <div style="position: absolute; bottom: 5px; right: 5px; font-size: 10px; color: white; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 2px;">End</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Legacy Wall Texture Option -->
             ${room.shape === 'rectangle' ? `
                 <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
@@ -1065,153 +1417,330 @@ class LayersPanel {
             ` : ''}
         </div>
         
-<-- Dock/Undock position holder -->
-    
     <div slot="footer">
         <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
         <sl-button variant="primary" class="save-btn">Save</sl-button>
     </div>
 `;
 
+    document.body.appendChild(dialog);
 
-        // <div style="margin-top: 16px;">
-        //     <sl-button class="dock-room-btn" variant="neutral" style="width: 100%;">
-        //         <span class="material-icons" style="margin-right: 8px;">link</span>
-        //         Dock to Another Room
-        //     </sl-button>
-        // </div>
+    return new Promise((resolve) => {
+        const nameInput = dialog.querySelector('#roomNameInput');
+        const folderSelect = dialog.querySelector('#folderSelect');
+        const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
+        const saveBtn = dialog.querySelector('.save-btn');
+        const cancelBtn = dialog.querySelector('.cancel-btn');
+        const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
+        const blockHeightSlider = dialog.querySelector('#blockHeight');
+        
+        // Slope control elements
+        const isSlopeCheckbox = dialog.querySelector('#isSlope');
+        const slopeConfigContainer = dialog.querySelector('#slopeConfigContainer');
+        const directionCheckboxes = dialog.querySelectorAll('.direction-checkbox');
+        const slopeStartHeightInput = dialog.querySelector('#slopeStartHeight');
+        const slopeEndHeightInput = dialog.querySelector('#slopeEndHeight');
+        
+        // Elements for the slope visualizer
+        const slopeStartPoint = dialog.querySelector('#slopeStartPoint');
+        const slopeEndPoint = dialog.querySelector('#slopeEndPoint');
+        const slopeLine = dialog.querySelector('#slopeLine');
 
-        document.body.appendChild(dialog);
-
-        return new Promise((resolve) => {
-            const nameInput = dialog.querySelector('#roomNameInput');
-            const folderSelect = dialog.querySelector('#folderSelect');
-            const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
-            const saveBtn = dialog.querySelector('.save-btn');
-            const cancelBtn = dialog.querySelector('.cancel-btn');
-            const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
-
-            const textureOptions = dialog.querySelectorAll('.texture-option');
-            textureOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
-                    option.style.border = '2px solid var(--sl-color-primary-600)';
-                    dialog.selectedTextureId = option.dataset.textureId;
-                });
+        // Setup texture selection
+        const textureOptions = dialog.querySelectorAll('.texture-option');
+        textureOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
+                option.style.border = '2px solid var(--sl-color-primary-600)';
+                dialog.selectedTextureId = option.dataset.textureId;
             });
-
-
-            const blockHeightSlider = dialog.querySelector('#blockHeight');
-            if (blockHeightSlider) {
-                // Set initial value if room is a raised block
-                if (room.isRaisedBlock && room.blockHeight) {
-                    blockHeightSlider.value = Math.round(room.blockHeight * 2);
-                }
-
-                blockHeightSlider.addEventListener('sl-input', (e) => {
-                    // Update label while sliding
-                    const value = parseInt(e.target.value);
-                    const height = value / 2;
-                    blockHeightSlider.label = `Block Height: ${height} ${height === 1 ? 'block' : 'blocks'}`;
-
-                    // Handle Prop- naming as slider moves
-                    const currentName = nameInput.value.trim();
-                    if (value > 0) {  // If any height is set
-                        if (currentName.startsWith("Wall")) {
-                            nameInput.value = currentName.replace("Wall", "Prop");
-                        } else if (!currentName.startsWith("Prop-")) {
-                            nameInput.value = `Prop-${currentName}`;
-                        }
-                    } else {  // If height is 0
-                        if (currentName.startsWith("Prop-")) {
-                            nameInput.value = currentName.substring(5);  // Remove Prop- prefix
-                        }
-                    }
-                });
-            }
-
-
-            if (isRegularWallCheckbox && blockHeightSlider) {
-                isRegularWallCheckbox.addEventListener('sl-change', (e) => {
-                    if (e.target.checked) {
-                        blockHeightSlider.disabled = true;
-                        blockHeightSlider.value = 0; // Set height to 0 for regular walls
-                    } else {
-                        blockHeightSlider.disabled = false;
-                    }
-                });
-            }
-
-            const handleSave = () => {
-                const newName = nameInput.value.trim();
-                if (newName) {
-                    room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
-
-
-                    // Handle wall type settings
-                    if (isRegularWallCheckbox && isRegularWallCheckbox.checked) {
-                        // Regular wall settings
-                        room.isRegularWall = true;
-                        room.isRaisedBlock = false;
-                        room.blockHeight = 0;
-                        room.type = 'wall';
-                    } else if (blockHeightSlider) {
-                        // Raised block settings
-                        room.isRegularWall = false;
-                        const blockHeight = parseInt(blockHeightSlider.value) / 2;
-                        room.isRaisedBlock = blockHeight > 0;
-                        room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
-                    }
-
-
-
-                    if (dialog.selectedTextureId && this.editor.resourceManager) {
-                        this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
-                    }
-
-                    // Handle folder assignment
-                    if (folderSelect.value) {
-                        this.folders.forEach(folder => {
-                            folder.rooms = folder.rooms.filter(r => r.id !== room.id);
-                        });
-                        const newFolder = this.folders.find(f => f.id === parseInt(folderSelect.value));
-                        if (newFolder) {
-                            newFolder.rooms.push(room);
-                        }
-                    }
-
-                    this.updateLayersList();
-                    dialog.hide();
-                    resolve(true);
-                }
-            };
-
-            saveBtn.addEventListener('click', handleSave);
-            cancelBtn.addEventListener('click', () => {
-                dialog.hide();
-                resolve(false);
-            });
-
-            const dockBtn = dialog.querySelector('.dock-room-btn');
-            if (dockBtn) {
-                dockBtn.addEventListener('click', () => {
-                    dialog.hide();
-                    this.showDockDialog(room);
-                });
-            }
-
-            const undockBtn = dialog.querySelector('.undock-room-btn');
-            if (undockBtn) {
-                undockBtn.addEventListener('click', () => {
-                    this.editor.undockRoom(room);
-                    dialog.hide();
-                });
-            }
-
-            dialog.addEventListener('sl-after-hide', () => dialog.remove());
-            dialog.show();
         });
-    }
+
+        // Toggle slope configuration visibility
+        if (isSlopeCheckbox) {
+            isSlopeCheckbox.addEventListener('click', () => {
+                if (slopeConfigContainer) {
+                    slopeConfigContainer.style.display = isSlopeCheckbox.checked ? 'block' : 'none';
+                }
+                
+                // When slope is enabled, regular wall should be disabled
+                if (isSlopeCheckbox.checked && isRegularWallCheckbox) {
+                    isRegularWallCheckbox.checked = false;
+                    if (blockHeightSlider) blockHeightSlider.disabled = false;
+                }
+                
+                // Make sure we have a selected direction
+                if (isSlopeCheckbox.checked) {
+                    const hasSelectedDirection = Array.from(directionCheckboxes).some(checkbox => checkbox.checked);
+                    if (!hasSelectedDirection && directionCheckboxes.length > 0) {
+                        // Default to east if nothing is selected
+                        const eastCheckbox = Array.from(directionCheckboxes).find(checkbox => checkbox.value === 'east');
+                        if (eastCheckbox) eastCheckbox.checked = true;
+                    }
+                    
+                    // Update the slope visualizer
+                    updateSlopeVisualizer();
+                }
+            });
+        }
+        
+        // Make direction checkboxes mutually exclusive
+        directionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('click', () => {
+                // Uncheck all other direction checkboxes
+                directionCheckboxes.forEach(cb => {
+                    if (cb !== checkbox) {
+                        cb.checked = false;
+                    }
+                });
+                
+                // Update the slope visualizer
+                updateSlopeVisualizer();
+            });
+        });
+        
+        // Update slope visualizer when heights change
+        if (slopeStartHeightInput) {
+            slopeStartHeightInput.addEventListener('input', updateSlopeVisualizer);
+        }
+        
+        if (slopeEndHeightInput) {
+            slopeEndHeightInput.addEventListener('input', updateSlopeVisualizer);
+        }
+        
+        // Function to update the slope visualizer based on current inputs
+        function updateSlopeVisualizer() {
+            // Get selected direction checkbox
+            const selectedCheckbox = Array.from(directionCheckboxes).find(checkbox => checkbox.checked);
+            if (!selectedCheckbox) return;
+            
+            const direction = selectedCheckbox.value;
+            const startHeight = parseFloat(slopeStartHeightInput.value) || 0;
+            const endHeight = parseFloat(slopeEndHeightInput.value) || 1;
+            
+            // Calculate height difference for visualization
+            const heightDiff = endHeight - startHeight;
+            const maxHeight = 5; // Max height we support
+            const normalizedHeightDiff = heightDiff / maxHeight; // Normalize to a 0-1 scale
+            
+            // Clear any previous additional lines
+            const additionalLines = dialog.querySelectorAll('#slopeVisualizer .additional-line');
+            additionalLines.forEach(line => line.remove());
+            
+            // Position elements based on the selected direction
+            switch (direction) {
+                case 'east': // Right is higher
+                    slopeStartPoint.style.left = '10%';
+                    slopeStartPoint.style.top = '70%';
+                    slopeEndPoint.style.left = '90%';
+                    slopeEndPoint.style.top = `${70 - normalizedHeightDiff * 40}%`;
+                    break;
+                    
+                case 'west': // Left is higher
+                    slopeStartPoint.style.left = '90%';
+                    slopeStartPoint.style.top = '70%';
+                    slopeEndPoint.style.left = '10%';
+                    slopeEndPoint.style.top = `${70 - normalizedHeightDiff * 40}%`;
+                    break;
+                    
+                case 'north': // Top is higher
+                    slopeStartPoint.style.left = '50%';
+                    slopeStartPoint.style.top = '70%';
+                    slopeEndPoint.style.left = '50%';
+                    slopeEndPoint.style.top = `${70 - normalizedHeightDiff * 40}%`;
+                    break;
+                    
+                case 'south': // Bottom is higher
+                    slopeStartPoint.style.left = '50%';
+                    slopeStartPoint.style.top = `${70 - normalizedHeightDiff * 40}%`;
+                    slopeEndPoint.style.left = '50%';
+                    slopeEndPoint.style.top = '70%';
+                    break;
+            }
+            
+            // Wait a moment for the DOM to update positions
+            setTimeout(() => {
+                // Get the bounding rectangles for accurate positions
+                const startRect = slopeStartPoint.getBoundingClientRect();
+                const endRect = slopeEndPoint.getBoundingClientRect();
+                const containerRect = dialog.querySelector('#slopeVisualizerContainer').getBoundingClientRect();
+                
+                // Calculate relative positions
+                const startX = startRect.left - containerRect.left + startRect.width/2;
+                const startY = startRect.top - containerRect.top + startRect.height/2;
+                const endX = endRect.left - containerRect.left + endRect.width/2;
+                const endY = endRect.top - containerRect.top + endRect.height/2;
+                
+                // Calculate line length
+                const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                
+                // Calculate angle
+                const angle = Math.atan2(endY - startY, endX - startX);
+                
+                // Position and rotate the line
+                slopeLine.style.width = `${length}px`;
+                slopeLine.style.height = '2px';
+                slopeLine.style.left = `${startX}px`;
+                slopeLine.style.top = `${startY}px`;
+                slopeLine.style.transformOrigin = '0 0';
+                slopeLine.style.transform = `rotate(${angle}rad)`;
+                
+                // Add horizontal/vertical reference lines for north/south directions
+                if (direction === 'north' || direction === 'south') {
+                    // Add horizontal reference line
+                    const horizontalLine = document.createElement('div');
+                    horizontalLine.className = 'additional-line';
+                    horizontalLine.style.position = 'absolute';
+                    horizontalLine.style.width = '80%';
+                    horizontalLine.style.height = '1px';
+                    horizontalLine.style.left = '10%';
+                    horizontalLine.style.top = '70%';
+                    horizontalLine.style.background = 'rgba(255,255,255,0.3)';
+                    dialog.querySelector('#slopeVisualizer').appendChild(horizontalLine);
+                }
+                else if (direction === 'east' || direction === 'west') {
+                    // Add vertical reference line
+                    const verticalLine = document.createElement('div');
+                    verticalLine.className = 'additional-line';
+                    verticalLine.style.position = 'absolute';
+                    verticalLine.style.width = '1px';
+                    verticalLine.style.height = '60%';
+                    verticalLine.style.left = direction === 'east' ? '10%' : '90%';
+                    verticalLine.style.top = '10%';
+                    verticalLine.style.background = 'rgba(255,255,255,0.3)';
+                    dialog.querySelector('#slopeVisualizer').appendChild(verticalLine);
+                }
+            }, 10);
+        }
+        
+        // Initialize the visualizer if slope is already checked
+        if (isSlopeCheckbox && isSlopeCheckbox.checked) {
+            // Add a small delay to allow the DOM to fully render
+            setTimeout(updateSlopeVisualizer, 100);
+        }
+
+        if (blockHeightSlider) {
+            // Set initial value if room is a raised block
+            if (room.isRaisedBlock && room.blockHeight) {
+                blockHeightSlider.value = Math.round(room.blockHeight * 2);
+            }
+
+            blockHeightSlider.addEventListener('sl-input', (e) => {
+                // Update label while sliding
+                const value = parseInt(e.target.value);
+                const height = value / 2;
+                blockHeightSlider.label = `Block Height: ${height} ${height === 1 ? 'block' : 'blocks'}`;
+
+                // Handle Prop- naming as slider moves
+                const currentName = nameInput.value.trim();
+                if (value > 0) {  // If any height is set
+                    if (currentName.startsWith("Wall")) {
+                        nameInput.value = currentName.replace("Wall", "Prop");
+                    } else if (!currentName.startsWith("Prop-")) {
+                        nameInput.value = `Prop-${currentName}`;
+                    }
+                } else {  // If height is 0
+                    if (currentName.startsWith("Prop-")) {
+                        nameInput.value = currentName.substring(5);  // Remove Prop- prefix
+                    }
+                }
+            });
+        }
+
+        if (isRegularWallCheckbox && blockHeightSlider) {
+            isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+                if (e.target.checked) {
+                    blockHeightSlider.disabled = true;
+                    blockHeightSlider.value = 0; // Set height to 0 for regular walls
+                    
+                    // When regular wall is enabled, slope should be disabled
+                    if (isSlopeCheckbox) {
+                        isSlopeCheckbox.checked = false;
+                        if (slopeConfigContainer) slopeConfigContainer.style.display = 'none';
+                    }
+                } else {
+                    blockHeightSlider.disabled = false;
+                }
+            });
+        }
+
+        const handleSave = () => {
+            const newName = nameInput.value.trim();
+            if (newName) {
+                room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
+
+                // Handle wall type settings
+                if (isRegularWallCheckbox && isRegularWallCheckbox.checked) {
+                    // Regular wall settings
+                    room.isRegularWall = true;
+                    room.isRaisedBlock = false;
+                    room.blockHeight = 0;
+                    room.type = 'wall';
+                    room.isSlope = false; // Ensure slope is turned off for regular walls
+                } else if (blockHeightSlider) {
+                    // Raised block settings
+                    room.isRegularWall = false;
+                    const blockHeight = parseInt(blockHeightSlider.value) / 2;
+                    room.isRaisedBlock = blockHeight > 0;
+                    room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+                }
+                
+                // Handle slope settings
+                if (isSlopeCheckbox) {
+                    room.isSlope = isSlopeCheckbox.checked;
+                    
+                    if (room.isSlope) {
+                        // Find the selected direction checkbox
+                        const selectedCheckbox = Array.from(directionCheckboxes).find(checkbox => checkbox.checked);
+                        if (selectedCheckbox) {
+                            room.slopeDirection = selectedCheckbox.value;
+                        } else {
+                            room.slopeDirection = 'east'; // Default direction
+                        }
+                        
+                        room.slopeStartHeight = parseFloat(slopeStartHeightInput.value) || 0;
+                        room.slopeEndHeight = parseFloat(slopeEndHeightInput.value) || 1;
+                        
+                        // Ensure this area is not set as a regular wall when it's a slope
+                        room.isRegularWall = false;
+                        room.isRaisedBlock = true; // Slopes need to be raised blocks
+                        
+                        // Set a reasonable block height for the slope
+                        room.blockHeight = Math.max(room.slopeStartHeight, room.slopeEndHeight);
+                    }
+                }
+
+                if (dialog.selectedTextureId && this.editor.resourceManager) {
+                    this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
+                }
+
+                // Handle folder assignment
+                if (folderSelect.value) {
+                    this.folders.forEach(folder => {
+                        folder.rooms = folder.rooms.filter(r => r.id !== room.id);
+                    });
+                    const newFolder = this.folders.find(f => f.id === parseInt(folderSelect.value));
+                    if (newFolder) {
+                        newFolder.rooms.push(room);
+                    }
+                }
+
+                this.updateLayersList();
+                dialog.hide();
+                resolve(true);
+            }
+        };
+
+        saveBtn.addEventListener('click', handleSave);
+        cancelBtn.addEventListener('click', () => {
+            dialog.hide();
+            resolve(false);
+        });
+
+        dialog.addEventListener('sl-after-hide', () => dialog.remove());
+        dialog.show();
+    });
+}
 
     async showDockDialog(room) {
         const dialog = document.createElement('sl-dialog');
