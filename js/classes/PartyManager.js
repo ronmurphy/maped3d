@@ -4857,6 +4857,19 @@ removeEncounterMarker() {
     </style>
   `;
 
+
+      // Add spinning dice animation - was 
+  //   diceContainer.innerHTML = `
+  //   <div class="spinning-dice" style="font-size: 64px; animation: flipSpin 1s;"><i class="fa-solid fa-dice-d20"></i></i></div>
+  // <style>
+  //   @keyframes flipSpin {
+  //     0% { transform: perspective(400px) rotateY(0deg) rotateZ(0deg) scale(0.5); }
+  //     50% { transform: perspective(400px) rotateY(180deg) rotateZ(360deg) scale(1.2); }
+  //     100% { transform: perspective(400px) rotateY(360deg) rotateZ(720deg) scale(1); }
+  //   }
+  //   </style>
+  // `;
+
     // Create result message container (hidden initially)
     const resultMessage = document.createElement('div');
     resultMessage.className = 'result-message';
