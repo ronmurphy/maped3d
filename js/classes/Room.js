@@ -335,24 +335,103 @@ return roomElement;
             }
         }
 
+        updateElement() {
+          if (!this.element) return;
+        
+          const editor = window.mapEditor;
+          if (!editor) return;
+        
+          // Calculate position based on scale and offset
+          const left = this.bounds.x * editor.scale + editor.offset.x;
+          const top = this.bounds.y * editor.scale + editor.offset.y;
+          const width = this.bounds.width * editor.scale;
+          const height = this.bounds.height * editor.scale;
+        
+          // Update element style
+          this.element.style.left = `${left}px`;
+          this.element.style.top = `${top}px`;
+          this.element.style.width = `${width}px`;
+          this.element.style.height = `${height}px`;
+        
+          // If this is a polygon room, update vertex positions
+          if (this.shape === "polygon" && this.points) {
+            const vertices = this.element.querySelectorAll(".polygon-vertex");
+            vertices.forEach((vertex, index) => {
+              const point = this.points[index];
+              vertex.style.left = `${(point.x / this.bounds.width) * 100}%`;
+              vertex.style.top = `${(point.y / this.bounds.height) * 100}%`;
+            });
+          }
+        
+          // Update appearance based on type and name
+          this.element.classList.remove("wall-room", "room-room");
+          this.element.classList.add(`${this.type}-room`);
+        
+          // Special styling for texture rooms
+          if (this.name === "WallTexture" || this.name === "RoomTexture") {
+            this.element.style.border = "2px dashed #4CAF50";
+            this.element.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
+          }
+          
+          // Add or update height indicator for raised blocks and regular walls
+          let heightLabel = this.element.querySelector('.height-indicator');
+          if ((this.isRaisedBlock && this.blockHeight > 0) || this.isRegularWall) {
+            // Create height label if it doesn't exist
+            if (!heightLabel) {
+              heightLabel = document.createElement('div');
+              heightLabel.className = 'height-indicator';
+              heightLabel.style.cssText = `
+                position: absolute;
+                top: 32px;
+                left: 4px;
+                background: rgba(0, 0, 0, 0.6);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 11px;
+                z-index: 5;
+                pointer-events: none;
+                user-select: none;
+                backdrop-filter: blur(2px);
+              `;
+              this.element.appendChild(heightLabel);
+            }
+            
+            // Determine what to show
+            let displayText = '';
+            if (this.isRegularWall) {
+              displayText = `Wall`;
+            } else if (this.isRaisedBlock) {
+              const sliderValue = Math.round(this.blockHeight * 2);
+              displayText = `H:${sliderValue} (${this.blockHeight})`;
+            }
+            
+            heightLabel.textContent = displayText;
+            heightLabel.style.display = 'block';
+          } else if (heightLabel) {
+            // Hide height label if it exists but no longer needed
+            heightLabel.style.display = 'none';
+          }
+        }
+
         // updateElement() {
         //   if (!this.element) return;
-        
+
         //   const editor = window.mapEditor;
         //   if (!editor) return;
-        
+
         //   // Calculate position based on scale and offset
         //   const left = this.bounds.x * editor.scale + editor.offset.x;
         //   const top = this.bounds.y * editor.scale + editor.offset.y;
         //   const width = this.bounds.width * editor.scale;
         //   const height = this.bounds.height * editor.scale;
-        
+
         //   // Update element style
         //   this.element.style.left = `${left}px`;
         //   this.element.style.top = `${top}px`;
         //   this.element.style.width = `${width}px`;
         //   this.element.style.height = `${height}px`;
-        
+
         //   // If this is a polygon room, update vertex positions
         //   if (this.shape === "polygon" && this.points) {
         //     const vertices = this.element.querySelectorAll(".polygon-vertex");
@@ -362,266 +441,17 @@ return roomElement;
         //       vertex.style.top = `${(point.y / this.bounds.height) * 100}%`;
         //     });
         //   }
-        
+
         //   // Update appearance based on type and name
         //   this.element.classList.remove("wall-room", "room-room");
         //   this.element.classList.add(`${this.type}-room`);
-        
+
         //   // Special styling for texture rooms
         //   if (this.name === "WallTexture" || this.name === "RoomTexture") {
         //     this.element.style.border = "2px dashed #4CAF50";
         //     this.element.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
         //   }
-          
-        //   // Add or update height indicator for raised blocks and regular walls
-        //   let heightLabel = this.element.querySelector('.height-indicator');
-        //   if ((this.isRaisedBlock && this.blockHeight > 0) || this.isRegularWall) {
-        //     // Create height label if it doesn't exist
-        //     if (!heightLabel) {
-        //       heightLabel = document.createElement('div');
-        //       heightLabel.className = 'height-indicator';
-        //       heightLabel.style.cssText = `
-        //         position: absolute;
-        //         top: 32px;
-        //         left: 4px;
-        //         background: rgba(0, 0, 0, 0.6);
-        //         color: white;
-        //         padding: 2px 6px;
-        //         border-radius: 4px;
-        //         font-size: 11px;
-        //         z-index: 5;
-        //         pointer-events: none;
-        //         user-select: none;
-        //         backdrop-filter: blur(2px);
-        //       `;
-        //       this.element.appendChild(heightLabel);
-        //     }
-            
-        //     // Determine what to show
-        //     let displayText = '';
-        //     if (this.isRegularWall) {
-        //       displayText = `Wall`;
-        //     } else if (this.isRaisedBlock) {
-        //       const sliderValue = Math.round(this.blockHeight * 2);
-        //       displayText = `H:${sliderValue} (${this.blockHeight})`;
-        //     }
-            
-        //     heightLabel.textContent = displayText;
-        //     heightLabel.style.display = 'block';
-        //   } else if (heightLabel) {
-        //     // Hide height label if it exists but no longer needed
-        //     heightLabel.style.display = 'none';
-        //   }
         // }
-
-        // This is the modified updateElement method for Room.js
-updateElement() {
-  if (!this.element) return;
-
-  const editor = window.mapEditor;
-  if (!editor) return;
-
-  // Calculate position based on scale and offset
-  const left = this.bounds.x * editor.scale + editor.offset.x;
-  const top = this.bounds.y * editor.scale + editor.offset.y;
-  const width = this.bounds.width * editor.scale;
-  const height = this.bounds.height * editor.scale;
-
-  // Update element style
-  this.element.style.left = `${left}px`;
-  this.element.style.top = `${top}px`;
-  this.element.style.width = `${width}px`;
-  this.element.style.height = `${height}px`;
-
-  // If this is a polygon room, update vertex positions
-  if (this.shape === "polygon" && this.points) {
-    const vertices = this.element.querySelectorAll(".polygon-vertex");
-    vertices.forEach((vertex, index) => {
-      const point = this.points[index];
-      vertex.style.left = `${(point.x / this.bounds.width) * 100}%`;
-      vertex.style.top = `${(point.y / this.bounds.height) * 100}%`;
-    });
-  }
-
-  // Update appearance based on type and name
-  this.element.classList.remove("wall-room", "room-room");
-  this.element.classList.add(`${this.type}-room`);
-
-  // Special styling for texture rooms
-  if (this.name === "WallTexture" || this.name === "RoomTexture") {
-    this.element.style.border = "2px dashed #4CAF50";
-    this.element.style.backgroundColor = "rgba(76, 175, 80, 0.2)";
-  }
-  
-  // Add or update height indicator for raised blocks and regular walls
-  let heightLabel = this.element.querySelector('.height-indicator');
-  if ((this.isRaisedBlock && this.blockHeight > 0) || this.isRegularWall) {
-    // Create height label if it doesn't exist
-    if (!heightLabel) {
-      heightLabel = document.createElement('div');
-      heightLabel.className = 'height-indicator';
-      heightLabel.style.cssText = `
-        position: absolute;
-        top: 32px;
-        left: 4px;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        z-index: 5;
-        pointer-events: none;
-        user-select: none;
-        backdrop-filter: blur(2px);
-      `;
-      this.element.appendChild(heightLabel);
-    }
-    
-    // Determine what to show
-    let displayText = '';
-    if (this.isRegularWall) {
-      displayText = `Wall`;
-    } else if (this.isRaisedBlock) {
-      const sliderValue = Math.round(this.blockHeight * 2);
-      displayText = `H:${sliderValue} (${this.blockHeight})`;
-    }
-    
-    heightLabel.textContent = displayText;
-    heightLabel.style.display = 'block';
-  } else if (heightLabel) {
-    // Hide height label if it exists but no longer needed
-    heightLabel.style.display = 'none';
-  }
-  
-  // NEW CODE: Update slope visual indicator
-  this.updateSlopeVisual();
-}
-
-// Add this new method to Room class
-updateSlopeVisual() {
-  if (!this.element) return;
-  
-  // Remove any existing slope indicators
-  const existingIndicator = this.element.querySelector('.slope-indicator');
-  if (existingIndicator) {
-    existingIndicator.remove();
-  }
-  
-  // If this is not a slope, remove attributes and return
-  if (!this.isSlope) {
-    this.element.removeAttribute('data-is-slope');
-    this.element.removeAttribute('data-slope-direction');
-    return;
-  }
-  
-  // Create a slope indicator element
-  const slopeIndicator = document.createElement('div');
-  slopeIndicator.className = 'slope-indicator';
-  
-  // Set base styles
-  slopeIndicator.style.position = 'absolute';
-  slopeIndicator.style.top = '0';
-  slopeIndicator.style.left = '0';
-  slopeIndicator.style.width = '100%';
-  slopeIndicator.style.height = '100%';
-  slopeIndicator.style.pointerEvents = 'none'; // Allow clicks to pass through
-  slopeIndicator.style.zIndex = '4';
-  
-  // Create arrow indicator based on direction
-  const arrow = document.createElement('div');
-  arrow.className = 'slope-arrow';
-  
-  // Set arrow direction and style
-  switch (this.slopeDirection) {
-    case 'north':
-      arrow.innerHTML = `
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="slope-gradient-${this.id}" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" style="stop-color:rgba(76, 175, 80, 0.3);" />
-              <stop offset="100%" style="stop-color:rgba(244, 67, 54, 0.3);" />
-            </linearGradient>
-          </defs>
-          <rect width="100" height="100" fill="url(#slope-gradient-${this.id})" />
-          <polygon points="50,20 35,40 65,40" fill="rgba(255,255,255,0.7)" />
-        </svg>
-      `;
-      break;
-    case 'east':
-      arrow.innerHTML = `
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="slope-gradient-${this.id}" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color:rgba(76, 175, 80, 0.3);" />
-              <stop offset="100%" style="stop-color:rgba(244, 67, 54, 0.3);" />
-            </linearGradient>
-          </defs>
-          <rect width="100" height="100" fill="url(#slope-gradient-${this.id})" />
-          <polygon points="80,50 60,35 60,65" fill="rgba(255,255,255,0.7)" />
-        </svg>
-      `;
-      break;
-    case 'south':
-      arrow.innerHTML = `
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="slope-gradient-${this.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:rgba(76, 175, 80, 0.3);" />
-              <stop offset="100%" style="stop-color:rgba(244, 67, 54, 0.3);" />
-            </linearGradient>
-          </defs>
-          <rect width="100" height="100" fill="url(#slope-gradient-${this.id})" />
-          <polygon points="50,80 65,60 35,60" fill="rgba(255,255,255,0.7)" />
-        </svg>
-      `;
-      break;
-    case 'west':
-      arrow.innerHTML = `
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="slope-gradient-${this.id}" x1="100%" y1="0%" x2="0%" y2="0%">
-              <stop offset="0%" style="stop-color:rgba(76, 175, 80, 0.3);" />
-              <stop offset="100%" style="stop-color:rgba(244, 67, 54, 0.3);" />
-            </linearGradient>
-          </defs>
-          <rect width="100" height="100" fill="url(#slope-gradient-${this.id})" />
-          <polygon points="20,50 40,65 40,35" fill="rgba(255,255,255,0.7)" />
-        </svg>
-      `;
-      break;
-  }
-  
-  arrow.style.width = '100%';
-  arrow.style.height = '100%';
-  arrow.style.opacity = '0.8';
-  
-  slopeIndicator.appendChild(arrow);
-  this.element.appendChild(slopeIndicator);
-  
-  // Add a data attribute that can be used for CSS styling
-  this.element.setAttribute('data-is-slope', 'true');
-  this.element.setAttribute('data-slope-direction', this.slopeDirection);
-  
-  // Add slope info to height indicator if it exists
-  const heightLabel = this.element.querySelector('.height-indicator');
-  if (heightLabel) {
-    const startHeight = this.slopeStartHeight || 0;
-    const endHeight = this.slopeEndHeight || 1;
-    heightLabel.textContent = `Slope: ${startHeight}→${endHeight}`;
-    heightLabel.style.display = 'block';
-    
-    // Add a small arrow icon to indicate direction
-    const directionChar = {
-      north: '↑',
-      east: '→',
-      south: '↓',
-      west: '←'
-    }[this.slopeDirection] || '→';
-    
-    heightLabel.textContent += ` ${directionChar}`;
-  }
-}
-
 
         createThumbnail(canvas) {
           const thumbnailCanvas = document.createElement("canvas");

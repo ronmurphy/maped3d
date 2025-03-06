@@ -2088,278 +2088,10 @@ class Scene3DController {
     return new THREE.Mesh(geometry, material);
   }
 
-  // createRaisedBlockGeometry(room) {
-  //   let geometry;
-  //   const materials = [];
-
-  //   // Side material (using wall texture)
-  //   const sideMaterial = room.type === "wall" ?
-  //     this.textureManager.createMaterial(room, this.wallTextureRoom) :
-  //     new THREE.MeshStandardMaterial({
-  //       color: 0xcccccc,
-  //       roughness: 0.7,
-  //       metalness: 0.2,
-  //       side: THREE.DoubleSide
-  //     });
-  //   materials.push(sideMaterial);
-  //   // Create and configure top texture
-  //   const topTexture = this.createTextureFromArea(room);
-  //   topTexture.center.set(0.5, 0.5); // Set rotation center to middle
-  //   // Remove the rotation line
-  //   // topTexture.repeat.set(1, 1); // Ensure 1:1 mapping
-  //   if (topTexture.image && topTexture.image.width > 0) {
-  //     topTexture.repeat.set(1, 1); // Ensure 1:1 mapping
-  //     this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-topTexture');
-  //     // topTexture.needsUpdate = true;
-  //   }
-
-  //   // Create top material with the configured texture
-  //   const topMaterial = new THREE.MeshStandardMaterial({
-  //     map: topTexture,
-  //     roughness: 0.6,
-  //     metalness: 0.1,
-  //     side: THREE.DoubleSide
-  //   });
-  //   materials.push(topMaterial);
-
-  //   // Bottom material (use same as sides)
-  //   materials.push(sideMaterial);
-
-
-  //   switch (room.shape) {
-
-
-  //     case "circle": {
-  //       // Only update the texture if it has valid data
-  //       if (topTexture && topTexture.image) {
-  //         topTexture.rotation = Math.PI / 2;
-  //         this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-circle-topTexture');
-  //         // topTexture.needsUpdate = true;
-  //       }
-
-  //       const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
-  //       geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
-  //       geometry.rotateZ(0);  // Keep it horizontal
-
-  //       // Move up by half the block height
-  //       geometry.translate(0, room.blockHeight / 2, 0);
-  //       break;
-  //     }
-
-  //     case "polygon": {
-  //       if (!room.points || room.points.length < 3) return null;
-
-  //       // Swap materials first
-  //       const tempMaterial = materials[0];
-  //       materials[0] = materials[1];
-  //       materials[1] = tempMaterial;
-
-  //       const shape = new THREE.Shape();
-
-  //       // Calculate bounds for UV mapping
-  //       const minX = Math.min(...room.points.map(p => p.x));
-  //       const maxX = Math.max(...room.points.map(p => p.x));
-  //       const minY = Math.min(...room.points.map(p => p.y));
-  //       const maxY = Math.max(...room.points.map(p => p.y));
-  //       const width = maxX - minX;
-  //       const height = maxY - minY;
-
-  //       // Create shape with normalized coordinates
-  //       room.points.forEach((point, index) => {
-  //         const x = (point.x - minX) / 50;
-  //         const y = -(point.y - minY) / 50;  // Flip Y and normalize
-  //         if (index === 0) shape.moveTo(x, y);
-  //         else shape.lineTo(x, y);
-  //       });
-  //       shape.closePath();
-
-  //       geometry = new THREE.ExtrudeGeometry(shape, {
-  //         depth: room.blockHeight,
-  //         bevelEnabled: false,
-  //         UVGenerator: {
-  //           generateTopUV: function (geometry, vertices, indexA, indexB, indexC) {
-  //             const vA = new THREE.Vector3(vertices[indexA * 3], vertices[indexA * 3 + 1], vertices[indexA * 3 + 2]);
-  //             const vB = new THREE.Vector3(vertices[indexB * 3], vertices[indexB * 3 + 1], vertices[indexB * 3 + 2]);
-  //             const vC = new THREE.Vector3(vertices[indexC * 3], vertices[indexC * 3 + 1], vertices[indexC * 3 + 2]);
-
-  //             return [
-  //               new THREE.Vector2(vA.x / width * 50, vA.y / height * 50),
-  //               new THREE.Vector2(vB.x / width * 50, vB.y / height * 50),
-  //               new THREE.Vector2(vC.x / width * 50, vC.y / height * 50)
-  //             ];
-  //           },
-  //           generateSideWallUV: function (geometry, vertices, indexA, indexB, indexC, indexD) {
-  //             return [
-  //               new THREE.Vector2(0, 0),
-  //               new THREE.Vector2(1, 0),
-  //               new THREE.Vector2(1, 1),
-  //               new THREE.Vector2(0, 1)
-  //             ];
-  //           }
-  //         }
-  //       });
-
-  //       geometry.rotateX(-Math.PI / 2);
-
-  //       const topBottomFaces = room.points.length - 2;
-  //       const sideFaces = room.points.length * 2;
-
-  //       geometry.clearGroups();
-  //       geometry.addGroup(0, sideFaces * 3, 0);
-  //       geometry.addGroup(sideFaces * 3, topBottomFaces * 3, 1);
-  //       geometry.addGroup((sideFaces + topBottomFaces) * 3, topBottomFaces * 3, 2);
-
-  //       break;
-  //     }
-
-  //     default: {
-  //       // Rectangle case
-  //       const positions = [];
-  //       const normals = [];
-  //       const uvs = [];
-  //       const indices = [];
-  //       // Keep track of where each face starts for material mapping
-  //       const materialGroups = [];
-  //       let faceCount = 0;
-
-  //       const x1 = room.bounds.x / 50 - this.boxWidth / 2;
-  //       const x2 = x1 + room.bounds.width / 50;
-  //       const z1 = room.bounds.y / 50 - this.boxDepth / 2;
-  //       const z2 = z1 + room.bounds.height / 50;
-  //       const height = room.blockHeight;
-
-  //       // Create and configure top texture
-  //       // topTexture.repeat.set(1, -1);  // Flip vertically by setting Y to negative
-
-  //       topTexture.repeat.set(1, -1);
-  //       // if (canvas.width > 0 && canvas.height > 0) {
-  //       //   topTexture.needsUpdate = true;
-  //       // }
-  //       // topTexture.needsUpdate = true;
-  //       this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-default-topTexture');
-
-  //       // All vertices remain the same
-  //       positions.push(
-  //         // Bottom face
-  //         x1, 0, z1,
-  //         x2, 0, z1,
-  //         x2, 0, z2,
-  //         x1, 0, z2,
-  //         // Top face
-  //         x1, height, z1,
-  //         x2, height, z1,
-  //         x2, height, z2,
-  //         x1, height, z2,
-  //         // Front
-  //         x1, 0, z1,
-  //         x2, 0, z1,
-  //         x2, height, z1,
-  //         x1, height, z1,
-  //         // Back
-  //         x1, 0, z2,
-  //         x2, 0, z2,
-  //         x2, height, z2,
-  //         x1, height, z2,
-  //         // Left
-  //         x1, 0, z1,
-  //         x1, 0, z2,
-  //         x1, height, z2,
-  //         x1, height, z1,
-  //         // Right
-  //         x2, 0, z1,
-  //         x2, 0, z2,
-  //         x2, height, z2,
-  //         x2, height, z1
-  //       );
-
-  //       // Normals stay the same
-  //       for (let i = 0; i < 4; i++) normals.push(0, -1, 0);  // Bottom
-  //       for (let i = 0; i < 4; i++) normals.push(0, 1, 0);   // Top
-  //       for (let i = 0; i < 4; i++) normals.push(0, 0, -1);  // Front
-  //       for (let i = 0; i < 4; i++) normals.push(0, 0, 1);   // Back
-  //       for (let i = 0; i < 4; i++) normals.push(-1, 0, 0);  // Left
-  //       for (let i = 0; i < 4; i++) normals.push(1, 0, 0);   // Right
-
-  //       // UVs for each face
-  //       const textureRepeatsU = this.wallTexture ? this.wallTexture.repeat.x : 1;
-  //       const textureRepeatsV = this.wallTexture ? this.wallTexture.repeat.y : 1;
-
-  //       // Add UVs for each face
-  //       for (let face = 0; face < 6; face++) {
-  //         uvs.push(
-  //           0, 0,
-  //           textureRepeatsU, 0,
-  //           textureRepeatsU, textureRepeatsV,
-  //           0, textureRepeatsV
-  //         );
-  //       }
-
-  //       // Add indices with material groups
-  //       // Bottom face (material index 2)
-  //       materialGroups.push({ startIndex: faceCount * 3, count: 6, materialIndex: 2 });
-  //       indices.push(0, 1, 2, 0, 2, 3);
-  //       faceCount += 2;
-
-  //       // Top face (material index 1)
-  //       materialGroups.push({ startIndex: faceCount * 3, count: 6, materialIndex: 1 });
-  //       indices.push(4, 5, 6, 4, 6, 7);
-  //       faceCount += 2;
-
-  //       // Side faces (material index 0)
-  //       materialGroups.push({ startIndex: faceCount * 3, count: 24, materialIndex: 0 });
-  //       for (let face = 2; face < 6; face++) {
-  //         const base = face * 4;
-  //         indices.push(
-  //           base, base + 1, base + 2,
-  //           base, base + 2, base + 3
-  //         );
-  //         faceCount += 2;
-  //       }
-
-  //       geometry = new THREE.BufferGeometry();
-  //       geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  //       geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-  //       geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  //       geometry.setIndex(indices);
-
-  //       // Add material groups to geometry
-  //       materialGroups.forEach(group => {
-  //         geometry.addGroup(group.startIndex, group.count, group.materialIndex);
-  //       });
-
-  //       break;
-  //     }
-  //   }
-
-  //   const mesh = new THREE.Mesh(geometry, materials);
-
-  //   // Position mesh correctly based on room bounds
-  //   if (room.shape === "polygon") {
-  //     mesh.position.set(
-  //       room.bounds.x / 50 - this.boxWidth / 2,  // Use absolute position
-  //       0,
-  //       room.bounds.y / 50 - this.boxDepth / 2
-  //     );
-  //   } else if (room.shape === "circle") {
-  //     mesh.position.set(
-  //       (room.bounds.x + room.bounds.width / 2) / 50 - this.boxWidth / 2,
-  //       0,
-  //       (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2
-  //     );
-
-  //   } else {
-  //     mesh.position.set(0, 0, 0);
-  //   }
-
-  //   return mesh;
-  // }
-
-  // non halfblock stairstepping code, does not work
-  // the polygon code may be able to be salvaged for terrain generation
   createRaisedBlockGeometry(room) {
     let geometry;
     const materials = [];
-  
+
     // Side material (using wall texture)
     const sideMaterial = room.type === "wall" ?
       this.textureManager.createMaterial(room, this.wallTextureRoom) :
@@ -2370,7 +2102,6 @@ class Scene3DController {
         side: THREE.DoubleSide
       });
     materials.push(sideMaterial);
-    
     // Create and configure top texture
     const topTexture = this.createTextureFromArea(room);
     topTexture.center.set(0.5, 0.5); // Set rotation center to middle
@@ -2381,7 +2112,7 @@ class Scene3DController {
       this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-topTexture');
       // topTexture.needsUpdate = true;
     }
-  
+
     // Create top material with the configured texture
     const topMaterial = new THREE.MeshStandardMaterial({
       map: topTexture,
@@ -2390,411 +2121,14 @@ class Scene3DController {
       side: THREE.DoubleSide
     });
     materials.push(topMaterial);
-  
+
     // Bottom material (use same as sides)
     materials.push(sideMaterial);
-  
-    // Check if this is a "slope" (we'll make it into stairs)
-    const isSlope = room.isSlope === true;
-    let slopeDirection = room.slopeDirection || 'east';
-    let slopeStartHeight = parseFloat(room.slopeStartHeight) || 0;
-    let slopeEndHeight = parseFloat(room.slopeEndHeight) || 1;
-  
-    // Calculate number of steps based on height difference
-    const heightDiff = Math.abs(slopeEndHeight - slopeStartHeight);
-    const numSteps = Math.max(1, Math.ceil(heightDiff * 2)); // 2 steps per block height
-    
-    if (isSlope) {
-      // We'll create a group to hold all step blocks
-      const stairsGroup = new THREE.Group();
-      
-      // Handle different shapes
-      if (room.shape === "circle") {
-        // For circles, create concentric stepped cylinders
-        const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
-        const segments = 32;
-        
-        for (let i = 0; i < numSteps; i++) {
-          // Calculate height of this step
-          const stepHeight = slopeStartHeight + (slopeEndHeight - slopeStartHeight) * (i / (numSteps - 1));
-          
-          // Calculate radius for this step (to create concentric circles)
-          const innerRadius = radius * (1 - (i / numSteps));
-          const outerRadius = radius * (1 - ((i-1) / numSteps));
-          
-          // Create cylinder for this step
-          const stepGeometry = new THREE.CylinderGeometry(
-            innerRadius,
-            innerRadius,
-            stepHeight, 
-            segments
-          );
-          
-          // Position the step cylinder
-          stepGeometry.translate(0, stepHeight / 2, 0);
-          
-          // Create mesh and add to group
-          const stepMesh = new THREE.Mesh(stepGeometry, materials);
-          
-          // Add metadata for physics
-          stepMesh.userData = {
-            isWall: true,
-            isRaisedBlock: true,
-            blockHeight: stepHeight
-          };
-          
-          stairsGroup.add(stepMesh);
-        }
-        
-        // Position the stair group
-        stairsGroup.position.set(
-          (room.bounds.x + room.bounds.width / 2) / 50 - this.boxWidth / 2,
-          0,
-          (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2
-        );
-        
-        // Return the group instead of a single mesh
-        stairsGroup.userData = {
-          isSlope: true,
-          isStairs: true,
-          slopeDirection: slopeDirection,
-          slopeStartHeight: slopeStartHeight,
-          slopeEndHeight: slopeEndHeight
-        };
-        
-        return stairsGroup;
-      }
-      else if (room.shape === "polygon") {
-        // For polygons, we'll create a series of extruded shapes
-        if (!room.points || room.points.length < 3) return null;
-        
-        // Swap materials first
-        const tempMaterial = materials[0];
-        materials[0] = materials[1];
-        materials[1] = tempMaterial;
-        
-        // Calculate bounds for UV mapping
-        const minX = Math.min(...room.points.map(p => p.x));
-        const maxX = Math.max(...room.points.map(p => p.x));
-        const minY = Math.min(...room.points.map(p => p.y));
-        const maxY = Math.max(...room.points.map(p => p.y));
-        const width = maxX - minX;
-        const height = maxY - minY;
-        
-        // Create the base shape
-        const shape = new THREE.Shape();
-        room.points.forEach((point, index) => {
-          const x = (point.x - minX) / 50;
-          const y = -(point.y - minY) / 50;  // Flip Y and normalize
-          if (index === 0) shape.moveTo(x, y);
-          else shape.lineTo(x, y);
-        });
-        shape.closePath();
-        
-        // Position for the polygon
-        const posX = room.bounds.x / 50 - this.boxWidth / 2;
-        const posZ = room.bounds.y / 50 - this.boxDepth / 2;
-        
-        // Calculate step positions based on direction
-        for (let i = 0; i < numSteps; i++) {
-          // Calculate height for this step
-          const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
-          
-          // Create step geometry
-          const extrudeSettings = {
-            depth: stepHeight,
-            bevelEnabled: false,
-            UVGenerator: {
-              generateTopUV: function (geometry, vertices, indexA, indexB, indexC) {
-                const vA = new THREE.Vector3(vertices[indexA * 3], vertices[indexA * 3 + 1], vertices[indexA * 3 + 2]);
-                const vB = new THREE.Vector3(vertices[indexB * 3], vertices[indexB * 3 + 1], vertices[indexB * 3 + 2]);
-                const vC = new THREE.Vector3(vertices[indexC * 3], vertices[indexC * 3 + 1], vertices[indexC * 3 + 2]);
-  
-                return [
-                  new THREE.Vector2(vA.x / width * 50, vA.y / height * 50),
-                  new THREE.Vector2(vB.x / width * 50, vB.y / height * 50),
-                  new THREE.Vector2(vC.x / width * 50, vC.y / height * 50)
-                ];
-              },
-              generateSideWallUV: function (geometry, vertices, indexA, indexB, indexC, indexD) {
-                return [
-                  new THREE.Vector2(0, 0),
-                  new THREE.Vector2(1, 0),
-                  new THREE.Vector2(1, 1),
-                  new THREE.Vector2(0, 1)
-                ];
-              }
-            }
-          };
-          
-          // Calculate scale factor for this step
-          const scaleFactor = 1 - (i / numSteps) * 0.8;
-          
-          // Create a scaled version of the shape for this step
-          const scaledShape = new THREE.Shape();
-          room.points.forEach((point, index) => {
-            // Scale around center
-            const centerX = (maxX + minX) / 2;
-            const centerY = (maxY + minY) / 2;
-            
-            const scaledX = centerX + (point.x - centerX) * scaleFactor;
-            const scaledY = centerY + (point.y - centerY) * scaleFactor;
-            
-            const x = (scaledX - minX) / 50;
-            const y = -(scaledY - minY) / 50;
-            
-            if (index === 0) scaledShape.moveTo(x, y);
-            else scaledShape.lineTo(x, y);
-          });
-          scaledShape.closePath();
-          
-          const stepGeometry = new THREE.ExtrudeGeometry(scaledShape, extrudeSettings);
-          stepGeometry.rotateX(-Math.PI / 2);
-          
-          // Create material groups
-          const topBottomFaces = room.points.length - 2;
-          const sideFaces = room.points.length * 2;
-  
-          stepGeometry.clearGroups();
-          stepGeometry.addGroup(0, sideFaces * 3, 0);
-          stepGeometry.addGroup(sideFaces * 3, topBottomFaces * 3, 1);
-          stepGeometry.addGroup((sideFaces + topBottomFaces) * 3, topBottomFaces * 3, 2);
-          
-          // Create step mesh
-          const stepMesh = new THREE.Mesh(stepGeometry, materials);
-          
-          // Add metadata for physics
-          stepMesh.userData = {
-            isWall: true,
-            isRaisedBlock: true,
-            blockHeight: stepHeight
-          };
-          
-          stairsGroup.add(stepMesh);
-        }
-        
-        // Position the stairs group
-        stairsGroup.position.set(posX, 0, posZ);
-        
-        // Store metadata
-        stairsGroup.userData = {
-          isSlope: true,
-          isStairs: true,
-          slopeDirection: slopeDirection,
-          slopeStartHeight: slopeStartHeight,
-          slopeEndHeight: slopeEndHeight
-        };
-        
-        return stairsGroup;
-      }
-// For rectangles, create a series of independent half-blocks
-const x1 = room.bounds.x / 50 - this.boxWidth / 2;
-const x2 = x1 + room.bounds.width / 50;
-const z1 = room.bounds.y / 50 - this.boxDepth / 2;
-const z2 = z1 + room.bounds.height / 50;
 
-// We'll keep using numSteps to determine how many steps to create
-const heightDiff = Math.abs(slopeEndHeight - slopeStartHeight);
-const numSteps = Math.max(1, Math.ceil(heightDiff * 2)); // 2 steps per block height
 
-// Set the appropriate step size based on direction
-let stepSizeX = room.bounds.width / 50 / numSteps;
-let stepSizeZ = room.bounds.height / 50 / numSteps;
-
-let steps = [];
-
-// Set up steps based on direction
-switch (slopeDirection) {
-    case 'north': // Steps go from south (z2) to north (z1)
-        for (let i = 0; i < numSteps; i++) {
-            // Calculate step position
-            const stepZ = z2 - (i + 1) * stepSizeZ;
-            // Calculate step height (from low to high)
-            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
-            
-            // Create half-block for this step
-            steps.push({
-                x: x1,
-                z: stepZ,
-                width: room.bounds.width / 50,
-                depth: stepSizeZ,
-                height: stepHeight + 0.5 // Half-block = 0.5 blocks
-            });
-        }
-        break;
-        
-    case 'east': // Steps go from west (x1) to east (x2)
-        for (let i = 0; i < numSteps; i++) {
-            // Calculate step position
-            const stepX = x1 + i * stepSizeX;
-            // Calculate step height (from low to high)
-            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
-            
-            // Create half-block for this step
-            steps.push({
-                x: stepX,
-                z: z1,
-                width: stepSizeX,
-                depth: room.bounds.height / 50,
-                height: stepHeight + 0.5 // Half-block = 0.5 blocks
-            });
-        }
-        break;
-        
-    case 'south': // Steps go from north (z1) to south (z2)
-        for (let i = 0; i < numSteps; i++) {
-            // Calculate step position
-            const stepZ = z1 + i * stepSizeZ;
-            // Calculate step height (from low to high)
-            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
-            
-            // Create half-block for this step
-            steps.push({
-                x: x1,
-                z: stepZ,
-                width: room.bounds.width / 50,
-                depth: stepSizeZ,
-                height: stepHeight + 0.5 // Half-block = 0.5 blocks
-            });
-        }
-        break;
-        
-    case 'west': // Steps go from east (x2) to west (x1)
-        for (let i = 0; i < numSteps; i++) {
-            // Calculate step position
-            const stepX = x2 - (i + 1) * stepSizeX;
-            // Calculate step height (from low to high)
-            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
-            
-            // Create half-block for this step
-            steps.push({
-                x: stepX,
-                z: z1,
-                width: stepSizeX,
-                depth: room.bounds.height / 50,
-                height: stepHeight + 0.5 // Half-block = 0.5 blocks
-            });
-        }
-        break;
-}
-
-// Now create the individual blocks for each step
-for (const step of steps) {
-    // Create step geometry
-    const stepPositions = [];
-    const stepNormals = [];
-    const stepUVs = [];
-    const stepIndices = [];
-    
-    // Create a box for this step
-    // Bottom face vertices
-    stepPositions.push(
-        0, 0, 0,                 // Bottom left front
-        step.width, 0, 0,        // Bottom right front
-        step.width, 0, step.depth, // Bottom right back
-        0, 0, step.depth         // Bottom left back
-    );
-    
-    // Top face vertices
-    stepPositions.push(
-        0, step.height, 0,                 // Top left front
-        step.width, step.height, 0,        // Top right front
-        step.width, step.height, step.depth, // Top right back
-        0, step.height, step.depth         // Top left back
-    );
-    
-    // Add front face vertices
-    stepPositions.push(
-        0, 0, 0,                   // Bottom left
-        step.width, 0, 0,          // Bottom right
-        step.width, step.height, 0,  // Top right
-        0, step.height, 0           // Top left
-    );
-    
-    // Add back face vertices
-    stepPositions.push(
-        0, 0, step.depth,                   // Bottom left
-        step.width, 0, step.depth,          // Bottom right
-        step.width, step.height, step.depth,  // Top right
-        0, step.height, step.depth           // Top left
-    );
-    
-    // Add left face vertices
-    stepPositions.push(
-        0, 0, 0,                     // Bottom front
-        0, 0, step.depth,            // Bottom back
-        0, step.height, step.depth,    // Top back
-        0, step.height, 0             // Top front
-    );
-    
-    // Add right face vertices
-    stepPositions.push(
-        step.width, 0, 0,                     // Bottom front
-        step.width, 0, step.depth,            // Bottom back
-        step.width, step.height, step.depth,    // Top back
-        step.width, step.height, 0             // Top front
-    );
-    
-    // Add normals
-    for (let j = 0; j < 4; j++) stepNormals.push(0, -1, 0);  // Bottom face
-    for (let j = 0; j < 4; j++) stepNormals.push(0, 1, 0);   // Top face
-    for (let j = 0; j < 4; j++) stepNormals.push(0, 0, -1);  // Front face
-    for (let j = 0; j < 4; j++) stepNormals.push(0, 0, 1);   // Back face
-    for (let j = 0; j < 4; j++) stepNormals.push(-1, 0, 0);  // Left face
-    for (let j = 0; j < 4; j++) stepNormals.push(1, 0, 0);   // Right face
-    
-    // Add UVs
-    for (let face = 0; face < 6; face++) {
-        stepUVs.push(
-            0, 0,
-            1, 0,
-            1, 1,
-            0, 1
-        );
-    }
-    
-    // Add indices
-    for (let face = 0; face < 6; face++) {
-        const base = face * 4;
-        stepIndices.push(
-            base, base + 1, base + 2,
-            base, base + 2, base + 3
-        );
-    }
-    
-    // Create buffer geometry
-    const stepGeometry = new THREE.BufferGeometry();
-    stepGeometry.setAttribute('position', new THREE.Float32BufferAttribute(stepPositions, 3));
-    stepGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(stepNormals, 3));
-    stepGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(stepUVs, 2));
-    stepGeometry.setIndex(stepIndices);
-    
-    // Add material groups
-    stepGeometry.clearGroups();
-    stepGeometry.addGroup(0, 6, 2);  // Bottom face
-    stepGeometry.addGroup(6, 6, 1);  // Top face
-    stepGeometry.addGroup(12, 24, 0); // Side faces
-    
-    // Create mesh
-    const stepMesh = new THREE.Mesh(stepGeometry, materials);
-    
-    // Position the step
-    stepMesh.position.set(step.x, 0, step.z);
-    
-    // Add metadata for physics - use fixed 0.5 for block height
-    stepMesh.userData = {
-        isWall: true,
-        isRaisedBlock: true,
-        blockHeight: step.height - 0.5  // Adjust so the height is from ground
-    };
-    
-    // Add to group
-    stairsGroup.add(stepMesh);
-    }
-    return stairsGroup;  
-  }
-  
     switch (room.shape) {
+
+
       case "circle": {
         // Only update the texture if it has valid data
         if (topTexture && topTexture.image) {
@@ -2802,27 +2136,26 @@ for (const step of steps) {
           this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-circle-topTexture');
           // topTexture.needsUpdate = true;
         }
-  
+
         const radius = Math.max(room.bounds.width, room.bounds.height) / 100;
-        
         geometry = new THREE.CylinderGeometry(radius, radius, room.blockHeight, 32);
         geometry.rotateZ(0);  // Keep it horizontal
-        
+
         // Move up by half the block height
         geometry.translate(0, room.blockHeight / 2, 0);
         break;
       }
-  
+
       case "polygon": {
         if (!room.points || room.points.length < 3) return null;
-  
+
         // Swap materials first
         const tempMaterial = materials[0];
         materials[0] = materials[1];
         materials[1] = tempMaterial;
-  
+
         const shape = new THREE.Shape();
-  
+
         // Calculate bounds for UV mapping
         const minX = Math.min(...room.points.map(p => p.x));
         const maxX = Math.max(...room.points.map(p => p.x));
@@ -2830,7 +2163,7 @@ for (const step of steps) {
         const maxY = Math.max(...room.points.map(p => p.y));
         const width = maxX - minX;
         const height = maxY - minY;
-  
+
         // Create shape with normalized coordinates
         room.points.forEach((point, index) => {
           const x = (point.x - minX) / 50;
@@ -2839,7 +2172,7 @@ for (const step of steps) {
           else shape.lineTo(x, y);
         });
         shape.closePath();
-  
+
         geometry = new THREE.ExtrudeGeometry(shape, {
           depth: room.blockHeight,
           bevelEnabled: false,
@@ -2848,7 +2181,7 @@ for (const step of steps) {
               const vA = new THREE.Vector3(vertices[indexA * 3], vertices[indexA * 3 + 1], vertices[indexA * 3 + 2]);
               const vB = new THREE.Vector3(vertices[indexB * 3], vertices[indexB * 3 + 1], vertices[indexB * 3 + 2]);
               const vC = new THREE.Vector3(vertices[indexC * 3], vertices[indexC * 3 + 1], vertices[indexC * 3 + 2]);
-  
+
               return [
                 new THREE.Vector2(vA.x / width * 50, vA.y / height * 50),
                 new THREE.Vector2(vB.x / width * 50, vB.y / height * 50),
@@ -2865,20 +2198,20 @@ for (const step of steps) {
             }
           }
         });
-  
+
         geometry.rotateX(-Math.PI / 2);
-  
+
         const topBottomFaces = room.points.length - 2;
         const sideFaces = room.points.length * 2;
-  
+
         geometry.clearGroups();
         geometry.addGroup(0, sideFaces * 3, 0);
         geometry.addGroup(sideFaces * 3, topBottomFaces * 3, 1);
         geometry.addGroup((sideFaces + topBottomFaces) * 3, topBottomFaces * 3, 2);
-        
+
         break;
       }
-  
+
       default: {
         // Rectangle case
         const positions = [];
@@ -2888,23 +2221,24 @@ for (const step of steps) {
         // Keep track of where each face starts for material mapping
         const materialGroups = [];
         let faceCount = 0;
-  
+
         const x1 = room.bounds.x / 50 - this.boxWidth / 2;
         const x2 = x1 + room.bounds.width / 50;
         const z1 = room.bounds.y / 50 - this.boxDepth / 2;
         const z2 = z1 + room.bounds.height / 50;
         const height = room.blockHeight;
-  
+
         // Create and configure top texture
         // topTexture.repeat.set(1, -1);  // Flip vertically by setting Y to negative
-  
+
         topTexture.repeat.set(1, -1);
         // if (canvas.width > 0 && canvas.height > 0) {
         //   topTexture.needsUpdate = true;
         // }
         // topTexture.needsUpdate = true;
         this.safeUpdateTexture(topTexture, 'createRaisedBlockGeometry-default-topTexture');
-  
+
+        // All vertices remain the same
         positions.push(
           // Bottom face
           x1, 0, z1,
@@ -2937,19 +2271,19 @@ for (const step of steps) {
           x2, height, z2,
           x2, height, z1
         );
-  
-        // Normals stay the same regardless of slope (we'll compute them correctly later)
+
+        // Normals stay the same
         for (let i = 0; i < 4; i++) normals.push(0, -1, 0);  // Bottom
         for (let i = 0; i < 4; i++) normals.push(0, 1, 0);   // Top
         for (let i = 0; i < 4; i++) normals.push(0, 0, -1);  // Front
         for (let i = 0; i < 4; i++) normals.push(0, 0, 1);   // Back
         for (let i = 0; i < 4; i++) normals.push(-1, 0, 0);  // Left
         for (let i = 0; i < 4; i++) normals.push(1, 0, 0);   // Right
-  
+
         // UVs for each face
         const textureRepeatsU = this.wallTexture ? this.wallTexture.repeat.x : 1;
         const textureRepeatsV = this.wallTexture ? this.wallTexture.repeat.y : 1;
-  
+
         // Add UVs for each face
         for (let face = 0; face < 6; face++) {
           uvs.push(
@@ -2959,18 +2293,18 @@ for (const step of steps) {
             0, textureRepeatsV
           );
         }
-  
+
         // Add indices with material groups
         // Bottom face (material index 2)
         materialGroups.push({ startIndex: faceCount * 3, count: 6, materialIndex: 2 });
         indices.push(0, 1, 2, 0, 2, 3);
         faceCount += 2;
-  
+
         // Top face (material index 1)
         materialGroups.push({ startIndex: faceCount * 3, count: 6, materialIndex: 1 });
         indices.push(4, 5, 6, 4, 6, 7);
         faceCount += 2;
-  
+
         // Side faces (material index 0)
         materialGroups.push({ startIndex: faceCount * 3, count: 24, materialIndex: 0 });
         for (let face = 2; face < 6; face++) {
@@ -2981,24 +2315,24 @@ for (const step of steps) {
           );
           faceCount += 2;
         }
-  
+
         geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         geometry.setIndex(indices);
-  
+
         // Add material groups to geometry
         materialGroups.forEach(group => {
           geometry.addGroup(group.startIndex, group.count, group.materialIndex);
         });
-  
+
         break;
       }
     }
-  
+
     const mesh = new THREE.Mesh(geometry, materials);
-  
+
     // Position mesh correctly based on room bounds
     if (room.shape === "polygon") {
       mesh.position.set(
@@ -3012,19 +2346,11 @@ for (const step of steps) {
         0,
         (room.bounds.y + room.bounds.height / 2) / 50 - this.boxDepth / 2
       );
-  
+
     } else {
       mesh.position.set(0, 0, 0);
     }
-    
-    // Store slope information with the mesh for physics
-    if (isSlope) {
-      mesh.userData.isSlope = true;
-      mesh.userData.slopeDirection = slopeDirection;
-      mesh.userData.slopeStartHeight = slopeStartHeight;
-      mesh.userData.slopeEndHeight = slopeEndHeight;
-    }
-  
+
     return mesh;
   }
 
