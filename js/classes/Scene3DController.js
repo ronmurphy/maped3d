@@ -2354,6 +2354,8 @@ class Scene3DController {
   //   return mesh;
   // }
 
+  // non halfblock stairstepping code, does not work
+  // the polygon code may be able to be salvaged for terrain generation
   createRaisedBlockGeometry(room) {
     let geometry;
     const materials = [];
@@ -2585,190 +2587,212 @@ class Scene3DController {
         
         return stairsGroup;
       }
-      else {
-        // For rectangles, create a series of blocks with increasing heights
-        const x1 = room.bounds.x / 50 - this.boxWidth / 2;
-        const x2 = x1 + room.bounds.width / 50;
-        const z1 = room.bounds.y / 50 - this.boxDepth / 2;
-        const z2 = z1 + room.bounds.height / 50;
-        
-        // Step size in world units
-        let stepSizeX = room.bounds.width / 50 / numSteps;
-        let stepSizeZ = room.bounds.height / 50 / numSteps;
-        
-        // Set the appropriate step size based on direction
-        let startX, startZ, stepX, stepZ;
-        
-        switch (slopeDirection) {
-          case 'north': // Steps go from south (z2) to north (z1)
-            startX = x1;
-            startZ = z2 - stepSizeZ;
-            stepX = 0;
-            stepZ = -stepSizeZ;
-            break;
-          case 'east': // Steps go from west (x1) to east (x2)
-            startX = x1;
-            startZ = z1;
-            stepX = stepSizeX;
-            stepZ = 0;
-            break;
-          case 'south': // Steps go from north (z1) to south (z2)
-            startX = x1;
-            startZ = z1;
-            stepX = 0;
-            stepZ = stepSizeZ;
-            break;
-          case 'west': // Steps go from east (x2) to west (x1)
-            startX = x2 - stepSizeX;
-            startZ = z1;
-            stepX = -stepSizeX;
-            stepZ = 0;
-            break;
-        }
-        
-        // Create each step
+// For rectangles, create a series of independent half-blocks
+const x1 = room.bounds.x / 50 - this.boxWidth / 2;
+const x2 = x1 + room.bounds.width / 50;
+const z1 = room.bounds.y / 50 - this.boxDepth / 2;
+const z2 = z1 + room.bounds.height / 50;
+
+// We'll keep using numSteps to determine how many steps to create
+const heightDiff = Math.abs(slopeEndHeight - slopeStartHeight);
+const numSteps = Math.max(1, Math.ceil(heightDiff * 2)); // 2 steps per block height
+
+// Set the appropriate step size based on direction
+let stepSizeX = room.bounds.width / 50 / numSteps;
+let stepSizeZ = room.bounds.height / 50 / numSteps;
+
+let steps = [];
+
+// Set up steps based on direction
+switch (slopeDirection) {
+    case 'north': // Steps go from south (z2) to north (z1)
         for (let i = 0; i < numSteps; i++) {
-          // Calculate height for this step
-          const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
-          
-          // Calculate position for this step
-          const stepX1 = startX + i * stepX;
-          const stepZ1 = startZ + i * stepZ;
-          
-          // Calculate width and depth for this step
-          let stepWidth, stepDepth;
-          
-          if (slopeDirection === 'north' || slopeDirection === 'south') {
-            stepWidth = room.bounds.width / 50;
-            stepDepth = stepSizeZ;
-          } else {
-            stepWidth = stepSizeX;
-            stepDepth = room.bounds.height / 50;
-          }
-          
-          // Create positions for a box geometry
-          const positions = [];
-          const normals = [];
-          const uvs = [];
-          const indices = [];
-          
-          // Bottom face vertices
-          positions.push(
-            0, 0, 0,                 // Bottom left front
-            stepWidth, 0, 0,         // Bottom right front
-            stepWidth, 0, stepDepth, // Bottom right back
-            0, 0, stepDepth          // Bottom left back
-          );
-          
-          // Top face vertices
-          positions.push(
-            0, stepHeight, 0,                 // Top left front
-            stepWidth, stepHeight, 0,         // Top right front
-            stepWidth, stepHeight, stepDepth, // Top right back
-            0, stepHeight, stepDepth          // Top left back
-          );
-          
-          // Add front face vertices
-          positions.push(
-            0, 0, 0,                   // Bottom left
-            stepWidth, 0, 0,           // Bottom right
-            stepWidth, stepHeight, 0,  // Top right
-            0, stepHeight, 0           // Top left
-          );
-          
-          // Add back face vertices
-          positions.push(
-            0, 0, stepDepth,                   // Bottom left
-            stepWidth, 0, stepDepth,           // Bottom right
-            stepWidth, stepHeight, stepDepth,  // Top right
-            0, stepHeight, stepDepth           // Top left
-          );
-          
-          // Add left face vertices
-          positions.push(
-            0, 0, 0,                     // Bottom front
-            0, 0, stepDepth,             // Bottom back
-            0, stepHeight, stepDepth,    // Top back
-            0, stepHeight, 0             // Top front
-          );
-          
-          // Add right face vertices
-          positions.push(
-            stepWidth, 0, 0,                     // Bottom front
-            stepWidth, 0, stepDepth,             // Bottom back
-            stepWidth, stepHeight, stepDepth,    // Top back
-            stepWidth, stepHeight, 0             // Top front
-          );
-          
-          // Add normals
-          for (let j = 0; j < 4; j++) normals.push(0, -1, 0);  // Bottom face
-          for (let j = 0; j < 4; j++) normals.push(0, 1, 0);   // Top face
-          for (let j = 0; j < 4; j++) normals.push(0, 0, -1);  // Front face
-          for (let j = 0; j < 4; j++) normals.push(0, 0, 1);   // Back face
-          for (let j = 0; j < 4; j++) normals.push(-1, 0, 0);  // Left face
-          for (let j = 0; j < 4; j++) normals.push(1, 0, 0);   // Right face
-          
-          // Add UVs
-          for (let face = 0; face < 6; face++) {
-            uvs.push(
-              0, 0,
-              1, 0,
-              1, 1,
-              0, 1
-            );
-          }
-          
-          // Add indices
-          for (let face = 0; face < 6; face++) {
-            const base = face * 4;
-            indices.push(
-              base, base + 1, base + 2,
-              base, base + 2, base + 3
-            );
-          }
-          
-          // Create buffer geometry
-          const stepGeometry = new THREE.BufferGeometry();
-          stepGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-          stepGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-          stepGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-          stepGeometry.setIndex(indices);
-          
-          // Add material groups
-          stepGeometry.clearGroups();
-          stepGeometry.addGroup(0, 6, 2);  // Bottom face
-          stepGeometry.addGroup(6, 6, 1);  // Top face
-          stepGeometry.addGroup(12, 24, 0); // Side faces
-          
-          // Create mesh
-          const stepMesh = new THREE.Mesh(stepGeometry, materials);
-          
-          // Position the step
-          stepMesh.position.set(stepX1, 0, stepZ1);
-          
-          // Add metadata for physics
-          stepMesh.userData = {
-            isWall: true,
-            isRaisedBlock: true,
-            blockHeight: stepHeight
-          };
-          
-          // Add to group
-          stairsGroup.add(stepMesh);
+            // Calculate step position
+            const stepZ = z2 - (i + 1) * stepSizeZ;
+            // Calculate step height (from low to high)
+            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
+            
+            // Create half-block for this step
+            steps.push({
+                x: x1,
+                z: stepZ,
+                width: room.bounds.width / 50,
+                depth: stepSizeZ,
+                height: stepHeight + 0.5 // Half-block = 0.5 blocks
+            });
         }
+        break;
         
-        // Store metadata on the stairs group
-        stairsGroup.userData = {
-          isSlope: true,
-          isStairs: true,
-          slopeDirection: slopeDirection,
-          slopeStartHeight: slopeStartHeight,
-          slopeEndHeight: slopeEndHeight
-        };
+    case 'east': // Steps go from west (x1) to east (x2)
+        for (let i = 0; i < numSteps; i++) {
+            // Calculate step position
+            const stepX = x1 + i * stepSizeX;
+            // Calculate step height (from low to high)
+            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
+            
+            // Create half-block for this step
+            steps.push({
+                x: stepX,
+                z: z1,
+                width: stepSizeX,
+                depth: room.bounds.height / 50,
+                height: stepHeight + 0.5 // Half-block = 0.5 blocks
+            });
+        }
+        break;
         
-        return stairsGroup;
-      }
+    case 'south': // Steps go from north (z1) to south (z2)
+        for (let i = 0; i < numSteps; i++) {
+            // Calculate step position
+            const stepZ = z1 + i * stepSizeZ;
+            // Calculate step height (from low to high)
+            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
+            
+            // Create half-block for this step
+            steps.push({
+                x: x1,
+                z: stepZ,
+                width: room.bounds.width / 50,
+                depth: stepSizeZ,
+                height: stepHeight + 0.5 // Half-block = 0.5 blocks
+            });
+        }
+        break;
+        
+    case 'west': // Steps go from east (x2) to west (x1)
+        for (let i = 0; i < numSteps; i++) {
+            // Calculate step position
+            const stepX = x2 - (i + 1) * stepSizeX;
+            // Calculate step height (from low to high)
+            const stepHeight = slopeStartHeight + (i / (numSteps - 1)) * (slopeEndHeight - slopeStartHeight);
+            
+            // Create half-block for this step
+            steps.push({
+                x: stepX,
+                z: z1,
+                width: stepSizeX,
+                depth: room.bounds.height / 50,
+                height: stepHeight + 0.5 // Half-block = 0.5 blocks
+            });
+        }
+        break;
+}
+
+// Now create the individual blocks for each step
+for (const step of steps) {
+    // Create step geometry
+    const stepPositions = [];
+    const stepNormals = [];
+    const stepUVs = [];
+    const stepIndices = [];
+    
+    // Create a box for this step
+    // Bottom face vertices
+    stepPositions.push(
+        0, 0, 0,                 // Bottom left front
+        step.width, 0, 0,        // Bottom right front
+        step.width, 0, step.depth, // Bottom right back
+        0, 0, step.depth         // Bottom left back
+    );
+    
+    // Top face vertices
+    stepPositions.push(
+        0, step.height, 0,                 // Top left front
+        step.width, step.height, 0,        // Top right front
+        step.width, step.height, step.depth, // Top right back
+        0, step.height, step.depth         // Top left back
+    );
+    
+    // Add front face vertices
+    stepPositions.push(
+        0, 0, 0,                   // Bottom left
+        step.width, 0, 0,          // Bottom right
+        step.width, step.height, 0,  // Top right
+        0, step.height, 0           // Top left
+    );
+    
+    // Add back face vertices
+    stepPositions.push(
+        0, 0, step.depth,                   // Bottom left
+        step.width, 0, step.depth,          // Bottom right
+        step.width, step.height, step.depth,  // Top right
+        0, step.height, step.depth           // Top left
+    );
+    
+    // Add left face vertices
+    stepPositions.push(
+        0, 0, 0,                     // Bottom front
+        0, 0, step.depth,            // Bottom back
+        0, step.height, step.depth,    // Top back
+        0, step.height, 0             // Top front
+    );
+    
+    // Add right face vertices
+    stepPositions.push(
+        step.width, 0, 0,                     // Bottom front
+        step.width, 0, step.depth,            // Bottom back
+        step.width, step.height, step.depth,    // Top back
+        step.width, step.height, 0             // Top front
+    );
+    
+    // Add normals
+    for (let j = 0; j < 4; j++) stepNormals.push(0, -1, 0);  // Bottom face
+    for (let j = 0; j < 4; j++) stepNormals.push(0, 1, 0);   // Top face
+    for (let j = 0; j < 4; j++) stepNormals.push(0, 0, -1);  // Front face
+    for (let j = 0; j < 4; j++) stepNormals.push(0, 0, 1);   // Back face
+    for (let j = 0; j < 4; j++) stepNormals.push(-1, 0, 0);  // Left face
+    for (let j = 0; j < 4; j++) stepNormals.push(1, 0, 0);   // Right face
+    
+    // Add UVs
+    for (let face = 0; face < 6; face++) {
+        stepUVs.push(
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 1
+        );
     }
+    
+    // Add indices
+    for (let face = 0; face < 6; face++) {
+        const base = face * 4;
+        stepIndices.push(
+            base, base + 1, base + 2,
+            base, base + 2, base + 3
+        );
+    }
+    
+    // Create buffer geometry
+    const stepGeometry = new THREE.BufferGeometry();
+    stepGeometry.setAttribute('position', new THREE.Float32BufferAttribute(stepPositions, 3));
+    stepGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(stepNormals, 3));
+    stepGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(stepUVs, 2));
+    stepGeometry.setIndex(stepIndices);
+    
+    // Add material groups
+    stepGeometry.clearGroups();
+    stepGeometry.addGroup(0, 6, 2);  // Bottom face
+    stepGeometry.addGroup(6, 6, 1);  // Top face
+    stepGeometry.addGroup(12, 24, 0); // Side faces
+    
+    // Create mesh
+    const stepMesh = new THREE.Mesh(stepGeometry, materials);
+    
+    // Position the step
+    stepMesh.position.set(step.x, 0, step.z);
+    
+    // Add metadata for physics - use fixed 0.5 for block height
+    stepMesh.userData = {
+        isWall: true,
+        isRaisedBlock: true,
+        blockHeight: step.height - 0.5  // Adjust so the height is from ground
+    };
+    
+    // Add to group
+    stairsGroup.add(stepMesh);
+    }
+    return stairsGroup;  
+  }
   
     switch (room.shape) {
       case "circle": {
