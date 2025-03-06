@@ -1037,44 +1037,6 @@ class PartyManager {
  * @param {String} customName - Optional custom name (if not provided, one will be generated)
  * @returns {Object} The newly added monster
  */
-// addNamedMonster(monster, customName = null) {
-//   // Generate a name if not provided
-//   const monsterName = customName || this.generateMonsterName(monster);
-//   console.log(`Monster will be named: ${monsterName}`);
-  
-//   // Create the monster, making sure to use the data property if it exists
-//   let monsterToAdd = monster.data || monster;
-  
-//   // Create a deep clone of the data to avoid modifying the original
-//   monsterToAdd = JSON.parse(JSON.stringify(monsterToAdd));
-  
-//   // Make sure the name is updated in all relevant places
-//   if (monsterToAdd.basic) {
-//     monsterToAdd.basic.name = monsterName; // Update name in basic data
-//   }
-  
-//   // Create the monster
-//   const newMonster = this.prepareMonster(monsterToAdd);
-  
-//   // Explicitly set display name and ensure type is preserved
-//   newMonster.displayName = monsterName;
-//   newMonster.name = monsterName;
-  
-//   // Make sure type is preserved if it wasn't picked up correctly
-//   if (newMonster.type === 'Unknown' && monsterToAdd.basic?.type) {
-//     newMonster.type = monsterToAdd.basic.type;
-//     newMonster.cr = monsterToAdd.basic.cr || newMonster.cr;
-//   }
-  
-//   console.log(`Prepared named monster: ${monsterName} (Type: ${newMonster.type}, CR: ${newMonster.cr})`);
-  
-//   // Add to party using the regular method
-//   const location = this.addMonster(newMonster);
-//   console.log(`Added ${monsterName} to party in ${location}`);
-  
-//   return newMonster;
-// }
-
 addNamedMonster(monster, customName = null) {
   // Generate a name if not provided
   const monsterName = customName || this.generateMonsterName(monster);
@@ -5117,34 +5079,6 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
     }
   }
 
-
-    // Update checkForStarterMonster to use the new method
-  // async checkForStarterMonster() {
-  //   try {
-  //     // Await the result from getEligibleStarterMonsters
-  //     const eligibleMonsters = await this.getEligibleStarterMonsters();
-  
-  //     // If we don't have any eligible monsters, just exit
-  //     if (!eligibleMonsters || eligibleMonsters.length === 0) {
-  //       console.warn('No eligible starter monsters found in bestiary');
-  //       return;
-  //     }
-  
-  //     // Pick 3 random monsters from eligible list
-  //     const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
-  
-  //     // Use the improved showStarterSelection method instead
-  //     this.showStarterSelection(starterChoices);
-  //   } catch (error) {
-  //     console.error('Error getting starter monsters:', error);
-  //     // Fallback to defaults as a last resort
-  //     const defaultMonsters = this.createDefaultStarterMonsters();
-  //     const starterChoices = this.getRandomStarters(defaultMonsters, 3);
-  //     // Use the improved showStarterSelection method here too
-  //     this.showStarterSelection(starterChoices);
-  //   }
-  // }
-
   async checkForStarterMonster() {
     // Get diverse starter monsters (3 by default)
     const starterChoices = await this.getStarterMonsters();
@@ -5278,125 +5212,7 @@ async getStarterMonsters(count = 3) {
   }
 }
 
-  // Find eligible starter monsters from bestiary
-  getEligibleStarterMonsters() {
-    console.log("PartyManager looking for starter monsters");
-
-    // Get direct access to database if possible
-    const monsterDatabase = this.monsterDatabase ||
-      (this.monsterManager ? this.monsterManager.loadDatabase() : null);
-
-    console.log("Direct database access:", !!monsterDatabase);
-
-    // Create a list of eligible monsters
-    const eligibleMonsters = [];
-
-    // If we have direct access to the database, use it
-    if (monsterDatabase && monsterDatabase.monsters) {
-      console.log(`Found ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
-
-      // Process all monsters in the database
-      Object.values(monsterDatabase.monsters).forEach(monster => {
-        try {
-          // Check CR value for eligibility
-          const cr = monster.basic?.cr || '0';
-          const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
-
-          if (isEligible) {
-            // console.log(`Found eligible starter: ${monster.basic.name} (CR ${cr})`);
-            eligibleMonsters.push(this.formatMonsterForParty(monster));
-          }
-        } catch (error) {
-          console.error("Error processing monster:", error);
-        }
-      });
-    } else {
-      console.warn("No direct database access available");
-    }
-
-    // console.log(`Found ${eligibleMonsters.length} eligible starter monsters`);
-
-    // If no eligible monsters found, create default starter monsters
-    if (eligibleMonsters.length === 0) {
-      // console.log("No eligible monsters found, creating defaults");
-      return this.createDefaultStarterMonsters();
-    }
-
-    return eligibleMonsters;
-  }
-
-  // Helper method to retry getting monsters with increasing delays
-  retryGetMonsters(resourceManager, monsterDatabase, attempt = 0, maxAttempts = 3) {
-    const eligibleMonsters = [];
-    const MAX_STARTER_XP = 100;
-
-    // First try ResourceManager's bestiary
-    if (resourceManager?.resources?.bestiary?.size > 0) {
-      // console.log(`Checking ${resourceManager.resources.bestiary.size} monsters in ResourceManager`);
-
-      resourceManager.resources.bestiary.forEach(monster => {
-        try {
-          // Calculate XP from CR if needed
-          const xp = this.getMonsterXP(monster);
-          if (xp <= MAX_STARTER_XP && xp > 0) {
-            // console.log(`Found eligible starter: ${monster.name} (XP: ${xp})`);
-            eligibleMonsters.push(this.formatMonsterForParty(monster));
-          }
-        } catch (error) {
-          console.error("Error processing monster:", error);
-        }
-      });
-    }
-    // Then try direct database access as fallback
-    else if (monsterDatabase?.monsters) {
-      // console.log(`Checking ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
-
-      Object.values(monsterDatabase.monsters).forEach(monster => {
-        try {
-          // Get XP from CR
-          const cr = monster.basic?.cr || "0";
-          let xp = 0;
-
-          if (cr === "1/4") xp = 50;
-          else if (cr === "1/2") xp = 100;
-          else if (cr === "0") xp = 10;
-          else if (cr === "1/8") xp = 25;
-
-          if (xp <= MAX_STARTER_XP && xp > 0) {
-            // console.log(`Found eligible starter: ${monster.basic.name} (CR: ${cr}, XP: ${xp})`);
-            eligibleMonsters.push(this.formatMonsterForParty(monster));
-          }
-        } catch (error) {
-          console.error("Error processing monster from database:", error);
-        }
-      });
-    }
-
-    // console.log(`Found ${eligibleMonsters.length} eligible starter monsters on attempt ${attempt + 1}`);
-
-    // If no monsters found and we have retries left, try again with delay
-    if (eligibleMonsters.length === 0 && attempt < maxAttempts - 1) {
-      const delay = (attempt + 1) * 500; // Increasing delays: 500ms, 1000ms, etc.
-      console.log(`No monsters found yet, retrying in ${delay}ms...`);
-
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve(this.retryGetMonsters(resourceManager, monsterDatabase, attempt + 1, maxAttempts));
-        }, delay);
-      });
-    }
-
-    // If we still don't have monsters or we're out of retries, create defaults
-    if (eligibleMonsters.length === 0) {
-      console.log("No eligible monsters found, creating defaults");
-      return this.createDefaultStarterMonsters();
-    }
-
-    return eligibleMonsters;
-  }
-
-  // Add these helper methods if they don't exist
-  // Helper to format monster for party
+// Helper to format monster for party
   formatMonsterForParty(monster) {
     try {
       // Create token if needed
@@ -5697,177 +5513,6 @@ async getStarterMonsters(count = 3) {
 
     return canvas.toDataURL('image/webp');
   }
-  // Updated createDefaultStarterMonsters with tokens
-  // createDefaultStarterMonsters() {
-  //   // Create simple SVG-based tokens
-  //   const wolfToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%234f46e5" stroke="white" stroke-width="2"/><path d="M30,40 L42,55 L35,70 L50,60 L65,70 L58,55 L70,40 L55,45 L50,30 L45,45 Z" fill="white"/></svg>`;
-
-  //   const fireToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="white" stroke-width="2"/><path d="M50,20 C60,40 80,40 70,60 C65,70 60,75 50,80 C40,75 35,70 30,60 C20,40 40,40 50,20 Z" fill="white"/></svg>`;
-
-  //   const feyToken = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2306b6d4" stroke="white" stroke-width="2"/><path d="M30,60 C25,40 50,20 75,40 C65,45 70,65 50,70 C30,65 35,45 30,60 Z M35,35 C40,30 60,30 65,35 C55,45 45,45 35,35 Z" fill="white"/></svg>`;
-
-  //   return [
-  //     {
-  //       id: 'starter_wolf',
-  //       name: 'Young Wolf',
-  //       type: 'Beast',
-  //       size: 'Medium',
-  //       level: 1,
-  //       cr: '1/4',
-  //       currentHP: 11,
-  //       maxHP: 11,
-  //       armorClass: 13,
-  //       experience: 0,
-  //       experienceToNext: 100,
-  //       token: {
-  //         data: wolfToken
-  //       },
-  //       data: {
-  //         basic: {
-  //           name: 'Young Wolf',
-  //           type: 'Beast',
-  //           size: 'Medium',
-  //           cr: '1/4',
-  //           alignment: 'Unaligned'
-  //         },
-  //         stats: {
-  //           ac: 13,
-  //           hp: { average: 11, roll: '2d8+2', max: 18 },
-  //           speed: '40 ft.'
-  //         },
-  //         abilities: {
-  //           str: { score: 12, modifier: 1 },
-  //           dex: { score: 15, modifier: 2 },
-  //           con: { score: 12, modifier: 1 },
-  //           int: { score: 3, modifier: -4 },
-  //           wis: { score: 12, modifier: 1 },
-  //           cha: { score: 6, modifier: -2 }
-  //         },
-  //         token: {
-  //           data: wolfToken
-  //         }
-  //       },
-  //       abilities: {
-  //         str: { score: 12, modifier: 1 },
-  //         dex: { score: 15, modifier: 2 },
-  //         con: { score: 12, modifier: 1 },
-  //         int: { score: 3, modifier: -4 },
-  //         wis: { score: 12, modifier: 1 },
-  //         cha: { score: 6, modifier: -2 }
-  //       },
-  //       monsterAbilities: [
-  //         { name: 'Bite', type: 'attack', damage: '1d4+1', description: 'Melee attack that deals piercing damage.' },
-  //         { name: 'Pack Tactics', type: 'buff', description: 'Advantage on attack rolls when allies are nearby.' }
-  //       ]
-  //     },
-  //     {
-  //       id: 'starter_elemental',
-  //       name: 'Minor Fire Elemental',
-  //       type: 'Elemental',
-  //       size: 'Small',
-  //       level: 1,
-  //       cr: '1/2',
-  //       currentHP: 15,
-  //       maxHP: 15,
-  //       armorClass: 13,
-  //       experience: 0,
-  //       experienceToNext: 100,
-  //       token: {
-  //         data: fireToken
-  //       },
-  //       data: {
-  //         basic: {
-  //           name: 'Minor Fire Elemental',
-  //           type: 'Elemental',
-  //           size: 'Small',
-  //           cr: '1/2',
-  //           alignment: 'Neutral'
-  //         },
-  //         stats: {
-  //           ac: 13,
-  //           hp: { average: 15, roll: '3d6+6', max: 24 },
-  //           speed: '30 ft.'
-  //         },
-  //         abilities: {
-  //           str: { score: 10, modifier: 0 },
-  //           dex: { score: 16, modifier: 3 },
-  //           con: { score: 14, modifier: 2 },
-  //           int: { score: 6, modifier: -2 },
-  //           wis: { score: 10, modifier: 0 },
-  //           cha: { score: 6, modifier: -2 }
-  //         },
-  //         token: {
-  //           data: fireToken
-  //         }
-  //       },
-  //       abilities: {
-  //         str: { score: 10, modifier: 0 },
-  //         dex: { score: 16, modifier: 3 },
-  //         con: { score: 14, modifier: 2 },
-  //         int: { score: 6, modifier: -2 },
-  //         wis: { score: 10, modifier: 0 },
-  //         cha: { score: 6, modifier: -2 }
-  //       },
-  //       monsterAbilities: [
-  //         { name: 'Fire Touch', type: 'attack', damage: '1d6+3', description: 'Melee attack that deals fire damage.' },
-  //         { name: 'Heat Aura', type: 'area', damage: '1d4', description: 'Damages enemies in close proximity.' }
-  //       ]
-  //     },
-  //     {
-  //       id: 'starter_sprite',
-  //       name: 'Forest Sprite',
-  //       type: 'Fey',
-  //       size: 'Tiny',
-  //       level: 1,
-  //       cr: '1/4',
-  //       currentHP: 10,
-  //       maxHP: 10,
-  //       armorClass: 15,
-  //       experience: 0,
-  //       experienceToNext: 100,
-  //       token: {
-  //         data: feyToken
-  //       },
-  //       data: {
-  //         basic: {
-  //           name: 'Forest Sprite',
-  //           type: 'Fey',
-  //           size: 'Tiny',
-  //           cr: '1/4',
-  //           alignment: 'Neutral Good'
-  //         },
-  //         stats: {
-  //           ac: 15,
-  //           hp: { average: 10, roll: '4d4', max: 16 },
-  //           speed: '20 ft., fly 40 ft.'
-  //         },
-  //         abilities: {
-  //           str: { score: 4, modifier: -3 },
-  //           dex: { score: 18, modifier: 4 },
-  //           con: { score: 10, modifier: 0 },
-  //           int: { score: 14, modifier: 2 },
-  //           wis: { score: 13, modifier: 1 },
-  //           cha: { score: 15, modifier: 2 }
-  //         },
-  //         token: {
-  //           data: feyToken
-  //         }
-  //       },
-  //       abilities: {
-  //         str: { score: 4, modifier: -3 },
-  //         dex: { score: 18, modifier: 4 },
-  //         con: { score: 10, modifier: 0 },
-  //         int: { score: 14, modifier: 2 },
-  //         wis: { score: 13, modifier: 1 },
-  //         cha: { score: 15, modifier: 2 }
-  //       },
-  //       monsterAbilities: [
-  //         { name: 'Magical Touch', type: 'attack', damage: '1d4+4', description: 'Ranged attack that deals magical damage.' },
-  //         { name: 'Invisibility', type: 'buff', description: 'Can become invisible until next attack.' }
-  //       ]
-  //     }
-  //   ];
-  // }
 
   // Choose random starter choices
   getRandomStarters(monsters, count) {
@@ -5875,23 +5520,6 @@ async getStarterMonsters(count = 3) {
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
 
-  // Offer starter monster selection
-  offerStarterMonster() {
-    const eligibleMonsters = this.getEligibleStarterMonsters();
-
-    if (eligibleMonsters.length === 0) {
-      console.warn('No eligible starter monsters found in bestiary');
-      return;
-    }
-
-    // Pick 3 random monsters from eligible list
-    const starterChoices = this.getRandomStarters(eligibleMonsters, 3);
-
-    // Show starter selection dialog
-    this.showStarterMonsterDialog(starterChoices);
-  }
-
-    // Replace the starter monster selection dialog with this improved version
   showStarterSelection(starterMonsters) {
     // Create overlay
     const overlay = document.createElement('div');
@@ -5965,7 +5593,7 @@ async getStarterMonsters(count = 3) {
         right: -10px;
         background: white;
         border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        // box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         opacity: 0;
         transform: scale(0.8);
         transition: all 0.3s ease;
@@ -5984,7 +5612,7 @@ async getStarterMonsters(count = 3) {
         
         // Highlight selected
         cardContainer.style.transform = 'translateY(-8px)';
-        cardContainer.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
+        // cardContainer.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
         selectionIndicator.style.opacity = '1';
         selectionIndicator.style.transform = 'scale(1)';
         
@@ -7987,121 +7615,9 @@ handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effe
   const success = roll <= successChance;
   
   console.log(`Gift recruitment roll: ${roll.toFixed(2)} vs ${successChance.toFixed(2)} - ${success ? 'SUCCESS' : 'FAILURE'}`);
-  
-  // If successful, add monster to party
-//   if (success) {
-//     // Generate a name for the monster
-//     const monsterName = this.generateMonsterName(monster);
-//     console.log(`Generated name for monster: ${monsterName}`);
 
-//     console.log("Monster data found:", monster);
-//     console.log("Monster type:", monster.basic?.type || monster.type);
-//     console.log("Monster CR:", monster.basic?.cr || monster.cr);
-    
-//     // Close the recruitment dialog first
-//     if (recruitmentOverlay) {
-//       recruitmentOverlay.style.opacity = '0';
-//       const dialogContainer = recruitmentOverlay.querySelector('.party-container');
-//       if (dialogContainer) {
-//         dialogContainer.style.transform = 'scale(0.95)';
-//       }
-//       setTimeout(() => {
-//         if (recruitmentOverlay.parentNode) {
-//           recruitmentOverlay.parentNode.removeChild(recruitmentOverlay);
-//         }
-//       }, 300);
-//     }
-    
-//     // Create a proper copy of the monster for the party
-//     // First determine what format we're dealing with to ensure we get all needed data
-//     let monsterData = monster.data ? 
-//   JSON.parse(JSON.stringify(monster.data)) : 
-//   JSON.parse(JSON.stringify(monster));
-
-// // Important: Make sure basic data exists
-// if (!monsterData.basic && monster.basic) {
-//   monsterData.basic = JSON.parse(JSON.stringify(monster.basic));
-// }
-    
-//     if (monster.data) {
-//       // If monster has a data property, use that as the base
-//       monsterData = JSON.parse(JSON.stringify(monster.data));
-//     } else {
-//       // Otherwise use the monster object directly
-//       monsterData = JSON.parse(JSON.stringify(monster));
-//     }
-    
-//     // Update the name in all relevant places
-//     if (monsterData.basic) {
-//       monsterData.basic.name = monsterName;
-//     }
-    
-//     // Create the monster properly using the party's existing method
-//     const newMonster = this.prepareMonster(monsterData);
-    
-//     // // Make sure the monster's name is set
-//     // newMonster.name = monsterName;
-
-//     newMonster.displayName = monsterName;
-    
-//     // If the monster is a humanoid and the gift was a usable item (weapon/armor), equip it
-//     const monsterType = this.getMonsterType(newMonster);
-//     if (monsterType === 'Humanoid' && (giftType === 'weapon' || giftType === 'armor')) {
-//       // Create a copy of the item with a personalized name
-//       const personalizedItem = JSON.parse(JSON.stringify(giftedItem));
-//       personalizedItem.name = `${monsterName}'s ${giftedItem.name}`;
-      
-//       // Equip the item to the monster
-//       newMonster.equipment = newMonster.equipment || {};
-//       newMonster.equipment[giftType] = personalizedItem;
-      
-//       // Update stats based on equipment
-//       this.updateMonsterStats(newMonster);
-      
-//       console.log(`Equipped personalized ${giftType} to ${monsterName}: ${personalizedItem.name}`);
-//     }
-//     // In handleGiftRecruitmentAttempt
-// // const newMonster = this.prepareMonster(monsterData);
-
-// // Force the name to be set after preparation
-// newMonster.name = monsterName;
-// console.log(`Set monster name to: ${monsterName}, result: ${newMonster.name}`);
-
-//     // Add to party
-//     this.addMonster(newMonster);
-//     console.log(`Added ${monsterName} to party with type: ${this.getMonsterType(newMonster)}`);
-//     console.log(`Added ${monsterName} (${newMonster.name}) to party`);
-
-//     // Remove the encounter marker if success
-//     this.removeEncounterMarker();
-//   }
 
 if (success) {
-  // Generate a name
-  // const monsterName = this.generateMonsterName(monster);
-  // console.log("Monster data found:", monster);
-  
-  // // Create the monster, making sure to use the data property if it exists
-  // let monsterToAdd = monster.data || monster;
-  
-  // // Create a deep clone of the data to avoid modifying the original
-  // monsterToAdd = JSON.parse(JSON.stringify(monsterToAdd));
-  
-  // // Make sure the name is updated in all relevant places
-  // if (monsterToAdd.basic) {
-  //   monsterToAdd.basic.name = monsterName; // Update name in basic data
-  // }
-  
-  // // Create the monster
-  // const newMonster = this.prepareMonster(monsterToAdd);
-  
-  // // Set display name
-  // newMonster.displayName = monsterName;
-  
-  // console.log(`Set monster name to: ${monsterName}, result: ${newMonster.name}`);
-  
-  // // Add to party
-  // this.addMonster(newMonster);
 
   const newMonster = this.addNamedMonster(monster);
   
