@@ -1029,8 +1029,8 @@ async showRenameDialog(room) {
                 
                 <!-- Slope Tab -->
                 <sl-tab slot="nav" panel="slope-config">
-                    <span class="material-icons" style="margin-right: 8px;">trending_up</span>
-                    Slope
+                    <span class="material-icons" style="margin-right: 8px;">stairs_2</span>
+                    Staircase
                 </sl-tab>
                 
                 <!-- Wall Properties Panel -->
@@ -1092,13 +1092,13 @@ async showRenameDialog(room) {
                 <sl-tab-panel name="slope-config">
                     <div style="padding: 8px 0;">
                         <sl-checkbox id="isSlope" ${room.isSlope ? 'checked' : ''}>
-                            Make this area a slope
+                            Make this area a staircase
                         </sl-checkbox>
                         
                         <div id="slopeConfigContainer" style="margin-top: 12px; ${room.isSlope ? '' : 'display: none;'}">
                             <!-- Visual slope direction selector -->
                             <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px;">Slope Direction:</label>
+                                <label style="display: block; margin-bottom: 8px;">Staircase Direction:</label>
                                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, auto); gap: 8px; place-items: center;">
                                     <!-- Top row -->
                                     <div></div>
@@ -1148,7 +1148,7 @@ async showRenameDialog(room) {
                                     <div></div>
                                 </div>
                                 <p style="margin-top: 8px; color: #666; font-size: 0.9em;">
-                                    The arrow indicates the uphill direction of the slope.
+                                    The arrow indicates the uphill direction of the staircase.
                                 </p>
                             </div>
                             
@@ -1194,15 +1194,15 @@ async showRenameDialog(room) {
                             <!-- Informational alert about slopes -->
                             <sl-alert type="info" open style="margin-top: 16px;">
                                 <span slot="icon" class="material-icons">info</span>
-                                <strong>About Slopes</strong><br>
-                                Slopes allow players to move between different elevations in 3D view. 
+                                <strong>About Staircases</strong><br>
+                                Staircases allow players to move between different elevations in 3D view. 
                                 The arrow direction indicates which side is higher.
                             </sl-alert>
                         </div>
                         
                         <div id="slopeDisabledMessage" style="display: ${room.isSlope ? 'none' : 'block'}; margin-top: 16px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 4px;">
                             <span class="material-icons" style="font-size: 48px; color: #666; margin-bottom: 8px;">trending_flat</span>
-                            <p>Enable "Make this area a slope" to configure slope properties.</p>
+                            <p>Enable "Make this area a staircase" to configure staircase properties.</p>
                         </div>
                     </div>
                 </sl-tab-panel>

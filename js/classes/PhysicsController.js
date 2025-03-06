@@ -83,28 +83,6 @@ class PhysicsController {
             playerPos.z + horizontalDirection.z * speed
         );
         
-        // Special handling for wall tops - dont walk off of walls
-        // if (this.onTopOfWall) {
-        //     // Cast ray downward from next position to check for edges
-        //     const downRay = new THREE.Raycaster(
-        //         new THREE.Vector3(nextPos.x, this.wallTopHeight + 0.1, nextPos.z),
-        //         new THREE.Vector3(0, -1, 0),
-        //         0,
-        //         0.5 // Short distance check
-        //     );
-            
-        //     const wallHits = downRay.intersectObjects(
-        //         this.scene3D.scene.children.filter(obj => obj.userData?.isWall)
-        //     );
-            
-        //     // If no wall beneath next position, we'd fall off
-        //     if (wallHits.length === 0) {
-        //         return {
-        //             canMove: false,
-        //             hitObject: null
-        //         };
-        //     }
-        // }
         
         // For inside-to-outside detection, we need to check if we cross a wall
         if (this.insideRoomWall) {
@@ -374,29 +352,7 @@ class PhysicsController {
                 this.scene3D.camera.position.z + direction.z * speed
             );
         
-            // Special case for wall tops
-            // if (this.onTopOfWall) {
-            //     // Check if we're still on top of a wall at the next position
-            //     const topRay = new THREE.Raycaster(
-            //         new THREE.Vector3(nextPosition.x, this.wallTopHeight + 0.1, nextPosition.z),
-            //         new THREE.Vector3(0, -1, 0),
-            //         0,
-            //         0.5
-            //     );
-                
-            //     const topHits = topRay.intersectObjects(
-            //         this.scene3D.scene.children.filter(obj => obj.userData?.isWall)
-            //     );
-                
-            //     // If there's still wall beneath us, we can move
-            //     if (topHits.length > 0) {
-            //         return true;
-            //     }
-                
-            //     // Otherwise we'd fall off, so start falling
-            //     this.isFalling = true;
-            //     return true;
-            // }
+
 
             // Special case for wall tops - allow player to walk off of walls
 if (this.onTopOfWall) {
