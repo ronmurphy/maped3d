@@ -5258,6 +5258,30 @@ this.gameState = 'initializing';
       }
     }
 
+      // Handle water areas
+  const waterAreas = rooms.filter(room => room.type === 'water' || room.isWaterArea);
+  if (waterAreas.length > 0 && this.shaderEffects) {
+    console.log(`Processing ${waterAreas.length} water areas`);
+    
+    waterAreas.forEach(room => {
+      // Convert from 2D coordinates to 3D
+      const x = (room.bounds.x + room.bounds.width/2) / cellSize - this.boxWidth/2;
+      const z = (room.bounds.y + room.bounds.height/2) / cellSize - this.boxDepth/2;
+      const width = room.bounds.width / cellSize;
+      const depth = room.bounds.height / cellSize;
+      
+      // Create water effect
+      this.shaderEffects.addWaterZone({
+        x: x,
+        z: z,
+        y: 0.1, // Slightly above ground
+        width: width,
+        depth: depth,
+        type: 'water'
+      });
+    });
+  }
+
     this.scene.add(result);
     return result;
   }

@@ -470,6 +470,7 @@ class MapEditor {
             points: room.points ? [...room.points] : null,
             isRaisedBlock: room.isRaisedBlock || false,
             blockHeight: room.blockHeight || 0,
+            isWaterArea: room.isWaterArea || false,
             finalized: room.finalized,
             locked: room.locked,
             thumbnail: room.thumbnail,
@@ -773,6 +774,13 @@ class MapEditor {
         // Restore raised block properties
         room.isRaisedBlock = roomData.isRaisedBlock || false;
         room.blockHeight = roomData.blockHeight || 0;
+        room.isWaterArea = roomData.isWaterArea || false; // Add this line
+  
+        if (room.type === 'water' || room.isWaterArea) {
+          room.element.classList.add('water-area');
+          room.element.style.backgroundColor = "rgba(0, 100, 255, 0.3)";
+          room.element.style.border = "1px solid rgba(0, 150, 255, 0.7)";
+        }
 
         if (roomData.locked) {
           room.locked = true;
@@ -6522,6 +6530,55 @@ async runHardwareTest() {
     }
   });
 }
+
+
+
+// Add this method to MapEditor class
+createWaterArea() {
+  if (!this.baseImage) {
+    this.showCustomToast("Please load a map first", "warning", 3000);
+    return;
+  }
+
+  let roomSize;
+  if (this.cellSize) {
+    roomSize = this.cellSize * 2; // Default to 2x2 grid cells
+  } else {
+    roomSize = 100;
+  }
+
+  const room = new Room(
+    Date.now(),
+    {
+      x: this.canvas.width / 2 - roomSize / 2,
+      y: this.canvas.height / 2 - roomSize / 2,
+      width: roomSize,
+      height: roomSize
+    },
+    "Water Area",
+    "rectangle", // Use rectangle shape for simplicity
+    "water" // New room type
+  );
+
+  this.rooms.push(room);
+  const roomElement = room.createDOMElement(this);
+  document.querySelector(".canvas-container").appendChild(roomElement);
+  
+  // Style the water area differently
+  roomElement.style.backgroundColor = "rgba(0, 100, 255, 0.3)";
+  roomElement.style.border = "1px solid rgba(0, 150, 255, 0.7)";
+  
+  // Mark it for special handling in Scene3D
+  room.isWaterArea = true;
+  
+  this.layersPanel.updateLayersList();
+  
+  // Set as selected for immediate editing
+  this.selectedRoomId = room.id;
+  room.updateEditState(true);
+}
+
+
 
 }
 

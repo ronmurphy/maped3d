@@ -967,251 +967,581 @@ class LayersPanel {
     }
 
 
-
-
-    async showRenameDialog(room) {
-        const dialog = document.createElement('sl-dialog');
-        dialog.label = 'Area Properties';
-
-        // Force type to wall
-        room.type = 'wall';
-
-        const assignedTextureId = this.editor.resourceManager?.textureAssignments?.get(room.id)?.textureId;
-        const wallTextures = this.editor.resourceManager?.resources.textures.walls;
-        const hasTextures = wallTextures && wallTextures.size > 0;
-        const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
-
-        // Check for legacy texture setting
-        const isLegacyTexture = room.name === "WallTexture";
-
-        dialog.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <sl-input 
-                id="roomNameInput" 
-                value="${room.name}" 
-                label="Area Name"
-            ></sl-input>
-
-            <!-- Folder Selection -->
-            <sl-select 
-                id="folderSelect" 
-                label="Folder"
-                value="${currentFolder ? currentFolder.id : ''}"
-            >
-                <sl-option value="">No Folder</sl-option>
-                ${this.folders.map(folder => `
-                    <sl-option value="${folder.id}">${folder.name}</sl-option>
-                `).join('')}
-            </sl-select>
-
-            ${hasTextures ? `
-              <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                  <div style="margin-bottom: 16px;">
-                      <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
-                      
-                      <!-- Modified to show checkbox for regular wall -->
-                      <div style="display: flex; flex-direction: column; gap: 12px;">
-                          <!-- Wall Height Selector -->
-                          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                              <sl-checkbox id="isRegularWall" 
-                                  ${room.isRegularWall ? 'checked' : ''}
-                                  ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
-                                  Regular Wall (Full Height)
-                              </sl-checkbox>
-                          </div>
-                          
-                          <!-- Block height slider - disabled when isRegularWall is checked -->
-                          <sl-range 
-                              id="blockHeight" 
-                              label="Height" 
-                              min="0" max="101" 
-                              step="1" 
-                              tooltip="top" 
-                              value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
-                              help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
-                              style="margin-bottom: 16px;"
-                              ${room.isRegularWall ? 'disabled' : ''}
-                          ></sl-range>
-                      </div>
-          
-                      <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
-                      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
-                          ${Array.from(wallTextures.entries()).map(([id, texture]) => `
-                              <div class="texture-option" data-texture-id="${id}" 
-                                  style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'
-            }; padding: 4px; border-radius: 4px; position: relative;">
-                                  <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-                                  <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
-                                  ${assignedTextureId === id ? `
-                                      <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
-                                          background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
-                                          check_circle
-                                      </span>
-                                  ` : ''}
-                              </div>
-                          `).join('')}
-                      </div>
-                  </div>
-              </div>
-          ` : ''}
-
-            <!-- Legacy Wall Texture Option -->
-            ${room.shape === 'rectangle' ? `
-                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                    <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
-                        Set as Wall Texture Source
-                    </sl-checkbox>
-                </div>
-            ` : ''}
+    // Updated showRenameDialog method for LayersPanel
+// Updated showRenameDialog method for LayersPanel
+async showRenameDialog(room) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Area Properties';
+    
+    // Force type to wall (keeping your logic)
+    room.type = 'wall';
+  
+    const assignedTextureId = this.editor.resourceManager?.textureAssignments?.get(room.id)?.textureId;
+    const wallTextures = this.editor.resourceManager?.resources.textures.walls;
+    const hasTextures = wallTextures && wallTextures.size > 0;
+    const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
+  
+    // Check for legacy texture setting
+    const isLegacyTexture = room.name === "WallTexture";
+    
+    dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Basic info at the top -->
+        <sl-input 
+          id="roomNameInput" 
+          value="${room.name}" 
+          label="Area Name"
+        ></sl-input>
+  
+        <!-- Folder Selection -->
+        <div class="form-group">
+          <label for="folderSelect">Folder</label>
+          <select 
+            id="folderSelect" 
+            class="native-select" 
+            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
+          >
+            <option value="">No Folder</option>
+            ${this.folders.map(folder => `
+              <option value="${folder.id}" ${currentFolder && currentFolder.id === folder.id ? 'selected' : ''}>${folder.name}</option>
+            `).join('')}
+          </select>
         </div>
         
-<-- Dock/Undock position holder -->
-    
-    <div slot="footer">
+        <!-- Tabbed interface -->
+        <sl-tab-group>
+          <!-- Tab 1: Properties -->
+          <sl-tab slot="nav" panel="properties">Properties</sl-tab>
+          <sl-tab-panel name="properties">
+            <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 0;">
+              <!-- Area Type Selection -->
+              <div class="form-group">
+                <label for="areaTypeSelect">Area Type</label>
+                <select 
+                  id="areaTypeSelect" 
+                  class="native-select" 
+                  style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
+                >
+                  <option value="wall" selected>Wall</option>
+                  <option value="water">Water Area</option>
+                </select>
+              </div>
+
+              <div id="typeChangeHelp" style="color: #666; font-size: 0.9em; margin-top: 4px; display: none;"></div>
+              
+              <!-- Wall Properties - Always visible initially -->
+              <div id="wallProperties">
+                ${hasTextures ? `
+                  <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+                    <div style="margin-bottom: 16px;">
+                      <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
+                      
+                      <!-- Wall Height Selector -->
+                      <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                          <sl-checkbox id="isRegularWall" 
+                            ${room.isRegularWall ? 'checked' : ''}
+                            ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
+                            Regular Wall (Full Height)
+                          </sl-checkbox>
+                        </div>
+                        
+                        <!-- Block height slider -->
+                        <sl-range 
+                          id="blockHeight" 
+                          label="Height" 
+                          min="0" max="8" 
+                          step="0.5" 
+                          tooltip="top" 
+                          value="${room.blockHeight || '0'}"
+                          help-text="0 = No raised block, 1 = 1 block, etc."
+                          style="margin-bottom: 16px;"
+                          ${room.isRegularWall ? 'disabled' : ''}
+                        ></sl-range>
+                      </div>
+                      
+                      <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
+                      <div style="max-height: 300px; overflow-y: auto; padding-right: 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+                          ${Array.from(wallTextures.entries()).map(([id, texture]) => `
+                            <div class="texture-option" data-texture-id="${id}" 
+                              style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'}; 
+                              padding: 4px; border-radius: 4px; position: relative;">
+                              <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+                              <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
+                              ${assignedTextureId === id ? `
+                                <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+                                  background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+                                  check_circle
+                                </span>
+                              ` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ` : '<p>No wall textures available</p>'}
+              </div>
+              
+              <!-- Water Properties - Initially hidden -->
+              <div id="waterProperties" style="display: none;">
+                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+                  <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Water Properties</label>
+                    
+                    <!-- Water Depth -->
+                    <sl-range 
+                      id="waterDepth" 
+                      label="Water Depth" 
+                      min="0.1" max="5" 
+                      step="0.1" 
+                      tooltip="top" 
+                      value="${room.waterDepth || '1.0'}"
+                      help-text="Deeper water appears darker and more opaque"
+                      style="margin-bottom: 16px;"
+                    ></sl-range>
+                    
+                    <!-- Water Color -->
+                    <sl-color-picker label="Water Color" value="${room.waterColor || '#4488aa'}" id="waterColor"></sl-color-picker>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sl-tab-panel>
+          
+          <!-- Tab 2: Advanced -->
+          <sl-tab slot="nav" panel="advanced">Advanced</sl-tab>
+          <sl-tab-panel name="advanced">
+            <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 0;">
+              <!-- Legacy options for rectangle rooms -->
+              ${room.shape === 'rectangle' ? `
+                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+                  <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
+                    Set as Wall Texture Source
+                  </sl-checkbox>
+                  <div style="color: #666; margin-top: 8px; font-size: 0.9em;">
+                    Legacy option for compatibility with older maps.
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </sl-tab-panel>
+        </sl-tab-group>
+      </div>
+      
+      <div slot="footer">
         <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
         <sl-button variant="primary" class="save-btn">Save</sl-button>
-    </div>
-`;
-
-
-        // <div style="margin-top: 16px;">
-        //     <sl-button class="dock-room-btn" variant="neutral" style="width: 100%;">
-        //         <span class="material-icons" style="margin-right: 8px;">link</span>
-        //         Dock to Another Room
-        //     </sl-button>
-        // </div>
-
-        document.body.appendChild(dialog);
-
-        return new Promise((resolve) => {
-            const nameInput = dialog.querySelector('#roomNameInput');
-            const folderSelect = dialog.querySelector('#folderSelect');
-            const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
-            const saveBtn = dialog.querySelector('.save-btn');
-            const cancelBtn = dialog.querySelector('.cancel-btn');
-            const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
-
-            const textureOptions = dialog.querySelectorAll('.texture-option');
-            textureOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
-                    option.style.border = '2px solid var(--sl-color-primary-600)';
-                    dialog.selectedTextureId = option.dataset.textureId;
-                });
-            });
-
-
-            const blockHeightSlider = dialog.querySelector('#blockHeight');
-            if (blockHeightSlider) {
-                // Set initial value if room is a raised block
-                if (room.isRaisedBlock && room.blockHeight) {
-                    blockHeightSlider.value = Math.round(room.blockHeight * 2);
-                }
-
-                blockHeightSlider.addEventListener('sl-input', (e) => {
-                    // Update label while sliding
-                    const value = parseInt(e.target.value);
-                    const height = value / 2;
-                    blockHeightSlider.label = `Block Height: ${height} ${height === 1 ? 'block' : 'blocks'}`;
-
-                    // Handle Prop- naming as slider moves
-                    const currentName = nameInput.value.trim();
-                    if (value > 0) {  // If any height is set
-                        if (currentName.startsWith("Wall")) {
-                            nameInput.value = currentName.replace("Wall", "Prop");
-                        } else if (!currentName.startsWith("Prop-")) {
-                            nameInput.value = `Prop-${currentName}`;
-                        }
-                    } else {  // If height is 0
-                        if (currentName.startsWith("Prop-")) {
-                            nameInput.value = currentName.substring(5);  // Remove Prop- prefix
-                        }
-                    }
-                });
-            }
-
-
-            if (isRegularWallCheckbox && blockHeightSlider) {
-                isRegularWallCheckbox.addEventListener('sl-change', (e) => {
-                    if (e.target.checked) {
-                        blockHeightSlider.disabled = true;
-                        blockHeightSlider.value = 0; // Set height to 0 for regular walls
-                    } else {
-                        blockHeightSlider.disabled = false;
-                    }
-                });
-            }
-
-            const handleSave = () => {
-                const newName = nameInput.value.trim();
-                if (newName) {
-                    room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
-
-
-                    // Handle wall type settings
-                    if (isRegularWallCheckbox && isRegularWallCheckbox.checked) {
-                        // Regular wall settings
-                        room.isRegularWall = true;
-                        room.isRaisedBlock = false;
-                        room.blockHeight = 0;
-                        room.type = 'wall';
-                    } else if (blockHeightSlider) {
-                        // Raised block settings
-                        room.isRegularWall = false;
-                        const blockHeight = parseInt(blockHeightSlider.value) / 2;
-                        room.isRaisedBlock = blockHeight > 0;
-                        room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
-                    }
-
-
-
-                    if (dialog.selectedTextureId && this.editor.resourceManager) {
-                        this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
-                    }
-
-                    // Handle folder assignment
-                    if (folderSelect.value) {
-                        this.folders.forEach(folder => {
-                            folder.rooms = folder.rooms.filter(r => r.id !== room.id);
-                        });
-                        const newFolder = this.folders.find(f => f.id === parseInt(folderSelect.value));
-                        if (newFolder) {
-                            newFolder.rooms.push(room);
-                        }
-                    }
-
-                    this.updateLayersList();
-                    dialog.hide();
-                    resolve(true);
-                }
-            };
-
-            saveBtn.addEventListener('click', handleSave);
-            cancelBtn.addEventListener('click', () => {
-                dialog.hide();
-                resolve(false);
-            });
-
-            const dockBtn = dialog.querySelector('.dock-room-btn');
-            if (dockBtn) {
-                dockBtn.addEventListener('click', () => {
-                    dialog.hide();
-                    this.showDockDialog(room);
-                });
-            }
-
-            const undockBtn = dialog.querySelector('.undock-room-btn');
-            if (undockBtn) {
-                undockBtn.addEventListener('click', () => {
-                    this.editor.undockRoom(room);
-                    dialog.hide();
-                });
-            }
-
-            dialog.addEventListener('sl-after-hide', () => dialog.remove());
-            dialog.show();
+      </div>`;
+  
+    document.body.appendChild(dialog);
+  
+    return new Promise((resolve) => {
+      const nameInput = dialog.querySelector('#roomNameInput');
+      const folderSelect = dialog.querySelector('#folderSelect');
+      const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
+      const areaTypeSelect = dialog.querySelector('#areaTypeSelect');
+      const saveBtn = dialog.querySelector('.save-btn');
+      const cancelBtn = dialog.querySelector('.cancel-btn');
+      const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
+      const blockHeightSlider = dialog.querySelector('#blockHeight');
+      const waterDepthSlider = dialog.querySelector('#waterDepth');
+      const waterColorPicker = dialog.querySelector('#waterColor');
+  
+      // Type selection changes visibility of properties sections
+      areaTypeSelect.addEventListener('change', (e) => {
+        const newType = e.target.value;
+        
+        // Toggle properties sections
+        const wallProperties = dialog.querySelector('#wallProperties');
+        const waterProperties = dialog.querySelector('#waterProperties');
+        
+        if (wallProperties) wallProperties.style.display = newType === 'wall' ? 'block' : 'none';
+        if (waterProperties) waterProperties.style.display = newType === 'water' ? 'block' : 'none';
+        
+        // Add help text about the type change
+        const helpText = dialog.querySelector('#typeChangeHelp');
+        if (helpText) {
+          if (newType === 'water') {
+            helpText.textContent = 'Converting to water area. Water depth controls how deep the water appears.';
+          } else {
+            helpText.textContent = 'Converting to wall. Block height controls how tall the wall appears.';
+          }
+          helpText.style.display = 'block';
+        }
+      });
+  
+      // Handle regular wall checkbox toggling
+      if (isRegularWallCheckbox && blockHeightSlider) {
+        isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+          blockHeightSlider.disabled = e.target.checked;
+          if (e.target.checked) {
+            blockHeightSlider.value = 0; // Reset height when regular wall selected
+          }
         });
-    }
+      }
+  
+      // Handle texture selection
+      const textureOptions = dialog.querySelectorAll('.texture-option');
+      textureOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          // Clear previous selections
+          textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
+          
+          // Set new selection
+          option.style.border = '2px solid var(--sl-color-primary-600)';
+          
+          // Store selected texture ID
+          dialog.selectedTextureId = option.dataset.textureId;
+        });
+      });
+  
+      // Handle save button
+      const handleSave = () => {
+        const newName = nameInput.value.trim();
+        if (newName) {
+          // Handle special texture name override
+          room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
+  
+          // Update room type
+          const newType = areaTypeSelect.value;
+          room.type = newType;
+          
+          // Handle property-specific settings
+          if (newType === 'wall') {
+  // Wall settings - make extra sure these are properly set
+  const heightValue = parseFloat(blockHeightSlider.value);
+  
+  // Handle regular walls vs. raised blocks
+  if (isRegularWallCheckbox.checked) {
+    room.isRegularWall = true;
+    room.isRaisedBlock = false;
+    room.blockHeight = 0;
+    console.log("Setting as regular (full height) wall");
+  } else {
+    room.isRegularWall = false;
+    room.isRaisedBlock = heightValue > 0;
+    room.blockHeight = heightValue;
+    console.log(`Setting as raised block with height: ${heightValue}`);
+  }
+            
+            // Remove water properties
+            delete room.waterDepth;
+            delete room.waterColor;
+          } 
+          if (newType === 'water') {
+            // Set BOTH the type AND the name for maximum compatibility
+            room.type = 'water';
+            room.isWaterArea = true;
+            
+            // Force the name to start with "Water" for detection
+            if (!room.name.startsWith("Water")) {
+              room.name = "Water " + room.name;
+            }
+            
+            // Store water properties
+            room.waterDepth = parseFloat(waterDepthSlider.value);
+            room.waterColor = waterColorPicker.value;
+          }
+  
+          // Handle texture assignment
+          if (dialog.selectedTextureId && this.editor.resourceManager) {
+            this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
+          }
+  
+          // Handle folder assignment
+          if (folderSelect.value) {
+            this.folders.forEach(folder => {
+              folder.rooms = folder.rooms.filter(r => r.id !== room.id);
+            });
+            const newFolder = this.folders.find(f => f.id === parseInt(folderSelect.value));
+            if (newFolder) {
+              newFolder.rooms.push(room);
+            }
+          } else {
+            // Remove from all folders if "No Folder" selected
+            this.folders.forEach(folder => {
+              folder.rooms = folder.rooms.filter(r => r.id !== room.id);
+            });
+          }
+  
+          // Update visual appearance based on new type
+          if (room.element) {
+            room.element.classList.remove('wall-room', 'water-room');
+            room.element.classList.add(`${room.type}-room`);
+            
+            if (room.type === 'water') {
+              room.element.classList.add('water-area');
+              room.element.style.backgroundColor = "rgba(0, 100, 255, 0.3)";
+              room.element.style.border = "1px solid rgba(0, 150, 255, 0.7)";
+            } else {
+              room.element.classList.remove('water-area');
+              room.element.style.backgroundColor = "";
+              room.element.style.border = "";
+            }
+          }
+  
+          this.updateLayersList();
+          dialog.hide();
+          resolve(true);
+        }
+      };
+  
+      saveBtn.addEventListener('click', handleSave);
+      cancelBtn.addEventListener('click', () => {
+        dialog.hide();
+        resolve(false);
+      });
+  
+      dialog.addEventListener('sl-after-hide', () => dialog.remove());
+      dialog.show();
+    });
+  }
+
+    //     async showRenameDialog(room) {
+    //         const dialog = document.createElement('sl-dialog');
+    //         dialog.label = 'Area Properties';
+
+    //         // Force type to wall
+    //         room.type = 'wall';
+
+    //         const assignedTextureId = this.editor.resourceManager?.textureAssignments?.get(room.id)?.textureId;
+    //         const wallTextures = this.editor.resourceManager?.resources.textures.walls;
+    //         const hasTextures = wallTextures && wallTextures.size > 0;
+    //         const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
+
+    //         // Check for legacy texture setting
+    //         const isLegacyTexture = room.name === "WallTexture";
+
+    //         dialog.innerHTML = `
+    //         <div style="display: flex; flex-direction: column; gap: 16px;">
+    //             <sl-input 
+    //                 id="roomNameInput" 
+    //                 value="${room.name}" 
+    //                 label="Area Name"
+    //             ></sl-input>
+
+    //             <!-- Folder Selection -->
+    //             <sl-select 
+    //                 id="folderSelect" 
+    //                 label="Folder"
+    //                 value="${currentFolder ? currentFolder.id : ''}"
+    //             >
+    //                 <sl-option value="">No Folder</sl-option>
+    //                 ${this.folders.map(folder => `
+    //                     <sl-option value="${folder.id}">${folder.name}</sl-option>
+    //                 `).join('')}
+    //             </sl-select>
+
+    //             ${hasTextures ? `
+    //               <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+    //                   <div style="margin-bottom: 16px;">
+    //                       <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
+
+    //                       <!-- Modified to show checkbox for regular wall -->
+    //                       <div style="display: flex; flex-direction: column; gap: 12px;">
+    //                           <!-- Wall Height Selector -->
+    //                           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+    //                               <sl-checkbox id="isRegularWall" 
+    //                                   ${room.isRegularWall ? 'checked' : ''}
+    //                                   ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
+    //                                   Regular Wall (Full Height)
+    //                               </sl-checkbox>
+    //                           </div>
+
+    //                           <!-- Block height slider - disabled when isRegularWall is checked -->
+    //                           <sl-range 
+    //                               id="blockHeight" 
+    //                               label="Height" 
+    //                               min="0" max="101" 
+    //                               step="1" 
+    //                               tooltip="top" 
+    //                               value="${room.blockHeight ? Math.round(room.blockHeight * 2) : '0'}"
+    //                               help-text="0 = No raised block, 1 = ½ block, 2 = 1 block, etc."
+    //                               style="margin-bottom: 16px;"
+    //                               ${room.isRegularWall ? 'disabled' : ''}
+    //                           ></sl-range>
+    //                       </div>
+
+    //                       <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
+    //                       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+    //                           ${Array.from(wallTextures.entries()).map(([id, texture]) => `
+    //                               <div class="texture-option" data-texture-id="${id}" 
+    //                                   style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'
+    //             }; padding: 4px; border-radius: 4px; position: relative;">
+    //                                   <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
+    //                                   <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
+    //                                   ${assignedTextureId === id ? `
+    //                                       <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
+    //                                           background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
+    //                                           check_circle
+    //                                       </span>
+    //                                   ` : ''}
+    //                               </div>
+    //                           `).join('')}
+    //                       </div>
+    //                   </div>
+    //               </div>
+    //           ` : ''}
+
+    //             <!-- Legacy Wall Texture Option -->
+    //             ${room.shape === 'rectangle' ? `
+    //                 <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+    //                     <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
+    //                         Set as Wall Texture Source
+    //                     </sl-checkbox>
+    //                 </div>
+    //             ` : ''}
+    //         </div>
+
+    // <-- Dock/Undock position holder -->
+
+    //     <div slot="footer">
+    //         <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+    //         <sl-button variant="primary" class="save-btn">Save</sl-button>
+    //     </div>
+    // `;
+
+
+    //         // <div style="margin-top: 16px;">
+    //         //     <sl-button class="dock-room-btn" variant="neutral" style="width: 100%;">
+    //         //         <span class="material-icons" style="margin-right: 8px;">link</span>
+    //         //         Dock to Another Room
+    //         //     </sl-button>
+    //         // </div>
+
+    //         document.body.appendChild(dialog);
+
+    //         return new Promise((resolve) => {
+    //             const nameInput = dialog.querySelector('#roomNameInput');
+    //             const folderSelect = dialog.querySelector('#folderSelect');
+    //             const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
+    //             const saveBtn = dialog.querySelector('.save-btn');
+    //             const cancelBtn = dialog.querySelector('.cancel-btn');
+    //             const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
+
+    //             const textureOptions = dialog.querySelectorAll('.texture-option');
+    //             textureOptions.forEach(option => {
+    //                 option.addEventListener('click', () => {
+    //                     textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
+    //                     option.style.border = '2px solid var(--sl-color-primary-600)';
+    //                     dialog.selectedTextureId = option.dataset.textureId;
+    //                 });
+    //             });
+
+
+    //             const blockHeightSlider = dialog.querySelector('#blockHeight');
+    //             if (blockHeightSlider) {
+    //                 // Set initial value if room is a raised block
+    //                 if (room.isRaisedBlock && room.blockHeight) {
+    //                     blockHeightSlider.value = Math.round(room.blockHeight * 2);
+    //                 }
+
+    //                 blockHeightSlider.addEventListener('sl-input', (e) => {
+    //                     // Update label while sliding
+    //                     const value = parseInt(e.target.value);
+    //                     const height = value / 2;
+    //                     blockHeightSlider.label = `Block Height: ${height} ${height === 1 ? 'block' : 'blocks'}`;
+
+    //                     // Handle Prop- naming as slider moves
+    //                     const currentName = nameInput.value.trim();
+    //                     if (value > 0) {  // If any height is set
+    //                         if (currentName.startsWith("Wall")) {
+    //                             nameInput.value = currentName.replace("Wall", "Prop");
+    //                         } else if (!currentName.startsWith("Prop-")) {
+    //                             nameInput.value = `Prop-${currentName}`;
+    //                         }
+    //                     } else {  // If height is 0
+    //                         if (currentName.startsWith("Prop-")) {
+    //                             nameInput.value = currentName.substring(5);  // Remove Prop- prefix
+    //                         }
+    //                     }
+    //                 });
+    //             }
+
+
+    //             if (isRegularWallCheckbox && blockHeightSlider) {
+    //                 isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+    //                     if (e.target.checked) {
+    //                         blockHeightSlider.disabled = true;
+    //                         blockHeightSlider.value = 0; // Set height to 0 for regular walls
+    //                     } else {
+    //                         blockHeightSlider.disabled = false;
+    //                     }
+    //                 });
+    //             }
+
+    //             const handleSave = () => {
+    //                 const newName = nameInput.value.trim();
+    //                 if (newName) {
+    //                     room.name = setAsTextureCheckbox?.checked ? "WallTexture" : newName;
+
+
+    //                     // Handle wall type settings
+    //                     if (isRegularWallCheckbox && isRegularWallCheckbox.checked) {
+    //                         // Regular wall settings
+    //                         room.isRegularWall = true;
+    //                         room.isRaisedBlock = false;
+    //                         room.blockHeight = 0;
+    //                         room.type = 'wall';
+    //                     } else if (blockHeightSlider) {
+    //                         // Raised block settings
+    //                         room.isRegularWall = false;
+    //                         const blockHeight = parseInt(blockHeightSlider.value) / 2;
+    //                         room.isRaisedBlock = blockHeight > 0;
+    //                         room.blockHeight = room.isRaisedBlock ? blockHeight : undefined;
+    //                     }
+
+
+
+    //                     if (dialog.selectedTextureId && this.editor.resourceManager) {
+    //                         this.editor.resourceManager.assignTextureToStructure(room.id, dialog.selectedTextureId, 'walls');
+    //                     }
+
+    //                     // Handle folder assignment
+    //                     if (folderSelect.value) {
+    //                         this.folders.forEach(folder => {
+    //                             folder.rooms = folder.rooms.filter(r => r.id !== room.id);
+    //                         });
+    //                         const newFolder = this.folders.find(f => f.id === parseInt(folderSelect.value));
+    //                         if (newFolder) {
+    //                             newFolder.rooms.push(room);
+    //                         }
+    //                     }
+
+    //                     this.updateLayersList();
+    //                     dialog.hide();
+    //                     resolve(true);
+    //                 }
+    //             };
+
+    //             saveBtn.addEventListener('click', handleSave);
+    //             cancelBtn.addEventListener('click', () => {
+    //                 dialog.hide();
+    //                 resolve(false);
+    //             });
+
+    //             const dockBtn = dialog.querySelector('.dock-room-btn');
+    //             if (dockBtn) {
+    //                 dockBtn.addEventListener('click', () => {
+    //                     dialog.hide();
+    //                     this.showDockDialog(room);
+    //                 });
+    //             }
+
+    //             const undockBtn = dialog.querySelector('.undock-room-btn');
+    //             if (undockBtn) {
+    //                 undockBtn.addEventListener('click', () => {
+    //                     this.editor.undockRoom(room);
+    //                     dialog.hide();
+    //                 });
+    //             }
+
+    //             dialog.addEventListener('sl-after-hide', () => dialog.remove());
+    //             dialog.show();
+    //         });
+    //     }
 
     async showDockDialog(room) {
         const dialog = document.createElement('sl-dialog');
