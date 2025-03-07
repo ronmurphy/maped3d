@@ -976,18 +976,111 @@ class Scene3DController {
   }
 
 
+  // createPropMesh(propData) {
+  //   console.log(`Creating prop mesh with ID: ${propData.id}`);
+
+  //   return new Promise((resolve, reject) => {
+  //     const textureLoader = new THREE.TextureLoader();
+
+  //     textureLoader.load(
+  //       propData.image,
+  //       (texture) => {
+  //         // Calculate dimensions based on texture aspect ratio
+  //         let width, height;
+
+  //         if (texture.image) {
+  //           const aspectRatio = texture.image.width / texture.image.height;
+  //           width = propData.scale || 1;
+  //           height = width / aspectRatio;
+  //         } else {
+  //           // Fallback if image dimensions aren't available
+  //           width = propData.scale || 1;
+  //           height = propData.scale || 1;
+  //         }
+
+  //         const geometry = new THREE.PlaneGeometry(width, height);
+  //         const material = new THREE.MeshBasicMaterial({
+  //           map: texture,
+  //           transparent: true,
+  //           side: THREE.DoubleSide,
+  //           alphaTest: 0.1 // Help with transparency sorting
+  //         });
+
+  //         const mesh = new THREE.Mesh(geometry, material);
+
+  //         // Position in world space
+  //         const x = propData.x / 50 - this.boxWidth / 2;
+  //         const z = propData.y / 50 - this.boxDepth / 2;
+
+  //         // Get elevation at this point
+  //         const { elevation } = this.getElevationAtPoint(x, z);
+
+  //         // Handle horizontal vs vertical orientation
+  //         if (propData.isHorizontal) {
+  //           // Horizontal prop - lie flat on surface
+  //           mesh.rotation.x = -Math.PI / 2;
+
+  //           // Set position slightly above surface
+  //           const y = elevation + 0.02;
+  //           mesh.position.set(x, y, z);
+
+  //           // Apply rotation around Y axis (which is now the up vector)
+  //           mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
+  //         }
+  //         else if (propData.isWallMounted) {
+  //           // Wall-mounted prop
+  //           const y = propData.height;
+  //           mesh.position.set(x, y, z);
+
+  //           // Rotate to face away from wall
+  //           mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
+  //         }
+  //         else {
+  //           // Vertical prop (original behavior)
+  //           const y = propData.height + elevation;
+  //           mesh.position.set(x, y, z);
+
+  //           // Standard rotation around Y axis
+  //           mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
+  //         }
+
+  //         // Add metadata
+  //         mesh.userData = {
+  //           type: 'prop',
+  //           id: propData.id,
+  //           name: propData.name || 'Prop',
+  //           isHorizontal: propData.isHorizontal || false,
+  //           isWallMounted: propData.isWallMounted || false,
+  //           gridX: propData.x,
+  //           gridY: propData.y
+  //         };
+
+  //         mesh.userData.debugId = Date.now(); // Add a unique timestamp
+  //         console.log(`Prop mesh created with debugId: ${mesh.userData.debugId}`);
+
+  //         resolve(mesh);
+  //       },
+  //       undefined,
+  //       (error) => {
+  //         console.error("Error loading prop texture:", error);
+  //         reject(error);
+  //       }
+  //     );
+  //   });
+  // }
+
   createPropMesh(propData) {
     console.log(`Creating prop mesh with ID: ${propData.id}`);
-
+  
     return new Promise((resolve, reject) => {
       const textureLoader = new THREE.TextureLoader();
-
+  
       textureLoader.load(
         propData.image,
         (texture) => {
           // Calculate dimensions based on texture aspect ratio
           let width, height;
-
+  
           if (texture.image) {
             const aspectRatio = texture.image.width / texture.image.height;
             width = propData.scale || 1;
@@ -997,7 +1090,7 @@ class Scene3DController {
             width = propData.scale || 1;
             height = propData.scale || 1;
           }
-
+  
           const geometry = new THREE.PlaneGeometry(width, height);
           const material = new THREE.MeshBasicMaterial({
             map: texture,
@@ -1005,25 +1098,25 @@ class Scene3DController {
             side: THREE.DoubleSide,
             alphaTest: 0.1 // Help with transparency sorting
           });
-
+  
           const mesh = new THREE.Mesh(geometry, material);
-
+  
           // Position in world space
           const x = propData.x / 50 - this.boxWidth / 2;
           const z = propData.y / 50 - this.boxDepth / 2;
-
+  
           // Get elevation at this point
           const { elevation } = this.getElevationAtPoint(x, z);
-
+  
           // Handle horizontal vs vertical orientation
           if (propData.isHorizontal) {
             // Horizontal prop - lie flat on surface
             mesh.rotation.x = -Math.PI / 2;
-
+  
             // Set position slightly above surface
             const y = elevation + 0.02;
             mesh.position.set(x, y, z);
-
+  
             // Apply rotation around Y axis (which is now the up vector)
             mesh.rotation.z = (propData.rotation || 0) * Math.PI / 180;
           }
@@ -1031,7 +1124,7 @@ class Scene3DController {
             // Wall-mounted prop
             const y = propData.height;
             mesh.position.set(x, y, z);
-
+  
             // Rotate to face away from wall
             mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
           }
@@ -1039,11 +1132,11 @@ class Scene3DController {
             // Vertical prop (original behavior)
             const y = propData.height + elevation;
             mesh.position.set(x, y, z);
-
+  
             // Standard rotation around Y axis
             mesh.rotation.y = (propData.rotation || 0) * Math.PI / 180;
           }
-
+  
           // Add metadata
           mesh.userData = {
             type: 'prop',
@@ -1054,10 +1147,21 @@ class Scene3DController {
             gridX: propData.x,
             gridY: propData.y
           };
-
+  
           mesh.userData.debugId = Date.now(); // Add a unique timestamp
           console.log(`Prop mesh created with debugId: ${mesh.userData.debugId}`);
-
+  
+          // IMPORTANT: Check if this prop should have light effects
+          if (this.checkIfLightSource(propData.name || '')) {
+            // If it has stored light data, use that; otherwise auto-detect
+            if (propData.lightSourceData) {
+              this.addLightEffectToProp(mesh, propData.lightSourceData);
+            } else {
+              // Add to list for auto-detection
+              setTimeout(() => this.addLightEffectToProp(mesh), 100);
+            }
+          }
+  
           resolve(mesh);
         },
         undefined,
@@ -3362,6 +3466,10 @@ class Scene3DController {
 
     console.log('Adding item to inventory:', prop);
 
+      // IMPORTANT: Before removing the prop, check if it has light effects
+  const isLightSource = this.checkIfLightSource(prop.name || '');
+  const lightSourceData = isLightSource ? this.removeLightEffects(prop.id) : null;
+
     // Create inventory item element
     const itemElement = document.createElement('div');
     itemElement.className = 'inventory-item';
@@ -3490,7 +3598,9 @@ class Scene3DController {
     this.inventory.set(prop.id, {
       id: prop.id,
       prop: prop,
-      element: itemElement
+      element: itemElement,
+      wasLightSource: isLightSource,
+      lightSourceData: lightSourceData
     });
 
     // Add to grid and hide empty message
@@ -3776,28 +3886,85 @@ class Scene3DController {
     return Math.atan2(normal.x, normal.z) * (180 / Math.PI);
   }
 
+  // dropInventoryItem(itemId, placementType = 'vertical') {
+  //   if (!this.inventory.has(itemId)) {
+  //     console.warn('Cannot drop item, not found in inventory:', itemId);
+  //     return;
+  //   }
+
+  //   const item = this.inventory.get(itemId);
+  //   console.log('Dropping inventory item:', item.prop);
+
+  //   // Create prop in the world at player's position
+  //   const playerPos = this.camera.position.clone();
+
+  //   // Add a small offset in front of the player
+  //   const direction = new THREE.Vector3();
+  //   this.camera.getWorldDirection(direction);
+  //   direction.multiplyScalar(1); // 1 unit in front
+  //   playerPos.add(direction);
+
+  //   // Convert back to grid coordinates
+  //   const gridX = Math.round((playerPos.x + this.boxWidth / 2) * 50);
+  //   const gridY = Math.round((playerPos.z + this.boxDepth / 2) * 50);
+
+  //   // Create prop data
+  //   const propData = {
+  //     id: `dropped-${Date.now()}`,
+  //     x: gridX,
+  //     y: gridY,
+  //     image: item.prop.image,
+  //     name: item.prop.name,
+  //     description: item.prop.description,
+  //     scale: item.prop.scale || 1,
+  //     height: placementType === 'horizontal' ? 0.05 : 1, // Lower height for horizontal items
+  //     isHorizontal: placementType === 'horizontal', // New flag for horizontal placement
+  //     rotation: 0
+  //   };
+
+  //   // Create and add prop mesh
+  //   this.createPropMesh(propData)
+  //     .then(mesh => {
+  //       this.scene.add(mesh);
+  //       console.log('Dropped item added to scene at:', { x: gridX, y: gridY, placementType });
+  //     })
+  //     .catch(error => {
+  //       console.error('Error creating dropped prop:', error);
+  //     });
+
+  //   // Remove from inventory
+  //   this.removeFromInventory(itemId);
+
+  //   // Show notification
+  //   this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
+  // }
+
   dropInventoryItem(itemId, placementType = 'vertical') {
     if (!this.inventory.has(itemId)) {
       console.warn('Cannot drop item, not found in inventory:', itemId);
       return;
     }
-
+  
     const item = this.inventory.get(itemId);
     console.log('Dropping inventory item:', item.prop);
-
+  
+    // Get light source info before removing from inventory
+    const wasLightSource = item.wasLightSource;
+    const lightSourceData = item.lightSourceData;
+  
     // Create prop in the world at player's position
     const playerPos = this.camera.position.clone();
-
+  
     // Add a small offset in front of the player
     const direction = new THREE.Vector3();
     this.camera.getWorldDirection(direction);
     direction.multiplyScalar(1); // 1 unit in front
     playerPos.add(direction);
-
+  
     // Convert back to grid coordinates
     const gridX = Math.round((playerPos.x + this.boxWidth / 2) * 50);
     const gridY = Math.round((playerPos.z + this.boxDepth / 2) * 50);
-
+  
     // Create prop data
     const propData = {
       id: `dropped-${Date.now()}`,
@@ -3809,9 +3976,12 @@ class Scene3DController {
       scale: item.prop.scale || 1,
       height: placementType === 'horizontal' ? 0.05 : 1, // Lower height for horizontal items
       isHorizontal: placementType === 'horizontal', // New flag for horizontal placement
-      rotation: 0
+      rotation: 0,
+      // Add light source data if applicable
+      wasLightSource: wasLightSource,
+      lightSourceData: lightSourceData
     };
-
+  
     // Create and add prop mesh
     this.createPropMesh(propData)
       .then(mesh => {
@@ -3821,10 +3991,10 @@ class Scene3DController {
       .catch(error => {
         console.error('Error creating dropped prop:', error);
       });
-
+  
     // Remove from inventory
     this.removeFromInventory(itemId);
-
+  
     // Show notification
     this.showNotification(`Dropped ${item.prop.name || 'Item'}`);
   }
@@ -3836,6 +4006,9 @@ class Scene3DController {
     }
 
     const item = this.inventory.get(itemId);
+
+    const wasLightSource = item.wasLightSource;
+    const lightSourceData = item.lightSourceData;
 
     // Create prop data for wall placement
     const propData = {
@@ -3849,7 +4022,9 @@ class Scene3DController {
       height: wallInfo.point.y, // Place at hit point height
       rotation: this.getWallRotation(wallInfo.normal), // Align with wall
       isWallMounted: true, // New flag
-      wallNormal: wallInfo.normal.clone() // Store for future reference
+      wallNormal: wallInfo.normal.clone(), // Store for future reference
+      wasLightSource: wasLightSource,
+      lightSourceData: lightSourceData
     };
 
     this.createPropMesh(propData)
@@ -6892,6 +7067,158 @@ updateTexturesForQualityLevel(level) {
     });
 
     console.log(`Auto-detected ${lightSourceCount} light sources from prop names`);
+  }
+
+  checkIfLightSource(name) {
+    // Convert to lowercase for case-insensitive matching
+    const lowerName = name.toLowerCase();
+    
+    // Same keywords from your autoDetectLightSources method
+    const lightKeywords = [
+      'fire', 'torch', 'flame', 'candle', 'lantern', 'campfire',
+      'crystal', 'gem', 'magic', 'arcane', 'rune', 'glow',
+      'lava', 'magma', 'ember', 'radiant', 'holy'
+    ];
+    
+    // Return true if name contains any of the keywords
+    return lightKeywords.some(keyword => lowerName.includes(keyword));
+  }
+  
+  // 3. Add this method to remove light effects and store their data
+  removeLightEffects(propId) {
+    // Skip if no light sources tracked
+    if (!this.lightSources || this.lightSources.size === 0) {
+      return null;
+    }
+  
+    // Find light source data for this prop
+    const lightData = this.lightSources.get(propId);
+    if (!lightData) {
+      return null;
+    }
+  
+    console.log(`Removing light effects for ${propId}`);
+  
+    // Store color and intensity for later recreation
+    const lightSourceData = {
+      color: lightData.light.color.getHex(),
+      intensity: lightData.originalIntensity,
+      distance: lightData.originalDistance
+    };
+  
+    // Remove the light from scene
+    if (lightData.light && lightData.light.parent) {
+      lightData.light.parent.remove(lightData.light);
+    }
+  
+    // Remove any particle effects
+    if (lightData.prop && lightData.prop.userData && lightData.prop.userData.effects) {
+      lightData.prop.userData.effects.forEach(effect => {
+        if (effect && effect.parent) {
+          effect.parent.remove(effect);
+        }
+      });
+    }
+  
+    // Delete from tracking map
+    this.lightSources.delete(propId);
+  
+    return lightSourceData;
+  }
+
+  addLightEffectToProp(prop, lightData = null) {
+    if (!prop || !prop.userData) return;
+    
+    console.log(`Adding light effect to prop: ${prop.userData.name || 'unnamed'}`);
+    
+    // If no light source container exists, create one
+    if (!this.lightSourcesContainer) {
+      this.lightSourcesContainer = new THREE.Group();
+      this.lightSourcesContainer.name = 'lightSources';
+      this.scene.add(this.lightSourcesContainer);
+    }
+    
+    // If no light sources tracking map exists, create one
+    if (!this.lightSources) {
+      this.lightSources = new Map();
+    }
+    
+    // Determine light properties based on prop name or provided data
+    let lightColor, lightIntensity, lightDistance;
+    
+    if (lightData) {
+      // Use provided light data
+      lightColor = lightData.color;
+      lightIntensity = lightData.intensity;
+      lightDistance = lightData.distance;
+    } else {
+      // Auto-detect based on prop name
+      const propName = prop.userData.name ? prop.userData.name.toLowerCase() : '';
+      
+      // Default light properties
+      lightColor = 0xff6600;  // Orange for fire
+      lightIntensity = 1.2;
+      lightDistance = 5;
+      
+      // Customize based on keywords
+      if (propName.includes('fire') || propName.includes('torch') || 
+          propName.includes('flame') || propName.includes('candle') || 
+          propName.includes('lantern') || propName.includes('campfire')) {
+        lightColor = 0xff6600;
+        lightIntensity = 1.5;
+        lightDistance = 8;
+      } else if (propName.includes('crystal') || propName.includes('gem') || 
+                 propName.includes('magic') || propName.includes('arcane') || 
+                 propName.includes('rune') || propName.includes('glow')) {
+        lightColor = 0x66ccff;
+        lightIntensity = 1.2;
+        lightDistance = 6;
+      } else if (propName.includes('lava') || propName.includes('magma') || 
+                 propName.includes('ember')) {
+        lightColor = 0xff3300;
+        lightIntensity = 1.3;
+        lightDistance = 7;
+      } else if (propName.includes('radiant') || propName.includes('holy')) {
+        lightColor = 0xffe599;
+        lightIntensity = 1.2;
+        lightDistance = 6;
+      }
+    }
+    
+    // Create the light
+    const light = new THREE.PointLight(
+      lightColor,
+      lightIntensity,
+      lightDistance,
+      2  // Decay
+    );
+    
+    // Position the light at or slightly above the prop
+    light.position.copy(prop.position);
+    
+    // Move up slightly if not already above ground
+    if (light.position.y < 1.5 && !prop.userData.isHorizontal) {
+      light.position.y += 0.5;
+    }
+    
+    // Add light to scene
+    this.lightSourcesContainer.add(light);
+    
+    // Mark this prop as having a light
+    prop.userData.hasLight = true;
+    
+    // Store reference to this light
+    this.lightSources.set(prop.userData.id, {
+      light,
+      prop: prop,
+      originalIntensity: lightIntensity,
+      originalDistance: lightDistance
+    });
+    
+    // Create glow effect
+    this.createFireGlowEffect(prop, lightColor);
+    
+    return light;
   }
 
   // Create fire glow effect for auto-detected props
