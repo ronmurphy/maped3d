@@ -1164,17 +1164,34 @@ initShaderEffects() {
           mesh.userData.debugId = Date.now(); // Add a unique timestamp
           console.log(`Prop mesh created with debugId: ${mesh.userData.debugId}`);
   
-          // IMPORTANT: Check if this prop should have light effects
-          if (this.checkIfLightSource(propData.name || '')) {
-            // If it has stored light data, use that; otherwise auto-detect
-            if (propData.lightSourceData) {
-              this.addLightEffectToProp(mesh, propData.lightSourceData);
+          // // IMPORTANT: Check if this prop should have light effects
+          // if (this.checkIfLightSource(propData.name || '')) {
+          //   // If it has stored light data, use that; otherwise auto-detect
+          //   if (propData.lightSourceData) {
+          //     this.addLightEffectToProp(mesh, propData.lightSourceData);
+          //   } else {
+          //     // Add to list for auto-detection
+          //     setTimeout(() => this.addLightEffectToProp(mesh), 100);
+          //   }
+          // }
+  
+          if (this.shaderEffectsManager && this.shaderEffectsManager.enabled) {
+            // If we have stored effect data, use that
+            if (propData.effectData) {
+              // Use specific effect data if available
+              const effectType = propData.effectData.type || 'propGlow';
+              const definition = this.shaderEffectsManager.effectDefinitions.get(effectType);
+              if (definition) {
+                this.shaderEffectsManager.applyEffect(mesh, effectType);
+              }
             } else {
-              // Add to list for auto-detection
-              setTimeout(() => this.addLightEffectToProp(mesh), 100);
+              // Otherwise let ShaderEffectsManager detect appropriate effects
+              setTimeout(() => {
+                this.shaderEffectsManager.detectAndApplyPropEffects(mesh);
+              }, 100);
             }
           }
-  
+
           resolve(mesh);
         },
         undefined,
@@ -2729,46 +2746,104 @@ initShaderEffects() {
           }
           break;
 
-        case "prop":
-          if (marker.data?.texture) {
-            console.log(`Processing prop marker: ${marker.id}`);
-            const propData = {
-              id: marker.id,
-              x: marker.x,
-              y: marker.y,
-              image: marker.data.texture.data,
-              rotation: marker.data.prop?.position?.rotation || 0,
-              scale: marker.data.prop?.scale || 1,
-              height: marker.data.prop?.height || 1,
-              isHorizontal: marker.data.prop?.isHorizontal || false,
-              name: marker.data.texture.name || "Prop", // Include the name from the texture data
-              description: marker.data.prop?.description || "A mysterious item."
-            };
+        // case "prop":
+        //   if (marker.data?.texture) {
+        //     console.log(`Processing prop marker: ${marker.id}`);
+        //     const propData = {
+        //       id: marker.id,
+        //       x: marker.x,
+        //       y: marker.y,
+        //       image: marker.data.texture.data,
+        //       rotation: marker.data.prop?.position?.rotation || 0,
+        //       scale: marker.data.prop?.scale || 1,
+        //       height: marker.data.prop?.height || 1,
+        //       isHorizontal: marker.data.prop?.isHorizontal || false,
+        //       name: marker.data.texture.name || "Prop", // Include the name from the texture data
+        //       description: marker.data.prop?.description || "A mysterious item."
+        //     };
 
-            // Create prop mesh and add to scene
-            propPromises.push(
-              this.createPropMesh(propData)
-                .then(mesh => {
-                  if (mesh) {
-                    this.scene.add(mesh);
-                    console.log(`Added prop mesh: ${marker.id}`);
-            // NEW CODE: Queue for effects processing
-            if (this.shaderEffects) {
+        //     this.updatePropsWithLightingInfo()
+
+        //     // Create prop mesh and add to scene
+        //     propPromises.push(
+        //       this.createPropMesh(propData)
+        //         .then(mesh => {
+        //           if (mesh) {
+        //             this.scene.add(mesh);
+        //             console.log(`Added prop mesh: ${marker.id}`);
+        //     // NEW CODE: Queue for effects processing
+        //     if (this.shaderEffects) {
+        //       setTimeout(() => {
+        //         this.shaderEffects.processObject(mesh);
+        //       }, 50); // Small delay to ensure mesh is properly added
+        //     }
+        //   }
+        //   return mesh;
+
+        //         })
+        //         .catch(error => {
+        //           console.error(`Error creating prop ${marker.id}:`, error);
+        //           return null;
+        //         })
+        //     );
+        //   }
+        //   break;
+
+        case "prop":
+  if (marker.data?.texture) {
+    console.log(`Processing prop marker: ${marker.id}`);
+    const propData = {
+      id: marker.id,
+      x: marker.x,
+      y: marker.y,
+      image: marker.data.texture.data,
+      rotation: marker.data.prop?.position?.rotation || 0,
+      scale: marker.data.prop?.scale || 1,
+      height: marker.data.prop?.height || 1,
+      isHorizontal: marker.data.prop?.isHorizontal || false,
+      name: marker.data.texture.name || "Prop", // Include the name from the texture data
+      description: marker.data.prop?.description || "A mysterious item."
+    };
+
+    // Check if this should be a light source based on name
+    if (this.shaderEffects) {
+      const effectType = this.shaderEffects.getEffectTypeForName(propData.name);
+      propData.isLightSource = !!effectType;
+      propData.lightSourceData = effectType ? { type: effectType } : null;
+    } else {
+      // Default values if no shader effects manager
+      propData.isLightSource = false;
+      propData.lightSourceData = null;
+    }
+
+    // Create prop mesh and add to scene
+    propPromises.push(
+      this.createPropMesh(propData)
+        .then(mesh => {
+          if (mesh) {
+            // Ensure userData has the lighting properties
+            mesh.userData.isLightSource = propData.isLightSource;
+            mesh.userData.lightSourceData = propData.lightSourceData;
+            
+            this.scene.add(mesh);
+            console.log(`Added prop mesh: ${marker.id}`);
+            
+            // Apply shader effects if needed
+            if (this.shaderEffects && propData.isLightSource) {
               setTimeout(() => {
                 this.shaderEffects.processObject(mesh);
               }, 50); // Small delay to ensure mesh is properly added
             }
           }
           return mesh;
-
-                })
-                .catch(error => {
-                  console.error(`Error creating prop ${marker.id}:`, error);
-                  return null;
-                })
-            );
-          }
-          break;
+        })
+        .catch(error => {
+          console.error(`Error creating prop ${marker.id}:`, error);
+          return null;
+        })
+    );
+  }
+  break;
 
 
         // First, improve teleporter creation in processAllMarkers
@@ -3616,14 +3691,38 @@ initShaderEffects() {
       this.showItemDetails(prop);
     };
 
-    // Add to inventory map and grid
+    if (!prop || this.inventory.has(prop.id)) return false;
+
+    console.log("Adding to inventory:", prop);
+  
+  
+    // Get prop name from userData or default to "Item"
+    const propName = prop.userData?.name || "Item";
+    
+    // FIXED: Check if prop is a light source and get data safely
+    const isLightSource = prop.userData?.isLightSource || false;
+    const lightSourceData = prop.userData?.lightSourceData || null;
+  
+    // Determine if the prop had shader effects applied
+    const hasShaderEffects = prop.userData?.effects && prop.userData.effects.length > 0;
+  
+    // Create item with default values for lighting properties
     this.inventory.set(prop.id, {
       id: prop.id,
       prop: prop,
       element: itemElement,
-      wasLightSource: isLightSource,
-      lightSourceData: lightSourceData
+      wasLightSource: isLightSource || hasShaderEffects,
+      lightSourceData: lightSourceData || hasShaderEffects ? { type: 'auto' } : null
     });
+
+    // // Add to inventory map and grid
+    // this.inventory.set(prop.id, {
+    //   id: prop.id,
+    //   prop: prop,
+    //   element: itemElement,
+    //   wasLightSource: isLightSource,
+    //   lightSourceData: lightSourceData
+    // });
 
     // Add to grid and hide empty message
     const grid = this.inventoryDrawer.querySelector('.inventory-grid');
@@ -4869,7 +4968,7 @@ createFootstepEffect() {
       
       // Double-check position for valid values
       if (!isNaN(footstepPos.x) && !isNaN(footstepPos.y) && !isNaN(footstepPos.z)) {
-        console.log("Creating footstep effect at:", footstepPos);
+        // console.log("Creating footstep effect at:", footstepPos);
         
         // Create the dust effect
         this.shaderEffects.createDustEffect(footstepPos, {
@@ -7241,6 +7340,57 @@ updateTexturesForQualityLevel(level) {
   //   console.log(`Auto-detected ${lightSourceCount} light sources from prop names`);
   // }
 
+  updatePropsWithLightingInfo() {
+    if (!this.shaderEffects) return;
+    
+    console.log("Scanning scene for props that need lighting information...");
+    let updated = 0;
+    
+    // Find all prop objects
+    this.scene.traverse(object => {
+      if (object.userData && object.userData.type === 'prop') {
+        const name = object.userData.name || "Prop";
+        
+        // Check if it should be a light source based on name
+        const effectType = this.shaderEffects.getEffectTypeForName(name);
+        
+        // Only add properties if they don't exist
+        if (object.userData.isLightSource === undefined) {
+          object.userData.isLightSource = !!effectType;
+          updated++;
+        }
+        
+        if (object.userData.lightSourceData === undefined) {
+          object.userData.lightSourceData = effectType ? { type: effectType } : null;
+          updated++;
+        }
+      }
+    });
+    
+    console.log(`Updated ${updated} props with lighting information`);
+  }
+
+  // updatePropsWithLightingInfo() {
+  //   // Find all prop objects
+  //   this.scene.traverse(object => {
+  //     if (object.userData && object.userData.type === 'prop') {
+  //       // Check if it should be a light source based on name
+  //       const shouldBeLight = this.shaderEffectsManager.getEffectTypeForName(object.name || object.userData.name || '');
+        
+  //       // Only add properties if they don't exist
+  //       if (object.userData.isLightSource === undefined) {
+  //         object.userData.isLightSource = !!shouldBeLight;
+  //       }
+        
+  //       if (object.userData.lightSourceData === undefined) {
+  //         object.userData.lightSourceData = shouldBeLight ? { type: shouldBeLight } : null;
+  //       }
+  //     }
+  //   });
+    
+  //   console.log("Updated all props with lighting information");
+  // }
+
   autoDetectLightSources() {
     console.log('Auto-detecting light sources via ShaderEffectsManager...');
     
@@ -7425,193 +7575,194 @@ updateTexturesForQualityLevel(level) {
     });
     
     // Create glow effect
-    this.createFireGlowEffect(prop, lightColor);
+    // this.createFireGlowEffect(prop, lightColor);
+    shaderEffectsManager.detectandapplyLightEffects(prop, lightColor);
     
     return light;
   }
 
   // Create fire glow effect for auto-detected props
-  createFireGlowEffect(prop, color = 0xff6600) {
-    // Skip if lighting effects are disabled
-    if (this.preferences && this.preferences.disableLighting) return;
+  // createFireGlowEffect(prop, color = 0xff6600) {
+  //   // Skip if lighting effects are disabled
+  //   if (this.preferences && this.preferences.disableLighting) return;
 
-    // Create emissive material for the prop if it has a standard material
-    if (prop.material && prop.material.isMeshStandardMaterial) {
-      // Store original material properties
-      if (!prop.userData.originalEmissive) {
-        prop.userData.originalEmissive = prop.material.emissive.clone();
-        prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
-      }
+  //   // Create emissive material for the prop if it has a standard material
+  //   if (prop.material && prop.material.isMeshStandardMaterial) {
+  //     // Store original material properties
+  //     if (!prop.userData.originalEmissive) {
+  //       prop.userData.originalEmissive = prop.material.emissive.clone();
+  //       prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
+  //     }
 
-      // Make the prop itself glow a bit
-      prop.material.emissive = new THREE.Color(color);
-      prop.material.emissiveIntensity = 0.5;
-    }
+  //     // Make the prop itself glow a bit
+  //     prop.material.emissive = new THREE.Color(color);
+  //     prop.material.emissiveIntensity = 0.5;
+  //   }
 
-    // Create glowing particle effect
-    const particleCount = 15;
-    const positions = new Float32Array(particleCount * 3);
-    const particleColors = new Float32Array(particleCount * 3); // Renamed to avoid conflict
-    const sizes = new Float32Array(particleCount);
+  //   // Create glowing particle effect
+  //   const particleCount = 15;
+  //   const positions = new Float32Array(particleCount * 3);
+  //   const particleColors = new Float32Array(particleCount * 3); // Renamed to avoid conflict
+  //   const sizes = new Float32Array(particleCount);
 
-    // Convert color to RGB components
-    const colorObj = new THREE.Color(color);
-    const r = colorObj.r;
-    const g = colorObj.g;
-    const b = colorObj.b;
+  //   // Convert color to RGB components
+  //   const colorObj = new THREE.Color(color);
+  //   const r = colorObj.r;
+  //   const g = colorObj.g;
+  //   const b = colorObj.b;
 
-    // Create random particles around the prop
-    for (let i = 0; i < particleCount; i++) {
-      const i3 = i * 3;
+  //   // Create random particles around the prop
+  //   for (let i = 0; i < particleCount; i++) {
+  //     const i3 = i * 3;
 
-      // Position particles in small sphere around the prop's upper part
-      const radius = 0.3;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.random() * Math.PI;
+  //     // Position particles in small sphere around the prop's upper part
+  //     const radius = 0.3;
+  //     const theta = Math.random() * Math.PI * 2;
+  //     const phi = Math.random() * Math.PI;
 
-      positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
-      positions[i3 + 1] = 0.2 + Math.random() * 0.2; // Slightly above
-      positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+  //     positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+  //     positions[i3 + 1] = 0.2 + Math.random() * 0.2; // Slightly above
+  //     positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
 
-      // Colors - base color with some variation
-      particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
-      particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
-      particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
+  //     // Colors - base color with some variation
+  //     particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
+  //     particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
+  //     particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
 
-      // Random sizes
-      sizes[i] = 0.05 + Math.random() * 0.15;
-    }
+  //     // Random sizes
+  //     sizes[i] = 0.05 + Math.random() * 0.15;
+  //   }
 
-    // Create geometry and set attributes
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3)); // Renamed attribute
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  //   // Create geometry and set attributes
+  //   const geometry = new THREE.BufferGeometry();
+  //   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  //   geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3)); // Renamed attribute
+  //   geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-    // Create shader material for better looking particles
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        baseColor: { value: new THREE.Color(color) }
-      },
-      vertexShader: `
-      attribute float size;
-      attribute vec3 particleColor; // Renamed attribute
-      varying vec3 vColor;
-      uniform float time;
+  //   // Create shader material for better looking particles
+  //   const material = new THREE.ShaderMaterial({
+  //     uniforms: {
+  //       time: { value: 0 },
+  //       baseColor: { value: new THREE.Color(color) }
+  //     },
+  //     vertexShader: `
+  //     attribute float size;
+  //     attribute vec3 particleColor; // Renamed attribute
+  //     varying vec3 vColor;
+  //     uniform float time;
       
-      void main() {
-        vColor = particleColor; // Use renamed attribute
+  //     void main() {
+  //       vColor = particleColor; // Use renamed attribute
         
-        // Animate position
-        vec3 pos = position;
-        pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
-        pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
-        pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
+  //       // Animate position
+  //       vec3 pos = position;
+  //       pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
+  //       pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
+  //       pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
         
-        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-        gl_PointSize = size * (300.0 / -mvPosition.z);
-        gl_Position = projectionMatrix * mvPosition;
-      }
-    `,
-      fragmentShader: `
-      varying vec3 vColor;
+  //       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+  //       gl_PointSize = size * (300.0 / -mvPosition.z);
+  //       gl_Position = projectionMatrix * mvPosition;
+  //     }
+  //   `,
+  //     fragmentShader: `
+  //     varying vec3 vColor;
       
-      void main() {
-        // Create circular particle
-        float r = distance(gl_PointCoord, vec2(0.5, 0.5));
-        if (r > 0.5) discard;
+  //     void main() {
+  //       // Create circular particle
+  //       float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+  //       if (r > 0.5) discard;
         
-        // Smooth edge and fade center for glow effect
-        float alpha = 0.9 * (1.0 - r * 1.9);
-        gl_FragColor = vec4(vColor, alpha);
-      }
-    `,
-      blending: THREE.AdditiveBlending,
-      depthTest: true,
-      depthWrite: false,
-      transparent: true,
-      vertexColors: true
-    });
+  //       // Smooth edge and fade center for glow effect
+  //       float alpha = 0.9 * (1.0 - r * 1.9);
+  //       gl_FragColor = vec4(vColor, alpha);
+  //     }
+  //   `,
+  //     blending: THREE.AdditiveBlending,
+  //     depthTest: true,
+  //     depthWrite: false,
+  //     transparent: true,
+  //     vertexColors: true
+  //   });
 
-    // Create particle system
-    const particles = new THREE.Points(geometry, material);
-    particles.position.copy(prop.position);
+  //   // Create particle system
+  //   const particles = new THREE.Points(geometry, material);
+  //   particles.position.copy(prop.position);
 
-    // Store time value for animation
-    particles.userData = {
-      type: 'effect',
-      timeOffset: Math.random() * 1000,
-      originalPosition: prop.position.clone()
-    };
+  //   // Store time value for animation
+  //   particles.userData = {
+  //     type: 'effect',
+  //     timeOffset: Math.random() * 1000,
+  //     originalPosition: prop.position.clone()
+  //   };
 
-    // Add to scene
-    this.scene.add(particles);
+  //   // Add to scene
+  //   this.scene.add(particles);
 
-    // Store reference
-    if (!prop.userData.effects) prop.userData.effects = [];
-    prop.userData.effects.push(particles);
+  //   // Store reference
+  //   if (!prop.userData.effects) prop.userData.effects = [];
+  //   prop.userData.effects.push(particles);
 
-    return particles;
-  }
+  //   return particles;
+  // }
 
 
   // Update auto-detected light sources
-  updateAutoLightSources(deltaTime) {
-    if (!this.lightSources || this.lightSources.size === 0) return;
+  // updateAutoLightSources(deltaTime) {
+  //   if (!this.lightSources || this.lightSources.size === 0) return;
 
-    const time = performance.now() * 0.001;
-    const playerPos = this.camera.position.clone();
+  //   const time = performance.now() * 0.001;
+  //   const playerPos = this.camera.position.clone();
 
-    // Update each light
-    this.lightSources.forEach((data, id) => {
-      const { light, prop, originalIntensity } = data;
+  //   // Update each light
+  //   this.lightSources.forEach((data, id) => {
+  //     const { light, prop, originalIntensity } = data;
 
-      // Skip if light was removed
-      if (!light || !light.parent) return;
+  //     // Skip if light was removed
+  //     if (!light || !light.parent) return;
 
-      // Calculate distance to player
-      const distance = playerPos.distanceTo(light.position);
+  //     // Calculate distance to player
+  //     const distance = playerPos.distanceTo(light.position);
 
-      // Dynamic intensity based on distance
-      const maxDistance = 30;
-      const fullFadeDistance = 50;
+  //     // Dynamic intensity based on distance
+  //     const maxDistance = 30;
+  //     const fullFadeDistance = 50;
 
-      if (distance <= maxDistance) {
-        // Full intensity when within reasonable range
-        light.intensity = originalIntensity * (0.85 + Math.sin(time * 3) * 0.15); // Flicker effect
-      } else if (distance <= fullFadeDistance) {
-        // Fade out with distance
-        const fadeRatio = 1 - ((distance - maxDistance) / (fullFadeDistance - maxDistance));
-        light.intensity = originalIntensity * fadeRatio;
-      } else {
-        // Turn off light completely when far away
-        light.intensity = 0;
-      }
+  //     if (distance <= maxDistance) {
+  //       // Full intensity when within reasonable range
+  //       light.intensity = originalIntensity * (0.85 + Math.sin(time * 3) * 0.15); // Flicker effect
+  //     } else if (distance <= fullFadeDistance) {
+  //       // Fade out with distance
+  //       const fadeRatio = 1 - ((distance - maxDistance) / (fullFadeDistance - maxDistance));
+  //       light.intensity = originalIntensity * fadeRatio;
+  //     } else {
+  //       // Turn off light completely when far away
+  //       light.intensity = 0;
+  //     }
 
-      // Update any particle effects
-      if (prop && prop.userData && prop.userData.effects) {
-        prop.userData.effects.forEach(effect => {
-          if (effect && effect.material && effect.material.uniforms) {
-            // Update time uniform for animation
-            effect.material.uniforms.time.value = time;
+  //     // Update any particle effects
+  //     if (prop && prop.userData && prop.userData.effects) {
+  //       prop.userData.effects.forEach(effect => {
+  //         if (effect && effect.material && effect.material.uniforms) {
+  //           // Update time uniform for animation
+  //           effect.material.uniforms.time.value = time;
 
-            // Make particles fade with distance similar to the light
-            if (distance > maxDistance) {
-              if (effect.material.opacity !== undefined) {
-                const fadeRatio = 1 - ((distance - maxDistance) / (fullFadeDistance - maxDistance));
-                effect.material.opacity = Math.max(0, fadeRatio);
-              }
-            } else {
-              if (effect.material.opacity !== undefined) {
-                effect.material.opacity = 1.0;
-              }
-            }
-          }
-        });
-      }
-    });
-  }
+  //           // Make particles fade with distance similar to the light
+  //           if (distance > maxDistance) {
+  //             if (effect.material.opacity !== undefined) {
+  //               const fadeRatio = 1 - ((distance - maxDistance) / (fullFadeDistance - maxDistance));
+  //               effect.material.opacity = Math.max(0, fadeRatio);
+  //             }
+  //           } else {
+  //             if (effect.material.opacity !== undefined) {
+  //               effect.material.opacity = 1.0;
+  //             }
+  //           }
+  //         }
+  //       });
+  //     }
+  //   });
+  // }
 
 
     initializeDayNightCycle() {
@@ -7699,6 +7850,36 @@ updateTexturesForQualityLevel(level) {
   
     console.log('Day/Night cycle initialized');
   }
+
+  // Add to Scene3DController class:
+createTestWaterArea() {
+  if (!this.shaderEffects) {
+    console.warn("ShaderEffectsManager not initialized yet");
+    return;
+  }
+  
+  // Create a test water area in front of the camera
+  const cameraDir = new THREE.Vector3();
+  this.camera.getWorldDirection(cameraDir);
+  
+  const pos = this.camera.position.clone();
+  pos.y -= 0.5;  // Slightly below eye level
+  pos.add(cameraDir.multiplyScalar(5)); // 5 units in front
+  
+  console.log("Creating test water area at:", pos);
+  
+  const waterZoneId = this.shaderEffects.addWaterZone({
+    x: pos.x,
+    z: pos.z,
+    y: pos.y,
+    width: 10,
+    depth: 10,
+    type: 'water'
+  });
+  
+  console.log("Test water area created with ID:", waterZoneId);
+  return waterZoneId;
+}
 
   // Add after createDayNightCycle() in Scene3DController.js
   createPartyButton() {

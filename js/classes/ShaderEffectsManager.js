@@ -122,6 +122,19 @@ class ShaderEffectsManager {
       medium: { particleCount: 100 },
       high: { particleCount: 200 }
     });
+
+    this.registerEffectType('coldMagic', {
+      keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
+      color: 0x88ccff, // Ice blue color
+      intensity: 0.6, 
+      distance: 4,
+      decay: 1.5,
+      particleCount: 12,
+      particleSize: 0.03,
+      particleColor: 0xaaddff,
+      animationSpeed: 0.5,
+      create: this.createPropGlowEffect.bind(this)
+    });
     
     // Add more effect types as needed
   }
@@ -751,7 +764,389 @@ createEnhancedParticles(count, size, color) {
   }
 
 
+/**
+ * Create a glow effect for props (like torches, lanterns, magic items)
+ * @param {Object3D} prop - The prop object to add effect to
+ * @param {Object} options - Configuration options
+ * @returns {Object} Effect data for tracking
+ */
+createPropGlowEffect(prop, options = {}) {
+  // Default options
+  const defaults = {
+    color: options.color || 0xff6600,
+    intensity: options.intensity || 0.5,
+    particleCount: options.particleCount || 15,
+    particleSize: options.particleSize || 0.1,
+    position: prop.position.clone(),
+    height: options.height || 0.2,
+    radius: options.radius || 0.3,
+    blending: THREE.AdditiveBlending
+  };
+  
+  // Skip if disabled
+  if (!this.enabled) return null;
+  
+  // Create container for effects
+  const container = new THREE.Group();
+  container.position.copy(defaults.position);
+  
+  // Add to scene
+  this.scene3D.scene.add(container);
+  
+  // Create glowing particle effect
+  const particleCount = this.getQualityAdjustedValue(defaults.particleCount, this.qualityLevel);
+  const positions = new Float32Array(particleCount * 3);
+  const particleColors = new Float32Array(particleCount * 3);
+  const sizes = new Float32Array(particleCount);
+  
+  // Convert color to RGB components
+  const colorObj = new THREE.Color(defaults.color);
+  const r = colorObj.r;
+  const g = colorObj.g;
+  const b = colorObj.b;
+  
+  // Create random particles around the prop
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    
+    // Position particles in small sphere around the prop's upper part
+    const radius = defaults.radius;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.random() * Math.PI;
+    
+    positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+    positions[i3 + 1] = defaults.height + Math.random() * 0.2; // Slightly above
+    positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    
+    // Colors - base color with some variation
+    particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
+    particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
+    particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
+    
+    // Random sizes
+    sizes[i] = defaults.particleSize * (0.5 + Math.random() * 1.0);
+  }
+  
+  // Create geometry and set attributes
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3));
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  
+  // Create shader material for better looking particles
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      baseColor: { value: new THREE.Color(defaults.color) }
+    },
+    vertexShader: `
+      attribute float size;
+      attribute vec3 particleColor;
+      varying vec3 vColor;
+      uniform float time;
+      
+      void main() {
+        vColor = particleColor;
+        
+        // Animate position
+        vec3 pos = position;
+        pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
+        pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
+        pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
+        
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      
+      void main() {
+        // Create circular particle
+        float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if (r > 0.5) discard;
+        
+        // Smooth edge and fade center for glow effect
+        float alpha = 0.9 * (1.0 - r * 1.9);
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `,
+    blending: defaults.blending,
+    depthTest: true,
+    depthWrite: false,
+    transparent: true,
+    vertexColors: true
+  });
+  
+  // Create particle system
+  const particles = new THREE.Points(geometry, material);
+  
+  // Add to container
+  container.add(particles);
+  
+  // Try to modify original prop material if available
+  if (prop.material && prop.material.isMeshStandardMaterial) {
+    // Store original material properties if they don't exist yet
+    if (!prop.userData.originalEmissive) {
+      prop.userData.originalEmissive = prop.material.emissive.clone();
+      prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
+    }
+    
+    // Make the prop itself glow
+    prop.material.emissive = new THREE.Color(defaults.color);
+    prop.material.emissiveIntensity = defaults.intensity;
+    
+    // Create reference to emissive mesh
+    const emissiveMesh = prop;
+    
+    // Return effect data including the emissive mesh
+    return {
+      container,
+      particles,
+      emissiveMesh,
+      originalObject: prop,
+      definition: {
+        color: defaults.color,
+        emissiveIntensity: defaults.intensity
+      },
+      animationData: {
+        time: 0,
+        speed: 1.0,
+        pattern: 'glow'
+      }
+    };
+  }
+  
+  // Return effect data without emissive mesh
+  return {
+    container,
+    particles,
+    originalObject: prop,
+    definition: {
+      color: defaults.color,
+      emissiveIntensity: defaults.intensity
+    },
+    animationData: {
+      time: 0,
+      speed: 1.0,
+      pattern: 'glow'
+    }
+  };
+}
 
+/**
+ * Scan a loaded model for props that might need effects
+ * @param {THREE.Group} model - The 3D model to scan
+ * @returns {number} Number of effects added
+ */
+scanModelForEffects(model) {
+  if (!model || !this.enabled) {
+    console.log('Model scanning skipped: model not provided or effects disabled');
+    return 0;
+  }
+  
+  console.log('Scanning model for props that might need effects...');
+  let effectsAdded = 0;
+  
+  // Process all objects in the model
+  model.traverse(object => {
+    // Skip objects without a mesh or that are not visible
+    if (!object.isMesh || !object.visible) return;
+    
+    // Check if object name suggests it should have effects
+    const name = object.name.toLowerCase();
+    const userData = object.userData || {};
+    
+    // Skip if object has a "noEffect" flag in userData
+    if (userData.noEffect) return;
+    
+    let effectType = null;
+    
+    // Check against all registered effect keywords
+    for (const [type, definition] of this.effectDefinitions) {
+      if (definition.keywords && definition.keywords.some(keyword => name.includes(keyword))) {
+        effectType = type;
+        break;
+      }
+    }
+    
+    // Skip if no matching effect type
+    if (!effectType) return;
+    
+    // Skip if already has effects
+    const effectId = `prop-${object.id}`;
+    if (this.effects.has(effectId)) return;
+    
+    console.log(`Applying ${effectType} effect to prop: ${object.name}`);
+    
+    try {
+      // Get effect definition and create effect
+      const definition = this.effectDefinitions.get(effectType);
+      if (!definition || !definition.create) return;
+      
+      const effectData = definition.create(object, definition, this.qualityLevel);
+      if (!effectData) return;
+      
+      // Store effect
+      this.effects.set(effectId, {
+        object,
+        type: effectType,
+        ...effectData
+      });
+      
+      effectsAdded++;
+      
+      if (this.debug) {
+        console.log(`Added ${effectType} effect to ${object.name}`);
+      }
+    } catch (error) {
+      console.error(`Error applying ${effectType} effect to ${object.name}:`, error);
+    }
+  });
+  
+  console.log(`Added effects to ${effectsAdded} props in model`);
+  return effectsAdded;
+}
+
+/**
+ * Apply appropriate effects to a prop based on its name and properties
+ * @param {THREE.Object3D} prop - The prop to add effects to
+ * @returns {boolean} Whether an effect was applied
+ */
+applyPropEffects(prop) {
+  if (!this.enabled || !prop) return false;
+  
+  // Check name to determine the appropriate effect
+  const name = prop.name || prop.userData?.name || '';
+  if (!name) return false;
+  
+  // Find matching effect type
+  const effectType = this.getEffectTypeForName(name);
+  if (!effectType) return false;
+  
+  // Create and apply the effect
+  const effectId = `prop-${prop.id}`;
+  if (this.effects.has(effectId)) {
+    return false; // Effect already applied
+  }
+  
+  try {
+    // Get effect definition
+    const definition = this.effectDefinitions.get(effectType);
+    if (!definition || !definition.create) {
+      console.warn(`No definition or creator for effect type: ${effectType}`);
+      return false;
+    }
+    
+    // Create the effect
+    const effectData = definition.create(prop, definition, this.qualityLevel);
+    if (!effectData) return false;
+    
+    // Store the effect
+    this.effects.set(effectId, {
+      object: prop,
+      type: effectType,
+      ...effectData
+    });
+    
+    if (this.debug) {
+      console.log(`Applied ${effectType} effect to prop: ${name}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error applying ${effectType} effect to prop:`, error);
+    return false;
+  }
+}
+
+/**
+ * Clean up all effects for a model when unloading
+ * @param {THREE.Group} model - The model to clean up effects for
+ */
+cleanupModelEffects(model) {
+  if (!model) return;
+  
+  const effectsToRemove = [];
+  
+  // Find all effects belonging to objects in this model
+  model.traverse(object => {
+    this.effects.forEach((effectData, effectId) => {
+      if (effectData.object === object || effectData.originalObject === object) {
+        effectsToRemove.push(effectId);
+      }
+    });
+  });
+  
+  // Remove all identified effects
+  effectsToRemove.forEach(effectId => {
+    this.removeEffect(effectId);
+  });
+  
+  if (this.debug) {
+    console.log(`Cleaned up ${effectsToRemove.length} effects for model`);
+  }
+}
+
+/**
+ * Auto-detect and apply appropriate effects to props
+ * @param {Object3D} prop - The prop to analyze and apply effects to
+ * @returns {Object|null} Effect data if applied, null otherwise
+ */
+detectAndApplyPropEffects(prop) {
+  // Skip if not enabled
+  if (!this.enabled) return null;
+  
+  // Check object name/type to determine effect
+  const name = prop.name || prop.userData?.name || '';
+  const lowerName = name.toLowerCase();
+  
+  // Check for fire-related props
+  if (lowerName.includes('torch') || lowerName.includes('fire') || 
+      lowerName.includes('flame') || lowerName.includes('candle') || 
+      lowerName.includes('lantern') || lowerName.includes('brazier')) {
+    return this.createPropGlowEffect(prop, {
+      color: 0xff6600,
+      intensity: 0.8
+    });
+  }
+  
+  // Check for magic-related props
+  if (lowerName.includes('crystal') || lowerName.includes('magic') || 
+      lowerName.includes('arcane') || lowerName.includes('rune') || 
+      lowerName.includes('enchant')) {
+    return this.createPropGlowEffect(prop, {
+      color: 0x66ccff,
+      intensity: 0.6,
+      particleCount: 12
+    });
+  }
+  
+  // Check for lava/magma
+  if (lowerName.includes('lava') || lowerName.includes('magma') || 
+      lowerName.includes('ember')) {
+    return this.createPropGlowEffect(prop, {
+      color: 0xff3300,
+      intensity: 1.0,
+      particleCount: 18
+    });
+  }
+  
+  // Check for holy/radiant items
+  if (lowerName.includes('holy') || lowerName.includes('divine') || 
+      lowerName.includes('sacred') || lowerName.includes('blessed') ||
+      lowerName.includes('radiant')) {
+    return this.createPropGlowEffect(prop, {
+      color: 0xffe599,
+      intensity: 0.7,
+      particleCount: 14
+    });
+  }
+  
+  // No effect applied
+  return null;
+}
 
 
 
@@ -949,7 +1344,7 @@ createImpactEffect(position, type = 'footstep', options = {}) {
  * @returns {Object} Effect data for tracking and updates
  */
 createDustEffect(position, options = {}) {
-  console.log("Dust effect requested at:", position, "with options:", options);
+  // console.log("Dust effect requested at:", position, "with options:", options);
   
   // Skip if disabled or low quality without force override
   if (!this.enabled || (this.qualityLevel === 'low' && !options.force)) {

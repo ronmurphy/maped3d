@@ -7633,6 +7633,8 @@ handleGiftRecruitmentAttempt(monster, chanceModifier, giftedItem, giftType, effe
 if (success) {
 
   const newMonster = this.addNamedMonster(monster);
+
+  const monsterName = this.getMonsterName(monster) //this.generateNewMonsterName(newMonster);
   
   // Log final result
   console.log(`Added ${monsterName} to party with type: ${this.getMonsterType(newMonster)}`);
