@@ -4223,23 +4223,7 @@ class Scene3DController {
 
     // Cap deltaTime to avoid huge jumps after pauses or slow frames
     const cappedDelta = Math.min(this.deltaTime, 0.1);
-
-    // Calculate base speed adjusted for time (normalized to 60fps)
-    //prefs.fpsLimit
-
-    // const prefs = this.getPreferences();
-    // if (prefs.fpsLimit) {
-    //   console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
-    //   this.setFPSLimit(prefs.fpsLimit);
-    //       if (this.fpsLimit) {
-    //   const timeAdjustedSpeed = this.moveState.speed * cappedDelta * prefs.fpsLimit;
-    // } else {
-
     const timeAdjustedSpeed = this.moveState.speed * cappedDelta * 60;
-    // }
-    // }
-
-
 
     // Skip movement if paused
     if (this._controlsPaused) {
@@ -4558,7 +4542,42 @@ class Scene3DController {
 
     // Update physics and camera height
     // this.camera.position.y = this.physics.update();
-    this.camera.position.y = this.physics.update(this.deltaTime || 0.016);
+    // this.camera.position.y = this.physics.update(this.deltaTime || 0.016);
+
+    this.camera.position.y = this.physics.update(this.deltaTime);
+
+    // Check if player just landed
+    this.camera.position.y = this.physics.update(this.deltaTime);
+
+    // RIGHT AFTER THAT LINE, add this landing effect check:
+    // Check for significant landings
+    if (this.physics && this.physics.justLanded === true) {
+      // Only log significant landings (reduce console spam)
+      if (this.physics.fallDistance > 1.0 || this.physics.landingVelocity > 0.5) {
+        console.log(`LANDING DETECTED - velocity: ${this.physics.landingVelocity.toFixed(2)}, distance: ${this.physics.fallDistance ? this.physics.fallDistance.toFixed(2) : 'unknown'}`);
+      }
+      
+      // Create effect only for significant falls
+      const significantFallThreshold = 1.0;
+      
+      if ((this.physics.landingVelocity > 0.5) || 
+          (this.physics.fallDistance && this.physics.fallDistance > significantFallThreshold)) {
+        
+        const intensity = Math.max(
+          this.physics.landingVelocity, 
+          this.physics.fallDistance ? this.physics.fallDistance / 5 : 0
+        );
+        
+        // Only create effect if we have a valid position
+        if (this.physics.landingPosition) {
+          this.createLandingEffect(this.physics.landingPosition, intensity);
+        }
+      }
+      
+      // IMPORTANT: Always reset the flag
+      this.physics.justLanded = false;
+    }
+
     // original renderer code
     // this.renderer.render(this.scene, this.camera);
 
@@ -4600,81 +4619,120 @@ class Scene3DController {
   };
 
 
-  createLandingEffect(position) {
-    // Create a particle system for dust effect
-    const particleCount = 20;
-    const particles = new THREE.BufferGeometry();
-
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-
-    // Set up particles in a small radius around landing position
-    for (let i = 0; i < particleCount; i++) {
-      const i3 = i * 3;
-      // Position within small radius
-      const radius = 0.2 + Math.random() * 0.3;
-      const angle = Math.random() * Math.PI * 2;
-
-      positions[i3] = position.x + Math.cos(angle) * radius;
-      positions[i3 + 1] = position.y + 0.05;  // Just above ground
-      positions[i3 + 2] = position.z + Math.sin(angle) * radius;
-
-      // Dust color (light brown/gray)
-      colors[i3] = 0.8 + Math.random() * 0.2;
-      colors[i3 + 1] = 0.7 + Math.random() * 0.2;
-      colors[i3 + 2] = 0.6 + Math.random() * 0.2;
-    }
-
-    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    // Material with particle texture
-    const particleMaterial = new THREE.PointsMaterial({
-      size: 0.1,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.7
-    });
-
-    const particleSystem = new THREE.Points(particles, particleMaterial);
-    this.scene.add(particleSystem);
-
-    // Animate particles rising and fading
-    const startTime = Date.now();
-    const duration = 1000;  // 1 second
-
-    const animateParticles = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = elapsed / duration;
-
-      if (progress < 1) {
-        // Update particles
-        for (let i = 0; i < particleCount; i++) {
-          const i3 = i * 3;
-          // Move upward slowly
-          particles.attributes.position.array[i3 + 1] += 0.003;
-        }
-
-        particles.attributes.position.needsUpdate = true;
-
-        // Fade out
-        particleMaterial.opacity = 0.7 * (1 - progress);
-
-        requestAnimationFrame(animateParticles);
-      } else {
-        // Remove when done
-        this.scene.remove(particleSystem);
-        particleSystem.geometry.dispose();
-        particleMaterial.dispose();
-      }
-    };
-
-    animateParticles();
+createLandingEffect(position, intensity = 1.0) {
+  console.log(`Creating landing effect at ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)} with intensity ${intensity.toFixed(2)}`);
+  
+  // Create a dust puff with standard THREE.js particles
+  const particleCount = Math.min(50, Math.floor(20 + intensity * 20));
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  
+  // Fill with random positions in a circle pattern
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    // Random position in circle
+    const radius = 0.3 * Math.random();
+    const angle = Math.random() * Math.PI * 2;
+    
+    particlePositions[i3] = position.x + Math.cos(angle) * radius;
+    particlePositions[i3 + 1] = position.y + 0.05; // Just above ground
+    particlePositions[i3 + 2] = position.z + Math.sin(angle) * radius;
   }
+  
+  particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
+  
+  // Simple texture for particles
+  const particleTexture = this.getParticleTexture();
+  
+  // Create material
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.15,
+    map: particleTexture,
+    transparent: true,
+    opacity: 0.7,
+    color: 0xddccbb, // Dust color
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+  
+  // Create particle system
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  this.scene.add(particles);
+  
+  console.log(`Added ${particleCount} particles to scene`);
+  
+  // Define simple animation loop
+  let animationFrameId;
+  const startTime = performance.now();
+  const duration = 1500; // 1.5 seconds
+  
+  const animateParticles = () => {
+    const elapsed = performance.now() - startTime;
+    const progress = elapsed / duration;
+    
+    if (progress < 1.0) {
+      // Update positions - rise up
+      const positions = particleGeometry.attributes.position.array;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Move upward
+        positions[i3 + 1] += 0.01;
+        
+        // Spread outward slightly
+        const offsetX = (Math.random() - 0.5) * 0.01;
+        const offsetZ = (Math.random() - 0.5) * 0.01;
+        positions[i3] += offsetX;
+        positions[i3 + 2] += offsetZ;
+      }
+      
+      particleGeometry.attributes.position.needsUpdate = true;
+      
+      // Fade out
+      particleMaterial.opacity = 0.7 * (1 - progress);
+      
+      // Continue animation
+      animationFrameId = requestAnimationFrame(animateParticles);
+    } else {
+      // Clean up
+      this.scene.remove(particles);
+      particleGeometry.dispose();
+      particleMaterial.dispose();
+      console.log("Landing effect animation complete");
+    }
+  };
+  
+  // Start animation
+  animateParticles();
+}
 
-
-  // Add this method to Scene3DController
-  // In loadPreferences method
+// Helper method to create/cache particle texture
+getParticleTexture() {
+  if (!this._particleTexture) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw a soft white circle
+    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.5, 'rgba(240,240,220,0.8)');
+    gradient.addColorStop(1, 'rgba(240,240,220,0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 32, 32);
+    
+    this._particleTexture = new THREE.CanvasTexture(canvas);
+  }
+  
+  return this._particleTexture;
+}
+  
+  
+  
+  
   loadPreferences() {
     try {
       // Load preferences from localStorage
@@ -4791,42 +4849,6 @@ class Scene3DController {
 
       // Process the scene
       await this.init3DScene(updateStatus);
-
-      // Instructions overlay
-      // const instructions = document.createElement("div");
-      // instructions.style.cssText = `
-      //   position: absolute;
-      //   top: 50%;
-      //   left: 50%;
-      //   transform: translate(-50%, -50%);
-      //   background: rgba(0, 0, 0, 0.7);
-      //   color: white;
-      //   padding: 20px;
-      //   width: 75vw;
-      //   border-radius: 5px;
-      //   text-align: center;
-      //   pointer-events: none;
-      // `;
-      // instructions.innerHTML = `
-      //   Click to Start<br>
-      //   WASD or Arrow Keys to move<br>
-      //   Hold Shift or Right Mouse Button to sprint<br>
-      //   ~ to show FPS<br>
-      //   I for inventory<br>
-      //   E as the Action key<br>
-      //   P for Party Manager<br>
-      //   ESC to exit
-      // `;
-      // container.appendChild(instructions);
-
-      // Controls event listeners
-      // this.controls.addEventListener("lock", () => {
-      //   instructions.style.display = "none";
-      // });
-
-      // this.controls.addEventListener("unlock", () => {
-      //   instructions.style.display = "block";
-      // });
 
       const gameMenu = new GameMenu(this, container);
 
@@ -5527,6 +5549,12 @@ this.gameState = 'initializing';
 
     console.log(`Found destination teleporter: ${destination.marker.id}`);
 
+    console.log("Current position:", {
+      x: this.camera.position.x.toFixed(2),
+      y: this.camera.position.y.toFixed(2),
+      z: this.camera.position.z.toFixed(2)
+    });
+
     // Get destination coordinates from teleporter
     const destX = destination.position.x;
     const destZ = destination.position.z;
@@ -5838,29 +5866,6 @@ this.gameState = 'initializing';
     // Get current quality level
     const qualityLevel = this.qualityLevel || 'medium';
 
-    // Adjust pixel ratio based on quality setting
-    // switch (qualityLevel) {
-    //   case 'ultra':
-    //     // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
-    //     targetPixelRatio = Math.min(devicePixelRatio, 2.5);
-    //     this.renderer.physicallyCorrectLights = true;
-    //     break;
-    //   case 'high':
-    //     // Use full pixel ratio, but cap extremely high DPR for 4K+ displays
-    //     targetPixelRatio = Math.min(devicePixelRatio, 2.5);
-    //     break;
-    //   case 'medium':
-    //     // Cap at 1.5 for medium quality
-    //     targetPixelRatio = Math.min(devicePixelRatio, 1.5);
-    //     break;
-    //   case 'low':
-    //     // Use 1.0 for low quality (no supersampling)
-    //     targetPixelRatio = 1.0;
-    //     break;
-    //   default:
-    //     // Default to medium behavior
-    //     targetPixelRatio = Math.min(devicePixelRatio, 1.5);
-    // }
 
         // In optimizeRenderer method, update the pixel ratio section:
     switch (qualityLevel) {
@@ -6180,331 +6185,6 @@ this.gameState = 'initializing';
   }
 
 
-  // setQualityLevel(level, options = {}) {
-  //   const settings = {
-  //     shadows: options.shadows !== undefined ? options.shadows : true,
-  //     antialias: options.antialias !== undefined ? options.antialias : true,
-  //     highQualityTextures: options.highQualityTextures !== undefined ? options.highQualityTextures : true,
-  //     ambientOcclusion: options.ambientOcclusion !== undefined ? options.ambientOcclusion : false
-  //   };
-
-  //   this.qualityLevel = level;
-
-  //   if (this.visualEffects) {
-  //     this.visualEffects.applyQualityLevel(level);
-  //   }
-
-  //   // Apply quality settings
-  //   switch (level) {
-  //     case 'high':
-  //       // Renderer settings
-  //       this.renderer.shadowMap.enabled = settings.shadows;
-  //       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Highest quality shadows
-  //       this.renderer.setPixelRatio(window.devicePixelRatio); // Full device pixel ratio
-
-  //       // Texture settings
-  //       this.textureMultiplier = 1.0; // Full resolution textures
-
-  //       // View distance settings
-  //       this.renderDistance = 100; // Long view distance
-
-  //       // Materials quality
-  //       this.scene.traverse(obj => {
-  //         if (obj.material) {
-  //           // Enable all material features
-  //           if (Array.isArray(obj.material)) {
-  //             obj.material.forEach(mat => {
-  //               if (mat.isMeshStandardMaterial) {
-  //                 mat.envMapIntensity = 1.0;
-  //                 mat.roughness = mat.userData?.originalRoughness || mat.roughness;
-  //                 mat.metalness = mat.userData?.originalMetalness || mat.metalness;
-  //               }
-  //             });
-  //           } else if (obj.material.isMeshStandardMaterial) {
-  //             obj.material.envMapIntensity = 1.0;
-  //             obj.material.roughness = obj.material.userData?.originalRoughness || obj.material.roughness;
-  //             obj.material.metalness = obj.material.userData?.originalMetalness || obj.material.metalness;
-  //           }
-  //         }
-  //       });
-
-  //       // Lighting quality
-  //       this.scene.traverse(obj => {
-  //         if (obj.isLight) {
-  //           obj.castShadow = settings.shadows;
-  //           if (obj.shadow) {
-  //             obj.shadow.mapSize.width = 2048;
-  //             obj.shadow.mapSize.height = 2048;
-  //             obj.shadow.bias = -0.0001;
-  //           }
-  //         }
-  //       });
-
-  //       // Set maximum anisotropy for textures (reduces blur at angles)
-  //       const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy();
-  //       this.scene.traverse(obj => {
-  //         if (obj.material) {
-  //           const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-  //           materials.forEach(mat => {
-  //             if (mat.map) {
-  //               mat.map.anisotropy = maxAnisotropy;
-  //               mat.map.needsUpdate = true;
-  //             }
-  //           });
-  //         }
-  //       });
-
-
-  //       if (this.visualEffects) {
-  //         this.visualEffects.applyQualityLevel(level);
-  //       }
-
-
-  //       // Physics quality
-  //       this.physics.simulationDetail = 2; // Higher detail physics
-  //       this.physics.maxSimulationSteps = 10; // More physics steps
-
-  //       break;
-
-  //     case 'medium':
-  //       // Renderer settings
-  //       this.renderer.shadowMap.enabled = settings.shadows;
-  //       this.renderer.shadowMap.type = THREE.PCFShadowMap; // Medium quality shadows
-  //       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Capped device pixel ratio
-
-  //       // Texture settings
-  //       this.textureMultiplier = 0.75; // 75% resolution textures
-
-  //       // View distance settings
-  //       this.renderDistance = 60; // Medium view distance
-
-  //       // Materials quality
-  //       this.scene.traverse(obj => {
-  //         if (obj.material) {
-  //           // Medium material features
-  //           if (Array.isArray(obj.material)) {
-  //             obj.material.forEach(mat => {
-  //               if (mat.isMeshStandardMaterial) {
-  //                 // Store original values if first time
-  //                 if (!mat.userData) mat.userData = {};
-  //                 if (mat.userData.originalRoughness === undefined)
-  //                   mat.userData.originalRoughness = mat.roughness;
-  //                 if (mat.userData.originalMetalness === undefined)
-  //                   mat.userData.originalMetalness = mat.metalness;
-
-  //                 mat.envMapIntensity = 0.7;
-  //                 mat.roughness = Math.min(0.95, mat.userData.originalRoughness * 1.2); // Increase roughness
-  //                 mat.metalness = mat.userData.originalMetalness * 0.9; // Decrease metalness
-  //               }
-  //             });
-  //           } else if (obj.material.isMeshStandardMaterial) {
-  //             // Store original values if first time
-  //             if (!obj.material.userData) obj.material.userData = {};
-  //             if (obj.material.userData.originalRoughness === undefined)
-  //               obj.material.userData.originalRoughness = obj.material.roughness;
-  //             if (obj.material.userData.originalMetalness === undefined)
-  //               obj.material.userData.originalMetalness = obj.material.metalness;
-
-  //             obj.material.envMapIntensity = 0.7;
-  //             obj.material.roughness = Math.min(0.95, obj.material.userData.originalRoughness * 1.2);
-  //             obj.material.metalness = obj.material.userData.originalMetalness * 0.9;
-  //           }
-  //         }
-  //       });
-
-  //       // Lighting quality
-  //       this.scene.traverse(obj => {
-  //         if (obj.isLight) {
-  //           obj.castShadow = settings.shadows;
-  //           if (obj.shadow) {
-  //             obj.shadow.mapSize.width = 1024;
-  //             obj.shadow.mapSize.height = 1024;
-  //             obj.shadow.bias = -0.0005;
-  //           }
-  //         }
-  //       });
-
-  //       // Medium anisotropy for textures
-  //       const medAnisotropy = Math.max(4, Math.floor(this.renderer.capabilities.getMaxAnisotropy() / 2));
-  //       this.scene.traverse(obj => {
-  //         if (obj.material) {
-  //           const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-  //           materials.forEach(mat => {
-  //             if (mat.map) {
-  //               mat.map.anisotropy = medAnisotropy;
-  //               mat.map.needsUpdate = true;
-  //             }
-  //           });
-  //         }
-  //       });
-
-  //       // Medium bloom if available
-  //       // if (this.bloomPass) {
-  //       //   this.bloomPass.enabled = true;
-  //       //   this.bloomPass.strength = 0.5;
-  //       //   this.bloomPass.radius = 0.35;
-  //       //   this.bloomPass.threshold = 0.9;
-  //       // }
-
-  //       if (this.visualEffects) {
-  //         this.visualEffects.applyQualityLevel(level);
-  //       }
-
-  //       // Physics quality
-  //       this.physics.simulationDetail = 1; // Medium detail physics
-  //       this.physics.maxSimulationSteps = 6; // Fewer physics steps
-
-  //       break;
-
-  //     case 'low':
-  //       // Renderer settings
-  //       this.renderer.shadowMap.enabled = settings.shadows && this.renderer.capabilities.maxShadowMapSize > 1024;
-  //       this.renderer.shadowMap.type = THREE.BasicShadowMap; // Simple shadows
-  //       this.renderer.setPixelRatio(1); // Minimum pixel ratio
-
-  //       // Texture settings
-  //       this.textureMultiplier = 0.5; // 50% resolution textures
-
-  //       // View distance settings
-  //       this.renderDistance = 40; // Short view distance
-
-  //       // Materials quality
-  //       this.scene.traverse(obj => {
-  //         if (obj.material) {
-  //           // Simplify materials
-  //           if (Array.isArray(obj.material)) {
-  //             obj.material.forEach(mat => {
-  //               if (mat.isMeshStandardMaterial) {
-  //                 // Store original values if first time
-  //                 if (!mat.userData) mat.userData = {};
-  //                 if (mat.userData.originalRoughness === undefined)
-  //                   mat.userData.originalRoughness = mat.roughness;
-  //                 if (mat.userData.originalMetalness === undefined)
-  //                   mat.userData.originalMetalness = mat.metalness;
-
-  //                 mat.envMapIntensity = 0.3;
-  //                 mat.roughness = Math.min(1.0, mat.userData.originalRoughness * 1.5); // Max roughness
-  //                 mat.metalness = mat.userData.originalMetalness * 0.7; // Minimal metalness
-  //               }
-  //             });
-  //           } else if (obj.material.isMeshStandardMaterial) {
-  //             // Store original values if first time
-  //             if (!obj.material.userData) obj.material.userData = {};
-  //             if (obj.material.userData.originalRoughness === undefined)
-  //               obj.material.userData.originalRoughness = obj.material.roughness;
-  //             if (obj.material.userData.originalMetalness === undefined)
-  //               obj.material.userData.originalMetalness = obj.material.metalness;
-
-  //             obj.material.envMapIntensity = 0.3;
-  //             obj.material.roughness = Math.min(1.0, obj.material.userData.originalRoughness * 1.5);
-  //             obj.material.metalness = obj.material.userData.originalMetalness * 0.7;
-  //           }
-
-  //           // Disable normal maps on low quality
-  //           if (Array.isArray(obj.material)) {
-  //             obj.material.forEach(mat => {
-  //               if (mat.normalMap) {
-  //                 mat.normalScale.set(0, 0); // Disable normal map effect
-  //               }
-  //             });
-  //           } else if (obj.material.normalMap) {
-  //             obj.material.normalScale.set(0, 0);
-  //           }
-  //         }
-  //       });
-
-  //       // Lighting quality
-  //       this.scene.traverse(obj => {
-  //         if (obj.isLight) {
-  //           obj.castShadow = settings.shadows;
-  //           if (obj.shadow) {
-  //             obj.shadow.mapSize.width = 512;
-  //             obj.shadow.mapSize.height = 512;
-  //             obj.shadow.bias = -0.001;
-  //           }
-
-  //           // Reduce light intensity for point and spot lights
-  //           if (obj.isPointLight || obj.isSpotLight) {
-  //             if (!obj.userData) obj.userData = {};
-  //             if (obj.userData.originalIntensity === undefined)
-  //               obj.userData.originalIntensity = obj.intensity;
-  //             obj.intensity = obj.userData.originalIntensity * 0.8;
-  //           }
-  //         }
-  //       });
-
-  //       // Low anisotropy for textures
-  //       this.scene.traverse(obj => {
-  //         if (obj.material) {
-  //           const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
-  //           materials.forEach(mat => {
-  //             if (mat.map) {
-  //               mat.map.anisotropy = 1; // Lowest possible value
-  //               mat.map.needsUpdate = true;
-  //             }
-  //           });
-  //         }
-  //       });
-
-  //       // Disable bloom for performance
-  //       // if (this.bloomPass) {
-  //       //   this.bloomPass.enabled = false;
-  //       // }
-
-  //       if (this.visualEffects) {
-  //         this.visualEffects.applyQualityLevel(level);
-  //       }
-
-  //       // Physics quality
-  //       this.physics.simulationDetail = 0; // Lowest detail physics
-  //       this.physics.maxSimulationSteps = 3; // Minimal physics steps
-
-  //       break;
-  //   }
-
-  //   // Update render distance
-  //   this.updateRenderDistance();
-
-  //   // Update FPS counter to show quality level
-  //   if (this.stats && this.stats.dom) {
-  //     // Add or update quality indicator
-  //     let qualityIndicator = this.stats.dom.querySelector('.quality-level');
-  //     if (!qualityIndicator) {
-  //       qualityIndicator = document.createElement('div');
-  //       qualityIndicator.className = 'quality-level';
-  //       qualityIndicator.style.cssText = `
-  //       position: absolute;
-  //       top: 48px;
-  //       right: 0;
-  //       background: rgba(0,0,0,0.5);
-  //       color: white;
-  //       padding: 2px 5px;
-  //       font-size: 10px;
-  //       border-radius: 0 0 0 3px;
-  //     `;
-  //       this.stats.dom.appendChild(qualityIndicator);
-  //     }
-
-  //     // Set color based on quality level
-  //     const levelColors = {
-  //       ultra: '#f7f7e1',
-  //       high: '#4CAF50',
-  //       medium: '#2196F3',
-  //       low: '#FF9800'
-  //     };
-
-  //     qualityIndicator.textContent = level.toUpperCase();
-  //     qualityIndicator.style.color = levelColors[level] || 'white';
-  //   }
-
-  //   console.log(`Quality level set to: ${level}`);
-  //   this.optimizeRenderer();
-  //   this.updateQualityIndicator();
-  //   return level;
-  // }
-
-  // Add this helper method to implement render distance
-  
   
 setQualityLevel(level, options = {}) {
   console.log(`Setting quality level to: ${level}`);
@@ -7397,81 +7077,6 @@ updateTexturesForQualityLevel(level) {
     });
   }
 
-  // initializeDayNightCycle() {
-  //   // Load the DayNightCycle script dynamically if not already loaded
-  //   if (typeof DayNightCycle === 'undefined') {
-  //     // Create script element
-  //     const script = document.createElement('script');
-  //     script.src = 'js/classes/day-night-cycle.js';
-
-  //     script.onload = () => {
-  //       // Create the cycle when script is loaded
-  //       this.createDayNightCycle();
-  //       this.createPartyButton();
-  //     };
-
-  //     script.onerror = (err) => {
-  //       console.error('Could not load day-night cycle script', err);
-  //     };
-
-  //     document.head.appendChild(script);
-  //   } else {
-  //     // Script is already loaded, create directly
-  //     this.createDayNightCycle();
-  //     this.createPartyButton();
-  //   }
-  // }
-
-
-
-  // Helper method to create the cycle
-  // createDayNightCycle() {
-  //   // Create the cycle
-  //   this.dayNightCycle = new DayNightCycle(this);
-
-  //   // Start with appropriate time based on preference or default to noon
-  //   const startTime = this.preferences?.timeOfDay || 12;
-  //   this.dayNightCycle.setTime(startTime);
-
-  //   // Start cycle if auto-play is enabled in preferences
-  //   if (this.preferences?.autoPlayDayNight) {
-  //     this.dayNightCycle.start();
-  //   }
-
-  //   // Create lighting controls in UI
-  //   const dayNightButton = document.createElement('div');
-  //   dayNightButton.className = 'time-control-button';
-  //   dayNightButton.setAttribute('data-tooltip', 'Day/Night Cycle');
-  //   dayNightButton.innerHTML = `<span class="material-icons">brightness_4</span>`;
-  //   dayNightButton.style.cssText = `
-  //   position: absolute;
-  //   top: 100px;
-  //   right: 10px;
-  //   background: rgba(0, 0, 0, 0.5);
-  //   color: white;
-  //   border-radius: 50%;
-  //   width: 40px;
-  //   height: 40px;
-  //   display: flex;
-  //   align-items: center;
-  //   justify-content: center;
-  //   cursor: pointer;
-  //   z-index: 1000;
-  // `;
-
-  //   // Add click handler to show controls
-  //   dayNightButton.addEventListener('click', () => {
-  //     this.dayNightCycle.showControls();
-  //   });
-
-  //   // Add to 3D view
-  //   const container = document.querySelector('.drawer-3d-view');
-  //   if (container) {
-  //     container.appendChild(dayNightButton);
-  //   }
-
-  //   console.log('Day/Night cycle initialized');
-  // }
 
     initializeDayNightCycle() {
     // Load the DayNightCycle script dynamically if not already loaded
