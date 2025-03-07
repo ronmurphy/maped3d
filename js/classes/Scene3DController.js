@@ -617,6 +617,7 @@ loadShaderEffectsManager() {
 }
 
   // Add this method to Scene3DController
+// Add/replace this method in Scene3DController
 initShaderEffects() {
   // Skip if already initialized or initialization in progress
   if (this.shaderEffects || this.isInitializingShaderEffects) return;
@@ -624,14 +625,18 @@ initShaderEffects() {
   // Set flag to prevent multiple initializations
   this.isInitializingShaderEffects = true;
 
+  console.log('Initializing ShaderEffectsManager...');
+  
   try {
     // Create a script element to load the ShaderEffectsManager
     const script = document.createElement('script');
-    script.src = '/js/classes/ShaderEffectsManager.js'; // Adjust path to match your file structure
+    script.src = '/js/classes/ShaderEffectsManager.js'; // Adjust path as needed
 
     script.onload = () => {
       try {
         console.log('ShaderEffectsManager script loaded successfully');
+        
+        // Initialize the effects manager
         this.shaderEffects = new ShaderEffectsManager(this);
         
         // Set quality based on current settings
@@ -639,18 +644,22 @@ initShaderEffects() {
           this.shaderEffects.setQualityLevel(this.qualityLevel);
         }
         
-        // Scan scene for objects that might need effects
-        this.shaderEffects.scanScene();
-        
-        // Set initial enabled state based on quality
-        if (this.preferences && this.preferences.disableLighting) {
-          this.shaderEffects.setEnabled(false);
+        // Sync with lighting preferences
+        if (this.preferences && this.preferences.disableLighting !== undefined) {
+          this.shaderEffects.setEnabled(!this.preferences.disableLighting);
         }
-
+        
         console.log('ShaderEffectsManager initialized');
-      } catch (err) {
+        
+        // After initialization, scan for existing props
+        setTimeout(() => {
+          this.shaderEffects.scanScene();
+        }, 100);
+      } 
+      catch (err) {
         console.error('Error initializing ShaderEffectsManager:', err);
-      } finally {
+      } 
+      finally {
         this.isInitializingShaderEffects = false; // Reset flag when done
       }
     };
@@ -661,7 +670,8 @@ initShaderEffects() {
     };
 
     document.head.appendChild(script);
-  } catch (err) {
+  } 
+  catch (err) {
     console.error('Error loading ShaderEffectsManager:', err);
     this.isInitializingShaderEffects = false; // Reset flag on error
   }
@@ -4693,7 +4703,11 @@ initShaderEffects() {
 
 
     if (this.shaderEffects) {
+      // Update shader effects
       this.shaderEffects.update(this.deltaTime || 0.016);
+      
+      // Create footstep effects if moving
+      this.createFootstepEffect();
     }
 
     // Update physics and camera height
@@ -4783,117 +4797,257 @@ initShaderEffects() {
 
   };
 
-
-createLandingEffect(position, intensity = 1.0) {
-  console.log(`Creating landing effect at ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)} with intensity ${intensity.toFixed(2)}`);
-  
-  // Create a dust puff with standard THREE.js particles
-  const particleCount = Math.min(50, Math.floor(20 + intensity * 20));
-  const particleGeometry = new THREE.BufferGeometry();
-  const particlePositions = new Float32Array(particleCount * 3);
-  
-  // Fill with random positions in a circle pattern
-  for (let i = 0; i < particleCount; i++) {
-    const i3 = i * 3;
-    // Random position in circle
-    const radius = 0.3 * Math.random();
-    const angle = Math.random() * Math.PI * 2;
-    
-    particlePositions[i3] = position.x + Math.cos(angle) * radius;
-    particlePositions[i3 + 1] = position.y + 0.05; // Just above ground
-    particlePositions[i3 + 2] = position.z + Math.sin(angle) * radius;
-  }
-  
-  particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
-  
-  // Simple texture for particles
-  const particleTexture = this.getParticleTexture();
-  
-  // Create material
-  const particleMaterial = new THREE.PointsMaterial({
-    size: 0.15,
-    map: particleTexture,
-    transparent: true,
-    opacity: 0.7,
-    color: 0xddccbb, // Dust color
-    depthWrite: false,
-    sizeAttenuation: true
-  });
-  
-  // Create particle system
-  const particles = new THREE.Points(particleGeometry, particleMaterial);
-  this.scene.add(particles);
-  
-  console.log(`Added ${particleCount} particles to scene`);
-  
-  // Define simple animation loop
-  let animationFrameId;
-  const startTime = performance.now();
-  const duration = 1500; // 1.5 seconds
-  
-  const animateParticles = () => {
-    const elapsed = performance.now() - startTime;
-    const progress = elapsed / duration;
-    
-    if (progress < 1.0) {
-      // Update positions - rise up
-      const positions = particleGeometry.attributes.position.array;
-      
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        
-        // Move upward
-        positions[i3 + 1] += 0.01;
-        
-        // Spread outward slightly
-        const offsetX = (Math.random() - 0.5) * 0.01;
-        const offsetZ = (Math.random() - 0.5) * 0.01;
-        positions[i3] += offsetX;
-        positions[i3 + 2] += offsetZ;
-      }
-      
-      particleGeometry.attributes.position.needsUpdate = true;
-      
-      // Fade out
-      particleMaterial.opacity = 0.7 * (1 - progress);
-      
-      // Continue animation
-      animationFrameId = requestAnimationFrame(animateParticles);
-    } else {
-      // Clean up
-      this.scene.remove(particles);
-      particleGeometry.dispose();
-      particleMaterial.dispose();
-      console.log("Landing effect animation complete");
+  createLandingEffect(position, intensity = 1.0) {
+    if (this.shaderEffects) {
+      console.log(`Creating landing effect at (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}) with intensity ${intensity.toFixed(2)}`);
+      return this.shaderEffects.createLandingEffect(position, intensity);
     }
-  };
+  }
+
+  // Add this method to Scene3DController
+// createFootstepEffect() {
+//   if (!this.shaderEffects || !this.camera) return;
   
-  // Start animation
-  animateParticles();
+//   // Only create effects at intervals and if moving
+//   if (!this._lastFootstepTime || 
+//       performance.now() - this._lastFootstepTime > 350) { // Adjust timing as needed
+    
+//     // Check if player is moving
+//     if (this.moveState.forward || this.moveState.backward || 
+//         this.moveState.left || this.moveState.right) {
+      
+//       // Position slightly behind player based on movement direction
+//       const playerPos = this.camera.position.clone();
+//       const direction = new THREE.Vector3();
+//       this.camera.getWorldDirection(direction);
+      
+//       // Footstep position is behind and below player
+//       direction.negate(); // Reverse direction
+//       direction.multiplyScalar(0.2); // Move behind player
+      
+//       const footstepPos = playerPos.clone().add(direction);
+//       footstepPos.y -= this.PLAYER_EYE_HEIGHT - 0.1; // Adjust to ground level
+      
+//       // Create dust with running intensity when sprinting
+//       const intensity = this.moveState.sprint ? 0.8 : 0.4;
+      
+//       // Use the dust effect
+//       this.shaderEffects.createDustEffect(footstepPos, {
+//         count: 5, // Fewer particles than landing
+//         size: 0.03,
+//         color: 0xdddddd,
+//         lifetime: 0.5
+//       });
+      
+//       this._lastFootstepTime = performance.now();
+//     }
+//   }
+// }
+
+// Replace your createFootstepEffect method
+createFootstepEffect() {
+  if (!this.shaderEffects || !this.camera || !this.moveState) return;
+  
+  // Only create effects at intervals and if moving
+  if (!this._lastFootstepTime || 
+      performance.now() - this._lastFootstepTime > 400) { // Footstep interval
+    
+    // Check if player is actually moving
+    if (this.moveState.forward || this.moveState.backward || 
+        this.moveState.left || this.moveState.right) {
+      
+      // Get the player's position
+      const playerPos = this.camera.position.clone();
+      
+      // FIXED METHOD: Calculate footstep position with a reliable height offset
+      const eyeHeight = this.PLAYER_EYE_HEIGHT || 1.7; // Default if not set
+      const footstepPos = new THREE.Vector3(
+        playerPos.x,
+        playerPos.y - eyeHeight + 0.05, // Just above ground level
+        playerPos.z
+      );
+      
+      // Double-check position for valid values
+      if (!isNaN(footstepPos.x) && !isNaN(footstepPos.y) && !isNaN(footstepPos.z)) {
+        console.log("Creating footstep effect at:", footstepPos);
+        
+        // Create the dust effect
+        this.shaderEffects.createDustEffect(footstepPos, {
+          count: 8,
+          size: 0.04,
+          color: 0xdddddd,
+          lifetime: 0.8
+        });
+        
+        // Update timestamp
+        this._lastFootstepTime = performance.now();
+      } else {
+        console.error("Invalid footstep position calculated:", footstepPos);
+      }
+    }
+  }
 }
 
-// Helper method to create/cache particle texture
-getParticleTexture() {
-  if (!this._particleTexture) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-    
-    // Draw a soft white circle
-    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.5, 'rgba(240,240,220,0.8)');
-    gradient.addColorStop(1, 'rgba(240,240,220,0)');
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 32, 32);
-    
-    this._particleTexture = new THREE.CanvasTexture(canvas);
-  }
+// Add/Update this method in Scene3DController
+// createFootstepEffect() {
+//   if (!this.shaderEffects || !this.camera || !this.moveState) return;
   
-  return this._particleTexture;
+//   // Only create effects at intervals and if moving
+//   if (!this._lastFootstepTime || 
+//       performance.now() - this._lastFootstepTime > 400) { // Footstep interval in ms
+    
+//     // Check if player is actually moving
+//     if (this.moveState.forward || this.moveState.backward || 
+//         this.moveState.left || this.moveState.right) {
+      
+//       // Get the player's position
+//       const playerPos = this.camera.position.clone();
+      
+//       // Calculate footstep position (slightly behind player)
+//       const direction = new THREE.Vector3();
+//       this.camera.getWorldDirection(direction);
+//       direction.negate(); // Behind player
+//       direction.multiplyScalar(0.3); // Distance behind
+      
+//       const footstepPos = playerPos.clone().add(direction);
+//       footstepPos.y = this.getFloorPosition(playerPos).y + 0.05; // Just above floor
+      
+//       console.log("Creating footstep effect at:", footstepPos);
+      
+//       // Create the dust effect
+//       this.shaderEffects.createDustEffect(footstepPos, {
+//         count: 8,
+//         size: 0.04,
+//         color: 0xdddddd,
+//         lifetime: 0.8
+//       });
+      
+//       // Update timestamp
+//       this._lastFootstepTime = performance.now();
+//     }
+//   }
+// }
+
+// Helper method to get floor position
+getFloorPosition(position) {
+  // If you have a proper ground detection system, use that
+  // This is a simple approximation
+  return new THREE.Vector3(
+    position.x, 
+    position.y - this.PLAYER_HEIGHT + 0.05, // Use your player height constant
+    position.z
+  );
 }
+// createLandingEffect(position, intensity = 1.0) {
+//   console.log(`Creating landing effect at ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)} with intensity ${intensity.toFixed(2)}`);
+  
+//   // Create a dust puff with standard THREE.js particles
+//   const particleCount = Math.min(50, Math.floor(20 + intensity * 20));
+//   const particleGeometry = new THREE.BufferGeometry();
+//   const particlePositions = new Float32Array(particleCount * 3);
+  
+//   // Fill with random positions in a circle pattern
+//   for (let i = 0; i < particleCount; i++) {
+//     const i3 = i * 3;
+//     // Random position in circle
+//     const radius = 0.3 * Math.random();
+//     const angle = Math.random() * Math.PI * 2;
+    
+//     particlePositions[i3] = position.x + Math.cos(angle) * radius;
+//     particlePositions[i3 + 1] = position.y + 0.05; // Just above ground
+//     particlePositions[i3 + 2] = position.z + Math.sin(angle) * radius;
+//   }
+  
+//   particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
+  
+//   // Simple texture for particles
+//   const particleTexture = this.getParticleTexture();
+  
+//   // Create material
+//   const particleMaterial = new THREE.PointsMaterial({
+//     size: 0.15,
+//     map: particleTexture,
+//     transparent: true,
+//     opacity: 0.7,
+//     color: 0xddccbb, // Dust color
+//     depthWrite: false,
+//     sizeAttenuation: true
+//   });
+  
+//   // Create particle system
+//   const particles = new THREE.Points(particleGeometry, particleMaterial);
+//   this.scene.add(particles);
+  
+//   console.log(`Added ${particleCount} particles to scene`);
+  
+//   // Define simple animation loop
+//   let animationFrameId;
+//   const startTime = performance.now();
+//   const duration = 1500; // 1.5 seconds
+  
+//   const animateParticles = () => {
+//     const elapsed = performance.now() - startTime;
+//     const progress = elapsed / duration;
+    
+//     if (progress < 1.0) {
+//       // Update positions - rise up
+//       const positions = particleGeometry.attributes.position.array;
+      
+//       for (let i = 0; i < particleCount; i++) {
+//         const i3 = i * 3;
+        
+//         // Move upward
+//         positions[i3 + 1] += 0.01;
+        
+//         // Spread outward slightly
+//         const offsetX = (Math.random() - 0.5) * 0.01;
+//         const offsetZ = (Math.random() - 0.5) * 0.01;
+//         positions[i3] += offsetX;
+//         positions[i3 + 2] += offsetZ;
+//       }
+      
+//       particleGeometry.attributes.position.needsUpdate = true;
+      
+//       // Fade out
+//       particleMaterial.opacity = 0.7 * (1 - progress);
+      
+//       // Continue animation
+//       animationFrameId = requestAnimationFrame(animateParticles);
+//     } else {
+//       // Clean up
+//       this.scene.remove(particles);
+//       particleGeometry.dispose();
+//       particleMaterial.dispose();
+//       console.log("Landing effect animation complete");
+//     }
+//   };
+  
+//   // Start animation
+//   animateParticles();
+// }
+
+// // Helper method to create/cache particle texture
+// getParticleTexture() {
+//   if (!this._particleTexture) {
+//     const canvas = document.createElement('canvas');
+//     canvas.width = 32;
+//     canvas.height = 32;
+//     const ctx = canvas.getContext('2d');
+    
+//     // Draw a soft white circle
+//     const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+//     gradient.addColorStop(0, 'rgba(255,255,255,1)');
+//     gradient.addColorStop(0.5, 'rgba(240,240,220,0.8)');
+//     gradient.addColorStop(1, 'rgba(240,240,220,0)');
+    
+//     ctx.fillStyle = gradient;
+//     ctx.fillRect(0, 0, 32, 32);
+    
+//     this._particleTexture = new THREE.CanvasTexture(canvas);
+//   }
+  
+//   return this._particleTexture;
+// }
   
   
   

@@ -15,7 +15,10 @@ class ShaderEffectsManager {
     this.zoneEffects = new Map(); // For area/zone effects
     this.enabled = true; // Global toggle
     this.qualityLevel = 'medium'; // performance setting (low, medium, high)
-    this.debug = false;
+    this.debug = false;  
+    this.temporaryEffects = new Map();
+    this.maxTempEffects = 20; // Maximum number of temporary effects like dust
+    this.effectCleanupInterval = null;
     
     // Register built-in effects
     this.registerEffectDefinitions();
@@ -939,13 +942,33 @@ createImpactEffect(position, type = 'footstep', options = {}) {
     return zoneId;
   }
 
-  /**
+/**
  * Create dust particles effect (for landings, footsteps, etc.)
  * @param {Object} position - Position {x, y, z} for the effect
  * @param {Object} options - Optional configuration parameters
  * @returns {Object} Effect data for tracking and updates
  */
 createDustEffect(position, options = {}) {
+  console.log("Dust effect requested at:", position, "with options:", options);
+  
+  // Skip if disabled or low quality without force override
+  if (!this.enabled || (this.qualityLevel === 'low' && !options.force)) {
+    return null;
+  }
+  
+  // NEW: Add NaN check for position values
+  if (isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
+    console.error("Dust effect failed: position contains NaN values");
+    return null;
+  }
+
+  
+  // Skip if we already have too many effects
+  if (this.temporaryEffects.size >= this.maxTempEffects && !options.force) {
+    if (this.debug) console.log('Max temporary effects reached, skipping dust effect');
+    return null;
+  }
+  
   const count = options.count || 20;
   const particlesGeometry = new THREE.BufferGeometry();
   const particlesMaterial = new THREE.PointsMaterial({
@@ -984,13 +1007,19 @@ createDustEffect(position, options = {}) {
   const particles = new THREE.Points(particlesGeometry, particlesMaterial);
   this.scene3D.scene.add(particles);
   
-  // Create animation data
+  // Create effect ID and set lifetime
+  const effectId = `dust-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const lifetime = options.lifetime || 3.0; // Default 3 second lifetime
+  
+  // Create particle system and animation data
   const particleSystem = {
+    id: effectId,
     mesh: particles,
     positions,
     velocities,
-    lifetime: options.lifetime || 1.0,
+    lifetime: lifetime,
     age: 0,
+    created: Date.now(),
     
     update: (deltaTime) => {
       // Update age
@@ -998,9 +1027,12 @@ createDustEffect(position, options = {}) {
       
       // Check if expired
       if (particleSystem.age >= particleSystem.lifetime) {
-        this.scene3D.scene.remove(particleSystem.mesh);
+        if (particleSystem.mesh.parent) {
+          this.scene3D.scene.remove(particleSystem.mesh);
+        }
         particleSystem.mesh.geometry.dispose();
         particleSystem.mesh.material.dispose();
+        this.temporaryEffects.delete(effectId);
         return false; // Remove from updates
       }
       
@@ -1030,21 +1062,172 @@ createDustEffect(position, options = {}) {
     }
   };
   
-  // Track for updates
-  const effectId = `dust-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  this.effects.set(effectId, {
-    type: 'temporary',
-    update: particleSystem.update,
-    cleanup: () => {
-      if (particleSystem.mesh.parent) {
-        this.scene3D.scene.remove(particleSystem.mesh);
-      }
-      particleSystem.mesh.geometry.dispose();
-      particleSystem.mesh.material.dispose();
-    }
-  });
+  // Add to temporary effects collection
+  this.temporaryEffects.set(effectId, particleSystem);
+  
+  // Start cleanup interval if not already running
+  this.ensureCleanupInterval();
+
+  console.log(`Created dust effect with ${count} particles, ID: ${effectId}`);
   
   return particleSystem;
+}
+
+/**
+ * Create a landing dust cloud effect
+ * @param {Object} position {x, y, z} position 
+ * @param {number} intensity How intense the effect should be (1.0 = normal)
+ * @returns {Object} Effect data
+ */
+createLandingEffect(position, intensity = 1.0) {
+  if (!this.enabled || (this.qualityLevel === 'low' && !intensity > 1.5)) return null;
+  
+  // Scale particles based on quality and intensity
+  const particleCount = Math.min(
+    this.qualityLevel === 'ultra' ? 75 : 
+    this.qualityLevel === 'high' ? 50 : 
+    30, 
+    Math.floor(20 + intensity * 20)
+  );
+  
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  const particleVelocities = [];
+ 
+  // Fill with random positions in a circle pattern
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    // Random position in circle
+    const radius = 0.3 * Math.random() * intensity;
+    const angle = Math.random() * Math.PI * 2;
+   
+    particlePositions[i3] = position.x + Math.cos(angle) * radius;
+    particlePositions[i3 + 1] = position.y + 0.05; // Just above ground
+    particlePositions[i3 + 2] = position.z + Math.sin(angle) * radius;
+    
+    // Add velocities with intensity factor
+    particleVelocities.push({
+      x: (Math.random() - 0.5) * 0.01 * intensity,
+      y: 0.01 + Math.random() * 0.02 * intensity,
+      z: (Math.random() - 0.5) * 0.01 * intensity  
+    });
+  }
+ 
+  particleGeometry.setAttribute('position', 
+    new THREE.Float32BufferAttribute(particlePositions, 3)
+  );
+ 
+  // Get or create particle texture
+  const particleTexture = this.getParticleTexture();
+ 
+  // Create material
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.15,
+    map: particleTexture,
+    transparent: true,
+    opacity: 0.7,
+    color: 0xddccbb, // Dust color
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+ 
+  // Create particle system
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  this.scene3D.scene.add(particles);
+ 
+  if (this.debug) {
+    console.log(`Added ${particleCount} landing dust particles at (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)})`);
+  }
+ 
+  // Create effect data for tracking
+  const effectId = `landing-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const lifetime = 1.5 * intensity; // Longer lifetime for bigger impacts
+  
+  const effectData = {
+    id: effectId,
+    type: 'temporary',
+    mesh: particles,
+    positions: particlePositions,
+    velocities: particleVelocities,
+    duration: lifetime,
+    age: 0,
+    created: Date.now(),
+    
+    update: (deltaTime) => {
+      // Update age
+      effectData.age += deltaTime;
+      const progress = effectData.age / effectData.duration;
+      
+      // Check if done
+      if (progress >= 1.0) {
+        // Clean up
+        if (particles.parent) {
+          this.scene3D.scene.remove(particles);
+        }
+        particleGeometry.dispose();
+        particleMaterial.dispose();
+        
+        return false; // Signal to remove from tracking
+      }
+      
+      // Update positions
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Apply velocities
+        particlePositions[i3] += particleVelocities[i].x;
+        particlePositions[i3 + 1] += particleVelocities[i].y;
+        particlePositions[i3 + 2] += particleVelocities[i].z;
+        
+        // Apply physics
+        particleVelocities[i].x *= 0.98; // Air resistance
+        particleVelocities[i].z *= 0.98;
+        particleVelocities[i].y -= 0.001; // Gravity
+      }
+      
+      // Update geometry
+      particleGeometry.attributes.position.needsUpdate = true;
+      
+      // Fade out
+      particleMaterial.opacity = 0.7 * (1 - progress);
+      
+      return true; // Keep updating
+    }
+  };
+  
+  // Add to temporary effects for tracking and updates
+  this.temporaryEffects.set(effectId, effectData);
+  
+  // Ensure cleanup interval is running
+  this.ensureCleanupInterval();
+  
+  return effectData;
+}
+
+/**
+ * Get or create a cached particle texture
+ * @returns {THREE.Texture} Particle texture
+ */
+getParticleTexture() {
+  if (!this._particleTexture) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+   
+    // Draw a soft white circle
+    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.5, 'rgba(240,240,220,0.8)');
+    gradient.addColorStop(1, 'rgba(240,240,220,0)');
+   
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 32, 32);
+   
+    this._particleTexture = new THREE.CanvasTexture(canvas);
+  }
+ 
+  return this._particleTexture;
 }
   
   /**
@@ -1134,16 +1317,33 @@ createDustEffect(position, options = {}) {
   update(deltaTime) {
     if (!this.enabled) return;
     
-    // Update all standard effects
+    // Update standard effects
     this.effects.forEach((effectData, objectId) => {
       this.updateEffect(effectData, deltaTime);
     });
     
-    // Update zone effects
-    this.zoneEffects.forEach((effectData, zoneId) => {
-      this.updateZoneEffect(effectData, deltaTime);
+    // Update temporary effects
+    let updatedCount = 0;
+    this.temporaryEffects.forEach((effectData, effectId) => {
+      if (effectData.update) {
+        const keepUpdating = effectData.update(deltaTime);
+        if (!keepUpdating) {
+          this.temporaryEffects.delete(effectId);
+        } else {
+          updatedCount++;
+        }
+      }
     });
-  }
+    
+    if (updatedCount > 0 && this.debug) {
+      console.log(`Updated ${updatedCount} temporary effects`);
+    }
+  
+  // Update zone effects
+  this.zoneEffects.forEach((effectData, zoneId) => {
+    this.updateZoneEffect(effectData, deltaTime);
+  });
+}
   
 /**
  * Update a specific effect
@@ -1314,6 +1514,87 @@ updateEffect(effectData, deltaTime) {
     
     console.log(`Scan complete. Added effects to ${effectsAdded} objects.`);
   }
+
+/**
+ * Ensure cleanup interval is running
+ */
+ensureCleanupInterval() {
+  if (!this.effectCleanupInterval) {
+    console.log('Starting effects cleanup interval');
+    this.effectCleanupInterval = setInterval(() => {
+      this.cleanupOldEffects();
+    }, 5000); // Check every 5 seconds
+  }
+}
+
+/**
+ * Clean up old effects
+ */
+cleanupOldEffects() {
+  if (this.temporaryEffects.size === 0) {
+    // Clear interval if no effects to manage
+    if (this.effectCleanupInterval) {
+      clearInterval(this.effectCleanupInterval);
+      this.effectCleanupInterval = null;
+    }
+    return;
+  }
+  
+  const now = Date.now();
+  const maxAge = 10000; // 10 seconds absolute maximum
+  
+  // First, remove any super old effects
+  this.temporaryEffects.forEach((effect, id) => {
+    if (now - effect.created > maxAge) {
+      // Force remove very old effects
+      if (effect.mesh && effect.mesh.parent) {
+        this.scene3D.scene.remove(effect.mesh);
+      }
+      
+      // Clean up resources
+      if (effect.mesh) {
+        if (effect.mesh.geometry) effect.mesh.geometry.dispose();
+        if (effect.mesh.material) effect.mesh.material.dispose();
+      }
+      
+      this.temporaryEffects.delete(id);
+      if (this.debug) console.log(`Removed old effect ${id}`);
+    }
+  });
+  
+  // Second, if we're still over limit, remove oldest effects
+  if (this.temporaryEffects.size > this.maxTempEffects) {
+    // Sort by creation time
+    const sortedEffects = Array.from(this.temporaryEffects.entries())
+      .sort((a, b) => a[1].created - b[1].created);
+    
+    // Remove oldest effects until we're within limits
+    const countToRemove = this.temporaryEffects.size - this.maxTempEffects;
+    for (let i = 0; i < countToRemove; i++) {
+      if (i < sortedEffects.length) {
+        const [id, effect] = sortedEffects[i];
+        
+        // Cleanup this effect
+        if (effect.mesh && effect.mesh.parent) {
+          this.scene3D.scene.remove(effect.mesh);
+        }
+        
+        // Clean up resources
+        if (effect.mesh) {
+          if (effect.mesh.geometry) effect.mesh.geometry.dispose();
+          if (effect.mesh.material) effect.mesh.material.dispose();
+        }
+        
+        this.temporaryEffects.delete(id);
+        if (this.debug) console.log(`Removed excess effect ${id}`);
+      }
+    }
+  }
+  
+  if (this.debug) {
+    console.log(`Cleanup completed: ${this.temporaryEffects.size} temporary effects remaining`);
+  }
+}
   
   /**
    * Dispose all effects and clean up resources
@@ -1340,6 +1621,24 @@ updateEffect(effectData, deltaTime) {
         }
       }
     });
+
+      // Clean up temporary effects
+  this.temporaryEffects.forEach((effect, id) => {
+    if (effect.mesh && effect.mesh.parent) {
+      this.scene3D.scene.remove(effect.mesh);
+    }
+    if (effect.mesh) {
+      if (effect.mesh.geometry) effect.mesh.geometry.dispose();
+      if (effect.mesh.material) effect.mesh.material.dispose();
+    }
+  });
+  this.temporaryEffects.clear();
+  
+  // Clear cleanup interval
+  if (this.effectCleanupInterval) {
+    clearInterval(this.effectCleanupInterval);
+    this.effectCleanupInterval = null;
+  }
     
     // Clear collections
     this.effects.clear();
