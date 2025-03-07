@@ -2,6 +2,7 @@
  * ShaderEffectsManager handles special visual effects throughout the scene
  * Supports both prop-based effects and area/zone effects
  */
+if (!window.ShaderEffectsManager) {
 class ShaderEffectsManager {
   /**
    * Create a new ShaderEffectsManager
@@ -35,7 +36,16 @@ class ShaderEffectsManager {
       particleSize: 0.05,
       particleColor: 0xff8844,
       animationSpeed: 1.0,
-      create: this.createFireEffect.bind(this)
+      // Use different creation method based on quality
+      create: (object, definition, qualityLevel) => {
+        // Use enhanced effects for medium and high quality
+        if (qualityLevel === 'high' || qualityLevel === 'ultra' || qualityLevel === 'medium') {
+          return this.createEnhancedFireEffect(object, definition, qualityLevel);
+        } else {
+          // Use basic effect for low quality
+          return this.createFireEffect(object, definition, qualityLevel);
+        }
+      }
     });
     
     this.registerEffectType('magic', {
@@ -445,6 +455,152 @@ class ShaderEffectsManager {
       }
     };
   }
+
+  /**
+ * Create an enhanced fire effect with advanced shaders
+ * @param {Object3D} object - Object to add effect to
+ * @param {Object} definition - Effect definition
+ * @param {string} qualityLevel - Quality level
+ * @returns {Object} Effect data
+ */
+createEnhancedFireEffect(object, definition, qualityLevel = 'medium') {
+  // Create container for effects
+  const container = new THREE.Group();
+  container.position.copy(object.position);
+  
+  // Add to scene
+  this.scene3D.scene.add(container);
+  
+  // Create light
+  const particleCount = this.getQualityAdjustedValue(definition.particleCount, qualityLevel);
+  const light = new THREE.PointLight(
+    definition.color,
+    definition.intensity,
+    definition.distance,
+    definition.decay
+  );
+  
+  // Position light slightly above object
+  light.position.y += 0.5;
+  container.add(light);
+  
+  // Create enhanced fire particles with shader
+  const particles = this.createEnhancedParticles(
+    particleCount, 
+    definition.particleSize,
+    definition.particleColor
+  );
+  
+  container.add(particles);
+  
+  // Return data for tracking
+  return {
+    container,
+    light,
+    particles,
+    originalObject: object,
+    definition,
+    animationData: {
+      time: 0,
+      speed: definition.animationSpeed
+    }
+  };
+}
+
+/**
+ * Create particles with advanced shader effects
+ * @param {number} count - Number of particles
+ * @param {number} size - Base particle size
+ * @param {number} color - Particle color
+ * @returns {Points} Enhanced particle system
+ */
+createEnhancedParticles(count, size, color) {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  
+  // Convert hex color to RGB
+  const particleColor = new THREE.Color(color);
+  
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    
+    // Randomize positions in a small area
+    const radius = Math.random() * 0.3;
+    const angle = Math.random() * Math.PI * 2;
+    positions[i3] = Math.cos(angle) * radius;
+    positions[i3 + 1] = Math.random() * 0.5; // Height
+    positions[i3 + 2] = Math.sin(angle) * radius;
+    
+    // Randomize colors slightly
+    colors[i3] = particleColor.r * (0.9 + Math.random() * 0.2);
+    colors[i3 + 1] = particleColor.g * (0.9 + Math.random() * 0.2);
+    colors[i3 + 2] = particleColor.b * (0.9 + Math.random() * 0.2);
+    
+    // Randomize sizes
+    sizes[i] = size * (0.7 + Math.random() * 0.6);
+  }
+  
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('particleColor', new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  
+  // Advanced shader material
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      baseColor: { value: new THREE.Color(color) }
+    },
+    vertexShader: `
+      attribute float size;
+      attribute vec3 particleColor;
+      varying vec3 vColor;
+      uniform float time;
+      
+      void main() {
+        vColor = particleColor;
+        
+        // Animate position
+        vec3 pos = position;
+        pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
+        pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
+        pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
+        
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      
+      void main() {
+        // Create circular particle
+        float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if (r > 0.5) discard;
+        
+        // Smooth edge and fade center for glow effect
+        float alpha = 0.9 * (1.0 - r * 1.9);
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `,
+    blending: THREE.AdditiveBlending,
+    depthTest: true,
+    depthWrite: false,
+    transparent: true,
+    vertexColors: true
+  });
+  
+  // Create particle system
+  const particles = new THREE.Points(geometry, material);
+  
+  // Store original positions for animation
+  particles.userData.positions = positions.slice();
+  particles.userData.time = 0;
+  
+  return particles;
+}
   
   /**
    * Create a magic effect for an object
@@ -590,6 +746,36 @@ class ShaderEffectsManager {
       }
     };
   }
+
+
+
+
+
+
+
+  /**
+ * Create footstep or impact dust effect
+ * @param {THREE.Vector3} position - World position
+ * @param {string} type - 'footstep' or 'impact'
+ * @param {Object} options - Additional options
+ */
+createImpactEffect(position, type = 'footstep', options = {}) {
+  // Skip effects on low quality
+  if (this.qualityLevel === 'low' && !options.force) return null;
+  
+  const defaults = {
+    count: type === 'footstep' ? 10 : 20,
+    color: options.color || (type === 'footstep' ? 0xcccccc : 0xddccbb),
+    size: type === 'footstep' ? 0.03 : 0.05,
+    lifetime: type === 'footstep' ? 0.5 : 1.0
+  };
+  
+  // Merge with provided options
+  const config = {...defaults, ...options};
+  
+  // Create the dust effect
+  return this.createDustEffect(position, config);
+}
   
   /**
    * Helper to create particles
@@ -752,6 +938,114 @@ class ShaderEffectsManager {
     
     return zoneId;
   }
+
+  /**
+ * Create dust particles effect (for landings, footsteps, etc.)
+ * @param {Object} position - Position {x, y, z} for the effect
+ * @param {Object} options - Optional configuration parameters
+ * @returns {Object} Effect data for tracking and updates
+ */
+createDustEffect(position, options = {}) {
+  const count = options.count || 20;
+  const particlesGeometry = new THREE.BufferGeometry();
+  const particlesMaterial = new THREE.PointsMaterial({
+    color: options.color || 0xcccccc,
+    size: options.size || 0.05,
+    transparent: true,
+    opacity: 0.6
+  });
+  
+  // Create particle positions
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+  
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 0.1 + Math.random() * 0.2;
+    
+    // Starting positions in a circle around landing point
+    positions[i3] = position.x + Math.cos(angle) * radius;
+    positions[i3 + 1] = position.y + 0.05; // Slightly above ground
+    positions[i3 + 2] = position.z + Math.sin(angle) * radius;
+    
+    // Add random velocities
+    velocities.push({
+      x: (Math.random() - 0.5) * 0.01,
+      y: 0.01 + Math.random() * 0.02,
+      z: (Math.random() - 0.5) * 0.01
+    });
+  }
+  
+  particlesGeometry.setAttribute('position', 
+    new THREE.BufferAttribute(positions, 3)
+  );
+  
+  const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+  this.scene3D.scene.add(particles);
+  
+  // Create animation data
+  const particleSystem = {
+    mesh: particles,
+    positions,
+    velocities,
+    lifetime: options.lifetime || 1.0,
+    age: 0,
+    
+    update: (deltaTime) => {
+      // Update age
+      particleSystem.age += deltaTime;
+      
+      // Check if expired
+      if (particleSystem.age >= particleSystem.lifetime) {
+        this.scene3D.scene.remove(particleSystem.mesh);
+        particleSystem.mesh.geometry.dispose();
+        particleSystem.mesh.material.dispose();
+        return false; // Remove from updates
+      }
+      
+      // Update particles
+      for (let i = 0; i < count; i++) {
+        const i3 = i * 3;
+        
+        // Apply velocities
+        positions[i3] += velocities[i].x;
+        positions[i3 + 1] += velocities[i].y;
+        positions[i3 + 2] += velocities[i].z;
+        
+        // Slow down with friction and gravity
+        velocities[i].x *= 0.98;
+        velocities[i].z *= 0.98;
+        velocities[i].y -= 0.001;
+      }
+      
+      // Fade out
+      const fadeRatio = 1 - (particleSystem.age / particleSystem.lifetime);
+      particlesMaterial.opacity = 0.6 * fadeRatio;
+      
+      // Update buffer
+      particlesGeometry.attributes.position.needsUpdate = true;
+      
+      return true; // Keep updating
+    }
+  };
+  
+  // Track for updates
+  const effectId = `dust-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  this.effects.set(effectId, {
+    type: 'temporary',
+    update: particleSystem.update,
+    cleanup: () => {
+      if (particleSystem.mesh.parent) {
+        this.scene3D.scene.remove(particleSystem.mesh);
+      }
+      particleSystem.mesh.geometry.dispose();
+      particleSystem.mesh.material.dispose();
+    }
+  });
+  
+  return particleSystem;
+}
   
   /**
    * Update effects quality based on performance
@@ -851,23 +1145,35 @@ class ShaderEffectsManager {
     });
   }
   
-  /**
-   * Update a specific effect
-   * @param {Object} effectData - Effect data
-   * @param {number} deltaTime - Time since last frame
-   */
-  updateEffect(effectData, deltaTime) {
-    if (!effectData.animationData) return;
-    
-    // Update animation time
-    effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
-    
-    // Animate particles if present
-    if (effectData.particles) {
+/**
+ * Update a specific effect
+ * @param {Object} effectData - Effect data
+ * @param {number} deltaTime - Time since last frame
+ */
+updateEffect(effectData, deltaTime) {
+  if (!effectData.animationData) return;
+  
+  // Update animation time
+  effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
+  const time = effectData.animationData.time;
+  
+  // Animate particles if present
+  if (effectData.particles) {
+    // Check if using advanced shader material
+    if (effectData.particles.material.isShaderMaterial && 
+        effectData.particles.material.uniforms && 
+        effectData.particles.material.uniforms.time) {
+      
+      // Update time uniform for shader animation
+      effectData.particles.material.uniforms.time.value = time;
+      
+      // No need to update positions manually, shader handles it
+    } 
+    // Standard particle animation (original code)
+    else {
       const positions = effectData.particles.geometry.attributes.position.array;
       const originalPositions = effectData.particles.userData.positions;
       const count = positions.length / 3;
-      const time = effectData.animationData.time;
       const pattern = effectData.animationData.pattern || 'default';
       
       for (let i = 0; i < count; i++) {
@@ -905,14 +1211,44 @@ class ShaderEffectsManager {
       // Update geometry
       effectData.particles.geometry.attributes.position.needsUpdate = true;
     }
+  }
+  
+  // Animate light flickering if applicable
+  if (effectData.light) {
+    // Apply subtle flicker to light intensity
+    const originalIntensity = effectData.definition.intensity || 1.0;
+    const flickerAmount = 0.1; // Amount of intensity variation
     
-    // Animate light flickering if applicable
-    if (effectData.light) {
-      // Apply subtle flicker to light intensity
-      const originalIntensity = effectData.definition.intensity;
-      effectData.light.intensity = originalIntensity * (0.9 + Math.sin(effectData.animationData.time * 5) * 0.1);
+    // More complex flicker calculation for realism
+    const flicker = 
+      Math.sin(time * 5) * 0.05 +
+      Math.sin(time * 10) * 0.025 +
+      Math.sin(time * 20) * 0.0125;
+    
+    effectData.light.intensity = originalIntensity * (1.0 - flickerAmount + flicker);
+    
+    // Option: also animate light color for more realism
+    if (effectData.definition.animateColor && effectData.light.color) {
+      // Shift color slightly toward yellow/red for fire
+      const baseColor = new THREE.Color(effectData.definition.color);
+      const warmthShift = Math.sin(time * 3) * 0.05; // Small color variation
+      
+      effectData.light.color.copy(baseColor);
+      effectData.light.color.r += warmthShift;
+      effectData.light.color.g += warmthShift * 0.4;
     }
   }
+  
+  // Update emissive material effects if present
+  if (effectData.emissiveMesh && effectData.emissiveMesh.material) {
+    const material = effectData.emissiveMesh.material;
+    if (material.emissiveIntensity !== undefined) {
+      // Add subtle pulsing to emissive intensity
+      const originalIntensity = effectData.definition.emissiveIntensity || 1.0;
+      material.emissiveIntensity = originalIntensity * (0.8 + Math.sin(time * 2) * 0.2);
+    }
+  }
+}
   
   /**
    * Update a zone effect
@@ -1014,4 +1350,5 @@ class ShaderEffectsManager {
 }
 
 // Export the class
-export default ShaderEffectsManager;
+window.ShaderEffectsManager = ShaderEffectsManager;
+}

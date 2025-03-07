@@ -121,15 +121,17 @@ class Scene3DController {
     }
 
     // Initialize visual effects
-    if (!this.visualEffects) {
-      this.visualEffects = new VisualEffectsManager(this);
-      this.visualEffects.initPostProcessing();
-    }
+    // if (!this.visualEffects) {
+    //   this.visualEffects = new VisualEffectsManager(this);
+    //   this.visualEffects.initPostProcessing();
+    // }
 
     // Initialize day/night cycle if not exists
     if (!this.dayNightCycle) {
       this.initializeDayNightCycle();
     }
+
+    this.initShaderEffects();
 
     // Add player light
     this.addPlayerLight();
@@ -201,6 +203,22 @@ class Scene3DController {
       this._gameMenu = null;
     }
   
+    if (this.shaderEffects) {
+      console.log('Cleaning up shader effects...');
+      this.shaderEffects.dispose();
+      this.shaderEffects = null;
+    }
+    
+    // Keep the existing cleanup for lightSources as a fallback
+    if (this.lightSources) {
+      this.lightSources.clear();
+      this.lightSources = null;
+    }
+    if (this.lightSourcesContainer) {
+      this.scene.remove(this.lightSourcesContainer);
+      this.lightSourcesContainer = null;
+    }
+
     // Clean up renderer DOM element - critical for WebGL context release
     if (this.renderer) {
       console.log('Disposing of renderer...');
@@ -531,45 +549,123 @@ class Scene3DController {
     };
   }
 
-    monitorMemory() {
-    if (window.performance && window.performance.memory) {
-      const memStats = document.createElement('div');
-      memStats.style.cssText = `
-        position: fixed;
-        top: 56px;
-        left: 100px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-family: monospace;
-        z-index: 1000;
-      `;
+  //   monitorMemory() {
+  //   if (window.performance && window.performance.memory) {
+  //     const memStats = document.createElement('div');
+  //     memStats.style.cssText = `
+  //       position: fixed;
+  //       top: 56px;
+  //       left: 100px;
+  //       background: rgba(0, 0, 0, 0.7);
+  //       color: white;
+  //       padding: 5px 10px;
+  //       border-radius: 4px;
+  //       font-family: monospace;
+  //       z-index: 1000;
+  //     `;
 
-      // Set initial display state based on showStats
-      memStats.style.display = this.showStats ? 'block' : 'none';
+  //     // Set initial display state based on showStats
+  //     memStats.style.display = this.showStats ? 'block' : 'none';
 
-      document.body.appendChild(memStats);
+  //     document.body.appendChild(memStats);
 
-      const updateMemStats = () => {
-        if (!memStats.parentNode) return;
+  //     const updateMemStats = () => {
+  //       if (!memStats.parentNode) return;
 
-        const memory = window.performance.memory;
-        const usedHeapSize = (memory.usedJSHeapSize / 1048576).toFixed(2);
-        const totalHeapSize = (memory.totalJSHeapSize / 1048576).toFixed(2);
+  //       const memory = window.performance.memory;
+  //       const usedHeapSize = (memory.usedJSHeapSize / 1048576).toFixed(2);
+  //       const totalHeapSize = (memory.totalJSHeapSize / 1048576).toFixed(2);
 
-        memStats.textContent = `Mem: ${usedHeapSize}MB / ${totalHeapSize}MB`;
+  //       memStats.textContent = `Mem: ${usedHeapSize}MB / ${totalHeapSize}MB`;
 
-        setTimeout(updateMemStats, 1000);
-      };
+  //       setTimeout(updateMemStats, 1000);
+  //     };
 
-      updateMemStats();
+  //     updateMemStats();
 
-      return memStats;
+  //     return memStats;
+  //   }
+
+  //   return null;
+  // }
+
+// Add this method to Scene3DController
+loadShaderEffectsManager() {
+  return new Promise((resolve, reject) => {
+    if (window.ShaderEffectsManager || this.shaderEffects) {
+      console.log('ShaderEffectsManager already loaded');
+      resolve(this.shaderEffects || new ShaderEffectsManager(this));
+      return;
     }
 
-    return null;
+    console.log('Loading ShaderEffectsManager...');
+    const script = document.createElement('script');
+    script.src = '/js/classes/ShaderEffectsManager.js';
+    
+    script.onload = () => {
+      console.log('ShaderEffectsManager loaded successfully');
+      resolve(new ShaderEffectsManager(this));
+    };
+    
+    script.onerror = (err) => {
+      console.error('Failed to load ShaderEffectsManager:', err);
+      reject(err);
+    };
+    
+    document.head.appendChild(script);
+  });
+}
+
+  // Add this method to Scene3DController
+initShaderEffects() {
+  // Skip if already initialized or initialization in progress
+  if (this.shaderEffects || this.isInitializingShaderEffects) return;
+
+  // Set flag to prevent multiple initializations
+  this.isInitializingShaderEffects = true;
+
+  try {
+    // Create a script element to load the ShaderEffectsManager
+    const script = document.createElement('script');
+    script.src = '/js/classes/ShaderEffectsManager.js'; // Adjust path to match your file structure
+
+    script.onload = () => {
+      try {
+        console.log('ShaderEffectsManager script loaded successfully');
+        this.shaderEffects = new ShaderEffectsManager(this);
+        
+        // Set quality based on current settings
+        if (this.qualityLevel) {
+          this.shaderEffects.setQualityLevel(this.qualityLevel);
+        }
+        
+        // Scan scene for objects that might need effects
+        this.shaderEffects.scanScene();
+        
+        // Set initial enabled state based on quality
+        if (this.preferences && this.preferences.disableLighting) {
+          this.shaderEffects.setEnabled(false);
+        }
+
+        console.log('ShaderEffectsManager initialized');
+      } catch (err) {
+        console.error('Error initializing ShaderEffectsManager:', err);
+      } finally {
+        this.isInitializingShaderEffects = false; // Reset flag when done
+      }
+    };
+
+    script.onerror = () => {
+      console.error('Failed to load ShaderEffectsManager.js');
+      this.isInitializingShaderEffects = false; // Reset flag on error
+    };
+
+    document.head.appendChild(script);
+  } catch (err) {
+    console.error('Error loading ShaderEffectsManager:', err);
+    this.isInitializingShaderEffects = false; // Reset flag on error
   }
+}
 
   safeUpdateTexture(texture, source = 'unknown') {
     if (!texture) {
@@ -688,7 +784,7 @@ class Scene3DController {
           }
 
           this.updateQualityIndicator();
-          this.memStats = this.monitorMemory();
+          // this.memStats = this.monitorMemory();
 
           // Explicitly set memStats visibility to match showStats
           if (this.memStats && this.showStats) {
@@ -897,7 +993,7 @@ class Scene3DController {
 
     // Always add quality indicator too
     this.updateQualityIndicator();
-    this.memStats = this.monitorMemory();
+    // this.memStats = this.monitorMemory();
 
     // Set initial visibility based on preferences
     this.stats.dom.style.display = this.showStats ? 'block' : 'none';
@@ -1378,7 +1474,7 @@ class Scene3DController {
           !(document.activeElement instanceof HTMLTextAreaElement)) {
           event.preventDefault(); // Prevent any default behavior
           this.toggleStats();
-          this.monitorMemory();
+          // this.monitorMemory();
         }
         break;
 
@@ -2646,8 +2742,15 @@ class Scene3DController {
                   if (mesh) {
                     this.scene.add(mesh);
                     console.log(`Added prop mesh: ${marker.id}`);
-                  }
-                  return mesh;
+            // NEW CODE: Queue for effects processing
+            if (this.shaderEffects) {
+              setTimeout(() => {
+                this.shaderEffects.processObject(mesh);
+              }, 50); // Small delay to ensure mesh is properly added
+            }
+          }
+          return mesh;
+
                 })
                 .catch(error => {
                   console.error(`Error creating prop ${marker.id}:`, error);
@@ -3374,8 +3477,14 @@ class Scene3DController {
     console.log('Adding item to inventory:', prop);
 
       // IMPORTANT: Before removing the prop, check if it has light effects
-  const isLightSource = this.checkIfLightSource(prop.name || '');
-  const lightSourceData = isLightSource ? this.removeLightEffects(prop.id) : null;
+  // const isLightSource = this.checkIfLightSource(prop.name || '');
+  // const lightSourceData = isLightSource ? this.removeLightEffects(prop.id) : null;
+
+  if (this.shaderEffects && this.nearestProp) {
+    // Try to remove any effects associated with this prop
+    this.shaderEffects.removeEffect(this.nearestProp.id);
+    console.log(`Removed effects from prop ${this.nearestProp.id} before pickup`);
+  }
 
     // Create inventory item element
     const itemElement = document.createElement('div');
@@ -3484,10 +3593,6 @@ class Scene3DController {
     cursor: pointer;
     font-size: 0.8em;
   `;
-    // useButton.onclick = (e) => {
-    //   e.stopPropagation();
-    //   this.useInventoryItem(prop.id);
-    // };
 
     useButton.onclick = (e) => {
       e.stopPropagation();
@@ -3839,10 +3944,27 @@ class Scene3DController {
   
     // Create and add prop mesh
     this.createPropMesh(propData)
+      // .then(mesh => {
+      //   this.scene.add(mesh);
+      //   console.log('Dropped item added to scene at:', { x: gridX, y: gridY, placementType });
+      // })
+
       .then(mesh => {
-        this.scene.add(mesh);
-        console.log('Dropped item added to scene at:', { x: gridX, y: gridY, placementType });
+        if (mesh) {
+          this.scene.add(mesh);
+          console.log('Dropped item added to scene at:', { x: gridX, y: gridY, placementType });
+          
+          // Process for effects if shader manager is loaded
+          if (this.shaderEffects) {
+            setTimeout(() => {
+              // Small delay to ensure mesh is fully added to scene
+              this.shaderEffects.processObject(mesh);
+            }, 100);
+          }
+        }
       })
+
+
       .catch(error => {
         console.error('Error creating dropped prop:', error);
       });
@@ -4570,11 +4692,15 @@ class Scene3DController {
     }
 
 
+    if (this.shaderEffects) {
+      this.shaderEffects.update(this.deltaTime || 0.016);
+    }
+
     // Update physics and camera height
     // this.camera.position.y = this.physics.update();
     // this.camera.position.y = this.physics.update(this.deltaTime || 0.016);
 
-    this.camera.position.y = this.physics.update(this.deltaTime);
+    // this.camera.position.y = this.physics.update(this.deltaTime);
 
     // Check if player just landed
     this.camera.position.y = this.physics.update(this.deltaTime);
@@ -4617,7 +4743,16 @@ class Scene3DController {
     }
 
 
-    this.updateAutoLightSources(this.deltaTime || 0.016);
+    // this.updateAutoLightSources(this.deltaTime || 0.016);
+
+    if (this.shaderEffects) {
+      // Use ShaderEffectsManager for updates
+      this.shaderEffects.update(this.deltaTime || 0.016);
+    }
+    // Otherwise fall back to legacy method if it exists
+    else if (this.lightSources && this.lightSources.size > 0) {
+      this.updateAutoLightSources(this.deltaTime || 0.016);
+    }
 
     // rendering distance baised upon hardware levels
     this.updateObjectVisibility();
@@ -6336,6 +6471,10 @@ setQualityLevel(level, options = {}) {
         (level === 'high' ? THREE.PCFShadowMap : THREE.BasicShadowMap);
     }
   }
+
+  if (this.shaderEffects) {
+    this.shaderEffects.setQualityLevel(level);
+  }
   
   // Update all textures based on quality
   this.updateTexturesForQualityLevel(level);
@@ -6830,98 +6969,135 @@ updateTexturesForQualityLevel(level) {
     this.lightingEnabled = enabled;
   }
 
+  // autoDetectLightSources() {
+  //   if (!this.scene) return;
+
+  //   console.log('Auto-detecting light sources from prop names...');
+
+  //   // Create a container for lights
+  //   if (!this.lightSourcesContainer) {
+  //     this.lightSourcesContainer = new THREE.Group();
+  //     this.lightSourcesContainer.name = 'lightSources';
+  //     this.scene.add(this.lightSourcesContainer);
+  //   }
+
+  //   // Track all light sources
+  //   if (!this.lightSources) {
+  //     this.lightSources = new Map();
+  //   }
+
+  //   // Keywords that suggest light emission
+  //   const lightKeywords = [
+  //     {
+  //       words: ['fire', 'torch', 'flame', 'candle', 'lantern', 'campfire'],
+  //       color: 0xff6600, intensity: 1.5, distance: 8, decay: 2
+  //     },
+  //     {
+  //       words: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
+  //       color: 0x66ccff, intensity: 1.2, distance: 6, decay: 1.5
+  //     },
+  //     {
+  //       words: ['lava', 'magma', 'ember'],
+  //       color: 0xff3300, intensity: 1.3, distance: 7, decay: 2
+  //     },      {
+  //       words: ['radiant', 'holy'],
+  //       color: 0xffe599, intensity: 1.2, distance: 6, decay: 1.5
+  //     },
+  //   ];
+
+  //   // Look for props in the scene
+  //   let lightSourceCount = 0;
+  //   this.scene.traverse(object => {
+  //     // Skip objects that aren't props or already have lights
+  //     if (!object.userData || object.userData.type !== 'prop' || object.userData.hasLight) {
+  //       return;
+  //     }
+
+  //     // Get the prop name
+  //     const propName = object.userData.name ? object.userData.name.toLowerCase() : '';
+  //     if (!propName) return;
+
+  //     // Check if prop name contains any light keywords
+  //     for (const category of lightKeywords) {
+  //       if (category.words.some(word => propName.includes(word))) {
+  //         console.log(`Auto-detected light source: "${propName}"`);
+
+  //         // Create a light source for this prop
+  //         const light = new THREE.PointLight(
+  //           category.color,
+  //           category.intensity,
+  //           category.distance,
+  //           category.decay
+  //         );
+
+  //         // Position the light at or slightly above the prop
+  //         light.position.copy(object.position);
+  //         // Move up slightly if not already above ground
+  //         if (light.position.y < 1.5) {
+  //           light.position.y += 0.5;
+  //         }
+
+  //         // Add light to scene
+  //         this.lightSourcesContainer.add(light);
+
+  //         // Mark this prop as having a light
+  //         object.userData.hasLight = true;
+
+  //         // Store reference to this light
+  //         this.lightSources.set(object.uuid, {
+  //           light,
+  //           prop: object,
+  //           originalIntensity: category.intensity,
+  //           originalDistance: category.distance
+  //         });
+
+  //         // Create glow effect
+  //         this.createFireGlowEffect(object, category.color);
+
+  //         lightSourceCount++;
+  //         break; // Stop after first match
+  //       }
+  //     }
+  //   });
+
+  //   console.log(`Auto-detected ${lightSourceCount} light sources from prop names`);
+  // }
+
   autoDetectLightSources() {
-    if (!this.scene) return;
-
-    console.log('Auto-detecting light sources from prop names...');
-
-    // Create a container for lights
-    if (!this.lightSourcesContainer) {
-      this.lightSourcesContainer = new THREE.Group();
-      this.lightSourcesContainer.name = 'lightSources';
-      this.scene.add(this.lightSourcesContainer);
+    console.log('Auto-detecting light sources via ShaderEffectsManager...');
+    
+    if (this.shaderEffects) {
+      // If already loaded, just scan the scene
+      this.shaderEffects.scanScene();
+      return true;
     }
-
-    // Track all light sources
-    if (!this.lightSources) {
-      this.lightSources = new Map();
-    }
-
-    // Keywords that suggest light emission
-    const lightKeywords = [
-      {
-        words: ['fire', 'torch', 'flame', 'candle', 'lantern', 'campfire'],
-        color: 0xff6600, intensity: 1.5, distance: 8, decay: 2
-      },
-      {
-        words: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
-        color: 0x66ccff, intensity: 1.2, distance: 6, decay: 1.5
-      },
-      {
-        words: ['lava', 'magma', 'ember'],
-        color: 0xff3300, intensity: 1.3, distance: 7, decay: 2
-      },      {
-        words: ['radiant', 'holy'],
-        color: 0xffe599, intensity: 1.2, distance: 6, decay: 1.5
-      },
-    ];
-
-    // Look for props in the scene
-    let lightSourceCount = 0;
-    this.scene.traverse(object => {
-      // Skip objects that aren't props or already have lights
-      if (!object.userData || object.userData.type !== 'prop' || object.userData.hasLight) {
-        return;
-      }
-
-      // Get the prop name
-      const propName = object.userData.name ? object.userData.name.toLowerCase() : '';
-      if (!propName) return;
-
-      // Check if prop name contains any light keywords
-      for (const category of lightKeywords) {
-        if (category.words.some(word => propName.includes(word))) {
-          console.log(`Auto-detected light source: "${propName}"`);
-
-          // Create a light source for this prop
-          const light = new THREE.PointLight(
-            category.color,
-            category.intensity,
-            category.distance,
-            category.decay
-          );
-
-          // Position the light at or slightly above the prop
-          light.position.copy(object.position);
-          // Move up slightly if not already above ground
-          if (light.position.y < 1.5) {
-            light.position.y += 0.5;
-          }
-
-          // Add light to scene
-          this.lightSourcesContainer.add(light);
-
-          // Mark this prop as having a light
-          object.userData.hasLight = true;
-
-          // Store reference to this light
-          this.lightSources.set(object.uuid, {
-            light,
-            prop: object,
-            originalIntensity: category.intensity,
-            originalDistance: category.distance
-          });
-
-          // Create glow effect
-          this.createFireGlowEffect(object, category.color);
-
-          lightSourceCount++;
-          break; // Stop after first match
+    
+    // Load and then scan
+    this.loadShaderEffectsManager()
+      .then(manager => {
+        this.shaderEffects = manager;
+        
+        // Set quality level
+        if (this.qualityLevel) {
+          this.shaderEffects.setQualityLevel(this.qualityLevel);
         }
-      }
-    });
-
-    console.log(`Auto-detected ${lightSourceCount} light sources from prop names`);
+        
+        // Scan scene for objects that need effects
+        this.shaderEffects.scanScene();
+        
+        // Handle lighting toggle from preferences
+        if (this.preferences && this.preferences.disableLighting !== undefined) {
+          this.shaderEffects.setEnabled(!this.preferences.disableLighting);
+        }
+        
+        return true;
+      })
+      .catch(err => {
+        console.error('Could not initialize ShaderEffectsManager:', err);
+        // Fall back to original method if needed
+        this._autoDetectLightSourcesLegacy();
+        return false;
+      });
   }
 
   checkIfLightSource(name) {
