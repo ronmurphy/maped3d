@@ -1,45 +1,97 @@
 
 window.ResourceManager = class {
     constructor() {
-                this.resources = {
-                    textures: {
-                        walls: new Map(),
-                        doors: new Map(),
-                        environmental: new Map(),
-                        props: new Map()
-                    },
-                    sounds: {
-                        ambient: new Map(),
-                        effects: new Map()
-                    },
-                    splashArt: {
-                        title: new Map(),
-                        loading: new Map(),
-                        background: new Map()
-                    },
-                    effects: {
-                        particles: new Map(),
-                        lighting: new Map()
-                    },
-                    bestiary: new Map()
-                };
+        this.resources = {
+            textures: {
+                walls: new Map(),
+                doors: new Map(),
+                environmental: new Map(),
+                props: new Map()
+            },
+            sounds: {
+                ambient: new Map(),
+                effects: new Map()
+            },
+            splashArt: {
+                title: new Map(),
+                loading: new Map(),
+                background: new Map()
+            },
+            effects: {
+                particles: new Map(),
+                lighting: new Map()
+            },
+            bestiary: new Map(),
+            metadata: {}  // Add metadata storage
+        };
+    
+        this.loadedPacks = new Map();
+        this.activePackId = null;
+        this.mapResourceLinks = new Map();
+        this.activeResourcePack = null;
+        this.thumbnailSize = 100;
+    
+        // Initialize textureAssignments map
+        this.textureAssignments = new Map();
+        this.defaultWallTextureId = null;
+    
+        // Initialize sound management
+        this.activeAudio = new Map();
+    
+        // Initialize MonsterManager
+        this.monsterManager = null;
+    
+        // Props filtering system
+this.propFolderMap = new Map();
+this.activeTagFilter = null;
+this.lastSelectedCategory = null;
+
+// Add metadata if it doesn't exist
+if (!this.resources.metadata) {
+    this.resources.metadata = {};
+}
+    }
+
+    // constructor() {
+    //             this.resources = {
+    //                 textures: {
+    //                     walls: new Map(),
+    //                     doors: new Map(),
+    //                     environmental: new Map(),
+    //                     props: new Map()
+    //                 },
+    //                 sounds: {
+    //                     ambient: new Map(),
+    //                     effects: new Map()
+    //                 },
+    //                 splashArt: {
+    //                     title: new Map(),
+    //                     loading: new Map(),
+    //                     background: new Map()
+    //                 },
+    //                 effects: {
+    //                     particles: new Map(),
+    //                     lighting: new Map()
+    //                 },
+    //                 bestiary: new Map()
+    //             };
         
-                this.loadedPacks = new Map();
-                this.activePackId = null;
-                this.mapResourceLinks = new Map();
-                this.activeResourcePack = null;
-                this.thumbnailSize = 100;
+    //             this.loadedPacks = new Map();
+    //             this.activePackId = null;
+    //             this.mapResourceLinks = new Map();
+    //             this.activeResourcePack = null;
+    //             this.thumbnailSize = 100;
         
-                // Initialize textureAssignments map
-                this.textureAssignments = new Map();
-                this.defaultWallTextureId = null;
+    //             // Initialize textureAssignments map
+    //             this.textureAssignments = new Map();
+    //             this.defaultWallTextureId = null;
         
-                // Initialize sound management
-                this.activeAudio = new Map();
+    //             // Initialize sound management
+    //             this.activeAudio = new Map();
         
-                // Initialize MonsterManager
-                this.monsterManager = null;
-            }
+    //             // Initialize MonsterManager
+    //             this.monsterManager = null;
+    //         }
 
     // Resource pack methods
     async loadResourcePack(file) {
@@ -59,6 +111,55 @@ window.ResourceManager = class {
         }
     }
 
+    // async saveResourcePack(mapName = null) {
+    //     const packData = {
+    //         name: this.activeResourcePack?.name || 'New Resource Pack',
+    //         version: '1.0',
+    //         textures: this.serializeTextures(),
+    //         sounds: this.serializeSounds(),
+    //         splashArt: this.serializeSplashArt(),
+    //         effects: this.serializeEffects()
+    //     };
+
+    //     const blob = new Blob([JSON.stringify(packData, null, 2)], {
+    //         type: 'application/json'
+    //     });
+
+    //     // Use provided mapName or default to resource-pack
+    //     const filename = mapName ? 
+    //         `${mapName}.resource.json` : 
+    //         'resource-pack.json';
+
+    //     const a = document.createElement('a');
+    //     a.href = URL.createObjectURL(blob);
+    //     a.download = filename;
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     document.body.removeChild(a);
+    //     URL.revokeObjectURL(a.href);
+        
+    //     return filename;
+    // }
+
+    // serializeTextures() {
+    //     const serialized = {};
+    //     for (const [category, textures] of Object.entries(this.resources.textures)) {
+    //         serialized[category] = {};
+    //         textures.forEach((texture, id) => {
+    //             serialized[category][id] = {
+    //                 id: texture.id,
+    //                 name: texture.name,
+    //                 category: texture.category,
+    //                 subcategory: texture.subcategory,
+    //                 data: texture.data,
+    //                 thumbnail: texture.thumbnail,
+    //                 dateAdded: texture.dateAdded
+    //             };
+    //         });
+    //     }
+    //     return serialized;
+    // }
+
     async saveResourcePack(mapName = null) {
         const packData = {
             name: this.activeResourcePack?.name || 'New Resource Pack',
@@ -66,18 +167,19 @@ window.ResourceManager = class {
             textures: this.serializeTextures(),
             sounds: this.serializeSounds(),
             splashArt: this.serializeSplashArt(),
-            effects: this.serializeEffects()
+            effects: this.serializeEffects(),
+            metadata: this.resources.metadata || {}
         };
-
+    
         const blob = new Blob([JSON.stringify(packData, null, 2)], {
             type: 'application/json'
         });
-
+    
         // Use provided mapName or default to resource-pack
         const filename = mapName ? 
             `${mapName}.resource.json` : 
             'resource-pack.json';
-
+    
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = filename;
@@ -101,7 +203,10 @@ window.ResourceManager = class {
                     subcategory: texture.subcategory,
                     data: texture.data,
                     thumbnail: texture.thumbnail,
-                    dateAdded: texture.dateAdded
+                    dateAdded: texture.dateAdded,
+                    // Include tag information
+                    tags: texture.tags || [],
+                    sourcePath: texture.sourcePath || null
                 };
             });
         }
@@ -171,8 +276,6 @@ window.ResourceManager = class {
 
 
 
-
-
     // deserializeResourcePack(packData) {
     //     if (packData.textures) {
     //         for (const [category, textures] of Object.entries(packData.textures)) {
@@ -182,15 +285,13 @@ window.ResourceManager = class {
     //             for (const [id, texture] of Object.entries(textures)) {
     //                 this.resources.textures[category].set(id, texture);
 
-    //                 // Add this: Set first wall texture as default
+    //                 // Set first wall texture as default
     //                 if (category === 'walls' && !this.defaultWallTextureId) {
     //                     this.defaultWallTextureId = id;
-    //                     console.log('Set default wall texture:', id);
     //                 }
     //             }
     //         }
     //     }
-
 
     //     if (packData.sounds) {
     //         for (const [category, sounds] of Object.entries(packData.sounds)) {
@@ -204,13 +305,44 @@ window.ResourceManager = class {
     //     }
 
     //     if (packData.splashArt) {
-    //         for (const [id, art] of Object.entries(packData.splashArt)) {
-    //             this.resources.splashArt.set(id, art);
+    //         for (const [category, artItems] of Object.entries(packData.splashArt)) {
+    //             if (!this.resources.splashArt[category]) {
+    //                 this.resources.splashArt[category] = new Map();
+    //             }
+    //             for (const [id, art] of Object.entries(artItems)) {
+    //                 this.resources.splashArt[category].set(id, art);
+    //             }
+    //         }
+    //     }
+
+    //     if (packData.effects) {
+    //         for (const [category, effects] of Object.entries(packData.effects)) {
+    //             if (!this.resources.effects[category]) {
+    //                 this.resources.effects[category] = new Map();
+    //             }
+    //             for (const [id, effect] of Object.entries(effects)) {
+    //                 this.resources.effects[category].set(id, effect);
+    //             }
     //         }
     //     }
     // }
 
     deserializeResourcePack(packData) {
+        // First restore propFolderMap if it exists in metadata
+        if (packData.metadata && packData.metadata.propFolders) {
+            this.propFolderMap = new Map();
+            
+            packData.metadata.propFolders.forEach(folder => {
+                this.propFolderMap.set(folder.tag, {
+                    label: folder.label,
+                    files: folder.files
+                });
+            });
+            
+            console.log('Restored prop folder map with tags:', this.propFolderMap);
+        }
+        
+        // Existing texture deserialization
         if (packData.textures) {
             for (const [category, textures] of Object.entries(packData.textures)) {
                 if (!this.resources.textures[category]) {
@@ -218,7 +350,7 @@ window.ResourceManager = class {
                 }
                 for (const [id, texture] of Object.entries(textures)) {
                     this.resources.textures[category].set(id, texture);
-
+    
                     // Set first wall texture as default
                     if (category === 'walls' && !this.defaultWallTextureId) {
                         this.defaultWallTextureId = id;
@@ -226,7 +358,8 @@ window.ResourceManager = class {
                 }
             }
         }
-
+    
+        // Continue with the rest of the deserialization (sounds, splashArt, effects)
         if (packData.sounds) {
             for (const [category, sounds] of Object.entries(packData.sounds)) {
                 if (!this.resources.sounds[category]) {
@@ -237,7 +370,7 @@ window.ResourceManager = class {
                 }
             }
         }
-
+    
         if (packData.splashArt) {
             for (const [category, artItems] of Object.entries(packData.splashArt)) {
                 if (!this.resources.splashArt[category]) {
@@ -248,7 +381,7 @@ window.ResourceManager = class {
                 }
             }
         }
-
+    
         if (packData.effects) {
             for (const [category, effects] of Object.entries(packData.effects)) {
                 if (!this.resources.effects[category]) {
@@ -258,6 +391,11 @@ window.ResourceManager = class {
                     this.resources.effects[category].set(id, effect);
                 }
             }
+        }
+        
+        // Also save metadata
+        if (packData.metadata) {
+            this.resources.metadata = packData.metadata;
         }
     }
 
@@ -556,55 +694,108 @@ getSpecificTexture(category, criteria) {
     return null;
   }
 
-    async addTexture(file, category, subcategory) {
-        if (!file || !category) {
-            console.warn('Missing required parameters:', { file, category });
-            return null;
-        }
+//     async addTexture(file, category, subcategory) {
+//         if (!file || !category) {
+//             console.warn('Missing required parameters:', { file, category });
+//             return null;
+//         }
     
-        try {
-            console.log('Creating texture from file:', file);
-            // Create thumbnail and base64 data
-            const imageData = await this.createImageData(file);
-            const thumbnail = await this.createThumbnail(file);
+//         try {
+//             console.log('Creating texture from file:', file);
+//             // Create thumbnail and base64 data
+//             const imageData = await this.createImageData(file);
+//             const thumbnail = await this.createThumbnail(file);
     
-            // Extract a clean name from the filename for props
-            let name = file.name;
-            if (category === 'props') {
-                // Remove file extension
-                name = name.replace(/\.[^.]+$/, '');
-                // Remove numbers and parentheses like (1), (2)
-                name = name.replace(/\s*\(\d+\)\s*$/, '');
-                // Convert to proper case (first letter capitalized)
-                name = name.charAt(0).toUpperCase() + name.slice(1);
-            }
+//             // Extract a clean name from the filename for props
+//             let name = file.name;
+//             if (category === 'props') {
+//                 // Remove file extension
+//                 name = name.replace(/\.[^.]+$/, '');
+//                 // Remove numbers and parentheses like (1), (2)
+//                 name = name.replace(/\s*\(\d+\)\s*$/, '');
+//                 // Convert to proper case (first letter capitalized)
+//                 name = name.charAt(0).toUpperCase() + name.slice(1);
+//             }
     
-// In the addTexture method, add this line:
-const textureData = {
-    id: `${category}_${Date.now()}`,
-    name: name, // The cleaned name
-    originalFilename: file.name, // Always store the original filename
-    category,
-    subcategory,
-    data: imageData,
-    thumbnail,
-    dateAdded: new Date().toISOString()
-};
+// // In the addTexture method, add this line:
+// const textureData = {
+//     id: `${category}_${Date.now()}`,
+//     name: name, // The cleaned name
+//     originalFilename: file.name, // Always store the original filename
+//     category,
+//     subcategory,
+//     data: imageData,
+//     thumbnail,
+//     dateAdded: new Date().toISOString()
+// };
     
-            console.log('Created texture data:', textureData);
+//             console.log('Created texture data:', textureData);
     
-            // Store in appropriate category
-            if (!this.resources.textures[category]) {
-                this.resources.textures[category] = new Map();
-            }
-            this.resources.textures[category].set(textureData.id, textureData);
+//             // Store in appropriate category
+//             if (!this.resources.textures[category]) {
+//                 this.resources.textures[category] = new Map();
+//             }
+//             this.resources.textures[category].set(textureData.id, textureData);
     
-            return textureData.id;
-        } catch (error) {
-            console.error('Error adding texture:', error);
-            return null;
-        }
+//             return textureData.id;
+//         } catch (error) {
+//             console.error('Error adding texture:', error);
+//             return null;
+//         }
+//     }
+
+async addTexture(file, category, options = {}) {
+    if (!file || !category) {
+        console.warn('Missing required parameters:', { file, category });
+        return null;
     }
+
+    try {
+        console.log('Creating texture from file:', file);
+        // Create thumbnail and base64 data
+        const imageData = await this.createImageData(file);
+        const thumbnail = await this.createThumbnail(file);
+
+        // Extract a clean name from the filename for props
+        let name = file.name;
+        if (category === 'props') {
+            // Remove file extension
+            name = name.replace(/\.[^.]+$/, '');
+            // Remove numbers and parentheses like (1), (2)
+            name = name.replace(/\s*\(\d+\)\s*$/, '');
+            // Convert to proper case (first letter capitalized)
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+        // Enhanced texture data with tags
+        const textureData = {
+            id: `${category}_${Date.now()}`,
+            name: name,
+            originalFilename: file.name,
+            category,
+            subcategory: options.subcategory || null,
+            data: imageData,
+            thumbnail,
+            dateAdded: new Date().toISOString(),
+            // Add tags if available (for props folder import)
+            tags: options.tags || [],
+            sourcePath: options.sourcePath || null
+        };
+
+        console.log('Created texture data:', textureData);
+
+        // Store in appropriate category
+        if (!this.resources.textures[category]) {
+            this.resources.textures[category] = new Map();
+        }
+        this.resources.textures[category].set(textureData.id, textureData);
+
+        return textureData.id;
+    } catch (error) {
+        console.error('Error adding texture:', error);
+        return null;
+    }
+}
 
     async addSplashArt(file, description = '', category = 'title') {
         if (!file) {
@@ -791,6 +982,239 @@ const textureData = {
 
 
 // Modify the updateGallery method in ResourceManager class
+// updateGallery(drawer, category, view = 'grid') {
+//     // Determine which tab panel to use
+//     let tabPanelName;
+//     if (['ambient', 'effects'].includes(category)) {
+//         tabPanelName = 'sounds';
+//     } else if (['walls', 'doors', 'environmental', 'props'].includes(category)) {
+//         tabPanelName = 'textures';
+//     } else if (['title', 'loading', 'background'].includes(category)) {
+//         tabPanelName = 'splashArt';
+//     } else {
+//         tabPanelName = category;
+//     }
+    
+//     console.log(`Looking for gallery in tab panel: ${tabPanelName}`);
+    
+//     let container = drawer.querySelector(`#${category}Gallery`);
+//     if (!container) {
+//         console.log(`Creating new gallery container for ${category}`);
+//         const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
+        
+//         if (tabPanel) {
+//             container = document.createElement('div');
+//             container.id = `${category}Gallery`;
+//             container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+//             tabPanel.appendChild(container);
+//         } else {
+//             console.error(`Tab panel ${tabPanelName} not found`);
+//             return;
+//         }
+//     }
+
+//     // Hide all other galleries in the same tab panel and show this one
+//     const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
+//     if (tabPanel) {
+//         tabPanel.querySelectorAll('.gallery-container').forEach(gallery => {
+//             gallery.style.display = gallery.id === `${category}Gallery` ? '' : 'none';
+//         });
+//     }
+
+//     // Update container class based on view
+//     container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+
+//     // Clear existing content
+//     container.innerHTML = '';
+
+//     // Get resources based on category type
+//     let resources;
+//     if (['title', 'loading', 'background'].includes(category)) {
+//         // Get resources from the specific splash art category
+//         resources = this.resources.splashArt[category];
+//         if (!resources) {
+//             // Initialize the category if it doesn't exist
+//             this.resources.splashArt[category] = new Map();
+//             resources = this.resources.splashArt[category];
+//         }
+//     } else if (category === 'ambient' || category === 'effects') {
+//         resources = this.resources.sounds[category];
+//     } else {
+//         resources = this.resources.textures[category];
+//     }
+
+//     if (!resources || resources.size === 0) {
+//         container.innerHTML = `
+//             <sl-card class="empty-gallery">
+//                 <div style="text-align: center; padding: 2rem;">
+//                     ${category === 'ambient' || category === 'effects' ? 
+//                         '<span class="material-icons" style="font-size: 3rem; opacity: 0.5;">volume_off</span>' :
+//                         '<span class="material-icons" style="font-size: 3rem; opacity: 0.5;">image_not_supported</span>'
+//                     }
+//                     <p>No ${category} added yet</p>
+//                 </div>
+//             </sl-card>
+//         `;
+//         return;
+//     }
+
+//     // Create cards for each resource
+//     resources.forEach((resource, id) => {
+//         const card = document.createElement('sl-card');
+//         card.className = 'resource-item';
+
+//         // Handle different resource types
+//         if (category === 'ambient' || category === 'effects') {
+//             // Sound resource
+//             card.innerHTML = `
+//                 ${view === 'grid' ? `
+//                     <div class="sound-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+//                         <div class="sound-icon" style="font-size: 48px; color: #666;">
+//                             <span class="material-icons">volume_up</span>
+//                         </div>
+//                         <div class="sound-info">
+//                             <div class="sound-name" style="color: #666; font-weight: bold;">${resource.name}</div>
+//                             <div class="sound-duration" style="color: #666; font-size: 0.9em;">
+//                                 ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
+//                             </div>
+//                         </div>
+//                     </div>
+//                 ` : `
+//                     <div style="display: flex; align-items: center; gap: 1rem;">
+//                         <div class="sound-icon" style="font-size: 24px; color: #666;">
+//                             <span class="material-icons">volume_up</span>
+//                         </div>
+//                         <div class="sound-info">
+//                             <div class="sound-name">${resource.name}</div>
+//                             <div class="sound-duration" style="color: #666; font-size: 0.9em;">
+//                                 ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
+//                             </div>
+//                         </div>
+//                     </div>
+//                 `}
+//                 <div slot="footer" class="resource-actions">
+//                     <sl-button-group>
+//                         <sl-button size="small" class="play-btn">
+//                             <span class="material-icons">play_arrow</span>
+//                         </sl-button>
+//                         <sl-button size="small" class="delete-btn" variant="danger">
+//                             <span class="material-icons">delete</span>
+//                         </sl-button>
+//                     </sl-button-group>
+//                 </div>
+//             `;
+        
+            
+//             const playBtn = card.querySelector('.play-btn');
+//             playBtn.addEventListener('click', () => {
+//                 if (playBtn.getAttribute('aria-pressed') === 'true') {
+//                     // Stop playback
+//                     this.stopSound(id);
+//                     playBtn.removeAttribute('aria-pressed');
+//                     playBtn.querySelector('.material-icons').textContent = 'play_arrow';
+//                 } else {
+//                     // Start playback
+//                     const audio = this.playSound(id, category);
+//                     if (audio) {
+//                         playBtn.setAttribute('aria-pressed', 'true');
+//                         playBtn.querySelector('.material-icons').textContent = 'stop';
+                        
+//                         // Reset button when sound ends
+//                         audio.addEventListener('ended', () => {
+//                             playBtn.removeAttribute('aria-pressed');
+//                             playBtn.querySelector('.material-icons').textContent = 'play_arrow';
+//                         });
+//                     }
+//                 }
+//             });
+
+//         } else {
+//             card.innerHTML = `
+//     ${view === 'grid' ? `
+//         <img 
+//             src="${resource.thumbnail}" 
+//             alt="${resource.name}"
+//             class="resource-thumbnail"
+//         />
+//         <div class="resource-info">
+//             <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+//             <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+//             ${resource.originalFilename ? 
+//                 `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+//             ${category === 'splashArt' && resource.description ? 
+//                 `<div class="resource-description">${resource.description}</div>` : ''}
+//         </div>
+//     ` : `
+//         <div style="display: flex; align-items: center; gap: 1rem;">
+//             <img 
+//                 src="${resource.thumbnail}" 
+//                 alt="${resource.name}"
+//                 class="resource-thumbnail"
+//                 style="width: 50px; height: 50px;"
+//             />
+//             <div class="resource-info">
+//                 <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+//                 <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+//                 ${resource.originalFilename ? 
+//                     `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+//                 ${category === 'splashArt' && resource.description ? 
+//                     `<div class="resource-description">${resource.description}</div>` : ''}
+//             </div>
+//         </div>
+//     `}
+//     <div slot="footer" class="resource-actions">
+//         <sl-button-group>
+//             <sl-button size="small" class="preview-btn">
+//                 <span class="material-icons">visibility</span>
+//             </sl-button>
+//             ${category === 'props' ? `
+//             <sl-button size="small" class="edit-name-btn">
+//                 <span class="material-icons">edit</span>
+//             </sl-button>
+//             ` : ''}
+//             <sl-button size="small" class="delete-btn" variant="danger">
+//                 <span class="material-icons">delete</span>
+//             </sl-button>
+//         </sl-button-group>
+//     </div>
+// `;
+
+//             // Add preview button handler for non-sound resources
+//             card.querySelector('.preview-btn').addEventListener('click', () => {
+//                 this.showResourcePreview(resource);
+//             });
+//         }
+
+//         if (category === 'props') {
+//             card.querySelector('.edit-name-btn').addEventListener('click', () => {
+//                 this.showNameEditor(resource, category, id, card);
+//             });
+//         }
+        
+
+//         // Add delete button handler for all resource types
+//         card.querySelector('.delete-btn').addEventListener('click', () => {
+//             const confirmMessage = category === 'splashArt' ? 
+//                 `Delete "${resource.name}"?` :
+//                 `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
+
+//             if (confirm(confirmMessage)) {
+//                 if (category === 'ambient' || category === 'effects') {
+//                     this.deleteSound(id, category);
+//                 } else if (category === 'splashArt') {
+//                     this.resources.splashArt.delete(id);
+//                 } else {
+//                     this.deleteResource(category, id);
+//                 }
+//                 this.updateGallery(drawer, category, view);
+//             }
+//         });
+
+//         container.appendChild(card);
+//     });
+// }
+
+// Modify the updateGallery method to handle prop tags
 updateGallery(drawer, category, view = 'grid') {
     // Determine which tab panel to use
     let tabPanelName;
@@ -833,16 +1257,23 @@ updateGallery(drawer, category, view = 'grid') {
     // Update container class based on view
     container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
 
-    // Clear existing content
+    // Add or update tag filter for props
+    if (category === 'props') {
+        this.updatePropsTagFilter(drawer, container);
+    }
+
+    // Clear existing content (keep tag filter if it exists)
+    const tagFilter = container.querySelector('.props-tag-filter');
     container.innerHTML = '';
+    if (tagFilter) {
+        container.appendChild(tagFilter);
+    }
 
     // Get resources based on category type
     let resources;
     if (['title', 'loading', 'background'].includes(category)) {
-        // Get resources from the specific splash art category
         resources = this.resources.splashArt[category];
         if (!resources) {
-            // Initialize the category if it doesn't exist
             this.resources.splashArt[category] = new Map();
             resources = this.resources.splashArt[category];
         }
@@ -852,8 +1283,24 @@ updateGallery(drawer, category, view = 'grid') {
         resources = this.resources.textures[category];
     }
 
-    if (!resources || resources.size === 0) {
-        container.innerHTML = `
+    // Apply tag filter for props
+    let filteredResources = resources;
+    if (category === 'props' && this.activeTagFilter) {
+        // Get list of file IDs that belong to this tag
+        const tagData = this.propFolderMap?.get(this.activeTagFilter);
+        if (tagData && tagData.files) {
+            // Filter resources to only include files with this tag
+            filteredResources = new Map();
+            tagData.files.forEach(fileId => {
+                if (resources.has(fileId)) {
+                    filteredResources.set(fileId, resources.get(fileId));
+                }
+            });
+        }
+    }
+
+    if (!filteredResources || filteredResources.size === 0) {
+        container.innerHTML += `
             <sl-card class="empty-gallery">
                 <div style="text-align: center; padding: 2rem;">
                     ${category === 'ambient' || category === 'effects' ? 
@@ -868,150 +1315,111 @@ updateGallery(drawer, category, view = 'grid') {
     }
 
     // Create cards for each resource
-    resources.forEach((resource, id) => {
+    filteredResources.forEach((resource, id) => {
         const card = document.createElement('sl-card');
         card.className = 'resource-item';
 
-        // Handle different resource types
-        if (category === 'ambient' || category === 'effects') {
-            // Sound resource
-            card.innerHTML = `
-                ${view === 'grid' ? `
-                    <div class="sound-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                        <div class="sound-icon" style="font-size: 48px; color: #666;">
-                            <span class="material-icons">volume_up</span>
-                        </div>
-                        <div class="sound-info">
-                            <div class="sound-name" style="color: #666; font-weight: bold;">${resource.name}</div>
-                            <div class="sound-duration" style="color: #666; font-size: 0.9em;">
-                                ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
-                            </div>
-                        </div>
-                    </div>
-                ` : `
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div class="sound-icon" style="font-size: 24px; color: #666;">
-                            <span class="material-icons">volume_up</span>
-                        </div>
-                        <div class="sound-info">
-                            <div class="sound-name">${resource.name}</div>
-                            <div class="sound-duration" style="color: #666; font-size: 0.9em;">
-                                ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
-                            </div>
-                        </div>
-                    </div>
-                `}
-                <div slot="footer" class="resource-actions">
-                    <sl-button-group>
-                        <sl-button size="small" class="play-btn">
-                            <span class="material-icons">play_arrow</span>
-                        </sl-button>
-                        <sl-button size="small" class="delete-btn" variant="danger">
-                            <span class="material-icons">delete</span>
-                        </sl-button>
-                    </sl-button-group>
-                </div>
-            `;
-        
-            
-            const playBtn = card.querySelector('.play-btn');
-            playBtn.addEventListener('click', () => {
-                if (playBtn.getAttribute('aria-pressed') === 'true') {
-                    // Stop playback
-                    this.stopSound(id);
-                    playBtn.removeAttribute('aria-pressed');
-                    playBtn.querySelector('.material-icons').textContent = 'play_arrow';
-                } else {
-                    // Start playback
-                    const audio = this.playSound(id, category);
-                    if (audio) {
-                        playBtn.setAttribute('aria-pressed', 'true');
-                        playBtn.querySelector('.material-icons').textContent = 'stop';
-                        
-                        // Reset button when sound ends
-                        audio.addEventListener('ended', () => {
-                            playBtn.removeAttribute('aria-pressed');
-                            playBtn.querySelector('.material-icons').textContent = 'play_arrow';
-                        });
-                    }
-                }
-            });
-
-        } else {
-            card.innerHTML = `
-    ${view === 'grid' ? `
-        <img 
-            src="${resource.thumbnail}" 
-            alt="${resource.name}"
-            class="resource-thumbnail"
-        />
-        <div class="resource-info">
-            <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
-            <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
-            ${resource.originalFilename ? 
-                `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
-            ${category === 'splashArt' && resource.description ? 
-                `<div class="resource-description">${resource.description}</div>` : ''}
-        </div>
-    ` : `
-        <div style="display: flex; align-items: center; gap: 1rem;">
+        // Build card HTML
+        card.innerHTML = `
+        ${view === 'grid' ? `
             <img 
                 src="${resource.thumbnail}" 
                 alt="${resource.name}"
                 class="resource-thumbnail"
-                style="width: 50px; height: 50px;"
             />
             <div class="resource-info">
                 <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
                 <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
                 ${resource.originalFilename ? 
                     `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
-                ${category === 'splashArt' && resource.description ? 
-                    `<div class="resource-description">${resource.description}</div>` : ''}
+                
+                ${category === 'props' && resource.tags && resource.tags.length > 0 ? 
+                    `<div class="resource-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                        ${resource.tags.map(tag => 
+                            `<sl-tag size="small" style="cursor: pointer; max-width: 100%; overflow: hidden;" 
+                                    data-tag="${tag}" 
+                                    title="${this.formatTagDisplay(tag)}">
+                                <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+                                ${this.formatTagDisplay(tag).split(' › ').pop()}
+                            </sl-tag>`
+                        ).join('')}
+                    </div>` : ''}
             </div>
+        ` : `
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <img 
+                    src="${resource.thumbnail}" 
+                    alt="${resource.name}"
+                    class="resource-thumbnail"
+                    style="width: 50px; height: 50px;"
+                />
+                <div class="resource-info">
+                    <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+                    <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+                    ${resource.originalFilename ? 
+                        `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+                    
+                    ${category === 'props' && resource.tags && resource.tags.length > 0 ? 
+                        `<div class="resource-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                            ${resource.tags.map(tag => 
+                                `<sl-tag size="small" style="cursor: pointer; max-width: 100%; overflow: hidden;" 
+                                        data-tag="${tag}" 
+                                        title="${this.formatTagDisplay(tag)}">
+                                    <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+                                    ${this.formatTagDisplay(tag).split(' › ').pop()}
+                                </sl-tag>`
+                            ).join('')}
+                        </div>` : ''}
+                </div>
+            </div>
+        `}
+        <div slot="footer" class="resource-actions">
+            <sl-button-group>
+                <sl-button size="small" class="preview-btn">
+                    <span class="material-icons">visibility</span>
+                </sl-button>
+                ${category === 'props' ? `
+                <sl-button size="small" class="edit-name-btn">
+                    <span class="material-icons">edit</span>
+                </sl-button>
+                ` : ''}
+                <sl-button size="small" class="delete-btn" variant="danger">
+                    <span class="material-icons">delete</span>
+                </sl-button>
+            </sl-button-group>
         </div>
-    `}
-    <div slot="footer" class="resource-actions">
-        <sl-button-group>
-            <sl-button size="small" class="preview-btn">
-                <span class="material-icons">visibility</span>
-            </sl-button>
-            ${category === 'props' ? `
-            <sl-button size="small" class="edit-name-btn">
-                <span class="material-icons">edit</span>
-            </sl-button>
-            ` : ''}
-            <sl-button size="small" class="delete-btn" variant="danger">
-                <span class="material-icons">delete</span>
-            </sl-button>
-        </sl-button-group>
-    </div>
-`;
+        `;
 
-            // Add preview button handler for non-sound resources
-            card.querySelector('.preview-btn').addEventListener('click', () => {
-                this.showResourcePreview(resource);
+        // Add tag click handlers
+        if (category === 'props') {
+            const tagElements = card.querySelectorAll('.resource-tags sl-tag');
+            tagElements.forEach(tag => {
+                tag.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const tagValue = tag.dataset.tag;
+                    this.setPropsTagFilter(drawer, tagValue);
+                });
             });
         }
+
+        // Add preview button handler
+        card.querySelector('.preview-btn').addEventListener('click', () => {
+            this.showResourcePreview(resource);
+        });
 
         if (category === 'props') {
             card.querySelector('.edit-name-btn').addEventListener('click', () => {
                 this.showNameEditor(resource, category, id, card);
             });
         }
-        
 
-        // Add delete button handler for all resource types
+        // Add delete button handler
         card.querySelector('.delete-btn').addEventListener('click', () => {
-            const confirmMessage = category === 'splashArt' ? 
-                `Delete "${resource.name}"?` :
-                `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
+            const confirmMessage = `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
 
             if (confirm(confirmMessage)) {
                 if (category === 'ambient' || category === 'effects') {
                     this.deleteSound(id, category);
-                } else if (category === 'splashArt') {
-                    this.resources.splashArt.delete(id);
                 } else {
                     this.deleteResource(category, id);
                 }
@@ -1020,6 +1428,259 @@ updateGallery(drawer, category, view = 'grid') {
         });
 
         container.appendChild(card);
+    });
+}
+
+// Method to update the props tag filter UI
+updatePropsTagFilter(drawer, container) {
+    // Remove any existing tag filter
+    const existingFilter = container.querySelector('.props-tag-filter');
+    if (existingFilter) {
+        existingFilter.remove();
+    }
+
+    // Create tag filter container
+    const tagFilterContainer = document.createElement('div');
+    tagFilterContainer.className = 'props-tag-filter';
+    tagFilterContainer.style.cssText = `
+        margin-bottom: 16px;
+        padding: 8px;
+        background: #f5f5f5;
+        border-radius: 4px;
+    `;
+
+    // Only proceed if we have folder data
+    if (!this.propFolderMap || this.propFolderMap.size === 0) {
+        // Add message about how to get tags
+        tagFilterContainer.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-icons" style="color: #666;">info</span>
+                <span style="color: #666; font-size: 0.9em;">Import folders to enable tag filtering</span>
+            </div>
+        `;
+        container.prepend(tagFilterContainer);
+        return;
+    }
+
+    // Add search box
+    const searchContainer = document.createElement('div');
+    searchContainer.style.cssText = `
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    `;
+    
+    searchContainer.innerHTML = `
+        <sl-input type="search" placeholder="Search props..." style="flex: 1;" id="props-search">
+            <span slot="prefix" class="material-icons" style="font-size: 16px; color: #666;">search</span>
+        </sl-input>
+        ${this.activeTagFilter ? `
+            <sl-button size="small" class="clear-tag-filter" variant="default">
+                <span class="material-icons" style="font-size: 16px;">clear</span>
+                Clear Filter
+            </sl-button>
+        ` : ''}
+    `;
+    
+    tagFilterContainer.appendChild(searchContainer);
+
+    // Add tag cloud for top-level folders
+    const tagCloud = document.createElement('div');
+    tagCloud.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    `;
+
+    // Get unique top-level tags
+    const topLevelTags = new Map();
+    
+    this.propFolderMap.forEach((data, tag) => {
+        // Get only top-level folders (no hyphens means it's a root folder)
+        const tagParts = tag.split('-');
+        if (tagParts.length === 1) {
+            topLevelTags.set(tag, data);
+        }
+    });
+    
+    // Add tags to the cloud
+    topLevelTags.forEach((data, tag) => {
+        const tagElement = document.createElement('sl-tag');
+        tagElement.variant = this.activeTagFilter === tag ? 'primary' : 'neutral';
+        tagElement.size = 'medium';
+        tagElement.style.cursor = 'pointer';
+        tagElement.innerHTML = `
+            <span class="material-icons" style="font-size: 14px; margin-right: 4px;">folder</span>
+            ${data.label}
+        `;
+        tagElement.dataset.tag = tag;
+        
+        // Add click handler
+        tagElement.addEventListener('click', () => {
+            this.setPropsTagFilter(drawer, tag);
+        });
+        
+        tagCloud.appendChild(tagElement);
+    });
+    
+    tagFilterContainer.appendChild(tagCloud);
+    
+    // If a tag is active, show its subcategories
+    if (this.activeTagFilter) {
+        // Find all child tags that belong to this parent
+        const childTags = new Map();
+        const parentTag = this.activeTagFilter;
+        
+        this.propFolderMap.forEach((data, tag) => {
+            // Tag starts with parent but is not the parent itself
+            if (tag !== parentTag && tag.startsWith(parentTag + '-')) {
+                // Direct child only (no grandchildren)
+                const tagParts = tag.split('-');
+                const parentParts = parentTag.split('-');
+                
+                if (tagParts.length === parentParts.length + 1) {
+                    childTags.set(tag, data);
+                }
+            }
+        });
+        
+        // Add subtitle showing current path
+        const pathElement = document.createElement('div');
+        pathElement.style.cssText = `
+            margin: 8px 0;
+            font-weight: 500;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        `;
+        
+        // Show breadcrumb
+        const parentData = this.propFolderMap.get(parentTag);
+        
+        pathElement.innerHTML = `
+            <span class="material-icons" style="font-size: 16px; color: #666;">folder_open</span>
+            <span>${parentData ? parentData.label : this.formatTagDisplay(parentTag)}</span>
+        `;
+        
+        // Add "up" button if not at root level
+        if (parentTag.includes('-')) {
+            const upButton = document.createElement('sl-button');
+            upButton.size = 'small';
+            upButton.variant = 'neutral';
+            upButton.style.marginLeft = 'auto';
+            upButton.innerHTML = `
+                <span class="material-icons" style="font-size: 14px;">arrow_upward</span>
+                Up
+            `;
+            
+            // Go up one level on click
+            upButton.addEventListener('click', () => {
+                const tagParts = parentTag.split('-');
+                tagParts.pop();
+                const parentFolder = tagParts.join('-');
+                this.setPropsTagFilter(drawer, parentFolder);
+            });
+            
+            pathElement.appendChild(upButton);
+        }
+        
+        tagFilterContainer.appendChild(pathElement);
+        
+        // Add subcategory tags if any exist
+        if (childTags.size > 0) {
+            const subTagCloud = document.createElement('div');
+            subTagCloud.style.cssText = `
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 8px;
+                padding: 8px;
+                background: #fff;
+                border-radius: 4px;
+            `;
+            
+            childTags.forEach((data, tag) => {
+                const tagElement = document.createElement('sl-tag');
+                tagElement.variant = 'neutral';
+                tagElement.size = 'small';
+                tagElement.style.cursor = 'pointer';
+                
+                // Just show the last part of the tag name
+                const displayName = this.formatTagDisplay(tag).split(' › ').pop();
+                
+                tagElement.innerHTML = `
+                    <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+                    ${displayName}
+                `;
+                tagElement.dataset.tag = tag;
+                
+                // Add click handler
+                tagElement.addEventListener('click', () => {
+                    this.setPropsTagFilter(drawer, tag);
+                });
+                
+                subTagCloud.appendChild(tagElement);
+            });
+            
+            tagFilterContainer.appendChild(subTagCloud);
+        }
+    }
+    
+    // Register search handler
+    const searchInput = searchContainer.querySelector('#props-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            this.filterPropsByName(drawer, e.target.value);
+        });
+    }
+    
+    // Register clear filter handler
+    const clearBtn = searchContainer.querySelector('.clear-tag-filter');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            this.clearPropsTagFilter(drawer);
+        });
+    }
+    
+    // Add the tag filter to the container
+    container.prepend(tagFilterContainer);
+}
+
+// Method to set the active tag filter
+setPropsTagFilter(drawer, tag) {
+    console.log(`Setting props tag filter: ${tag}`);
+    this.activeTagFilter = tag;
+    this.updateGallery(drawer, 'props');
+}
+
+// Method to clear the active tag filter
+clearPropsTagFilter(drawer) {
+    console.log('Clearing props tag filter');
+    this.activeTagFilter = null;
+    this.updateGallery(drawer, 'props');
+}
+
+// Filter props by name without changing the tag filter
+filterPropsByName(drawer, searchTerm) {
+    console.log(`Filtering props by name: ${searchTerm}`);
+    
+    const container = drawer.querySelector('#propsGallery');
+    if (!container) return;
+    
+    // Get all prop cards
+    const cards = container.querySelectorAll('.resource-item');
+    
+    // Show/hide based on name match
+    cards.forEach(card => {
+        const nameElement = card.querySelector('.resource-name');
+        if (!nameElement) return;
+        
+        const name = nameElement.textContent.toLowerCase();
+        const isMatch = !searchTerm || name.includes(searchTerm.toLowerCase());
+        
+        card.style.display = isMatch ? '' : 'none';
     });
 }
 
@@ -1759,299 +2420,671 @@ if (packNameInput) {
 
 
 
-    setupEventHandlers(drawer) {
+//     setupEventHandlers(drawer) {
+
+//         const saveBtn = drawer.querySelector('#saveResourcePack');
+//         const loadBtn = drawer.querySelector('#loadResourcePack');
+//         const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+//         const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
 
 
-        const saveBtn = drawer.querySelector('#saveResourcePack');
-        const loadBtn = drawer.querySelector('#loadResourcePack');
-        const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-        const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-
-
-
-   
-        // if (saveBtn) {
-        //     saveBtn.addEventListener('click', () => {
-        //         this.saveResourcePack();
-        //     });
-        // }
-
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                const action = saveBtn.getAttribute('data-action') || 'save-resources';
+//         if (saveBtn) {
+//             saveBtn.addEventListener('click', () => {
+//                 const action = saveBtn.getAttribute('data-action') || 'save-resources';
                 
-                if (action === 'save-all') {
-                    // In bestiary tab, save both resources and bestiary
-                    this.saveResourcePack();
+//                 if (action === 'save-all') {
+//                     // In bestiary tab, save both resources and bestiary
+//                     this.saveResourcePack();
                     
-                    // Also save bestiary if we have monsters
-                    if (this.resources.bestiary.size > 0) {
-                        this.saveBestiaryToFile();
-                    }
-                } else {
-                    // Default action - save resource pack only
-                    this.saveResourcePack();
-                }
-            });
-        }
+//                     // Also save bestiary if we have monsters
+//                     if (this.resources.bestiary.size > 0) {
+//                         this.saveBestiaryToFile();
+//                     }
+//                 } else {
+//                     // Default action - save resource pack only
+//                     this.saveResourcePack();
+//                 }
+//             });
+//         }
     
-        if (loadBtn) {
-            // Modify to handle bestiary uploads
-            const originalLoadHandler = loadBtn.onclick;
-            loadBtn.onclick = () => {
-                // Create dialog with options
-                const dialog = document.createElement('sl-dialog');
-                dialog.label = 'Load File';
-                dialog.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <sl-button class="load-resource-btn" size="large" style="justify-content: flex-start;">
-                            <span class="material-icons" slot="prefix">folder_open</span>
-                            Load Resource Pack
-                            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                                Load textures, sounds, and other resources
-                            </div>
-                        </sl-button>
-                        <sl-button class="load-bestiary-btn" size="large" style="justify-content: flex-start;">
-                            <span class="material-icons" slot="prefix">pets</span>
-                            Load Bestiary File
-                            <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                                Import monster data from a bestiary.json file
-                            </div>
-                        </sl-button>
-                    </div>
-                `;
+//         if (loadBtn) {
+//             // Modify to handle bestiary uploads
+//             const originalLoadHandler = loadBtn.onclick;
+//             loadBtn.onclick = () => {
+//                 // Create dialog with options
+//                 const dialog = document.createElement('sl-dialog');
+//                 dialog.label = 'Load File';
+//                 dialog.innerHTML = `
+//                     <div style="display: flex; flex-direction: column; gap: 16px;">
+//                         <sl-button class="load-resource-btn" size="large" style="justify-content: flex-start;">
+//                             <span class="material-icons" slot="prefix">folder_open</span>
+//                             Load Resource Pack
+//                             <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                                 Load textures, sounds, and other resources
+//                             </div>
+//                         </sl-button>
+//                         <sl-button class="load-bestiary-btn" size="large" style="justify-content: flex-start;">
+//                             <span class="material-icons" slot="prefix">pets</span>
+//                             Load Bestiary File
+//                             <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+//                                 Import monster data from a bestiary.json file
+//                             </div>
+//                         </sl-button>
+//                     </div>
+//                 `;
                 
-                document.body.appendChild(dialog);
+//                 document.body.appendChild(dialog);
                 
-                // Create hidden file inputs
-                const resourceInput = document.createElement('input');
-                resourceInput.type = 'file';
-                resourceInput.accept = '.json';
-                resourceInput.style.display = 'none';
+//                 // Create hidden file inputs
+//                 const resourceInput = document.createElement('input');
+//                 resourceInput.type = 'file';
+//                 resourceInput.accept = '.json';
+//                 resourceInput.style.display = 'none';
                 
-                const bestiaryInput = document.createElement('input');
-                bestiaryInput.type = 'file';
-                bestiaryInput.accept = '.json';
-                bestiaryInput.style.display = 'none';
+//                 const bestiaryInput = document.createElement('input');
+//                 bestiaryInput.type = 'file';
+//                 bestiaryInput.accept = '.json';
+//                 bestiaryInput.style.display = 'none';
                 
-                document.body.appendChild(resourceInput);
-                document.body.appendChild(bestiaryInput);
+//                 document.body.appendChild(resourceInput);
+//                 document.body.appendChild(bestiaryInput);
                 
-                // Resource pack loading
-                resourceInput.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        // Use the original load behavior
-                        this.loadResourcePack(file).then(success => {
-                            if (success) {
-                                const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
-                                this.updateGallery(drawer, currentCategory);
-                                // alert('Resource pack loaded successfully');
-                            } else {
-                                alert('Failed to load resource pack');
-                            }
-                        });
-                    }
-                });
+//                 // Resource pack loading
+//                 resourceInput.addEventListener('change', (e) => {
+//                     const file = e.target.files[0];
+//                     if (file) {
+//                         // Use the original load behavior
+//                         this.loadResourcePack(file).then(success => {
+//                             if (success) {
+//                                 const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+//                                 this.updateGallery(drawer, currentCategory);
+//                                 // alert('Resource pack loaded successfully');
+//                             } else {
+//                                 alert('Failed to load resource pack');
+//                             }
+//                         });
+//                     }
+//                 });
                 
-                // Bestiary loading
-                bestiaryInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const success = await this.loadBestiaryFromFile(file);
-                        if (success) {
-                            this.updateBestiaryGallery(drawer, 'grid');
-                            alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
-                        } else {
-                            alert('Failed to load bestiary file');
-                        }
-                    }
-                });
+//                 // Bestiary loading
+//                 bestiaryInput.addEventListener('change', async (e) => {
+//                     const file = e.target.files[0];
+//                     if (file) {
+//                         const success = await this.loadBestiaryFromFile(file);
+//                         if (success) {
+//                             this.updateBestiaryGallery(drawer, 'grid');
+//                             alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+//                         } else {
+//                             alert('Failed to load bestiary file');
+//                         }
+//                     }
+//                 });
                 
-                // Add button click handlers
-                dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
-                    dialog.hide();
-                    resourceInput.click();
-                });
+//                 // Add button click handlers
+//                 dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
+//                     dialog.hide();
+//                     resourceInput.click();
+//                 });
                 
-                dialog.querySelector('.load-bestiary-btn').addEventListener('click', () => {
-                    dialog.hide();
-                    bestiaryInput.click();
-                });
+//                 dialog.querySelector('.load-bestiary-btn').addEventListener('click', () => {
+//                     dialog.hide();
+//                     bestiaryInput.click();
+//                 });
                 
-                // Clean up on close
-                dialog.addEventListener('sl-after-hide', () => {
-                    dialog.remove();
-                    resourceInput.remove();
-                    bestiaryInput.remove();
-                });
+//                 // Clean up on close
+//                 dialog.addEventListener('sl-after-hide', () => {
+//                     dialog.remove();
+//                     resourceInput.remove();
+//                     bestiaryInput.remove();
+//                 });
                 
-                dialog.show();
-            };
-        }
+//                 dialog.show();
+//             };
+//         }
 
-        if (exportBestiaryBtn) {
-            exportBestiaryBtn.addEventListener('click', () => {
-                this.saveBestiaryToFile();
-            });
-        }
+//         if (exportBestiaryBtn) {
+//             exportBestiaryBtn.addEventListener('click', () => {
+//                 this.saveBestiaryToFile();
+//             });
+//         }
         
-        if (importBestiaryBtn) {
-            importBestiaryBtn.addEventListener('click', () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
-                input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const success = await this.loadBestiaryFromFile(file);
-                        if (success) {
-                            this.updateBestiaryGallery(drawer, 'grid');
-                            alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
-                        } else {
-                            alert('Failed to load bestiary file');
-                        }
-                    }
-                };
-                input.click();
-            });
-        }
+//         if (importBestiaryBtn) {
+//             importBestiaryBtn.addEventListener('click', () => {
+//                 const input = document.createElement('input');
+//                 input.type = 'file';
+//                 input.accept = '.json';
+//                 input.onchange = async (e) => {
+//                     const file = e.target.files[0];
+//                     if (file) {
+//                         const success = await this.loadBestiaryFromFile(file);
+//                         if (success) {
+//                             this.updateBestiaryGallery(drawer, 'grid');
+//                             alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+//                         } else {
+//                             alert('Failed to load bestiary file');
+//                         }
+//                     }
+//                 };
+//                 input.click();
+//             });
+//         }
 
-        // Update the view toggle handler
-        drawer.querySelectorAll('.view-toggle').forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                const panel = toggle.closest('sl-tab-panel');
-                if (!panel) return;
+//         // Update the view toggle handler
+//         drawer.querySelectorAll('.view-toggle').forEach(toggle => {
+//             toggle.addEventListener('click', () => {
+//                 const panel = toggle.closest('sl-tab-panel');
+//                 if (!panel) return;
 
-                const galleryContainer = panel.querySelector('.gallery-container');
-                if (!galleryContainer) return;
+//                 const galleryContainer = panel.querySelector('.gallery-container');
+//                 if (!galleryContainer) return;
 
-                const view = toggle.dataset.view;
+//                 const view = toggle.dataset.view;
 
-                // Update button states
-                panel.querySelectorAll('.view-toggle').forEach(t => t.variant = 'default');
-                toggle.variant = 'primary';
+//                 // Update button states
+//                 panel.querySelectorAll('.view-toggle').forEach(t => t.variant = 'default');
+//                 toggle.variant = 'primary';
 
-                // Update gallery view
-                galleryContainer.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+//                 // Update gallery view
+//                 galleryContainer.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
 
-                // Refresh gallery content
-                const category = panel.querySelector('[data-category]')?.dataset.category;
-                // if (category) {
-                //     this.updateGallery(drawer, category, view);
-                // }
+//                 // Refresh gallery content
+//                 const category = panel.querySelector('[data-category]')?.dataset.category;
+//                 // if (category) {
+//                 //     this.updateGallery(drawer, category, view);
+//                 // }
 
-                if (panel.getAttribute('name') === 'bestiary') {
-                    this.updateBestiaryGallery(drawer, view);
-                } else {
-                    // Handle other gallery types (existing code)
-                    const category = panel.querySelector('[data-category]')?.dataset.category;
-                    if (category) {
-                        this.updateGallery(drawer, category, view);
-                    }
-                }
-            });
-        });
+//                 if (panel.getAttribute('name') === 'bestiary') {
+//                     this.updateBestiaryGallery(drawer, view);
+//                 } else {
+//                     // Handle other gallery types (existing code)
+//                     const category = panel.querySelector('[data-category]')?.dataset.category;
+//                     if (category) {
+//                         this.updateGallery(drawer, category, view);
+//                     }
+//                 }
+//             });
+//         });
 
-        // Setup category selection for textures
-        const categoryBtns = drawer.querySelectorAll('.texture-categories sl-button');
-        categoryBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Update button states
-                categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
-                btn.setAttribute('variant', 'primary');
+//         // Setup category selection for textures
+//         // const categoryBtns = drawer.querySelectorAll('.texture-categories sl-button');
+//         // categoryBtns.forEach(btn => {
+//         //     btn.addEventListener('click', () => {
+//         //         // Update button states
+//         //         categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+//         //         btn.setAttribute('variant', 'primary');
 
-                const category = btn.dataset.category;
+//         //         const category = btn.dataset.category;
 
-                // Hide all galleries first
-                ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
-                    const gallery = drawer.querySelector(`#${cat}Gallery`);
-                    if (gallery) {
-                        gallery.style.display = 'none';
-                    }
-                });
+//         //         // Hide all galleries first
+//         //         ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
+//         //             const gallery = drawer.querySelector(`#${cat}Gallery`);
+//         //             if (gallery) {
+//         //                 gallery.style.display = 'none';
+//         //             }
+//         //         });
 
-                // Show selected category's gallery
-                const selectedGallery = drawer.querySelector(`#${category}Gallery`);
-                if (selectedGallery) {
-                    selectedGallery.style.display = 'grid';
-                    // Update gallery content
-                    this.updateGallery(drawer, category);
-                }
-            });
-        });
+//         //         // Show selected category's gallery
+//         //         const selectedGallery = drawer.querySelector(`#${category}Gallery`);
+//         //         if (selectedGallery) {
+//         //             selectedGallery.style.display = 'grid';
+//         //             // Update gallery content
+//         //             this.updateGallery(drawer, category);
+//         //         }
+//         //     });
+//         // });
 
-        this.setupSplashArtHandlers(drawer);
+//         const categoryBtns = drawer.querySelectorAll('.texture-categories sl-button');
+//         categoryBtns.forEach(btn => {
+//             btn.addEventListener('click', () => {
+//                 // Update button states
+//                 categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+//                 btn.setAttribute('variant', 'primary');
+    
+//                 const category = btn.dataset.category;
+//                 this.lastSelectedCategory = category;  // Remember the category
+    
+//                 // Hide all galleries first
+//                 ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
+//                     const gallery = drawer.querySelector(`#${cat}Gallery`);
+//                     if (gallery) {
+//                         gallery.style.display = 'none';
+//                     }
+//                 });
+    
+//                 // Show selected category's gallery
+//                 const selectedGallery = drawer.querySelector(`#${category}Gallery`);
+//                 if (selectedGallery) {
+//                     selectedGallery.style.display = 'grid';
+//                     // Update gallery content
+//                     this.updateGallery(drawer, category);
+//                 }
+//             });
+//         });
 
-            // Handle tab changes to load bestiary when tab is activated
+//         this.setupSplashArtHandlers(drawer);
 
-const tabGroup = drawer.querySelector('sl-tab-group');
-if (tabGroup) {
-    tabGroup.addEventListener('sl-tab-show', (e) => {
-        const tabName = e.detail.name;
+//             // Handle tab changes to load bestiary when tab is activated
+
+// const tabGroup = drawer.querySelector('sl-tab-group');
+// if (tabGroup) {
+//     tabGroup.addEventListener('sl-tab-show', (e) => {
+//         const tabName = e.detail.name;
         
-        // Toggle bestiary-specific buttons
-        const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-        const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-        const saveResourceBtn = drawer.querySelector('#saveResourcePack');
-        const loadResourceBtn = drawer.querySelector('#loadResourcePack');
+//         // Toggle bestiary-specific buttons
+//         const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+//         const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+//         const saveResourceBtn = drawer.querySelector('#saveResourcePack');
+//         const loadResourceBtn = drawer.querySelector('#loadResourcePack');
         
-        if (exportBestiaryBtn && importBestiaryBtn && saveResourceBtn && loadResourceBtn) {
-            const isBestiaryTab = tabName === 'bestiary';
+//         if (exportBestiaryBtn && importBestiaryBtn && saveResourceBtn && loadResourceBtn) {
+//             const isBestiaryTab = tabName === 'bestiary';
             
-            // Show/hide bestiary buttons
-            exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
-            importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+//             // Show/hide bestiary buttons
+//             exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+//             importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
             
-            // Update save/load button text based on context
-            if (isBestiaryTab) {
-                saveResourceBtn.innerHTML = `
-                    <span class="material-icons" slot="prefix">save</span>
-                    Save All
-                `;
-                saveResourceBtn.setAttribute('data-action', 'save-all');
+//             // Update save/load button text based on context
+//             if (isBestiaryTab) {
+//                 saveResourceBtn.innerHTML = `
+//                     <span class="material-icons" slot="prefix">save</span>
+//                     Save All
+//                 `;
+//                 saveResourceBtn.setAttribute('data-action', 'save-all');
+//             } else {
+//                 saveResourceBtn.innerHTML = `
+//                     <span class="material-icons" slot="prefix">save</span>
+//                     Save
+//                 `;
+//                 saveResourceBtn.setAttribute('data-action', 'save-resources');
+//             }
+//         }
+        
+//         // Update gallery if needed
+//         if (tabName === 'bestiary') {
+//             this.updateBestiaryGallery(drawer, 'grid');
+//         }
+//     });
+
+
+// }
+
+
+
+//         // Handle file uploads for each type
+//         // const setupUploadHandler = (btnClass, inputClass, type) => {
+//         //     const uploadBtn = drawer.querySelector(`.${btnClass}`);
+//         //     const fileInput = drawer.querySelector(`.${inputClass}`);
+    
+//         //     if (!uploadBtn || !fileInput) {
+//         //         console.warn(`Upload elements not found for ${type}`);
+//         //         return;
+//         //     }
+    
+//         //     uploadBtn.addEventListener('click', () => {
+//         //         fileInput.click();
+//         //     });
+    
+//         //     fileInput.addEventListener('change', async (e) => {
+//         //         const files = Array.from(e.target.files || []);
+//         //         const tabPanel = uploadBtn.closest('sl-tab-panel');
+    
+//         //         if (!files.length) return;
+    
+//         //         console.log(`Processing ${files.length} ${type} files`);
+    
+//         //         for (const file of files) {
+//         //             try {
+//         //                 if (type === 'splashArt') {
+//         //                     const description = await this.promptForDescription(file.name);
+//         //                     await this.addSplashArt(file, description);
+//         //                 } else if (type === 'sound') {
+//         //                     const category = tabPanel?.querySelector('.sound-categories sl-button[variant="primary"]')?.dataset.category || 'ambient';
+//         //                     await this.addSound(file, category);
+//         //                 } else {
+//         //                     const category = tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+//         //                     await this.addTexture(file, category);
+//         //                 }
+//         //             } catch (error) {
+//         //                 console.error(`Error processing ${type} file:`, error);
+//         //             }
+//         //         }
+    
+//         //         // Update gallery with correct category
+//         //         if (tabPanel) {
+//         //             const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+//         //             const category = type === 'splashArt' ? 'splashArt' : 
+//         //                            tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
+                    
+//         //             if (category) {
+//         //                 this.updateGallery(drawer, category, view);
+//         //             }
+//         //         }
+    
+//         //         // Reset file input
+//         //         fileInput.value = '';
+//         //     });
+//         // };
+
+        
+
+//         setupUploadHandler('texture-upload-btn', 'texture-file-input', 'texture');
+//         setupUploadHandler('sound-upload-btn', 'sound-file-input', 'sound');
+//         setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
+
+//         const soundCategoryBtns = drawer.querySelectorAll('.sound-categories sl-button');
+// soundCategoryBtns.forEach(btn => {
+//     btn.addEventListener('click', () => {
+//         // Update button states
+//         soundCategoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+//         btn.setAttribute('variant', 'primary');
+
+//         const category = btn.dataset.category;
+//         this.updateGallery(drawer, category, 
+//             drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
+//         );
+//     });
+// });
+
+//             // Setup Bestiary tab handlers
+//     const addMonsterBtn = drawer.querySelector('.add-monster-btn');
+//     if (addMonsterBtn) {
+//         addMonsterBtn.addEventListener('click', async () => {
+//             await this.showMonsterImporter();
+//         });
+//     }
+
+//         // Add close handler
+//         drawer.addEventListener('sl-after-hide', () => {
+//             // Optional: Clean up any resources if needed
+//         });
+//     }
+
+setupEventHandlers(drawer) {
+    const saveBtn = drawer.querySelector('#saveResourcePack');
+    const loadBtn = drawer.querySelector('#loadResourcePack');
+    const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+    const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const action = saveBtn.getAttribute('data-action') || 'save-resources';
+            
+            if (action === 'save-all') {
+                // In bestiary tab, save both resources and bestiary
+                this.saveResourcePack();
+                
+                // Also save bestiary if we have monsters
+                if (this.resources.bestiary.size > 0) {
+                    this.saveBestiaryToFile();
+                }
             } else {
-                saveResourceBtn.innerHTML = `
-                    <span class="material-icons" slot="prefix">save</span>
-                    Save
-                `;
-                saveResourceBtn.setAttribute('data-action', 'save-resources');
+                // Default action - save resource pack only
+                this.saveResourcePack();
             }
-        }
-        
-        // Update gallery if needed
-        if (tabName === 'bestiary') {
-            this.updateBestiaryGallery(drawer, 'grid');
-        }
+        });
+    }
+
+    if (loadBtn) {
+        // Modify to handle bestiary uploads
+        const originalLoadHandler = loadBtn.onclick;
+        loadBtn.onclick = () => {
+            // Create dialog with options
+            const dialog = document.createElement('sl-dialog');
+            dialog.label = 'Load File';
+            dialog.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <sl-button class="load-resource-btn" size="large" style="justify-content: flex-start;">
+                        <span class="material-icons" slot="prefix">folder_open</span>
+                        Load Resource Pack
+                        <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                            Load textures, sounds, and other resources
+                        </div>
+                    </sl-button>
+                    <sl-button class="load-bestiary-btn" size="large" style="justify-content: flex-start;">
+                        <span class="material-icons" slot="prefix">pets</span>
+                        Load Bestiary File
+                        <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                            Import monster data from a bestiary.json file
+                        </div>
+                    </sl-button>
+                </div>
+            `;
+            
+            document.body.appendChild(dialog);
+            
+            // Create hidden file inputs
+            const resourceInput = document.createElement('input');
+            resourceInput.type = 'file';
+            resourceInput.accept = '.json';
+            resourceInput.style.display = 'none';
+            
+            const bestiaryInput = document.createElement('input');
+            bestiaryInput.type = 'file';
+            bestiaryInput.accept = '.json';
+            bestiaryInput.style.display = 'none';
+            
+            document.body.appendChild(resourceInput);
+            document.body.appendChild(bestiaryInput);
+            
+            // Resource pack loading
+            resourceInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Use the original load behavior
+                    this.loadResourcePack(file).then(success => {
+                        if (success) {
+                            const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+                            this.updateGallery(drawer, currentCategory);
+                            // alert('Resource pack loaded successfully');
+                        } else {
+                            alert('Failed to load resource pack');
+                        }
+                    });
+                }
+            });
+            
+            // Bestiary loading
+            bestiaryInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const success = await this.loadBestiaryFromFile(file);
+                    if (success) {
+                        this.updateBestiaryGallery(drawer, 'grid');
+                        alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+                    } else {
+                        alert('Failed to load bestiary file');
+                    }
+                }
+            });
+            
+            // Add button click handlers
+            dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
+                dialog.hide();
+                resourceInput.click();
+            });
+            
+            dialog.querySelector('.load-bestiary-btn').addEventListener('click', () => {
+                dialog.hide();
+                bestiaryInput.click();
+            });
+            
+            // Clean up on close
+            dialog.addEventListener('sl-after-hide', () => {
+                dialog.remove();
+                resourceInput.remove();
+                bestiaryInput.remove();
+            });
+            
+            dialog.show();
+        };
+    }
+
+    if (exportBestiaryBtn) {
+        exportBestiaryBtn.addEventListener('click', () => {
+            this.saveBestiaryToFile();
+        });
+    }
+    
+    if (importBestiaryBtn) {
+        importBestiaryBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const success = await this.loadBestiaryFromFile(file);
+                    if (success) {
+                        this.updateBestiaryGallery(drawer, 'grid');
+                        alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
+                    } else {
+                        alert('Failed to load bestiary file');
+                    }
+                }
+            };
+            input.click();
+        });
+    }
+
+    // Update the view toggle handler
+    drawer.querySelectorAll('.view-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const panel = toggle.closest('sl-tab-panel');
+            if (!panel) return;
+
+            const galleryContainer = panel.querySelector('.gallery-container');
+            if (!galleryContainer) return;
+
+            const view = toggle.dataset.view;
+
+            // Update button states
+            panel.querySelectorAll('.view-toggle').forEach(t => t.variant = 'default');
+            toggle.variant = 'primary';
+
+            // Update gallery view
+            galleryContainer.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+
+            // Refresh gallery content
+            if (panel.getAttribute('name') === 'bestiary') {
+                this.updateBestiaryGallery(drawer, view);
+            } else {
+                // Handle other gallery types (existing code)
+                const category = panel.querySelector('[data-category]')?.dataset.category;
+                if (category) {
+                    this.updateGallery(drawer, category, view);
+                }
+            }
+        });
     });
 
+    // Setup category selection for textures
+    const categoryBtns = drawer.querySelectorAll('.texture-categories sl-button');
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update button states
+            categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+            btn.setAttribute('variant', 'primary');
 
-}
+            const category = btn.dataset.category;
+            this.lastSelectedCategory = category; // Track the last selected category
 
-
-
-        // Handle file uploads for each type
-        const setupUploadHandler = (btnClass, inputClass, type) => {
-            const uploadBtn = drawer.querySelector(`.${btnClass}`);
-            const fileInput = drawer.querySelector(`.${inputClass}`);
-    
-            if (!uploadBtn || !fileInput) {
-                console.warn(`Upload elements not found for ${type}`);
-                return;
-            }
-    
-            uploadBtn.addEventListener('click', () => {
-                fileInput.click();
+            // Hide all galleries first
+            ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
+                const gallery = drawer.querySelector(`#${cat}Gallery`);
+                if (gallery) {
+                    gallery.style.display = 'none';
+                }
             });
-    
-            fileInput.addEventListener('change', async (e) => {
-                const files = Array.from(e.target.files || []);
-                const tabPanel = uploadBtn.closest('sl-tab-panel');
-    
-                if (!files.length) return;
-    
-                console.log(`Processing ${files.length} ${type} files`);
-    
+
+            // Show selected category's gallery
+            const selectedGallery = drawer.querySelector(`#${category}Gallery`);
+            if (selectedGallery) {
+                selectedGallery.style.display = 'grid';
+                // Update gallery content
+                this.updateGallery(drawer, category);
+            }
+        });
+    });
+
+    this.setupSplashArtHandlers(drawer);
+
+    // Handle tab changes to load bestiary when tab is activated
+    const tabGroup = drawer.querySelector('sl-tab-group');
+    if (tabGroup) {
+        tabGroup.addEventListener('sl-tab-show', (e) => {
+            const tabName = e.detail.name;
+            
+            // Toggle bestiary-specific buttons
+            const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
+            const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+            const saveResourceBtn = drawer.querySelector('#saveResourcePack');
+            const loadResourceBtn = drawer.querySelector('#loadResourcePack');
+            
+            if (exportBestiaryBtn && importBestiaryBtn && saveResourceBtn && loadResourceBtn) {
+                const isBestiaryTab = tabName === 'bestiary';
+                
+                // Show/hide bestiary buttons
+                exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+                importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
+                
+                // Update save/load button text based on context
+                if (isBestiaryTab) {
+                    saveResourceBtn.innerHTML = `
+                        <span class="material-icons" slot="prefix">save</span>
+                        Save All
+                    `;
+                    saveResourceBtn.setAttribute('data-action', 'save-all');
+                } else {
+                    saveResourceBtn.innerHTML = `
+                        <span class="material-icons" slot="prefix">save</span>
+                        Save
+                    `;
+                    saveResourceBtn.setAttribute('data-action', 'save-resources');
+                }
+            }
+            
+            // Update gallery if needed
+            if (tabName === 'bestiary') {
+                this.updateBestiaryGallery(drawer, 'grid');
+            }
+        });
+    }
+
+    // Handle file uploads for each type - KEEP THIS AS A CONST FUNCTION
+    const setupUploadHandler = (btnClass, inputClass, type) => {
+        const uploadBtn = drawer.querySelector(`.${btnClass}`);
+        const fileInput = drawer.querySelector(`.${inputClass}`);
+
+        if (!uploadBtn || !fileInput) {
+            console.warn(`Upload elements not found for ${type}`);
+            return;
+        }
+
+        uploadBtn.addEventListener('click', () => {
+            if (type === 'texture' && this.lastSelectedCategory === 'props') {
+                // Show dialog with options for props importing
+                this.showPropsImportOptions(drawer);
+            } else {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files || []);
+            const tabPanel = uploadBtn.closest('sl-tab-panel');
+
+            if (!files.length) return;
+
+            console.log(`Processing ${files.length} ${type} files`);
+
+            // For folder import of props, extract folder information
+            const isPropsImport = type === 'texture' && tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category === 'props';
+            const importedWithFolders = isPropsImport && fileInput.hasAttribute('webkitdirectory');
+
+            if (importedWithFolders) {
+                await this.processFolderImport(files);
+            } else {
+                // Regular file processing
                 for (const file of files) {
                     try {
                         if (type === 'splashArt') {
@@ -2068,42 +3101,43 @@ if (tabGroup) {
                         console.error(`Error processing ${type} file:`, error);
                     }
                 }
-    
-                // Update gallery with correct category
-                if (tabPanel) {
-                    const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
-                    const category = type === 'splashArt' ? 'splashArt' : 
-                                   tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
-                    
-                    if (category) {
-                        this.updateGallery(drawer, category, view);
-                    }
+            }
+
+            // Update gallery with correct category
+            if (tabPanel) {
+                const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+                const category = type === 'splashArt' ? 'splashArt' : 
+                            tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
+                
+                if (category) {
+                    this.updateGallery(drawer, category, view);
                 }
-    
-                // Reset file input
-                fileInput.value = '';
-            });
-        };
+            }
 
-        setupUploadHandler('texture-upload-btn', 'texture-file-input', 'texture');
-        setupUploadHandler('sound-upload-btn', 'sound-file-input', 'sound');
-        setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
+            // Reset file input
+            fileInput.value = '';
+        });
+    };
 
-        const soundCategoryBtns = drawer.querySelectorAll('.sound-categories sl-button');
-soundCategoryBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        // Update button states
-        soundCategoryBtns.forEach(b => b.setAttribute('variant', 'default'));
-        btn.setAttribute('variant', 'primary');
+    setupUploadHandler('texture-upload-btn', 'texture-file-input', 'texture');
+    setupUploadHandler('sound-upload-btn', 'sound-file-input', 'sound');
+    setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
 
-        const category = btn.dataset.category;
-        this.updateGallery(drawer, category, 
-            drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
-        );
+    const soundCategoryBtns = drawer.querySelectorAll('.sound-categories sl-button');
+    soundCategoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update button states
+            soundCategoryBtns.forEach(b => b.setAttribute('variant', 'default'));
+            btn.setAttribute('variant', 'primary');
+
+            const category = btn.dataset.category;
+            this.updateGallery(drawer, category, 
+                drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
+            );
+        });
     });
-});
 
-            // Setup Bestiary tab handlers
+    // Setup Bestiary tab handlers
     const addMonsterBtn = drawer.querySelector('.add-monster-btn');
     if (addMonsterBtn) {
         addMonsterBtn.addEventListener('click', async () => {
@@ -2111,13 +3145,100 @@ soundCategoryBtns.forEach(btn => {
         });
     }
 
-        // Add close handler
-        drawer.addEventListener('sl-after-hide', () => {
-            // Optional: Clean up any resources if needed
-        });
-    }
+    // Add close handler
+    drawer.addEventListener('sl-after-hide', () => {
+        // Optional: Clean up any resources if needed
+    });
+}
 
-
+// Add this as a new method
+showPropsImportOptions(drawer) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Import Props';
+    
+    dialog.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <sl-button size="large" class="single-files-btn" style="justify-content: flex-start;">
+                <span class="material-icons" slot="prefix">upload_file</span>
+                Select Files
+                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    Select individual prop files to import
+                </div>
+            </sl-button>
+            
+            <sl-button size="large" class="folder-btn" style="justify-content: flex-start;">
+                <span class="material-icons" slot="prefix">folder_open</span>
+                Select Folder
+                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    Import an entire folder of props with automatic tagging
+                </div>
+            </sl-button>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Create hidden file inputs
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+    
+    const folderInput = document.createElement('input');
+    folderInput.type = 'file';
+    folderInput.accept = 'image/*';
+    folderInput.multiple = true;
+    folderInput.webkitdirectory = true;
+    folderInput.directory = true;
+    folderInput.style.display = 'none';
+    
+    document.body.appendChild(fileInput);
+    document.body.appendChild(folderInput);
+    
+    // File selection handler
+    dialog.querySelector('.single-files-btn').addEventListener('click', () => {
+        dialog.hide();
+        fileInput.click();
+    });
+    
+    // Folder selection handler
+    dialog.querySelector('.folder-btn').addEventListener('click', () => {
+        dialog.hide();
+        folderInput.click();
+    });
+    
+    // Handle file selections
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            for (const file of files) {
+                await this.addTexture(file, 'props');
+            }
+            this.updateGallery(drawer, 'props');
+        }
+        document.body.removeChild(fileInput);
+    });
+    
+    // Handle folder selections
+    folderInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            await this.processFolderImport(files);
+            this.updateGallery(drawer, 'props');
+        }
+        document.body.removeChild(folderInput);
+    });
+    
+    // Clean up on dialog close
+    dialog.addEventListener('sl-after-hide', () => {
+        dialog.remove();
+        if (document.body.contains(fileInput)) document.body.removeChild(fileInput);
+        if (document.body.contains(folderInput)) document.body.removeChild(folderInput);
+    });
+    
+    dialog.show();
+}
 
 setupSplashArtHandlers(drawer) {
     console.log('Setting up splash art handlers');
@@ -3734,6 +4855,242 @@ getFilteredBestiary(drawer) {
             return null;
         }
     }
+
+// Modify the texture upload handler to support folder selection
+setupUploadHandler(btnClass, inputClass, type) {
+    const uploadBtn = drawer.querySelector(`.${btnClass}`);
+    const fileInput = drawer.querySelector(`.${inputClass}`);
+
+    if (!uploadBtn || !fileInput) {
+        console.warn(`Upload elements not found for ${type}`);
+        return;
+    }
+
+    uploadBtn.addEventListener('click', () => {
+        if (type === 'texture' && this.lastSelectedCategory === 'props') {
+            // Show dialog with options for props importing
+            this.showPropsImportOptions();
+        } else {
+            fileInput.click();
+        }
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        const tabPanel = uploadBtn.closest('sl-tab-panel');
+
+        if (!files.length) return;
+
+        console.log(`Processing ${files.length} ${type} files`);
+
+        // For folder import of props, extract folder information
+        const isPropsImport = type === 'texture' && tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category === 'props';
+        const importedWithFolders = isPropsImport && fileInput.hasAttribute('webkitdirectory');
+
+        if (importedWithFolders) {
+            await this.processFolderImport(files);
+        } else {
+            // Regular file processing
+            for (const file of files) {
+                try {
+                    if (type === 'splashArt') {
+                        const description = await this.promptForDescription(file.name);
+                        await this.addSplashArt(file, description);
+                    } else if (type === 'sound') {
+                        const category = tabPanel?.querySelector('.sound-categories sl-button[variant="primary"]')?.dataset.category || 'ambient';
+                        await this.addSound(file, category);
+                    } else {
+                        const category = tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+                        await this.addTexture(file, category);
+                    }
+                } catch (error) {
+                    console.error(`Error processing ${type} file:`, error);
+                }
+            }
+        }
+
+        // Update gallery with correct category
+        if (tabPanel) {
+            const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
+            const category = type === 'splashArt' ? 'splashArt' : 
+                           tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
+            
+            if (category) {
+                this.updateGallery(drawer, category, view);
+            }
+        }
+
+        // Reset file input
+        fileInput.value = '';
+    });
+}
+
+// New method for showing props import options
+showPropsImportOptions() {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Import Props';
+    
+    dialog.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <sl-button size="large" class="single-files-btn" style="justify-content: flex-start;">
+                <span class="material-icons" slot="prefix">upload_file</span>
+                Select Files
+                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    Select individual prop files to import
+                </div>
+            </sl-button>
+            
+            <sl-button size="large" class="folder-btn" style="justify-content: flex-start;">
+                <span class="material-icons" slot="prefix">folder_open</span>
+                Select Folder
+                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                    Import an entire folder of props with automatic tagging
+                </div>
+            </sl-button>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Create hidden file inputs
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+    
+    const folderInput = document.createElement('input');
+    folderInput.type = 'file';
+    folderInput.accept = 'image/*';
+    folderInput.multiple = true;
+    folderInput.webkitdirectory = true;
+    folderInput.directory = true;
+    folderInput.style.display = 'none';
+    
+    document.body.appendChild(fileInput);
+    document.body.appendChild(folderInput);
+    
+    // File selection handler
+    dialog.querySelector('.single-files-btn').addEventListener('click', () => {
+        dialog.hide();
+        fileInput.click();
+    });
+    
+    // Folder selection handler
+    dialog.querySelector('.folder-btn').addEventListener('click', () => {
+        dialog.hide();
+        folderInput.click();
+    });
+    
+    // Handle file selections
+    fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            for (const file of files) {
+                await this.addTexture(file, 'props');
+            }
+            this.updateGallery(document.querySelector('.resource-manager-drawer'), 'props');
+        }
+        document.body.removeChild(fileInput);
+    });
+    
+    // Handle folder selections
+    folderInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length > 0) {
+            await this.processFolderImport(files);
+            this.updateGallery(document.querySelector('.resource-manager-drawer'), 'props');
+        }
+        document.body.removeChild(folderInput);
+    });
+    
+    // Clean up on dialog close
+    dialog.addEventListener('sl-after-hide', () => {
+        dialog.remove();
+        if (document.body.contains(fileInput)) document.body.removeChild(fileInput);
+        if (document.body.contains(folderInput)) document.body.removeChild(folderInput);
+    });
+    
+    dialog.show();
+}
+
+// New method to process folder imports
+async processFolderImport(files) {
+    console.log(`Processing ${files.length} files from folder import`);
+    
+    // Map to store folder structure
+    const folderMap = new Map();
+    
+    // Process each file and extract its folder path
+    for (const file of files) {
+        // Get the file's folder path
+        const path = file.webkitRelativePath || '';
+        const pathParts = path.split('/');
+        
+        // Skip files that aren't in folders
+        if (pathParts.length < 2) continue;
+        
+        // Skip non-image files
+        if (!file.type.startsWith('image/')) {
+            console.log(`Skipping non-image file: ${file.name}`);
+            continue;
+        }
+        
+        // Remove filename from path
+        pathParts.pop();
+        
+        // Create tags from folder structure
+        const tags = [];
+        let currentPath = '';
+        for (const part of pathParts) {
+            if (currentPath) currentPath += '-';
+            currentPath += part.toLowerCase().replace(/\s+/g, '-');
+            tags.push(currentPath);
+        }
+        
+        // Add file to the resource
+        const textureId = await this.addTexture(file, 'props', {
+            tags: tags,
+            sourcePath: pathParts.join('/')
+        });
+        
+        // Add folder information to the map
+        if (textureId) {
+            tags.forEach(tag => {
+                if (!folderMap.has(tag)) {
+                    folderMap.set(tag, {
+                        label: this.formatTagDisplay(tag),
+                        files: []
+                    });
+                }
+                folderMap.get(tag).files.push(textureId);
+            });
+        }
+    }
+    
+    // Store folder mapping
+    this.propFolderMap = folderMap;
+    
+    // Save folder mapping to resources
+    if (!this.resources.metadata) {
+        this.resources.metadata = {};
+    }
+    
+    this.resources.metadata.propFolders = Array.from(folderMap.entries()).map(([tag, data]) => ({
+        tag,
+        label: data.label,
+        files: data.files
+    }));
+    
+    console.log(`Processed ${folderMap.size} folders with tags:`, this.resources.metadata.propFolders);
+}
+
+// Helper to format tag display from tag ID
+formatTagDisplay(tag) {
+    return tag.split('-').map(part => 
+        part.charAt(0).toUpperCase() + part.slice(1)
+    ).join(' › ');
+}
 
 
 
