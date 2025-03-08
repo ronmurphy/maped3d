@@ -1463,7 +1463,7 @@ createDustEffect(position, options = {}) {
   // Start cleanup interval if not already running
   this.ensureCleanupInterval();
 
-  console.log(`Created dust effect with ${count} particles, ID: ${effectId}`);
+  // console.log(`Created dust effect with ${count} particles, ID: ${effectId}`);
   
   return particleSystem;
 }

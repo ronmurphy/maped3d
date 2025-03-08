@@ -1050,7 +1050,7 @@ async showRenameDialog(room) {
                         <sl-range 
                           id="blockHeight" 
                           label="Height" 
-                          min="0" max="8" 
+                          min="0" max="101" 
                           step="0.5" 
                           tooltip="top" 
                           value="${room.blockHeight || '0'}"
