@@ -4896,7 +4896,7 @@ removeEncounterMarker() {
           approachMessage = 'The monster was impressed by your display of strength.';
           break;
         case 'gift':
-          const extraInfo = extraData || {}; // This line was causing the error
+          const extraInfo = extraData || {}; 
           const itemName = extraInfo.itemName || 'your gift';
           const newName = extraInfo.monsterName;
           const effectiveness = extraInfo.effectiveness || '';
@@ -4909,9 +4909,9 @@ removeEncounterMarker() {
             approachMessage = `The ${monster.name} accepted ${itemName}. `;
           }
           
-          if (newName) {
-            approachMessage += `You've named your new companion ${newName}.`;
-          }
+          // if (newName) {
+          //   approachMessage += `You've named your new companion ${newName}.`;
+          // }
             break;
         }
 
