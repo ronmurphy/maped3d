@@ -32,322 +32,684 @@ class Storyboard {
     /**
      * Initialize CSS styles for story displays
      */
-    initStyles() {
-      const styles = document.createElement('style');
-      styles.textContent = `
-        .story-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 2000;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-        }
+    // initStyles() {
+    //   const styles = document.createElement('style');
+    //   styles.textContent = `
+    //     .story-overlay {
+    //       position: fixed;
+    //       top: 0;
+    //       left: 0;
+    //       right: 0;
+    //       bottom: 0;
+    //       background: rgba(0, 0, 0, 0.7);
+    //       display: flex;
+    //       justify-content: center;
+    //       align-items: center;
+    //       z-index: 2000;
+    //       opacity: 0;
+    //       transition: opacity 0.3s ease;
+    //     }
         
-        .story-content {
-          background: #fff;
-          max-width: 800px;
-          width: 80vw;
-          max-height: 80vh;
-          border-radius: 8px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-          transform: scale(0.95);
-          transition: transform 0.3s ease;
-        }
+    //     .story-content {
+    //       background: #fff;
+    //       max-width: 800px;
+    //       width: 80vw;
+    //       max-height: 80vh;
+    //       border-radius: 8px;
+    //       overflow: hidden;
+    //       display: flex;
+    //       flex-direction: column;
+    //       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    //       transform: scale(0.95);
+    //       transition: transform 0.3s ease;
+    //     }
         
-        .story-header {
-          padding: 16px;
-          background: linear-gradient(135deg, #673ab7, #9c27b0);
-          color: white;
-          font-weight: bold;
-          font-size: 1.2rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
+    //     .story-header {
+    //       padding: 16px;
+    //       background: linear-gradient(135deg, #673ab7, #9c27b0);
+    //       color: white;
+    //       font-weight: bold;
+    //       font-size: 1.2rem;
+    //       display: flex;
+    //       justify-content: space-between;
+    //       align-items: center;
+    //     }
         
-        .story-body {
-          padding: 24px;
-          overflow-y: auto;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
+    //     .story-body {
+    //       padding: 24px;
+    //       overflow-y: auto;
+    //       flex: 1;
+    //       display: flex;
+    //       flex-direction: column;
+    //       gap: 20px;
+    //     }
         
-        .story-image {
-          width: 100%;
-          border-radius: 4px;
-          overflow: hidden;
-        }
+    //     .story-image {
+    //       width: 100%;
+    //       border-radius: 4px;
+    //       overflow: hidden;
+    //     }
         
-        .story-image img {
-          width: 100%;
-          height: auto;
-          display: block;
-        }
+    //     .story-image img {
+    //       width: 100%;
+    //       height: auto;
+    //       display: block;
+    //     }
         
-        .story-text {
-          font-size: 1.1rem;
-          line-height: 1.6;
-          color: #333;
-        }
+    //     .story-text {
+    //       font-size: 1.1rem;
+    //       line-height: 1.6;
+    //       color: #333;
+    //     }
         
-        .story-choices {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-top: 16px;
-        }
+    //     .story-choices {
+    //       display: flex;
+    //       flex-direction: column;
+    //       gap: 8px;
+    //       margin-top: 16px;
+    //     }
         
-        .story-choice {
-          padding: 12px 16px;
-          background: #f0f0f0;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
+    //     .story-choice {
+    //       padding: 12px 16px;
+    //       background: #f0f0f0;
+    //       border-radius: 4px;
+    //       cursor: pointer;
+    //       transition: background 0.2s;
+    //     }
         
-        .story-choice:hover {
-          background: #e0e0e0;
-        }
+    //     .story-choice:hover {
+    //       background: #e0e0e0;
+    //     }
         
-        .story-footer {
-          padding: 16px;
-          background: #f5f5f5;
-          border-top: 1px solid #ddd;
-          display: flex;
-          justify-content: flex-end;
-        }
+    //     .story-footer {
+    //       padding: 16px;
+    //       background: #f5f5f5;
+    //       border-top: 1px solid #ddd;
+    //       display: flex;
+    //       justify-content: flex-end;
+    //     }
         
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-          .story-content {
-            background: #2a2a2a;
-          }
+    //     /* Dark mode support */
+    //     @media (prefers-color-scheme: dark) {
+    //       .story-content {
+    //         background: #2a2a2a;
+    //       }
           
-          .story-text {
-            color: #e0e0e0;
-          }
+    //       .story-text {
+    //         color: #e0e0e0;
+    //       }
           
-          .story-choice {
-            background: #3a3a3a;
-            color: #e0e0e0;
-          }
+    //       .story-choice {
+    //         background: #3a3a3a;
+    //         color: #e0e0e0;
+    //       }
           
-          .story-choice:hover {
-            background: #4a4a4a;
-          }
+    //       .story-choice:hover {
+    //         background: #4a4a4a;
+    //       }
           
-          .story-footer {
-            background: #333;
-            border-top: 1px solid #444;
-          }
-        }
+    //       .story-footer {
+    //         background: #333;
+    //         border-top: 1px solid #444;
+    //       }
+    //     }
         
-        /* Node Editor Styles */
-        .storyboard-editor {
-          display: flex;
-          height: 100%;
-          overflow: hidden;
-        }
+    //     /* Node Editor Styles */
+    //     .storyboard-editor {
+    //       display: flex;
+    //       height: 100%;
+    //       overflow: hidden;
+    //     }
         
-        .storyboard-canvas {
-          flex: 1;
-          background: #f0f0f0;
-          background-image: 
-            linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
-          background-size: 20px 20px;
-          position: relative;
-          overflow: auto;
-        }
+    //     .storyboard-canvas {
+    //       flex: 1;
+    //       background: #f0f0f0;
+    //       background-image: 
+    //         linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+    //         linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+    //       background-size: 20px 20px;
+    //       position: relative;
+    //       overflow: auto;
+    //     }
         
-        .storyboard-sidebar {
-          width: 300px;
-          background: #fff;
-          border-left: 1px solid #ddd;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
+    //     .storyboard-sidebar {
+    //       width: 300px;
+    //       background: #fff;
+    //       border-left: 1px solid #ddd;
+    //       display: flex;
+    //       flex-direction: column;
+    //       overflow: hidden;
+    //     }
         
-        .storyboard-node {
-          position: absolute;
-          background: white;
-          border-radius: 6px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          min-width: 200px;
-          display: flex;
-          flex-direction: column;
-          user-select: none;
-          cursor: move;
-          z-index: 1;
-        }
+    //     .storyboard-node {
+    //       position: absolute;
+    //       background: white;
+    //       border-radius: 6px;
+    //       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    //       min-width: 200px;
+    //       display: flex;
+    //       flex-direction: column;
+    //       user-select: none;
+    //       cursor: move;
+    //       z-index: 1;
+    //     }
         
-        .storyboard-node-header {
-          padding: 8px 12px;
-          background: #673ab7;
-          color: white;
-          font-weight: bold;
-          border-radius: 6px 6px 0 0;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
+    //     .storyboard-node-header {
+    //       padding: 8px 12px;
+    //       background: #673ab7;
+    //       color: white;
+    //       font-weight: bold;
+    //       border-radius: 6px 6px 0 0;
+    //       display: flex;
+    //       justify-content: space-between;
+    //       align-items: center;
+    //     }
         
-        .storyboard-node-body {
-          padding: 12px;
-        }
+    //     .storyboard-node-body {
+    //       padding: 12px;
+    //     }
         
-        .storyboard-node-footer {
-          padding: 8px 12px;
-          display: flex;
-          justify-content: space-between;
-          border-top: 1px solid #eee;
-        }
+    //     .storyboard-node-footer {
+    //       padding: 8px 12px;
+    //       display: flex;
+    //       justify-content: space-between;
+    //       border-top: 1px solid #eee;
+    //     }
         
-        .storyboard-connection {
-          position: absolute;
-          pointer-events: none;
-          z-index: 0;
-        }
+    //     .storyboard-connection {
+    //       position: absolute;
+    //       pointer-events: none;
+    //       z-index: 0;
+    //     }
         
-        .storyboard-port {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: #aaa;
-          border: 2px solid white;
-          position: absolute;
-          cursor: pointer;
-          z-index: 2;
-        }
+    //     .storyboard-port {
+    //       width: 14px;
+    //       height: 14px;
+    //       border-radius: 50%;
+    //       background: #aaa;
+    //       border: 2px solid white;
+    //       position: absolute;
+    //       cursor: pointer;
+    //       z-index: 2;
+    //     }
         
-        .storyboard-port.input {
-          top: -7px;
-          left: 50%;
-          transform: translateX(-50%);
-        }
+    //     .storyboard-port.input {
+    //       top: -7px;
+    //       left: 50%;
+    //       transform: translateX(-50%);
+    //     }
         
-        .storyboard-port.output {
-          bottom: -7px;
-          left: 50%;
-          transform: translateX(-50%);
-        }
+    //     .storyboard-port.output {
+    //       bottom: -7px;
+    //       left: 50%;
+    //       transform: translateX(-50%);
+    //     }
         
-        .storyboard-toolbox {
-          padding: 12px;
-          border-bottom: 1px solid #ddd;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
+    //     .storyboard-toolbox {
+    //       padding: 12px;
+    //       border-bottom: 1px solid #ddd;
+    //       display: flex;
+    //       flex-wrap: wrap;
+    //       gap: 8px;
+    //     }
         
-        .storyboard-tool {
-          padding: 6px 12px;
-          background: #673ab7;
-          color: white;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 0.9rem;
-        }
+    //     .storyboard-tool {
+    //       padding: 6px 12px;
+    //       background: #673ab7;
+    //       color: white;
+    //       border-radius: 4px;
+    //       cursor: pointer;
+    //       font-size: 0.9rem;
+    //     }
         
-        .storyboard-properties {
-          flex: 1;
-          padding: 12px;
-          overflow-y: auto;
-        }
+    //     .storyboard-properties {
+    //       flex: 1;
+    //       padding: 12px;
+    //       overflow-y: auto;
+    //     }
         
-        .storyboard-property-group {
-          margin-bottom: 16px;
-        }
+    //     .storyboard-property-group {
+    //       margin-bottom: 16px;
+    //     }
         
-        .storyboard-property-label {
-          font-weight: bold;
-          margin-bottom: 4px;
-          color: #555;
-        }
+    //     .storyboard-property-label {
+    //       font-weight: bold;
+    //       margin-bottom: 4px;
+    //       color: #555;
+    //     }
         
-        .storyboard-property-field {
-          margin-bottom: 8px;
-        }
+    //     .storyboard-property-field {
+    //       margin-bottom: 8px;
+    //     }
         
-        /* Dark mode for editor */
-        @media (prefers-color-scheme: dark) {
-          .storyboard-canvas {
-            background-color: #2a2a2a;
-            background-image: 
-              linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-          }
+    //     /* Dark mode for editor */
+    //     @media (prefers-color-scheme: dark) {
+    //       .storyboard-canvas {
+    //         background-color: #2a2a2a;
+    //         background-image: 
+    //           linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    //           linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+    //       }
           
-          .storyboard-sidebar {
-            background: #333;
-            border-left: 1px solid #444;
-          }
+    //       .storyboard-sidebar {
+    //         background: #333;
+    //         border-left: 1px solid #444;
+    //       }
           
-          .storyboard-node {
-            background: #333;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-          }
+    //       .storyboard-node {
+    //         background: #333;
+    //         box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    //       }
           
-          .storyboard-node-body {
-            color: #e0e0e0;
-          }
+    //       .storyboard-node-body {
+    //         color: #e0e0e0;
+    //       }
           
-          .storyboard-node-footer {
-            border-top: 1px solid #444;
-          }
+    //       .storyboard-node-footer {
+    //         border-top: 1px solid #444;
+    //       }
           
-          .storyboard-property-label {
-            color: #aaa;
-          }
-        }
-      `;
+    //       .storyboard-property-label {
+    //         color: #aaa;
+    //       }
+    //     }
+    //   `;
       
-      document.head.appendChild(styles);
-    }
+    //   document.head.appendChild(styles);
+    // }
   
+/**
+ * Replace the initStyles method in Storyboard class with this improved version
+ * This fixes the white border and aligns better with your app's styling
+ */
+initStyles() {
+    const styles = document.createElement('style');
+    styles.textContent = `
+      /* Drawer styling overrides */
+      sl-drawer::part(panel) {
+        padding: 0;
+        border: none;
+        background: #242424;
+        color: #e0e0e0;
+      }
+      
+      sl-drawer::part(header) {
+        background: #333;
+        padding: 16px;
+        border-bottom: 1px solid #444;
+      }
+      
+      sl-drawer::part(body) {
+        padding: 0;
+      }
+      
+      sl-drawer::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+        padding: 12px;
+      }
+      
+      /* Story overlay styling */
+      .story-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      .story-content {
+        background: #242424;
+        max-width: 800px;
+        width: 80vw;
+        max-height: 80vh;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+      }
+      
+      .story-header {
+        padding: 16px;
+        background: linear-gradient(135deg, #673ab7, #9c27b0);
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .story-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .story-image {
+        width: 100%;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .story-image img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      
+      .story-text {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #e0e0e0;
+      }
+      
+      .story-choices {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      
+      .story-choice {
+        padding: 12px 16px;
+        background: #333;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+        color: #e0e0e0;
+      }
+      
+      .story-choice:hover {
+        background: #444;
+      }
+      
+      .story-footer {
+        padding: 16px;
+        background: #333;
+        border-top: 1px solid #444;
+        display: flex;
+        justify-content: flex-end;
+      }
+      
+      /* Node Editor Styles */
+      .storyboard-editor {
+        display: flex;
+        height: 100%;
+        overflow: hidden;
+      }
+      
+      .storyboard-canvas {
+        flex: 1;
+        background: #1e1e1e;
+        background-image: 
+          linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
+        position: relative;
+        overflow: auto;
+      }
+      
+      .storyboard-sidebar {
+        width: 300px;
+        background: #242424;
+        border-left: 1px solid #444;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      
+      .storyboard-node {
+        position: absolute;
+        background: #333;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        min-width: 200px;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+        cursor: move;
+        z-index: 1;
+      }
+      
+      .storyboard-node-header {
+        padding: 8px 12px;
+        background: #673ab7;
+        color: white;
+        font-weight: bold;
+        border-radius: 6px 6px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .storyboard-node-body {
+        padding: 12px;
+        color: #e0e0e0;
+      }
+      
+      .storyboard-node-footer {
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid #444;
+      }
+      
+      .storyboard-connection {
+        position: absolute;
+        pointer-events: none;
+        z-index: 0;
+      }
+      
+      .storyboard-port {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #aaa;
+        border: 2px solid #333;
+        position: absolute;
+        cursor: pointer;
+        z-index: 2;
+      }
+      
+      .storyboard-port.input {
+        top: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .storyboard-port.output {
+        bottom: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .storyboard-toolbox {
+        padding: 12px;
+        border-bottom: 1px solid #444;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .storyboard-tool {
+        padding: 6px 12px;
+        background: #673ab7;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      
+      .storyboard-tool:hover {
+        background: #7e57c2;
+      }
+      
+      .storyboard-tool:active {
+        background: #5e35b1;
+      }
+      
+      .storyboard-properties {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        color: #e0e0e0;
+      }
+      
+      .storyboard-property-group {
+        margin-bottom: 16px;
+      }
+      
+      .storyboard-property-label {
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: #aaa;
+      }
+      
+      .storyboard-property-field {
+        margin-bottom: 8px;
+      }
+      
+      /* Make node buttons more visible */
+      .storyboard-node-close {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        line-height: 16px;
+        text-align: center;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.2);
+        cursor: pointer;
+        font-weight: bold;
+      }
+      
+      .storyboard-node-close:hover {
+        background: rgba(255,0,0,0.5);
+      }
+      
+      /* Selected node styling */
+      .storyboard-node.selected {
+        outline: 2px solid #fff;
+        box-shadow: 0 0 10px rgba(255,255,255,0.3);
+      }
+    `;
+    
+    document.head.appendChild(styles);
+  }
+
     /**
      * Opens the storyboard editor in an sl-drawer
      */
-    openEditor() {
-      if (this.editor) {
-        console.log('Editor already open');
-        return;
-      }
-      
+    // openEditor() {
+    //     if (this.editor) {
+    //       console.log('Editor already open');
+    //       return;
+    //     }
+        
+    //     // Create editor drawer
+    //     const drawer = document.createElement('sl-drawer');
+    //     drawer.label = 'Storyboard Editor';
+    //     drawer.placement = 'end';
+        
+    //     // Set size to leave room for sidebar
+    //     drawer.style.cssText = '--size: calc(100vw - 260px);';
+        
+    //     // Create editor content
+    //     drawer.innerHTML = `
+    //       <div class="storyboard-editor">
+    //         <div class="storyboard-canvas" id="storyboard-canvas">
+    //           <!-- Nodes will be added here dynamically -->
+    //         </div>
+    //         <div class="storyboard-sidebar">
+    //           <div class="storyboard-toolbox">
+    //             <div class="storyboard-tool" data-type="dialog">Dialog</div>
+    //             <div class="storyboard-tool" data-type="choice">Choice</div>
+    //             <div class="storyboard-tool" data-type="trigger">Trigger</div>
+    //             <div class="storyboard-tool" data-type="event">Event</div>
+    //             <div class="storyboard-tool" data-type="condition">Condition</div>
+    //             <div class="storyboard-tool" data-type="combat">Combat</div>
+    //             <div class="storyboard-tool" data-type="reward">Reward</div>
+    //           </div>
+    //           <div class="storyboard-properties" id="storyboard-properties">
+    //             <div class="story-no-selection">
+    //               <p>Select a node to edit its properties.</p>
+    //             </div>
+    //           </div>
+    //           <div style="padding: 12px; border-top: 1px solid #ddd;">
+    //             <sl-button variant="primary" id="save-storyboard" style="width: 100%;">Save Storyboard</sl-button>
+    //           </div>
+    //         </div>
+    //       </div>
+          
+    //       <sl-button slot="footer" variant="primary">Close</sl-button>
+    //     `;
+        
+    //     document.body.appendChild(drawer);
+    //     drawer.show();
+        
+    //     // Store reference to editor
+    //     this.editor = drawer;
+        
+    //     // Set up editor functionality after drawer is shown
+    //     drawer.addEventListener('sl-after-show', () => {
+    //       this.initEditorFunctionality();
+    //     });
+        
+    //     // Clean up when drawer is closed
+    //     drawer.addEventListener('sl-after-hide', () => {
+    //       this.editor = null;
+    //     });
+    //   }
+    
+
+/**
+ * Updated openEditor method for the Storyboard class
+ */
+openEditor() {
+    console.log('Opening storyboard editor');
+    
+    if (this.editor) {
+      console.log('Editor already open');
+      return;
+    }
+    
+    try {
       // Create editor drawer
       const drawer = document.createElement('sl-drawer');
       drawer.label = 'Storyboard Editor';
       drawer.placement = 'end';
-      drawer.style.cssText = '--size: 90vw;';
       
-      // Create editor content
+      // Set size to leave room for sidebar
+      drawer.style.cssText = '--size: calc(100vw - 260px);';
+      
+      // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
       drawer.innerHTML = `
-        <div class="storyboard-editor">
+        <div class="storyboard-editor" id="sb-editor">
           <div class="storyboard-canvas" id="storyboard-canvas">
             <!-- Nodes will be added here dynamically -->
           </div>
-          <div class="storyboard-sidebar">
-            <div class="storyboard-toolbox">
-              <div class="storyboard-tool" data-type="dialog">Dialog</div>
-              <div class="storyboard-tool" data-type="choice">Choice</div>
-              <div class="storyboard-tool" data-type="trigger">Trigger</div>
-              <div class="storyboard-tool" data-type="event">Event</div>
-              <div class="storyboard-tool" data-type="condition">Condition</div>
-              <div class="storyboard-tool" data-type="combat">Combat</div>
-              <div class="storyboard-tool" data-type="reward">Reward</div>
+          <div class="storyboard-sidebar" id="sb-sidebar">
+            <div class="storyboard-toolbox" id="sb-toolbox">
+              <div class="storyboard-tool" id="sb-tool-dialog" data-type="dialog">Dialog</div>
+              <div class="storyboard-tool" id="sb-tool-choice" data-type="choice">Choice</div>
+              <div class="storyboard-tool" id="sb-tool-trigger" data-type="trigger">Trigger</div>
+              <div class="storyboard-tool" id="sb-tool-event" data-type="event">Event</div>
+              <div class="storyboard-tool" id="sb-tool-condition" data-type="condition">Condition</div>
+              <div class="storyboard-tool" id="sb-tool-combat" data-type="combat">Combat</div>
+              <div class="storyboard-tool" id="sb-tool-reward" data-type="reward">Reward</div>
             </div>
             <div class="storyboard-properties" id="storyboard-properties">
               <div class="story-no-selection">
@@ -360,194 +722,421 @@ class Storyboard {
           </div>
         </div>
         
-        <sl-button slot="footer" variant="primary">Close</sl-button>
+        <sl-button slot="footer" variant="primary" id="sb-close-btn">Close</sl-button>
       `;
       
+      // Add to DOM
       document.body.appendChild(drawer);
-      drawer.show();
       
-      // Store reference to editor
+      // Store reference to editor before showing
       this.editor = drawer;
       
-      // Set up editor functionality after drawer is shown
+      // Add event listeners for drawer
       drawer.addEventListener('sl-after-show', () => {
+        console.log('Drawer shown, initializing editor');
         this.initEditorFunctionality();
       });
       
       // Clean up when drawer is closed
       drawer.addEventListener('sl-after-hide', () => {
+        console.log('Drawer closed, cleaning up');
         this.editor = null;
       });
+      
+      // Show the drawer
+      console.log('Showing storyboard drawer');
+      drawer.show();
+      
+    } catch (error) {
+      console.error('Error opening storyboard editor:', error);
     }
-    
+  }
+
     /**
      * Initialize the functionality of the storyboard editor
      */
-    initEditorFunctionality() {
-      if (!this.editor) return;
+    // initEditorFunctionality() {
+    //   if (!this.editor) return;
       
-      const canvas = this.editor.querySelector('#storyboard-canvas');
-      const properties = this.editor.querySelector('#storyboard-properties');
-      const tools = this.editor.querySelectorAll('.storyboard-tool');
+    //   const canvas = this.editor.querySelector('#storyboard-canvas');
+    //   const properties = this.editor.querySelector('#storyboard-properties');
+    //   const tools = this.editor.querySelectorAll('.storyboard-tool');
       
-      // Track editor state
-      const editorState = {
-        selectedNode: null,
-        draggingNode: null,
-        draggingOffset: { x: 0, y: 0 },
-        connectingFrom: null,
-        nodes: new Map(),
-        connections: []
-      };
+    //   // Track editor state
+    //   const editorState = {
+    //     selectedNode: null,
+    //     draggingNode: null,
+    //     draggingOffset: { x: 0, y: 0 },
+    //     connectingFrom: null,
+    //     nodes: new Map(),
+    //     connections: []
+    //   };
       
-      // Load any existing story graphs
-      // For now just create a sample node for testing
-      this.createSampleNode(canvas, editorState);
+    //   // Load any existing story graphs
+    //   // For now just create a sample node for testing
+    //   this.createSampleNode(canvas, editorState);
       
-      // Set up tool buttons
-      tools.forEach(tool => {
-        tool.addEventListener('click', () => {
-          const nodeType = tool.getAttribute('data-type');
-          this.createNewNode(canvas, editorState, nodeType);
-        });
-      });
+    //   // Set up tool buttons
+    //   tools.forEach(tool => {
+    //     tool.addEventListener('click', () => {
+    //       const nodeType = tool.getAttribute('data-type');
+    //       this.createNewNode(canvas, editorState, nodeType);
+    //     });
+    //   });
       
-      // Set up canvas interactions
-      canvas.addEventListener('mousedown', (e) => {
-        // Check if we clicked on a node
-        let nodeEl = e.target.closest('.storyboard-node');
+    //   // Set up canvas interactions
+    //   canvas.addEventListener('mousedown', (e) => {
+    //     // Check if we clicked on a node
+    //     let nodeEl = e.target.closest('.storyboard-node');
         
-        if (nodeEl) {
-          // Handle node selection
-          this.selectNode(nodeEl, editorState, properties);
+    //     if (nodeEl) {
+    //       // Handle node selection
+    //       this.selectNode(nodeEl, editorState, properties);
           
+    //       // Handle node dragging
+    //       if (e.target.closest('.storyboard-node-header')) {
+    //         const rect = nodeEl.getBoundingClientRect();
+    //         editorState.draggingNode = nodeEl;
+    //         editorState.draggingOffset = {
+    //           x: e.clientX - rect.left,
+    //           y: e.clientY - rect.top
+    //         };
+    //       }
+          
+    //       // Handle connection creation
+    //       if (e.target.closest('.storyboard-port')) {
+    //         const port = e.target.closest('.storyboard-port');
+    //         if (port.classList.contains('output')) {
+    //           editorState.connectingFrom = {
+    //             node: nodeEl,
+    //             port: port
+    //           };
+              
+    //           // Create temporary connection line
+    //           const conn = document.createElement('div');
+    //           conn.className = 'storyboard-connection temp-connection';
+    //           conn.style.cssText = `
+    //             position: absolute;
+    //             height: 2px;
+    //             background: #673ab7;
+    //             transform-origin: left center;
+    //           `;
+              
+    //           const fromRect = port.getBoundingClientRect();
+    //           const canvasRect = canvas.getBoundingClientRect();
+              
+    //           const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+    //           const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+              
+    //           conn.style.left = `${x1}px`;
+    //           conn.style.top = `${y1}px`;
+              
+    //           canvas.appendChild(conn);
+    //           editorState.connectingFrom.tempConnection = conn;
+    //         }
+    //       }
+    //     } else {
+    //       // Clicked on empty canvas
+    //       this.deselectNode(editorState, properties);
+    //     }
+    //   });
+      
+    //   canvas.addEventListener('mousemove', (e) => {
+    //     // Handle node dragging
+    //     if (editorState.draggingNode) {
+    //       const canvasRect = canvas.getBoundingClientRect();
+    //       const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
+    //       const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
+          
+    //       editorState.draggingNode.style.left = `${x}px`;
+    //       editorState.draggingNode.style.top = `${y}px`;
+          
+    //       // Update any connections attached to this node
+    //       this.updateConnections(editorState);
+    //     }
+        
+    //     // Handle connection creation
+    //     if (editorState.connectingFrom) {
+    //       const canvasRect = canvas.getBoundingClientRect();
+    //       const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
+          
+    //       const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+    //       const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+    //       const x2 = e.clientX - canvasRect.left;
+    //       const y2 = e.clientY - canvasRect.top;
+          
+    //       const dx = x2 - x1;
+    //       const dy = y2 - y1;
+    //       const length = Math.sqrt(dx * dx + dy * dy);
+    //       const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+          
+    //       const conn = editorState.connectingFrom.tempConnection;
+    //       conn.style.width = `${length}px`;
+    //       conn.style.transform = `rotate(${angle}deg)`;
+    //     }
+    //   });
+      
+    //   canvas.addEventListener('mouseup', (e) => {
+    //     // Handle node dragging end
+    //     if (editorState.draggingNode) {
+    //       editorState.draggingNode = null;
+    //     }
+        
+    //     // Handle connection creation end
+    //     if (editorState.connectingFrom) {
+    //       const targetPort = e.target.closest('.storyboard-port');
+          
+    //       if (targetPort && targetPort.classList.contains('input')) {
+    //         const fromNode = editorState.connectingFrom.node;
+    //         const toNode = targetPort.closest('.storyboard-node');
+            
+    //         // Don't connect to self
+    //         if (fromNode !== toNode) {
+    //           this.createConnection(canvas, editorState, {
+    //             from: {
+    //               node: fromNode,
+    //               port: editorState.connectingFrom.port
+    //             },
+    //             to: {
+    //               node: toNode,
+    //               port: targetPort
+    //             }
+    //           });
+    //         }
+    //       }
+          
+    //       // Remove temporary connection
+    //       if (editorState.connectingFrom.tempConnection) {
+    //         editorState.connectingFrom.tempConnection.remove();
+    //       }
+          
+    //       editorState.connectingFrom = null;
+    //     }
+    //   });
+      
+    //   // Save button
+    //   const saveButton = this.editor.querySelector('#save-storyboard');
+    //   saveButton.addEventListener('click', () => {
+    //     this.saveStoryboard(editorState);
+    //   });
+    // }
+
+    /**
+ * Updated initEditorFunctionality method for Storyboard class
+ * This adds more robust event handling and debug logging
+ */
+initEditorFunctionality() {
+    if (!this.editor) {
+      console.error('Editor not found');
+      return;
+    }
+    
+    console.log('Initializing editor functionality');
+    
+    // Ensure the drawer is fully rendered before setting up editor
+    setTimeout(() => {
+      try {
+        const canvas = this.editor.querySelector('#storyboard-canvas');
+        const properties = this.editor.querySelector('#storyboard-properties');
+        const tools = this.editor.querySelectorAll('.storyboard-tool');
+        
+        if (!canvas) {
+          console.error('Canvas element not found in editor');
+          return;
+        }
+        
+        console.log('Found canvas element:', canvas);
+        console.log('Found tool buttons:', tools.length);
+        
+        // Track editor state
+        const editorState = {
+          selectedNode: null,
+          draggingNode: null,
+          draggingOffset: { x: 0, y: 0 },
+          connectingFrom: null,
+          nodes: new Map(),
+          connections: []
+        };
+        
+        // Load any existing story graphs
+        // For now just create a sample node for testing
+        this.createSampleNode(canvas, editorState);
+        
+        // Set up tool buttons with direct event handlers
+        tools.forEach(tool => {
+          console.log('Setting up tool:', tool.getAttribute('data-type'));
+          
+          tool.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const nodeType = tool.getAttribute('data-type');
+            console.log('Tool clicked:', nodeType);
+            
+            this.createNewNode(canvas, editorState, nodeType);
+          });
+        });
+        
+        // Set up canvas interactions with proper event delegation
+        canvas.addEventListener('mousedown', (e) => {
+          // Check if we clicked on a node
+          let nodeEl = e.target.closest('.storyboard-node');
+          
+          if (nodeEl) {
+            // Handle node selection
+            this.selectNode(nodeEl, editorState, properties);
+            
+            // Handle node dragging
+            if (e.target.closest('.storyboard-node-header')) {
+              const rect = nodeEl.getBoundingClientRect();
+              editorState.draggingNode = nodeEl;
+              editorState.draggingOffset = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+              };
+            }
+            
+            // Handle connection creation
+            if (e.target.closest('.storyboard-port')) {
+              const port = e.target.closest('.storyboard-port');
+              if (port.classList.contains('output')) {
+                editorState.connectingFrom = {
+                  node: nodeEl,
+                  port: port
+                };
+                
+                // Create temporary connection line
+                const conn = document.createElement('div');
+                conn.className = 'storyboard-connection temp-connection';
+                conn.style.cssText = `
+                  position: absolute;
+                  height: 2px;
+                  background: #673ab7;
+                  transform-origin: left center;
+                `;
+                
+                const fromRect = port.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+                
+                const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+                const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+                
+                conn.style.left = `${x1}px`;
+                conn.style.top = `${y1}px`;
+                
+                canvas.appendChild(conn);
+                editorState.connectingFrom.tempConnection = conn;
+              }
+            }
+          } else {
+            // Clicked on empty canvas
+            this.deselectNode(editorState, properties);
+          }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
           // Handle node dragging
-          if (e.target.closest('.storyboard-node-header')) {
-            const rect = nodeEl.getBoundingClientRect();
-            editorState.draggingNode = nodeEl;
-            editorState.draggingOffset = {
-              x: e.clientX - rect.left,
-              y: e.clientY - rect.top
-            };
+          if (editorState.draggingNode) {
+            const canvasRect = canvas.getBoundingClientRect();
+            const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
+            const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
+            
+            editorState.draggingNode.style.left = `${x}px`;
+            editorState.draggingNode.style.top = `${y}px`;
+            
+            // Update any connections attached to this node
+            this.updateConnections(editorState);
           }
           
           // Handle connection creation
-          if (e.target.closest('.storyboard-port')) {
-            const port = e.target.closest('.storyboard-port');
-            if (port.classList.contains('output')) {
-              editorState.connectingFrom = {
-                node: nodeEl,
-                port: port
-              };
-              
-              // Create temporary connection line
-              const conn = document.createElement('div');
-              conn.className = 'storyboard-connection temp-connection';
-              conn.style.cssText = `
-                position: absolute;
-                height: 2px;
-                background: #673ab7;
-                transform-origin: left center;
-              `;
-              
-              const fromRect = port.getBoundingClientRect();
-              const canvasRect = canvas.getBoundingClientRect();
-              
-              const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-              const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-              
-              conn.style.left = `${x1}px`;
-              conn.style.top = `${y1}px`;
-              
-              canvas.appendChild(conn);
-              editorState.connectingFrom.tempConnection = conn;
-            }
-          }
-        } else {
-          // Clicked on empty canvas
-          this.deselectNode(editorState, properties);
-        }
-      });
-      
-      canvas.addEventListener('mousemove', (e) => {
-        // Handle node dragging
-        if (editorState.draggingNode) {
-          const canvasRect = canvas.getBoundingClientRect();
-          const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
-          const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
-          
-          editorState.draggingNode.style.left = `${x}px`;
-          editorState.draggingNode.style.top = `${y}px`;
-          
-          // Update any connections attached to this node
-          this.updateConnections(editorState);
-        }
-        
-        // Handle connection creation
-        if (editorState.connectingFrom) {
-          const canvasRect = canvas.getBoundingClientRect();
-          const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
-          
-          const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-          const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-          const x2 = e.clientX - canvasRect.left;
-          const y2 = e.clientY - canvasRect.top;
-          
-          const dx = x2 - x1;
-          const dy = y2 - y1;
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-          
-          const conn = editorState.connectingFrom.tempConnection;
-          conn.style.width = `${length}px`;
-          conn.style.transform = `rotate(${angle}deg)`;
-        }
-      });
-      
-      canvas.addEventListener('mouseup', (e) => {
-        // Handle node dragging end
-        if (editorState.draggingNode) {
-          editorState.draggingNode = null;
-        }
-        
-        // Handle connection creation end
-        if (editorState.connectingFrom) {
-          const targetPort = e.target.closest('.storyboard-port');
-          
-          if (targetPort && targetPort.classList.contains('input')) {
-            const fromNode = editorState.connectingFrom.node;
-            const toNode = targetPort.closest('.storyboard-node');
+          if (editorState.connectingFrom) {
+            const canvasRect = canvas.getBoundingClientRect();
+            const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
             
-            // Don't connect to self
-            if (fromNode !== toNode) {
-              this.createConnection(canvas, editorState, {
-                from: {
-                  node: fromNode,
-                  port: editorState.connectingFrom.port
-                },
-                to: {
-                  node: toNode,
-                  port: targetPort
-                }
-              });
+            const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+            const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+            const x2 = e.clientX - canvasRect.left;
+            const y2 = e.clientY - canvasRect.top;
+            
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            const conn = editorState.connectingFrom.tempConnection;
+            conn.style.width = `${length}px`;
+            conn.style.transform = `rotate(${angle}deg)`;
+          }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+          // Handle node dragging end
+          if (editorState.draggingNode) {
+            editorState.draggingNode = null;
+          }
+          
+          // Handle connection creation end
+          if (editorState.connectingFrom) {
+            const targetPort = e.target.closest('.storyboard-port');
+            
+            if (targetPort && targetPort.classList.contains('input')) {
+              const fromNode = editorState.connectingFrom.node;
+              const toNode = targetPort.closest('.storyboard-node');
+              
+              // Don't connect to self
+              if (fromNode !== toNode) {
+                this.createConnection(canvas, editorState, {
+                  from: {
+                    node: fromNode,
+                    port: editorState.connectingFrom.port
+                  },
+                  to: {
+                    node: toNode,
+                    port: targetPort
+                  }
+                });
+              }
             }
+            
+            // Remove temporary connection
+            if (editorState.connectingFrom.tempConnection) {
+              editorState.connectingFrom.tempConnection.remove();
+            }
+            
+            editorState.connectingFrom = null;
           }
-          
-          // Remove temporary connection
-          if (editorState.connectingFrom.tempConnection) {
-            editorState.connectingFrom.tempConnection.remove();
-          }
-          
-          editorState.connectingFrom = null;
+        });
+        
+        // Save button with explicit handler
+        const saveButton = this.editor.querySelector('#save-storyboard');
+        if (saveButton) {
+          console.log('Found save button');
+          saveButton.addEventListener('click', (e) => {
+            console.log('Save button clicked');
+            this.saveStoryboard(editorState);
+          });
+        } else {
+          console.error('Save button not found');
         }
-      });
-      
-      // Save button
-      const saveButton = this.editor.querySelector('#save-storyboard');
-      saveButton.addEventListener('click', () => {
-        this.saveStoryboard(editorState);
-      });
-    }
+        
+        // Close button with explicit handler
+        const closeButton = this.editor.querySelector('sl-button[slot="footer"]');
+        if (closeButton) {
+          console.log('Found close button');
+          closeButton.addEventListener('click', (e) => {
+            console.log('Close button clicked');
+            this.editor.hide();
+          });
+        } else {
+          console.error('Close button not found');
+        }
+        
+        console.log('Editor functionality initialized successfully');
+      } catch (error) {
+        console.error('Error initializing editor functionality:', error);
+      }
+    }, 300); // Add a small delay to ensure components are ready
+  }
     
     /**
      * Create a sample node for testing
@@ -596,102 +1185,219 @@ class Storyboard {
     /**
      * Create a new node of the specified type
      */
-    createNewNode(canvas, editorState, nodeType) {
-      const node = document.createElement('div');
-      node.className = 'storyboard-node';
-      node.setAttribute('data-type', nodeType);
-      node.setAttribute('data-id', 'node_' + Date.now());
+    // createNewNode(canvas, editorState, nodeType) {
+    //   const node = document.createElement('div');
+    //   node.className = 'storyboard-node';
+    //   node.setAttribute('data-type', nodeType);
+    //   node.setAttribute('data-id', 'node_' + Date.now());
       
-      // Position in center of visible canvas
-      const canvasRect = canvas.getBoundingClientRect();
-      const scrollLeft = canvas.scrollLeft;
-      const scrollTop = canvas.scrollTop;
+    //   // Position in center of visible canvas
+    //   const canvasRect = canvas.getBoundingClientRect();
+    //   const scrollLeft = canvas.scrollLeft;
+    //   const scrollTop = canvas.scrollTop;
       
-      node.style.left = `${scrollLeft + canvasRect.width / 2 - 100}px`;
-      node.style.top = `${scrollTop + canvasRect.height / 2 - 50}px`;
+    //   node.style.left = `${scrollLeft + canvasRect.width / 2 - 100}px`;
+    //   node.style.top = `${scrollTop + canvasRect.height / 2 - 50}px`;
       
-      // Configure based on node type
-      let title, body, data;
+    //   // Configure based on node type
+    //   let title, body, data;
       
-      switch (nodeType) {
-        case 'dialog':
-          title = 'Dialog';
-          body = '<div>New dialog text</div>';
-          data = { title: 'Dialog', text: 'New dialog text', image: null };
-          break;
-        case 'choice':
-          title = 'Choice';
-          body = '<div>What would you like to do?</div><div style="color:#777;font-size:0.9em;">Add options in properties</div>';
-          data = { 
-            text: 'What would you like to do?', 
-            options: [
-              { text: 'Option 1', targetId: null },
-              { text: 'Option 2', targetId: null }
-            ] 
-          };
-          break;
-        case 'trigger':
-          title = 'Location Trigger';
-          body = '<div>X: 0, Y: 0, Radius: 1</div>';
-          data = { x: 0, y: 0, radius: 1, once: true };
-          break;
-        case 'event':
-          title = 'Game Event';
-          body = '<div>Select event in properties</div>';
-          data = { eventType: 'none', params: {} };
-          break;
-        case 'condition':
-          title = 'Condition';
-          body = '<div>Configure condition in properties</div>';
-          data = { condition: 'none', params: {} };
-          break;
-        case 'combat':
-          title = 'Combat';
-          body = '<div>Start combat with enemies</div>';
-          data = { enemies: [], background: null };
-          break;
-        case 'reward':
-          title = 'Reward';
-          body = '<div>Give rewards to player</div>';
-          data = { items: [], experience: 0, monsters: [] };
-          break;
-        default:
-          title = 'Node';
-          body = '<div>Configure node</div>';
-          data = {};
-      }
+    //   switch (nodeType) {
+    //     case 'dialog':
+    //       title = 'Dialog';
+    //       body = '<div>New dialog text</div>';
+    //       data = { title: 'Dialog', text: 'New dialog text', image: null };
+    //       break;
+    //     case 'choice':
+    //       title = 'Choice';
+    //       body = '<div>What would you like to do?</div><div style="color:#777;font-size:0.9em;">Add options in properties</div>';
+    //       data = { 
+    //         text: 'What would you like to do?', 
+    //         options: [
+    //           { text: 'Option 1', targetId: null },
+    //           { text: 'Option 2', targetId: null }
+    //         ] 
+    //       };
+    //       break;
+    //     case 'trigger':
+    //       title = 'Location Trigger';
+    //       body = '<div>X: 0, Y: 0, Radius: 1</div>';
+    //       data = { x: 0, y: 0, radius: 1, once: true };
+    //       break;
+    //     case 'event':
+    //       title = 'Game Event';
+    //       body = '<div>Select event in properties</div>';
+    //       data = { eventType: 'none', params: {} };
+    //       break;
+    //     case 'condition':
+    //       title = 'Condition';
+    //       body = '<div>Configure condition in properties</div>';
+    //       data = { condition: 'none', params: {} };
+    //       break;
+    //     case 'combat':
+    //       title = 'Combat';
+    //       body = '<div>Start combat with enemies</div>';
+    //       data = { enemies: [], background: null };
+    //       break;
+    //     case 'reward':
+    //       title = 'Reward';
+    //       body = '<div>Give rewards to player</div>';
+    //       data = { items: [], experience: 0, monsters: [] };
+    //       break;
+    //     default:
+    //       title = 'Node';
+    //       body = '<div>Configure node</div>';
+    //       data = {};
+    //   }
       
-      node.innerHTML = `
-        <div class="storyboard-node-header">
-          ${title}
-          <span class="storyboard-node-close">×</span>
-        </div>
-        <div class="storyboard-node-body">
-          ${body}
-        </div>
-        <div class="storyboard-node-footer">
-          <div class="storyboard-port input"></div>
-          <div class="storyboard-port output"></div>
-        </div>
-      `;
+    //   node.innerHTML = `
+    //     <div class="storyboard-node-header">
+    //       ${title}
+    //       <span class="storyboard-node-close">×</span>
+    //     </div>
+    //     <div class="storyboard-node-body">
+    //       ${body}
+    //     </div>
+    //     <div class="storyboard-node-footer">
+    //       <div class="storyboard-port input"></div>
+    //       <div class="storyboard-port output"></div>
+    //     </div>
+    //   `;
       
-      canvas.appendChild(node);
+    //   canvas.appendChild(node);
       
-      // Add to nodes collection
-      editorState.nodes.set(node.getAttribute('data-id'), {
-        element: node,
-        type: nodeType,
-        data: data
-      });
+    //   // Add to nodes collection
+    //   editorState.nodes.set(node.getAttribute('data-id'), {
+    //     element: node,
+    //     type: nodeType,
+    //     data: data
+    //   });
       
-      // Set up delete handler
-      node.querySelector('.storyboard-node-close').addEventListener('click', () => {
+    //   // Set up delete handler
+    //   node.querySelector('.storyboard-node-close').addEventListener('click', () => {
+    //     this.deleteNode(node, editorState);
+    //   });
+      
+    //   // Select the new node
+    //   this.selectNode(node, editorState, this.editor.querySelector('#storyboard-properties'));
+    // }
+
+    /**
+ * Replace the createNewNode method in Storyboard class to fix the event handling
+ */
+createNewNode(canvas, editorState, nodeType) {
+    console.log('Creating new node of type:', nodeType);
+    
+    // Create node element
+    const node = document.createElement('div');
+    node.className = 'storyboard-node';
+    node.setAttribute('data-type', nodeType);
+    node.setAttribute('data-id', 'node_' + Date.now());
+    
+    // Position in center of visible canvas
+    const canvasRect = canvas.getBoundingClientRect();
+    const scrollLeft = canvas.scrollLeft;
+    const scrollTop = canvas.scrollTop;
+    
+    // Calculate position - center of visible area
+    const centerX = scrollLeft + canvasRect.width / 2 - 100;
+    const centerY = scrollTop + canvasRect.height / 2 - 50;
+    
+    node.style.left = `${centerX}px`;
+    node.style.top = `${centerY}px`;
+    
+    // Configure based on node type
+    let title, body, data;
+    
+    switch (nodeType) {
+      case 'dialog':
+        title = 'Dialog';
+        body = '<div>New dialog text</div>';
+        data = { title: 'Dialog', text: 'New dialog text', image: null };
+        break;
+      case 'choice':
+        title = 'Choice';
+        body = '<div>What would you like to do?</div><div style="color:#777;font-size:0.9em;">Add options in properties</div>';
+        data = { 
+          text: 'What would you like to do?', 
+          options: [
+            { text: 'Option 1', targetId: null },
+            { text: 'Option 2', targetId: null }
+          ] 
+        };
+        break;
+      case 'trigger':
+        title = 'Location Trigger';
+        body = '<div>X: 0, Y: 0, Radius: 1</div>';
+        data = { x: 0, y: 0, radius: 1, once: true };
+        break;
+      case 'event':
+        title = 'Game Event';
+        body = '<div>Select event in properties</div>';
+        data = { eventType: 'none', params: {} };
+        break;
+      case 'condition':
+        title = 'Condition';
+        body = '<div>Configure condition in properties</div>';
+        data = { condition: 'none', params: {} };
+        break;
+      case 'combat':
+        title = 'Combat';
+        body = '<div>Start combat with enemies</div>';
+        data = { enemies: [], background: null };
+        break;
+      case 'reward':
+        title = 'Reward';
+        body = '<div>Give rewards to player</div>';
+        data = { items: [], experience: 0, monsters: [] };
+        break;
+      default:
+        title = 'Node';
+        body = '<div>Configure node</div>';
+        data = {};
+    }
+    
+    node.innerHTML = `
+      <div class="storyboard-node-header">
+        ${title}
+        <span class="storyboard-node-close">×</span>
+      </div>
+      <div class="storyboard-node-body">
+        ${body}
+      </div>
+      <div class="storyboard-node-footer">
+        <div class="storyboard-port input"></div>
+        <div class="storyboard-port output"></div>
+      </div>
+    `;
+    
+    // Add the node to canvas
+    canvas.appendChild(node);
+    console.log('Node added to canvas');
+    
+    // Add to nodes collection
+    editorState.nodes.set(node.getAttribute('data-id'), {
+      element: node,
+      type: nodeType,
+      data: data
+    });
+    
+    // Set up delete handler
+    const closeBtn = node.querySelector('.storyboard-node-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Delete node clicked');
         this.deleteNode(node, editorState);
       });
-      
-      // Select the new node
-      this.selectNode(node, editorState, this.editor.querySelector('#storyboard-properties'));
     }
+    
+    // Select the new node
+    this.selectNode(node, editorState, this.editor.querySelector('#storyboard-properties'));
+    
+    return node;
+  }
     
     /**
      * Create a connection between two nodes

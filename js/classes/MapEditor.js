@@ -47,6 +47,10 @@ class MapEditor {
       });
     });
 
+    this.checkStoryboard(() => {
+      console.log('Storyboard initialized:', !!this.storyboard);
+    });
+
 
     this.setupCanvas();
     this.calculateLayersListHeight = this.calculateLayersListHeight.bind(this);
@@ -57,6 +61,70 @@ class MapEditor {
 
     // this.fixZoomIssues();
   }
+
+  checkStoryboard(callback) {
+    const storyboardBtn = document.getElementById('storyboardTool');
+  
+    // Create a temporary script element to test loading
+    const script = document.createElement('script');
+    script.src = 'js/classes/Storyboard.js';
+    script.onload = () => {
+      // Storyboard loaded successfully
+      console.log('Storyboard script loaded');
+      this.storyboard = new Storyboard(this.scene3D, this.resourceManager);
+      
+      // Store in window for global access if needed
+      window.storyboard = this.storyboard;
+  
+      if (storyboardBtn) {
+        // Update tooltip to show it's available
+        storyboardBtn.setAttribute('data-tooltip', 'Story Editor [F11]');
+        
+        // Add click handler
+        storyboardBtn.addEventListener('click', () => {
+          this.storyboard.openEditor();
+        });
+      }
+      if (callback) callback();
+    };
+    script.onerror = () => {
+      console.warn('Storyboard not available');
+      if (storyboardBtn) {
+        // Disable or hide the button if storyboard isn't available
+        storyboardBtn.style.opacity = '0.5';
+        storyboardBtn.setAttribute('data-tooltip', 'Story Editor (not available)');
+      }
+      if (callback) callback();
+    };
+    document.head.appendChild(script);
+  }
+
+  initStoryboard() {
+    // Initialize storyboard if not already initialized
+    if (!this.storyboard) {
+      console.log('Initializing Storyboard from MapEditor');
+      
+      // Create new instance with reference to Scene3D and ResourceManager
+      this.storyboard = new Storyboard(this.scene3D, this.resourceManager);
+      
+      // Store globally for potential access by other systems
+      window.storyboard = this.storyboard;
+      
+      // Load any saved storyboard data
+      this.storyboard.loadFromStorage();
+    }
+    
+    return this.storyboard;
+  }
+  
+  // Add as a method to the MapEditor class
+  openStoryboardEditor() {
+    // Initialize if needed
+    const storyboard = this.initStoryboard();
+    
+    // Open the editor
+    storyboard.openEditor();
+  } 
 
   checkResourceManager(callback) {
     const resourceManagerBtn = document.getElementById('resourceManagerBtn');
@@ -94,6 +162,8 @@ class MapEditor {
     };
     document.head.appendChild(script);
   }
+
+  
 
   checkTextureManager(callback) {
     const script = document.createElement('script');
@@ -2219,6 +2289,9 @@ if (preferencesBtn) {
           case "screenshotTool":
             this.takeScreenshot();
             break;
+          case "storyboardTool":
+              this.openStoryboardEditor();
+              break;
         }
       });
     });
