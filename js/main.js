@@ -443,12 +443,6 @@ document.addEventListener("DOMContentLoaded", () => {
       
       dialog.show();
     }
-    
-    // Also set up the help button if it exists
-    // const helpBtn = document.getElementById('helpBtn');
-    // if (helpBtn) {
-    //   helpBtn.addEventListener('click', showHelpDialog);
-    // }
 
 
   });
