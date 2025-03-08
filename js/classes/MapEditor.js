@@ -35,13 +35,7 @@ class MapEditor {
     // Setup in correct order
     this.setupTitleHandlers();
     this.updateMapTitle();
-    // this.checkResourceManager(() => {
-    //   console.log('ResourceManager initialized:', !!this.resourceManager);
-    //   this.checkTextureManager(() => {
-    //     console.log('TextureManager initialized:', !!this.textureManager);
-    //     this.setupEventListeners();
-    //   });
-    // });
+
 
     this.checkResourceManager(() => {
       console.log('ResourceManager initialized:', !!this.resourceManager);

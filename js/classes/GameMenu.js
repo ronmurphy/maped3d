@@ -1098,35 +1098,6 @@ class GameMenu {
       this.menuContainer.appendChild(backButton);
     }
     
-    // Helper method to capture a screenshot thumbnail from the current scene
-    // captureScreenshot(width = 200, height = 120) {
-    //   if (!this.scene3D || !this.scene3D.renderer) {
-    //     console.error("Cannot capture screenshot: renderer not available");
-    //     return null;
-    //   }
-      
-    //   try {
-    //     // Create a small canvas for the thumbnail
-    //     const canvas = document.createElement('canvas');
-    //     canvas.width = width;
-    //     canvas.height = height;
-    //     const context = canvas.getContext('2d');
-        
-    //     // Get the original renderer canvas
-    //     const rendererCanvas = this.scene3D.renderer.domElement;
-        
-    //     // Draw the current frame to our thumbnail canvas, resizing it
-    //     context.drawImage(rendererCanvas, 0, 0, width, height);
-        
-    //     // Convert to base64 data URL (JPEG for smaller size)
-    //     return canvas.toDataURL('image/jpeg', 0.7);
-    //   } catch (error) {
-    //     console.error("Error capturing screenshot:", error);
-    //     return null;
-    //   }
-
-      
-    // }
     
 // Helper method to capture a screenshot thumbnail from the current scene
 captureScreenshot(width = 200, height = 120) {
