@@ -57,22 +57,6 @@ if (typeof window.Storyboard === 'undefined') {
       console.log('Storyboard system initialized with persistent data');
     }
 
-    testResourceManager() {
-      if (!this.resourceManager) {
-        console.error('Resource Manager not available');
-        return false;
-      }
-      
-      // Check essential structures
-      if (!this.resourceManager.resources || 
-          !this.resourceManager.resources.splashArt) {
-        console.error('Resource Manager missing essential structures');
-        return false;
-      }
-      
-      return true;
-    }
-
     /**
      * Initialize CSS styles for story displays
      */
@@ -369,12 +353,12 @@ if (typeof window.Storyboard === 'undefined') {
      */
     openEditor() {
       console.log('Opening storyboard editor');
-    
+
       if (this.editor) {
         console.log('Editor already open');
         return;
       }
-    
+
       try {
         // Reset UI state but keep data
         this.editorState.active = true;
@@ -383,13 +367,14 @@ if (typeof window.Storyboard === 'undefined') {
         this.editorState.connectingFrom = null;
         this.editorState.canvasElement = null;
         this.editorState.propertiesElement = null;
-    
-        // Create and attach the drawer synchronously
+
+        // Create editor drawer
         const drawer = document.createElement('sl-drawer');
         drawer.label = 'Storyboard Editor';
         drawer.placement = 'end';
+
+        // Set size to leave room for sidebar
         drawer.style.cssText = '--size: calc(100vw - 260px);';
-        document.body.appendChild(drawer);
 
         // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
         drawer.innerHTML = `
@@ -426,39 +411,47 @@ if (typeof window.Storyboard === 'undefined') {
 
         // Store reference to editor before showing
         this.editor = drawer;
-    
-        // Set up close button handler
-        drawer.querySelector('#sb-close-btn').addEventListener('click', () => {
-          this.saveCurrentGraph(); // Save before closing
+
+        // Add explicit close handler
+        const closeBtn = drawer.querySelector('#sb-close-btn');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            console.log('Close button clicked');
+
+            // Make sure to save any unsaved changes when closing
+            if (this.currentGraph.dirty) {
+              this.saveCurrentGraph();
+            }
+
+            this.editorState.active = false; // Update UI state first
+            drawer.hide();
+            this.editor = null;
+          });
+        }
+
+        // Handle hide event
+        drawer.addEventListener('sl-after-hide', () => {
+          console.log('Drawer closed, cleaning up');
+
+          // Just reset UI state, not data
           this.editorState.active = false;
-          drawer.hide();
+          this.editor = null;
         });
-        
+
         // Show the drawer
+        console.log('Showing storyboard drawer');
         drawer.show();
-        
-        // Initialize functionality directly after showing
-        drawer.addEventListener('sl-after-show', () => {
-          // Find key elements
-          const canvas = drawer.querySelector('#storyboard-canvas');
-          const properties = drawer.querySelector('#storyboard-properties');
-          
-          if (!canvas || !properties) {
-            console.error('Required elements not found');
-            return;
-          }
-          
-          // Store references
-          this.editorState.canvasElement = canvas;
-          this.editorState.propertiesElement = properties;
-          
-          // Set up tools, canvas interactions, etc.
-          this.setupToolButtons();
-          this.setupCanvasInteractions(canvas, properties);
-          this.restoreNodesFromData(canvas);
-        });
+
+        // Initialize functionality after a small delay
+        console.log('Setting up initialization timer');
+        setTimeout(() => {
+          console.log('Initialization timer fired, initializing editor');
+          this.directInitEditor();
+        }, 500);
+
       } catch (error) {
-        console.error('Error opening editor:', error);
+        console.error('Error opening storyboard editor:', error);
+        this.editorState.active = false;
       }
     }
 
@@ -1715,21 +1708,22 @@ if (typeof window.Storyboard === 'undefined') {
             // Get current values from inputs
             const titleInput = properties.querySelector('#dialog-title-input');
             const textInput = properties.querySelector('#dialog-text-input');
-          
+
             if (titleInput && textInput) {
               // Update node data
-              nodeData.data.title = titleInput.value.trim();
-              nodeData.data.text = textInput.value.trim();
-              
-              // The image is already stored in nodeData.data.image
-              // when selected in showSplashArtSelector
-              
-              // Update node visual representation
-              this.updateNodeVisual(nodeData);
-              
-              // Mark as dirty for saving
+              const title = titleInput.value.trim();
+              const text = textInput.value.trim();
+
+              nodeData.data.title = title;
+              nodeData.data.text = text;
+
+              // Mark as dirty
               this.currentGraph.dirty = true;
-              
+
+              // Update visual representation
+              this.updateNodeVisual(nodeData);
+
+              // Show confirmation
               this.showToast('Node updated', 'success');
             }
           });
@@ -1864,35 +1858,32 @@ if (typeof window.Storyboard === 'undefined') {
      */
     showSplashArtSelector(nodeData) {
       if (!this.resourceManager || !nodeData) {
+        console.error('ResourceManager not available for splash art selection');
         this.showToast('Resource Manager not available', 'error');
         return;
       }
-    
-      // Get all splash art categories from resource manager
+
+      // Create drawer for splash art selection
+      const drawer = document.createElement('sl-drawer');
+      drawer.label = 'Select Splash Art';
+      drawer.placement = 'bottom';
+      drawer.style.cssText = '--size: 70vh;';
+
+      // Get all splash art from resource manager
       let allSplashArt = [];
-      
-      // Get all available categories dynamically
-      const categories = Object.keys(this.resourceManager.resources.splashArt || {});
-      
-      if (categories.length === 0) {
-        this.showToast('No splash art available in resource manager', 'error');
-        return;
-      }
-      
+      const categories = ['title', 'loading', 'background']; // Add all relevant categories
+
+      // Get splash art from all categories
       categories.forEach(category => {
         const artMap = this.resourceManager.resources.splashArt[category];
-        if (artMap && artMap.size > 0) {
+        if (artMap) {
           Array.from(artMap.entries()).forEach(([id, art]) => {
-            // Check if we have usable data
-            if (art && (art.thumbnail || art.data)) {
-              allSplashArt.push({
-                id,
-                name: art.name || 'Unnamed',
-                thumbnail: art.thumbnail || art.data, // Fall back to full data if no thumbnail
-                data: art.data,
-                category
-              });
-            }
+            allSplashArt.push({
+              id,
+              name: art.name,
+              thumbnail: art.thumbnail,
+              category
+            });
           });
         }
       });
@@ -2059,19 +2050,12 @@ if (typeof window.Storyboard === 'undefined') {
      */
     getSplashArtUrl(imageData) {
       if (!imageData || !this.resourceManager) return '';
-    
+
       try {
-        // Handle different image data formats
-        if (typeof imageData === 'string') {
-          // Direct base64 or URL
-          return imageData;
-        }
-        
         const { id, category } = imageData;
         const art = this.resourceManager.resources.splashArt[category]?.get(id);
-        
-        // Return full data when available, fall back to thumbnail
-        return art?.data || art?.thumbnail || '';
+
+        return art?.thumbnail || '';
       } catch (error) {
         console.error('Error getting splash art URL:', error);
         return '';
@@ -2406,27 +2390,22 @@ if (typeof window.Storyboard === 'undefined') {
       if (this.currentOverlay) {
         this.closeOverlay();
       }
-    
+
       const overlay = document.createElement('div');
       overlay.className = 'story-overlay';
-    
+
       let imageHtml = '';
       if (dialogData.image) {
-        try {
-          // Get appropriate image data
-          const imageUrl = this.getDialogImageUrl(dialogData.image);
-          
-          if (imageUrl) {
-            imageHtml = `
-              <div class="story-image">
-                <img src="${imageUrl}" alt="Story Image" onerror="this.style.display='none'">
-              </div>
-            `;
-          }
-        } catch (error) {
-          console.error('Error preparing dialog image:', error);
-          // Continue without the image
-        }
+        // Get image URL from resource manager if available
+        const imageUrl = this.resourceManager ?
+          this.resourceManager.getSplashArtUrl(dialogData.image) :
+          dialogData.image;
+
+        imageHtml = `
+          <div class="story-image">
+            <img src="${imageUrl}" alt="Story Image">
+          </div>
+        `;
       }
 
       overlay.innerHTML = `
@@ -2468,41 +2447,6 @@ if (typeof window.Storyboard === 'undefined') {
         this.scene3D.pauseControls();
       }
     }
-
-    // New helper method to get dialog images
-getDialogImageUrl(imageData) {
-  // Handle string URLs or base64 directly
-  if (typeof imageData === 'string') {
-    return imageData;
-  }
-  
-  // Handle resource manager references
-  if (imageData && imageData.id && imageData.category && this.resourceManager) {
-    const resource = this.resourceManager.resources.splashArt[imageData.category]?.get(imageData.id);
-    return resource?.data || resource?.thumbnail || '';
-  }
-  
-  // Handle direct image objects
-  if (imageData && imageData.data) {
-    return imageData.data;
-  }
-  
-  return '';
-}
-
-// Check if a splash art resource exists
-splashArtExists(id, category) {
-  if (!this.resourceManager || !id || !category) return false;
-  
-  const categoryMap = this.resourceManager.resources.splashArt[category];
-  return categoryMap && categoryMap.has(id);
-}
-
-// Get a splash art resource safely
-getSplashArt(id, category) {
-  if (!this.splashArtExists(id, category)) return null;
-  return this.resourceManager.resources.splashArt[category].get(id);
-}
 
     /**
      * Show a choice dialog with options
