@@ -3,20 +3,48 @@
  * Handles creation, editing, and execution of narrative flows and game events
  */
 
-class Storyboard {
+// Check if Storyboard already exists to prevent redeclaration
+if (typeof window.Storyboard === 'undefined') {
+  /**
+   * Storyboard.js - Node-based story and event management system for the game
+   * Handles creation, editing, and execution of narrative flows and game events
+   */
+  window.Storyboard = class Storyboard {
     constructor(scene3D, resourceManager) {
       // Core dependencies
       this.scene3D = scene3D;
       this.resourceManager = resourceManager;
       
-      // Story data
+      // Story data - persistent between sessions
       this.storyGraphs = new Map(); // Map of story IDs to story graph objects
       this.activeStories = new Map(); // Currently active story executions
       this.triggeredStories = new Set(); // IDs of stories that have been triggered
       
-      // UI references
-      this.editor = null; // Reference to editor when open
+      // Current working graph data - persists between editor sessions
+      this.currentGraph = {
+        id: 'graph_default',
+        nodes: new Map(),  // Persistent node data
+        connections: [],   // Persistent connection data
+        dirty: false       // Whether data has changed since last save
+      };
+      
+      // UI references - temporary, only valid when editor is open
+      this.editor = null;  // Reference to editor drawer
       this.currentOverlay = null; // Current story overlay (dialogs etc)
+      
+      // Editor UI state - temporary, reset each time editor opens
+      this.editorState = {
+        active: false,
+        selectedNode: null,
+        draggingNode: null,
+        draggingOffset: { x: 0, y: 0 },
+        connectingFrom: null,
+        canvasElement: null,
+        propertiesElement: null
+      };
+      
+      // Try to load existing data
+      this.loadFromStorage();
       
       // Initialize styles
       this.initStyles();
@@ -26,302 +54,12 @@ class Storyboard {
         this.scene3D.registerUpdateCallback(this.checkTriggers.bind(this));
       }
       
-      console.log('Storyboard system initialized');
+      console.log('Storyboard system initialized with persistent data');
     }
   
     /**
      * Initialize CSS styles for story displays
      */
-    // initStyles() {
-    //   const styles = document.createElement('style');
-    //   styles.textContent = `
-    //     .story-overlay {
-    //       position: fixed;
-    //       top: 0;
-    //       left: 0;
-    //       right: 0;
-    //       bottom: 0;
-    //       background: rgba(0, 0, 0, 0.7);
-    //       display: flex;
-    //       justify-content: center;
-    //       align-items: center;
-    //       z-index: 2000;
-    //       opacity: 0;
-    //       transition: opacity 0.3s ease;
-    //     }
-        
-    //     .story-content {
-    //       background: #fff;
-    //       max-width: 800px;
-    //       width: 80vw;
-    //       max-height: 80vh;
-    //       border-radius: 8px;
-    //       overflow: hidden;
-    //       display: flex;
-    //       flex-direction: column;
-    //       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    //       transform: scale(0.95);
-    //       transition: transform 0.3s ease;
-    //     }
-        
-    //     .story-header {
-    //       padding: 16px;
-    //       background: linear-gradient(135deg, #673ab7, #9c27b0);
-    //       color: white;
-    //       font-weight: bold;
-    //       font-size: 1.2rem;
-    //       display: flex;
-    //       justify-content: space-between;
-    //       align-items: center;
-    //     }
-        
-    //     .story-body {
-    //       padding: 24px;
-    //       overflow-y: auto;
-    //       flex: 1;
-    //       display: flex;
-    //       flex-direction: column;
-    //       gap: 20px;
-    //     }
-        
-    //     .story-image {
-    //       width: 100%;
-    //       border-radius: 4px;
-    //       overflow: hidden;
-    //     }
-        
-    //     .story-image img {
-    //       width: 100%;
-    //       height: auto;
-    //       display: block;
-    //     }
-        
-    //     .story-text {
-    //       font-size: 1.1rem;
-    //       line-height: 1.6;
-    //       color: #333;
-    //     }
-        
-    //     .story-choices {
-    //       display: flex;
-    //       flex-direction: column;
-    //       gap: 8px;
-    //       margin-top: 16px;
-    //     }
-        
-    //     .story-choice {
-    //       padding: 12px 16px;
-    //       background: #f0f0f0;
-    //       border-radius: 4px;
-    //       cursor: pointer;
-    //       transition: background 0.2s;
-    //     }
-        
-    //     .story-choice:hover {
-    //       background: #e0e0e0;
-    //     }
-        
-    //     .story-footer {
-    //       padding: 16px;
-    //       background: #f5f5f5;
-    //       border-top: 1px solid #ddd;
-    //       display: flex;
-    //       justify-content: flex-end;
-    //     }
-        
-    //     /* Dark mode support */
-    //     @media (prefers-color-scheme: dark) {
-    //       .story-content {
-    //         background: #2a2a2a;
-    //       }
-          
-    //       .story-text {
-    //         color: #e0e0e0;
-    //       }
-          
-    //       .story-choice {
-    //         background: #3a3a3a;
-    //         color: #e0e0e0;
-    //       }
-          
-    //       .story-choice:hover {
-    //         background: #4a4a4a;
-    //       }
-          
-    //       .story-footer {
-    //         background: #333;
-    //         border-top: 1px solid #444;
-    //       }
-    //     }
-        
-    //     /* Node Editor Styles */
-    //     .storyboard-editor {
-    //       display: flex;
-    //       height: 100%;
-    //       overflow: hidden;
-    //     }
-        
-    //     .storyboard-canvas {
-    //       flex: 1;
-    //       background: #f0f0f0;
-    //       background-image: 
-    //         linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
-    //         linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
-    //       background-size: 20px 20px;
-    //       position: relative;
-    //       overflow: auto;
-    //     }
-        
-    //     .storyboard-sidebar {
-    //       width: 300px;
-    //       background: #fff;
-    //       border-left: 1px solid #ddd;
-    //       display: flex;
-    //       flex-direction: column;
-    //       overflow: hidden;
-    //     }
-        
-    //     .storyboard-node {
-    //       position: absolute;
-    //       background: white;
-    //       border-radius: 6px;
-    //       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    //       min-width: 200px;
-    //       display: flex;
-    //       flex-direction: column;
-    //       user-select: none;
-    //       cursor: move;
-    //       z-index: 1;
-    //     }
-        
-    //     .storyboard-node-header {
-    //       padding: 8px 12px;
-    //       background: #673ab7;
-    //       color: white;
-    //       font-weight: bold;
-    //       border-radius: 6px 6px 0 0;
-    //       display: flex;
-    //       justify-content: space-between;
-    //       align-items: center;
-    //     }
-        
-    //     .storyboard-node-body {
-    //       padding: 12px;
-    //     }
-        
-    //     .storyboard-node-footer {
-    //       padding: 8px 12px;
-    //       display: flex;
-    //       justify-content: space-between;
-    //       border-top: 1px solid #eee;
-    //     }
-        
-    //     .storyboard-connection {
-    //       position: absolute;
-    //       pointer-events: none;
-    //       z-index: 0;
-    //     }
-        
-    //     .storyboard-port {
-    //       width: 14px;
-    //       height: 14px;
-    //       border-radius: 50%;
-    //       background: #aaa;
-    //       border: 2px solid white;
-    //       position: absolute;
-    //       cursor: pointer;
-    //       z-index: 2;
-    //     }
-        
-    //     .storyboard-port.input {
-    //       top: -7px;
-    //       left: 50%;
-    //       transform: translateX(-50%);
-    //     }
-        
-    //     .storyboard-port.output {
-    //       bottom: -7px;
-    //       left: 50%;
-    //       transform: translateX(-50%);
-    //     }
-        
-    //     .storyboard-toolbox {
-    //       padding: 12px;
-    //       border-bottom: 1px solid #ddd;
-    //       display: flex;
-    //       flex-wrap: wrap;
-    //       gap: 8px;
-    //     }
-        
-    //     .storyboard-tool {
-    //       padding: 6px 12px;
-    //       background: #673ab7;
-    //       color: white;
-    //       border-radius: 4px;
-    //       cursor: pointer;
-    //       font-size: 0.9rem;
-    //     }
-        
-    //     .storyboard-properties {
-    //       flex: 1;
-    //       padding: 12px;
-    //       overflow-y: auto;
-    //     }
-        
-    //     .storyboard-property-group {
-    //       margin-bottom: 16px;
-    //     }
-        
-    //     .storyboard-property-label {
-    //       font-weight: bold;
-    //       margin-bottom: 4px;
-    //       color: #555;
-    //     }
-        
-    //     .storyboard-property-field {
-    //       margin-bottom: 8px;
-    //     }
-        
-    //     /* Dark mode for editor */
-    //     @media (prefers-color-scheme: dark) {
-    //       .storyboard-canvas {
-    //         background-color: #2a2a2a;
-    //         background-image: 
-    //           linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-    //           linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-    //       }
-          
-    //       .storyboard-sidebar {
-    //         background: #333;
-    //         border-left: 1px solid #444;
-    //       }
-          
-    //       .storyboard-node {
-    //         background: #333;
-    //         box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    //       }
-          
-    //       .storyboard-node-body {
-    //         color: #e0e0e0;
-    //       }
-          
-    //       .storyboard-node-footer {
-    //         border-top: 1px solid #444;
-    //       }
-          
-    //       .storyboard-property-label {
-    //         color: #aaa;
-    //       }
-    //     }
-    //   `;
-      
-    //   document.head.appendChild(styles);
-    // }
-  
-/**
- * Replace the initStyles method in Storyboard class with this improved version
- * This fixes the white border and aligns better with your app's styling
- */
 initStyles() {
     const styles = document.createElement('style');
     styles.textContent = `
@@ -610,321 +348,640 @@ initStyles() {
     document.head.appendChild(styles);
   }
 
-    /**
-     * Opens the storyboard editor in an sl-drawer
-     */
-    // openEditor() {
-    //     if (this.editor) {
-    //       console.log('Editor already open');
-    //       return;
-    //     }
-        
-    //     // Create editor drawer
-    //     const drawer = document.createElement('sl-drawer');
-    //     drawer.label = 'Storyboard Editor';
-    //     drawer.placement = 'end';
-        
-    //     // Set size to leave room for sidebar
-    //     drawer.style.cssText = '--size: calc(100vw - 260px);';
-        
-    //     // Create editor content
-    //     drawer.innerHTML = `
-    //       <div class="storyboard-editor">
-    //         <div class="storyboard-canvas" id="storyboard-canvas">
-    //           <!-- Nodes will be added here dynamically -->
-    //         </div>
-    //         <div class="storyboard-sidebar">
-    //           <div class="storyboard-toolbox">
-    //             <div class="storyboard-tool" data-type="dialog">Dialog</div>
-    //             <div class="storyboard-tool" data-type="choice">Choice</div>
-    //             <div class="storyboard-tool" data-type="trigger">Trigger</div>
-    //             <div class="storyboard-tool" data-type="event">Event</div>
-    //             <div class="storyboard-tool" data-type="condition">Condition</div>
-    //             <div class="storyboard-tool" data-type="combat">Combat</div>
-    //             <div class="storyboard-tool" data-type="reward">Reward</div>
-    //           </div>
-    //           <div class="storyboard-properties" id="storyboard-properties">
-    //             <div class="story-no-selection">
-    //               <p>Select a node to edit its properties.</p>
-    //             </div>
-    //           </div>
-    //           <div style="padding: 12px; border-top: 1px solid #ddd;">
-    //             <sl-button variant="primary" id="save-storyboard" style="width: 100%;">Save Storyboard</sl-button>
-    //           </div>
-    //         </div>
-    //       </div>
-          
-    //       <sl-button slot="footer" variant="primary">Close</sl-button>
-    //     `;
-        
-    //     document.body.appendChild(drawer);
-    //     drawer.show();
-        
-    //     // Store reference to editor
-    //     this.editor = drawer;
-        
-    //     // Set up editor functionality after drawer is shown
-    //     drawer.addEventListener('sl-after-show', () => {
-    //       this.initEditorFunctionality();
-    //     });
-        
-    //     // Clean up when drawer is closed
-    //     drawer.addEventListener('sl-after-hide', () => {
-    //       this.editor = null;
-    //     });
-    //   }
-    
-
 /**
- * Updated openEditor method for the Storyboard class
+ * Opens the storyboard editor in an sl-drawer
  */
 openEditor() {
-    console.log('Opening storyboard editor');
+  console.log('Opening storyboard editor');
+  
+  if (this.editor) {
+    console.log('Editor already open');
+    return;
+  }
+  
+  try {
+    // Reset UI state but keep data
+    this.editorState.active = true;
+    this.editorState.selectedNode = null;
+    this.editorState.draggingNode = null;
+    this.editorState.connectingFrom = null;
+    this.editorState.canvasElement = null;
+    this.editorState.propertiesElement = null;
     
-    if (this.editor) {
-      console.log('Editor already open');
+    // Create editor drawer
+    const drawer = document.createElement('sl-drawer');
+    drawer.label = 'Storyboard Editor';
+    drawer.placement = 'end';
+    
+    // Set size to leave room for sidebar
+    drawer.style.cssText = '--size: calc(100vw - 260px);';
+    
+    // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
+    drawer.innerHTML = `
+      <div class="storyboard-editor" id="sb-editor">
+        <div class="storyboard-canvas" id="storyboard-canvas">
+          <!-- Nodes will be added here dynamically -->
+        </div>
+        <div class="storyboard-sidebar" id="sb-sidebar">
+          <div class="storyboard-toolbox" id="sb-toolbox">
+            <div class="storyboard-tool" id="sb-tool-dialog" data-type="dialog">Dialog</div>
+            <div class="storyboard-tool" id="sb-tool-choice" data-type="choice">Choice</div>
+            <div class="storyboard-tool" id="sb-tool-trigger" data-type="trigger">Trigger</div>
+            <div class="storyboard-tool" id="sb-tool-event" data-type="event">Event</div>
+            <div class="storyboard-tool" id="sb-tool-condition" data-type="condition">Condition</div>
+            <div class="storyboard-tool" id="sb-tool-combat" data-type="combat">Combat</div>
+            <div class="storyboard-tool" id="sb-tool-reward" data-type="reward">Reward</div>
+          </div>
+          <div class="storyboard-properties" id="storyboard-properties">
+            <div class="story-no-selection">
+              <p>Select a node to edit its properties.</p>
+            </div>
+          </div>
+          <div style="padding: 12px; border-top: 1px solid #ddd;">
+            <sl-button variant="primary" id="save-storyboard" style="width: 100%;">Save Storyboard</sl-button>
+          </div>
+        </div>
+      </div>
+      
+      <sl-button slot="footer" variant="primary" id="sb-close-btn">Close</sl-button>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(drawer);
+    
+    // Store reference to editor before showing
+    this.editor = drawer;
+    
+    // Add explicit close handler
+    const closeBtn = drawer.querySelector('#sb-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        console.log('Close button clicked');
+        
+        // Make sure to save any unsaved changes when closing
+        if (this.currentGraph.dirty) {
+          this.saveCurrentGraph();
+        }
+        
+        this.editorState.active = false; // Update UI state first
+        drawer.hide();
+        this.editor = null;
+      });
+    }
+    
+    // Handle hide event
+    drawer.addEventListener('sl-after-hide', () => {
+      console.log('Drawer closed, cleaning up');
+      
+      // Just reset UI state, not data
+      this.editorState.active = false;
+      this.editor = null;
+    });
+    
+    // Show the drawer
+    console.log('Showing storyboard drawer');
+    drawer.show();
+    
+    // Initialize functionality after a small delay
+    console.log('Setting up initialization timer');
+    setTimeout(() => {
+      console.log('Initialization timer fired, initializing editor');
+      this.directInitEditor();
+    }, 500);
+    
+  } catch (error) {
+    console.error('Error opening storyboard editor:', error);
+    this.editorState.active = false;
+  }
+}
+
+/**
+ * New saveCurrentGraph method to persist the current graph
+ */
+saveCurrentGraph() {
+  if (!this.currentGraph.id) {
+    this.currentGraph.id = 'graph_' + Date.now();
+  }
+  
+  // Create clean graph data without DOM references
+  const cleanGraph = {
+    nodes: [],
+    connections: []
+  };
+  
+  // Convert nodes to clean format
+  this.currentGraph.nodes.forEach((nodeData, nodeId) => {
+    // Extract position from DOM if available
+    let position = { x: 0, y: 0 };
+    if (nodeData.element) {
+      position = {
+        x: parseInt(nodeData.element.style.left) || 0,
+        y: parseInt(nodeData.element.style.top) || 0
+      };
+    } else if (nodeData.position) {
+      position = nodeData.position;
+    }
+    
+    // Create clean node data
+    cleanGraph.nodes.push({
+      id: nodeId,
+      type: nodeData.type,
+      position: position,
+      data: nodeData.data
+    });
+  });
+  
+  // Add connections
+  this.currentGraph.connections.forEach(conn => {
+    cleanGraph.connections.push({
+      from: conn.from,
+      to: conn.to
+    });
+  });
+  
+  // Store in storyGraphs
+  this.storyGraphs.set(this.currentGraph.id, cleanGraph);
+  
+  // Mark as clean
+  this.currentGraph.dirty = false;
+  
+  // Save to localStorage
+  this.saveToStorage();
+  
+  console.log('Current graph saved:', this.currentGraph.id);
+}
+
+/**
+ * New method for direct initialization without relying on the sl-after-show event
+ */
+directInitEditor() {
+  if (!this.editor) {
+    console.error('Editor not found in directInitEditor');
+    this.editorState.active = false;
+    return;
+  }
+  
+  console.log('Starting direct editor initialization');
+  
+  try {
+    const canvas = this.editor.querySelector('#storyboard-canvas');
+    const properties = this.editor.querySelector('#storyboard-properties');
+    
+    if (!canvas || !properties) {
+      console.error('Canvas or properties element not found in editor');
       return;
     }
     
-    try {
-      // Create editor drawer
-      const drawer = document.createElement('sl-drawer');
-      drawer.label = 'Storyboard Editor';
-      drawer.placement = 'end';
-      
-      // Set size to leave room for sidebar
-      drawer.style.cssText = '--size: calc(100vw - 260px);';
-      
-      // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
-      drawer.innerHTML = `
-        <div class="storyboard-editor" id="sb-editor">
-          <div class="storyboard-canvas" id="storyboard-canvas">
-            <!-- Nodes will be added here dynamically -->
-          </div>
-          <div class="storyboard-sidebar" id="sb-sidebar">
-            <div class="storyboard-toolbox" id="sb-toolbox">
-              <div class="storyboard-tool" id="sb-tool-dialog" data-type="dialog">Dialog</div>
-              <div class="storyboard-tool" id="sb-tool-choice" data-type="choice">Choice</div>
-              <div class="storyboard-tool" id="sb-tool-trigger" data-type="trigger">Trigger</div>
-              <div class="storyboard-tool" id="sb-tool-event" data-type="event">Event</div>
-              <div class="storyboard-tool" id="sb-tool-condition" data-type="condition">Condition</div>
-              <div class="storyboard-tool" id="sb-tool-combat" data-type="combat">Combat</div>
-              <div class="storyboard-tool" id="sb-tool-reward" data-type="reward">Reward</div>
-            </div>
-            <div class="storyboard-properties" id="storyboard-properties">
-              <div class="story-no-selection">
-                <p>Select a node to edit its properties.</p>
-              </div>
-            </div>
-            <div style="padding: 12px; border-top: 1px solid #ddd;">
-              <sl-button variant="primary" id="save-storyboard" style="width: 100%;">Save Storyboard</sl-button>
-            </div>
-          </div>
-        </div>
+    // Store references in UI state
+    this.editorState.canvasElement = canvas;
+    this.editorState.propertiesElement = properties;
+    
+    console.log('Found canvas and properties elements');
+    
+    // Set up tool buttons
+    this.setupToolButtons();
+    
+    // Set up canvas interactions
+    this.setupCanvasInteractions(canvas, properties);
+    
+    // Set up save button
+    const saveButton = this.editor.querySelector('#save-storyboard');
+    if (saveButton) {
+      console.log('Setting up save button');
+      saveButton.addEventListener('click', () => {
+        console.log('Save button clicked');
+        this.saveCurrentGraph();
         
-        <sl-button slot="footer" variant="primary" id="sb-close-btn">Close</sl-button>
-      `;
-      
-      // Add to DOM
-      document.body.appendChild(drawer);
-      
-      // Store reference to editor before showing
-      this.editor = drawer;
-      
-      // Add event listeners for drawer
-      drawer.addEventListener('sl-after-show', () => {
-        console.log('Drawer shown, initializing editor');
-        this.initEditorFunctionality();
+        // Show confirmation toast
+        const toast = document.createElement('sl-alert');
+        toast.variant = 'success';
+        toast.closable = true;
+        toast.duration = 3000;
+        toast.innerHTML = `
+          <sl-icon slot="icon" name="check-circle"></sl-icon>
+          Storyboard saved successfully!
+        `;
+        document.body.appendChild(toast);
+        toast.toast();
       });
-      
-      // Clean up when drawer is closed
-      drawer.addEventListener('sl-after-hide', () => {
-        console.log('Drawer closed, cleaning up');
-        this.editor = null;
-      });
-      
-      // Show the drawer
-      console.log('Showing storyboard drawer');
-      drawer.show();
-      
-    } catch (error) {
-      console.error('Error opening storyboard editor:', error);
     }
+    
+    // Restore nodes from persistent data
+    this.restoreNodesFromData(canvas);
+    
+    console.log('Editor initialization complete');
+    
+  } catch (error) {
+    console.error('Error in directInitEditor:', error);
+    this.editorState.active = false;
   }
+}
+
+/**
+ * New method to set up tool buttons
+ */
+setupToolButtons() {
+  if (!this.editor) return;
+  
+  const toolIds = ['sb-tool-dialog', 'sb-tool-choice', 'sb-tool-trigger', 
+                  'sb-tool-event', 'sb-tool-condition', 'sb-tool-combat', 'sb-tool-reward'];
+  
+  toolIds.forEach(id => {
+    const tool = this.editor.querySelector(`#${id}`);
+    if (tool) {
+      console.log(`Setting up tool button: ${id}`);
+      tool.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nodeType = tool.getAttribute('data-type');
+        console.log(`Tool clicked: ${nodeType}`);
+        this.createNewNode(this.editorState.canvasElement, nodeType);
+      });
+    } else {
+      console.error(`Tool button not found: ${id}`);
+    }
+  });
+}
+
+/**
+ * New method to restore nodes from persistent data
+ */
+restoreNodesFromData(canvas) {
+  if (!canvas) return;
+  
+  // Clear the canvas first
+  const existingNodes = canvas.querySelectorAll('.storyboard-node');
+  existingNodes.forEach(node => node.remove());
+  
+  // Check if we have existing nodes in the current graph
+  if (this.currentGraph.nodes.size === 0) {
+    // If empty, add a sample node
+    console.log('No existing nodes, creating sample node');
+    this.createSampleNode(canvas);
+    return;
+  }
+  
+  console.log(`Restoring ${this.currentGraph.nodes.size} nodes from persistent data`);
+  
+  // Restore all nodes
+  this.currentGraph.nodes.forEach((nodeData, nodeId) => {
+    this.restoreSingleNode(canvas, nodeData, nodeId);
+  });
+  
+  // Restore connections after all nodes are created
+  setTimeout(() => {
+    this.restoreConnections(canvas);
+  }, 100);
+}
+
+/**
+ * New method to restore a single node
+ */
+restoreSingleNode(canvas, nodeData, nodeId) {
+  // Create node element
+  const node = document.createElement('div');
+  node.className = 'storyboard-node';
+  node.setAttribute('data-type', nodeData.type);
+  node.setAttribute('data-id', nodeId);
+  
+  // Set position
+  if (nodeData.position) {
+    node.style.left = `${nodeData.position.x}px`;
+    node.style.top = `${nodeData.position.y}px`;
+  } else {
+    node.style.left = '100px';
+    node.style.top = '100px';
+  }
+  
+  // Set content based on node type
+  const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+  let body = '';
+  
+  switch (nodeData.type) {
+    case 'dialog':
+      body = `<div>${nodeData.data.text || ''}</div>`;
+      break;
+    case 'choice':
+      body = `
+        <div>${nodeData.data.text || ''}</div>
+        <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
+      `;
+      break;
+    case 'trigger':
+      body = `<div>X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}</div>`;
+      break;
+    case 'event':
+      body = `<div>Event: ${nodeData.data.eventType || 'none'}</div>`;
+      break;
+    case 'condition':
+      body = `<div>Condition: ${nodeData.data.condition || 'none'}</div>`;
+      break;
+    case 'combat':
+      body = `<div>Combat with ${nodeData.data.enemies?.length || 0} enemies</div>`;
+      break;
+    case 'reward':
+      body = `<div>Rewards: ${nodeData.data.items?.length || 0} items</div>`;
+      break;
+    default:
+      body = '<div>Configure node</div>';
+  }
+  
+  node.innerHTML = `
+    <div class="storyboard-node-header">
+      ${title}
+      <span class="storyboard-node-close">×</span>
+    </div>
+    <div class="storyboard-node-body">
+      ${body}
+    </div>
+    <div class="storyboard-node-footer">
+      <div class="storyboard-port input"></div>
+      <div class="storyboard-port output"></div>
+    </div>
+  `;
+  
+  // Add to canvas
+  canvas.appendChild(node);
+  
+  // Update the stored node data to include element reference
+  nodeData.element = node;
+  
+  // Set up delete handler
+  const closeBtn = node.querySelector('.storyboard-node-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Delete node clicked');
+      this.deleteNode(node);
+    });
+  }
+  
+  console.log(`Restored node: ${nodeId}`);
+}
+
+/**
+ * New method to restore connections
+ */
+restoreConnections(canvas) {
+  if (!canvas) return;
+  
+  console.log(`Restoring ${this.currentGraph.connections.length} connections`);
+  
+  // Clear existing connection elements
+  const existingConnections = canvas.querySelectorAll('.storyboard-connection:not(.temp-connection)');
+  existingConnections.forEach(conn => conn.remove());
+  
+  // Recreate all connections
+  this.currentGraph.connections.forEach(conn => {
+    // Find source and target nodes
+    const fromNode = canvas.querySelector(`.storyboard-node[data-id="${conn.from}"]`);
+    const toNode = canvas.querySelector(`.storyboard-node[data-id="${conn.to}"]`);
+    
+    if (fromNode && toNode) {
+      // Get the ports
+      const fromPort = fromNode.querySelector('.storyboard-port.output');
+      const toPort = toNode.querySelector('.storyboard-port.input');
+      
+      if (fromPort && toPort) {
+        this.createConnection(canvas, {
+          from: {
+            node: fromNode,
+            port: fromPort
+          },
+          to: {
+            node: toNode,
+            port: toPort
+          }
+        });
+      }
+    }
+  });
+}
+
+setupCanvasInteractions(canvas, properties) {
+  // Store references in case they're needed
+  const editorState = this.editorState;
+  
+  canvas.addEventListener('mousedown', (e) => {
+    // Check if we clicked on a node
+    let nodeEl = e.target.closest('.storyboard-node');
+    
+    if (nodeEl) {
+      console.log('Node clicked:', nodeEl.getAttribute('data-id'));
+      // Handle node selection
+      this.selectNode(nodeEl, editorState, properties);
+      
+      // Handle node dragging
+      if (e.target.closest('.storyboard-node-header')) {
+        const rect = nodeEl.getBoundingClientRect();
+        editorState.draggingNode = nodeEl;
+        editorState.draggingOffset = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+      
+      // Handle connection creation
+      if (e.target.closest('.storyboard-port')) {
+        const port = e.target.closest('.storyboard-port');
+        if (port.classList.contains('output')) {
+          editorState.connectingFrom = {
+            node: nodeEl,
+            port: port
+          };
+          
+          // Create temporary connection line
+          const conn = document.createElement('div');
+          conn.className = 'storyboard-connection temp-connection';
+          conn.style.cssText = `
+            position: absolute;
+            height: 2px;
+            background: #673ab7;
+            transform-origin: left center;
+          `;
+          
+          const fromRect = port.getBoundingClientRect();
+          const canvasRect = canvas.getBoundingClientRect();
+          
+          const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+          const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+          
+          conn.style.left = `${x1}px`;
+          conn.style.top = `${y1}px`;
+          
+          canvas.appendChild(conn);
+          editorState.connectingFrom.tempConnection = conn;
+        }
+      }
+    } else {
+      // Clicked on empty canvas
+      this.deselectNode(editorState, properties);
+    }
+  });
+  
+  canvas.addEventListener('mousemove', (e) => {
+    // Handle node dragging
+    if (editorState.draggingNode) {
+      const canvasRect = canvas.getBoundingClientRect();
+      const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
+      const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
+      
+      editorState.draggingNode.style.left = `${x}px`;
+      editorState.draggingNode.style.top = `${y}px`;
+      
+      // Update any connections attached to this node
+      this.updateConnections(editorState);
+    }
+    
+    // Handle connection creation
+    if (editorState.connectingFrom) {
+      const canvasRect = canvas.getBoundingClientRect();
+      const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
+      
+      const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+      const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+      const x2 = e.clientX - canvasRect.left;
+      const y2 = e.clientY - canvasRect.top;
+      
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      
+      const conn = editorState.connectingFrom.tempConnection;
+      conn.style.width = `${length}px`;
+      conn.style.transform = `rotate(${angle}deg)`;
+    }
+  });
+  
+  canvas.addEventListener('mouseup', (e) => {
+    // Handle node dragging end
+    if (editorState.draggingNode) {
+      editorState.draggingNode = null;
+    }
+    
+    // Handle connection creation end
+    if (editorState.connectingFrom) {
+      const targetPort = e.target.closest('.storyboard-port');
+      
+      if (targetPort && targetPort.classList.contains('input')) {
+        const fromNode = editorState.connectingFrom.node;
+        const toNode = targetPort.closest('.storyboard-node');
+        
+        // Don't connect to self
+        if (fromNode !== toNode) {
+          this.createConnection(canvas, editorState, {
+            from: {
+              node: fromNode,
+              port: editorState.connectingFrom.port
+            },
+            to: {
+              node: toNode,
+              port: targetPort
+            }
+          });
+        }
+      }
+      
+      // Remove temporary connection
+      if (editorState.connectingFrom.tempConnection) {
+        editorState.connectingFrom.tempConnection.remove();
+      }
+      
+      editorState.connectingFrom = null;
+    }
+  });
+}
+
+/**
+ * sees if the editor is avaliable after being closed
+ * @returns true / false
+ */
+isEditorAvailable() {
+  // First check persistent state
+  if (!this.editorState.active) {
+    console.warn('Editor is not active according to persistent state');
+    return false;
+  }
+  
+  // Then check actual editor element
+  if (!this.editor) {
+    console.warn('Editor element is null but state is active - fixing inconsistency');
+    this.editorState.active = false;
+    return false;
+  }
+  
+  // Check if canvas is accessible
+  if (!this.editorState.canvasElement) {
+    console.warn('Canvas element not available in editor state');
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Update the createSampleNode method to be more reliable
+ */
+createSampleNode(canvas, editorState) {
+  console.log('Creating sample node at 100,100');
+  
+  // Create the node element
+  const node = document.createElement('div');
+  node.className = 'storyboard-node';
+  node.setAttribute('data-type', 'dialog');
+  node.setAttribute('data-id', 'node_' + Date.now());
+  node.style.left = '100px';
+  node.style.top = '100px';
+  
+  // Set HTML content
+  node.innerHTML = `
+    <div class="storyboard-node-header">
+      Dialog Node
+      <span class="storyboard-node-close">×</span>
+    </div>
+    <div class="storyboard-node-body">
+      <div>Welcome to the game!</div>
+    </div>
+    <div class="storyboard-node-footer">
+      <div class="storyboard-port input"></div>
+      <div class="storyboard-port output"></div>
+    </div>
+  `;
+  
+  // Add to canvas
+  canvas.appendChild(node);
+  console.log('Sample node added to canvas');
+  
+  // Add to nodes collection
+  editorState.nodes.set(node.getAttribute('data-id'), {
+    element: node,
+    type: 'dialog',
+    data: {
+      title: 'Dialog Node',
+      text: 'Welcome to the game!',
+      image: null
+    }
+  });
+  
+  // Set up delete handler with proper event handling
+  const closeBtn = node.querySelector('.storyboard-node-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Delete node clicked');
+      this.deleteNode(node, editorState);
+    });
+  }
+  
+  return node;
+}
 
     /**
      * Initialize the functionality of the storyboard editor
      */
-    // initEditorFunctionality() {
-    //   if (!this.editor) return;
-      
-    //   const canvas = this.editor.querySelector('#storyboard-canvas');
-    //   const properties = this.editor.querySelector('#storyboard-properties');
-    //   const tools = this.editor.querySelectorAll('.storyboard-tool');
-      
-    //   // Track editor state
-    //   const editorState = {
-    //     selectedNode: null,
-    //     draggingNode: null,
-    //     draggingOffset: { x: 0, y: 0 },
-    //     connectingFrom: null,
-    //     nodes: new Map(),
-    //     connections: []
-    //   };
-      
-    //   // Load any existing story graphs
-    //   // For now just create a sample node for testing
-    //   this.createSampleNode(canvas, editorState);
-      
-    //   // Set up tool buttons
-    //   tools.forEach(tool => {
-    //     tool.addEventListener('click', () => {
-    //       const nodeType = tool.getAttribute('data-type');
-    //       this.createNewNode(canvas, editorState, nodeType);
-    //     });
-    //   });
-      
-    //   // Set up canvas interactions
-    //   canvas.addEventListener('mousedown', (e) => {
-    //     // Check if we clicked on a node
-    //     let nodeEl = e.target.closest('.storyboard-node');
-        
-    //     if (nodeEl) {
-    //       // Handle node selection
-    //       this.selectNode(nodeEl, editorState, properties);
-          
-    //       // Handle node dragging
-    //       if (e.target.closest('.storyboard-node-header')) {
-    //         const rect = nodeEl.getBoundingClientRect();
-    //         editorState.draggingNode = nodeEl;
-    //         editorState.draggingOffset = {
-    //           x: e.clientX - rect.left,
-    //           y: e.clientY - rect.top
-    //         };
-    //       }
-          
-    //       // Handle connection creation
-    //       if (e.target.closest('.storyboard-port')) {
-    //         const port = e.target.closest('.storyboard-port');
-    //         if (port.classList.contains('output')) {
-    //           editorState.connectingFrom = {
-    //             node: nodeEl,
-    //             port: port
-    //           };
-              
-    //           // Create temporary connection line
-    //           const conn = document.createElement('div');
-    //           conn.className = 'storyboard-connection temp-connection';
-    //           conn.style.cssText = `
-    //             position: absolute;
-    //             height: 2px;
-    //             background: #673ab7;
-    //             transform-origin: left center;
-    //           `;
-              
-    //           const fromRect = port.getBoundingClientRect();
-    //           const canvasRect = canvas.getBoundingClientRect();
-              
-    //           const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-    //           const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-              
-    //           conn.style.left = `${x1}px`;
-    //           conn.style.top = `${y1}px`;
-              
-    //           canvas.appendChild(conn);
-    //           editorState.connectingFrom.tempConnection = conn;
-    //         }
-    //       }
-    //     } else {
-    //       // Clicked on empty canvas
-    //       this.deselectNode(editorState, properties);
-    //     }
-    //   });
-      
-    //   canvas.addEventListener('mousemove', (e) => {
-    //     // Handle node dragging
-    //     if (editorState.draggingNode) {
-    //       const canvasRect = canvas.getBoundingClientRect();
-    //       const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
-    //       const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
-          
-    //       editorState.draggingNode.style.left = `${x}px`;
-    //       editorState.draggingNode.style.top = `${y}px`;
-          
-    //       // Update any connections attached to this node
-    //       this.updateConnections(editorState);
-    //     }
-        
-    //     // Handle connection creation
-    //     if (editorState.connectingFrom) {
-    //       const canvasRect = canvas.getBoundingClientRect();
-    //       const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
-          
-    //       const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-    //       const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-    //       const x2 = e.clientX - canvasRect.left;
-    //       const y2 = e.clientY - canvasRect.top;
-          
-    //       const dx = x2 - x1;
-    //       const dy = y2 - y1;
-    //       const length = Math.sqrt(dx * dx + dy * dy);
-    //       const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-          
-    //       const conn = editorState.connectingFrom.tempConnection;
-    //       conn.style.width = `${length}px`;
-    //       conn.style.transform = `rotate(${angle}deg)`;
-    //     }
-    //   });
-      
-    //   canvas.addEventListener('mouseup', (e) => {
-    //     // Handle node dragging end
-    //     if (editorState.draggingNode) {
-    //       editorState.draggingNode = null;
-    //     }
-        
-    //     // Handle connection creation end
-    //     if (editorState.connectingFrom) {
-    //       const targetPort = e.target.closest('.storyboard-port');
-          
-    //       if (targetPort && targetPort.classList.contains('input')) {
-    //         const fromNode = editorState.connectingFrom.node;
-    //         const toNode = targetPort.closest('.storyboard-node');
-            
-    //         // Don't connect to self
-    //         if (fromNode !== toNode) {
-    //           this.createConnection(canvas, editorState, {
-    //             from: {
-    //               node: fromNode,
-    //               port: editorState.connectingFrom.port
-    //             },
-    //             to: {
-    //               node: toNode,
-    //               port: targetPort
-    //             }
-    //           });
-    //         }
-    //       }
-          
-    //       // Remove temporary connection
-    //       if (editorState.connectingFrom.tempConnection) {
-    //         editorState.connectingFrom.tempConnection.remove();
-    //       }
-          
-    //       editorState.connectingFrom = null;
-    //     }
-    //   });
-      
-    //   // Save button
-    //   const saveButton = this.editor.querySelector('#save-storyboard');
-    //   saveButton.addEventListener('click', () => {
-    //     this.saveStoryboard(editorState);
-    //   });
-    // }
-
-    /**
- * Updated initEditorFunctionality method for Storyboard class
- * This adds more robust event handling and debug logging
- */
 initEditorFunctionality() {
     if (!this.editor) {
       console.error('Editor not found');
@@ -1141,275 +1198,134 @@ initEditorFunctionality() {
     /**
      * Create a sample node for testing
      */
-    createSampleNode(canvas, editorState) {
-      const node = document.createElement('div');
-      node.className = 'storyboard-node';
-      node.setAttribute('data-type', 'dialog');
-      node.setAttribute('data-id', 'node_' + Date.now());
-      node.style.left = '100px';
-      node.style.top = '100px';
+    createSampleNode(canvas) {
+      console.log('Creating sample node at 100,100');
       
-      node.innerHTML = `
-        <div class="storyboard-node-header">
-          Dialog Node
-          <span class="storyboard-node-close">×</span>
-        </div>
-        <div class="storyboard-node-body">
-          <div>Welcome to the game!</div>
-        </div>
-        <div class="storyboard-node-footer">
-          <div class="storyboard-port input"></div>
-          <div class="storyboard-port output"></div>
-        </div>
-      `;
+      // Create unique ID
+      const nodeId = 'node_sample_' + Date.now();
       
-      canvas.appendChild(node);
-      
-      // Add to nodes collection
-      editorState.nodes.set(node.getAttribute('data-id'), {
-        element: node,
+      // Create sample node data
+      const nodeData = {
         type: 'dialog',
+        position: { x: 100, y: 100 },
         data: {
           title: 'Dialog Node',
           text: 'Welcome to the game!',
           image: null
-        }
-      });
+        },
+        element: null // Will be set after DOM creation
+      };
       
-      // Set up delete handler
-      node.querySelector('.storyboard-node-close').addEventListener('click', () => {
-        this.deleteNode(node, editorState);
-      });
+      // Add to persistent graph
+      this.currentGraph.nodes.set(nodeId, nodeData);
+      this.currentGraph.dirty = true;
+      
+      // Create DOM element
+      this.restoreSingleNode(canvas, nodeData, nodeId);
+      
+      return nodeData.element;
     }
     
     /**
      * Create a new node of the specified type
      */
-    // createNewNode(canvas, editorState, nodeType) {
-    //   const node = document.createElement('div');
-    //   node.className = 'storyboard-node';
-    //   node.setAttribute('data-type', nodeType);
-    //   node.setAttribute('data-id', 'node_' + Date.now());
+    createNewNode(canvas, nodeType) {
+      if (!this.isEditorAvailable() || !canvas) {
+        console.error('Cannot create node - editor or canvas not available');
+        return null;
+      }
       
-    //   // Position in center of visible canvas
-    //   const canvasRect = canvas.getBoundingClientRect();
-    //   const scrollLeft = canvas.scrollLeft;
-    //   const scrollTop = canvas.scrollTop;
+      console.log('Creating new node of type:', nodeType);
       
-    //   node.style.left = `${scrollLeft + canvasRect.width / 2 - 100}px`;
-    //   node.style.top = `${scrollTop + canvasRect.height / 2 - 50}px`;
+      // Create unique ID
+      const nodeId = 'node_' + Date.now();
       
-    //   // Configure based on node type
-    //   let title, body, data;
+      // Create default data for this node type
+      let data = {};
       
-    //   switch (nodeType) {
-    //     case 'dialog':
-    //       title = 'Dialog';
-    //       body = '<div>New dialog text</div>';
-    //       data = { title: 'Dialog', text: 'New dialog text', image: null };
-    //       break;
-    //     case 'choice':
-    //       title = 'Choice';
-    //       body = '<div>What would you like to do?</div><div style="color:#777;font-size:0.9em;">Add options in properties</div>';
-    //       data = { 
-    //         text: 'What would you like to do?', 
-    //         options: [
-    //           { text: 'Option 1', targetId: null },
-    //           { text: 'Option 2', targetId: null }
-    //         ] 
-    //       };
-    //       break;
-    //     case 'trigger':
-    //       title = 'Location Trigger';
-    //       body = '<div>X: 0, Y: 0, Radius: 1</div>';
-    //       data = { x: 0, y: 0, radius: 1, once: true };
-    //       break;
-    //     case 'event':
-    //       title = 'Game Event';
-    //       body = '<div>Select event in properties</div>';
-    //       data = { eventType: 'none', params: {} };
-    //       break;
-    //     case 'condition':
-    //       title = 'Condition';
-    //       body = '<div>Configure condition in properties</div>';
-    //       data = { condition: 'none', params: {} };
-    //       break;
-    //     case 'combat':
-    //       title = 'Combat';
-    //       body = '<div>Start combat with enemies</div>';
-    //       data = { enemies: [], background: null };
-    //       break;
-    //     case 'reward':
-    //       title = 'Reward';
-    //       body = '<div>Give rewards to player</div>';
-    //       data = { items: [], experience: 0, monsters: [] };
-    //       break;
-    //     default:
-    //       title = 'Node';
-    //       body = '<div>Configure node</div>';
-    //       data = {};
-    //   }
+      switch (nodeType) {
+        case 'dialog':
+          data = { title: 'Dialog', text: 'New dialog text', image: null };
+          break;
+        case 'choice':
+          data = { 
+            text: 'What would you like to do?', 
+            options: [
+              { text: 'Option 1', targetId: null },
+              { text: 'Option 2', targetId: null }
+            ] 
+          };
+          break;
+        case 'trigger':
+          data = { x: 0, y: 0, radius: 1, once: true };
+          break;
+        case 'event':
+          data = { eventType: 'none', params: {} };
+          break;
+        case 'condition':
+          data = { condition: 'none', params: {} };
+          break;
+        case 'combat':
+          data = { enemies: [], background: null };
+          break;
+        case 'reward':
+          data = { items: [], experience: 0, monsters: [] };
+          break;
+        default:
+          data = {};
+      }
       
-    //   node.innerHTML = `
-    //     <div class="storyboard-node-header">
-    //       ${title}
-    //       <span class="storyboard-node-close">×</span>
-    //     </div>
-    //     <div class="storyboard-node-body">
-    //       ${body}
-    //     </div>
-    //     <div class="storyboard-node-footer">
-    //       <div class="storyboard-port input"></div>
-    //       <div class="storyboard-port output"></div>
-    //     </div>
-    //   `;
+      // Position in center of visible canvas
+      const canvasRect = canvas.getBoundingClientRect();
+      const scrollLeft = canvas.scrollLeft;
+      const scrollTop = canvas.scrollTop;
+      const centerX = scrollLeft + canvasRect.width / 2 - 100;
+      const centerY = scrollTop + canvasRect.height / 2 - 50;
       
-    //   canvas.appendChild(node);
+      // Create persistent node data
+      const nodeData = {
+        type: nodeType,
+        position: { x: centerX, y: centerY },
+        data: data,
+        element: null // Will be set after DOM creation
+      };
       
-    //   // Add to nodes collection
-    //   editorState.nodes.set(node.getAttribute('data-id'), {
-    //     element: node,
-    //     type: nodeType,
-    //     data: data
-    //   });
+      // Add to persistent graph
+      this.currentGraph.nodes.set(nodeId, nodeData);
+      this.currentGraph.dirty = true;
       
-    //   // Set up delete handler
-    //   node.querySelector('.storyboard-node-close').addEventListener('click', () => {
-    //     this.deleteNode(node, editorState);
-    //   });
+      // Create DOM element
+      this.restoreSingleNode(canvas, nodeData, nodeId);
       
-    //   // Select the new node
-    //   this.selectNode(node, editorState, this.editor.querySelector('#storyboard-properties'));
-    // }
-
-    /**
- * Replace the createNewNode method in Storyboard class to fix the event handling
- */
-createNewNode(canvas, editorState, nodeType) {
-    console.log('Creating new node of type:', nodeType);
-    
-    // Create node element
-    const node = document.createElement('div');
-    node.className = 'storyboard-node';
-    node.setAttribute('data-type', nodeType);
-    node.setAttribute('data-id', 'node_' + Date.now());
-    
-    // Position in center of visible canvas
-    const canvasRect = canvas.getBoundingClientRect();
-    const scrollLeft = canvas.scrollLeft;
-    const scrollTop = canvas.scrollTop;
-    
-    // Calculate position - center of visible area
-    const centerX = scrollLeft + canvasRect.width / 2 - 100;
-    const centerY = scrollTop + canvasRect.height / 2 - 50;
-    
-    node.style.left = `${centerX}px`;
-    node.style.top = `${centerY}px`;
-    
-    // Configure based on node type
-    let title, body, data;
-    
-    switch (nodeType) {
-      case 'dialog':
-        title = 'Dialog';
-        body = '<div>New dialog text</div>';
-        data = { title: 'Dialog', text: 'New dialog text', image: null };
-        break;
-      case 'choice':
-        title = 'Choice';
-        body = '<div>What would you like to do?</div><div style="color:#777;font-size:0.9em;">Add options in properties</div>';
-        data = { 
-          text: 'What would you like to do?', 
-          options: [
-            { text: 'Option 1', targetId: null },
-            { text: 'Option 2', targetId: null }
-          ] 
-        };
-        break;
-      case 'trigger':
-        title = 'Location Trigger';
-        body = '<div>X: 0, Y: 0, Radius: 1</div>';
-        data = { x: 0, y: 0, radius: 1, once: true };
-        break;
-      case 'event':
-        title = 'Game Event';
-        body = '<div>Select event in properties</div>';
-        data = { eventType: 'none', params: {} };
-        break;
-      case 'condition':
-        title = 'Condition';
-        body = '<div>Configure condition in properties</div>';
-        data = { condition: 'none', params: {} };
-        break;
-      case 'combat':
-        title = 'Combat';
-        body = '<div>Start combat with enemies</div>';
-        data = { enemies: [], background: null };
-        break;
-      case 'reward':
-        title = 'Reward';
-        body = '<div>Give rewards to player</div>';
-        data = { items: [], experience: 0, monsters: [] };
-        break;
-      default:
-        title = 'Node';
-        body = '<div>Configure node</div>';
-        data = {};
+      // Select the new node
+      if (nodeData.element) {
+        this.selectNode(nodeData.element);
+      }
+      
+      return nodeData.element;
     }
-    
-    node.innerHTML = `
-      <div class="storyboard-node-header">
-        ${title}
-        <span class="storyboard-node-close">×</span>
-      </div>
-      <div class="storyboard-node-body">
-        ${body}
-      </div>
-      <div class="storyboard-node-footer">
-        <div class="storyboard-port input"></div>
-        <div class="storyboard-port output"></div>
-      </div>
-    `;
-    
-    // Add the node to canvas
-    canvas.appendChild(node);
-    console.log('Node added to canvas');
-    
-    // Add to nodes collection
-    editorState.nodes.set(node.getAttribute('data-id'), {
-      element: node,
-      type: nodeType,
-      data: data
-    });
-    
-    // Set up delete handler
-    const closeBtn = node.querySelector('.storyboard-node-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Delete node clicked');
-        this.deleteNode(node, editorState);
-      });
-    }
-    
-    // Select the new node
-    this.selectNode(node, editorState, this.editor.querySelector('#storyboard-properties'));
-    
-    return node;
-  }
     
     /**
      * Create a connection between two nodes
      */
-    createConnection(canvas, editorState, connection) {
+    createConnection(canvas, connection) {
+      if (!canvas || !connection.from || !connection.to) {
+        console.error('Invalid connection data');
+        return null;
+      }
+      
       const fromNode = connection.from.node;
       const toNode = connection.to.node;
+      const fromId = fromNode.getAttribute('data-id');
+      const toId = toNode.getAttribute('data-id');
       
+      console.log(`Creating connection from ${fromId} to ${toId}`);
+      
+      // Create connection element
       const conn = document.createElement('div');
       conn.className = 'storyboard-connection';
-      conn.setAttribute('data-from', fromNode.getAttribute('data-id'));
-      conn.setAttribute('data-to', toNode.getAttribute('data-id'));
+      conn.setAttribute('data-from', fromId);
+      conn.setAttribute('data-to', toId);
       
       conn.style.cssText = `
         position: absolute;
@@ -1421,21 +1337,26 @@ createNewNode(canvas, editorState, nodeType) {
       
       canvas.appendChild(conn);
       
-      // Add to connections collection
-      editorState.connections.push({
-        element: conn,
-        from: fromNode.getAttribute('data-id'),
-        to: toNode.getAttribute('data-id')
+      // Add to persistent connections
+      this.currentGraph.connections.push({
+        from: fromId,
+        to: toId,
+        element: conn
       });
+      this.currentGraph.dirty = true;
       
       // Update connection position
       this.updateConnection(conn, fromNode, toNode, canvas);
+      
+      return conn;
     }
     
     /**
      * Update a single connection's position
      */
     updateConnection(connectionEl, fromNode, toNode, canvas) {
+      if (!this.isEditorAvailable()) return;
+
       const fromPort = fromNode.querySelector('.storyboard-port.output');
       const toPort = toNode.querySelector('.storyboard-port.input');
       
@@ -1464,7 +1385,16 @@ createNewNode(canvas, editorState, nodeType) {
      * Update all connections in the editor
      */
     updateConnections(editorState) {
-      const canvas = this.editor.querySelector('#storyboard-canvas');
+      if (!this.isEditorAvailable()) {
+        console.error('Editor not available in updateConnections');
+        return;
+      }
+      
+      const canvas = this.editorState.canvasElement;
+      if (!canvas) {
+        console.error('Canvas not found in updateConnections');
+        return;
+      }
       
       editorState.connections.forEach(connection => {
         const fromNode = canvas.querySelector(`.storyboard-node[data-id="${connection.from}"]`);
@@ -1479,46 +1409,61 @@ createNewNode(canvas, editorState, nodeType) {
     /**
      * Delete a node and its connections
      */
-    deleteNode(nodeEl, editorState) {
+    deleteNode(nodeEl) {
+      if (!nodeEl) return;
+      
       const nodeId = nodeEl.getAttribute('data-id');
+      console.log('Deleting node:', nodeId);
       
       // Remove associated connections
-      editorState.connections = editorState.connections.filter(conn => {
-        if (conn.from === nodeId || conn.to === nodeId) {
-          conn.element.remove();
-          return false;
-        }
-        return true;
-      });
+      const canvas = nodeEl.parentElement;
+      if (canvas) {
+        this.currentGraph.connections = this.currentGraph.connections.filter(conn => {
+          if (conn.from === nodeId || conn.to === nodeId) {
+            if (conn.element) {
+              conn.element.remove();
+            }
+            return false;
+          }
+          return true;
+        });
+      }
       
       // Remove node element
       nodeEl.remove();
       
-      // Remove from nodes collection
-      editorState.nodes.delete(nodeId);
+      // Remove from persistent graph
+      this.currentGraph.nodes.delete(nodeId);
+      this.currentGraph.dirty = true;
       
       // Deselect if this was the selected node
-      if (editorState.selectedNode === nodeEl) {
-        this.deselectNode(editorState, this.editor.querySelector('#storyboard-properties'));
+      if (this.editorState.selectedNode === nodeEl) {
+        this.deselectNode();
       }
     }
     
     /**
      * Select a node and show its properties
      */
-    selectNode(nodeEl, editorState, propertiesPanel) {
+    selectNode(nodeEl) {
+      if (!this.isEditorAvailable() || !nodeEl) return;
+      
       // Deselect previous node
-      if (editorState.selectedNode) {
-        editorState.selectedNode.classList.remove('selected');
+      if (this.editorState.selectedNode) {
+        this.editorState.selectedNode.classList.remove('selected');
       }
       
       // Select this node
       nodeEl.classList.add('selected');
-      editorState.selectedNode = nodeEl;
+      this.editorState.selectedNode = nodeEl;
       
       // Show properties
+      const properties = this.editorState.propertiesElement;
+      if (!properties) return;
+      
+      // Get the node data
       const nodeId = nodeEl.getAttribute('data-id');
-      const nodeData = editorState.nodes.get(nodeId);
+      const nodeData = this.currentGraph.nodes.get(nodeId);
       
       if (nodeData) {
         let propertiesHtml = '';
@@ -1707,6 +1652,8 @@ createNewNode(canvas, editorState, nodeType) {
      * Deselect the current node
      */
     deselectNode(editorState, propertiesPanel) {
+
+      if (!this.isEditorAvailable()) return;
       if (editorState.selectedNode) {
         editorState.selectedNode.classList.remove('selected');
         editorState.selectedNode = null;
@@ -1723,6 +1670,9 @@ createNewNode(canvas, editorState, nodeType) {
      * Update a node's property based on input change
      */
     updateNodeProperty(nodeData, input, editorState) {
+
+      if (!this.isEditorAvailable()) return;
+
       const name = input.getAttribute('name');
       let value;
       
@@ -1762,13 +1712,18 @@ createNewNode(canvas, editorState, nodeType) {
      * Save the current storyboard
      */
     saveStoryboard(editorState) {
+      if (!this.isEditorAvailable()) {
+        console.error('Editor not available in saveStoryboard');
+        return;
+      }
+      
       // Convert editor state to story graph data
       const storyGraph = {
         nodes: [],
         connections: []
       };
       
-      // Add nodes
+      // Add nodes from persistent state
       editorState.nodes.forEach((nodeData, nodeId) => {
         storyGraph.nodes.push({
           id: nodeId,
@@ -1781,7 +1736,7 @@ createNewNode(canvas, editorState, nodeType) {
         });
       });
       
-      // Add connections
+      // Add connections from persistent state
       editorState.connections.forEach(conn => {
         storyGraph.connections.push({
           from: conn.from,
@@ -2378,3 +2333,13 @@ createNewNode(canvas, editorState, nodeType) {
     window.storyboard = new Storyboard(scene3D, resourceManager);
     return window.storyboard;
   };
+
+
+
+
+};
+// Create global instance when script loads
+window.initStoryboard = (scene3D, resourceManager) => {
+  window.storyboard = new window.Storyboard(scene3D, resourceManager);
+  return window.storyboard;
+};

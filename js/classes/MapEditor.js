@@ -62,42 +62,81 @@ class MapEditor {
     // this.fixZoomIssues();
   }
 
-  checkStoryboard(callback) {
-    const storyboardBtn = document.getElementById('storyboardTool');
-  
-    // Create a temporary script element to test loading
-    const script = document.createElement('script');
-    script.src = 'js/classes/Storyboard.js';
-    script.onload = () => {
-      // Storyboard loaded successfully
-      console.log('Storyboard script loaded');
-      this.storyboard = new Storyboard(this.scene3D, this.resourceManager);
-      
-      // Store in window for global access if needed
-      window.storyboard = this.storyboard;
-  
-      if (storyboardBtn) {
-        // Update tooltip to show it's available
-        storyboardBtn.setAttribute('data-tooltip', 'Story Editor [F11]');
-        
-        // Add click handler
-        storyboardBtn.addEventListener('click', () => {
-          this.storyboard.openEditor();
-        });
-      }
-      if (callback) callback();
-    };
-    script.onerror = () => {
-      console.warn('Storyboard not available');
-      if (storyboardBtn) {
-        // Disable or hide the button if storyboard isn't available
-        storyboardBtn.style.opacity = '0.5';
-        storyboardBtn.setAttribute('data-tooltip', 'Story Editor (not available)');
-      }
-      if (callback) callback();
-    };
-    document.head.appendChild(script);
+/**
+ * Modified checkStoryboard method to prevent double-loading
+ */
+checkStoryboard(callback) {
+  const storyboardBtn = document.getElementById('storyboardTool');
+
+  // First check if Storyboard already exists globally
+  if (window.Storyboard) {
+    console.log('Storyboard already loaded, initializing instance');
+    this.storyboard = new window.Storyboard(this.scene3D, this.resourceManager);
+    window.storyboard = this.storyboard;
+    
+    if (storyboardBtn) {
+      storyboardBtn.setAttribute('data-tooltip', 'Story Editor [F11]');
+      storyboardBtn.addEventListener('click', () => {
+        this.storyboard.openEditor();
+      });
+    }
+    
+    if (callback) callback();
+    return;
   }
+
+  // Check if the script is already in the document
+  if (document.querySelector('script[src="js/classes/Storyboard.js"]')) {
+    console.log('Storyboard script tag already exists in document');
+    // Wait a short time for the script to initialize if it hasn't already
+    setTimeout(() => {
+      if (window.Storyboard) {
+        this.storyboard = new window.Storyboard(this.scene3D, this.resourceManager);
+        window.storyboard = this.storyboard;
+        
+        if (storyboardBtn) {
+          storyboardBtn.setAttribute('data-tooltip', 'Story Editor [F11]');
+          storyboardBtn.addEventListener('click', () => {
+            this.storyboard.openEditor();
+          });
+        }
+      } else {
+        console.warn('Storyboard script exists but class not defined');
+      }
+      
+      if (callback) callback();
+    }, 100);
+    return;
+  }
+
+  // If we get here, we need to load the script
+  console.log('Loading Storyboard script dynamically');
+  const script = document.createElement('script');
+  script.src = 'js/classes/Storyboard.js';
+  script.onload = () => {
+    // Storyboard loaded successfully
+    console.log('Storyboard script loaded dynamically');
+    this.storyboard = new window.Storyboard(this.scene3D, this.resourceManager);
+    window.storyboard = this.storyboard;
+
+    if (storyboardBtn) {
+      storyboardBtn.setAttribute('data-tooltip', 'Story Editor [F11]');
+      storyboardBtn.addEventListener('click', () => {
+        this.storyboard.openEditor();
+      });
+    }
+    if (callback) callback();
+  };
+  script.onerror = () => {
+    console.warn('Storyboard not available');
+    if (storyboardBtn) {
+      storyboardBtn.style.opacity = '0.5';
+      storyboardBtn.setAttribute('data-tooltip', 'Story Editor (not available)');
+    }
+    if (callback) callback();
+  };
+  document.head.appendChild(script);
+}
 
   initStoryboard() {
     // Initialize storyboard if not already initialized
