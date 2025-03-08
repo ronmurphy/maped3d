@@ -52,143 +52,652 @@ if (!this.resources.metadata) {
 }
     }
 
-    // constructor() {
-    //             this.resources = {
-    //                 textures: {
-    //                     walls: new Map(),
-    //                     doors: new Map(),
-    //                     environmental: new Map(),
-    //                     props: new Map()
-    //                 },
-    //                 sounds: {
-    //                     ambient: new Map(),
-    //                     effects: new Map()
-    //                 },
-    //                 splashArt: {
-    //                     title: new Map(),
-    //                     loading: new Map(),
-    //                     background: new Map()
-    //                 },
-    //                 effects: {
-    //                     particles: new Map(),
-    //                     lighting: new Map()
-    //                 },
-    //                 bestiary: new Map()
-    //             };
-        
-    //             this.loadedPacks = new Map();
-    //             this.activePackId = null;
-    //             this.mapResourceLinks = new Map();
-    //             this.activeResourcePack = null;
-    //             this.thumbnailSize = 100;
-        
-    //             // Initialize textureAssignments map
-    //             this.textureAssignments = new Map();
-    //             this.defaultWallTextureId = null;
-        
-    //             // Initialize sound management
-    //             this.activeAudio = new Map();
-        
-    //             // Initialize MonsterManager
-    //             this.monsterManager = null;
-    //         }
 
-    // Resource pack methods
     async loadResourcePack(file) {
         try {
-            // Read the file as text
+            // Create loading progress overlay
+            const overlay = this.createLoadProgressOverlay();
+            document.body.appendChild(overlay);
+            
+            // Update initial progress
+            this.updateLoadProgress(overlay, 0, 'Reading file...');
+            
+            // Read the file
             const text = await file.text();
+            this.updateLoadProgress(overlay, 20, 'Parsing data...');
+            
+            // Parse the JSON data
             const packData = JSON.parse(text);
-
-            // Load the data into our resources
-            this.deserializeResourcePack(packData);
+            
+            // Count total items for progress tracking
+            let totalTextures = 0;
+            let processedTextures = 0;
+            
+            // Count textures in each category
+            this.updateLoadProgress(overlay, 30, 'Counting resources...');
+            
+            for (const category in packData.textures) {
+                totalTextures += Object.keys(packData.textures[category]).length;
+            }
+            
+            this.updateLoadProgress(overlay, 40, `Found ${totalTextures} textures to process...`);
+            
+            // Clear existing resources
+            this.resources.textures = {
+                walls: new Map(),
+                doors: new Map(),
+                environmental: new Map(),
+                props: new Map()
+            };
+            
+            // First restore propFolderMap if it exists in metadata
+            if (packData.metadata && packData.metadata.propFolders) {
+                this.propFolderMap = new Map();
+                
+                packData.metadata.propFolders.forEach(folder => {
+                    this.propFolderMap.set(folder.tag, {
+                        label: folder.label,
+                        files: folder.files
+                    });
+                });
+                
+                this.updateLoadProgress(overlay, 45, `Restored ${this.propFolderMap.size} folders...`);
+            }
+            
+            // Process textures in chunks
+            const chunkSize = 20; // Process more at once for loading since we don't need to compress
+            let currentProgress = 45;
+            
+            // Process each texture category
+            for (const category in packData.textures) {
+                const textures = packData.textures[category];
+                const textureIds = Object.keys(textures);
+                const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+                
+                // Initialize category if needed
+                if (!this.resources.textures[category]) {
+                    this.resources.textures[category] = new Map();
+                }
+                
+                // Process textures in chunks
+                for (let i = 0; i < textureIds.length; i += chunkSize) {
+                    // Update progress
+                    const percentComplete = 45 + (processedTextures / totalTextures * 40);
+                    this.updateLoadProgress(
+                        overlay,
+                        percentComplete,
+                        `Loading ${categoryName}: ${processedTextures} of ${totalTextures} textures...`
+                    );
+                    
+                    // Process this chunk
+                    const chunk = textureIds.slice(i, i + chunkSize);
+                    
+                    // Add a small delay to allow UI to update and memory to be freed
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    
+                    // Process each texture in the chunk
+                    for (const id of chunk) {
+                        const texture = textures[id];
+                        this.resources.textures[category].set(id, texture);
+                        
+                        // Set first wall texture as default if needed
+                        if (category === 'walls' && !this.defaultWallTextureId) {
+                            this.defaultWallTextureId = id;
+                        }
+                        
+                        processedTextures++;
+                    }
+                }
+            }
+            
+            // Continue with the rest of the deserialization (sounds, splashArt, effects)
+            this.updateLoadProgress(overlay, 85, 'Loading other resources...');
+            
+            if (packData.sounds) {
+                for (const [category, sounds] of Object.entries(packData.sounds)) {
+                    if (!this.resources.sounds[category]) {
+                        this.resources.sounds[category] = new Map();
+                    }
+                    for (const [id, sound] of Object.entries(sounds)) {
+                        this.resources.sounds[category].set(id, sound);
+                    }
+                }
+            }
+    
+            if (packData.splashArt) {
+                for (const [category, artItems] of Object.entries(packData.splashArt)) {
+                    if (!this.resources.splashArt[category]) {
+                        this.resources.splashArt[category] = new Map();
+                    }
+                    for (const [id, art] of Object.entries(artItems)) {
+                        this.resources.splashArt[category].set(id, art);
+                    }
+                }
+            }
+    
+            if (packData.effects) {
+                for (const [category, effects] of Object.entries(packData.effects)) {
+                    if (!this.resources.effects[category]) {
+                        this.resources.effects[category] = new Map();
+                    }
+                    for (const [id, effect] of Object.entries(effects)) {
+                        this.resources.effects[category].set(id, effect);
+                    }
+                }
+            }
+            
+            // Also save metadata
+            if (packData.metadata) {
+                this.resources.metadata = packData.metadata;
+            }
+            
+            // Update active resource pack reference
             this.activeResourcePack = packData;
-
+            
+            // Complete progress
+            this.updateLoadProgress(overlay, 100, 'Load complete!');
+            
+            // Add a short delay before removing the overlay
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Show success notification
+            this.showSuccessNotification(`Successfully loaded resource pack with ${totalTextures} textures`);
+            
+            // Remove the overlay
+            overlay.remove();
+            
             return true;
         } catch (error) {
             console.error('Error loading resource pack:', error);
+            
+            // Remove progress overlay if it exists
+            document.querySelector('.load-progress-overlay')?.remove();
+            
+            // Show error notification
+            this.showErrorNotification('Error loading resource pack: ' + error.message);
+            
             return false;
         }
     }
-
-    // async saveResourcePack(mapName = null) {
-    //     const packData = {
-    //         name: this.activeResourcePack?.name || 'New Resource Pack',
-    //         version: '1.0',
-    //         textures: this.serializeTextures(),
-    //         sounds: this.serializeSounds(),
-    //         splashArt: this.serializeSplashArt(),
-    //         effects: this.serializeEffects()
-    //     };
-
-    //     const blob = new Blob([JSON.stringify(packData, null, 2)], {
-    //         type: 'application/json'
-    //     });
-
-    //     // Use provided mapName or default to resource-pack
-    //     const filename = mapName ? 
-    //         `${mapName}.resource.json` : 
-    //         'resource-pack.json';
-
-    //     const a = document.createElement('a');
-    //     a.href = URL.createObjectURL(blob);
-    //     a.download = filename;
-    //     document.body.appendChild(a);
-    //     a.click();
-    //     document.body.removeChild(a);
-    //     URL.revokeObjectURL(a.href);
+    
+    // Create loading progress overlay (similar to save progress but with different title)
+    createLoadProgressOverlay() {
+        const overlay = document.createElement('div');
+        overlay.className = 'load-progress-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
         
-    //     return filename;
-    // }
-
-    // serializeTextures() {
-    //     const serialized = {};
-    //     for (const [category, textures] of Object.entries(this.resources.textures)) {
-    //         serialized[category] = {};
-    //         textures.forEach((texture, id) => {
-    //             serialized[category][id] = {
-    //                 id: texture.id,
-    //                 name: texture.name,
-    //                 category: texture.category,
-    //                 subcategory: texture.subcategory,
-    //                 data: texture.data,
-    //                 thumbnail: texture.thumbnail,
-    //                 dateAdded: texture.dateAdded
-    //             };
-    //         });
-    //     }
-    //     return serialized;
-    // }
-
+        const card = document.createElement('div');
+        card.className = 'load-progress-card';
+        card.style.cssText = `
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            width: 400px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        `;
+        
+        card.innerHTML = `
+            <h2 style="margin-top: 0; font-size: 1.5em; font-weight: 500;">Loading Resource Pack</h2>
+            <p class="progress-status" style="margin-bottom: 16px; color: #666;">Reading file...</p>
+            
+            <div class="progress-container" style="width: 100%; height: 8px; background-color: #f0f0f0; border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+                <div class="progress-bar" style="width: 0%; height: 100%; background-color: #3F51B5; transition: width 0.3s ease;"></div>
+            </div>
+            
+            <div style="color: #666; font-size: 0.9em;">
+                <p>Loading large resource packs may take a moment.</p>
+                <p style="margin-bottom: 0;">Please don't close this window.</p>
+            </div>
+        `;
+        
+        overlay.appendChild(card);
+        return overlay;
+    }
+    
+    // Update progress bar and status text for loading
+    updateLoadProgress(overlay, percent, statusText) {
+        const progressBar = overlay.querySelector('.progress-bar');
+        const progressStatus = overlay.querySelector('.progress-status');
+        
+        if (progressBar && progressStatus) {
+            progressBar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+            progressStatus.textContent = statusText;
+        }
+    }
+    
     async saveResourcePack(mapName = null) {
-        const packData = {
-            name: this.activeResourcePack?.name || 'New Resource Pack',
-            version: '1.0',
-            textures: this.serializeTextures(),
-            sounds: this.serializeSounds(),
-            splashArt: this.serializeSplashArt(),
-            effects: this.serializeEffects(),
-            metadata: this.resources.metadata || {}
-        };
+        try {
+            // Create save progress overlay
+            const overlay = this.createSaveProgressOverlay();
+            document.body.appendChild(overlay);
+            
+            // Set initial progress
+            this.updateSaveProgress(overlay, 0, 'Preparing resource pack...');
+            
+            // Small delay to let the UI update
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Prepare basic pack data without texture data first
+            const packData = {
+                name: this.activeResourcePack?.name || 'New Resource Pack',
+                version: '1.0',
+                metadata: this.resources.metadata || {},
+                chunks: []  // We'll track chunks here
+            };
     
-        const blob = new Blob([JSON.stringify(packData, null, 2)], {
-            type: 'application/json'
-        });
-    
-        // Use provided mapName or default to resource-pack
-        const filename = mapName ? 
-            `${mapName}.resource.json` : 
-            'resource-pack.json';
-    
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
+            // Create filename
+            const filename = mapName ? 
+                `${mapName}.resource.json` : 
+                'resource-pack.json';
+                
+            console.log(`Starting chunked save of resource pack: ${filename}`);
+            
+            // Count total items for progress tracking
+            let totalCategories = Object.keys(this.resources.textures).length;
+            let processedCategories = 0;
+            let totalTextures = 0;
+            let processedTextures = 0;
+            
+            // Count total textures
+            for (const [category, textures] of Object.entries(this.resources.textures)) {
+                totalTextures += textures.size;
+            }
+            
+            // Use more efficient method to serialize textures
+            this.updateSaveProgress(overlay, 5, 'Processing textures...');
+            packData.textures = {};
+            
+            // Process each texture category
+            for (const [category, textures] of Object.entries(this.resources.textures)) {
+                packData.textures[category] = {};
+                
+                const categoryDisplayName = category.charAt(0).toUpperCase() + category.slice(1);
+                this.updateSaveProgress(
+                    overlay, 
+                    5 + (processedCategories / totalCategories * 50), 
+                    `Processing ${categoryDisplayName}...`
+                );
+                
+                // Break the operation into chunks
+                const textureEntries = Array.from(textures.entries());
+                const chunkSize = 10; // Process 10 textures at a time
+                
+                // Process in chunks to avoid memory issues
+                for (let i = 0; i < textureEntries.length; i += chunkSize) {
+                    // Create a small delay between chunks to allow garbage collection
+                    if (i > 0) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                    
+                    const chunk = textureEntries.slice(i, i + chunkSize);
+                    
+                    // Process this chunk
+                    for (const [id, texture] of chunk) {
+                        // Optimize texture data by compressing images if they're large
+                        let optimizedData = texture.data;
+                        
+                        // Update progress
+                        processedTextures++;
+                        const textureProgress = 5 + 
+                            (processedCategories / totalCategories * 50) + 
+                            (i / textureEntries.length * (50 / totalCategories));
+                        
+                        this.updateSaveProgress(
+                            overlay, 
+                            textureProgress, 
+                            `Processing ${texture.name}...`
+                        );
+                        
+                        // If data is a data URL and is large, try to compress it
+                        if (typeof texture.data === 'string' && 
+                            texture.data.startsWith('data:image/') && 
+                            texture.data.length > 500000) { // 500KB threshold
+                            
+                            try {
+                                // Create a more efficient compressed version
+                                optimizedData = await this.compressImageData(texture.data);
+                                console.log(`Compressed image: ${texture.name} (${Math.round(texture.data.length/1024)}KB → ${Math.round(optimizedData.length/1024)}KB)`);
+                            } catch (e) {
+                                console.warn(`Failed to compress image: ${texture.name}`, e);
+                                optimizedData = texture.data;
+                            }
+                        }
+                        
+                        // Store optimized texture data
+                        packData.textures[category][id] = {
+                            id: texture.id,
+                            name: texture.name,
+                            category: texture.category,
+                            subcategory: texture.subcategory,
+                            data: optimizedData,
+                            thumbnail: texture.thumbnail,
+                            dateAdded: texture.dateAdded,
+                            tags: texture.tags || [],
+                            sourcePath: texture.sourcePath || null
+                        };
+                    }
+                }
+                
+                processedCategories++;
+            }
+            
+            // Update progress
+            this.updateSaveProgress(overlay, 60, 'Processing other resources...');
+            
+            // Save smaller data categories normally
+            packData.sounds = this.serializeSounds();
+            packData.splashArt = this.serializeSplashArt();
+            packData.effects = this.serializeEffects();
+            
+            // Update progress
+            this.updateSaveProgress(overlay, 80, 'Creating file...');
+            
+            // Prepare the JSON data
+            const jsonData = JSON.stringify(packData, null, 2);
+            
+            // Update progress
+            this.updateSaveProgress(overlay, 90, 'Creating download...');
+            
+            // Save to file
+            const blob = new Blob([jsonData], {
+                type: 'application/json'
+            });
+            
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            
+            // Show success before triggering download
+            this.updateSaveProgress(overlay, 100, 'Save complete!');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Initiate download
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            
+            // Show success notification
+            this.showSuccessNotification(`Successfully saved ${filename}`);
+            
+            // Remove progress overlay
+            overlay.remove();
+            
+            console.log(`Successfully saved resource pack: ${filename}`);
+            return filename;
+        } catch (error) {
+            console.error('Error saving resource pack:', error);
+            
+            // Remove progress overlay if it exists
+            document.querySelector('.save-progress-overlay')?.remove();
+            
+            // Show error notification
+            this.showErrorNotification('Error saving resource pack: ' + error.message);
+            return null;
+        }
+    }
+
+    createSaveProgressOverlay() {
+        const overlay = document.createElement('div');
+        overlay.className = 'save-progress-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
         
-        return filename;
+        const card = document.createElement('div');
+        card.className = 'save-progress-card';
+        card.style.cssText = `
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            width: 400px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        `;
+        
+        card.innerHTML = `
+            <h2 style="margin-top: 0; font-size: 1.5em; font-weight: 500;">Saving Resource Pack</h2>
+            <p class="progress-status" style="margin-bottom: 16px; color: #666;">Preparing...</p>
+            
+            <div class="progress-container" style="width: 100%; height: 8px; background-color: #f0f0f0; border-radius: 4px; overflow: hidden; margin-bottom: 16px;">
+                <div class="progress-bar" style="width: 0%; height: 100%; background-color: #3F51B5; transition: width 0.3s ease;"></div>
+            </div>
+            
+            <div style="color: #666; font-size: 0.9em;">
+                <p>Processing large resource packs may take a moment.</p>
+                <p style="margin-bottom: 0;">Please don't close this window.</p>
+            </div>
+        `;
+        
+        overlay.appendChild(card);
+        return overlay;
+    }
+    
+    // Update progress bar and status text
+    updateSaveProgress(overlay, percent, statusText) {
+        const progressBar = overlay.querySelector('.progress-bar');
+        const progressStatus = overlay.querySelector('.progress-status');
+        
+        if (progressBar && progressStatus) {
+            progressBar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+            progressStatus.textContent = statusText;
+        }
+    }
+    
+    // Show success notification toast
+    showSuccessNotification(message) {
+        const toast = document.createElement('div');
+        toast.className = 'notification-toast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease, fadeOut 0.5s ease 4.5s forwards;
+        `;
+        
+        toast.innerHTML = `
+            <span class="material-icons">check_circle</span>
+            <span>${message}</span>
+        `;
+        
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        document.body.appendChild(toast);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+    
+    // Show error notification toast
+    showErrorNotification(message) {
+        const toast = document.createElement('div');
+        toast.className = 'notification-toast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #F44336;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        toast.innerHTML = `
+            <span class="material-icons">error</span>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '<span class="material-icons">close</span>';
+        closeBtn.style.cssText = `
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin-left: 8px;
+            padding: 0;
+        `;
+        
+        closeBtn.addEventListener('click', () => {
+            toast.remove();
+        });
+        
+        toast.appendChild(closeBtn);
+        
+        // Remove after 8 seconds if not closed manually
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                toast.remove();
+            }
+        }, 8000);
+    }
+
+
+    // Add a method to save textures in chunks
+    async saveTexturesChunked(packData, chunkSize = 10) {
+        packData.textures = {};
+        
+        // Process each texture category
+        for (const [category, textures] of Object.entries(this.resources.textures)) {
+            packData.textures[category] = {};
+            
+            // Break the operation into chunks
+            const textureEntries = Array.from(textures.entries());
+            const totalTextures = textureEntries.length;
+            
+            console.log(`Saving ${totalTextures} textures in category: ${category}`);
+            
+            // Process in chunks to avoid memory issues
+            for (let i = 0; i < totalTextures; i += chunkSize) {
+                // Create a small delay between chunks to allow garbage collection
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                const chunk = textureEntries.slice(i, i + chunkSize);
+                
+                // Process this chunk
+                chunk.forEach(([id, texture]) => {
+                    // Optimize texture data by compressing images if they're large
+                    let optimizedData = texture.data;
+                    
+                    // If data is a data URL and is large, try to compress it
+                    if (typeof texture.data === 'string' && 
+                        texture.data.startsWith('data:image/') && 
+                        texture.data.length > 500000) { // 500KB threshold
+                        
+                        try {
+                            // Create a more efficient compressed version
+                            optimizedData = this.compressImageData(texture.data);
+                            console.log(`Compressed image: ${texture.name} (${Math.round(texture.data.length/1024)}KB → ${Math.round(optimizedData.length/1024)}KB)`);
+                        } catch (e) {
+                            console.warn(`Failed to compress image: ${texture.name}`, e);
+                            optimizedData = texture.data;
+                        }
+                    }
+                    
+                    // Store optimized texture data
+                    packData.textures[category][id] = {
+                        id: texture.id,
+                        name: texture.name,
+                        category: texture.category,
+                        subcategory: texture.subcategory,
+                        data: optimizedData,
+                        thumbnail: texture.thumbnail,
+                        dateAdded: texture.dateAdded,
+                        tags: texture.tags || [],
+                        sourcePath: texture.sourcePath || null
+                    };
+                });
+                
+                console.log(`Saved chunk ${Math.floor(i/chunkSize) + 1}/${Math.ceil(totalTextures/chunkSize)} in ${category}`);
+            }
+        }
+        
+        return packData;
+    }
+    
+    // Add a method to compress image data
+    compressImageData(dataUrl, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            try {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Set dimensions
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Draw at original size
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Convert to WebP with compression
+                    const compressedData = canvas.toDataURL('image/webp', quality);
+                    resolve(compressedData);
+                };
+                
+                img.onerror = () => {
+                    reject(new Error('Failed to load image for compression'));
+                };
+                
+                img.src = dataUrl;
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 
     serializeTextures() {
@@ -274,59 +783,6 @@ if (!this.resources.metadata) {
         };
     }
 
-
-
-    // deserializeResourcePack(packData) {
-    //     if (packData.textures) {
-    //         for (const [category, textures] of Object.entries(packData.textures)) {
-    //             if (!this.resources.textures[category]) {
-    //                 this.resources.textures[category] = new Map();
-    //             }
-    //             for (const [id, texture] of Object.entries(textures)) {
-    //                 this.resources.textures[category].set(id, texture);
-
-    //                 // Set first wall texture as default
-    //                 if (category === 'walls' && !this.defaultWallTextureId) {
-    //                     this.defaultWallTextureId = id;
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     if (packData.sounds) {
-    //         for (const [category, sounds] of Object.entries(packData.sounds)) {
-    //             if (!this.resources.sounds[category]) {
-    //                 this.resources.sounds[category] = new Map();
-    //             }
-    //             for (const [id, sound] of Object.entries(sounds)) {
-    //                 this.resources.sounds[category].set(id, sound);
-    //             }
-    //         }
-    //     }
-
-    //     if (packData.splashArt) {
-    //         for (const [category, artItems] of Object.entries(packData.splashArt)) {
-    //             if (!this.resources.splashArt[category]) {
-    //                 this.resources.splashArt[category] = new Map();
-    //             }
-    //             for (const [id, art] of Object.entries(artItems)) {
-    //                 this.resources.splashArt[category].set(id, art);
-    //             }
-    //         }
-    //     }
-
-    //     if (packData.effects) {
-    //         for (const [category, effects] of Object.entries(packData.effects)) {
-    //             if (!this.resources.effects[category]) {
-    //                 this.resources.effects[category] = new Map();
-    //             }
-    //             for (const [id, effect] of Object.entries(effects)) {
-    //                 this.resources.effects[category].set(id, effect);
-    //             }
-    //         }
-    //     }
-    // }
-
     deserializeResourcePack(packData) {
         // First restore propFolderMap if it exists in metadata
         if (packData.metadata && packData.metadata.propFolders) {
@@ -342,12 +798,15 @@ if (!this.resources.metadata) {
             console.log('Restored prop folder map with tags:', this.propFolderMap);
         }
         
-        // Existing texture deserialization
+        // Handle texture deserialization - check if we're using chunked format
         if (packData.textures) {
+            // Process each texture category
             for (const [category, textures] of Object.entries(packData.textures)) {
                 if (!this.resources.textures[category]) {
                     this.resources.textures[category] = new Map();
                 }
+                
+                // Process the textures
                 for (const [id, texture] of Object.entries(textures)) {
                     this.resources.textures[category].set(id, texture);
     
@@ -358,7 +817,7 @@ if (!this.resources.metadata) {
                 }
             }
         }
-    
+        
         // Continue with the rest of the deserialization (sounds, splashArt, effects)
         if (packData.sounds) {
             for (const [category, sounds] of Object.entries(packData.sounds)) {
@@ -398,7 +857,6 @@ if (!this.resources.metadata) {
             this.resources.metadata = packData.metadata;
         }
     }
-
 
     getDefaultWallTexture() {
         if (!this.defaultWallTextureId) return null;
@@ -694,56 +1152,6 @@ getSpecificTexture(category, criteria) {
     return null;
   }
 
-//     async addTexture(file, category, subcategory) {
-//         if (!file || !category) {
-//             console.warn('Missing required parameters:', { file, category });
-//             return null;
-//         }
-    
-//         try {
-//             console.log('Creating texture from file:', file);
-//             // Create thumbnail and base64 data
-//             const imageData = await this.createImageData(file);
-//             const thumbnail = await this.createThumbnail(file);
-    
-//             // Extract a clean name from the filename for props
-//             let name = file.name;
-//             if (category === 'props') {
-//                 // Remove file extension
-//                 name = name.replace(/\.[^.]+$/, '');
-//                 // Remove numbers and parentheses like (1), (2)
-//                 name = name.replace(/\s*\(\d+\)\s*$/, '');
-//                 // Convert to proper case (first letter capitalized)
-//                 name = name.charAt(0).toUpperCase() + name.slice(1);
-//             }
-    
-// // In the addTexture method, add this line:
-// const textureData = {
-//     id: `${category}_${Date.now()}`,
-//     name: name, // The cleaned name
-//     originalFilename: file.name, // Always store the original filename
-//     category,
-//     subcategory,
-//     data: imageData,
-//     thumbnail,
-//     dateAdded: new Date().toISOString()
-// };
-    
-//             console.log('Created texture data:', textureData);
-    
-//             // Store in appropriate category
-//             if (!this.resources.textures[category]) {
-//                 this.resources.textures[category] = new Map();
-//             }
-//             this.resources.textures[category].set(textureData.id, textureData);
-    
-//             return textureData.id;
-//         } catch (error) {
-//             console.error('Error adding texture:', error);
-//             return null;
-//         }
-//     }
-
 async addTexture(file, category, options = {}) {
     if (!file || !category) {
         console.warn('Missing required parameters:', { file, category });
@@ -979,9 +1387,6 @@ async addTexture(file, category, options = {}) {
         }
     }
 
-
-
-// Modify the updateGallery method in ResourceManager class
 // updateGallery(drawer, category, view = 'grid') {
 //     // Determine which tab panel to use
 //     let tabPanelName;
@@ -1023,17 +1428,145 @@ async addTexture(file, category, options = {}) {
 
 //     // Update container class based on view
 //     container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+    
+//     // Handle view controls and search for props
+//     const viewControls = tabPanel.querySelector('.view-controls');
+//     if (viewControls) {
+//         // Remove any existing search controls from view controls
+//         const existingSearch = viewControls.querySelector('.props-search-controls');
+//         if (existingSearch) {
+//             existingSearch.remove();
+//         }
+        
+//         const existingCount = viewControls.querySelector('.props-count');
+//         if (existingCount) {
+//             existingCount.remove();
+//         }
+        
+//         // Add search controls if we're in props category
+//         if (category === 'props') {
+//             const searchControls = document.createElement('div');
+//             searchControls.className = 'props-search-controls';
+//             searchControls.style.cssText = `
+//                 display: flex;
+//                 align-items: center;
+//                 gap: 8px;
+//                 margin-right: auto; // Push view toggles to the right
+//             `;
+            
+//             searchControls.innerHTML = `
+//                 <sl-input type="search" placeholder="Search props..." style="width: 200px;" id="props-search">
+//                     <span slot="prefix" class="material-icons" style="font-size: 16px; color: #666;">search</span>
+//                 </sl-input>
+//                 ${this.activeTagFilter ? `
+//                     <sl-button size="small" class="clear-tag-filter" variant="default">
+//                         <span class="material-icons" style="font-size: 16px;">filter_alt_off</span>
+//                         Clear Filter
+//                     </sl-button>
+//                 ` : ''}
+//             `;
+            
+//             // Add search controls before the view toggles
+//             viewControls.insertBefore(searchControls, viewControls.firstChild);
+            
+//             // Register search handler
+//             const searchInput = searchControls.querySelector('#props-search');
+//             if (searchInput) {
+//                 searchInput.addEventListener('input', (e) => {
+//                     this.filterPropsByName(drawer, e.target.value);
+//                 });
+//             }
+            
+//             // Register clear filter handler
+//             const clearBtn = searchControls.querySelector('.clear-tag-filter');
+//             if (clearBtn) {
+//                 clearBtn.addEventListener('click', () => {
+//                     this.clearPropsTagFilter(drawer);
+//                 });
+//             }
+            
+//             // Now that resources and filteredResources are defined, add the count display
+//             const totalItems = resources ? resources.size : 0;
+//             const filteredItems = filteredResources ? filteredResources.size : 0;
+            
+//             const countDisplay = document.createElement('div');
+//             countDisplay.className = 'props-count';
+//             countDisplay.style.cssText = `
+//                 margin-left: 16px;
+//                 font-size: 0.9em;
+//                 color: #666;
+//             `;
+            
+//             if (this.activeTagFilter) {
+//                 countDisplay.textContent = `${filteredItems} of ${totalItems} items`;
+//             } else {
+//                 countDisplay.textContent = `${totalItems} items`;
+//             }
+            
+//             viewControls.appendChild(countDisplay);
+//         }
+//     }
 
-//     // Clear existing content
-//     container.innerHTML = '';
+//     // Create two-column layout for props
+//     if (category === 'props') {
+//         // Check if we already have the layout container
+//         let layoutContainer = tabPanel.querySelector('.props-layout-container');
+//         if (!layoutContainer) {
+//             // Create the layout container
+//             layoutContainer = document.createElement('div');
+//             layoutContainer.className = 'props-layout-container';
+//             layoutContainer.style.cssText = `
+//                 display: flex;
+//                 gap: 16px;
+//                 height: calc(100% - 60px); // Leave room for the controls
+//             `;
+            
+//             // Move the container into the layout container
+//             if (container.parentNode) {
+//                 container.parentNode.insertBefore(layoutContainer, container);
+//                 layoutContainer.appendChild(container);
+//             }
+//         }
+        
+//         // Update the container styles for the props grid
+//         container.style.cssText = `
+//             flex: 1;
+//             overflow-y: auto;
+//             height: 100%;
+//             padding: 8px;
+//         `;
+        
+//         // Create or update the tag filter sidebar
+//         let tagSidebar = layoutContainer.querySelector('.props-tag-sidebar');
+//         if (!tagSidebar) {
+//             tagSidebar = document.createElement('div');
+//             tagSidebar.className = 'props-tag-sidebar';
+//             tagSidebar.style.cssText = `
+//                 width: 250px;
+//                 flex-shrink: 0;
+//                 background: #f5f5f5;
+//                 border-radius: 4px;
+//                 padding: 12px;
+//                 overflow-y: auto;
+//                 height: 100%;
+//             `;
+            
+//             // Add to layout before the main container
+//             layoutContainer.insertBefore(tagSidebar, container);
+//         }
+        
+//         // Update tag filter content
+//         this.updateTagSidebar(drawer, tagSidebar);
+//     } else {
+//         // Reset container styles for non-props categories
+//         container.style.cssText = '';
+//     }
 
 //     // Get resources based on category type
 //     let resources;
 //     if (['title', 'loading', 'background'].includes(category)) {
-//         // Get resources from the specific splash art category
 //         resources = this.resources.splashArt[category];
 //         if (!resources) {
-//             // Initialize the category if it doesn't exist
 //             this.resources.splashArt[category] = new Map();
 //             resources = this.resources.splashArt[category];
 //         }
@@ -1043,7 +1576,23 @@ async addTexture(file, category, options = {}) {
 //         resources = this.resources.textures[category];
 //     }
 
-//     if (!resources || resources.size === 0) {
+//     // Apply tag filter for props
+//     let filteredResources = resources;
+//     if (category === 'props' && this.activeTagFilter) {
+//         // Get list of file IDs that belong to this tag
+//         const tagData = this.propFolderMap?.get(this.activeTagFilter);
+//         if (tagData && tagData.files) {
+//             // Filter resources to only include files with this tag
+//             filteredResources = new Map();
+//             tagData.files.forEach(fileId => {
+//                 if (resources.has(fileId)) {
+//                     filteredResources.set(fileId, resources.get(fileId));
+//                 }
+//             });
+//         }
+//     }
+
+//     if (!filteredResources || filteredResources.size === 0) {
 //         container.innerHTML = `
 //             <sl-card class="empty-gallery">
 //                 <div style="text-align: center; padding: 2rem;">
@@ -1058,151 +1607,115 @@ async addTexture(file, category, options = {}) {
 //         return;
 //     }
 
+//     // Clear the main container
+//     container.innerHTML = '';
+
 //     // Create cards for each resource
-//     resources.forEach((resource, id) => {
+//     filteredResources.forEach((resource, id) => {
 //         const card = document.createElement('sl-card');
 //         card.className = 'resource-item';
 
-//         // Handle different resource types
-//         if (category === 'ambient' || category === 'effects') {
-//             // Sound resource
-//             card.innerHTML = `
-//                 ${view === 'grid' ? `
-//                     <div class="sound-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-//                         <div class="sound-icon" style="font-size: 48px; color: #666;">
-//                             <span class="material-icons">volume_up</span>
-//                         </div>
-//                         <div class="sound-info">
-//                             <div class="sound-name" style="color: #666; font-weight: bold;">${resource.name}</div>
-//                             <div class="sound-duration" style="color: #666; font-size: 0.9em;">
-//                                 ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
-//                             </div>
-//                         </div>
-//                     </div>
-//                 ` : `
-//                     <div style="display: flex; align-items: center; gap: 1rem;">
-//                         <div class="sound-icon" style="font-size: 24px; color: #666;">
-//                             <span class="material-icons">volume_up</span>
-//                         </div>
-//                         <div class="sound-info">
-//                             <div class="sound-name">${resource.name}</div>
-//                             <div class="sound-duration" style="color: #666; font-size: 0.9em;">
-//                                 ${resource.duration ? resource.duration.toFixed(1) + 's' : 'Unknown duration'}
-//                             </div>
-//                         </div>
-//                     </div>
-//                 `}
-//                 <div slot="footer" class="resource-actions">
-//                     <sl-button-group>
-//                         <sl-button size="small" class="play-btn">
-//                             <span class="material-icons">play_arrow</span>
-//                         </sl-button>
-//                         <sl-button size="small" class="delete-btn" variant="danger">
-//                             <span class="material-icons">delete</span>
-//                         </sl-button>
-//                     </sl-button-group>
-//                 </div>
-//             `;
-        
-            
-//             const playBtn = card.querySelector('.play-btn');
-//             playBtn.addEventListener('click', () => {
-//                 if (playBtn.getAttribute('aria-pressed') === 'true') {
-//                     // Stop playback
-//                     this.stopSound(id);
-//                     playBtn.removeAttribute('aria-pressed');
-//                     playBtn.querySelector('.material-icons').textContent = 'play_arrow';
-//                 } else {
-//                     // Start playback
-//                     const audio = this.playSound(id, category);
-//                     if (audio) {
-//                         playBtn.setAttribute('aria-pressed', 'true');
-//                         playBtn.querySelector('.material-icons').textContent = 'stop';
-                        
-//                         // Reset button when sound ends
-//                         audio.addEventListener('ended', () => {
-//                             playBtn.removeAttribute('aria-pressed');
-//                             playBtn.querySelector('.material-icons').textContent = 'play_arrow';
-//                         });
-//                     }
-//                 }
-//             });
-
-//         } else {
-//             card.innerHTML = `
-//     ${view === 'grid' ? `
-//         <img 
-//             src="${resource.thumbnail}" 
-//             alt="${resource.name}"
-//             class="resource-thumbnail"
-//         />
-//         <div class="resource-info">
-//             <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
-//             <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
-//             ${resource.originalFilename ? 
-//                 `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
-//             ${category === 'splashArt' && resource.description ? 
-//                 `<div class="resource-description">${resource.description}</div>` : ''}
-//         </div>
-//     ` : `
-//         <div style="display: flex; align-items: center; gap: 1rem;">
+//         // Build card HTML
+//         card.innerHTML = `
+//         ${view === 'grid' ? `
 //             <img 
 //                 src="${resource.thumbnail}" 
 //                 alt="${resource.name}"
 //                 class="resource-thumbnail"
-//                 style="width: 50px; height: 50px;"
 //             />
 //             <div class="resource-info">
 //                 <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
 //                 <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
 //                 ${resource.originalFilename ? 
 //                     `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
-//                 ${category === 'splashArt' && resource.description ? 
-//                     `<div class="resource-description">${resource.description}</div>` : ''}
+                
+//                 ${category === 'props' && resource.tags && resource.tags.length > 0 ? 
+//                     `<div class="resource-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+//                         ${resource.tags.map(tag => 
+//                             `<sl-tag size="small" style="cursor: pointer; max-width: 100%; overflow: hidden;" 
+//                                     data-tag="${tag}" 
+//                                     title="${this.formatTagDisplay(tag)}">
+//                                 <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+//                                 ${this.formatTagDisplay(tag).split(' › ').pop()}
+//                             </sl-tag>`
+//                         ).join('')}
+//                     </div>` : ''}
 //             </div>
+//         ` : `
+//             <div style="display: flex; align-items: center; gap: 1rem;">
+//                 <img 
+//                     src="${resource.thumbnail}" 
+//                     alt="${resource.name}"
+//                     class="resource-thumbnail"
+//                     style="width: 50px; height: 50px;"
+//                 />
+//                 <div class="resource-info">
+//                     <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+//                     <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+//                     ${resource.originalFilename ? 
+//                         `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+                    
+//                     ${category === 'props' && resource.tags && resource.tags.length > 0 ? 
+//                         `<div class="resource-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+//                             ${resource.tags.map(tag => 
+//                                 `<sl-tag size="small" style="cursor: pointer; max-width: 100%; overflow: hidden;" 
+//                                         data-tag="${tag}" 
+//                                         title="${this.formatTagDisplay(tag)}">
+//                                     <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+//                                     ${this.formatTagDisplay(tag).split(' › ').pop()}
+//                                 </sl-tag>`
+//                             ).join('')}
+//                         </div>` : ''}
+//                 </div>
+//             </div>
+//         `}
+//         <div slot="footer" class="resource-actions">
+//             <sl-button-group>
+//                 <sl-button size="small" class="preview-btn">
+//                     <span class="material-icons">visibility</span>
+//                 </sl-button>
+//                 ${category === 'props' ? `
+//                 <sl-button size="small" class="edit-name-btn">
+//                     <span class="material-icons">edit</span>
+//                 </sl-button>
+//                 ` : ''}
+//                 <sl-button size="small" class="delete-btn" variant="danger">
+//                     <span class="material-icons">delete</span>
+//                 </sl-button>
+//             </sl-button-group>
 //         </div>
-//     `}
-//     <div slot="footer" class="resource-actions">
-//         <sl-button-group>
-//             <sl-button size="small" class="preview-btn">
-//                 <span class="material-icons">visibility</span>
-//             </sl-button>
-//             ${category === 'props' ? `
-//             <sl-button size="small" class="edit-name-btn">
-//                 <span class="material-icons">edit</span>
-//             </sl-button>
-//             ` : ''}
-//             <sl-button size="small" class="delete-btn" variant="danger">
-//                 <span class="material-icons">delete</span>
-//             </sl-button>
-//         </sl-button-group>
-//     </div>
-// `;
+//         `;
 
-//             // Add preview button handler for non-sound resources
-//             card.querySelector('.preview-btn').addEventListener('click', () => {
-//                 this.showResourcePreview(resource);
+//         // Add tag click handlers
+//         if (category === 'props') {
+//             const tagElements = card.querySelectorAll('.resource-tags sl-tag');
+//             tagElements.forEach(tag => {
+//                 tag.addEventListener('click', (e) => {
+//                     e.stopPropagation();
+//                     const tagValue = tag.dataset.tag;
+//                     this.setPropsTagFilter(drawer, tagValue);
+//                 });
 //             });
 //         }
+
+//         // Add preview button handler
+//         card.querySelector('.preview-btn').addEventListener('click', () => {
+//             this.showResourcePreview(resource);
+//         });
 
 //         if (category === 'props') {
 //             card.querySelector('.edit-name-btn').addEventListener('click', () => {
 //                 this.showNameEditor(resource, category, id, card);
 //             });
 //         }
-        
 
-//         // Add delete button handler for all resource types
+//         // Add delete button handler
 //         card.querySelector('.delete-btn').addEventListener('click', () => {
-//             const confirmMessage = category === 'splashArt' ? 
-//                 `Delete "${resource.name}"?` :
-//                 `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
+//             const confirmMessage = `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
 
 //             if (confirm(confirmMessage)) {
 //                 if (category === 'ambient' || category === 'effects') {
 //                     this.deleteSound(id, category);
-//                 } else if (category === 'splashArt') {
-//                     this.resources.splashArt.delete(id);
 //                 } else {
 //                     this.deleteResource(category, id);
 //                 }
@@ -1214,7 +1727,6 @@ async addTexture(file, category, options = {}) {
 //     });
 // }
 
-// Modify the updateGallery method to handle prop tags
 updateGallery(drawer, category, view = 'grid') {
     // Determine which tab panel to use
     let tabPanelName;
@@ -1230,45 +1742,32 @@ updateGallery(drawer, category, view = 'grid') {
     
     console.log(`Looking for gallery in tab panel: ${tabPanelName}`);
     
+    // Find the tab panel
+    const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
+    if (!tabPanel) {
+        console.error(`Tab panel ${tabPanelName} not found`);
+        return;
+    }
+    
+    // Find or create container
     let container = drawer.querySelector(`#${category}Gallery`);
     if (!container) {
         console.log(`Creating new gallery container for ${category}`);
-        const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
-        
-        if (tabPanel) {
-            container = document.createElement('div');
-            container.id = `${category}Gallery`;
-            container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
-            tabPanel.appendChild(container);
-        } else {
-            console.error(`Tab panel ${tabPanelName} not found`);
-            return;
-        }
+        container = document.createElement('div');
+        container.id = `${category}Gallery`;
+        container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+        tabPanel.appendChild(container);
     }
 
     // Hide all other galleries in the same tab panel and show this one
-    const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
-    if (tabPanel) {
-        tabPanel.querySelectorAll('.gallery-container').forEach(gallery => {
-            gallery.style.display = gallery.id === `${category}Gallery` ? '' : 'none';
-        });
-    }
+    tabPanel.querySelectorAll('.gallery-container').forEach(gallery => {
+        gallery.style.display = gallery.id === `${category}Gallery` ? '' : 'none';
+    });
 
     // Update container class based on view
     container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
-
-    // Add or update tag filter for props
-    if (category === 'props') {
-        this.updatePropsTagFilter(drawer, container);
-    }
-
-    // Clear existing content (keep tag filter if it exists)
-    const tagFilter = container.querySelector('.props-tag-filter');
-    container.innerHTML = '';
-    if (tagFilter) {
-        container.appendChild(tagFilter);
-    }
-
+    
+    // IMPORTANT: Get resources FIRST before any UI code that uses them
     // Get resources based on category type
     let resources;
     if (['title', 'loading', 'background'].includes(category)) {
@@ -1298,9 +1797,145 @@ updateGallery(drawer, category, view = 'grid') {
             });
         }
     }
+    
+    // NOW we can handle the UI elements that refer to resources
+    
+    // Handle view controls and search for props
+    const viewControls = tabPanel.querySelector('.view-controls');
+    if (viewControls) {
+        // Remove any existing search controls and count displays
+        const existingSearch = viewControls.querySelector('.props-search-controls');
+        if (existingSearch) {
+            existingSearch.remove();
+        }
+        
+        const existingCount = viewControls.querySelector('.props-count');
+        if (existingCount) {
+            existingCount.remove();
+        }
+        
+        // Add search controls if we're in props category
+        if (category === 'props') {
+            const searchControls = document.createElement('div');
+            searchControls.className = 'props-search-controls';
+            searchControls.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-right: auto; // Push view toggles to the right
+            `;
+            
+            searchControls.innerHTML = `
+                <sl-input type="search" placeholder="Search props..." style="width: 200px;" id="props-search">
+                    <span slot="prefix" class="material-icons" style="font-size: 16px; color: #666;">search</span>
+                </sl-input>
+                ${this.activeTagFilter ? `
+                    <sl-button size="small" class="clear-tag-filter" variant="default">
+                        <span class="material-icons" style="font-size: 16px;">filter_alt_off</span>
+                        Clear Filter
+                    </sl-button>
+                ` : ''}
+            `;
+            
+            // Add search controls before the view toggles
+            viewControls.insertBefore(searchControls, viewControls.firstChild);
+            
+            // Register search handler
+            const searchInput = searchControls.querySelector('#props-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    this.filterPropsByName(drawer, e.target.value);
+                });
+            }
+            
+            // Register clear filter handler
+            const clearBtn = searchControls.querySelector('.clear-tag-filter');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    this.clearPropsTagFilter(drawer);
+                });
+            }
+            
+            // Now that resources and filteredResources are defined, add the count display
+            const totalItems = resources ? resources.size : 0;
+            const filteredItems = filteredResources ? filteredResources.size : 0;
+            
+            const countDisplay = document.createElement('div');
+            countDisplay.className = 'props-count';
+            countDisplay.style.cssText = `
+                margin-left: 16px;
+                font-size: 0.9em;
+                color: #666;
+            `;
+            
+            if (this.activeTagFilter) {
+                countDisplay.textContent = `${filteredItems} of ${totalItems} items`;
+            } else {
+                countDisplay.textContent = `${totalItems} items`;
+            }
+            
+            viewControls.appendChild(countDisplay);
+        }
+    }
 
+    // Create two-column layout for props
+    if (category === 'props') {
+        // Check if we already have the layout container
+        let layoutContainer = tabPanel.querySelector('.props-layout-container');
+        if (!layoutContainer) {
+            // Create the layout container
+            layoutContainer = document.createElement('div');
+            layoutContainer.className = 'props-layout-container';
+            layoutContainer.style.cssText = `
+                display: flex;
+                gap: 16px;
+                height: calc(100% - 60px); // Leave room for the controls
+            `;
+            
+            // Move the container into the layout container
+            if (container.parentNode) {
+                container.parentNode.insertBefore(layoutContainer, container);
+                layoutContainer.appendChild(container);
+            }
+        }
+        
+        // Update the container styles for the props grid
+        container.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            height: 100%;
+            padding: 8px;
+        `;
+        
+        // Create or update the tag filter sidebar
+        let tagSidebar = layoutContainer.querySelector('.props-tag-sidebar');
+        if (!tagSidebar) {
+            tagSidebar = document.createElement('div');
+            tagSidebar.className = 'props-tag-sidebar';
+            tagSidebar.style.cssText = `
+                width: 250px;
+                flex-shrink: 0;
+                background: #f5f5f5;
+                border-radius: 4px;
+                padding: 12px;
+                overflow-y: auto;
+                height: 100%;
+            `;
+            
+            // Add to layout before the main container
+            layoutContainer.insertBefore(tagSidebar, container);
+        }
+        
+        // Update tag filter content
+        this.updateTagSidebar(drawer, tagSidebar);
+    } else {
+        // Reset container styles for non-props categories
+        container.style.cssText = '';
+    }
+
+    // Check for empty resources case
     if (!filteredResources || filteredResources.size === 0) {
-        container.innerHTML += `
+        container.innerHTML = `
             <sl-card class="empty-gallery">
                 <div style="text-align: center; padding: 2rem;">
                     ${category === 'ambient' || category === 'effects' ? 
@@ -1313,6 +1948,9 @@ updateGallery(drawer, category, view = 'grid') {
         `;
         return;
     }
+
+    // Clear the main container
+    container.innerHTML = '';
 
     // Create cards for each resource
     filteredResources.forEach((resource, id) => {
@@ -1429,6 +2067,168 @@ updateGallery(drawer, category, view = 'grid') {
 
         container.appendChild(card);
     });
+}
+
+// New method to update the tag sidebar
+updateTagSidebar(drawer, sidebarElement) {
+    sidebarElement.innerHTML = '';
+    
+    // Only proceed if we have folder data
+    if (!this.propFolderMap || this.propFolderMap.size === 0) {
+        // Add message about how to get tags
+        sidebarElement.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <span class="material-icons" style="color: #666;">info</span>
+                <span style="color: #666; font-size: 0.9em;">Import folders to enable tag filtering</span>
+            </div>
+        `;
+        return;
+    }
+    
+    // Create header section with active filter info
+    const headerElement = document.createElement('div');
+    headerElement.style.cssText = `
+        margin-bottom: 16px;
+        font-weight: 500;
+        color: #333;
+    `;
+    
+    if (this.activeTagFilter) {
+        // Show active filter info
+        const parentData = this.propFolderMap.get(this.activeTagFilter);
+        
+        headerElement.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                <span class="material-icons" style="font-size: 18px; color: #666;">folder_open</span>
+                <span>Current Filter:</span>
+            </div>
+            <div style="background: #e0e0e0; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+                <div style="font-weight: bold;">${parentData ? parentData.label : this.formatTagDisplay(this.activeTagFilter)}</div>
+            </div>
+        `;
+        
+        // Add "up" button if not at root level
+        if (this.activeTagFilter.includes('-')) {
+            const upButton = document.createElement('sl-button');
+            upButton.size = 'small';
+            upButton.variant = 'neutral';
+            upButton.style.width = '100%';
+            upButton.style.marginBottom = '16px';
+            upButton.innerHTML = `
+                <span class="material-icons" style="font-size: 14px; margin-right: 4px;">arrow_upward</span>
+                Up One Level
+            `;
+            
+            // Go up one level on click
+            upButton.addEventListener('click', () => {
+                const tagParts = this.activeTagFilter.split('-');
+                tagParts.pop();
+                const parentFolder = tagParts.join('-');
+                this.setPropsTagFilter(drawer, parentFolder);
+            });
+            
+            headerElement.appendChild(upButton);
+        }
+    } else {
+        // Show "All Props" header
+        headerElement.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+                <span class="material-icons" style="font-size: 18px; color: #666;">folder</span>
+                <span>All Categories</span>
+            </div>
+        `;
+    }
+    
+    sidebarElement.appendChild(headerElement);
+    
+    // Determine which tags to show based on active filter
+    let tagsToShow = new Map();
+    
+    if (this.activeTagFilter) {
+        // Find all direct child tags
+        const parentTag = this.activeTagFilter;
+        
+        this.propFolderMap.forEach((data, tag) => {
+            // Tag starts with parent but is not the parent itself
+            if (tag !== parentTag && tag.startsWith(parentTag + '-')) {
+                // Direct child only (no grandchildren)
+                const tagParts = tag.split('-');
+                const parentParts = parentTag.split('-');
+                
+                if (tagParts.length === parentParts.length + 1) {
+                    tagsToShow.set(tag, data);
+                }
+            }
+        });
+    } else {
+        // Show only top-level tags
+        this.propFolderMap.forEach((data, tag) => {
+            // Get only top-level folders (no hyphens means it's a root folder)
+            const tagParts = tag.split('-');
+            if (tagParts.length === 1) {
+                tagsToShow.set(tag, data);
+            }
+        });
+    }
+    
+    // Create tag list
+    const tagList = document.createElement('div');
+    tagList.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    `;
+    
+    // Add tag entries
+    tagsToShow.forEach((data, tag) => {
+        const tagEntry = document.createElement('div');
+        tagEntry.className = 'tag-entry';
+        tagEntry.style.cssText = `
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: #000;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        `;
+        
+        // Just show the last part of the tag name
+        const displayName = this.formatTagDisplay(tag).split(' › ').pop();
+        
+        tagEntry.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="material-icons" style="font-size: 16px; color: #666;">folder</span>
+                <span>${displayName}</span>
+            </div>
+        `;
+        
+        // Add hover effect
+        tagEntry.addEventListener('mouseenter', () => {
+            tagEntry.style.background = '#f0f0f0';
+        });
+        
+        tagEntry.addEventListener('mouseleave', () => {
+            tagEntry.style.background = 'white';
+        });
+        
+        // Add click handler
+        tagEntry.addEventListener('click', () => {
+            this.setPropsTagFilter(drawer, tag);
+        });
+        
+        tagList.appendChild(tagEntry);
+    });
+    
+    if (tagsToShow.size === 0) {
+        tagList.innerHTML = `
+            <div style="text-align: center; color: #666; padding: 12px;">
+                No subfolders found
+            </div>
+        `;
+    }
+    
+    sidebarElement.appendChild(tagList);
 }
 
 // Method to update the props tag filter UI
@@ -1975,10 +2775,10 @@ showNameEditor(resource, category, id, cardElement) {
         // Add embedded styles
         const styles = document.createElement('style');
         styles.textContent = `
-            .resource-manager-drawer::part(panel) {
-                width: 50vw;
-                max-width: 800px;
-            }
+.resource-manager-drawer::part(panel) {
+    width: 75vw;  // Changed from 50vw to 75vw
+    max-width: 1200px;  // Also increased from 800px
+}
     
             .resource-categories {
                 margin-bottom: 1rem;
@@ -2419,386 +3219,6 @@ if (packNameInput) {
     }
 
 
-
-//     setupEventHandlers(drawer) {
-
-//         const saveBtn = drawer.querySelector('#saveResourcePack');
-//         const loadBtn = drawer.querySelector('#loadResourcePack');
-//         const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-//         const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-
-
-//         if (saveBtn) {
-//             saveBtn.addEventListener('click', () => {
-//                 const action = saveBtn.getAttribute('data-action') || 'save-resources';
-                
-//                 if (action === 'save-all') {
-//                     // In bestiary tab, save both resources and bestiary
-//                     this.saveResourcePack();
-                    
-//                     // Also save bestiary if we have monsters
-//                     if (this.resources.bestiary.size > 0) {
-//                         this.saveBestiaryToFile();
-//                     }
-//                 } else {
-//                     // Default action - save resource pack only
-//                     this.saveResourcePack();
-//                 }
-//             });
-//         }
-    
-//         if (loadBtn) {
-//             // Modify to handle bestiary uploads
-//             const originalLoadHandler = loadBtn.onclick;
-//             loadBtn.onclick = () => {
-//                 // Create dialog with options
-//                 const dialog = document.createElement('sl-dialog');
-//                 dialog.label = 'Load File';
-//                 dialog.innerHTML = `
-//                     <div style="display: flex; flex-direction: column; gap: 16px;">
-//                         <sl-button class="load-resource-btn" size="large" style="justify-content: flex-start;">
-//                             <span class="material-icons" slot="prefix">folder_open</span>
-//                             Load Resource Pack
-//                             <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                                 Load textures, sounds, and other resources
-//                             </div>
-//                         </sl-button>
-//                         <sl-button class="load-bestiary-btn" size="large" style="justify-content: flex-start;">
-//                             <span class="material-icons" slot="prefix">pets</span>
-//                             Load Bestiary File
-//                             <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-//                                 Import monster data from a bestiary.json file
-//                             </div>
-//                         </sl-button>
-//                     </div>
-//                 `;
-                
-//                 document.body.appendChild(dialog);
-                
-//                 // Create hidden file inputs
-//                 const resourceInput = document.createElement('input');
-//                 resourceInput.type = 'file';
-//                 resourceInput.accept = '.json';
-//                 resourceInput.style.display = 'none';
-                
-//                 const bestiaryInput = document.createElement('input');
-//                 bestiaryInput.type = 'file';
-//                 bestiaryInput.accept = '.json';
-//                 bestiaryInput.style.display = 'none';
-                
-//                 document.body.appendChild(resourceInput);
-//                 document.body.appendChild(bestiaryInput);
-                
-//                 // Resource pack loading
-//                 resourceInput.addEventListener('change', (e) => {
-//                     const file = e.target.files[0];
-//                     if (file) {
-//                         // Use the original load behavior
-//                         this.loadResourcePack(file).then(success => {
-//                             if (success) {
-//                                 const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
-//                                 this.updateGallery(drawer, currentCategory);
-//                                 // alert('Resource pack loaded successfully');
-//                             } else {
-//                                 alert('Failed to load resource pack');
-//                             }
-//                         });
-//                     }
-//                 });
-                
-//                 // Bestiary loading
-//                 bestiaryInput.addEventListener('change', async (e) => {
-//                     const file = e.target.files[0];
-//                     if (file) {
-//                         const success = await this.loadBestiaryFromFile(file);
-//                         if (success) {
-//                             this.updateBestiaryGallery(drawer, 'grid');
-//                             alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
-//                         } else {
-//                             alert('Failed to load bestiary file');
-//                         }
-//                     }
-//                 });
-                
-//                 // Add button click handlers
-//                 dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
-//                     dialog.hide();
-//                     resourceInput.click();
-//                 });
-                
-//                 dialog.querySelector('.load-bestiary-btn').addEventListener('click', () => {
-//                     dialog.hide();
-//                     bestiaryInput.click();
-//                 });
-                
-//                 // Clean up on close
-//                 dialog.addEventListener('sl-after-hide', () => {
-//                     dialog.remove();
-//                     resourceInput.remove();
-//                     bestiaryInput.remove();
-//                 });
-                
-//                 dialog.show();
-//             };
-//         }
-
-//         if (exportBestiaryBtn) {
-//             exportBestiaryBtn.addEventListener('click', () => {
-//                 this.saveBestiaryToFile();
-//             });
-//         }
-        
-//         if (importBestiaryBtn) {
-//             importBestiaryBtn.addEventListener('click', () => {
-//                 const input = document.createElement('input');
-//                 input.type = 'file';
-//                 input.accept = '.json';
-//                 input.onchange = async (e) => {
-//                     const file = e.target.files[0];
-//                     if (file) {
-//                         const success = await this.loadBestiaryFromFile(file);
-//                         if (success) {
-//                             this.updateBestiaryGallery(drawer, 'grid');
-//                             alert(`Successfully loaded ${this.resources.bestiary.size} monsters`);
-//                         } else {
-//                             alert('Failed to load bestiary file');
-//                         }
-//                     }
-//                 };
-//                 input.click();
-//             });
-//         }
-
-//         // Update the view toggle handler
-//         drawer.querySelectorAll('.view-toggle').forEach(toggle => {
-//             toggle.addEventListener('click', () => {
-//                 const panel = toggle.closest('sl-tab-panel');
-//                 if (!panel) return;
-
-//                 const galleryContainer = panel.querySelector('.gallery-container');
-//                 if (!galleryContainer) return;
-
-//                 const view = toggle.dataset.view;
-
-//                 // Update button states
-//                 panel.querySelectorAll('.view-toggle').forEach(t => t.variant = 'default');
-//                 toggle.variant = 'primary';
-
-//                 // Update gallery view
-//                 galleryContainer.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
-
-//                 // Refresh gallery content
-//                 const category = panel.querySelector('[data-category]')?.dataset.category;
-//                 // if (category) {
-//                 //     this.updateGallery(drawer, category, view);
-//                 // }
-
-//                 if (panel.getAttribute('name') === 'bestiary') {
-//                     this.updateBestiaryGallery(drawer, view);
-//                 } else {
-//                     // Handle other gallery types (existing code)
-//                     const category = panel.querySelector('[data-category]')?.dataset.category;
-//                     if (category) {
-//                         this.updateGallery(drawer, category, view);
-//                     }
-//                 }
-//             });
-//         });
-
-//         // Setup category selection for textures
-//         // const categoryBtns = drawer.querySelectorAll('.texture-categories sl-button');
-//         // categoryBtns.forEach(btn => {
-//         //     btn.addEventListener('click', () => {
-//         //         // Update button states
-//         //         categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
-//         //         btn.setAttribute('variant', 'primary');
-
-//         //         const category = btn.dataset.category;
-
-//         //         // Hide all galleries first
-//         //         ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
-//         //             const gallery = drawer.querySelector(`#${cat}Gallery`);
-//         //             if (gallery) {
-//         //                 gallery.style.display = 'none';
-//         //             }
-//         //         });
-
-//         //         // Show selected category's gallery
-//         //         const selectedGallery = drawer.querySelector(`#${category}Gallery`);
-//         //         if (selectedGallery) {
-//         //             selectedGallery.style.display = 'grid';
-//         //             // Update gallery content
-//         //             this.updateGallery(drawer, category);
-//         //         }
-//         //     });
-//         // });
-
-//         const categoryBtns = drawer.querySelectorAll('.texture-categories sl-button');
-//         categoryBtns.forEach(btn => {
-//             btn.addEventListener('click', () => {
-//                 // Update button states
-//                 categoryBtns.forEach(b => b.setAttribute('variant', 'default'));
-//                 btn.setAttribute('variant', 'primary');
-    
-//                 const category = btn.dataset.category;
-//                 this.lastSelectedCategory = category;  // Remember the category
-    
-//                 // Hide all galleries first
-//                 ['walls', 'doors', 'environmental', 'props'].forEach(cat => {
-//                     const gallery = drawer.querySelector(`#${cat}Gallery`);
-//                     if (gallery) {
-//                         gallery.style.display = 'none';
-//                     }
-//                 });
-    
-//                 // Show selected category's gallery
-//                 const selectedGallery = drawer.querySelector(`#${category}Gallery`);
-//                 if (selectedGallery) {
-//                     selectedGallery.style.display = 'grid';
-//                     // Update gallery content
-//                     this.updateGallery(drawer, category);
-//                 }
-//             });
-//         });
-
-//         this.setupSplashArtHandlers(drawer);
-
-//             // Handle tab changes to load bestiary when tab is activated
-
-// const tabGroup = drawer.querySelector('sl-tab-group');
-// if (tabGroup) {
-//     tabGroup.addEventListener('sl-tab-show', (e) => {
-//         const tabName = e.detail.name;
-        
-//         // Toggle bestiary-specific buttons
-//         const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
-//         const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
-//         const saveResourceBtn = drawer.querySelector('#saveResourcePack');
-//         const loadResourceBtn = drawer.querySelector('#loadResourcePack');
-        
-//         if (exportBestiaryBtn && importBestiaryBtn && saveResourceBtn && loadResourceBtn) {
-//             const isBestiaryTab = tabName === 'bestiary';
-            
-//             // Show/hide bestiary buttons
-//             exportBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
-//             importBestiaryBtn.style.display = isBestiaryTab ? 'inline-flex' : 'none';
-            
-//             // Update save/load button text based on context
-//             if (isBestiaryTab) {
-//                 saveResourceBtn.innerHTML = `
-//                     <span class="material-icons" slot="prefix">save</span>
-//                     Save All
-//                 `;
-//                 saveResourceBtn.setAttribute('data-action', 'save-all');
-//             } else {
-//                 saveResourceBtn.innerHTML = `
-//                     <span class="material-icons" slot="prefix">save</span>
-//                     Save
-//                 `;
-//                 saveResourceBtn.setAttribute('data-action', 'save-resources');
-//             }
-//         }
-        
-//         // Update gallery if needed
-//         if (tabName === 'bestiary') {
-//             this.updateBestiaryGallery(drawer, 'grid');
-//         }
-//     });
-
-
-// }
-
-
-
-//         // Handle file uploads for each type
-//         // const setupUploadHandler = (btnClass, inputClass, type) => {
-//         //     const uploadBtn = drawer.querySelector(`.${btnClass}`);
-//         //     const fileInput = drawer.querySelector(`.${inputClass}`);
-    
-//         //     if (!uploadBtn || !fileInput) {
-//         //         console.warn(`Upload elements not found for ${type}`);
-//         //         return;
-//         //     }
-    
-//         //     uploadBtn.addEventListener('click', () => {
-//         //         fileInput.click();
-//         //     });
-    
-//         //     fileInput.addEventListener('change', async (e) => {
-//         //         const files = Array.from(e.target.files || []);
-//         //         const tabPanel = uploadBtn.closest('sl-tab-panel');
-    
-//         //         if (!files.length) return;
-    
-//         //         console.log(`Processing ${files.length} ${type} files`);
-    
-//         //         for (const file of files) {
-//         //             try {
-//         //                 if (type === 'splashArt') {
-//         //                     const description = await this.promptForDescription(file.name);
-//         //                     await this.addSplashArt(file, description);
-//         //                 } else if (type === 'sound') {
-//         //                     const category = tabPanel?.querySelector('.sound-categories sl-button[variant="primary"]')?.dataset.category || 'ambient';
-//         //                     await this.addSound(file, category);
-//         //                 } else {
-//         //                     const category = tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
-//         //                     await this.addTexture(file, category);
-//         //                 }
-//         //             } catch (error) {
-//         //                 console.error(`Error processing ${type} file:`, error);
-//         //             }
-//         //         }
-    
-//         //         // Update gallery with correct category
-//         //         if (tabPanel) {
-//         //             const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
-//         //             const category = type === 'splashArt' ? 'splashArt' : 
-//         //                            tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
-                    
-//         //             if (category) {
-//         //                 this.updateGallery(drawer, category, view);
-//         //             }
-//         //         }
-    
-//         //         // Reset file input
-//         //         fileInput.value = '';
-//         //     });
-//         // };
-
-        
-
-//         setupUploadHandler('texture-upload-btn', 'texture-file-input', 'texture');
-//         setupUploadHandler('sound-upload-btn', 'sound-file-input', 'sound');
-//         setupUploadHandler('splashart-upload-btn', 'splashart-file-input', 'splashArt');
-
-//         const soundCategoryBtns = drawer.querySelectorAll('.sound-categories sl-button');
-// soundCategoryBtns.forEach(btn => {
-//     btn.addEventListener('click', () => {
-//         // Update button states
-//         soundCategoryBtns.forEach(b => b.setAttribute('variant', 'default'));
-//         btn.setAttribute('variant', 'primary');
-
-//         const category = btn.dataset.category;
-//         this.updateGallery(drawer, category, 
-//             drawer.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid'
-//         );
-//     });
-// });
-
-//             // Setup Bestiary tab handlers
-//     const addMonsterBtn = drawer.querySelector('.add-monster-btn');
-//     if (addMonsterBtn) {
-//         addMonsterBtn.addEventListener('click', async () => {
-//             await this.showMonsterImporter();
-//         });
-//     }
-
-//         // Add close handler
-//         drawer.addEventListener('sl-after-hide', () => {
-//             // Optional: Clean up any resources if needed
-//         });
-//     }
-
 setupEventHandlers(drawer) {
     const saveBtn = drawer.querySelector('#saveResourcePack');
     const loadBtn = drawer.querySelector('#loadResourcePack');
@@ -2898,9 +3318,27 @@ setupEventHandlers(drawer) {
             });
             
             // Add button click handlers
+            // dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
+            //     dialog.hide();
+            //     resourceInput.click();
+            // });
+
             dialog.querySelector('.load-resource-btn').addEventListener('click', () => {
                 dialog.hide();
                 resourceInput.click();
+            });
+            
+            resourceInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Use our optimized loading function
+                    this.loadResourcePack(file).then(success => {
+                        if (success) {
+                            const currentCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+                            this.updateGallery(drawer, currentCategory);
+                        }
+                    });
+                }
             });
             
             dialog.querySelector('.load-bestiary-btn').addEventListener('click', () => {
@@ -3151,7 +3589,6 @@ setupEventHandlers(drawer) {
     });
 }
 
-// Add this as a new method
 showPropsImportOptions(drawer) {
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Import Props';
@@ -3178,7 +3615,7 @@ showPropsImportOptions(drawer) {
     
     document.body.appendChild(dialog);
     
-    // Create hidden file inputs
+    // Create hidden file inputs - these will be cleaned up with the dialog
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
@@ -3193,8 +3630,9 @@ showPropsImportOptions(drawer) {
     folderInput.directory = true;
     folderInput.style.display = 'none';
     
-    document.body.appendChild(fileInput);
-    document.body.appendChild(folderInput);
+    // Append inputs to the dialog instead of document.body for better cleanup
+    dialog.appendChild(fileInput);
+    dialog.appendChild(folderInput);
     
     // File selection handler
     dialog.querySelector('.single-files-btn').addEventListener('click', () => {
@@ -3217,7 +3655,6 @@ showPropsImportOptions(drawer) {
             }
             this.updateGallery(drawer, 'props');
         }
-        document.body.removeChild(fileInput);
     });
     
     // Handle folder selections
@@ -3227,14 +3664,11 @@ showPropsImportOptions(drawer) {
             await this.processFolderImport(files);
             this.updateGallery(drawer, 'props');
         }
-        document.body.removeChild(folderInput);
     });
     
-    // Clean up on dialog close
+    // Clean up on dialog close - the dialog and all its children will be removed
     dialog.addEventListener('sl-after-hide', () => {
-        dialog.remove();
-        if (document.body.contains(fileInput)) document.body.removeChild(fileInput);
-        if (document.body.contains(folderInput)) document.body.removeChild(folderInput);
+        dialog.remove(); // This also removes the file inputs that are children of the dialog
     });
     
     dialog.show();
@@ -4856,170 +5290,12 @@ getFilteredBestiary(drawer) {
         }
     }
 
-// Modify the texture upload handler to support folder selection
-setupUploadHandler(btnClass, inputClass, type) {
-    const uploadBtn = drawer.querySelector(`.${btnClass}`);
-    const fileInput = drawer.querySelector(`.${inputClass}`);
-
-    if (!uploadBtn || !fileInput) {
-        console.warn(`Upload elements not found for ${type}`);
-        return;
-    }
-
-    uploadBtn.addEventListener('click', () => {
-        if (type === 'texture' && this.lastSelectedCategory === 'props') {
-            // Show dialog with options for props importing
-            this.showPropsImportOptions();
-        } else {
-            fileInput.click();
-        }
-    });
-
-    fileInput.addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files || []);
-        const tabPanel = uploadBtn.closest('sl-tab-panel');
-
-        if (!files.length) return;
-
-        console.log(`Processing ${files.length} ${type} files`);
-
-        // For folder import of props, extract folder information
-        const isPropsImport = type === 'texture' && tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category === 'props';
-        const importedWithFolders = isPropsImport && fileInput.hasAttribute('webkitdirectory');
-
-        if (importedWithFolders) {
-            await this.processFolderImport(files);
-        } else {
-            // Regular file processing
-            for (const file of files) {
-                try {
-                    if (type === 'splashArt') {
-                        const description = await this.promptForDescription(file.name);
-                        await this.addSplashArt(file, description);
-                    } else if (type === 'sound') {
-                        const category = tabPanel?.querySelector('.sound-categories sl-button[variant="primary"]')?.dataset.category || 'ambient';
-                        await this.addSound(file, category);
-                    } else {
-                        const category = tabPanel?.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
-                        await this.addTexture(file, category);
-                    }
-                } catch (error) {
-                    console.error(`Error processing ${type} file:`, error);
-                }
-            }
-        }
-
-        // Update gallery with correct category
-        if (tabPanel) {
-            const view = tabPanel.querySelector('.view-toggle[variant="primary"]')?.dataset.view || 'grid';
-            const category = type === 'splashArt' ? 'splashArt' : 
-                           tabPanel.querySelector('[data-category][variant="primary"]')?.dataset.category;
-            
-            if (category) {
-                this.updateGallery(drawer, category, view);
-            }
-        }
-
-        // Reset file input
-        fileInput.value = '';
-    });
-}
-
-// New method for showing props import options
-showPropsImportOptions() {
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = 'Import Props';
-    
-    dialog.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <sl-button size="large" class="single-files-btn" style="justify-content: flex-start;">
-                <span class="material-icons" slot="prefix">upload_file</span>
-                Select Files
-                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                    Select individual prop files to import
-                </div>
-            </sl-button>
-            
-            <sl-button size="large" class="folder-btn" style="justify-content: flex-start;">
-                <span class="material-icons" slot="prefix">folder_open</span>
-                Select Folder
-                <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                    Import an entire folder of props with automatic tagging
-                </div>
-            </sl-button>
-        </div>
-    `;
-    
-    document.body.appendChild(dialog);
-    
-    // Create hidden file inputs
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true;
-    fileInput.style.display = 'none';
-    
-    const folderInput = document.createElement('input');
-    folderInput.type = 'file';
-    folderInput.accept = 'image/*';
-    folderInput.multiple = true;
-    folderInput.webkitdirectory = true;
-    folderInput.directory = true;
-    folderInput.style.display = 'none';
-    
-    document.body.appendChild(fileInput);
-    document.body.appendChild(folderInput);
-    
-    // File selection handler
-    dialog.querySelector('.single-files-btn').addEventListener('click', () => {
-        dialog.hide();
-        fileInput.click();
-    });
-    
-    // Folder selection handler
-    dialog.querySelector('.folder-btn').addEventListener('click', () => {
-        dialog.hide();
-        folderInput.click();
-    });
-    
-    // Handle file selections
-    fileInput.addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length > 0) {
-            for (const file of files) {
-                await this.addTexture(file, 'props');
-            }
-            this.updateGallery(document.querySelector('.resource-manager-drawer'), 'props');
-        }
-        document.body.removeChild(fileInput);
-    });
-    
-    // Handle folder selections
-    folderInput.addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length > 0) {
-            await this.processFolderImport(files);
-            this.updateGallery(document.querySelector('.resource-manager-drawer'), 'props');
-        }
-        document.body.removeChild(folderInput);
-    });
-    
-    // Clean up on dialog close
-    dialog.addEventListener('sl-after-hide', () => {
-        dialog.remove();
-        if (document.body.contains(fileInput)) document.body.removeChild(fileInput);
-        if (document.body.contains(folderInput)) document.body.removeChild(folderInput);
-    });
-    
-    dialog.show();
-}
-
 // New method to process folder imports
 async processFolderImport(files) {
     console.log(`Processing ${files.length} files from folder import`);
     
-    // Map to store folder structure
-    const folderMap = new Map();
+    // Create a new map for this import, or use existing one if it exists
+    const folderMap = this.propFolderMap || new Map();
     
     // Process each file and extract its folder path
     for (const file of files) {
@@ -5057,12 +5333,15 @@ async processFolderImport(files) {
         // Add folder information to the map
         if (textureId) {
             tags.forEach(tag => {
+                // Create entry if it doesn't exist
                 if (!folderMap.has(tag)) {
                     folderMap.set(tag, {
                         label: this.formatTagDisplay(tag),
                         files: []
                     });
                 }
+                
+                // Add this file to the tag's files list
                 folderMap.get(tag).files.push(textureId);
             });
         }
@@ -5082,7 +5361,7 @@ async processFolderImport(files) {
         files: data.files
     }));
     
-    console.log(`Processed ${folderMap.size} folders with tags:`, this.resources.metadata.propFolders);
+    console.log(`Processed ${folderMap.size} total folders with tags:`, this.propFolderMap);
 }
 
 // Helper to format tag display from tag ID
@@ -5095,3 +5374,4 @@ formatTagDisplay(tag) {
 
 
 }
+
