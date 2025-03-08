@@ -50,6 +50,8 @@ class Scene3DController {
     this._ignoreNextLock = false;    // Flag to prevent event cascades
     this._ignoreNextUnlock = false;  // Flag to prevent event cascades
     this.gameStarted = false;
+    this.firstRunOfferComplete = false;
+
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
     this.setupInventorySystem();
@@ -489,11 +491,19 @@ class Scene3DController {
         this._controlsPaused = true;
         break;
         
-      case 'playing':
-        // Resume all systems
-        this._controlsPaused = false;
-        break;
+      // case 'playing':
+      //   // Resume all systems
+      //   this._controlsPaused = false;
+      //   break;
         
+      case 'playing':
+        // Check for first run offer before resuming gameplay
+        if (!this.checkFirstRunOffer()) {
+          // Only resume if we didn't show the party manager
+          this._controlsPaused = false;
+        }
+        break;
+
       case 'exiting':
         // Clean transition when exiting game
         this._controlsPaused = true;
@@ -548,6 +558,43 @@ class Scene3DController {
       }
     };
   }
+
+
+  checkFirstRunOffer() {
+    if (!this.firstRunOfferComplete && window.partyManager) {
+      console.log("First run starter offer triggered");
+      this.pauseControls();
+      window.partyManager.showPartyManager();
+      this.firstRunOfferComplete = true;
+      return true;
+    }
+    return false;
+  }
+
+//   checkFirstRunOffer() {
+
+//     if (!this.firstRunOfferComplete && window.partyManager) {
+//       console.log("Opening Party Manager");
+
+//       // Pause 3D controls while party manager is open
+//       this.pauseControls();
+
+//       // Show party manager
+//       window.partyManager.showPartyManager();
+
+//       // Resume controls when party manager closes
+//       const checkForDialog = setInterval(() => {
+//         const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+//         if (!dialog) {
+//           this.resumeControls();
+//           this.firstRunOfferComplete = true;
+//           clearInterval(checkForDialog);
+//         }
+//       }, 100);
+//       return true;
+//     }
+// return false;
+// }
 
 
 // Add this method to Scene3DController

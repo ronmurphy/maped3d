@@ -5544,13 +5544,14 @@ async getStarterMonsters(count = 3) {
     container.className = 'party-container';
     container.style.maxWidth = '900px';
     container.style.transform = 'scale(0.95)';
+    container.style.zIndex = '3000';
     
     // Create header
     const header = document.createElement('div');
     header.className = 'party-header';
     header.innerHTML = `
       <div style="display: flex; align-items: center;">
-        <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px;">
+        <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px; ">
         <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
       </div>
     `;
