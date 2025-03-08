@@ -1482,7 +1482,7 @@ initShaderEffects() {
       case "KeyI":
         this.toggleInventory();
         break;
-      case "KeyE":
+      case "KeyF":
         // Handle interactions
         if (this.nearestProp && !this.inventory.has(this.nearestProp.userData.id)) {
           // Pick up the prop
@@ -4507,7 +4507,7 @@ initShaderEffects() {
     // Update pickup prompt
     if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
       const prompt = this.createPickupPrompt();
-      prompt.textContent = 'Press E to pick up';
+      prompt.textContent = 'Press F to pick up';
       prompt.style.display = 'block';
       this.nearestProp = nearestProp;
     } else if (this.pickupPrompt) {
@@ -4518,7 +4518,7 @@ initShaderEffects() {
     // Update encounter prompt
     if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
       const prompt = this.createEncounterPrompt();
-      prompt.textContent = 'Press E to approach monster';
+      prompt.textContent = 'Press F to approach monster';
       prompt.style.display = 'block';
       this.nearestEncounter = nearestEncounter;
     } else if (!nearestEncounter && this.encounterPrompt) {
@@ -4648,7 +4648,7 @@ initShaderEffects() {
     // Show/hide splash art prompt
     if (nearestSplashArt && !this.activeSplashArt) {
       const prompt = this.createSplashArtPrompt();
-      prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press E to inspect';
+      prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press F to inspect';
       prompt.style.display = 'block';
       this.nearestSplashArt = nearestSplashArt;
     } else if (!nearestSplashArt && this.splashArtPrompt) {
@@ -4672,7 +4672,7 @@ initShaderEffects() {
     // Show/hide pickup prompt
     if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
       const prompt = this.createPickupPrompt();
-      prompt.textContent = 'Press E to pick up';
+      prompt.textContent = 'Press F to pick up';
       prompt.style.display = 'block';
       this.nearestProp = nearestProp;
     } else if (this.pickupPrompt) {
@@ -4700,7 +4700,7 @@ initShaderEffects() {
     // Show or hide encounter prompt
     if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
       const prompt = this.createEncounterPrompt();
-      prompt.textContent = 'Press E to approach monster';
+      prompt.textContent = 'Press F to approach monster';
       prompt.style.display = 'block';
       this.nearestEncounter = nearestEncounter;
     } else if (!nearestEncounter && this.encounterPrompt) {
@@ -5213,7 +5213,7 @@ this.gameState = 'initializing';
     const teleporterActive = this.teleportPrompt && this.teleportPrompt.style.display === 'block';
 
     if (nearestDoor && !teleporterActive) {
-      this.doorPrompt.textContent = 'Press E to open door';
+      this.doorPrompt.textContent = 'Press F to open door';
       this.doorPrompt.style.display = 'block';
       this.activeDoor = nearestDoor;
     } else {
@@ -5671,7 +5671,7 @@ this.gameState = 'initializing';
     }
 
     if (nearestTeleporter) {
-      this.teleportPrompt.textContent = 'Press E to teleport';
+      this.teleportPrompt.textContent = 'Press F to teleport';
       this.teleportPrompt.style.display = 'block';
       this.activeTeleporter = nearestTeleporter;
     } else {
