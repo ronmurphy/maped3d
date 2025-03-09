@@ -5,10 +5,7 @@
 
 // Check if Storyboard already exists to prevent redeclaration
 if (typeof window.Storyboard === 'undefined') {
-  /**
-   * Storyboard.js - Node-based story and event management system for the game
-   * Handles creation, editing, and execution of narrative flows and game events
-   */
+
   window.Storyboard = class Storyboard {
     constructor(scene3D, resourceManager) {
       // Core dependencies
@@ -76,44 +73,44 @@ if (typeof window.Storyboard === 'undefined') {
       const styles = document.createElement('style');
       styles.textContent = `
       /* Drawer styling overrides */
-      sl-drawer::part(panel) {
-        padding: 0;
-        border: none;
-        background: #242424;
-        color: #e0e0e0;
-      }
-      
-      sl-drawer::part(header) {
-        background: #333;
-        padding: 16px;
-        border-bottom: 1px solid #444;
-      }
-      
-      sl-drawer::part(body) {
-        padding: 0;
-      }
-      
-      sl-drawer::part(footer) {
-        background: #333;
-        border-top: 1px solid #444;
-        padding: 12px;
-      }
+  .storyboard-drawer::part(panel) {
+    padding: 0;
+    border: none;
+    background: #242424;
+    color: #e0e0e0;
+  }
+  
+  .storyboard-drawer::part(header) {
+    background: #333;
+    padding: 16px;
+    border-bottom: 1px solid #444;
+  }
+  
+  .storyboard-drawer::part(body) {
+    padding: 0;
+  }
+  
+  .storyboard-drawer::part(footer) {
+    background: #333;
+    border-top: 1px solid #444;
+    padding: 12px;
+  }
       
       /* Story overlay styling */
-      .story-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 2000;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
+  .story-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
       
       .story-content {
         background: #242424;
@@ -341,7 +338,7 @@ if (typeof window.Storyboard === 'undefined') {
         line-height: 16px;
         text-align: center;
         border-radius: 50%;
-        background: rgba(0,0,0,0.2);
+        background: rgba(128, 5, 5, 0.91);
         cursor: pointer;
         font-weight: bold;
       }
@@ -355,6 +352,7 @@ if (typeof window.Storyboard === 'undefined') {
         outline: 2px solid #fff;
         box-shadow: 0 0 10px rgba(255,255,255,0.3);
       }
+
     `;
 
       document.head.appendChild(styles);
@@ -365,12 +363,12 @@ if (typeof window.Storyboard === 'undefined') {
      */
     openEditor() {
       console.log('Opening storyboard editor');
-
+    
       if (this.editor) {
         console.log('Editor already open');
         return;
       }
-
+    
       try {
         // Reset UI state but keep data
         this.editorState.active = true;
@@ -379,14 +377,17 @@ if (typeof window.Storyboard === 'undefined') {
         this.editorState.connectingFrom = null;
         this.editorState.canvasElement = null;
         this.editorState.propertiesElement = null;
-
+    
         // Create editor drawer
         const drawer = document.createElement('sl-drawer');
         drawer.label = 'Storyboard Editor';
         drawer.placement = 'end';
-
+        
+        // Add the storyboard-drawer class
+        drawer.classList.add('storyboard-drawer');
+    
         // Set size to leave room for sidebar
-        drawer.style.cssText = '--size: calc(100vw - 260px);';
+        drawer.style.cssText = '--size: calc(100vw - 280px);';
 
         // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
         drawer.innerHTML = `
@@ -1464,6 +1465,18 @@ if (typeof window.Storyboard === 'undefined') {
       }
     }
 
+    getImageName(imageData) {
+      if (!imageData || !this.resourceManager) return '';
+      try {
+        const { id, category } = imageData;
+        const art = this.resourceManager.resources.splashArt[category]?.get(id);
+        return art?.name || '';
+      } catch (error) {
+        console.error('Error getting image name:', error);
+        return '';
+      }
+    }
+
     /**
      * Select a node and show its properties
      */
@@ -1503,7 +1516,18 @@ if (typeof window.Storyboard === 'undefined') {
               <div class="storyboard-property-group">
                 <div class="storyboard-property-label">Dialog Text</div>
                 <div class="storyboard-property-field">
-                  <sl-textarea id="dialog-text-input" name="text" rows="4">${nodeData.data.text || ''}</sl-textarea>
+                  <!-- Regular HTML textarea that will always work -->
+                  <textarea 
+                    id="dialog-text-area" 
+                    style="width: 100%; min-height: 120px; padding: 8px; border: 2px solid #6200ee; 
+                           background: #333; color: white; border-radius: 4px; font-family: inherit;
+                           font-size: 1em; resize: vertical; margin-bottom: 8px;"
+                    rows="6"
+                  >${nodeData.data.text || ''}</textarea>
+                  
+                  <div class="text-status" style="margin-top: 4px; font-size: 0.8em; color: #aaa;">
+                    <span class="char-count">0</span> characters
+                  </div>
                 </div>
               </div>
               
@@ -1512,14 +1536,17 @@ if (typeof window.Storyboard === 'undefined') {
                 <div class="storyboard-property-field">
                   <sl-button id="select-image-btn" size="small">Select Image</sl-button>
                   ${nodeData.data.image ? `
-                    <div class="selected-image-preview" style="margin-top: 8px; position: relative;">
+                    <div class="selected-image-preview" style="margin-top: 12px; border: 1px solid #444; padding: 8px; border-radius: 4px; background: #333;">
                       <img src="${this.getSplashArtUrl(nodeData.data.image)}" 
-                           style="max-width: 100%; max-height: 100px; border-radius: 4px;">
-                      <sl-button size="small" class="remove-image-btn" style="position: absolute; top: 4px; right: 4px;">
-                        <span class="material-icons" style="font-size: 16px;">close</span>
-                      </sl-button>
+                           style="max-width: 100%; max-height: 150px; display: block; margin: 0 auto; border-radius: 4px;">
+                      <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #aaa; font-size: 0.9em;">${this.getImageName(nodeData.data.image) || 'Selected Image'}</span>
+                        <sl-button size="small" class="remove-image-btn" variant="danger">
+                          <span class="material-icons" style="font-size: 16px;">close</span>
+                        </sl-button>
+                      </div>
                     </div>
-                  ` : ''}
+                  ` : '<div style="margin-top: 8px; font-size: 0.9em; color: #888;">No image selected</div>'}
                 </div>
               </div>
               
@@ -1694,53 +1721,80 @@ if (typeof window.Storyboard === 'undefined') {
         }
 
         properties.innerHTML = `
-            <div class="storyboard-properties-content" data-node-id="${nodeId}">
-              <h3 style="margin-top:0;">${nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)} Node</h3>
-              ${propertiesHtml}
-            </div>
-          `;
-
-        // Set up node-specific event handlers
+        <div class="storyboard-properties-content" data-node-id="${nodeId}">
+          <h3 style="margin-top:0;">${nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)} Node</h3>
+          ${propertiesHtml}
+        </div>
+      `;
+    
+      // Add a small delay to ensure custom elements are upgraded
+      setTimeout(() => {
         this.setupNodePropertyHandlers(nodeData, nodeId, properties);
-      }
+      }, 50);
     }
+  }
 
     /**
      * New method to set up property handlers for different node types
      */
     setupNodePropertyHandlers(nodeData, nodeId, properties) {
       if (!properties || !nodeData) return;
-
+    
       // Handle dialog node properties
       if (nodeData.type === 'dialog') {
+        // Set up character counter
+        const textArea = properties.querySelector('#dialog-text-area');
+        const charCount = properties.querySelector('.char-count');
+        
+        if (textArea && charCount) {
+          // Update initial count
+          charCount.textContent = textArea.value.length;
+          
+          // Update count on input
+          textArea.addEventListener('input', () => {
+            charCount.textContent = textArea.value.length;
+          });
+        }
+    
         // Apply button handler
         const applyBtn = properties.querySelector('#apply-dialog-changes');
         if (applyBtn) {
           applyBtn.addEventListener('click', () => {
-            // Get current values from inputs
-            const titleInput = properties.querySelector('#dialog-title-input');
-            const textInput = properties.querySelector('#dialog-text-input');
-
-            if (titleInput && textInput) {
+            try {
+              // Get current values from inputs
+              const titleInput = properties.querySelector('#dialog-title-input');
+              const textArea = properties.querySelector('#dialog-text-area');
+              
+              // Safer value retrieval
+              const title = titleInput?.value?.trim() || '';
+              const text = textArea?.value?.trim() || '';
+              
               // Update node data
-              const title = titleInput.value.trim();
-              const text = textInput.value.trim();
-
               nodeData.data.title = title;
               nodeData.data.text = text;
-
+              
               // Mark as dirty
               this.currentGraph.dirty = true;
-
+              
               // Update visual representation
               this.updateNodeVisual(nodeData);
-
+              
+              // Visual feedback
+              if (textArea) textArea.style.borderColor = '#22c55e'; // Success green
+              
+              setTimeout(() => {
+                if (textArea) textArea.style.borderColor = '#6200ee'; // Return to purple
+              }, 1000);
+              
               // Show confirmation
               this.showToast('Node updated', 'success');
+            } catch (error) {
+              console.error('Error updating node data:', error);
+              this.showToast('Error updating node', 'error');
             }
           });
         }
-
+    
         // Select image button handler
         const selectImageBtn = properties.querySelector('#select-image-btn');
         if (selectImageBtn) {
@@ -1748,50 +1802,26 @@ if (typeof window.Storyboard === 'undefined') {
             this.showSplashArtSelector(nodeData);
           });
         }
-
-        // Remove image button handler
+        
+        // Handle remove image button if it exists
         const removeImageBtn = properties.querySelector('.remove-image-btn');
         if (removeImageBtn) {
           removeImageBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-
+    
             // Remove image reference
             nodeData.data.image = null;
-
+    
             // Mark as dirty
             this.currentGraph.dirty = true;
-
+    
             // Refresh properties panel
             this.selectNode(nodeData.element);
           });
         }
       }
-
-      // Add handlers for choice nodes
-      else if (nodeData.type === 'choice') {
-        // Add option button
-        const addOptionBtn = properties.querySelector('.add-option');
-        if (addOptionBtn) {
-          addOptionBtn.addEventListener('click', () => {
-            nodeData.data.options.push({ text: 'New Option', targetId: null });
-            this.currentGraph.dirty = true;
-            this.selectNode(nodeData.element); // Refresh properties panel
-          });
-        }
-
-        // Delete option buttons
-        const deleteOptionBtns = properties.querySelectorAll('.delete-option');
-        deleteOptionBtns.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const index = parseInt(btn.getAttribute('data-index'));
-            nodeData.data.options.splice(index, 1);
-            this.currentGraph.dirty = true;
-            this.selectNode(nodeData.element); // Refresh properties panel
-          });
-        });
-      }
-
+    
       // Add handlers for other node types as needed...
     }
 
@@ -1874,13 +1904,88 @@ if (typeof window.Storyboard === 'undefined') {
         this.showToast('Resource Manager not available', 'error');
         return;
       }
-
+    
       // Create drawer for splash art selection
       const drawer = document.createElement('sl-drawer');
-      drawer.label = 'Select Splash Art';
+      // drawer.label = 'Select Splash Art';
       drawer.placement = 'bottom';
-      drawer.style.cssText = '--size: 70vh;';
+      drawer.style.cssText = '--size: 70vh;'; // This controls height for bottom drawers
+      
+      // Add class for consistent styling
+      drawer.classList.add('storyboard-drawer');
+      drawer.classList.add('splash-art-selector-drawer');
+    
+      // Add styles for this specific drawer to account for sidebar
+      const selectorStyles = document.createElement('style');
+      selectorStyles.textContent = `
+      .splash-art-selector-drawer::part(overlay) {
+        left: 280px !important; /* Start after sidebar */
+        width: calc(100% - 280px) !important; /* Take remaining width */
+      }
+      
+      .splash-art-selector-drawer::part(panel) {
+        background: #242424;
+        color: #e0e0e0;
+        left: 280px !important; /* Start after sidebar */
+        width: calc(100% - 280px) !important; /* Take remaining width */
+        max-width: none !important; /* Override default max-width */
+        margin-left: 0 !important; /* Reset margin */
+        border-radius: 8px 0 0 0 !important; /* Round only the left corner */
+      }
+      
+      .splash-art-selector-drawer::part(header) {
+        background: #333;
+        border-bottom: 1px solid #444;
+      	height: 48px;
+      }
+      
+      .splash-art-selector-drawer::part(body) {
+        padding: 0;
+      }
+      
+      .splash-art-selector-drawer::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+      }
+      
+      .splash-art-selector-drawer sl-input::part(base) {
+        background: #333;
+        color: #e0e0e0;
+        border-color: #444;
+      }
+      
+      .splash-art-selector-drawer .splash-art-item {
+        background: #333 !important;
+        border: 1px solid #444 !important;
+        transition: all 0.2s ease;
+      }
+      
+      .splash-art-selector-drawer .splash-art-item:hover {
+        border-color: #673ab7 !important;
+        transform: translateY(-2px);
 
+        .drawer__title {
+	flex: 1 1 auto;
+	font-style: inherit;
+	font-variant: inherit;
+	font-weight: inherit;
+	font-stretch: inherit;
+	font-family: inherit;
+	font-size-adjust: inherit;
+	font-kerning: inherit;
+	font-optical-sizing: inherit;
+	font-language-override: inherit;
+	font-feature-settings: inherit;
+	font-variation-settings: inherit;
+	font-size: var(--sl-font-size-large);
+	line-height: var(--sl-line-height-dense);
+	/* padding: var(--header-spacing); */
+	margin: 0px;
+}
+      }
+      `;
+      document.head.appendChild(selectorStyles);
+    
       // Get all splash art from resource manager
       let allSplashArt = [];
       const categories = ['title', 'loading', 'background']; // Add all relevant categories
@@ -1948,9 +2053,12 @@ if (typeof window.Storyboard === 'undefined') {
             </div>
           </div>
         `;
-
-      document.body.appendChild(drawer);
-      drawer.show();
+        
+        document.body.appendChild(drawer);
+        // drawer.show();
+        setTimeout(() => {
+          drawer.show();
+        }, 10);
 
       // Set up search functionality
       const searchInput = drawer.querySelector('#splash-art-search');
@@ -2763,18 +2871,18 @@ if (typeof window.Storyboard === 'undefined') {
     }
   }
 
-  // Create global instance when script loads
-  window.initStoryboard = (scene3D, resourceManager) => {
-    window.storyboard = new Storyboard(scene3D, resourceManager);
-    return window.storyboard;
-  };
+  // // Create global instance when script loads
+  // window.initStoryboard = (scene3D, resourceManager) => {
+  //   window.storyboard = new Storyboard(scene3D, resourceManager);
+  //   return window.storyboard;
+  // };
 
 
 
 
 };
 // Create global instance when script loads
-// window.initStoryboard = (scene3D, resourceManager) => {
-//   window.storyboard = new window.Storyboard(scene3D, resourceManager);
-//   return window.storyboard;
-// };
+window.initStoryboard = (scene3D, resourceManager) => {
+  window.storyboard = new window.Storyboard(scene3D, resourceManager);
+  return window.storyboard;
+};

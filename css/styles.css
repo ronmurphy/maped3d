@@ -1524,3 +1524,67 @@ sl-tooltip {
     from { background-position: 0 0; }
     to { background-position: 30px 0; }
   }
+
+   /* Default dark theme for all drawers */
+   sl-drawer::part(panel) {
+    background: #242424;
+    color: #e0e0e0;
+  }
+  
+  sl-drawer::part(header) {
+    background: #333;
+    border-bottom: 1px solid #444;
+  }
+  
+  sl-drawer::part(body) {
+    background: #242424;
+  }
+  
+  sl-drawer::part(footer) {
+    background: #333;
+    border-top: 1px solid #444;
+  }
+  
+  /* Default dark theme for dialogs */
+  sl-dialog::part(panel) {
+    background: #242424;
+    color: #e0e0e0;
+  }
+  
+  sl-dialog::part(header) {
+    background: #333;
+    border-bottom: 1px solid #444;
+  }
+  
+  sl-dialog::part(body) {
+    background: #242424;
+  }
+  
+  sl-dialog::part(footer) {
+    background: #333;
+    border-top: 1px solid #444;
+  }
+  
+  /* Default styles for form elements in dark theme */
+  sl-input::part(base),
+  sl-select::part(base),
+  sl-textarea::part(base) {
+    background: #333;
+    color: #e0e0e0;
+    border-color: #444;
+  }
+  
+  sl-input:focus-within::part(base),
+  sl-select:focus-within::part(base),
+  sl-textarea:focus-within::part(base) {
+    border-color: #673ab7;
+  }
+  
+  sl-button[variant='primary']::part(base) {
+    background: #673ab7;
+    color: white;
+  }
+  
+  sl-button[variant='primary']:hover::part(base) {
+    background: #7e57c2;
+  }

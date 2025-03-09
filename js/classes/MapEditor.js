@@ -179,6 +179,7 @@ checkStoryboard(callback) {
       this.resourceManager.initializeMonsterManager(this);
       // Init Storyboard
       this.resourceManager.initStoryboard();
+      storyboard.connectToResourceManager(this.resourceManager);
 
       if (resourceManagerBtn) {
         resourceManagerBtn.style.display = 'flex';

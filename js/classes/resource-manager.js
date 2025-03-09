@@ -2447,14 +2447,18 @@ showNameEditor(resource, category, id, cardElement) {
         drawer.label = "Resource Manager";
         drawer.placement = "end";
         drawer.classList.add("resource-manager-drawer");
+        drawer.style.cssText = '--size: calc(100vw - 260px);';
 
         // Add embedded styles
         const styles = document.createElement('style');
+
+        // .resource-manager-drawer::part(panel) {
+        //     width: 75vw;  // Changed from 50vw to 75vw
+        //     max-width: 1200px;  // Also increased from 800px
+        // }
+
         styles.textContent = `
-.resource-manager-drawer::part(panel) {
-    width: 75vw;  // Changed from 50vw to 75vw
-    max-width: 1200px;  // Also increased from 800px
-}
+
     
             .resource-categories {
                 margin-bottom: 1rem;
@@ -2676,6 +2680,250 @@ showNameEditor(resource, category, id, cardElement) {
 .monster-ability-name {
     font-weight: bold;
 }
+
+    .resource-manager-drawer::part(panel) {
+        --size: calc(100vw - 280px);
+        background: #242424;
+        color: #e0e0e0;
+    }
+    
+    .resource-manager-drawer::part(header) {
+        background: #333;
+        padding: 16px;
+        border-bottom: 1px solid #444;
+        height: 48px;
+    }
+    
+    .resource-manager-drawer::part(body) {
+        padding: 0;
+    }
+    
+    .resource-manager-drawer::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+        padding: 12px;
+    }
+    
+    /* Tab styling */
+    .resource-manager-drawer sl-tab-group::part(base) {
+        background: #242424;
+    }
+    
+    .resource-manager-drawer sl-tab-group::part(nav) {
+        background: #333;
+        border-bottom: 1px solid #444;
+    }
+    
+    .resource-manager-drawer sl-tab::part(base) {
+        color: #e0e0e0;
+        border: none;
+    }
+    
+    .resource-manager-drawer sl-tab[active]::part(base) {
+        color: #673ab7;
+        border-bottom-color: #673ab7;
+    }
+    
+    .resource-manager-drawer sl-tab-panel::part(base) {
+        padding: 16px;
+    }
+    
+    /* Button styling */
+    .resource-manager-drawer sl-button::part(base) {
+        border: none;
+    }
+    
+    .resource-manager-drawer sl-button[variant='primary']::part(base) {
+        background: #673ab7;
+        color: white;
+    }
+    
+    .resource-manager-drawer sl-button[variant='primary']:hover::part(base) {
+        background: #7e57c2;
+    }
+    
+    .resource-manager-drawer sl-button[variant='default']::part(base) {
+        background: #333;
+        color: #e0e0e0;
+    }
+    
+    .resource-manager-drawer sl-button[variant='default']:hover::part(base) {
+        background: #444;
+    }
+    
+    .resource-manager-drawer sl-button[variant='danger']::part(base) {
+        background: #d32f2f;
+        color: white;
+    }
+    
+    /* Form elements */
+    .resource-manager-drawer sl-input::part(base),
+    .resource-manager-drawer sl-select::part(base),
+    .resource-manager-drawer sl-textarea::part(base) {
+        background: #333;
+        color: #e0e0e0;
+        border-color: #444;
+    }
+    
+    .resource-manager-drawer sl-input:focus-within::part(base),
+    .resource-manager-drawer sl-select:focus-within::part(base),
+    .resource-manager-drawer sl-textarea:focus-within::part(base) {
+        border-color: #673ab7;
+    }
+    
+    /* Card styling */
+    .resource-manager-drawer sl-card::part(base) {
+        background: #333;
+        color: #e0e0e0;
+        border: 1px solid #444;
+    }
+    
+    /* Gallery items */
+    .resource-categories {
+        margin-bottom: 1rem;
+        background: #333;
+        padding: 8px;
+        border-radius: 4px;
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .resource-item {
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 0.5rem;
+        transition: all 0.2s ease;
+        background: #333;
+    }
+
+    .resource-item:hover {
+        border-color: #673ab7;
+        transform: translateY(-2px);
+    }
+
+    .resource-thumbnail {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+    }
+
+    .resource-info {
+        font-size: 0.9rem;
+        color: #e0e0e0;
+    }
+
+    .view-controls {
+        margin: 1rem 0;
+        display: flex;
+        justify-content: flex-end;
+        background: #333;
+        padding: 8px;
+        border-radius: 4px;
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .gallery-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+    
+    /* Props section styling */
+    .props-tag-sidebar {
+        background: #333 !important;
+        border: 1px solid #444;
+    }
+    
+    .tag-entry {
+        background: #242424 !important;
+        border: 1px solid #444 !important;
+        color: #e0e0e0 !important;
+    }
+    
+    .tag-entry:hover {
+        background: #333 !important;
+    }
+    
+    /* Dialog styling */
+    sl-dialog::part(panel) {
+        background: #242424;
+        color: #e0e0e0;
+    }
+    
+    sl-dialog::part(header) {
+        background: #333;
+        border-bottom: 1px solid #444;
+    }
+    
+    sl-dialog::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+    }
+    
+    /* Toast notifications */
+    .notification-toast {
+        background-color: #242424 !important;
+        color: #e0e0e0 !important;
+        border: 1px solid #444;
+    }
+
+        .resource-manager-drawer::part(panel) {
+        --size: calc(100vw - 280px);
+        background: #242424;
+        color: #e0e0e0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .resource-manager-drawer::part(header) {
+        background: #333;
+        padding: 16px;
+        border-bottom: 1px solid #444;
+        height: 48px;
+        min-height: 48px; /* Ensure consistent height */
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    .resource-manager-drawer::part(body) {
+        padding: 0;
+        flex: 1; /* Take up available space */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Important for proper scrolling */
+    }
+    
+    .resource-manager-drawer::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+        padding: 12px;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    /* Make tab panels fill the container */
+    .resource-manager-drawer sl-tab-group {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .resource-manager-drawer sl-tab-panel::part(base) {
+        height: 100%;
+        overflow-y: auto; /* Allow scrolling within tabs */
+    }
 
         `;
 
@@ -3349,6 +3597,34 @@ showPropsImportOptions(drawer) {
     
     dialog.show();
 }
+
+// getSplashArtUrl(imageData) {
+//     if (!imageData || !this.resourceManager) return '';
+
+//     try {
+//       const { id, category } = imageData;
+//       const art = this.resourceManager.resources.splashArt[category]?.get(id);
+
+//       return art?.base64Data || '';
+//     } catch (error) {
+//       console.error('Error getting splash art URL:', error);
+//       return '';
+//     }
+//   }
+
+getSplashArtUrl(imageData) {
+    if (!imageData) return '';
+    try {
+      const { id, category } = imageData;
+      const art = this.resources.splashArt[category]?.get(id);
+      
+      // Return the full image data, not just the thumbnail
+      return art?.data || '';
+    } catch (error) {
+      console.error('Error getting splash art URL:', error);
+      return '';
+    }
+  }
 
 setupSplashArtHandlers(drawer) {
     console.log('Setting up splash art handlers');
