@@ -1523,15 +1523,15 @@ if (typeof window.Storyboard === 'undefined') {
       const nodeId = nodeEl.getAttribute('data-id');
       const nodeData = this.currentGraph.nodes.get(nodeId);
 
-
-
-      if (nodeData) {
-
         let propertiesHtml = '';
         let paramsHtml = '';
         let optionsHtml = '';
         let eventOptionsHtml = '';
         let conditionOptionsHtml = '';
+
+      if (nodeData) {
+
+
 
 
         switch (nodeData.type) {
@@ -1597,7 +1597,7 @@ if (typeof window.Storyboard === 'undefined') {
             }
 
             // Generate options HTML dynamically
-            let optionsHtml = '';
+            optionsHtml = '';
             nodeData.data.options.forEach((option, index) => {
               optionsHtml += `
       <div class="option-row" style="display: flex; gap: 8px; margin-bottom: 12px; align-items: start;">
@@ -1761,14 +1761,14 @@ if (typeof window.Storyboard === 'undefined') {
             }
 
             // Generate event options
-            const eventOptionsHtml = eventTypes.map(event => `
+            eventOptionsHtml = eventTypes.map(event => `
     <option value="${event.value}" ${nodeData.data.eventType === event.value ? 'selected' : ''}>
       ${event.label}
     </option>
   `).join('');
 
             // Generate parameter form based on event type
-            let paramsHtml = '';
+            paramsHtml = '';
             switch (nodeData.data.eventType) {
               case 'giveItem':
                 // Get item name if available
@@ -2003,7 +2003,7 @@ if (typeof window.Storyboard === 'undefined') {
               }
             
               // Generate condition options
-              const conditionOptionsHtml = conditionTypes.map(cond => `
+              conditionOptionsHtml = conditionTypes.map(cond => `
                 <option value="${cond.value}" ${nodeData.data.condition === cond.value ? 'selected' : ''}>
                   ${cond.label}
                 </option>
