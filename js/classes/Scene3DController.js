@@ -92,14 +92,32 @@ class Scene3DController {
     this.renderer.toneMappingExposure = 1.2;
     this.renderer.setClearColor(0x222222);
 
-    // Create camera with correct aspect ratio
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      width / height,
-      0.1,
-      1000
-    );
-    this.camera.position.set(0, 2, 5);
+
+
+    // // Create camera with correct aspect ratio
+    // this.camera = new THREE.PerspectiveCamera(
+    //   75,
+    //   width / height,
+    //   0.1,
+    //   1000
+    // );
+    // this.camera.position.set(0, 2, 5);
+
+        // Create camera with correct aspect ratio and wider view range
+        const maxDimension = this.baseImage ? Math.max(this.baseImage.width, this.baseImage.height) : 0;
+        const farClippingDistance = Math.max(
+          5000, // Large default
+          maxDimension > 0 ? maxDimension / 10 : 1000 // Scale based on map size
+        );
+        
+        console.log(`Camera far clipping plane set to: ${farClippingDistance}`);
+        
+        this.camera = new THREE.PerspectiveCamera(
+          75,
+          width / height,
+          0.1,
+          farClippingDistance
+        );
 
     // Create controls
     this.controls = new THREE.PointerLockControls(this.camera, container);
@@ -2962,6 +2980,49 @@ initShaderEffects() {
     }
   }
 
+    // Add this method to Scene3DController class to help debug floor rendering
+  fixFloorRendering() {
+    if (!this.floorMesh) {
+      console.warn('Cannot fix floor - no floor mesh found');
+      return false;
+    }
+    
+    console.log('Attempting to fix floor rendering issues...');
+    
+    // Get the floor material
+    const material = this.floorMesh.material;
+    
+    if (!material || !material.map) {
+      console.warn('Floor has no texture material');
+      return false;
+    }
+    
+    // Fix texture settings
+    const texture = material.map;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.repeat.set(1, 1);
+    texture.offset.set(0, 0);
+    texture.rotation = 0;
+    texture.center.set(0.5, 0.5);
+    
+    if (material.map.image && material.map.image.width > 0) {
+      material.map.needsUpdate = true;
+    }
+    
+    // Force material update
+    material.needsUpdate = true;
+    
+    // Move floor slightly higher to avoid z-fighting
+    this.floorMesh.position.y = 0.02;
+    
+    // Ensure frustum culling is disabled
+    this.floorMesh.frustumCulled = false;
+    
+    console.log('Floor rendering settings adjusted');
+    return true;
+  }
+
 
   async init3DScene(updateStatus) {
     const renderState = {
@@ -3105,12 +3166,31 @@ initShaderEffects() {
     });
 
 
-    // Add floor
-    const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
-    const floor = new THREE.Mesh(floorGeometry, materials[0]);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0.01; // Slightly above ground to prevent z-fighting
-    this.scene.add(floor);
+    // Add floor - old
+    // const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
+    // const floor = new THREE.Mesh(floorGeometry, materials[0]);
+    // floor.rotation.x = -Math.PI / 2;
+    // floor.position.y = 0.01; // Slightly above ground to prevent z-fighting
+    // this.scene.add(floor);
+    
+// Simple scaled floor that doesn't stretch the texture
+const floorGeometry = new THREE.PlaneGeometry(this.boxWidth * 2, this.boxDepth * 2);
+const floorMaterial = new THREE.MeshStandardMaterial({
+  map: texture,
+  side: THREE.DoubleSide
+});
+
+// Make sure texture isn't repeating
+texture.wrapS = THREE.ClampToEdgeWrapping;
+texture.wrapT = THREE.ClampToEdgeWrapping;
+texture.repeat.set(1, 1);
+
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0.01;
+floor.frustumCulled = false;
+this.floorMesh = floor;
+this.scene.add(floor);
 
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
