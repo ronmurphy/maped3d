@@ -521,31 +521,255 @@ class MonsterManager {
       }
     };
   }
+// original working code - backup
+  // async parseMonsterHtml(html) {
+  //   //   console.log("Starting to parse monster HTML"); // Debug 1
+  //   const parser = new DOMParser();
+  //   const doc = parser.parseFromString(html, "text/html");
+  //   //   console.log("HTML parsed into document"); // Debug 2
+
+  //   try {
+  //     // Required basic information
+  //     const name =
+  //       doc.querySelector(".stats__h-name")?.textContent?.trim() ||
+  //       "Unknown Monster";
+  //     // console.log("Found name:", name); // Debug 3
+
+  //     const typeInfo =
+  //       doc.querySelector("td i")?.textContent?.trim() ||
+  //       "Medium Unknown, Unaligned";
+  //     // console.log("Found typeInfo:", typeInfo); // Debug 4
+
+  //     // Parse type info with defaults
+  //     const [sizeTypeAlign = ""] = typeInfo.split(",");
+  //     const [size = "Medium", type = "Unknown"] = sizeTypeAlign
+  //       .trim()
+  //       .split(/\s+/);
+  //     const alignment = typeInfo.split(",")[1]?.trim() || "Unaligned";
+
+  //     // Required stats (with safe defaults)
+  //     const stats = {
+  //       ac: parseInt(
+  //         doc.querySelector('[title="Armor Class"] + span')
+  //           ?.textContent || "10"
+  //       ),
+  //       hp: {
+  //         average: parseInt(
+  //           doc.querySelector('[title="Hit Points"] + span')
+  //             ?.textContent || "1"
+  //         ),
+  //         roll:
+  //           doc
+  //             .querySelector('[data-roll-name="Hit Points"]')
+  //             ?.textContent?.trim() || "1d4",
+  //         max: parseInt(
+  //           doc.querySelector('[title="Maximum: "]')?.textContent || "1"
+  //         )
+  //       },
+  //       speed: "30 ft."
+  //     };
+
+  //     // Try to get actual speed
+  //     const speedNode = Array.from(doc.querySelectorAll("strong")).find(
+  //       (el) => el.textContent === "Speed"
+  //     );
+  //     if (speedNode && speedNode.nextSibling) {
+  //       stats.speed = speedNode.nextSibling.textContent.trim();
+  //     }
+
+  //     // Parse ability scores - Updated version
+  //     // console.log("About to parse ability scores");
+  //     // Parse ability scores
+  //     const abilities = {};
+  //     const abilityRows = Array.from(
+  //       doc.querySelectorAll(".stats-tbl-ability-scores__lbl-abv")
+  //     );
+
+  //     abilityRows.forEach((labelCell) => {
+  //       const abilityDiv = labelCell.querySelector(".bold.small-caps");
+  //       if (abilityDiv) {
+  //         const abilityName = abilityDiv.textContent.trim().toLowerCase();
+  //         if (
+  //           ["str", "dex", "con", "int", "wis", "cha"].includes(
+  //             abilityName
+  //           )
+  //         ) {
+  //           try {
+  //             // Get score from the next cell's div directly
+  //             const scoreDiv =
+  //               labelCell.nextElementSibling.querySelector(
+  //                 ".ve-text-center"
+  //               );
+  //             const score = parseInt(scoreDiv?.textContent || "10");
+
+  //             // Get modifier from the next cell's roller span
+  //             const modifierCell =
+  //               scoreDiv?.parentElement.nextElementSibling;
+  //             const modifierText =
+  //               modifierCell?.querySelector(".roller")?.textContent ||
+  //               "0";
+  //             const modifier = parseInt(
+  //               modifierText.match(/[+-]\d+/)?.[0] || "0"
+  //             );
+
+  //             abilities[abilityName] = { score, modifier };
+  //             // console.log(`Parsed ${abilityName}:`, { score, modifier });
+  //           } catch (e) {
+  //             console.error(`Error parsing ${abilityName}:`, e);
+  //             abilities[abilityName] = { score: 10, modifier: 0 };
+  //           }
+  //         }
+  //       }
+  //     });
+  //     // console.log("Abilities parsed successfully:", abilities);
+
+  //     // Optional extras
+  //     let extras = {
+  //       immunities: [],
+  //       resistances: [],
+  //       senses: [],
+  //       languages: "None",
+  //       cr: "0",
+  //       xp: 0,
+  //       proficiencyBonus: 2
+  //     };
+
+  //     try {
+  //       const crNode = doc.querySelector(
+  //         '[title="Challenge Rating"] + span'
+  //       );
+  //       if (crNode) {
+  //         extras.cr = crNode.textContent.split("(")[0].trim();
+  //         const xpMatch = crNode.textContent.match(/XP (\d+)/);
+  //         if (xpMatch) extras.xp = parseInt(xpMatch[1]);
+  //         // console.log("Parsed CR/XP:", extras.cr, extras.xp);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse CR/XP");
+  //     }
+
+  //     try {
+  //       const immunityNode = Array.from(
+  //         doc.querySelectorAll("strong")
+  //       ).find((el) => el.textContent === "Immunities");
+  //       if (immunityNode && immunityNode.nextSibling) {
+  //         extras.immunities = immunityNode.nextSibling.textContent
+  //           .split(";")
+  //           .map((i) => i.trim())
+  //           .filter((i) => i);
+  //         // console.log("Parsed immunities:", extras.immunities);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse immunities");
+  //     }
+
+  //     try {
+  //       const sensesNode = Array.from(
+  //         doc.querySelectorAll("strong")
+  //       ).find((el) => el.textContent === "Senses");
+  //       if (sensesNode && sensesNode.nextSibling) {
+  //         extras.senses = sensesNode.nextSibling.textContent
+  //           .split(",")
+  //           .map((s) => s.trim())
+  //           .filter((s) => s);
+  //         // console.log("Parsed senses:", extras.senses);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse senses");
+  //     }
+
+  //     try {
+  //       const languagesNode = Array.from(
+  //         doc.querySelectorAll("strong")
+  //       ).find((el) => el.textContent === "Languages");
+  //       if (languagesNode && languagesNode.nextSibling) {
+  //         extras.languages =
+  //           languagesNode.nextSibling.textContent.trim() || "None";
+  //         // console.log("Parsed languages:", extras.languages);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse languages");
+  //     }
+
+  //     let tokenUrl = null;
+  //     let tokenData = null;
+
+  //     try {
+  //       const tokenDiv = doc.querySelector("#float-token");
+  //       if (tokenDiv) {
+  //         const imgElement = tokenDiv.querySelector("img.stats__token");
+  //         if (imgElement?.src) {
+  //           const path = imgElement.src.replace(/.*\/bestiary\/tokens\//, "");
+  //           tokenUrl = this.getTokenUrl(path);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error handling token:", error);
+  //     }
+
+
+  //     // Include token data in the return object (this should already be in your code)
+  //     return {
+  //       basic: {
+  //         name,
+  //         size,
+  //         type,
+  //         alignment,
+  //         cr: extras.cr,
+  //         xp: extras.xp,
+  //         proficiencyBonus: extras.proficiencyBonus
+  //       },
+  //       stats,
+  //       abilities,
+  //       traits: {
+  //         immunities: extras.immunities,
+  //         senses: extras.senses,
+  //         languages: extras.languages
+  //       },
+  //       token: {
+  //         url: tokenUrl,
+  //         data: tokenData
+  //       }
+  //     };
+  //   } catch (error) {
+  //     console.error("Error parsing monster HTML:", error);
+  //     return this.getDefaultMonsterData();
+  //   }
+  // }
 
   async parseMonsterHtml(html) {
-    //   console.log("Starting to parse monster HTML"); // Debug 1
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    //   console.log("HTML parsed into document"); // Debug 2
-
+  
     try {
       // Required basic information
-      const name =
-        doc.querySelector(".stats__h-name")?.textContent?.trim() ||
-        "Unknown Monster";
-      // console.log("Found name:", name); // Debug 3
-
-      const typeInfo =
-        doc.querySelector("td i")?.textContent?.trim() ||
-        "Medium Unknown, Unaligned";
-      // console.log("Found typeInfo:", typeInfo); // Debug 4
-
-      // Parse type info with defaults
+      const name = doc.querySelector(".stats__h-name")?.textContent?.trim() || "Unknown Monster";
+      
+      // Extract source abbreviation - NEW CODE
+      let sourceAbbreviation = '';
+      const sourceElement = doc.querySelector(".stats__h-source-abbreviation");
+      if (sourceElement) {
+        // Find the class that starts with "source__"
+        const sourceClass = Array.from(sourceElement.classList)
+          .find(cls => cls.startsWith('source__'));
+        if (sourceClass) {
+          sourceAbbreviation = sourceClass.replace('source__', '');
+        }
+      }
+      
+      // Create 5e.tools URL - NEW CODE
+      let toolsUrl = '';
+      if (name && sourceAbbreviation) {
+        const urlSafeName = name.toLowerCase().replace(/\s+/g, '%20');
+        toolsUrl = `https://5e.tools/bestiary.html#${urlSafeName}_${sourceAbbreviation.toLowerCase()}`;
+      }
+  
+      // Rest of existing code for parsing monster info
+      const typeInfo = doc.querySelector("td i")?.textContent?.trim() || "Medium Unknown, Unaligned";
       const [sizeTypeAlign = ""] = typeInfo.split(",");
-      const [size = "Medium", type = "Unknown"] = sizeTypeAlign
-        .trim()
-        .split(/\s+/);
+      const [size = "Medium", type = "Unknown"] = sizeTypeAlign.trim().split(/\s+/);
       const alignment = typeInfo.split(",")[1]?.trim() || "Unaligned";
+  
 
       // Required stats (with safe defaults)
       const stats = {
@@ -717,7 +941,9 @@ class MonsterManager {
           alignment,
           cr: extras.cr,
           xp: extras.xp,
-          proficiencyBonus: extras.proficiencyBonus
+          proficiencyBonus: extras.proficiencyBonus,
+          source: sourceAbbreviation, // Add source abbreviation
+          toolsUrl: toolsUrl           // Add URL to 5e.tools
         },
         stats,
         abilities,

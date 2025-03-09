@@ -4294,6 +4294,273 @@ setupSplashArtHandlers(drawer) {
         console.groupEnd();
     }
 
+// updateBestiaryGallery(drawer, view = 'grid') {
+//     const container = drawer.querySelector('#bestiaryGallery');
+//     if (!container) {
+//         console.warn('Bestiary gallery container not found');
+//         return;
+//     }
+    
+//     // Specifically find the bestiary panel header
+//     const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+//     if (!bestiaryPanel) {
+//         console.warn('Bestiary panel not found');
+//         return;
+//     }
+    
+//     const panelHeader = bestiaryPanel.querySelector('.panel-header');
+//     if (panelHeader) {
+//         // If we've already added the filter controls, don't add them again
+//         if (!bestiaryPanel.querySelector('.monster-filter-bar')) {
+//             // Clear existing controls first
+//             const addMonsterBtn = panelHeader.querySelector('.add-monster-btn');
+//             panelHeader.innerHTML = '';
+            
+//             // Get unique CR values and monster types for filters
+//             const crValues = new Set();
+//             const typeValues = new Set();
+//             const sizeValues = new Set(['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan']);
+            
+//             this.resources.bestiary.forEach(monster => {
+//                 if (monster.cr) crValues.add(monster.cr);
+//                 if (monster.type) typeValues.add(monster.type);
+//             });
+            
+//             // Create compact layout with flex
+//             panelHeader.style.display = 'flex';
+//             panelHeader.style.flexWrap = 'wrap';
+//             panelHeader.style.alignItems = 'flex-end';
+//             panelHeader.style.gap = '8px';
+            
+//             panelHeader.innerHTML = `
+//     <!-- Native search input -->
+//     <div class="search-container" style="flex: 1; min-width: 120px; position: relative;">
+//         <input type="search" id="monster-search" placeholder="Search monsters..." 
+//                style="width: 100%; padding: 8px; padding-right: 30px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+//         <button type="button" id="clear-search" 
+//                 style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">
+//             <span class="material-icons" style="font-size: 18px; color: #666;">close</span>
+//         </button>
+//     </div>
+    
+//     <!-- CR filter - temporarily shown but disabled 
+//     <select id="cr-filter" style="width: 80px; padding: 7px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #f0f0f0;" disabled>
+//         <option value="">CR</option>
+//         ${Array.from(crValues).sort((a, b) => {
+//             const numA = a === '0' ? 0 : eval(String(a).replace('/','/')); 
+//             const numB = b === '0' ? 0 : eval(String(b).replace('/','/')); 
+//             return numA - numB;
+//         }).map(cr => `<option value="${cr}">CR ${cr}</option>`).join('')}
+//     </select>
+//     -->
+    
+//     <!-- Clear filters button -->
+//     <button type="button" id="clear-filters" 
+//             style="background: none; border: none; display: flex; align-items: center; justify-content: center; padding: 8px; cursor: pointer;">
+//         <span class="material-icons" style="font-size: 18px; color: #666;">filter_alt_off</span>
+//     </button>
+// `;
+            
+//             // Add the monster button at the end
+//             if (addMonsterBtn) {
+//                 panelHeader.appendChild(addMonsterBtn);
+//             } else {
+//                 const newAddBtn = document.createElement('sl-button');
+//                 newAddBtn.setAttribute('size', 'small');
+//                 newAddBtn.classList.add('add-monster-btn');
+//                 newAddBtn.setAttribute('variant', 'primary'); 
+//                 newAddBtn.setAttribute('circle', '');
+//                 newAddBtn.innerHTML = `
+//                     <span class="material-icons">add</span>
+//                 `;
+//                 panelHeader.appendChild(newAddBtn);
+                
+//                 // Add event listener
+//                 newAddBtn.addEventListener('click', async () => {
+//                     await this.showMonsterImporter();
+//                     // Refresh gallery after adding monster
+//                     this.updateBestiaryGallery(drawer, view);
+//                 });
+//             }
+            
+//             // Add event listeners for filtering
+//             this.setupBestiaryFilters(drawer, panelHeader);
+//         }
+//     }
+    
+//     // Update container class based on view
+//     container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+//     container.innerHTML = '';
+    
+//     if (this.resources.bestiary.size === 0) {
+//         container.innerHTML = `
+//             <sl-card class="empty-gallery">
+//                 <div style="text-align: center; padding: 2rem;">
+//                     <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">pets</span>
+//                     <p>No monsters in bestiary yet</p>
+//                 </div>
+//             </sl-card>
+//         `;
+//         return;
+//     }
+    
+//     // Apply any active filters
+//     const filteredMonsters = this.getFilteredBestiary(drawer);
+    
+//     if (filteredMonsters.length === 0) {
+//         container.innerHTML = `
+//             <sl-card class="empty-gallery">
+//                 <div style="text-align: center; padding: 2rem;">
+//                     <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">filter_alt_off</span>
+//                     <p>No monsters match your filters</p>
+//                 </div>
+//             </sl-card>
+//         `;
+//         return;
+//     }
+    
+//     // Create cards for each filtered monster
+//     filteredMonsters.forEach(monster => {
+//         const card = document.createElement('sl-card');
+//         card.className = 'resource-item';
+        
+//         const displayCR = monster.cr || '?';
+//         const displayType = monster.type || 'Unknown';
+//         const isTokenUrl = monster.data?.token?.url && !monster.data.token.data?.startsWith('data:');
+        
+//         card.innerHTML = `
+//             ${view === 'grid' ? `
+//                 <div style="position: relative;">
+//                     <img 
+//                         src="${monster.thumbnail}" 
+//                         alt="${monster.name}"
+//                         class="resource-thumbnail"
+//                     />
+//                     <div class="monster-badge" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 10px; font-size: 0.75em;">
+//                         CR ${displayCR}
+//                     </div>
+//                     ${isTokenUrl ? `
+//                         <div class="token-warning" style="position: absolute; top: 5px; left: 5px; background: rgba(244, 67, 54, 0.8); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Token needs update. Delete and re-add this monster.">
+//                             <span class="material-icons" style="font-size: 14px;">warning</span>
+//                         </div>
+//                     ` : ''}
+//                 </div>
+//                 <div class="resource-info">
+//                     <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
+//                     <div class="resource-meta">${monster.size} ${displayType}</div>
+//                 </div>
+//             ` : `
+//                 <div style="display: flex; align-items: center; gap: 1rem;">
+//                     <div style="position: relative; flex-shrink: 0;">
+//                         <img 
+//                             src="${monster.thumbnail}" 
+//                             alt="${monster.name}"
+//                             class="resource-thumbnail"
+//                             style="width: 50px; height: 50px;"
+//                         />
+//                         ${isTokenUrl ? `
+//                             <div class="token-warning" style="position: absolute; top: -5px; left: -5px; background: rgba(244, 67, 54, 0.8); color: white; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Token needs update. Delete and re-add this monster.">
+//                                 <span class="material-icons" style="font-size: 10px;">warning</span>
+//                             </div>
+//                         ` : ''}
+//                     </div>
+//                     <div class="resource-info">
+//                         <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
+//                         <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
+//                     </div>
+//                 </div>
+//             `}
+//             <div slot="footer" class="resource-actions">
+//                 <sl-button-group>
+//                     <sl-button size="small" class="view-btn">
+//                         <span class="material-icons">visibility</span>
+//                     </sl-button>
+//                     <sl-button size="small" class="edit-btn">
+//                         <span class="material-icons">edit</span>
+//                     </sl-button>
+//                     <sl-button size="small" class="delete-btn" variant="danger">
+//                         <span class="material-icons">delete</span>
+//                     </sl-button>
+//                 </sl-button-group>
+//             </div>
+//         `;
+        
+//         // Add hover tooltip for warning
+//         if (isTokenUrl) {
+//             const warning = card.querySelector('.token-warning');
+//             if (warning) {
+//                 warning.addEventListener('mouseenter', () => {
+//                     const tooltip = document.createElement('div');
+//                     tooltip.className = 'token-warning-tooltip';
+//                     tooltip.style.cssText = `
+//                         position: fixed;
+//                         background: rgba(0,0,0,0.8);
+//                         color: white;
+//                         padding: 8px 12px;
+//                         border-radius: 4px;
+//                         z-index: 10000;
+//                         max-width: 250px;
+//                         font-size: 0.9em;
+//                         pointer-events: none;
+//                     `;
+//                     tooltip.textContent = 'This monster uses a URL token which may not display correctly in 3D view. Delete and re-add this monster to fix.';
+//                     document.body.appendChild(tooltip);
+                    
+//                     // Position the tooltip
+//                     const rect = warning.getBoundingClientRect();
+//                     tooltip.style.left = `${rect.right + 10}px`;
+//                     tooltip.style.top = `${rect.top}px`;
+                    
+//                     warning.addEventListener('mouseleave', () => {
+//                         tooltip.remove();
+//                     }, { once: true });
+//                 });
+//             }
+//         }
+        
+//         // Add event listeners
+//         card.querySelector('.view-btn').addEventListener('click', () => {
+//             this.showMonsterDetails(monster.data);
+//         });
+        
+//         card.querySelector('.edit-btn').addEventListener('click', () => {
+//             // TODO: Add monster editing capability later
+//             alert('Monster editing will be implemented in a future update');
+//         });
+        
+//         card.querySelector('.delete-btn').addEventListener('click', async () => {
+//             if (confirm(`Remove ${monster.name} from bestiary?`)) {
+//                 // First, remove from the resource manager's bestiary collection
+//                 this.resources.bestiary.delete(monster.id);
+                
+//                 // Then ensure it's deleted from persistent storage via MonsterManager
+//                 if (this.monsterManager) {
+//                     // Use the new deleteMonster method if available
+//                     if (typeof this.monsterManager.deleteMonster === 'function') {
+//                         this.monsterManager.deleteMonster(monster.id);
+//                     } else {
+//                         // Fallback for older versions
+//                         const database = this.monsterManager.loadDatabase();
+//                         if (database && database.monsters) {
+//                             delete database.monsters[monster.id];
+//                             localStorage.setItem("monsterDatabase", JSON.stringify(database));
+//                         }
+//                     }
+//                     console.log(`Deleted monster '${monster.name}' (${monster.id}) from persistent storage`);
+//                 }
+                
+//                 // Refresh the gallery to show changes
+//                 this.updateBestiaryGallery(drawer, view);
+//             }
+//         });
+        
+//         container.appendChild(card);
+//     });
+
+//     // Debugging
+//     // this.addDirectSearchToPanel(drawer);
+// }
+
 updateBestiaryGallery(drawer, view = 'grid') {
     const container = drawer.querySelector('#bestiaryGallery');
     if (!container) {
@@ -4427,6 +4694,7 @@ updateBestiaryGallery(drawer, view = 'grid') {
         const displayCR = monster.cr || '?';
         const displayType = monster.type || 'Unknown';
         const isTokenUrl = monster.data?.token?.url && !monster.data.token.data?.startsWith('data:');
+        const hasSource = monster.data?.basic?.source;
         
         card.innerHTML = `
             ${view === 'grid' ? `
@@ -4439,6 +4707,15 @@ updateBestiaryGallery(drawer, view = 'grid') {
                     <div class="monster-badge" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 5px; border-radius: 10px; font-size: 0.75em;">
                         CR ${displayCR}
                     </div>
+                    ${hasSource ? `
+                        <a href="https://5e.tools/bestiary.html#${monster.name.toLowerCase().replace(/\s+/g, '%20')}_${monster.data.basic.source.toLowerCase()}" 
+                           target="_blank" rel="noopener noreferrer" 
+                           class="tools-link" 
+                           style="position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" 
+                           title="View on 5e.tools (${monster.data.basic.source})">
+                            <span class="material-icons" style="font-size: 14px;">open_in_new</span>
+                        </a>
+                    ` : ''}
                     ${isTokenUrl ? `
                         <div class="token-warning" style="position: absolute; top: 5px; left: 5px; background: rgba(244, 67, 54, 0.8); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" title="Token needs update. Delete and re-add this monster.">
                             <span class="material-icons" style="font-size: 14px;">warning</span>
@@ -4447,7 +4724,7 @@ updateBestiaryGallery(drawer, view = 'grid') {
                 </div>
                 <div class="resource-info">
                     <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
-                    <div class="resource-meta">${monster.size} ${displayType}</div>
+                    <div class="resource-meta">${monster.size} ${displayType}${hasSource ? ` <span style="opacity: 0.7;">(${monster.data.basic.source})</span>` : ''}</div>
                 </div>
             ` : `
                 <div style="display: flex; align-items: center; gap: 1rem;">
@@ -4465,7 +4742,17 @@ updateBestiaryGallery(drawer, view = 'grid') {
                         ` : ''}
                     </div>
                     <div class="resource-info">
-                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}</div>
+                        <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">
+                            ${monster.name} ${isTokenUrl ? `<span class="material-icons" style="font-size: 14px; color: #f44336; vertical-align: middle;">warning</span>` : ''}
+                            ${hasSource ? `
+                                <a href="https://5e.tools/bestiary.html#${monster.name.toLowerCase().replace(/\s+/g, '%20')}_${monster.data.basic.source.toLowerCase()}" 
+                                   target="_blank" rel="noopener noreferrer" 
+                                   style="margin-left: 5px; font-size: 0.9em; color: #673ab7;">
+                                    <span class="material-icons" style="font-size: 14px; vertical-align: middle;">open_in_new</span> 
+                                    <span style="font-size: 0.8em;">${monster.data.basic.source}</span>
+                                </a>
+                            ` : ''}
+                        </div>
                         <div class="resource-meta">CR ${displayCR} | ${monster.size} ${displayType}</div>
                     </div>
                 </div>
@@ -4560,6 +4847,7 @@ updateBestiaryGallery(drawer, view = 'grid') {
     // Debugging
     // this.addDirectSearchToPanel(drawer);
 }
+
 setupBestiaryFilters(drawer, panelHeader) {
     // Ensure we're targeting elements within the bestiary panel
     const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
@@ -4765,6 +5053,129 @@ getFilteredBestiary(drawer) {
 
 
 
+    // showMonsterDetails(monsterData) {
+    //     const dialog = document.createElement('sl-dialog');
+    //     dialog.label = monsterData.basic.name;
+        
+    //     // Generate full stat block HTML
+    //     dialog.innerHTML = `
+    //         <div style="max-height: 70vh; overflow-y: auto;">
+    //             <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;">
+    //                 ${monsterData.token?.data ? `
+    //                     <div style="flex: 0 0 150px; text-align: center;">
+    //                         <img src="${monsterData.token.data}" style="width: 150px; height: 150px; object-fit: contain; border-radius: 5px;">
+    //                     </div>
+    //                 ` : ''}
+                    
+    //                 <div style="flex: 1;">
+    //                     <div style="font-style: italic; color: #666; margin-bottom: 8px;">
+    //                         ${monsterData.basic.size} ${monsterData.basic.type}, ${monsterData.basic.alignment}
+    //                     </div>
+                        
+    //                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f5f5f5; color: #000; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+    //                         <div>
+    //                             <div style="font-weight: bold;">Armor Class</div>
+    //                             <div>${monsterData.stats.ac}</div>
+    //                         </div>
+    //                         <div>
+    //                             <div style="font-weight: bold;">Hit Points</div>
+    //                             <div>${monsterData.stats.hp.average} (${monsterData.stats.hp.roll})</div>
+    //                         </div>
+    //                         <div>
+    //                             <div style="font-weight: bold;">Speed</div>
+    //                             <div>${monsterData.stats.speed}</div>
+    //                         </div>
+    //                     </div>
+                        
+    //                     <div>
+    //                         <div style="font-weight: bold;">Challenge Rating:</div>
+    //                         <div>${monsterData.basic.cr} (${monsterData.basic.xp} XP)</div>
+    //                     </div>
+    //                 </div>
+    //             </div>
+                
+    //             <!-- Ability Scores -->
+    //             <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; text-align: center; background: #f5f5f5; color: #000; padding: 8px; border-radius: 4px; margin-bottom: 16px;">
+    //                 <div>
+    //                     <div style="font-weight: bold;">STR</div>
+    //                     <div>${monsterData.abilities.str.score} (${monsterData.abilities.str.modifier >= 0 ? "+" : ""}${monsterData.abilities.str.modifier})</div>
+    //                 </div>
+    //                 <div>
+    //                     <div style="font-weight: bold;">DEX</div>
+    //                     <div>${monsterData.abilities.dex.score} (${monsterData.abilities.dex.modifier >= 0 ? "+" : ""}${monsterData.abilities.dex.modifier})</div>
+    //                 </div>
+    //                 <div>
+    //                     <div style="font-weight: bold;">CON</div>
+    //                     <div>${monsterData.abilities.con.score} (${monsterData.abilities.con.modifier >= 0 ? "+" : ""}${monsterData.abilities.con.modifier})</div>
+    //                 </div>
+    //                 <div>
+    //                     <div style="font-weight: bold;">INT</div>
+    //                     <div>${monsterData.abilities.int.score} (${monsterData.abilities.int.modifier >= 0 ? "+" : ""}${monsterData.abilities.int.modifier})</div>
+    //                 </div>
+    //                 <div>
+    //                     <div style="font-weight: bold;">WIS</div>
+    //                     <div>${monsterData.abilities.wis.score} (${monsterData.abilities.wis.modifier >= 0 ? "+" : ""}${monsterData.abilities.wis.modifier})</div>
+    //                 </div>
+    //                 <div>
+    //                     <div style="font-weight: bold;">CHA</div>
+    //                     <div>${monsterData.abilities.cha.score} (${monsterData.abilities.cha.modifier >= 0 ? "+" : ""}${monsterData.abilities.cha.modifier})</div>
+    //                 </div>
+    //             </div>
+                
+    //             <!-- Additional Traits -->
+    //             <div style="margin-bottom: 16px;">
+    //                 ${monsterData.traits.senses.length > 0 ? `
+    //                     <div style="margin-bottom: 8px;">
+    //                         <strong>Senses:</strong> ${monsterData.traits.senses.join(', ')}
+    //                     </div>
+    //                 ` : ''}
+                    
+    //                 <div style="margin-bottom: 8px;">
+    //                     <strong>Languages:</strong> ${monsterData.traits.languages}
+    //                 </div>
+                    
+    //                 ${monsterData.traits.immunities.length > 0 ? `
+    //                     <div style="margin-bottom: 8px;">
+    //                         <strong>Immunities:</strong> ${monsterData.traits.immunities.join(', ')}
+    //                     </div>
+    //                 ` : ''}
+    //             </div>
+    //         </div>
+            
+    //         <div slot="footer">
+    //             <sl-button class="close-btn" variant="neutral">Close</sl-button>
+    //             <sl-button class="add-encounter-btn" variant="primary">
+    //                 <span class="material-icons">add_location</span>
+    //                 Add to Map
+    //             </sl-button>
+    //         </div>
+    //     `;
+        
+    //     document.body.appendChild(dialog);
+        
+    //     // Add event handlers
+    //     dialog.querySelector('.close-btn').addEventListener('click', () => {
+    //         dialog.hide();
+    //     });
+        
+    //     dialog.querySelector('.add-encounter-btn').addEventListener('click', () => {
+    //         dialog.hide();
+    //         // Find the map editor instance
+    //         const mapEditor = window.mapEditor || document.querySelector('.map-editor')?.mapEditor;
+    //         if (mapEditor) {
+    //             this.addMonsterToMap(monsterData, mapEditor);
+    //         } else {
+    //             alert('Map editor not found or not initialized');
+    //         }
+    //     });
+        
+    //     dialog.addEventListener('sl-after-hide', () => {
+    //         dialog.remove();
+    //     });
+        
+    //     dialog.show();
+    // }
+
     showMonsterDetails(monsterData) {
         const dialog = document.createElement('sl-dialog');
         dialog.label = monsterData.basic.name;
@@ -4780,8 +5191,18 @@ getFilteredBestiary(drawer) {
                     ` : ''}
                     
                     <div style="flex: 1;">
-                        <div style="font-style: italic; color: #666; margin-bottom: 8px;">
-                            ${monsterData.basic.size} ${monsterData.basic.type}, ${monsterData.basic.alignment}
+                        <div style="font-style: italic; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                ${monsterData.basic.size} ${monsterData.basic.type}, ${monsterData.basic.alignment}
+                            </div>
+                            ${monsterData.basic.toolsUrl ? `
+                                <a href="${monsterData.basic.toolsUrl}" target="_blank" rel="noopener noreferrer" 
+                                   style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                                    <span class="material-icons" style="font-size: 14px;">open_in_new</span>
+                                    <span style="font-weight: bold; color: #444;">5e.tools</span>
+                                    ${monsterData.basic.source ? `<span style="color: #666;">(${monsterData.basic.source})</span>` : ''}
+                                </a>
+                            ` : ''}
                         </div>
                         
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f5f5f5; color: #000; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
