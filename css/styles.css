@@ -1554,7 +1554,13 @@ sl-tooltip {
   sl-dialog::part(header) {
     background: #333;
     border-bottom: 1px solid #444;
+    height:32px;
+
   }
+
+  sl-dialog::part(title) {
+	padding: 0px 0px 0px 10px;
+}
   
   sl-dialog::part(body) {
     background: #242424;
@@ -1563,6 +1569,7 @@ sl-tooltip {
   sl-dialog::part(footer) {
     background: #333;
     border-top: 1px solid #444;
+    padding: 4px;
   }
   
   /* Default styles for form elements in dark theme */
@@ -1573,6 +1580,13 @@ sl-tooltip {
     color: #e0e0e0;
     border-color: #444;
   }
+  
+  sl-dialog::part(close-button):hover {
+    background-color: red;
+    color: black;
+    border-radius: 4px; /* Optional: Makes the background look better */
+  }
+  
   
   sl-input:focus-within::part(base),
   sl-select:focus-within::part(base),

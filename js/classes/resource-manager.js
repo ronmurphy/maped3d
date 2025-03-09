@@ -4784,7 +4784,7 @@ getFilteredBestiary(drawer) {
                             ${monsterData.basic.size} ${monsterData.basic.type}, ${monsterData.basic.alignment}
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f5f5f5; color: #000; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
                             <div>
                                 <div style="font-weight: bold;">Armor Class</div>
                                 <div>${monsterData.stats.ac}</div>
@@ -4807,7 +4807,7 @@ getFilteredBestiary(drawer) {
                 </div>
                 
                 <!-- Ability Scores -->
-                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; text-align: center; background: #f5f5f5; padding: 8px; border-radius: 4px; margin-bottom: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; text-align: center; background: #f5f5f5; color: #000; padding: 8px; border-radius: 4px; margin-bottom: 16px;">
                     <div>
                         <div style="font-weight: bold;">STR</div>
                         <div>${monsterData.abilities.str.score} (${monsterData.abilities.str.modifier >= 0 ? "+" : ""}${monsterData.abilities.str.modifier})</div>
