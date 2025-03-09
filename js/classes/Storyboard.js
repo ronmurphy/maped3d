@@ -54,13 +54,13 @@ if (typeof window.Storyboard === 'undefined') {
       console.log('Storyboard system initialized with persistent data');
     }
 
-    
+
     connectToResourceManager(resourceManager) {
       if (!resourceManager) {
         console.error('Storyboard - Invalid ResourceManager provided');
         return false;
       }
-      
+
       this.resourceManager = resourceManager;
       console.log('Storyboard is Connected to ResourceManager');
       return true;
@@ -69,6 +69,12 @@ if (typeof window.Storyboard === 'undefined') {
     /**
      * Initialize CSS styles for story displays
      */
+  // .storyboard-drawer::part(header) {
+  //   background: #333;
+  //   padding: 16px;
+  //   border-bottom: 1px solid #444;
+  // }
+
     initStyles() {
       const styles = document.createElement('style');
       styles.textContent = `
@@ -80,11 +86,28 @@ if (typeof window.Storyboard === 'undefined') {
     color: #e0e0e0;
   }
   
-  .storyboard-drawer::part(header) {
-    background: #333;
-    padding: 16px;
-    border-bottom: 1px solid #444;
-  }
+.storyboard-drawer::part(header) {
+  background: #333;
+  border-bottom: 1px solid #444;
+  height: 48px;
+  padding: 0 16px; /* Reduce padding */
+  display: flex;
+  align-items: center; /* Vertically center content */
+}
+
+/* Target the title specifically */
+.storyboard-drawer::part(title) {
+  font-size: 1rem; /* Slightly smaller font */
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis for long titles */
+}
+
+/* Adjust the close button */
+.storyboard-drawer::part(close-button) {
+  margin-left: 8px; /* Less margin */
+  padding: 8px; /* Smaller click target but still usable */
+}
   
   .storyboard-drawer::part(body) {
     padding: 0;
@@ -363,12 +386,12 @@ if (typeof window.Storyboard === 'undefined') {
      */
     openEditor() {
       console.log('Opening storyboard editor');
-    
+
       if (this.editor) {
         console.log('Editor already open');
         return;
       }
-    
+
       try {
         // Reset UI state but keep data
         this.editorState.active = true;
@@ -377,15 +400,15 @@ if (typeof window.Storyboard === 'undefined') {
         this.editorState.connectingFrom = null;
         this.editorState.canvasElement = null;
         this.editorState.propertiesElement = null;
-    
+
         // Create editor drawer
         const drawer = document.createElement('sl-drawer');
         drawer.label = 'Storyboard Editor';
         drawer.placement = 'end';
-        
+
         // Add the storyboard-drawer class
         drawer.classList.add('storyboard-drawer');
-    
+
         // Set size to leave room for sidebar
         drawer.style.cssText = '--size: calc(100vw - 280px);';
 
@@ -1502,6 +1525,10 @@ if (typeof window.Storyboard === 'undefined') {
 
       if (nodeData) {
         let propertiesHtml = '';
+        let paramsHtml = '';
+        let optionsHtml = '';
+        let eventOptionsHtml = '';
+        let conditionOptionsHtml = '';
 
         switch (nodeData.type) {
           case 'dialog':
@@ -1557,89 +1584,352 @@ if (typeof window.Storyboard === 'undefined') {
             break;
 
           case 'choice':
-            let optionsHtml = '';
+            // Initialize options array if it doesn't exist
+            if (!nodeData.data.options || !Array.isArray(nodeData.data.options)) {
+              nodeData.data.options = [
+                { text: 'Option 1', targetId: null },
+                { text: 'Option 2', targetId: null }
+              ];
+            }
 
-            if (nodeData.data.options && nodeData.data.options.length) {
-              nodeData.data.options.forEach((option, index) => {
-                optionsHtml += `
-                  <div style="display:flex; margin-bottom:8px; gap:8px; align-items:center;">
-                    <sl-input name="option_${index}" value="${option.text}" style="flex:1;"></sl-input>
-                    <sl-button size="small" class="delete-option" data-index="${index}">×</sl-button>
+            // Generate options HTML dynamically
+            let optionsHtml = '';
+            nodeData.data.options.forEach((option, index) => {
+              optionsHtml += `
+      <div class="option-row" style="display: flex; gap: 8px; margin-bottom: 12px; align-items: start;">
+        <div style="flex: 1;">
+          <textarea 
+            class="option-text" 
+            data-index="${index}"
+            style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            rows="2">${option.text || ''}</textarea>
+        </div>
+        <sl-button size="small" class="delete-option-btn" data-index="${index}" style="flex-shrink: 0;">
+          <span class="material-icons" style="font-size: 16px;">delete</span>
+        </sl-button>
+      </div>
+    `;
+            });
+
+            propertiesHtml = `
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Question Text</div>
+      <div class="storyboard-property-field">
+        <textarea 
+          id="choice-text-area" 
+          style="width: 100%; min-height: 100px; padding: 8px; border: 2px solid #6200ee; 
+                 background: #333; color: white; border-radius: 4px; font-family: inherit;
+                 font-size: 1em; resize: vertical; margin-bottom: 8px;"
+          rows="4"
+        >${nodeData.data.text || 'What would you like to do?'}</textarea>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Options</div>
+      <div class="storyboard-property-field options-container">
+        ${optionsHtml}
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+        <sl-button id="add-option-btn" size="small" variant="primary">
+          <span class="material-icons" style="font-size: 16px; margin-right: 4px;">add</span>
+          Add Option
+        </sl-button>
+        <span style="color: #aaa; font-size: 0.9em; align-self: center;">
+          ${nodeData.data.options.length} options
+        </span>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+      <sl-button id="apply-choice-changes" variant="primary">Apply Changes</sl-button>
+    </div>
+  `;
+            break;
+
+          // For the selectNode method in Storyboard.js - add this case for trigger nodes
+          case 'trigger':
+            // Ensure default values exist
+            if (!nodeData.data.x) nodeData.data.x = 0;
+            if (!nodeData.data.y) nodeData.data.y = 0;
+            if (!nodeData.data.radius) nodeData.data.radius = 1;
+            if (nodeData.data.once === undefined) nodeData.data.once = true;
+
+            propertiesHtml = `
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Trigger Position</div>
+      <div class="storyboard-property-field" style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">X Coordinate</label>
+          <input 
+            type="number" 
+            id="trigger-x-input" 
+            value="${nodeData.data.x}"
+            step="0.1"
+            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+          >
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Y Coordinate</label>
+          <input 
+            type="number" 
+            id="trigger-y-input" 
+            value="${nodeData.data.y}"
+            step="0.1"
+            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+          >
+        </div>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Trigger Radius</div>
+      <div class="storyboard-property-field" style="margin-bottom: 16px;">
+        <input 
+          type="range" 
+          id="trigger-radius-input" 
+          min="0.1" 
+          max="10" 
+          step="0.1" 
+          value="${nodeData.data.radius}"
+          style="width: 100%; margin-bottom: 8px;"
+        >
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #aaa; font-size: 0.9em;">0.1</span>
+          <span id="radius-value" style="color: white; font-weight: bold;">${nodeData.data.radius}</span>
+          <span style="color: #aaa; font-size: 0.9em;">10</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-field" style="margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; cursor: pointer;">
+          <input 
+            type="checkbox" 
+            id="trigger-once-input" 
+            ${nodeData.data.once ? 'checked' : ''}
+            style="margin-right: 8px;"
+          >
+          <span>Trigger only once</span>
+        </label>
+        <div style="margin-top: 4px; color: #aaa; font-size: 0.9em; margin-left: 24px;">
+          If checked, this trigger will only activate once per game session.
+        </div>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <sl-button id="pick-location-btn" size="small" variant="primary">
+        <span class="material-icons" style="font-size: 16px; margin-right: 4px;">location_on</span>
+        Pick Location In-Game
+      </sl-button>
+      <div style="margin-top: 8px; color: #aaa; font-size: 0.9em;">
+        This will allow you to place the trigger by clicking on the map.
+      </div>
+    </div>
+    
+    <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+      <sl-button id="apply-trigger-changes" variant="primary">Apply Changes</sl-button>
+    </div>
+  `;
+            break;
+
+          // For the selectNode method in Storyboard.js - add this case for event nodes
+          case 'event':
+            // Define available event types
+            const eventTypes = [
+              { value: 'offerStarter', label: 'Offer Starter Monster' },
+              { value: 'showPartyManager', label: 'Show Party Manager' },
+              { value: 'giveItem', label: 'Give Item to Player' },
+              { value: 'setFlag', label: 'Set Game Flag' },
+              { value: 'teleport', label: 'Teleport Player' }
+            ];
+
+            // Set default if not set
+            if (!nodeData.data.eventType) {
+              nodeData.data.eventType = 'offerStarter';
+            }
+
+            // Initialize params if they don't exist
+            if (!nodeData.data.params) {
+              nodeData.data.params = {};
+            }
+
+            // Generate event options
+            const eventOptionsHtml = eventTypes.map(event => `
+    <option value="${event.value}" ${nodeData.data.eventType === event.value ? 'selected' : ''}>
+      ${event.label}
+    </option>
+  `).join('');
+
+            // Generate parameter form based on event type
+            let paramsHtml = '';
+            switch (nodeData.data.eventType) {
+              case 'giveItem':
+                // Get item name if available
+                const itemName = nodeData.data.params?.itemName || 'No item selected';
+
+                paramsHtml = `
+                  <div class="param-group" style="margin-top: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                      <label style="color: #aaa; font-size: 0.9em;">Selected Item</label>
+                      <sl-button id="select-item-btn" size="small">
+                        <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+                        Browse Items
+                      </sl-button>
+                    </div>
+                    
+                    ${nodeData.data.params?.itemId ? `
+                      <div class="selected-item-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+                        <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                          <img src="${this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId)?.thumbnail || ''}" 
+                               style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                        <div style="flex: 1;">
+                          <div style="font-weight: 500;">${itemName}</div>
+                          <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.itemId}</div>
+                        </div>
+                      </div>
+                    ` : `
+                      <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+                        No item selected yet. Click "Browse Items" to choose one.
+                      </div>
+                    `}
+                  </div>
+                  
+                  <div class="param-group" style="margin-top: 16px;">
+                    <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Quantity</label>
+                    <input 
+                      type="number" 
+                      id="item-quantity-input" 
+                      value="${nodeData.data.params?.quantity || 1}"
+                      min="1"
+                      style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+                    >
+                  </div>
+                  
+                  <div class="param-group" style="margin-top: 16px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                      <input 
+                        type="checkbox" 
+                        id="item-horizontal-input" 
+                        ${nodeData.data.params?.isHorizontal ? 'checked' : ''}
+                        style="margin-right: 8px;"
+                      >
+                      <span>Place horizontally (flat on ground)</span>
+                    </label>
+                    <div style="margin-top: 4px; margin-left: 24px; color: #aaa; font-size: 0.9em;">
+                      When checked, item will be placed flat on the ground instead of standing upright.
+                    </div>
                   </div>
                 `;
-              });
+                break;
+
+              case 'setFlag':
+                paramsHtml = `
+        <div class="param-group" style="margin-top: 16px;">
+          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
+          <input 
+            type="text" 
+            id="flag-name-input" 
+            value="${nodeData.data.params.flag || ''}"
+            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            placeholder="Enter flag name"
+          >
+        </div>
+        <div class="param-group" style="margin-top: 16px;">
+          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Value</label>
+          <select 
+            id="flag-value-input"
+            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+          >
+            <option value="true" ${nodeData.data.params.value === true ? 'selected' : ''}>True</option>
+            <option value="false" ${nodeData.data.params.value === false ? 'selected' : ''}>False</option>
+          </select>
+        </div>
+      `;
+                break;
+
+              case 'teleport':
+                paramsHtml = `
+        <div class="param-group" style="margin-top: 16px; display: flex; gap: 12px;">
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">X Coordinate</label>
+            <input 
+              type="number" 
+              id="teleport-x-input" 
+              value="${nodeData.data.params.x || 0}"
+              step="0.1"
+              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            >
+          </div>
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Y Coordinate</label>
+            <input 
+              type="number" 
+              id="teleport-y-input" 
+              value="${nodeData.data.params.y || 0}"
+              step="0.1"
+              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            >
+          </div>
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Z Coordinate</label>
+            <input 
+              type="number" 
+              id="teleport-z-input" 
+              value="${nodeData.data.params.z || 0}"
+              step="0.1"
+              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            >
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <sl-button id="pick-teleport-location-btn" size="small">
+            <span class="material-icons" style="font-size: 16px; margin-right: 4px;">location_on</span>
+            Pick Location In-Game
+          </sl-button>
+        </div>
+      `;
+                break;
+
+              // For offerStarter and showPartyManager, no additional parameters needed
+              default:
+                paramsHtml = `
+        <div style="margin-top: 16px; padding: 12px; background: #383838; border-radius: 4px;">
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <span class="material-icons" style="font-size: 20px; margin-right: 8px; color: #aaa;">info</span>
+            <span>No additional parameters required for this event type.</span>
+          </div>
+        </div>
+      `;
             }
 
             propertiesHtml = `
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Question Text</div>
-                <div class="storyboard-property-field">
-                  <sl-textarea name="text" rows="3">${nodeData.data.text || ''}</sl-textarea>
-                </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Options</div>
-                <div class="storyboard-property-options">
-                  ${optionsHtml}
-                </div>
-                <sl-button size="small" class="add-option">Add Option</sl-button>
-              </div>
-            `;
-            break;
-
-          case 'trigger':
-            propertiesHtml = `
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Position</div>
-                <div class="storyboard-property-field" style="display:flex; gap:8px;">
-                  <sl-input type="number" name="x" value="${nodeData.data.x || 0}" label="X"></sl-input>
-                  <sl-input type="number" name="y" value="${nodeData.data.y || 0}" label="Y"></sl-input>
-                </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Radius</div>
-                <div class="storyboard-property-field">
-                  <sl-input type="number" name="radius" value="${nodeData.data.radius || 1}"></sl-input>
-                </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-field">
-                  <sl-checkbox name="once" ?checked="${nodeData.data.once !== false}">Trigger only once</sl-checkbox>
-                </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <sl-button size="small">Pick Location In-Game</sl-button>
-              </div>
-            `;
-            break;
-
-          case 'event':
-            propertiesHtml = `
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Event Type</div>
-                <div class="storyboard-property-field">
-                  <sl-select name="eventType">
-                    <sl-option value="none">Select Event Type</sl-option>
-                    <sl-option value="offerStarter" ?selected="${nodeData.data.eventType === 'offerStarter'}">Offer Starter Monster</sl-option>
-                    <sl-option value="showPartyManager" ?selected="${nodeData.data.eventType === 'showPartyManager'}">Show Party Manager</sl-option>
-                    <sl-option value="giveItem" ?selected="${nodeData.data.eventType === 'giveItem'}">Give Item</sl-option>
-                    <sl-option value="setFlag" ?selected="${nodeData.data.eventType === 'setFlag'}">Set Game Flag</sl-option>
-                    <sl-option value="teleport" ?selected="${nodeData.data.eventType === 'teleport'}">Teleport Player</sl-option>
-                  </sl-select>
-                </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Event Parameters</div>
-                <div class="storyboard-property-field">
-                  <p style="color:#777; font-size:0.9em;">Parameters will be displayed based on selected event type.</p>
-                </div>
-              </div>
-            `;
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Event Type</div>
+      <div class="storyboard-property-field">
+        <select 
+          id="event-type-select" 
+          style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+        >
+          ${eventOptionsHtml}
+        </select>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Event Parameters</div>
+      <div class="storyboard-property-field event-params-container">
+        ${paramsHtml}
+      </div>
+    </div>
+    
+    <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+      <sl-button id="apply-event-changes" variant="primary">Apply Changes</sl-button>
+    </div>
+  `;
             break;
 
           case 'combat':
@@ -1688,30 +1978,213 @@ if (typeof window.Storyboard === 'undefined') {
             `;
             break;
 
-          case 'condition':
-            propertiesHtml = `
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Condition Type</div>
-                <div class="storyboard-property-field">
-                  <sl-select name="condition">
-                    <sl-option value="none">Select Condition Type</sl-option>
-                    <sl-option value="hasMonster" ?selected="${nodeData.data.condition === 'hasMonster'}">Has Monster</sl-option>
-                    <sl-option value="hasItem" ?selected="${nodeData.data.condition === 'hasItem'}">Has Item</sl-option>
-                    <sl-option value="hasFlag" ?selected="${nodeData.data.condition === 'hasFlag'}">Has Flag</sl-option>
-                    <sl-option value="monsterLevel" ?selected="${nodeData.data.condition === 'monsterLevel'}">Monster Level</sl-option>
-                  </sl-select>
-                </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Condition Parameters</div>
-                <div class="storyboard-property-field">
-                  <p style="color:#777; font-size:0.9em;">Parameters will be displayed based on selected condition type.</p>
-                </div>
-              </div>
-            `;
-            break;
+// Add this inside your selectNode method, in the switch statement for different node types
 
+case 'condition':
+  // Define available condition types
+  const conditionTypes = [
+    { value: 'hasMonster', label: 'Has Monster' },
+    { value: 'hasItem', label: 'Has Item' },
+    { value: 'hasFlag', label: 'Has Game Flag' },
+    { value: 'monsterLevel', label: 'Monster Level Check' }
+    // Note: Removed playerLevel as per discussion
+  ];
+  
+  // Set default if not set
+  if (!nodeData.data.condition) {
+    nodeData.data.condition = 'hasFlag';
+  }
+  
+  // Initialize params if they don't exist
+  if (!nodeData.data.params) {
+    nodeData.data.params = {};
+  }
+
+  // Generate condition options
+  const conditionOptionsHtml = conditionTypes.map(cond => `
+    <option value="${cond.value}" ${nodeData.data.condition === cond.value ? 'selected' : ''}>
+      ${cond.label}
+    </option>
+  `).join('');
+
+  // Generate parameter form based on condition type
+  // let paramsHtml = '';
+  switch (nodeData.data.condition) {
+    case 'hasMonster':
+      paramsHtml = `
+        <div class="param-group" style="margin-top: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
+            <sl-button id="select-monster-btn" size="small">
+              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+              Browse Monsters
+            </sl-button>
+          </div>
+          
+          ${nodeData.data.params?.monsterId ? `
+            <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+              <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
+                     style="width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1;">
+                <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
+                <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
+              </div>
+            </div>
+          ` : `
+            <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+              No monster selected yet. Click "Browse Monsters" to choose one.
+            </div>
+          `}
+        </div>
+      `;
+      break;
+      
+    case 'hasItem':
+      paramsHtml = `
+        <div class="param-group" style="margin-top: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <label style="color: #aaa; font-size: 0.9em;">Selected Item</label>
+            <sl-button id="select-item-btn" size="small">
+              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+              Browse Items
+            </sl-button>
+          </div>
+          
+          ${nodeData.data.params?.itemId ? `
+            <div class="selected-item-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+              <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                <img src="${this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId)?.thumbnail || ''}" 
+                     style="width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1;">
+                <div style="font-weight: 500;">${nodeData.data.params.itemName || 'Unknown Item'}</div>
+                <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.itemId}</div>
+              </div>
+            </div>
+          ` : `
+            <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+              No item selected yet. Click "Browse Items" to choose one.
+            </div>
+          `}
+          
+          <div style="margin-top: 12px;">
+            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Quantity</label>
+            <input 
+              type="number" 
+              id="item-quantity-input" 
+              value="${nodeData.data.params?.quantity || 1}"
+              min="1"
+              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            >
+          </div>
+        </div>
+      `;
+      break;
+      
+    case 'hasFlag':
+      paramsHtml = `
+        <div class="param-group" style="margin-top: 16px;">
+          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
+          <input 
+            type="text" 
+            id="flag-name-input" 
+            value="${nodeData.data.params?.flag || ''}"
+            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            placeholder="Enter flag name"
+          >
+        </div>
+        <div class="param-group" style="margin-top: 16px;">
+          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Required Value</label>
+          <select 
+            id="flag-value-input"
+            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+          >
+            <option value="true" ${nodeData.data.params?.value === true ? 'selected' : ''}>True</option>
+            <option value="false" ${nodeData.data.params?.value === false ? 'selected' : ''}>False</option>
+          </select>
+        </div>
+      `;
+      break;
+      
+    case 'monsterLevel':
+      paramsHtml = `
+        <div class="param-group" style="margin-top: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
+            <sl-button id="select-monster-btn" size="small">
+              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+              Browse Monsters
+            </sl-button>
+          </div>
+          
+          ${nodeData.data.params?.monsterId ? `
+            <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+              <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
+                     style="width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1;">
+                <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
+                <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
+              </div>
+            </div>
+          ` : `
+            <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+              No monster selected yet. Click "Browse Monsters" to choose one.
+            </div>
+          `}
+          
+          <div style="margin-top: 12px;">
+            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Level</label>
+            <input 
+              type="number" 
+              id="monster-level-input" 
+              value="${nodeData.data.params?.level || 1}"
+              min="1"
+              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+            >
+          </div>
+        </div>
+      `;
+      break;
+  }
+
+  propertiesHtml = `
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Condition Type</div>
+      <div class="storyboard-property-field">
+        <select 
+          id="condition-type-select" 
+          style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+        >
+          ${conditionOptionsHtml}
+        </select>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <div class="storyboard-property-label">Condition Parameters</div>
+      <div class="storyboard-property-field condition-params-container">
+        ${paramsHtml}
+      </div>
+    </div>
+    
+    <div class="storyboard-property-group">
+      <div style="background: #383838; padding: 12px; border-radius: 4px;">
+        <div style="display: flex; align-items: flex-start; margin-bottom: 8px;">
+          <span class="material-icons" style="font-size: 20px; margin-right: 8px; color: #aaa; margin-top: 2px;">info</span>
+          <span>Connect the output of this condition node to two different nodes. The first connection is followed if the condition is true, the second if the condition is false.</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+      <sl-button id="apply-condition-changes" variant="primary">Apply Changes</sl-button>
+    </div>
+  `;
+  break;
           default:
             propertiesHtml = `
                 <div class="storyboard-property-group">
@@ -1726,36 +2199,36 @@ if (typeof window.Storyboard === 'undefined') {
           ${propertiesHtml}
         </div>
       `;
-    
-      // Add a small delay to ensure custom elements are upgraded
-      setTimeout(() => {
-        this.setupNodePropertyHandlers(nodeData, nodeId, properties);
-      }, 50);
+
+        // Add a small delay to ensure custom elements are upgraded
+        setTimeout(() => {
+          this.setupNodePropertyHandlers(nodeData, nodeId, properties);
+        }, 50);
+      }
     }
-  }
 
     /**
      * New method to set up property handlers for different node types
      */
     setupNodePropertyHandlers(nodeData, nodeId, properties) {
       if (!properties || !nodeData) return;
-    
+
       // Handle dialog node properties
       if (nodeData.type === 'dialog') {
         // Set up character counter
         const textArea = properties.querySelector('#dialog-text-area');
         const charCount = properties.querySelector('.char-count');
-        
+
         if (textArea && charCount) {
           // Update initial count
           charCount.textContent = textArea.value.length;
-          
+
           // Update count on input
           textArea.addEventListener('input', () => {
             charCount.textContent = textArea.value.length;
           });
         }
-    
+
         // Apply button handler
         const applyBtn = properties.querySelector('#apply-dialog-changes');
         if (applyBtn) {
@@ -1764,28 +2237,28 @@ if (typeof window.Storyboard === 'undefined') {
               // Get current values from inputs
               const titleInput = properties.querySelector('#dialog-title-input');
               const textArea = properties.querySelector('#dialog-text-area');
-              
+
               // Safer value retrieval
               const title = titleInput?.value?.trim() || '';
               const text = textArea?.value?.trim() || '';
-              
+
               // Update node data
               nodeData.data.title = title;
               nodeData.data.text = text;
-              
+
               // Mark as dirty
               this.currentGraph.dirty = true;
-              
+
               // Update visual representation
               this.updateNodeVisual(nodeData);
-              
+
               // Visual feedback
               if (textArea) textArea.style.borderColor = '#22c55e'; // Success green
-              
+
               setTimeout(() => {
                 if (textArea) textArea.style.borderColor = '#6200ee'; // Return to purple
               }, 1000);
-              
+
               // Show confirmation
               this.showToast('Node updated', 'success');
             } catch (error) {
@@ -1794,334 +2267,1368 @@ if (typeof window.Storyboard === 'undefined') {
             }
           });
         }
-    
-        // Select image button handler
+
         const selectImageBtn = properties.querySelector('#select-image-btn');
         if (selectImageBtn) {
           selectImageBtn.addEventListener('click', () => {
-            this.showSplashArtSelector(nodeData);
+            // Use the unified resource selector
+            this.showResourceSelector(nodeData, 'splashArt', 'title', (resourceId, resource) => {
+              // Update node data with selected image
+              nodeData.data.image = {
+                id: resourceId,
+                category: 'title'
+              };
+    
+              // Mark as dirty
+              this.currentGraph.dirty = true;
+    
+              // Update visual representation
+              this.updateNodeVisual(nodeData);
+    
+              // Refresh properties panel
+              this.selectNode(nodeData.element);
+    
+              // Show confirmation
+              this.showToast(`Image "${resource.name}" selected`, 'success');
+            });
           });
         }
-        
+
         // Handle remove image button if it exists
         const removeImageBtn = properties.querySelector('.remove-image-btn');
         if (removeImageBtn) {
           removeImageBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-    
+
             // Remove image reference
             nodeData.data.image = null;
-    
+
             // Mark as dirty
             this.currentGraph.dirty = true;
-    
+
             // Refresh properties panel
             this.selectNode(nodeData.element);
           });
         }
       }
-    
+
+      // In setupNodePropertyHandlers method, add this for choice nodes
+      if (nodeData.type === 'choice') {
+        // Apply button handler
+        const applyBtn = properties.querySelector('#apply-choice-changes');
+        if (applyBtn) {
+          applyBtn.addEventListener('click', () => {
+            try {
+              // Get main question text
+              const textArea = properties.querySelector('#choice-text-area');
+              const text = textArea?.value?.trim() || '';
+
+              // Get all option texts
+              const optionTextareas = properties.querySelectorAll('.option-text');
+              const options = [];
+
+              optionTextareas.forEach(textarea => {
+                const index = parseInt(textarea.getAttribute('data-index'));
+                const text = textarea.value.trim();
+
+                // Preserve existing targetId if available
+                const existingOption = nodeData.data.options[index];
+                const targetId = existingOption ? existingOption.targetId : null;
+
+                options.push({ text, targetId });
+              });
+
+              // Update node data
+              nodeData.data.text = text;
+              nodeData.data.options = options;
+
+              // Mark as dirty
+              this.currentGraph.dirty = true;
+
+              // Update visual representation
+              this.updateNodeVisual(nodeData);
+
+              // Show confirmation
+              this.showToast('Choice options updated', 'success');
+            } catch (error) {
+              console.error('Error updating choice node:', error);
+              this.showToast('Error updating choice node', 'error');
+            }
+          });
+        }
+
+        // Add option button
+        const addOptionBtn = properties.querySelector('#add-option-btn');
+        if (addOptionBtn) {
+          addOptionBtn.addEventListener('click', () => {
+            // Add new option to data
+            nodeData.data.options.push({ text: 'New option', targetId: null });
+
+            // Refresh properties panel to show new option
+            this.selectNode(nodeData.element);
+
+            // Show confirmation
+            this.showToast('Option added', 'success');
+          });
+        }
+
+        // Delete option buttons
+        const deleteButtons = properties.querySelectorAll('.delete-option-btn');
+        deleteButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            const index = parseInt(button.getAttribute('data-index'));
+
+            // Need at least one option
+            if (nodeData.data.options.length <= 1) {
+              this.showToast('Cannot delete last option', 'error');
+              return;
+            }
+
+            // Remove the option
+            nodeData.data.options.splice(index, 1);
+
+            // Refresh properties panel
+            this.selectNode(nodeData.element);
+
+            // Show confirmation
+            this.showToast('Option deleted', 'success');
+          });
+        });
+      }
+
+      // In setupNodePropertyHandlers method, add this for trigger nodes
+      if (nodeData.type === 'trigger') {
+        // Set up radius range slider
+        const radiusInput = properties.querySelector('#trigger-radius-input');
+        const radiusValue = properties.querySelector('#radius-value');
+
+        if (radiusInput && radiusValue) {
+          // Update value display when slider changes
+          radiusInput.addEventListener('input', () => {
+            radiusValue.textContent = radiusInput.value;
+          });
+        }
+
+        // Apply button handler
+        const applyBtn = properties.querySelector('#apply-trigger-changes');
+        if (applyBtn) {
+          applyBtn.addEventListener('click', () => {
+            try {
+              // Get values from inputs
+              const xInput = properties.querySelector('#trigger-x-input');
+              const yInput = properties.querySelector('#trigger-y-input');
+              const radiusInput = properties.querySelector('#trigger-radius-input');
+              const onceInput = properties.querySelector('#trigger-once-input');
+
+              // Parse values (with validation)
+              const x = parseFloat(xInput.value) || 0;
+              const y = parseFloat(yInput.value) || 0;
+              const radius = parseFloat(radiusInput.value) || 1;
+              const once = onceInput.checked;
+
+              // Update node data
+              nodeData.data.x = x;
+              nodeData.data.y = y;
+              nodeData.data.radius = radius;
+              nodeData.data.once = once;
+
+              // Mark as dirty
+              this.currentGraph.dirty = true;
+
+              // Update visual representation
+              this.updateNodeVisual(nodeData);
+
+              // Show confirmation
+              this.showToast('Trigger updated', 'success');
+            } catch (error) {
+              console.error('Error updating trigger node:', error);
+              this.showToast('Error updating trigger node', 'error');
+            }
+          });
+        }
+
+        // Pick location button
+        const pickLocationBtn = properties.querySelector('#pick-location-btn');
+        if (pickLocationBtn) {
+          pickLocationBtn.addEventListener('click', () => {
+            // If we have a 3D scene, enable location picking mode
+            if (this.scene3D) {
+              this.showToast('Location picking mode enabled', 'info');
+
+              // Close the editor drawer temporarily
+              if (this.editor) {
+                this.editor.hide();
+              }
+
+              // Here you'd connect to your scene's click handler
+              // For now, we'll just show a toast with instructions
+              this.showToast('Click on the map to place trigger (not implemented yet)', 'info', 5000);
+
+              // In a real implementation, you'd have code like:
+              /*
+              this.scene3D.enablePickingMode((position) => {
+                // Update node data with picked position
+                nodeData.data.x = position.x;
+                nodeData.data.y = position.z; // Assuming Y is up in your world
+                
+                // Re-open editor and refresh
+                this.openEditor();
+                this.selectNode(nodeData.element);
+                
+                this.showToast('Location set', 'success');
+              });
+              */
+            } else {
+              this.showToast('3D scene not available for picking', 'error');
+            }
+          });
+        }
+      }
+
+      // In setupNodePropertyHandlers method, add this for event nodes
+      if (nodeData.type === 'event') {
+        // Event type change handler
+        const eventTypeSelect = properties.querySelector('#event-type-select');
+        if (eventTypeSelect) {
+          eventTypeSelect.addEventListener('change', () => {
+            // Update event type
+            nodeData.data.eventType = eventTypeSelect.value;
+
+            // Reset parameters for new event type
+            nodeData.data.params = {};
+
+            // Refresh panel to show appropriate parameters
+            this.selectNode(nodeData.element);
+          });
+        }
+
+        // Apply button handler
+        const applyBtn = properties.querySelector('#apply-event-changes');
+        if (applyBtn) {
+          applyBtn.addEventListener('click', () => {
+            try {
+              // Get event type value
+              const eventType = eventTypeSelect ? eventTypeSelect.value : nodeData.data.eventType;
+
+              // Get parameters based on event type
+              const params = {};
+
+              switch (eventType) {
+                case 'giveItem':
+                  const selectItemBtn = properties.querySelector('#select-item-btn');
+                  if (selectItemBtn) {
+                    selectItemBtn.addEventListener('click', () => {
+                      this.showPropsSelector(nodeData);
+                    });
+                  }
+
+                  // Make sure we capture the horizontal flag for our item
+                  const applyBtn = properties.querySelector('#apply-event-changes');
+                  if (applyBtn) {
+                    // We'll enhance the existing apply handler by adding the horizontal flag
+                    applyBtn.addEventListener('click', () => {
+                      // Make sure we save the current horizontal flag state when updating
+                      if (nodeData.data.eventType === 'giveItem') {
+                        const horizontalCheckbox = properties.querySelector('#item-horizontal-input');
+                        if (horizontalCheckbox && nodeData.data.params) {
+                          nodeData.data.params.isHorizontal = horizontalCheckbox.checked;
+                        }
+                      }
+                    });
+                  }
+                  break;
+
+                case 'setFlag':
+                  const flagNameInput = properties.querySelector('#flag-name-input');
+                  const flagValueInput = properties.querySelector('#flag-value-input');
+
+                  params.flag = flagNameInput ? flagNameInput.value.trim() : '';
+                  params.value = flagValueInput ? flagValueInput.value === 'true' : true;
+                  break;
+
+                case 'teleport':
+                  const xInput = properties.querySelector('#teleport-x-input');
+                  const yInput = properties.querySelector('#teleport-y-input');
+                  const zInput = properties.querySelector('#teleport-z-input');
+
+                  params.x = xInput ? parseFloat(xInput.value) || 0 : 0;
+                  params.y = yInput ? parseFloat(yInput.value) || 0 : 0;
+                  params.z = zInput ? parseFloat(zInput.value) || 0 : 0;
+                  break;
+              }
+
+              // Update node data
+              nodeData.data.eventType = eventType;
+              nodeData.data.params = params;
+
+              // Mark as dirty
+              this.currentGraph.dirty = true;
+
+              // Update visual representation
+              this.updateNodeVisual(nodeData);
+
+              // Show confirmation
+              this.showToast('Event updated', 'success');
+            } catch (error) {
+              console.error('Error updating event node:', error);
+              this.showToast('Error updating event node', 'error');
+            }
+          });
+        }
+
+        // Special event type specific handlers
+        switch (nodeData.data.eventType) {
+          case 'teleport':
+            const pickLocationBtn = properties.querySelector('#pick-teleport-location-btn');
+            if (pickLocationBtn) {
+              pickLocationBtn.addEventListener('click', () => {
+                this.showToast('Location picking not implemented yet', 'info');
+                // Similar to trigger location picking
+              });
+            }
+            break;
+
+          // case 'giveItem':
+          //   const selectItemBtn = properties.querySelector('#select-item-btn');
+          //   if (selectItemBtn) {
+          //     selectItemBtn.addEventListener('click', () => {
+          //       this.showToast('Item browser not implemented yet', 'info');
+          //       // Would connect to an item database browser
+          //     });
+          //   }
+          //   break;
+
+          case 'giveItem':
+            const selectItemBtn = properties.querySelector('#select-item-btn');
+            if (selectItemBtn) {
+              selectItemBtn.addEventListener('click', () => {
+                this.showResourceSelector(nodeData, 'textures', 'props', (resourceId, resource) => {
+                  // Update node data with selected item
+                  if (!nodeData.data.params) {
+                    nodeData.data.params = {};
+                  }
+                  
+                  nodeData.data.params.itemId = resourceId;
+                  nodeData.data.params.itemName = resource.name;
+                  nodeData.data.params.y = 0; // Set default y to 0 for ground placement
+                  nodeData.data.params.isHorizontal = true; // Default to horizontal orientation
+                  
+                  // Mark as dirty
+                  this.currentGraph.dirty = true;
+          
+                  // Refresh properties panel
+                  this.selectNode(nodeData.element);
+          
+                  // Show confirmation
+                  this.showToast(`Item "${resource.name}" selected`, 'success');
+                });
+              });
+            }
+            break;
+
+
+        }
+      }
+
+// Add this to your setupNodePropertyHandlers method
+// This goes in the if-else chain where other node types are handled
+
+if (nodeData.type === 'condition') {
+  // Condition type change handler
+  const conditionTypeSelect = properties.querySelector('#condition-type-select');
+  if (conditionTypeSelect) {
+    conditionTypeSelect.addEventListener('change', () => {
+      // Update condition type
+      nodeData.data.condition = conditionTypeSelect.value;
+      
+      // Reset parameters for new condition type
+      nodeData.data.params = {};
+      
+      // Refresh panel to show appropriate parameters
+      this.selectNode(nodeData.element);
+    });
+  }
+  
+  // Apply button handler
+  const applyBtn = properties.querySelector('#apply-condition-changes');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      try {
+        // Get condition type value
+        const condition = conditionTypeSelect ? conditionTypeSelect.value : nodeData.data.condition;
+        
+        // Get parameters based on condition type
+        const params = {};
+        
+        switch (condition) {
+          case 'hasMonster':
+            // Keep existing monster data
+            if (nodeData.data.params?.monsterId) {
+              params.monsterId = nodeData.data.params.monsterId;
+              params.monsterName = nodeData.data.params.monsterName;
+            }
+            break;
+            
+          case 'hasItem':
+            // Keep existing item data, update quantity
+            if (nodeData.data.params?.itemId) {
+              params.itemId = nodeData.data.params.itemId;
+              params.itemName = nodeData.data.params.itemName;
+            }
+            
+            const quantityInput = properties.querySelector('#item-quantity-input');
+            params.quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+            break;
+            
+          case 'hasFlag':
+            const flagNameInput = properties.querySelector('#flag-name-input');
+            const flagValueInput = properties.querySelector('#flag-value-input');
+            
+            params.flag = flagNameInput ? flagNameInput.value.trim() : '';
+            params.value = flagValueInput ? flagValueInput.value === 'true' : true;
+            break;
+            
+          case 'monsterLevel':
+            // Keep existing monster data, update level
+            if (nodeData.data.params?.monsterId) {
+              params.monsterId = nodeData.data.params.monsterId;
+              params.monsterName = nodeData.data.params.monsterName;
+            }
+            
+            const levelInput = properties.querySelector('#monster-level-input');
+            params.level = levelInput ? parseInt(levelInput.value) || 1 : 1;
+            break;
+            
+          case 'playerLevel':
+            // Note: This will be replaced later with something more fitting
+            const playerLevelInput = properties.querySelector('#player-level-input');
+            params.level = playerLevelInput ? parseInt(playerLevelInput.value) || 1 : 1;
+            break;
+        }
+        
+        // Update node data
+        nodeData.data.condition = condition;
+        nodeData.data.params = params;
+        
+        // Mark as dirty
+        this.currentGraph.dirty = true;
+        
+        // Update visual representation
+        this.updateNodeVisual(nodeData);
+        
+        // Show confirmation
+        this.showToast('Condition updated', 'success');
+      } catch (error) {
+        console.error('Error updating condition node:', error);
+        this.showToast('Error updating condition node', 'error');
+      }
+    });
+  }
+  
+  // Resource selection handlers based on condition type
+  switch (nodeData.data.condition) {
+    case 'hasMonster':
+    case 'monsterLevel':
+      const selectMonsterBtn = properties.querySelector('#select-monster-btn');
+      if (selectMonsterBtn) {
+        selectMonsterBtn.addEventListener('click', () => {
+          this.showResourceSelector(nodeData, 'bestiary', '', (monsterId, monster) => {
+            // Update node data with selected monster
+            if (!nodeData.data.params) {
+              nodeData.data.params = {};
+            }
+            
+            nodeData.data.params.monsterId = monsterId;
+            nodeData.data.params.monsterName = monster.name;
+            
+            // Mark as dirty
+            this.currentGraph.dirty = true;
+
+            // Refresh properties panel
+            this.selectNode(nodeData.element);
+
+            // Show confirmation
+            this.showToast(`Monster "${monster.name}" selected`, 'success');
+          });
+        });
+      }
+      break;
+      
+    case 'hasItem':
+      const selectItemBtn = properties.querySelector('#select-item-btn');
+      if (selectItemBtn) {
+        selectItemBtn.addEventListener('click', () => {
+          this.showResourceSelector(nodeData, 'textures', 'props', (itemId, item) => {
+            // Update node data with selected item
+            if (!nodeData.data.params) {
+              nodeData.data.params = {};
+            }
+            
+            nodeData.data.params.itemId = itemId;
+            nodeData.data.params.itemName = item.name;
+            
+            // Mark as dirty
+            this.currentGraph.dirty = true;
+
+            // Refresh properties panel
+            this.selectNode(nodeData.element);
+
+            // Show confirmation
+            this.showToast(`Item "${item.name}" selected`, 'success');
+          });
+        });
+      }
+      break;
+  }
+}
+
+
+
+
+
       // Add handlers for other node types as needed...
     }
 
     /**
-     * New method to update a node's visual appearance based on its data
+     * old working method to update a node's visual appearance based on its data
      */
-    updateNodeVisual(nodeData) {
-      if (!nodeData || !nodeData.element) return;
+//     updateNodeVisual(nodeData) {
+//       if (!nodeData || !nodeData.element) return;
 
-      const element = nodeData.element;
+//       const element = nodeData.element;
+    
+//       // Update title in header
+//       const header = element.querySelector('.storyboard-node-header');
+//       if (header) {
+//         // Get the text node (first child)
+//         let textNode = null;
+//         for (const child of header.childNodes) {
+//           if (child.nodeType === Node.TEXT_NODE) {
+//             textNode = child;
+//             break;
+//           }
+//         }
 
-      // Update title in header
-      const header = element.querySelector('.storyboard-node-header');
-      if (header) {
-        // Get the text node (first child)
-        let textNode = null;
-        for (const child of header.childNodes) {
-          if (child.nodeType === Node.TEXT_NODE) {
-            textNode = child;
-            break;
-          }
-        }
+//         if (textNode) {
+//           textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+//         } else {
+//           // If no text node found, insert one at the beginning
+//           const closeButton = header.querySelector('.storyboard-node-close');
+//           if (closeButton) {
+//             header.insertBefore(
+//               document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
+//               closeButton
+//             );
+//           }
+//         }
+//       }
 
-        if (textNode) {
-          textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
-        } else {
-          // If no text node found, insert one at the beginning
-          const closeButton = header.querySelector('.storyboard-node-close');
-          if (closeButton) {
-            header.insertBefore(
-              document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
-              closeButton
-            );
-          }
-        }
-      }
+//       const body = element.querySelector('.storyboard-node-body');
+//       if (body) {
+//         // Declare variables once at the top level
+//         let description = '';
+//         let eventTypeName = '';
+//         let conditionName = '';
+//         let itemName = '';
+//         let quantity = 0;
+//         let orientation = '';
+        
+//         switch (nodeData.type) {
+//           case 'dialog':
+//             body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
+//             if (nodeData.data.image) {
+//               body.innerHTML += `
+//                   <div style="margin-top: 4px; font-size: 0.8em; color: #888;">
+//                     <span class="material-icons" style="font-size: 14px; vertical-align: middle;">image</span>
+//                     Image attached
+//                   </div>
+//                 `;
+//             }
+//             break;
 
-      // Update content in body based on node type
-      const body = element.querySelector('.storyboard-node-body');
-      if (body) {
-        switch (nodeData.type) {
-          case 'dialog':
-            body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
-            if (nodeData.data.image) {
-              body.innerHTML += `
-                  <div style="margin-top: 4px; font-size: 0.8em; color: #888;">
-                    <span class="material-icons" style="font-size: 14px; vertical-align: middle;">image</span>
-                    Image attached
-                  </div>
-                `;
-            }
-            break;
+//           // In the updateNodeVisual method, update the case for choice nodes
+//           case 'choice':
+//             body.innerHTML = `
+//     <div>${nodeData.data.text || 'What would you like to do?'}</div>
+//     <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
+//       ${nodeData.data.options?.length || 0} options
+//     </div>
+//   `;
+//             break;
 
-          case 'choice':
-            body.innerHTML = `
-                <div>${nodeData.data.text || ''}</div>
-                <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
-              `;
-            break;
+//           // In the updateNodeVisual method, update the case for trigger nodes
+//           case 'trigger':
+//             body.innerHTML = `
+//     <div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(1)}</div>
+//     <div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
+//     <div style="margin-top: 4px; font-size: 0.9em; color: ${nodeData.data.once ? '#4CAF50' : '#FFC107'};">
+//       ${nodeData.data.once ? 'Triggers once' : 'Triggers repeatedly'}
+//     </div>
+//   `;
+//             break;
 
-          case 'trigger':
-            body.innerHTML = `<div>X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}</div>`;
-            break;
+//           // In the updateNodeVisual method, update the case for event nodes
+//           case 'event':
+//             // Get a human-readable event type name
+//             let eventTypeName = '';
+//             switch (nodeData.data.eventType) {
+//               case 'offerStarter': eventTypeName = 'Offer Starter Monster'; break;
+//               case 'showPartyManager': eventTypeName = 'Show Party Manager'; break;
+//               case 'giveItem': eventTypeName = 'Give Item'; break;
+//               case 'setFlag': eventTypeName = 'Set Flag'; break;
+//               case 'teleport': eventTypeName = 'Teleport Player'; break;
+//               default: eventTypeName = nodeData.data.eventType || 'Unknown';
+//             }
 
-          case 'event':
-            body.innerHTML = `<div>Event: ${nodeData.data.eventType || 'none'}</div>`;
-            break;
+//             // Build description based on event type
+//             let description = '';
+//             switch (nodeData.data.eventType) {
+//               case 'giveItem':
+//                 const itemName = nodeData.data.params?.itemName || nodeData.data.params?.itemId || 'Not set';
+//                 const quantity = nodeData.data.params?.quantity || 1;
+//                 const orientation = nodeData.data.params?.isHorizontal ? 'Horizontal' : 'Vertical';
+//                 description = `Item: ${itemName}, Qty: ${quantity}, ${orientation}`;
+//                 break;
+//               case 'setFlag':
+//                 description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
+//                 break;
+//               case 'teleport':
+//                 const x = nodeData.data.params?.x || 0;
+//                 const y = nodeData.data.params?.y || 0;
+//                 const z = nodeData.data.params?.z || 0;
+//                 description = `Position: ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}`;
+//                 break;
+//             }
 
-          // Other node types...
-        }
+//             body.innerHTML = `
+//     <div>${eventTypeName}</div>
+//     ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
+//   `;
+//             break;
+
+// // condition method goes here
+
+
+
+
+//           // Other node types...
+//         }
+//       }
+//     }
+
+updateNodeVisual(nodeData) {
+  if (!nodeData || !nodeData.element) return;
+
+  const element = nodeData.element;
+
+  // Update title in header
+  const header = element.querySelector('.storyboard-node-header');
+  if (header) {
+    // Get the text node (first child)
+    let textNode = null;
+    for (const child of header.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        textNode = child;
+        break;
       }
     }
+
+    if (textNode) {
+      textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+    } else {
+      // If no text node found, insert one at the beginning
+      const closeButton = header.querySelector('.storyboard-node-close');
+      if (closeButton) {
+        header.insertBefore(
+          document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
+          closeButton
+        );
+      }
+    }
+  }
+
+  const body = element.querySelector('.storyboard-node-body');
+  if (body) {
+    // Declare variables once at the top level
+    let description = '';
+    let eventTypeName = '';
+    let conditionName = '';
+    let itemName = '';
+    let quantity = 0;
+    let orientation = '';
+    let x, y, z;
+    
+    switch (nodeData.type) {
+      case 'dialog':
+        body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
+        if (nodeData.data.image) {
+          body.innerHTML += `
+              <div style="margin-top: 4px; font-size: 0.8em; color: #888;">
+                <span class="material-icons" style="font-size: 14px; vertical-align: middle;">image</span>
+                Image attached
+              </div>
+            `;
+        }
+        break;
+
+      // In the updateNodeVisual method, update the case for choice nodes
+      case 'choice':
+        body.innerHTML = `
+<div>${nodeData.data.text || 'What would you like to do?'}</div>
+<div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
+  ${nodeData.data.options?.length || 0} options
+</div>
+`;
+        break;
+
+      // In the updateNodeVisual method, update the case for trigger nodes
+      case 'trigger':
+        body.innerHTML = `
+<div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(1)}</div>
+<div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
+<div style="margin-top: 4px; font-size: 0.9em; color: ${nodeData.data.once ? '#4CAF50' : '#FFC107'};">
+  ${nodeData.data.once ? 'Triggers once' : 'Triggers repeatedly'}
+</div>
+`;
+        break;
+
+      // In the updateNodeVisual method, update the case for event nodes
+      case 'event':
+        // Get a human-readable event type name - reuse variables from above
+        eventTypeName = '';
+        switch (nodeData.data.eventType) {
+          case 'offerStarter': eventTypeName = 'Offer Starter Monster'; break;
+          case 'showPartyManager': eventTypeName = 'Show Party Manager'; break;
+          case 'giveItem': eventTypeName = 'Give Item'; break;
+          case 'setFlag': eventTypeName = 'Set Flag'; break;
+          case 'teleport': eventTypeName = 'Teleport Player'; break;
+          default: eventTypeName = nodeData.data.eventType || 'Unknown';
+        }
+
+        // Build description based on event type - reuse variables from above
+        description = '';
+        switch (nodeData.data.eventType) {
+          case 'giveItem':
+            itemName = nodeData.data.params?.itemName || nodeData.data.params?.itemId || 'Not set';
+            quantity = nodeData.data.params?.quantity || 1;
+            orientation = nodeData.data.params?.isHorizontal ? 'Horizontal' : 'Vertical';
+            description = `Item: ${itemName}, Qty: ${quantity}, ${orientation}`;
+            break;
+          case 'setFlag':
+            description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
+            break;
+          case 'teleport':
+            x = nodeData.data.params?.x || 0;
+            y = nodeData.data.params?.y || 0;
+            z = nodeData.data.params?.z || 0;
+            description = `Position: ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}`;
+            break;
+        }
+
+        body.innerHTML = `
+<div>${eventTypeName}</div>
+${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
+`;
+        break;
+
+        case 'condition':
+          // Get a human-readable condition type name - reuse variables from above
+          conditionName = '';
+          switch (nodeData.data.condition) {
+            case 'hasMonster': conditionName = 'Has Monster'; break;
+            case 'hasItem': conditionName = 'Has Item'; break;
+            case 'hasFlag': conditionName = 'Has Flag'; break;
+            case 'monsterLevel': conditionName = 'Monster Level'; break;
+            case 'playerLevel': conditionName = 'Player Level'; break;
+            default: conditionName = nodeData.data.condition || 'Unknown';
+          }
+          
+          // Build description based on condition type - reuse variables from above
+          description = '';
+          switch (nodeData.data.condition) {
+            case 'hasMonster':
+              description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}`;
+              break;
+            case 'hasItem':
+              description = `Item: ${nodeData.data.params?.itemName || 'Not set'}, Qty: ${nodeData.data.params?.quantity || 1}`;
+              break;
+            case 'hasFlag':
+              description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
+              break;
+            case 'monsterLevel':
+              description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}, Level: ${nodeData.data.params?.level || 1}+`;
+              break;
+            case 'playerLevel':
+              description = `Level: ${nodeData.data.params?.level || 1}+`;
+              break;
+          }
+          
+          body.innerHTML = `
+  <div style="display: flex; align-items: center; gap: 6px;">
+    <span class="material-icons" style="font-size: 18px; color: #FFC107;">help</span>
+    <span>${conditionName}</span>
+  </div>
+  ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
+  <div style="margin-top: 8px; font-size: 0.8em; color: #2196F3;">
+    <span class="material-icons" style="font-size: 12px; vertical-align: middle;">arrow_forward</span> 
+    First branch: If true
+  </div>
+  <div style="font-size: 0.8em; color: #F44336;">
+    <span class="material-icons" style="font-size: 12px; vertical-align: middle;">arrow_forward</span> 
+    Second branch: If false
+  </div>
+  `;
+          break;
+      // Other node types...
+
+
+
+
+
+      default:
+        body.innerHTML = '<div>Configure node</div>';
+    }
+  }
+}
+
+
+
+/**
+ * Show a unified resource selector for various resource types
+ * @param {Object} nodeData - The node data to update with selection
+ * @param {string} resourceType - Main resource type: 'textures', 'sounds', 'splashArt', 'bestiary'
+ * @param {string} category - Subcategory within the resource type: 'props', 'walls', 'ambient', 'title', etc.
+ * @param {Function} onSelect - Callback function when item is selected (receives resourceId and resource)
+ */
+showResourceSelector(nodeData, resourceType, category, onSelect) {
+  if (!this.resourceManager || !nodeData) {
+    console.error('ResourceManager not available for resource selection');
+    this.showToast('Resource Manager not available', 'error');
+    return;
+  }
+
+  // Create drawer for resource selection
+  const drawer = document.createElement('sl-drawer');
+  drawer.label = `Select ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+  drawer.placement = 'bottom';
+  drawer.style.cssText = '--size: 70vh;';
+  
+  // Add classes for styling
+  drawer.classList.add('storyboard-drawer');
+  drawer.classList.add('resource-selector-drawer');
+
+  // Add styles for this specific drawer
+  const selectorStyles = document.createElement('style');
+  selectorStyles.textContent = `
+    .resource-selector-drawer::part(overlay) {
+      left: 280px !important;
+      width: calc(100% - 280px) !important;
+    }
+    
+    .resource-selector-drawer::part(panel) {
+      background: #242424;
+      color: #e0e0e0;
+      left: 280px !important;
+      width: calc(100% - 280px) !important;
+      max-width: none !important;
+      margin-left: 0 !important;
+      border-radius: 8px 0 0 0 !important;
+    }
+    
+.resource-selector-drawer::part(header) {
+  background: #333;
+  border-bottom: 1px solid #444;
+  height: 48px;
+  padding: 0 16px; /* Reduce padding */
+  display: flex;
+  align-items: center; /* Vertically center content */
+}
+
+/* Target the title specifically */
+.resource-selector-drawer::part(title) {
+  font-size: 1rem; /* Slightly smaller font */
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis for long titles */
+}
+
+/* Adjust the close button */
+.resource-selector-drawer::part(close-button) {
+  margin-left: 8px; /* Less margin */
+  padding: 8px; /* Smaller click target but still usable */
+}
+    
+    .resource-selector-drawer::part(body) {
+      padding: 0;
+    }
+    
+    .resource-selector-drawer::part(footer) {
+      background: #333;
+      border-top: 1px solid #444;
+    }
+    
+    .resource-selector-drawer .resource-item {
+      cursor: pointer;
+      border: 1px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      background: #333;
+    }
+    
+    .resource-selector-drawer .resource-item:hover {
+      border-color: #673ab7;
+      transform: translateY(-2px);
+    }
+  `;
+  document.head.appendChild(selectorStyles);
+
+  // Get resources from resource manager
+  let resources = [];
+  
+  if (resourceType === 'textures') {
+    const resourceMap = this.resourceManager.resources.textures[category];
+    if (resourceMap && resourceMap.size > 0) {
+      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+        id,
+        name: resource.name || 'Unnamed',
+        thumbnail: resource.thumbnail,
+        data: resource
+      }));
+    }
+  } else if (resourceType === 'sounds') {
+    const resourceMap = this.resourceManager.resources.sounds[category];
+    if (resourceMap && resourceMap.size > 0) {
+      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+        id,
+        name: resource.name || 'Unnamed',
+        duration: resource.duration || 0,
+        data: resource
+      }));
+    }
+  } else if (resourceType === 'splashArt') {
+    const resourceMap = this.resourceManager.resources.splashArt[category];
+    if (resourceMap && resourceMap.size > 0) {
+      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+        id,
+        name: resource.name || 'Unnamed',
+        thumbnail: resource.thumbnail,
+        data: resource
+      }));
+    }
+  } else if (resourceType === 'bestiary') {
+    const resourceMap = this.resourceManager.resources.bestiary;
+    if (resourceMap && resourceMap.size > 0) {
+      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+        id,
+        name: resource.name || 'Unnamed',
+        thumbnail: resource.thumbnail,
+        cr: resource.cr,
+        type: resource.type,
+        data: resource
+      }));
+    }
+  }
+
+  // Customize item rendering based on resource type
+  let itemRenderer;
+  
+  if (resourceType === 'textures' || resourceType === 'splashArt') {
+    // For visual resources
+    itemRenderer = (resource) => `
+      <div class="resource-item" data-id="${resource.id}" style="height: 100%;">
+        <div style="height: 120px; overflow: hidden;">
+          <img src="${resource.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <div style="padding: 8px;">
+          <div style="font-weight: 500; word-break: break-word;">${resource.name}</div>
+        </div>
+      </div>
+    `;
+  } else if (resourceType === 'sounds') {
+    // For sound resources
+    itemRenderer = (resource) => `
+      <div class="resource-item" data-id="${resource.id}" style="height: 100%; display: flex; flex-direction: column;">
+        <div style="flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+          <div class="material-icons" style="font-size: 32px; margin-bottom: 8px; color: #673ab7;">music_note</div>
+          <div style="margin-bottom: 4px; text-align: center;">${resource.name}</div>
+          <div style="font-size: 0.8em; color: #aaa;">${this.formatDuration(resource.duration)}</div>
+        </div>
+        <div style="padding: 8px; border-top: 1px solid #444; text-align: center;">
+          <sl-button size="small" class="play-sound-btn" data-id="${resource.id}">
+            <span class="material-icons" style="font-size: 16px;">play_arrow</span>
+            Play
+          </sl-button>
+        </div>
+      </div>
+    `;
+  } else if (resourceType === 'bestiary') {
+    // For bestiary resources
+    itemRenderer = (resource) => `
+      <div class="resource-item" data-id="${resource.id}" style="height: 100%;">
+        <div style="height: 120px; overflow: hidden;">
+          <img src="${resource.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <div style="padding: 8px;">
+          <div style="font-weight: 500; word-break: break-word;">${resource.name}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #aaa; margin-top: 4px;">
+            <span>CR ${resource.cr || '?'}</span>
+            <span>${resource.type || 'Monster'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Add drawer content
+  drawer.innerHTML = `
+    <div style="padding: 16px;">
+      <div style="margin-bottom: 16px;">
+        <sl-input placeholder="Search..." clearable id="resource-search"></sl-input>
+      </div>
+      
+      <div class="resources-grid" style="
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+        max-height: calc(70vh - 140px);
+        overflow-y: auto;
+        padding-right: 8px;
+      ">
+        ${resources.length > 0 ?
+          resources.map(resource => itemRenderer(resource)).join('') :
+          `<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: #888;">
+            No ${category} available. Add some in the Resource Manager.
+          </div>`
+        }
+      </div>
+    </div>
+    
+    <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
+      <sl-button variant="text">Cancel</sl-button>
+      <div style="color: #aaa; font-size: 0.9em;">
+        ${resources.length} items available
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(drawer);
+  drawer.show();
+
+  // Set up search functionality
+  const searchInput = drawer.querySelector('#resource-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+
+      drawer.querySelectorAll('.resource-item').forEach(item => {
+        const nameElement = item.querySelector('div > div');
+        if (!nameElement) return;
+        
+        const name = nameElement.textContent.toLowerCase();
+
+        // Show/hide based on search term
+        if (name.includes(searchTerm)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Set up sound play buttons if needed
+  if (resourceType === 'sounds') {
+    drawer.querySelectorAll('.play-sound-btn').forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.stopPropagation(); // Don't select when just playing
+        const soundId = button.getAttribute('data-id');
+        this.resourceManager.playSound(soundId, category);
+      });
+    });
+  }
+
+  // Set up item selection
+  drawer.querySelectorAll('.resource-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const resourceId = item.getAttribute('data-id');
+      let resource;
+      
+      // Get the selected resource based on resource type
+      if (resourceType === 'textures') {
+        resource = this.resourceManager.resources.textures[category].get(resourceId);
+      } else if (resourceType === 'sounds') {
+        resource = this.resourceManager.resources.sounds[category].get(resourceId);
+      } else if (resourceType === 'splashArt') {
+        resource = this.resourceManager.resources.splashArt[category].get(resourceId);
+      } else if (resourceType === 'bestiary') {
+        resource = this.resourceManager.resources.bestiary.get(resourceId);
+      }
+
+      if (resource) {
+        // Use callback for selection if provided
+        if (typeof onSelect === 'function') {
+          onSelect(resourceId, resource);
+        }
+        
+        // Close drawer
+        drawer.hide();
+      }
+    });
+  });
+
+  // Set up cancel button
+  const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      drawer.hide();
+    });
+  }
+
+  // Clean up when drawer is closed
+  drawer.addEventListener('sl-after-hide', () => {
+    drawer.remove();
+    selectorStyles.remove();
+  });
+}
+
+// Helper method to format sound duration
+formatDuration(seconds) {
+  if (!seconds) return '0:00';
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
+}
 
     /**
      * New method to show a splash art selector
      */
-    showSplashArtSelector(nodeData) {
-      if (!this.resourceManager || !nodeData) {
-        console.error('ResourceManager not available for splash art selection');
-        this.showToast('Resource Manager not available', 'error');
-        return;
-      }
-    
-      // Create drawer for splash art selection
-      const drawer = document.createElement('sl-drawer');
-      // drawer.label = 'Select Splash Art';
-      drawer.placement = 'bottom';
-      drawer.style.cssText = '--size: 70vh;'; // This controls height for bottom drawers
-      
-      // Add class for consistent styling
-      drawer.classList.add('storyboard-drawer');
-      drawer.classList.add('splash-art-selector-drawer');
-    
-      // Add styles for this specific drawer to account for sidebar
-      const selectorStyles = document.createElement('style');
-      selectorStyles.textContent = `
-      .splash-art-selector-drawer::part(overlay) {
-        left: 280px !important; /* Start after sidebar */
-        width: calc(100% - 280px) !important; /* Take remaining width */
-      }
-      
-      .splash-art-selector-drawer::part(panel) {
-        background: #242424;
-        color: #e0e0e0;
-        left: 280px !important; /* Start after sidebar */
-        width: calc(100% - 280px) !important; /* Take remaining width */
-        max-width: none !important; /* Override default max-width */
-        margin-left: 0 !important; /* Reset margin */
-        border-radius: 8px 0 0 0 !important; /* Round only the left corner */
-      }
-      
-      .splash-art-selector-drawer::part(header) {
-        background: #333;
-        border-bottom: 1px solid #444;
-      	height: 48px;
-      }
-      
-      .splash-art-selector-drawer::part(body) {
-        padding: 0;
-      }
-      
-      .splash-art-selector-drawer::part(footer) {
-        background: #333;
-        border-top: 1px solid #444;
-      }
-      
-      .splash-art-selector-drawer sl-input::part(base) {
-        background: #333;
-        color: #e0e0e0;
-        border-color: #444;
-      }
-      
-      .splash-art-selector-drawer .splash-art-item {
-        background: #333 !important;
-        border: 1px solid #444 !important;
-        transition: all 0.2s ease;
-      }
-      
-      .splash-art-selector-drawer .splash-art-item:hover {
-        border-color: #673ab7 !important;
-        transform: translateY(-2px);
+//     showSplashArtSelector(nodeData) {
+//       if (!this.resourceManager || !nodeData) {
+//         console.error('ResourceManager not available for splash art selection');
+//         this.showToast('Resource Manager not available', 'error');
+//         return;
+//       }
 
-        .drawer__title {
-	flex: 1 1 auto;
-	font-style: inherit;
-	font-variant: inherit;
-	font-weight: inherit;
-	font-stretch: inherit;
-	font-family: inherit;
-	font-size-adjust: inherit;
-	font-kerning: inherit;
-	font-optical-sizing: inherit;
-	font-language-override: inherit;
-	font-feature-settings: inherit;
-	font-variation-settings: inherit;
-	font-size: var(--sl-font-size-large);
-	line-height: var(--sl-line-height-dense);
-	/* padding: var(--header-spacing); */
-	margin: 0px;
-}
-      }
-      `;
-      document.head.appendChild(selectorStyles);
-    
-      // Get all splash art from resource manager
-      let allSplashArt = [];
-      const categories = ['title', 'loading', 'background']; // Add all relevant categories
+//       // Create drawer for splash art selection
+//       const drawer = document.createElement('sl-drawer');
+//       // drawer.label = 'Select Splash Art';
+//       drawer.placement = 'bottom';
+//       drawer.style.cssText = '--size: 70vh;'; // This controls height for bottom drawers
 
-      // Get splash art from all categories
-      categories.forEach(category => {
-        const artMap = this.resourceManager.resources.splashArt[category];
-        if (artMap) {
-          Array.from(artMap.entries()).forEach(([id, art]) => {
-            allSplashArt.push({
-              id,
-              name: art.name,
-              thumbnail: art.thumbnail,
-              category
-            });
-          });
-        }
-      });
+//       // Add class for consistent styling
+//       drawer.classList.add('storyboard-drawer');
+//       drawer.classList.add('splash-art-selector-drawer');
 
-      // Add drawer content
-      drawer.innerHTML = `
-          <div style="padding: 16px;">
-            <div style="margin-bottom: 16px;">
-              <sl-input placeholder="Search splash art..." clearable id="splash-art-search"></sl-input>
-            </div>
+//       // Add styles for this specific drawer to account for sidebar
+//       const selectorStyles = document.createElement('style');
+//       selectorStyles.textContent = `
+//       .splash-art-selector-drawer::part(overlay) {
+//         left: 280px !important; /* Start after sidebar */
+//         width: calc(100% - 280px) !important; /* Take remaining width */
+//       }
+      
+//       .splash-art-selector-drawer::part(panel) {
+//         background: #242424;
+//         color: #e0e0e0;
+//         left: 280px !important; /* Start after sidebar */
+//         width: calc(100% - 280px) !important; /* Take remaining width */
+//         max-width: none !important; /* Override default max-width */
+//         margin-left: 0 !important; /* Reset margin */
+//         border-radius: 8px 0 0 0 !important; /* Round only the left corner */
+//       }
+      
+//       .splash-art-selector-drawer::part(header) {
+//         background: #333;
+//         border-bottom: 1px solid #444;
+//       	height: 48px;
+//       }
+      
+//       .splash-art-selector-drawer::part(body) {
+//         padding: 0;
+//       }
+      
+//       .splash-art-selector-drawer::part(footer) {
+//         background: #333;
+//         border-top: 1px solid #444;
+//       }
+      
+//       .splash-art-selector-drawer sl-input::part(base) {
+//         background: #333;
+//         color: #e0e0e0;
+//         border-color: #444;
+//       }
+      
+//       .splash-art-selector-drawer .splash-art-item {
+//         background: #333 !important;
+//         border: 1px solid #444 !important;
+//         transition: all 0.2s ease;
+//       }
+      
+//       .splash-art-selector-drawer .splash-art-item:hover {
+//         border-color: #673ab7 !important;
+//         transform: translateY(-2px);
+
+//         .drawer__title {
+// 	flex: 1 1 auto;
+// 	font-style: inherit;
+// 	font-variant: inherit;
+// 	font-weight: inherit;
+// 	font-stretch: inherit;
+// 	font-family: inherit;
+// 	font-size-adjust: inherit;
+// 	font-kerning: inherit;
+// 	font-optical-sizing: inherit;
+// 	font-language-override: inherit;
+// 	font-feature-settings: inherit;
+// 	font-variation-settings: inherit;
+// 	font-size: var(--sl-font-size-large);
+// 	line-height: var(--sl-line-height-dense);
+// 	/* padding: var(--header-spacing); */
+// 	margin: 0px;
+// }
+//       }
+//       `;
+//       document.head.appendChild(selectorStyles);
+
+//       // Get all splash art from resource manager
+//       let allSplashArt = [];
+//       const categories = ['title', 'loading', 'background']; // Add all relevant categories
+
+//       // Get splash art from all categories
+//       categories.forEach(category => {
+//         const artMap = this.resourceManager.resources.splashArt[category];
+//         if (artMap) {
+//           Array.from(artMap.entries()).forEach(([id, art]) => {
+//             allSplashArt.push({
+//               id,
+//               name: art.name,
+//               thumbnail: art.thumbnail,
+//               category
+//             });
+//           });
+//         }
+//       });
+
+//       // Add drawer content
+//       drawer.innerHTML = `
+//           <div style="padding: 16px;">
+//             <div style="margin-bottom: 16px;">
+//               <sl-input placeholder="Search splash art..." clearable id="splash-art-search"></sl-input>
+//             </div>
             
-            <div class="splash-art-grid" style="
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-              gap: 16px;
-              max-height: calc(70vh - 120px);
-              overflow-y: auto;
-              padding-right: 8px;
-            ">
-              ${allSplashArt.length > 0 ?
-          allSplashArt.map(art => `
-                  <div class="splash-art-item" data-id="${art.id}" data-category="${art.category}" style="
-                    cursor: pointer;
-                    border: 1px solid #444;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    transition: all 0.2s;
-                    background: #333;
-                  ">
-                    <div style="height: 120px; overflow: hidden;">
-                      <img src="${art.thumbnail}" style="width: 100%; height: 100%; object-fit: cover;">
-                    </div>
-                    <div style="padding: 8px;">
-                      <div style="font-weight: 500;">${art.name}</div>
-                      <div style="font-size: 0.8em; color: #aaa;">${art.category}</div>
-                    </div>
-                  </div>
-                `).join('') :
-          `<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: #888;">
-                  No splash art available. Add some in the Resource Manager.
-                </div>`
-        }
-            </div>
-          </div>
+//             <div class="splash-art-grid" style="
+//               display: grid;
+//               grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+//               gap: 16px;
+//               max-height: calc(70vh - 120px);
+//               overflow-y: auto;
+//               padding-right: 8px;
+//             ">
+//               ${allSplashArt.length > 0 ?
+//           allSplashArt.map(art => `
+//                   <div class="splash-art-item" data-id="${art.id}" data-category="${art.category}" style="
+//                     cursor: pointer;
+//                     border: 1px solid #444;
+//                     border-radius: 8px;
+//                     overflow: hidden;
+//                     transition: all 0.2s;
+//                     background: #333;
+//                   ">
+//                     <div style="height: 120px; overflow: hidden;">
+//                       <img src="${art.thumbnail}" style="width: 100%; height: 100%; object-fit: cover;">
+//                     </div>
+//                     <div style="padding: 8px;">
+//                       <div style="font-weight: 500;">${art.name}</div>
+//                       <div style="font-size: 0.8em; color: #aaa;">${art.category}</div>
+//                     </div>
+//                   </div>
+//                 `).join('') :
+//           `<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: #888;">
+//                   No splash art available. Add some in the Resource Manager.
+//                 </div>`
+//         }
+//             </div>
+//           </div>
           
-          <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
-            <sl-button variant="text">Cancel</sl-button>
-            <div style="color: #aaa; font-size: 0.9em;">
-              ${allSplashArt.length} items available
-            </div>
-          </div>
-        `;
-        
-        document.body.appendChild(drawer);
-        // drawer.show();
-        setTimeout(() => {
-          drawer.show();
-        }, 10);
+//           <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
+//             <sl-button variant="text">Cancel</sl-button>
+//             <div style="color: #aaa; font-size: 0.9em;">
+//               ${allSplashArt.length} items available
+//             </div>
+//           </div>
+//         `;
 
-      // Set up search functionality
-      const searchInput = drawer.querySelector('#splash-art-search');
-      if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-          const searchTerm = e.target.value.toLowerCase();
+//       document.body.appendChild(drawer);
+//       // drawer.show();
+//       setTimeout(() => {
+//         drawer.show();
+//       }, 10);
 
-          drawer.querySelectorAll('.splash-art-item').forEach(item => {
-            const name = item.querySelector('div > div').textContent.toLowerCase();
-            const category = item.querySelector('div > div:nth-child(2)').textContent.toLowerCase();
+//       // Set up search functionality
+//       const searchInput = drawer.querySelector('#splash-art-search');
+//       if (searchInput) {
+//         searchInput.addEventListener('input', (e) => {
+//           const searchTerm = e.target.value.toLowerCase();
 
-            // Show/hide based on search term
-            if (name.includes(searchTerm) || category.includes(searchTerm)) {
-              item.style.display = 'block';
-            } else {
-              item.style.display = 'none';
-            }
-          });
-        });
-      }
+//           drawer.querySelectorAll('.splash-art-item').forEach(item => {
+//             const name = item.querySelector('div > div').textContent.toLowerCase();
+//             const category = item.querySelector('div > div:nth-child(2)').textContent.toLowerCase();
 
-      // Set up item selection
-      drawer.querySelectorAll('.splash-art-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const artId = item.getAttribute('data-id');
-          const category = item.getAttribute('data-category');
+//             // Show/hide based on search term
+//             if (name.includes(searchTerm) || category.includes(searchTerm)) {
+//               item.style.display = 'block';
+//             } else {
+//               item.style.display = 'none';
+//             }
+//           });
+//         });
+//       }
 
-          // Update node data
-          nodeData.data.image = {
-            id: artId,
-            category: category
-          };
+//       // Set up item selection
+//       drawer.querySelectorAll('.splash-art-item').forEach(item => {
+//         item.addEventListener('click', () => {
+//           const artId = item.getAttribute('data-id');
+//           const category = item.getAttribute('data-category');
 
-          // Mark as dirty
-          this.currentGraph.dirty = true;
+//           // Update node data
+//           nodeData.data.image = {
+//             id: artId,
+//             category: category
+//           };
 
-          // Update visual
-          this.updateNodeVisual(nodeData);
+//           // Mark as dirty
+//           this.currentGraph.dirty = true;
 
-          // Refresh properties panel
-          this.selectNode(nodeData.element);
+//           // Update visual
+//           this.updateNodeVisual(nodeData);
 
-          // Close drawer
-          drawer.hide();
+//           // Refresh properties panel
+//           this.selectNode(nodeData.element);
 
-          // Show confirmation
-          this.showToast('Image added to dialog', 'success');
-        });
-      });
+//           // Close drawer
+//           drawer.hide();
 
-      // Set up cancel button
-      const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
-      if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-          drawer.hide();
-        });
-      }
+//           // Show confirmation
+//           this.showToast('Image added to dialog', 'success');
+//         });
+//       });
 
-      // Clean up when drawer is closed
-      drawer.addEventListener('sl-after-hide', () => {
-        drawer.remove();
-      });
-    }
+//       // Set up cancel button
+//       const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
+//       if (cancelBtn) {
+//         cancelBtn.addEventListener('click', () => {
+//           drawer.hide();
+//         });
+//       }
+
+//       // Clean up when drawer is closed
+//       drawer.addEventListener('sl-after-hide', () => {
+//         drawer.remove();
+//       });
+//     }
 
     /**
 * Simplified toast notification method
