@@ -1523,12 +1523,16 @@ if (typeof window.Storyboard === 'undefined') {
       const nodeId = nodeEl.getAttribute('data-id');
       const nodeData = this.currentGraph.nodes.get(nodeId);
 
+
+
       if (nodeData) {
+
         let propertiesHtml = '';
         let paramsHtml = '';
         let optionsHtml = '';
         let eventOptionsHtml = '';
         let conditionOptionsHtml = '';
+
 
         switch (nodeData.type) {
           case 'dialog':
@@ -1978,214 +1982,218 @@ if (typeof window.Storyboard === 'undefined') {
             `;
             break;
 
-// Add this inside your selectNode method, in the switch statement for different node types
-
-case 'condition':
-  // Define available condition types
-  const conditionTypes = [
-    { value: 'hasMonster', label: 'Has Monster' },
-    { value: 'hasItem', label: 'Has Item' },
-    { value: 'hasFlag', label: 'Has Game Flag' },
-    { value: 'monsterLevel', label: 'Monster Level Check' }
-    // Note: Removed playerLevel as per discussion
-  ];
+            case 'condition':
+              // Define available condition types
+              const conditionTypes = [
+                { value: 'hasMonster', label: 'Has Monster' },
+                { value: 'hasItem', label: 'Has Item' },
+                { value: 'hasFlag', label: 'Has Game Flag' },
+                { value: 'monsterLevel', label: 'Monster Level Check' }
+                // Removed playerLevel as you suggested
+              ];
+              
+              // Set default if not set
+              if (!nodeData.data.condition) {
+                nodeData.data.condition = 'hasFlag';
+              }
+              
+              // Initialize params if they don't exist
+              if (!nodeData.data.params) {
+                nodeData.data.params = {};
+              }
+            
+              // Generate condition options
+              const conditionOptionsHtml = conditionTypes.map(cond => `
+                <option value="${cond.value}" ${nodeData.data.condition === cond.value ? 'selected' : ''}>
+                  ${cond.label}
+                </option>
+              `).join('');
+            
+              // Generate parameter form based on condition type
+              paramsHtml = '';
+              switch (nodeData.data.condition) {
+                case 'hasMonster':
+                  paramsHtml = `
+                    <div class="param-group" style="margin-top: 16px;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
+                        <sl-button id="select-monster-btn" size="small">
+                          <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+                          Browse Monsters
+                        </sl-button>
+                      </div>
+                      
+                      ${nodeData.data.params?.monsterId ? `
+                        <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+                          <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                            <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
+                                 style="width: 100%; height: 100%; object-fit: contain;">
+                          </div>
+                          <div style="flex: 1;">
+                            <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
+                            <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
+                          </div>
+                        </div>
+                      ` : `
+                        <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+                          No monster selected yet. Click "Browse Monsters" to choose one.
+                        </div>
+                      `}
+                    </div>
+                  `;
+                  break;
+                  
+                case 'hasItem':
+                  paramsHtml = `
+                    <div class="param-group" style="margin-top: 16px;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="color: #aaa; font-size: 0.9em;">Selected Item</label>
+                        <sl-button id="select-item-btn" size="small">
+                          <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+                          Browse Items
+                        </sl-button>
+                      </div>
+                      
+                      ${nodeData.data.params?.itemId ? `
+                        <div class="selected-item-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+                          <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                            <img src="${this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId)?.thumbnail || ''}" 
+                                 style="width: 100%; height: 100%; object-fit: contain;">
+                          </div>
+                          <div style="flex: 1;">
+                            <div style="font-weight: 500;">${nodeData.data.params.itemName || 'Unknown Item'}</div>
+                            <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.itemId}</div>
+                          </div>
+                        </div>
+                      ` : `
+                        <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+                          No item selected yet. Click "Browse Items" to choose one.
+                        </div>
+                      `}
+                      
+                      <div style="margin-top: 12px;">
+                        <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Quantity</label>
+                        <input 
+                          type="number" 
+                          id="item-quantity-input" 
+                          value="${nodeData.data.params?.quantity || 1}"
+                          min="1"
+                          style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+                        >
+                      </div>
+                    </div>
+                  `;
+                  break;
+                  
+                case 'hasFlag':
+                  paramsHtml = `
+                    <div class="param-group" style="margin-top: 16px;">
+                      <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
+                      <input 
+                        type="text" 
+                        id="flag-name-input" 
+                        value="${nodeData.data.params?.flag || ''}"
+                        style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+                        placeholder="Enter flag name"
+                      >
+                    </div>
+                    <div class="param-group" style="margin-top: 16px;">
+                      <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Required Value</label>
+                      <select 
+                        id="flag-value-input"
+                        style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+                      >
+                        <option value="true" ${nodeData.data.params?.value === true ? 'selected' : ''}>True</option>
+                        <option value="false" ${nodeData.data.params?.value === false ? 'selected' : ''}>False</option>
+                      </select>
+                    </div>
+                  `;
+                  break;
+                  
+                case 'monsterLevel':
+                  paramsHtml = `
+                    <div class="param-group" style="margin-top: 16px;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
+                        <sl-button id="select-monster-btn" size="small">
+                          <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
+                          Browse Monsters
+                        </sl-button>
+                      </div>
+                      
+                      ${nodeData.data.params?.monsterId ? `
+                        <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
+                          <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
+                            <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
+                                 style="width: 100%; height: 100%; object-fit: contain;">
+                          </div>
+                          <div style="flex: 1;">
+                            <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
+                            <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
+                          </div>
+                        </div>
+                      ` : `
+                        <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
+                          No monster selected yet. Click "Browse Monsters" to choose one.
+                        </div>
+                      `}
+                      
+                      <div style="margin-top: 12px;">
+                        <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Level</label>
+                        <input 
+                          type="number" 
+                          id="monster-level-input" 
+                          value="${nodeData.data.params?.level || 1}"
+                          min="1"
+                          style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+                        >
+                      </div>
+                    </div>
+                  `;
+                  break;
+              }
+            
+              propertiesHtml = `
+                <div class="storyboard-property-group">
+                  <div class="storyboard-property-label">Condition Type</div>
+                  <div class="storyboard-property-field">
+                    <select 
+                      id="condition-type-select" 
+                      style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
+                    >
+                      ${conditionOptionsHtml}
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="storyboard-property-group">
+                  <div class="storyboard-property-label">Condition Parameters</div>
+                  <div class="storyboard-property-field condition-params-container">
+                    ${paramsHtml}
+                  </div>
+                </div>
+                
+                <div class="storyboard-property-group">
+                  <div style="background: #383838; padding: 12px; border-radius: 4px;">
+                    <div style="display: flex; align-items: flex-start; margin-bottom: 8px;">
+                      <span class="material-icons" style="font-size: 20px; margin-right: 8px; color: #aaa; margin-top: 2px;">info</span>
+                      <span>Connect the output of this condition node to two different nodes. The first connection is followed if the condition is true, the second if the condition is false.</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                  <sl-button id="apply-condition-changes" variant="primary">Apply Changes</sl-button>
+                </div>
+              `;
+              break;       
   
-  // Set default if not set
-  if (!nodeData.data.condition) {
-    nodeData.data.condition = 'hasFlag';
-  }
   
-  // Initialize params if they don't exist
-  if (!nodeData.data.params) {
-    nodeData.data.params = {};
-  }
-
-  // Generate condition options
-  const conditionOptionsHtml = conditionTypes.map(cond => `
-    <option value="${cond.value}" ${nodeData.data.condition === cond.value ? 'selected' : ''}>
-      ${cond.label}
-    </option>
-  `).join('');
-
-  // Generate parameter form based on condition type
-  // let paramsHtml = '';
-  switch (nodeData.data.condition) {
-    case 'hasMonster':
-      paramsHtml = `
-        <div class="param-group" style="margin-top: 16px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
-            <sl-button id="select-monster-btn" size="small">
-              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
-              Browse Monsters
-            </sl-button>
-          </div>
-          
-          ${nodeData.data.params?.monsterId ? `
-            <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
-              <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
-                     style="width: 100%; height: 100%; object-fit: contain;">
-              </div>
-              <div style="flex: 1;">
-                <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
-                <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
-              </div>
-            </div>
-          ` : `
-            <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
-              No monster selected yet. Click "Browse Monsters" to choose one.
-            </div>
-          `}
-        </div>
-      `;
-      break;
-      
-    case 'hasItem':
-      paramsHtml = `
-        <div class="param-group" style="margin-top: 16px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <label style="color: #aaa; font-size: 0.9em;">Selected Item</label>
-            <sl-button id="select-item-btn" size="small">
-              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
-              Browse Items
-            </sl-button>
-          </div>
-          
-          ${nodeData.data.params?.itemId ? `
-            <div class="selected-item-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
-              <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                <img src="${this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId)?.thumbnail || ''}" 
-                     style="width: 100%; height: 100%; object-fit: contain;">
-              </div>
-              <div style="flex: 1;">
-                <div style="font-weight: 500;">${nodeData.data.params.itemName || 'Unknown Item'}</div>
-                <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.itemId}</div>
-              </div>
-            </div>
-          ` : `
-            <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
-              No item selected yet. Click "Browse Items" to choose one.
-            </div>
-          `}
-          
-          <div style="margin-top: 12px;">
-            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Quantity</label>
-            <input 
-              type="number" 
-              id="item-quantity-input" 
-              value="${nodeData.data.params?.quantity || 1}"
-              min="1"
-              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
-            >
-          </div>
-        </div>
-      `;
-      break;
-      
-    case 'hasFlag':
-      paramsHtml = `
-        <div class="param-group" style="margin-top: 16px;">
-          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
-          <input 
-            type="text" 
-            id="flag-name-input" 
-            value="${nodeData.data.params?.flag || ''}"
-            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
-            placeholder="Enter flag name"
-          >
-        </div>
-        <div class="param-group" style="margin-top: 16px;">
-          <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Required Value</label>
-          <select 
-            id="flag-value-input"
-            style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
-          >
-            <option value="true" ${nodeData.data.params?.value === true ? 'selected' : ''}>True</option>
-            <option value="false" ${nodeData.data.params?.value === false ? 'selected' : ''}>False</option>
-          </select>
-        </div>
-      `;
-      break;
-      
-    case 'monsterLevel':
-      paramsHtml = `
-        <div class="param-group" style="margin-top: 16px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
-            <sl-button id="select-monster-btn" size="small">
-              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">search</span>
-              Browse Monsters
-            </sl-button>
-          </div>
-          
-          ${nodeData.data.params?.monsterId ? `
-            <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
-              <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
-                     style="width: 100%; height: 100%; object-fit: contain;">
-              </div>
-              <div style="flex: 1;">
-                <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
-                <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
-              </div>
-            </div>
-          ` : `
-            <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
-              No monster selected yet. Click "Browse Monsters" to choose one.
-            </div>
-          `}
-          
-          <div style="margin-top: 12px;">
-            <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Level</label>
-            <input 
-              type="number" 
-              id="monster-level-input" 
-              value="${nodeData.data.params?.level || 1}"
-              min="1"
-              style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
-            >
-          </div>
-        </div>
-      `;
-      break;
-  }
-
-  propertiesHtml = `
-    <div class="storyboard-property-group">
-      <div class="storyboard-property-label">Condition Type</div>
-      <div class="storyboard-property-field">
-        <select 
-          id="condition-type-select" 
-          style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
-        >
-          ${conditionOptionsHtml}
-        </select>
-      </div>
-    </div>
-    
-    <div class="storyboard-property-group">
-      <div class="storyboard-property-label">Condition Parameters</div>
-      <div class="storyboard-property-field condition-params-container">
-        ${paramsHtml}
-      </div>
-    </div>
-    
-    <div class="storyboard-property-group">
-      <div style="background: #383838; padding: 12px; border-radius: 4px;">
-        <div style="display: flex; align-items: flex-start; margin-bottom: 8px;">
-          <span class="material-icons" style="font-size: 20px; margin-right: 8px; color: #aaa; margin-top: 2px;">info</span>
-          <span>Connect the output of this condition node to two different nodes. The first connection is followed if the condition is true, the second if the condition is false.</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
-      <sl-button id="apply-condition-changes" variant="primary">Apply Changes</sl-button>
-    </div>
-  `;
-  break;
-          default:
+  
+  
+  
+  
+  default:
             propertiesHtml = `
                 <div class="storyboard-property-group">
                   <p>Properties for ${nodeData.type} node</p>
@@ -3401,234 +3409,6 @@ formatDuration(seconds) {
   const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
   return `${mins}:${secs}`;
 }
-
-    /**
-     * New method to show a splash art selector
-     */
-//     showSplashArtSelector(nodeData) {
-//       if (!this.resourceManager || !nodeData) {
-//         console.error('ResourceManager not available for splash art selection');
-//         this.showToast('Resource Manager not available', 'error');
-//         return;
-//       }
-
-//       // Create drawer for splash art selection
-//       const drawer = document.createElement('sl-drawer');
-//       // drawer.label = 'Select Splash Art';
-//       drawer.placement = 'bottom';
-//       drawer.style.cssText = '--size: 70vh;'; // This controls height for bottom drawers
-
-//       // Add class for consistent styling
-//       drawer.classList.add('storyboard-drawer');
-//       drawer.classList.add('splash-art-selector-drawer');
-
-//       // Add styles for this specific drawer to account for sidebar
-//       const selectorStyles = document.createElement('style');
-//       selectorStyles.textContent = `
-//       .splash-art-selector-drawer::part(overlay) {
-//         left: 280px !important; /* Start after sidebar */
-//         width: calc(100% - 280px) !important; /* Take remaining width */
-//       }
-      
-//       .splash-art-selector-drawer::part(panel) {
-//         background: #242424;
-//         color: #e0e0e0;
-//         left: 280px !important; /* Start after sidebar */
-//         width: calc(100% - 280px) !important; /* Take remaining width */
-//         max-width: none !important; /* Override default max-width */
-//         margin-left: 0 !important; /* Reset margin */
-//         border-radius: 8px 0 0 0 !important; /* Round only the left corner */
-//       }
-      
-//       .splash-art-selector-drawer::part(header) {
-//         background: #333;
-//         border-bottom: 1px solid #444;
-//       	height: 48px;
-//       }
-      
-//       .splash-art-selector-drawer::part(body) {
-//         padding: 0;
-//       }
-      
-//       .splash-art-selector-drawer::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//       }
-      
-//       .splash-art-selector-drawer sl-input::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//         border-color: #444;
-//       }
-      
-//       .splash-art-selector-drawer .splash-art-item {
-//         background: #333 !important;
-//         border: 1px solid #444 !important;
-//         transition: all 0.2s ease;
-//       }
-      
-//       .splash-art-selector-drawer .splash-art-item:hover {
-//         border-color: #673ab7 !important;
-//         transform: translateY(-2px);
-
-//         .drawer__title {
-// 	flex: 1 1 auto;
-// 	font-style: inherit;
-// 	font-variant: inherit;
-// 	font-weight: inherit;
-// 	font-stretch: inherit;
-// 	font-family: inherit;
-// 	font-size-adjust: inherit;
-// 	font-kerning: inherit;
-// 	font-optical-sizing: inherit;
-// 	font-language-override: inherit;
-// 	font-feature-settings: inherit;
-// 	font-variation-settings: inherit;
-// 	font-size: var(--sl-font-size-large);
-// 	line-height: var(--sl-line-height-dense);
-// 	/* padding: var(--header-spacing); */
-// 	margin: 0px;
-// }
-//       }
-//       `;
-//       document.head.appendChild(selectorStyles);
-
-//       // Get all splash art from resource manager
-//       let allSplashArt = [];
-//       const categories = ['title', 'loading', 'background']; // Add all relevant categories
-
-//       // Get splash art from all categories
-//       categories.forEach(category => {
-//         const artMap = this.resourceManager.resources.splashArt[category];
-//         if (artMap) {
-//           Array.from(artMap.entries()).forEach(([id, art]) => {
-//             allSplashArt.push({
-//               id,
-//               name: art.name,
-//               thumbnail: art.thumbnail,
-//               category
-//             });
-//           });
-//         }
-//       });
-
-//       // Add drawer content
-//       drawer.innerHTML = `
-//           <div style="padding: 16px;">
-//             <div style="margin-bottom: 16px;">
-//               <sl-input placeholder="Search splash art..." clearable id="splash-art-search"></sl-input>
-//             </div>
-            
-//             <div class="splash-art-grid" style="
-//               display: grid;
-//               grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-//               gap: 16px;
-//               max-height: calc(70vh - 120px);
-//               overflow-y: auto;
-//               padding-right: 8px;
-//             ">
-//               ${allSplashArt.length > 0 ?
-//           allSplashArt.map(art => `
-//                   <div class="splash-art-item" data-id="${art.id}" data-category="${art.category}" style="
-//                     cursor: pointer;
-//                     border: 1px solid #444;
-//                     border-radius: 8px;
-//                     overflow: hidden;
-//                     transition: all 0.2s;
-//                     background: #333;
-//                   ">
-//                     <div style="height: 120px; overflow: hidden;">
-//                       <img src="${art.thumbnail}" style="width: 100%; height: 100%; object-fit: cover;">
-//                     </div>
-//                     <div style="padding: 8px;">
-//                       <div style="font-weight: 500;">${art.name}</div>
-//                       <div style="font-size: 0.8em; color: #aaa;">${art.category}</div>
-//                     </div>
-//                   </div>
-//                 `).join('') :
-//           `<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: #888;">
-//                   No splash art available. Add some in the Resource Manager.
-//                 </div>`
-//         }
-//             </div>
-//           </div>
-          
-//           <div slot="footer" style="display: flex; justify-content: space-between; align-items: center;">
-//             <sl-button variant="text">Cancel</sl-button>
-//             <div style="color: #aaa; font-size: 0.9em;">
-//               ${allSplashArt.length} items available
-//             </div>
-//           </div>
-//         `;
-
-//       document.body.appendChild(drawer);
-//       // drawer.show();
-//       setTimeout(() => {
-//         drawer.show();
-//       }, 10);
-
-//       // Set up search functionality
-//       const searchInput = drawer.querySelector('#splash-art-search');
-//       if (searchInput) {
-//         searchInput.addEventListener('input', (e) => {
-//           const searchTerm = e.target.value.toLowerCase();
-
-//           drawer.querySelectorAll('.splash-art-item').forEach(item => {
-//             const name = item.querySelector('div > div').textContent.toLowerCase();
-//             const category = item.querySelector('div > div:nth-child(2)').textContent.toLowerCase();
-
-//             // Show/hide based on search term
-//             if (name.includes(searchTerm) || category.includes(searchTerm)) {
-//               item.style.display = 'block';
-//             } else {
-//               item.style.display = 'none';
-//             }
-//           });
-//         });
-//       }
-
-//       // Set up item selection
-//       drawer.querySelectorAll('.splash-art-item').forEach(item => {
-//         item.addEventListener('click', () => {
-//           const artId = item.getAttribute('data-id');
-//           const category = item.getAttribute('data-category');
-
-//           // Update node data
-//           nodeData.data.image = {
-//             id: artId,
-//             category: category
-//           };
-
-//           // Mark as dirty
-//           this.currentGraph.dirty = true;
-
-//           // Update visual
-//           this.updateNodeVisual(nodeData);
-
-//           // Refresh properties panel
-//           this.selectNode(nodeData.element);
-
-//           // Close drawer
-//           drawer.hide();
-
-//           // Show confirmation
-//           this.showToast('Image added to dialog', 'success');
-//         });
-//       });
-
-//       // Set up cancel button
-//       const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
-//       if (cancelBtn) {
-//         cancelBtn.addEventListener('click', () => {
-//           drawer.hide();
-//         });
-//       }
-
-//       // Clean up when drawer is closed
-//       drawer.addEventListener('sl-after-hide', () => {
-//         drawer.remove();
-//       });
-//     }
 
     /**
 * Simplified toast notification method
