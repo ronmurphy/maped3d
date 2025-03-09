@@ -177,6 +177,8 @@ checkStoryboard(callback) {
 
       // Initialize MonsterManager in ResourceManager
       this.resourceManager.initializeMonsterManager(this);
+      // Init Storyboard
+      this.resourceManager.initStoryboard();
 
       if (resourceManagerBtn) {
         resourceManagerBtn.style.display = 'flex';

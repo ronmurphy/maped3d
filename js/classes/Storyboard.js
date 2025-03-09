@@ -57,6 +57,18 @@ if (typeof window.Storyboard === 'undefined') {
       console.log('Storyboard system initialized with persistent data');
     }
 
+    
+    connectToResourceManager(resourceManager) {
+      if (!resourceManager) {
+        console.error('Storyboard - Invalid ResourceManager provided');
+        return false;
+      }
+      
+      this.resourceManager = resourceManager;
+      console.log('Storyboard is Connected to ResourceManager');
+      return true;
+    }
+
     /**
      * Initialize CSS styles for story displays
      */
@@ -2762,7 +2774,7 @@ if (typeof window.Storyboard === 'undefined') {
 
 };
 // Create global instance when script loads
-window.initStoryboard = (scene3D, resourceManager) => {
-  window.storyboard = new window.Storyboard(scene3D, resourceManager);
-  return window.storyboard;
-};
+// window.initStoryboard = (scene3D, resourceManager) => {
+//   window.storyboard = new window.Storyboard(scene3D, resourceManager);
+//   return window.storyboard;
+// };

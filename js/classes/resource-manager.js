@@ -52,6 +52,21 @@ if (!this.resources.metadata) {
 }
     }
 
+    initStoryboard() {
+        if (!window.Storyboard) {
+          console.error('Storyboard class not available');
+          return null;
+        }
+        
+        // Create storyboard instance if not exists
+        if (!this.storyboard) {
+          this.storyboard = new window.Storyboard(this.scene3D);
+          this.storyboard.connectToResourceManager(this);
+        }
+        
+        return this.storyboard;
+      }
+
 
     async loadResourcePack(file) {
         try {
