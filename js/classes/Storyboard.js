@@ -4,8 +4,7 @@
  */
 
 // Check if Storyboard already exists to prevent redeclaration
-if (typeof window.Storyboard === 'undefined') {
-
+if (typeof window.Storyboard === "undefined") {
   window.Storyboard = class Storyboard {
     constructor(scene3D, resourceManager) {
       // Core dependencies
@@ -19,14 +18,14 @@ if (typeof window.Storyboard === 'undefined') {
 
       // Current working graph data - persists between editor sessions
       this.currentGraph = {
-        id: 'graph_default',
-        nodes: new Map(),  // Persistent node data
-        connections: [],   // Persistent connection data
-        dirty: false       // Whether data has changed since last save
+        id: "graph_default",
+        nodes: new Map(), // Persistent node data
+        connections: [], // Persistent connection data
+        dirty: false // Whether data has changed since last save
       };
 
       // UI references - temporary, only valid when editor is open
-      this.editor = null;  // Reference to editor drawer
+      this.editor = null; // Reference to editor drawer
       this.currentOverlay = null; // Current story overlay (dialogs etc)
 
       // Editor UI state - temporary, reset each time editor opens
@@ -47,22 +46,24 @@ if (typeof window.Storyboard === 'undefined') {
       this.initStyles();
 
       // Register world trigger check with scene3D if available
-      if (this.scene3D && typeof this.scene3D.registerUpdateCallback === 'function') {
+      if (
+        this.scene3D &&
+        typeof this.scene3D.registerUpdateCallback === "function"
+      ) {
         this.scene3D.registerUpdateCallback(this.checkTriggers.bind(this));
       }
 
-      console.log('Storyboard system initialized with persistent data');
+      console.log("Storyboard system initialized with persistent data");
     }
-
 
     connectToResourceManager(resourceManager) {
       if (!resourceManager) {
-        console.error('Storyboard - Invalid ResourceManager provided');
+        console.error("Storyboard - Invalid ResourceManager provided");
         return false;
       }
 
       this.resourceManager = resourceManager;
-      console.log('Storyboard is Connected to ResourceManager');
+      console.log("Storyboard is Connected to ResourceManager");
       return true;
     }
 
@@ -76,7 +77,7 @@ if (typeof window.Storyboard === 'undefined') {
     // }
 
     initStyles() {
-      const styles = document.createElement('style');
+      const styles = document.createElement("style");
       styles.textContent = `
       /* Drawer styling overrides */
   .storyboard-drawer::part(panel) {
@@ -410,10 +411,10 @@ if (typeof window.Storyboard === 'undefined') {
      * Opens the storyboard editor in an sl-drawer
      */
     openEditor() {
-      console.log('Opening storyboard editor');
+      console.log("Opening storyboard editor");
 
       if (this.editor) {
-        console.log('Editor already open');
+        console.log("Editor already open");
         return;
       }
 
@@ -427,15 +428,15 @@ if (typeof window.Storyboard === 'undefined') {
         this.editorState.propertiesElement = null;
 
         // Create editor drawer
-        const drawer = document.createElement('sl-drawer');
-        drawer.label = 'Storyboard Editor';
-        drawer.placement = 'end';
+        const drawer = document.createElement("sl-drawer");
+        drawer.label = "Storyboard Editor";
+        drawer.placement = "end";
 
         // Add the storyboard-drawer class
-        drawer.classList.add('storyboard-drawer');
+        drawer.classList.add("storyboard-drawer");
 
         // Set size to leave room for sidebar
-        drawer.style.cssText = '--size: calc(100vw - 280px);';
+        drawer.style.cssText = "--size: calc(100vw - 280px);";
 
         // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
         drawer.innerHTML = `
@@ -474,10 +475,10 @@ if (typeof window.Storyboard === 'undefined') {
         this.editor = drawer;
 
         // Add explicit close handler
-        const closeBtn = drawer.querySelector('#sb-close-btn');
+        const closeBtn = drawer.querySelector("#sb-close-btn");
         if (closeBtn) {
-          closeBtn.addEventListener('click', () => {
-            console.log('Close button clicked');
+          closeBtn.addEventListener("click", () => {
+            console.log("Close button clicked");
 
             // Make sure to save any unsaved changes when closing
             if (this.currentGraph.dirty) {
@@ -491,8 +492,8 @@ if (typeof window.Storyboard === 'undefined') {
         }
 
         // Handle hide event
-        drawer.addEventListener('sl-after-hide', () => {
-          console.log('Drawer closed, cleaning up');
+        drawer.addEventListener("sl-after-hide", () => {
+          console.log("Drawer closed, cleaning up");
 
           // Just reset UI state, not data
           this.editorState.active = false;
@@ -500,18 +501,17 @@ if (typeof window.Storyboard === 'undefined') {
         });
 
         // Show the drawer
-        console.log('Showing storyboard drawer');
+        console.log("Showing storyboard drawer");
         drawer.show();
 
         // Initialize functionality after a small delay
-        console.log('Setting up initialization timer');
+        console.log("Setting up initialization timer");
         setTimeout(() => {
-          console.log('Initialization timer fired, initializing editor');
+          console.log("Initialization timer fired, initializing editor");
           this.directInitEditor();
         }, 500);
-
       } catch (error) {
-        console.error('Error opening storyboard editor:', error);
+        console.error("Error opening storyboard editor:", error);
         this.editorState.active = false;
       }
     }
@@ -521,7 +521,7 @@ if (typeof window.Storyboard === 'undefined') {
      */
     saveCurrentGraph() {
       if (!this.currentGraph.id) {
-        this.currentGraph.id = 'graph_' + Date.now();
+        this.currentGraph.id = "graph_" + Date.now();
       }
 
       // Create clean graph data without DOM references
@@ -553,7 +553,7 @@ if (typeof window.Storyboard === 'undefined') {
       });
 
       // Add connections
-      this.currentGraph.connections.forEach(conn => {
+      this.currentGraph.connections.forEach((conn) => {
         cleanGraph.connections.push({
           from: conn.from,
           to: conn.to
@@ -569,7 +569,7 @@ if (typeof window.Storyboard === 'undefined') {
       // Save to localStorage
       this.saveToStorage();
 
-      console.log('Current graph saved:', this.currentGraph.id);
+      console.log("Current graph saved:", this.currentGraph.id);
     }
 
     /**
@@ -577,19 +577,19 @@ if (typeof window.Storyboard === 'undefined') {
      */
     directInitEditor() {
       if (!this.editor) {
-        console.error('Editor not found in directInitEditor');
+        console.error("Editor not found in directInitEditor");
         this.editorState.active = false;
         return;
       }
 
-      console.log('Starting direct editor initialization');
+      console.log("Starting direct editor initialization");
 
       try {
-        const canvas = this.editor.querySelector('#storyboard-canvas');
-        const properties = this.editor.querySelector('#storyboard-properties');
+        const canvas = this.editor.querySelector("#storyboard-canvas");
+        const properties = this.editor.querySelector("#storyboard-properties");
 
         if (!canvas || !properties) {
-          console.error('Canvas or properties element not found in editor');
+          console.error("Canvas or properties element not found in editor");
           return;
         }
 
@@ -597,7 +597,7 @@ if (typeof window.Storyboard === 'undefined') {
         this.editorState.canvasElement = canvas;
         this.editorState.propertiesElement = properties;
 
-        console.log('Found canvas and properties elements');
+        console.log("Found canvas and properties elements");
 
         // Set up tool buttons
         this.setupToolButtons();
@@ -606,16 +606,16 @@ if (typeof window.Storyboard === 'undefined') {
         this.setupCanvasInteractions(canvas, properties);
 
         // Set up save button
-        const saveButton = this.editor.querySelector('#save-storyboard');
+        const saveButton = this.editor.querySelector("#save-storyboard");
         if (saveButton) {
-          console.log('Setting up save button');
-          saveButton.addEventListener('click', () => {
-            console.log('Save button clicked');
+          console.log("Setting up save button");
+          saveButton.addEventListener("click", () => {
+            console.log("Save button clicked");
             this.saveCurrentGraph();
 
             // Show confirmation toast
-            const toast = document.createElement('sl-alert');
-            toast.variant = 'success';
+            const toast = document.createElement("sl-alert");
+            toast.variant = "success";
             toast.closable = true;
             toast.duration = 3000;
             toast.innerHTML = `
@@ -630,10 +630,9 @@ if (typeof window.Storyboard === 'undefined') {
         // Restore nodes from persistent data
         this.restoreNodesFromData(canvas);
 
-        console.log('Editor initialization complete');
-
+        console.log("Editor initialization complete");
       } catch (error) {
-        console.error('Error in directInitEditor:', error);
+        console.error("Error in directInitEditor:", error);
         this.editorState.active = false;
       }
     }
@@ -644,17 +643,24 @@ if (typeof window.Storyboard === 'undefined') {
     setupToolButtons() {
       if (!this.editor) return;
 
-      const toolIds = ['sb-tool-dialog', 'sb-tool-choice', 'sb-tool-trigger',
-        'sb-tool-event', 'sb-tool-condition', 'sb-tool-combat', 'sb-tool-reward'];
+      const toolIds = [
+        "sb-tool-dialog",
+        "sb-tool-choice",
+        "sb-tool-trigger",
+        "sb-tool-event",
+        "sb-tool-condition",
+        "sb-tool-combat",
+        "sb-tool-reward"
+      ];
 
-      toolIds.forEach(id => {
+      toolIds.forEach((id) => {
         const tool = this.editor.querySelector(`#${id}`);
         if (tool) {
           console.log(`Setting up tool button: ${id}`);
-          tool.addEventListener('click', (e) => {
+          tool.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const nodeType = tool.getAttribute('data-type');
+            const nodeType = tool.getAttribute("data-type");
             console.log(`Tool clicked: ${nodeType}`);
             this.createNewNode(this.editorState.canvasElement, nodeType);
           });
@@ -671,18 +677,20 @@ if (typeof window.Storyboard === 'undefined') {
       if (!canvas) return;
 
       // Clear the canvas first
-      const existingNodes = canvas.querySelectorAll('.storyboard-node');
-      existingNodes.forEach(node => node.remove());
+      const existingNodes = canvas.querySelectorAll(".storyboard-node");
+      existingNodes.forEach((node) => node.remove());
 
       // Check if we have existing nodes in the current graph
       if (this.currentGraph.nodes.size === 0) {
         // If empty, add a sample node
-        console.log('No existing nodes, creating sample node');
+        console.log("No existing nodes, creating sample node");
         this.createSampleNode(canvas);
         return;
       }
 
-      console.log(`Restoring ${this.currentGraph.nodes.size} nodes from persistent data`);
+      console.log(
+        `Restoring ${this.currentGraph.nodes.size} nodes from persistent data`
+      );
 
       // Restore all nodes
       this.currentGraph.nodes.forEach((nodeData, nodeId) => {
@@ -698,15 +706,15 @@ if (typeof window.Storyboard === 'undefined') {
     /**
      * New method to restore a single node
      */
-/**
- * Generates the HTML for special node types with multiple ports
- */
-/**
- * Generates the HTML for special node types with multiple ports
- */
-generateNodeHTML(nodeType, title, body, nodeData) {
-  // Base structure with input port at the top
-  const baseTemplate = `
+    /**
+     * Generates the HTML for special node types with multiple ports
+     */
+    /**
+     * Generates the HTML for special node types with multiple ports
+     */
+    generateNodeHTML(nodeType, title, body, nodeData) {
+      // Base structure with input port at the top
+      const baseTemplate = `
     <div class="storyboard-port input" style="position: absolute; top: -7px; left: 50%; transform: translateX(-50%);"></div>
     <div class="storyboard-node-header">
       ${title}
@@ -717,64 +725,71 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     </div>
   `;
 
-  // Add the footer with appropriate output ports based on node type
-  switch (nodeType) {
-    case 'condition':
-      return `
+      // Add the footer with appropriate output ports based on node type
+      switch (nodeType) {
+        case "condition":
+          return `
         ${baseTemplate}
         <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
           <div class="storyboard-port output true-port" data-path="true" style="background: #2196F3; position: absolute; bottom: -7px; left: 30%; transform: translateX(-50%);"></div>
           <div class="storyboard-port output false-port" data-path="false" style="background: #F44336; position: absolute; bottom: -7px; left: 70%; transform: translateX(-50%);"></div>
         </div>
       `;
-      
-    case 'choice':
-      // Get number of options (limit to 5)
-      const options = nodeData?.data?.options || [];
-      const numOptions = Math.min(options.length, 5);
-      
-      // Generate option ports
-      let portsHTML = '';
-      const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
-      
-      // Position the ports evenly
-      for (let i = 0; i < numOptions; i++) {
-        const percentage = numOptions <= 1 ? 50 : (i * (100 / (numOptions - 1)));
-        const color = colors[i % colors.length];
-        
-        portsHTML += `
+
+        case "choice":
+          // Get number of options (limit to 5)
+          const options = nodeData?.data?.options || [];
+          const numOptions = Math.min(options.length, 5);
+
+          // Generate option ports
+          let portsHTML = "";
+          const colors = [
+            "#4CAF50",
+            "#2196F3",
+            "#FF9800",
+            "#9C27B0",
+            "#607D8B"
+          ];
+
+          // Position the ports evenly
+          for (let i = 0; i < numOptions; i++) {
+            const percentage =
+              numOptions <= 1 ? 50 : i * (100 / (numOptions - 1));
+            const color = colors[i % colors.length];
+
+            portsHTML += `
           <div class="storyboard-port output option-port" 
                data-option="${i}" 
                style="background: ${color}; position: absolute; bottom: -7px; left: ${percentage}%; transform: translateX(-50%);"
                title="Option ${i + 1}"></div>
         `;
-      }
-      
-      return `
+          }
+
+          return `
         ${baseTemplate}
         <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
           ${portsHTML}
         </div>
       `;
-      
-    case 'combat':
-      return `
+
+        case "combat":
+          return `
         ${baseTemplate}
         <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
           <div class="storyboard-port output win-port" data-path="victory" style="background: #4CAF50; position: absolute; bottom: -7px; left: 30%; transform: translateX(-50%);"></div>
           <div class="storyboard-port output lose-port" data-path="defeat" style="background: #F44336; position: absolute; bottom: -7px; left: 70%; transform: translateX(-50%);"></div>
         </div>
       `;
-      
-    default:
-      return `
+
+        default:
+          return `
         ${baseTemplate}
         <div class="storyboard-node-footer">
           <div class="storyboard-port output" style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);"></div>
         </div>
       `;
-  }
-}
+      }
+    }
 
     // restoreSingleNode(canvas, nodeData, nodeId) {
     //   // Create node element
@@ -782,7 +797,7 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //   node.className = 'storyboard-node';
     //   node.setAttribute('data-type', nodeData.type);
     //   node.setAttribute('data-id', nodeId);
-    
+
     //   // Set position
     //   if (nodeData.position) {
     //     node.style.left = `${nodeData.position.x}px`;
@@ -791,13 +806,13 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //     node.style.left = '100px';
     //     node.style.top = '100px';
     //   }
-    
+
     //   // Set content based on node type
     //   const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
     //   let body = '';
     //   let useCustomHtml = false;
     //   let customHtml = '';
-    
+
     //   switch (nodeData.type) {
     //     case 'dialog':
     //       body = `<div>${nodeData.data.text || ''}</div>`;
@@ -807,27 +822,27 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //         <div>${nodeData.data.text || ''}</div>
     //         <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
     //       `;
-          
+
     //       // Special structure for choice node
     //       useCustomHtml = true;
-          
+
     //       // Get number of options
     //       const optionCount = nodeData.data.options?.length || 0;
-          
+
     //       // Generate option ports HTML
     //       let optionPortsHtml = '';
     //       const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B']; // Colors for up to 5 options
-          
+
     //       for (let i = 0; i < optionCount; i++) {
     //         const color = colors[i % colors.length]; // Cycle through colors
     //         optionPortsHtml += `
-    //           <div class="storyboard-port output option-port" 
-    //                data-option="${i}" 
+    //           <div class="storyboard-port output option-port"
+    //                data-option="${i}"
     //                style="background: ${color};"
     //                title="Option ${i+1}"></div>
     //         `;
     //       }
-          
+
     //       customHtml = `
     //         <div class="storyboard-node-header">
     //           ${title}
@@ -852,7 +867,7 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //       break;
     //     case 'condition':
     //       body = `<div>Condition: ${nodeData.data.condition || 'none'}</div>`;
-          
+
     //       // Special structure for condition node
     //       useCustomHtml = true;
     //       customHtml = `
@@ -874,7 +889,7 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //       break;
     //     case 'combat':
     //       body = `<div>Combat with ${nodeData.data.enemies?.length || 0} enemies</div>`;
-          
+
     //       // Special structure for combat node
     //       useCustomHtml = true;
     //       customHtml = `
@@ -900,7 +915,7 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //     default:
     //       body = '<div>Configure node</div>';
     //   }
-    
+
     //   // Set HTML content based on whether we have custom HTML
     //   if (useCustomHtml) {
     //     node.innerHTML = customHtml;
@@ -920,13 +935,13 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //       </div>
     //     `;
     //   }
-    
+
     //   // Add to canvas
     //   canvas.appendChild(node);
-    
+
     //   // Update the stored node data to include element reference
     //   nodeData.element = node;
-    
+
     //   // Set up delete handler
     //   const closeBtn = node.querySelector('.storyboard-node-close');
     //   if (closeBtn) {
@@ -937,75 +952,90 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     //       this.deleteNode(node);
     //     });
     //   }
-    
+
     //   console.log(`Restored node: ${nodeId}`);
     // }
 
     restoreSingleNode(canvas, nodeData, nodeId) {
       // Create node element
-      const node = document.createElement('div');
-      node.className = 'storyboard-node';
-      node.setAttribute('data-type', nodeData.type);
-      node.setAttribute('data-id', nodeId);
-    
+      const node = document.createElement("div");
+      node.className = "storyboard-node";
+      node.setAttribute("data-type", nodeData.type);
+      node.setAttribute("data-id", nodeId);
+
       // Set position
       if (nodeData.position) {
         node.style.left = `${nodeData.position.x}px`;
         node.style.top = `${nodeData.position.y}px`;
       } else {
-        node.style.left = '100px';
-        node.style.top = '100px';
+        node.style.left = "100px";
+        node.style.top = "100px";
       }
-    
+
       // Set content based on node type
-      const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
-      let body = '';
-    
+      const title =
+        nodeData.data.title ||
+        nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+      let body = "";
+
       switch (nodeData.type) {
-        case 'dialog':
-          body = `<div>${nodeData.data.text || ''}</div>`;
+        case "dialog":
+          body = `<div>${nodeData.data.text || ""}</div>`;
           break;
-        case 'choice':
+        case "choice":
           body = `
-            <div>${nodeData.data.text || ''}</div>
-            <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
+            <div>${nodeData.data.text || ""}</div>
+            <div style="color:#777;font-size:0.9em;">${
+              nodeData.data.options?.length || 0
+            } options</div>
           `;
           break;
-        case 'trigger':
-          body = `<div>X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}</div>`;
+        case "trigger":
+          body = `<div>X: ${nodeData.data.x || 0}, Y: ${
+            nodeData.data.y || 0
+          }, Radius: ${nodeData.data.radius || 1}</div>`;
           break;
-        case 'event':
-          body = `<div>Event: ${nodeData.data.eventType || 'none'}</div>`;
+        case "event":
+          body = `<div>Event: ${nodeData.data.eventType || "none"}</div>`;
           break;
-        case 'condition':
-          body = `<div>Condition: ${nodeData.data.condition || 'none'}</div>`;
+        case "condition":
+          body = `<div>Condition: ${nodeData.data.condition || "none"}</div>`;
           break;
-        case 'combat':
-          body = `<div>Combat with ${nodeData.data.enemies?.length || 0} enemies</div>`;
+        case "combat":
+          body = `<div>Combat with ${
+            nodeData.data.enemies?.length || 0
+          } enemies</div>`;
           break;
-        case 'reward':
-          body = `<div>Rewards: ${nodeData.data.items?.length || 0} items</div>`;
+        case "reward":
+          body = `<div>Rewards: ${
+            nodeData.data.items?.length || 0
+          } items</div>`;
           break;
         default:
-          body = '<div>Configure node</div>';
+          body = "<div>Configure node</div>";
       }
-    
+
       // Use the helper method to generate HTML based on node type
-      node.innerHTML = this.generateNodeHTML(nodeData.type, title, body, nodeData);
-    
+      node.innerHTML = this.generateNodeHTML(
+        nodeData.type,
+        title,
+        body,
+        nodeData
+      );
+
       // Add to canvas
       canvas.appendChild(node);
-    
+
       // Update the stored node data to include element reference
       nodeData.element = node;
-    
+
       // Set up delete handler
-      const closeBtn = node.querySelector('.storyboard-node-close');
+      const closeBtn = node.querySelector(".storyboard-node-close");
       if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
+        closeBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('Delete node clicked');
+          console.log("Delete node clicked");
           this.deleteNode(node);
         });
       }
@@ -1017,22 +1047,30 @@ generateNodeHTML(nodeType, title, body, nodeData) {
     restoreConnections(canvas) {
       if (!canvas) return;
 
-      console.log(`Restoring ${this.currentGraph.connections.length} connections`);
+      console.log(
+        `Restoring ${this.currentGraph.connections.length} connections`
+      );
 
       // Clear existing connection elements
-      const existingConnections = canvas.querySelectorAll('.storyboard-connection:not(.temp-connection)');
-      existingConnections.forEach(conn => conn.remove());
+      const existingConnections = canvas.querySelectorAll(
+        ".storyboard-connection:not(.temp-connection)"
+      );
+      existingConnections.forEach((conn) => conn.remove());
 
       // Recreate all connections
-      this.currentGraph.connections.forEach(conn => {
+      this.currentGraph.connections.forEach((conn) => {
         // Find source and target nodes
-        const fromNode = canvas.querySelector(`.storyboard-node[data-id="${conn.from}"]`);
-        const toNode = canvas.querySelector(`.storyboard-node[data-id="${conn.to}"]`);
+        const fromNode = canvas.querySelector(
+          `.storyboard-node[data-id="${conn.from}"]`
+        );
+        const toNode = canvas.querySelector(
+          `.storyboard-node[data-id="${conn.to}"]`
+        );
 
         if (fromNode && toNode) {
           // Get the ports
-          const fromPort = fromNode.querySelector('.storyboard-port.output');
-          const toPort = toNode.querySelector('.storyboard-port.input');
+          const fromPort = fromNode.querySelector(".storyboard-port.output");
+          const toPort = toNode.querySelector(".storyboard-port.input");
 
           if (fromPort && toPort) {
             this.createConnection(canvas, {
@@ -1052,58 +1090,58 @@ generateNodeHTML(nodeType, title, body, nodeData) {
 
     setupCanvasInteractions(canvas, properties) {
       if (!canvas || !properties) return;
-    
+
       // Store references in case they're needed
       const editorState = this.editorState;
-      
+
       // Add canvas state for zoom and pan
       editorState.canvasScale = 1;
       editorState.canvasPan = { x: 0, y: 0 };
       editorState.isPanning = false;
       editorState.panStart = { x: 0, y: 0 };
-    
+
       // Create a container for all nodes
-      let nodesContainer = canvas.querySelector('.nodes-container');
+      let nodesContainer = canvas.querySelector(".nodes-container");
       if (!nodesContainer) {
-        nodesContainer = document.createElement('div');
-        nodesContainer.className = 'nodes-container';
-        nodesContainer.style.position = 'absolute';
-        nodesContainer.style.width = '100%';
-        nodesContainer.style.height = '100%';
-        nodesContainer.style.transformOrigin = '0 0';
-        nodesContainer.style.transform = 'scale(1)';
-        nodesContainer.style.transition = 'transform 0.1s';
-        
+        nodesContainer = document.createElement("div");
+        nodesContainer.className = "nodes-container";
+        nodesContainer.style.position = "absolute";
+        nodesContainer.style.width = "100%";
+        nodesContainer.style.height = "100%";
+        nodesContainer.style.transformOrigin = "0 0";
+        nodesContainer.style.transform = "scale(1)";
+        nodesContainer.style.transition = "transform 0.1s";
+
         // Move any existing nodes into the container
-        const existingNodes = Array.from(canvas.querySelectorAll('.storyboard-node'));
-        existingNodes.forEach(node => nodesContainer.appendChild(node));
-        
+        const existingNodes = Array.from(
+          canvas.querySelectorAll(".storyboard-node")
+        );
+        existingNodes.forEach((node) => nodesContainer.appendChild(node));
+
         canvas.appendChild(nodesContainer);
         editorState.nodesContainer = nodesContainer;
       }
 
-      
-
-      canvas.addEventListener('mousedown', (e) => {
-
-            // Check if middle button
-    if (e.button === 1 || e.buttons === 4) {
-      e.preventDefault();
-      editorState.isPanning = true;
-      editorState.panStart = { x: e.clientX, y: e.clientY };
-      canvas.style.cursor = 'grabbing';
-    }
+      canvas.addEventListener("mousedown", (e) => {
+        // Check if middle button
+        if (e.button === 1) {
+          e.preventDefault();
+          editorState.isPanning = true;
+          editorState.lastX = e.clientX;
+          editorState.lastY = e.clientY;
+          canvas.style.cursor = "grabbing";
+        }
 
         // Check if we clicked on a node
-        let nodeEl = e.target.closest('.storyboard-node');
+        let nodeEl = e.target.closest(".storyboard-node");
 
         if (nodeEl) {
-          console.log('Node clicked:', nodeEl.getAttribute('data-id'));
+          console.log("Node clicked:", nodeEl.getAttribute("data-id"));
           // Handle node selection
           this.selectNode(nodeEl);
 
           // Handle node dragging
-          if (e.target.closest('.storyboard-node-header')) {
+          if (e.target.closest(".storyboard-node-header")) {
             const rect = nodeEl.getBoundingClientRect();
             editorState.draggingNode = nodeEl;
             editorState.draggingOffset = {
@@ -1112,41 +1150,45 @@ generateNodeHTML(nodeType, title, body, nodeData) {
             };
           }
 
-
           // This is part of the setupCanvasInteractions method - just the connection creation part
-// Handle connection creation
-if (e.target.closest('.storyboard-port')) {
-  const port = e.target.closest('.storyboard-port');
-  if (port.classList.contains('output') || port.classList.contains('true-port') || port.classList.contains('false-port') || 
-      port.classList.contains('win-port') || port.classList.contains('lose-port')) {
-    editorState.connectingFrom = {
-      node: nodeEl,
-      port: port
-    };
+          // Handle connection creation
+          if (e.target.closest(".storyboard-port")) {
+            const port = e.target.closest(".storyboard-port");
+            if (
+              port.classList.contains("output") ||
+              port.classList.contains("true-port") ||
+              port.classList.contains("false-port") ||
+              port.classList.contains("win-port") ||
+              port.classList.contains("lose-port")
+            ) {
+              editorState.connectingFrom = {
+                node: nodeEl,
+                port: port
+              };
 
-    // Get port position for connection drawing
-    const portRect = port.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
-    
-    const x1 = portRect.left + portRect.width / 2 - canvasRect.left;
-    const y1 = portRect.top + portRect.height / 2 - canvasRect.top;
+              // Get port position for connection drawing
+              const portRect = port.getBoundingClientRect();
+              const canvasRect = canvas.getBoundingClientRect();
 
-    // Create temporary connection line with color based on port type
-    let lineColor = '#673ab7'; // Default purple
-    
-    const nodeType = nodeEl.getAttribute('data-type');
-    const pathType = port.getAttribute('data-path');
-    
-    if (nodeType === 'condition' && pathType) {
-      lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
-    } else if (nodeType === 'combat' && pathType) {
-      lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
-    }
-    
-    // Create temporary connection
-    const conn = document.createElement('div');
-    conn.className = 'storyboard-connection temp-connection';
-    conn.style.cssText = `
+              const x1 = portRect.left + portRect.width / 2 - canvasRect.left;
+              const y1 = portRect.top + portRect.height / 2 - canvasRect.top;
+
+              // Create temporary connection line with color based on port type
+              let lineColor = "#673ab7"; // Default purple
+
+              const nodeType = nodeEl.getAttribute("data-type");
+              const pathType = port.getAttribute("data-path");
+
+              if (nodeType === "condition" && pathType) {
+                lineColor = pathType === "true" ? "#2196F3" : "#F44336";
+              } else if (nodeType === "combat" && pathType) {
+                lineColor = pathType === "victory" ? "#4CAF50" : "#F44336";
+              }
+
+              // Create temporary connection
+              const conn = document.createElement("div");
+              conn.className = "storyboard-connection temp-connection";
+              conn.style.cssText = `
       position: absolute;
       height: 2px;
       background: ${lineColor};
@@ -1155,60 +1197,51 @@ if (e.target.closest('.storyboard-port')) {
       top: ${y1}px;
     `;
 
-    canvas.appendChild(conn);
-    editorState.connectingFrom.tempConnection = conn;
-  }
-}
-
+              canvas.appendChild(conn);
+              editorState.connectingFrom.tempConnection = conn;
+            }
+          }
         } else {
           // Clicked on empty canvas
           this.deselectNode();
         }
       });
 
+      canvas.addEventListener("wheel", (e) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
 
-        // Mouse wheel to zoom
-  canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    
-    // Get mouse position relative to canvas
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    
-    // Calculate new scale
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    const newScale = Math.max(0.3, Math.min(2, editorState.canvasScale + delta));
-    
-    // Apply the scale
-    editorState.canvasScale = newScale;
-    
-    // Apply transform
-    updateCanvasTransform(editorState, nodesContainer);
-    
-    // Update all connections
-    this.updateConnections();
-  });
+          // Calculate zoom factor (smaller increment for smoother zoom)
+          const factor = e.deltaY > 0 ? 0.9 : 1.1;
+          editorState.canvasScale = Math.max(
+            0.1,
+            Math.min(2.0, editorState.canvasScale * factor)
+          );
 
-      canvas.addEventListener('mousemove', (e) => {
+          // Apply zoom
+          canvas.style.transform = `scale(${editorState.canvasScale})`;
+          canvas.style.transformOrigin = "0 0";
 
-
-        if (editorState.isPanning) {
-          const dx = e.clientX - editorState.panStart.x;
-          const dy = e.clientY - editorState.panStart.y;
-          
-          editorState.canvasPan.x += dx / editorState.canvasScale;
-          editorState.canvasPan.y += dy / editorState.canvasScale;
-          
-          editorState.panStart = { x: e.clientX, y: e.clientY };
-          
-          // Apply transform
-          updateCanvasTransform(editorState, nodesContainer);
-          
-          // Update connections
+          // Update connections after zoom
           this.updateConnections();
-          
-          return;
+        }
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (editorState.isPanning) {
+          e.preventDefault();
+
+          // Calculate delta
+          const dx = e.clientX - editorState.lastX;
+          const dy = e.clientY - editorState.lastY;
+
+          // Update scroll position
+          canvas.scrollLeft -= dx;
+          canvas.scrollTop -= dy;
+
+          // Update last position
+          editorState.lastX = e.clientX;
+          editorState.lastY = e.clientY;
         }
 
         // Handle node dragging
@@ -1221,7 +1254,7 @@ if (e.target.closest('.storyboard-port')) {
           editorState.draggingNode.style.top = `${y}px`;
 
           // Update node position in persistent data
-          const nodeId = editorState.draggingNode.getAttribute('data-id');
+          const nodeId = editorState.draggingNode.getAttribute("data-id");
           const nodeData = this.currentGraph.nodes.get(nodeId);
           if (nodeData) {
             nodeData.position = { x, y };
@@ -1235,7 +1268,8 @@ if (e.target.closest('.storyboard-port')) {
         // Handle connection creation
         if (editorState.connectingFrom) {
           const canvasRect = canvas.getBoundingClientRect();
-          const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
+          const fromRect =
+            editorState.connectingFrom.port.getBoundingClientRect();
 
           const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
           const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
@@ -1245,7 +1279,7 @@ if (e.target.closest('.storyboard-port')) {
           const dx = x2 - x1;
           const dy = y2 - y1;
           const length = Math.sqrt(dx * dx + dy * dy);
-          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+          const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
           const conn = editorState.connectingFrom.tempConnection;
           if (conn) {
@@ -1255,11 +1289,10 @@ if (e.target.closest('.storyboard-port')) {
         }
       });
 
-      canvas.addEventListener('mouseup', (e) => {
-
+      canvas.addEventListener("mouseup", (e) => {
         if (editorState.isPanning) {
           editorState.isPanning = false;
-          canvas.style.cursor = 'default';
+          canvas.style.cursor = "default";
         }
 
         // Handle node dragging end
@@ -1269,11 +1302,11 @@ if (e.target.closest('.storyboard-port')) {
 
         // Handle connection creation end
         if (editorState.connectingFrom) {
-          const targetPort = e.target.closest('.storyboard-port');
+          const targetPort = e.target.closest(".storyboard-port");
 
-          if (targetPort && targetPort.classList.contains('input')) {
+          if (targetPort && targetPort.classList.contains("input")) {
             const fromNode = editorState.connectingFrom.node;
-            const toNode = targetPort.closest('.storyboard-node');
+            const toNode = targetPort.closest(".storyboard-node");
 
             // Don't connect to self
             if (fromNode !== toNode) {
@@ -1299,43 +1332,43 @@ if (e.target.closest('.storyboard-port')) {
         }
       });
 
-        // Add keyboard shortcuts for zoom
-  document.addEventListener('keydown', (e) => {
-    if (!editorState.active) return;
-    
-    // Ctrl/Cmd + 0: Reset zoom
-    if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      editorState.canvasScale = 1;
-      editorState.canvasPan = { x: 0, y: 0 };
-      updateCanvasTransform(editorState, nodesContainer);
-      this.updateConnections();
-    }
-    
-    // Ctrl/Cmd + -: Zoom out
-    if ((e.key === '-' || e.key === '_') && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      editorState.canvasScale = Math.max(0.3, editorState.canvasScale - 0.1);
-      updateCanvasTransform(editorState, nodesContainer);
-      this.updateConnections();
-    }
-    
-    // Ctrl/Cmd + +: Zoom in
-    if ((e.key === '=' || e.key === '+') && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      editorState.canvasScale = Math.min(2, editorState.canvasScale + 0.1);
-      updateCanvasTransform(editorState, nodesContainer);
-      this.updateConnections();
-    }
-  });
+      // Add keyboard shortcuts for zoom
+      document.addEventListener("keydown", (e) => {
+        if (!editorState.active) return;
 
-  function updateCanvasTransform(state, container) {
-    container.style.transform = `scale(${state.canvasScale}) translate(${state.canvasPan.x}px, ${state.canvasPan.y}px)`;
-  }
+        // Ctrl/Cmd + 0: Reset zoom
+        if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          editorState.canvasScale = 1;
+          editorState.canvasPan = { x: 0, y: 0 };
+          updateCanvasTransform(editorState, nodesContainer);
+          this.updateConnections();
+        }
 
+        // Ctrl/Cmd + -: Zoom out
+        if ((e.key === "-" || e.key === "_") && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          editorState.canvasScale = Math.max(
+            0.3,
+            editorState.canvasScale - 0.1
+          );
+          updateCanvasTransform(editorState, nodesContainer);
+          this.updateConnections();
+        }
+
+        // Ctrl/Cmd + +: Zoom in
+        if ((e.key === "=" || e.key === "+") && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          editorState.canvasScale = Math.min(2, editorState.canvasScale + 0.1);
+          updateCanvasTransform(editorState, nodesContainer);
+          this.updateConnections();
+        }
+      });
+
+      function updateCanvasTransform(state, container) {
+        container.style.transform = `scale(${state.canvasScale}) translate(${state.canvasPan.x}px, ${state.canvasPan.y}px)`;
+      }
     }
-
-
 
     /**
      * sees if the editor is avaliable after being closed
@@ -1344,20 +1377,22 @@ if (e.target.closest('.storyboard-port')) {
     isEditorAvailable() {
       // First check persistent state
       if (!this.editorState.active) {
-        console.warn('Editor is not active according to persistent state');
+        console.warn("Editor is not active according to persistent state");
         return false;
       }
 
       // Then check actual editor element
       if (!this.editor) {
-        console.warn('Editor element is null but state is active - fixing inconsistency');
+        console.warn(
+          "Editor element is null but state is active - fixing inconsistency"
+        );
         this.editorState.active = false;
         return false;
       }
 
       // Check if canvas is accessible
       if (!this.editorState.canvasElement) {
-        console.warn('Canvas element not available in editor state');
+        console.warn("Canvas element not available in editor state");
         return false;
       }
 
@@ -1368,15 +1403,15 @@ if (e.target.closest('.storyboard-port')) {
      * Update the createSampleNode method to be more reliable
      */
     createSampleNode(canvas, editorState) {
-      console.log('Creating sample node at 100,100');
+      console.log("Creating sample node at 100,100");
 
       // Create the node element
-      const node = document.createElement('div');
-      node.className = 'storyboard-node';
-      node.setAttribute('data-type', 'dialog');
-      node.setAttribute('data-id', 'node_' + Date.now());
-      node.style.left = '100px';
-      node.style.top = '100px';
+      const node = document.createElement("div");
+      node.className = "storyboard-node";
+      node.setAttribute("data-type", "dialog");
+      node.setAttribute("data-id", "node_" + Date.now());
+      node.style.left = "100px";
+      node.style.top = "100px";
 
       // Set HTML content
       node.innerHTML = `
@@ -1395,26 +1430,26 @@ if (e.target.closest('.storyboard-port')) {
 
       // Add to canvas
       canvas.appendChild(node);
-      console.log('Sample node added to canvas');
+      console.log("Sample node added to canvas");
 
       // Add to nodes collection
-      editorState.nodes.set(node.getAttribute('data-id'), {
+      editorState.nodes.set(node.getAttribute("data-id"), {
         element: node,
-        type: 'dialog',
+        type: "dialog",
         data: {
-          title: 'Dialog Node',
-          text: 'Welcome to the game!',
+          title: "Dialog Node",
+          text: "Welcome to the game!",
           image: null
         }
       });
 
       // Set up delete handler with proper event handling
-      const closeBtn = node.querySelector('.storyboard-node-close');
+      const closeBtn = node.querySelector(".storyboard-node-close");
       if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
+        closeBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('Delete node clicked');
+          console.log("Delete node clicked");
           this.deleteNode(node, editorState);
         });
       }
@@ -1427,26 +1462,28 @@ if (e.target.closest('.storyboard-port')) {
      */
     initEditorFunctionality() {
       if (!this.editor) {
-        console.error('Editor not found');
+        console.error("Editor not found");
         return;
       }
 
-      console.log('Initializing editor functionality');
+      console.log("Initializing editor functionality");
 
       // Ensure the drawer is fully rendered before setting up editor
       setTimeout(() => {
         try {
-          const canvas = this.editor.querySelector('#storyboard-canvas');
-          const properties = this.editor.querySelector('#storyboard-properties');
-          const tools = this.editor.querySelectorAll('.storyboard-tool');
+          const canvas = this.editor.querySelector("#storyboard-canvas");
+          const properties = this.editor.querySelector(
+            "#storyboard-properties"
+          );
+          const tools = this.editor.querySelectorAll(".storyboard-tool");
 
           if (!canvas) {
-            console.error('Canvas element not found in editor');
+            console.error("Canvas element not found in editor");
             return;
           }
 
-          console.log('Found canvas element:', canvas);
-          console.log('Found tool buttons:', tools.length);
+          console.log("Found canvas element:", canvas);
+          console.log("Found tool buttons:", tools.length);
 
           // Track editor state
           const editorState = {
@@ -1463,31 +1500,31 @@ if (e.target.closest('.storyboard-port')) {
           this.createSampleNode(canvas, editorState);
 
           // Set up tool buttons with direct event handlers
-          tools.forEach(tool => {
-            console.log('Setting up tool:', tool.getAttribute('data-type'));
+          tools.forEach((tool) => {
+            console.log("Setting up tool:", tool.getAttribute("data-type"));
 
-            tool.addEventListener('click', (e) => {
+            tool.addEventListener("click", (e) => {
               e.preventDefault();
               e.stopPropagation();
 
-              const nodeType = tool.getAttribute('data-type');
-              console.log('Tool clicked:', nodeType);
+              const nodeType = tool.getAttribute("data-type");
+              console.log("Tool clicked:", nodeType);
 
               this.createNewNode(canvas, editorState, nodeType);
             });
           });
 
           // Set up canvas interactions with proper event delegation
-          canvas.addEventListener('mousedown', (e) => {
+          canvas.addEventListener("mousedown", (e) => {
             // Check if we clicked on a node
-            let nodeEl = e.target.closest('.storyboard-node');
+            let nodeEl = e.target.closest(".storyboard-node");
 
             if (nodeEl) {
               // Handle node selection
               this.selectNode(nodeEl, editorState, properties);
 
               // Handle node dragging
-              if (e.target.closest('.storyboard-node-header')) {
+              if (e.target.closest(".storyboard-node-header")) {
                 const rect = nodeEl.getBoundingClientRect();
                 editorState.draggingNode = nodeEl;
                 editorState.draggingOffset = {
@@ -1497,17 +1534,17 @@ if (e.target.closest('.storyboard-port')) {
               }
 
               // Handle connection creation
-              if (e.target.closest('.storyboard-port')) {
-                const port = e.target.closest('.storyboard-port');
-                if (port.classList.contains('output')) {
+              if (e.target.closest(".storyboard-port")) {
+                const port = e.target.closest(".storyboard-port");
+                if (port.classList.contains("output")) {
                   editorState.connectingFrom = {
                     node: nodeEl,
                     port: port
                   };
 
                   // Create temporary connection line
-                  const conn = document.createElement('div');
-                  conn.className = 'storyboard-connection temp-connection';
+                  const conn = document.createElement("div");
+                  conn.className = "storyboard-connection temp-connection";
                   conn.style.cssText = `
                   position: absolute;
                   height: 2px;
@@ -1518,8 +1555,10 @@ if (e.target.closest('.storyboard-port')) {
                   const fromRect = port.getBoundingClientRect();
                   const canvasRect = canvas.getBoundingClientRect();
 
-                  const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-                  const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+                  const x1 =
+                    fromRect.left + fromRect.width / 2 - canvasRect.left;
+                  const y1 =
+                    fromRect.top + fromRect.height / 2 - canvasRect.top;
 
                   conn.style.left = `${x1}px`;
                   conn.style.top = `${y1}px`;
@@ -1534,12 +1573,14 @@ if (e.target.closest('.storyboard-port')) {
             }
           });
 
-          canvas.addEventListener('mousemove', (e) => {
+          canvas.addEventListener("mousemove", (e) => {
             // Handle node dragging
             if (editorState.draggingNode) {
               const canvasRect = canvas.getBoundingClientRect();
-              const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
-              const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
+              const x =
+                e.clientX - canvasRect.left - editorState.draggingOffset.x;
+              const y =
+                e.clientY - canvasRect.top - editorState.draggingOffset.y;
 
               editorState.draggingNode.style.left = `${x}px`;
               editorState.draggingNode.style.top = `${y}px`;
@@ -1551,7 +1592,8 @@ if (e.target.closest('.storyboard-port')) {
             // Handle connection creation
             if (editorState.connectingFrom) {
               const canvasRect = canvas.getBoundingClientRect();
-              const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
+              const fromRect =
+                editorState.connectingFrom.port.getBoundingClientRect();
 
               const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
               const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
@@ -1561,7 +1603,7 @@ if (e.target.closest('.storyboard-port')) {
               const dx = x2 - x1;
               const dy = y2 - y1;
               const length = Math.sqrt(dx * dx + dy * dy);
-              const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+              const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
 
               const conn = editorState.connectingFrom.tempConnection;
               conn.style.width = `${length}px`;
@@ -1569,7 +1611,7 @@ if (e.target.closest('.storyboard-port')) {
             }
           });
 
-          canvas.addEventListener('mouseup', (e) => {
+          canvas.addEventListener("mouseup", (e) => {
             // Handle node dragging end
             if (editorState.draggingNode) {
               editorState.draggingNode = null;
@@ -1577,11 +1619,11 @@ if (e.target.closest('.storyboard-port')) {
 
             // Handle connection creation end
             if (editorState.connectingFrom) {
-              const targetPort = e.target.closest('.storyboard-port');
+              const targetPort = e.target.closest(".storyboard-port");
 
-              if (targetPort && targetPort.classList.contains('input')) {
+              if (targetPort && targetPort.classList.contains("input")) {
                 const fromNode = editorState.connectingFrom.node;
-                const toNode = targetPort.closest('.storyboard-node');
+                const toNode = targetPort.closest(".storyboard-node");
 
                 // Don't connect to self
                 if (fromNode !== toNode) {
@@ -1608,32 +1650,34 @@ if (e.target.closest('.storyboard-port')) {
           });
 
           // Save button with explicit handler
-          const saveButton = this.editor.querySelector('#save-storyboard');
+          const saveButton = this.editor.querySelector("#save-storyboard");
           if (saveButton) {
-            console.log('Found save button');
-            saveButton.addEventListener('click', (e) => {
-              console.log('Save button clicked');
+            console.log("Found save button");
+            saveButton.addEventListener("click", (e) => {
+              console.log("Save button clicked");
               this.saveStoryboard(editorState);
             });
           } else {
-            console.error('Save button not found');
+            console.error("Save button not found");
           }
 
           // Close button with explicit handler
-          const closeButton = this.editor.querySelector('sl-button[slot="footer"]');
+          const closeButton = this.editor.querySelector(
+            'sl-button[slot="footer"]'
+          );
           if (closeButton) {
-            console.log('Found close button');
-            closeButton.addEventListener('click', (e) => {
-              console.log('Close button clicked');
+            console.log("Found close button");
+            closeButton.addEventListener("click", (e) => {
+              console.log("Close button clicked");
               this.editor.hide();
             });
           } else {
-            console.error('Close button not found');
+            console.error("Close button not found");
           }
 
-          console.log('Editor functionality initialized successfully');
+          console.log("Editor functionality initialized successfully");
         } catch (error) {
-          console.error('Error initializing editor functionality:', error);
+          console.error("Error initializing editor functionality:", error);
         }
       }, 300); // Add a small delay to ensure components are ready
     }
@@ -1642,18 +1686,18 @@ if (e.target.closest('.storyboard-port')) {
      * Create a sample node for testing
      */
     createSampleNode(canvas) {
-      console.log('Creating sample node at 100,100');
+      console.log("Creating sample node at 100,100");
 
       // Create unique ID
-      const nodeId = 'node_sample_' + Date.now();
+      const nodeId = "node_sample_" + Date.now();
 
       // Create sample node data
       const nodeData = {
-        type: 'dialog',
+        type: "dialog",
         position: { x: 100, y: 100 },
         data: {
-          title: 'Dialog Node',
-          text: 'Welcome to the game!',
+          title: "Dialog Node",
+          text: "Welcome to the game!",
           image: null
         },
         element: null // Will be set after DOM creation
@@ -1672,135 +1716,60 @@ if (e.target.closest('.storyboard-port')) {
     /**
      * Create a new node of the specified type
      */
-    // createNewNode(canvas, nodeType) {
-    //   if (!this.isEditorAvailable() || !canvas) {
-    //     console.error('Cannot create node - editor or canvas not available');
-    //     return null;
-    //   }
-
-    //   console.log('Creating new node of type:', nodeType);
-
-    //   // Create unique ID
-    //   const nodeId = 'node_' + Date.now();
-
-    //   // Create default data for this node type
-    //   let data = {};
-
-    //   switch (nodeType) {
-    //     case 'dialog':
-    //       data = { title: 'Dialog', text: 'New dialog text', image: null };
-    //       break;
-    //     case 'choice':
-    //       data = {
-    //         text: 'What would you like to do?',
-    //         options: [
-    //           { text: 'Option 1', targetId: null },
-    //           { text: 'Option 2', targetId: null }
-    //         ]
-    //       };
-    //       break;
-    //     case 'trigger':
-    //       data = { x: 0, y: 0, radius: 1, once: true };
-    //       break;
-    //     case 'event':
-    //       data = { eventType: 'none', params: {} };
-    //       break;
-    //     case 'condition':
-    //       data = { condition: 'none', params: {} };
-    //       break;
-    //     case 'combat':
-    //       data = { enemies: [], background: null };
-    //       break;
-    //     case 'reward':
-    //       data = { items: [], experience: 0, monsters: [] };
-    //       break;
-    //     default:
-    //       data = {};
-    //   }
-
-    //   // Position in center of visible canvas
-    //   const canvasRect = canvas.getBoundingClientRect();
-    //   const scrollLeft = canvas.scrollLeft;
-    //   const scrollTop = canvas.scrollTop;
-    //   const centerX = scrollLeft + canvasRect.width / 2 - 100;
-    //   const centerY = scrollTop + canvasRect.height / 2 - 50;
-
-    //   // Create persistent node data
-    //   const nodeData = {
-    //     type: nodeType,
-    //     position: { x: centerX, y: centerY },
-    //     data: data,
-    //     element: null // Will be set after DOM creation
-    //   };
-
-    //   // Add to persistent graph
-    //   this.currentGraph.nodes.set(nodeId, nodeData);
-    //   this.currentGraph.dirty = true;
-
-    //   // Create DOM element
-    //   this.restoreSingleNode(canvas, nodeData, nodeId);
-
-    //   // Select the new node
-    //   if (nodeData.element) {
-    //     this.selectNode(nodeData.element);
-    //   }
-
-    //   return nodeData.element;
-    // }
 
     createNewNode(canvas, nodeType) {
       if (!this.isEditorAvailable() || !canvas) {
-        console.error('Cannot create node - editor or canvas not available');
+        console.error("Cannot create node - editor or canvas not available");
         return null;
       }
-    
-      console.log('Creating new node of type:', nodeType);
-    
+
+      console.log("Creating new node of type:", nodeType);
+
       // Create unique ID
-      const nodeId = 'node_' + Date.now();
-    
+      const nodeId = "node_" + Date.now();
+
       // Create default data for this node type
       let data = {};
-    
+
       switch (nodeType) {
-        case 'dialog':
-          data = { title: 'Dialog', text: 'New dialog text', image: null };
+        case "dialog":
+          data = { title: "Dialog", text: "New dialog text", image: null };
           break;
-        case 'choice':
+        case "choice":
           data = {
-            text: 'What would you like to do?',
+            text: "What would you like to do?",
             options: [
-              { text: 'Option 1', targetId: null },
-              { text: 'Option 2', targetId: null }
+              { text: "Option 1", targetId: null },
+              { text: "Option 2", targetId: null }
             ]
           };
           break;
-        case 'trigger':
+        case "trigger":
           data = { x: 0, y: 0, radius: 1, once: true };
           break;
-        case 'event':
-          data = { eventType: 'none', params: {} };
+        case "event":
+          data = { eventType: "none", params: {} };
           break;
-        case 'condition':
-          data = { condition: 'none', params: {} };
+        case "condition":
+          data = { condition: "none", params: {} };
           break;
-        case 'combat':
+        case "combat":
           data = { enemies: [], background: null };
           break;
-        case 'reward':
+        case "reward":
           data = { items: [], experience: 0 };
           break;
         default:
           data = {};
       }
-    
+
       // Position in center of visible canvas
       const canvasRect = canvas.getBoundingClientRect();
       const scrollLeft = canvas.scrollLeft;
       const scrollTop = canvas.scrollTop;
       const centerX = scrollLeft + canvasRect.width / 2 - 100;
       const centerY = scrollTop + canvasRect.height / 2 - 50;
-    
+
       // Create persistent node data
       const nodeData = {
         type: nodeType,
@@ -1808,159 +1777,125 @@ if (e.target.closest('.storyboard-port')) {
         data: data,
         element: null // Will be set after DOM creation
       };
-    
+
       // Add to persistent graph
       this.currentGraph.nodes.set(nodeId, nodeData);
       this.currentGraph.dirty = true;
-    
+
       // Create DOM element - use our new generateNodeHTML method
-      const node = document.createElement('div');
-      node.className = 'storyboard-node';
-      node.setAttribute('data-type', nodeType);
-      node.setAttribute('data-id', nodeId);
+      const node = document.createElement("div");
+      node.className = "storyboard-node";
+      node.setAttribute("data-type", nodeType);
+      node.setAttribute("data-id", nodeId);
       node.style.left = `${centerX}px`;
       node.style.top = `${centerY}px`;
-    
+
       // Get title and default body content
-      const title = data.title || nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
-      let body = '';
-      
+      const title =
+        data.title || nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
+      let body = "";
+
       switch (nodeType) {
-        case 'dialog':
-          body = `<div>${data.text || ''}</div>`;
+        case "dialog":
+          body = `<div>${data.text || ""}</div>`;
           break;
-        case 'choice':
+        case "choice":
           body = `
-            <div>${data.text || ''}</div>
-            <div style="color:#777;font-size:0.9em;">${data.options?.length || 0} options</div>
+            <div>${data.text || ""}</div>
+            <div style="color:#777;font-size:0.9em;">${
+              data.options?.length || 0
+            } options</div>
           `;
           break;
-        case 'trigger':
-          body = `<div>X: ${data.x || 0}, Y: ${data.y || 0}, Radius: ${data.radius || 1}</div>`;
+        case "trigger":
+          body = `<div>X: ${data.x || 0}, Y: ${data.y || 0}, Radius: ${
+            data.radius || 1
+          }</div>`;
           break;
-        case 'event':
-          body = `<div>Event: ${data.eventType || 'none'}</div>`;
+        case "event":
+          body = `<div>Event: ${data.eventType || "none"}</div>`;
           break;
-        case 'condition':
-          body = `<div>Condition: ${data.condition || 'none'}</div>`;
+        case "condition":
+          body = `<div>Condition: ${data.condition || "none"}</div>`;
           break;
-        case 'combat':
+        case "combat":
           body = `<div>Combat with ${data.enemies?.length || 0} enemies</div>`;
           break;
-        case 'reward':
+        case "reward":
           body = `<div>Rewards: ${data.items?.length || 0} items</div>`;
           break;
         default:
-          body = '<div>Configure node</div>';
+          body = "<div>Configure node</div>";
       }
-    
+
       // Use our helper to generate the proper HTML
       node.innerHTML = this.generateNodeHTML(nodeType, title, body, nodeData);
       canvas.appendChild(node);
-    
+
       // Store the element reference
       nodeData.element = node;
-    
+
       // Set up delete handler
-      const closeBtn = node.querySelector('.storyboard-node-close');
+      const closeBtn = node.querySelector(".storyboard-node-close");
       if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
+        closeBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('Delete node clicked');
+          console.log("Delete node clicked");
           this.deleteNode(node);
         });
       }
-    
+
       // Select the new node
       this.selectNode(node);
-    
+
       return node;
     }
 
     /**
      * Create a connection between two nodes
      */
-    // createConnection(canvas, connection) {
-    //   if (!canvas || !connection.from || !connection.to) {
-    //     console.error('Invalid connection data');
-    //     return null;
-    //   }
-
-    //   const fromNode = connection.from.node;
-    //   const toNode = connection.to.node;
-    //   const fromId = fromNode.getAttribute('data-id');
-    //   const toId = toNode.getAttribute('data-id');
-
-    //   console.log(`Creating connection from ${fromId} to ${toId}`);
-
-    //   // Create connection element
-    //   const conn = document.createElement('div');
-    //   conn.className = 'storyboard-connection';
-    //   conn.setAttribute('data-from', fromId);
-    //   conn.setAttribute('data-to', toId);
-
-    //   conn.style.cssText = `
-    //     position: absolute;
-    //     height: 2px;
-    //     background: #673ab7;
-    //     transform-origin: left center;
-    //     z-index: 0;
-    //   `;
-
-    //   canvas.appendChild(conn);
-
-    //   // Add to persistent connections
-    //   this.currentGraph.connections.push({
-    //     from: fromId,
-    //     to: toId,
-    //     element: conn
-    //   });
-    //   this.currentGraph.dirty = true;
-
-    //   // Update connection position
-    //   this.updateConnection(conn, fromNode, toNode, canvas);
-
-    //   return conn;
-    // }
-
     createConnection(canvas, connection) {
       if (!canvas || !connection.from || !connection.to) {
-        console.error('Invalid connection data');
+        console.error("Invalid connection data");
         return null;
       }
-    
+
       const fromNode = connection.from.node;
       const toNode = connection.to.node;
-      const fromId = fromNode.getAttribute('data-id');
-      const toId = toNode.getAttribute('data-id');
-      
+      const fromId = fromNode.getAttribute("data-id");
+      const toId = toNode.getAttribute("data-id");
+
       // Check if this is a condition node connection and which port was used
-      const fromNodeType = fromNode.getAttribute('data-type');
-      const pathType = connection.from.port.getAttribute('data-path'); // 'true', 'false', 'victory', 'defeat'
-      
-      console.log(`Creating connection from ${fromId} to ${toId}${pathType ? ` (${pathType} path)` : ''}`);
-    
+      const fromNodeType = fromNode.getAttribute("data-type");
+      const pathType = connection.from.port.getAttribute("data-path"); // 'true', 'false', 'victory', 'defeat'
+
+      console.log(
+        `Creating connection from ${fromId} to ${toId}${
+          pathType ? ` (${pathType} path)` : ""
+        }`
+      );
+
       // Create connection element
-      const conn = document.createElement('div');
-      conn.className = 'storyboard-connection';
-      conn.setAttribute('data-from', fromId);
-      conn.setAttribute('data-to', toId);
-      
+      const conn = document.createElement("div");
+      conn.className = "storyboard-connection";
+      conn.setAttribute("data-from", fromId);
+      conn.setAttribute("data-to", toId);
+
       // Set path attribute if available
       if (pathType) {
-        conn.setAttribute('data-path', pathType);
+        conn.setAttribute("data-path", pathType);
       }
-      
+
       // Set line color based on node type and path
-      let lineColor = '#673ab7'; // Default purple
-      
-      if (fromNodeType === 'condition' && pathType) {
-        lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
-      } else if (fromNodeType === 'combat' && pathType) {
-        lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+      let lineColor = "#673ab7"; // Default purple
+
+      if (fromNodeType === "condition" && pathType) {
+        lineColor = pathType === "true" ? "#2196F3" : "#F44336";
+      } else if (fromNodeType === "combat" && pathType) {
+        lineColor = pathType === "victory" ? "#4CAF50" : "#F44336";
       }
-      
+
       conn.style.cssText = `
         position: absolute;
         height: 2px;
@@ -1968,9 +1903,9 @@ if (e.target.closest('.storyboard-port')) {
         transform-origin: left center;
         z-index: 0;
       `;
-    
+
       canvas.appendChild(conn);
-    
+
       // Add to persistent connections
       this.currentGraph.connections.push({
         from: fromId,
@@ -1978,228 +1913,94 @@ if (e.target.closest('.storyboard-port')) {
         path: pathType || null,
         element: conn
       });
-      
+
       this.currentGraph.dirty = true;
-    
+
       // Update connection position
       this.updateConnection(conn, fromNode, toNode, canvas);
-    
+
       return conn;
     }
 
-    // createConnection(canvas, connection) {
-    //   if (!canvas || !connection.from || !connection.to) {
-    //     console.error('Invalid connection data');
-    //     return null;
-    //   }
-
-    //   const fromNode = connection.from.node;
-    //   const toNode = connection.to.node;
-    //   const fromId = fromNode.getAttribute('data-id');
-    //   const toId = toNode.getAttribute('data-id');
-
-    //   // Check if this is a condition node connection and which port was used
-    //   const isConditionConnection = fromNode.getAttribute('data-type') === 'condition';
-    //   const pathType = connection.from.port.getAttribute('data-path'); // 'true' or 'false'
-
-    //   console.log(`Creating connection from ${fromId} to ${toId}${isConditionConnection ? ` (${pathType} path)` : ''}`);
-
-    //   // Create connection element
-    //   const conn = document.createElement('div');
-    //   conn.className = 'storyboard-connection';
-    //   conn.setAttribute('data-from', fromId);
-    //   conn.setAttribute('data-to', toId);
-
-    //   // For condition nodes, store which path this connection represents
-    //   if (isConditionConnection && pathType) {
-    //     conn.setAttribute('data-path', pathType);
-
-    //     // Color the connection based on the path type
-    //     const lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
-    //     conn.style.cssText = `
-    //       position: absolute;
-    //       height: 2px;
-    //       background: ${lineColor};
-    //       transform-origin: left center;
-    //       z-index: 0;
-    //     `;
-    //   } else {
-    //     conn.style.cssText = `
-    //       position: absolute;
-    //       height: 2px;
-    //       background: #673ab7;
-    //       transform-origin: left center;
-    //       z-index: 0;
-    //     `;
-    //   }
-
-    //   canvas.appendChild(conn);
-
-    //   // Add to persistent connections with path info
-    //   this.currentGraph.connections.push({
-    //     from: fromId,
-    //     to: toId,
-    //     path: pathType || null,
-    //     element: conn
-    //   });
-
-    //   this.currentGraph.dirty = true;
-
-    //   // Update connection position
-    //   this.updateConnection(conn, fromNode, toNode, canvas);
-
-    //   return conn;
-    // }
 
     /**
      * Update a single connection's position
      */
-    // updateConnection(connectionEl, fromNode, toNode, canvas) {
-    //   if (!this.isEditorAvailable()) return;
-
-    //   const fromPort = fromNode.querySelector('.storyboard-port.output');
-    //   const toPort = toNode.querySelector('.storyboard-port.input');
-
-    //   const canvasRect = canvas.getBoundingClientRect();
-
-    //   const fromRect = fromPort.getBoundingClientRect();
-    //   const toRect = toPort.getBoundingClientRect();
-
-    //   const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-    //   const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-    //   const x2 = toRect.left + toRect.width / 2 - canvasRect.left;
-    //   const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
-
-    //   const dx = x2 - x1;
-    //   const dy = y2 - y1;
-    //   const length = Math.sqrt(dx * dx + dy * dy);
-    //   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-    //   connectionEl.style.left = `${x1}px`;
-    //   connectionEl.style.top = `${y1}px`;
-    //   connectionEl.style.width = `${length}px`;
-    //   connectionEl.style.transform = `rotate(${angle}deg)`;
-    // }
     updateConnection(connectionEl, fromNode, toNode, canvas) {
       if (!this.isEditorAvailable()) return;
-      
+
       // Get the nodesContainer for scale and offset
       const nodesContainer = this.editorState.nodesContainer || canvas;
       const scale = this.editorState.canvasScale || 1;
-    
+
       // Find the correct output port based on the connection's path
       let fromPort;
-      const fromNodeType = fromNode.getAttribute('data-type');
-      const connectionPath = connectionEl.getAttribute('data-path');
-      const optionIndex = connectionEl.getAttribute('data-option');
-      
-      if (fromNodeType === 'condition' && connectionPath) {
+      const fromNodeType = fromNode.getAttribute("data-type");
+      const connectionPath = connectionEl.getAttribute("data-path");
+      const optionIndex = connectionEl.getAttribute("data-option");
+
+      if (fromNodeType === "condition" && connectionPath) {
         // Find specific port for condition nodes
-        if (connectionPath === 'true') {
-          fromPort = fromNode.querySelector('.storyboard-port.output.true-port');
+        if (connectionPath === "true") {
+          fromPort = fromNode.querySelector(
+            ".storyboard-port.output.true-port"
+          );
         } else {
-          fromPort = fromNode.querySelector('.storyboard-port.output.false-port');
+          fromPort = fromNode.querySelector(
+            ".storyboard-port.output.false-port"
+          );
         }
-      } else if (fromNodeType === 'combat' && connectionPath) {
+      } else if (fromNodeType === "combat" && connectionPath) {
         // Find specific port for combat nodes
-        if (connectionPath === 'victory') {
-          fromPort = fromNode.querySelector('.storyboard-port.output.win-port');
+        if (connectionPath === "victory") {
+          fromPort = fromNode.querySelector(".storyboard-port.output.win-port");
         } else {
-          fromPort = fromNode.querySelector('.storyboard-port.output.lose-port');
+          fromPort = fromNode.querySelector(
+            ".storyboard-port.output.lose-port"
+          );
         }
-      } else if (fromNodeType === 'choice' && optionIndex !== null) {
+      } else if (fromNodeType === "choice" && optionIndex !== null) {
         // Find specific option port for choice nodes
-        fromPort = fromNode.querySelector(`.storyboard-port.output.option-port[data-option="${optionIndex}"]`);
+        fromPort = fromNode.querySelector(
+          `.storyboard-port.output.option-port[data-option="${optionIndex}"]`
+        );
       } else {
         // Default output port
-        fromPort = fromNode.querySelector('.storyboard-port.output');
+        fromPort = fromNode.querySelector(".storyboard-port.output");
       }
-      
-      const toPort = toNode.querySelector('.storyboard-port.input');
-    
+
+      const toPort = toNode.querySelector(".storyboard-port.input");
+
       if (!fromPort || !toPort) {
-        console.error('Could not find ports for connection');
+        console.error("Could not find ports for connection");
         return;
       }
-    
+
       // Get positions relative to scaled container
       const fromRect = fromPort.getBoundingClientRect();
       const toRect = toPort.getBoundingClientRect();
       const containerRect = nodesContainer.getBoundingClientRect();
-      
+
       // Calculate positions in the scaled/panned space
-      const x1 = (fromRect.left + fromRect.width / 2 - containerRect.left) / scale;
-      const y1 = (fromRect.top + fromRect.height / 2 - containerRect.top) / scale;
+      const x1 =
+        (fromRect.left + fromRect.width / 2 - containerRect.left) / scale;
+      const y1 =
+        (fromRect.top + fromRect.height / 2 - containerRect.top) / scale;
       const x2 = (toRect.left + toRect.width / 2 - containerRect.left) / scale;
       const y2 = (toRect.top + toRect.height / 2 - containerRect.top) / scale;
-    
+
       const dx = x2 - x1;
       const dy = y2 - y1;
       const length = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
       // Position the connection in the scaled space
       connectionEl.style.left = `${x1}px`;
       connectionEl.style.top = `${y1}px`;
       connectionEl.style.width = `${length}px`;
       connectionEl.style.transform = `rotate(${angle}deg)`;
-      connectionEl.style.transformOrigin = 'left center';
+      connectionEl.style.transformOrigin = "left center";
     }
-
-    // updateConnection(connectionEl, fromNode, toNode, canvas) {
-    //   if (!this.isEditorAvailable()) return;
-    
-    //   // Find the correct output port based on the connection's path
-    //   let fromPort;
-    //   const fromNodeType = fromNode.getAttribute('data-type');
-    //   const connectionPath = connectionEl.getAttribute('data-path');
-      
-    //   if (fromNodeType === 'condition' && connectionPath) {
-    //     // Find specific port for condition nodes
-    //     if (connectionPath === 'true') {
-    //       fromPort = fromNode.querySelector('.storyboard-port.output.true-port');
-    //     } else {
-    //       fromPort = fromNode.querySelector('.storyboard-port.output.false-port');
-    //     }
-    //   } else if (fromNodeType === 'combat' && connectionPath) {
-    //     // Find specific port for combat nodes
-    //     if (connectionPath === 'victory') {
-    //       fromPort = fromNode.querySelector('.storyboard-port.output.win-port');
-    //     } else {
-    //       fromPort = fromNode.querySelector('.storyboard-port.output.lose-port');
-    //     }
-    //   } else {
-    //     // Default output port
-    //     fromPort = fromNode.querySelector('.storyboard-port.output');
-    //   }
-      
-    //   const toPort = toNode.querySelector('.storyboard-port.input');
-    
-    //   if (!fromPort || !toPort) {
-    //     console.error('Could not find ports for connection');
-    //     return;
-    //   }
-    
-    //   const canvasRect = canvas.getBoundingClientRect();
-    
-    //   const fromRect = fromPort.getBoundingClientRect();
-    //   const toRect = toPort.getBoundingClientRect();
-    
-    //   const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-    //   const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-    //   const x2 = toRect.left + toRect.width / 2 - canvasRect.left;
-    //   const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
-    
-    //   const dx = x2 - x1;
-    //   const dy = y2 - y1;
-    //   const length = Math.sqrt(dx * dx + dy * dy);
-    //   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    
-    //   connectionEl.style.left = `${x1}px`;
-    //   connectionEl.style.top = `${y1}px`;
-    //   connectionEl.style.width = `${length}px`;
-    //   connectionEl.style.transform = `rotate(${angle}deg)`;
-    // }
 
     /**
      * Update all connections in the editor
@@ -2210,11 +2011,15 @@ if (e.target.closest('.storyboard-port')) {
       const canvas = this.editorState.canvasElement;
       if (!canvas) return;
 
-      this.currentGraph.connections.forEach(connection => {
+      this.currentGraph.connections.forEach((connection) => {
         if (!connection.element) return;
 
-        const fromNode = canvas.querySelector(`.storyboard-node[data-id="${connection.from}"]`);
-        const toNode = canvas.querySelector(`.storyboard-node[data-id="${connection.to}"]`);
+        const fromNode = canvas.querySelector(
+          `.storyboard-node[data-id="${connection.from}"]`
+        );
+        const toNode = canvas.querySelector(
+          `.storyboard-node[data-id="${connection.to}"]`
+        );
 
         if (fromNode && toNode) {
           this.updateConnection(connection.element, fromNode, toNode, canvas);
@@ -2228,21 +2033,23 @@ if (e.target.closest('.storyboard-port')) {
     deleteNode(nodeEl) {
       if (!nodeEl) return;
 
-      const nodeId = nodeEl.getAttribute('data-id');
-      console.log('Deleting node:', nodeId);
+      const nodeId = nodeEl.getAttribute("data-id");
+      console.log("Deleting node:", nodeId);
 
       // Remove associated connections
       const canvas = nodeEl.parentElement;
       if (canvas) {
-        this.currentGraph.connections = this.currentGraph.connections.filter(conn => {
-          if (conn.from === nodeId || conn.to === nodeId) {
-            if (conn.element) {
-              conn.element.remove();
+        this.currentGraph.connections = this.currentGraph.connections.filter(
+          (conn) => {
+            if (conn.from === nodeId || conn.to === nodeId) {
+              if (conn.element) {
+                conn.element.remove();
+              }
+              return false;
             }
-            return false;
+            return true;
           }
-          return true;
-        });
+        );
       }
 
       // Remove node element
@@ -2259,14 +2066,14 @@ if (e.target.closest('.storyboard-port')) {
     }
 
     getImageName(imageData) {
-      if (!imageData || !this.resourceManager) return '';
+      if (!imageData || !this.resourceManager) return "";
       try {
         const { id, category } = imageData;
         const art = this.resourceManager.resources.splashArt[category]?.get(id);
-        return art?.name || '';
+        return art?.name || "";
       } catch (error) {
-        console.error('Error getting image name:', error);
-        return '';
+        console.error("Error getting image name:", error);
+        return "";
       }
     }
 
@@ -2278,11 +2085,11 @@ if (e.target.closest('.storyboard-port')) {
 
       // Deselect previous node
       if (this.editorState.selectedNode) {
-        this.editorState.selectedNode.classList.remove('selected');
+        this.editorState.selectedNode.classList.remove("selected");
       }
 
       // Select this node
-      nodeEl.classList.add('selected');
+      nodeEl.classList.add("selected");
       this.editorState.selectedNode = nodeEl;
 
       // Show properties
@@ -2290,27 +2097,25 @@ if (e.target.closest('.storyboard-port')) {
       if (!properties) return;
 
       // Get the node data
-      const nodeId = nodeEl.getAttribute('data-id');
+      const nodeId = nodeEl.getAttribute("data-id");
       const nodeData = this.currentGraph.nodes.get(nodeId);
 
-      let propertiesHtml = '';
-      let paramsHtml = '';
-      let optionsHtml = '';
-      let eventOptionsHtml = '';
-      let conditionOptionsHtml = '';
+      let propertiesHtml = "";
+      let paramsHtml = "";
+      let optionsHtml = "";
+      let eventOptionsHtml = "";
+      let conditionOptionsHtml = "";
 
       if (nodeData) {
-
-
-
-
         switch (nodeData.type) {
-          case 'dialog':
+          case "dialog":
             propertiesHtml = `
               <div class="storyboard-property-group">
                 <div class="storyboard-property-label">Dialog Title</div>
                 <div class="storyboard-property-field">
-                  <sl-input id="dialog-title-input" name="title" value="${nodeData.data.title || ''}"></sl-input>
+                  <sl-input id="dialog-title-input" name="title" value="${
+                    nodeData.data.title || ""
+                  }"></sl-input>
                 </div>
               </div>
               
@@ -2324,7 +2129,7 @@ if (e.target.closest('.storyboard-port')) {
                            background: #333; color: white; border-radius: 4px; font-family: inherit;
                            font-size: 1em; resize: vertical; margin-bottom: 8px;"
                     rows="6"
-                  >${nodeData.data.text || ''}</textarea>
+                  >${nodeData.data.text || ""}</textarea>
                   
                   <div class="text-status" style="margin-top: 4px; font-size: 0.8em; color: #aaa;">
                     <span class="char-count">0</span> characters
@@ -2336,18 +2141,25 @@ if (e.target.closest('.storyboard-port')) {
                 <div class="storyboard-property-label">Image</div>
                 <div class="storyboard-property-field">
                   <sl-button id="select-image-btn" size="small">Select Image</sl-button>
-                  ${nodeData.data.image ? `
+                  ${
+                    nodeData.data.image
+                      ? `
                     <div class="selected-image-preview" style="margin-top: 12px; border: 1px solid #444; padding: 8px; border-radius: 4px; background: #333;">
                       <img src="${this.getSplashArtUrl(nodeData.data.image)}" 
                            style="max-width: 100%; max-height: 150px; display: block; margin: 0 auto; border-radius: 4px;">
                       <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #aaa; font-size: 0.9em;">${this.getImageName(nodeData.data.image) || 'Selected Image'}</span>
+                        <span style="color: #aaa; font-size: 0.9em;">${
+                          this.getImageName(nodeData.data.image) ||
+                          "Selected Image"
+                        }</span>
                         <sl-button size="small" class="remove-image-btn" variant="danger">
                           <span class="material-icons" style="font-size: 16px;">close</span>
                         </sl-button>
                       </div>
                     </div>
-                  ` : '<div style="margin-top: 8px; font-size: 0.9em; color: #888;">No image selected</div>'}
+                  `
+                      : '<div style="margin-top: 8px; font-size: 0.9em; color: #888;">No image selected</div>'
+                  }
                 </div>
               </div>
               
@@ -2357,17 +2169,20 @@ if (e.target.closest('.storyboard-port')) {
             `;
             break;
 
-          case 'choice':
+          case "choice":
             // Initialize options array if it doesn't exist
-            if (!nodeData.data.options || !Array.isArray(nodeData.data.options)) {
+            if (
+              !nodeData.data.options ||
+              !Array.isArray(nodeData.data.options)
+            ) {
               nodeData.data.options = [
-                { text: 'Option 1', targetId: null },
-                { text: 'Option 2', targetId: null }
+                { text: "Option 1", targetId: null },
+                { text: "Option 2", targetId: null }
               ];
             }
 
             // Generate options HTML dynamically
-            optionsHtml = '';
+            optionsHtml = "";
             nodeData.data.options.forEach((option, index) => {
               optionsHtml += `
       <div class="option-row" style="display: flex; gap: 8px; margin-bottom: 12px; align-items: start;">
@@ -2376,7 +2191,7 @@ if (e.target.closest('.storyboard-port')) {
             class="option-text" 
             data-index="${index}"
             style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
-            rows="2">${option.text || ''}</textarea>
+            rows="2">${option.text || ""}</textarea>
         </div>
         <sl-button size="small" class="delete-option-btn" data-index="${index}" style="flex-shrink: 0;">
           <span class="material-icons" style="font-size: 16px;">delete</span>
@@ -2395,7 +2210,7 @@ if (e.target.closest('.storyboard-port')) {
                  background: #333; color: white; border-radius: 4px; font-family: inherit;
                  font-size: 1em; resize: vertical; margin-bottom: 8px;"
           rows="4"
-        >${nodeData.data.text || 'What would you like to do?'}</textarea>
+        >${nodeData.data.text || "What would you like to do?"}</textarea>
       </div>
     </div>
     
@@ -2422,7 +2237,7 @@ if (e.target.closest('.storyboard-port')) {
             break;
 
           // For the selectNode method in Storyboard.js - add this case for trigger nodes
-          case 'trigger':
+          case "trigger":
             // Ensure default values exist
             if (!nodeData.data.x) nodeData.data.x = 0;
             if (!nodeData.data.y) nodeData.data.y = 0;
@@ -2470,7 +2285,9 @@ if (e.target.closest('.storyboard-port')) {
         >
         <div style="display: flex; justify-content: space-between;">
           <span style="color: #aaa; font-size: 0.9em;">0.1</span>
-          <span id="radius-value" style="color: white; font-weight: bold;">${nodeData.data.radius}</span>
+          <span id="radius-value" style="color: white; font-weight: bold;">${
+            nodeData.data.radius
+          }</span>
           <span style="color: #aaa; font-size: 0.9em;">10</span>
         </div>
       </div>
@@ -2482,7 +2299,7 @@ if (e.target.closest('.storyboard-port')) {
           <input 
             type="checkbox" 
             id="trigger-once-input" 
-            ${nodeData.data.once ? 'checked' : ''}
+            ${nodeData.data.once ? "checked" : ""}
             style="margin-right: 8px;"
           >
           <span>Trigger only once</span>
@@ -2510,19 +2327,19 @@ if (e.target.closest('.storyboard-port')) {
             break;
 
           // For the selectNode method in Storyboard.js - add this case for event nodes
-          case 'event':
+          case "event":
             // Define available event types
             const eventTypes = [
-              { value: 'offerStarter', label: 'Offer Starter Monster' },
-              { value: 'showPartyManager', label: 'Show Party Manager' },
-              { value: 'giveItem', label: 'Give Item to Player' },
-              { value: 'setFlag', label: 'Set Game Flag' },
-              { value: 'teleport', label: 'Teleport Player' }
+              { value: "offerStarter", label: "Offer Starter Monster" },
+              { value: "showPartyManager", label: "Show Party Manager" },
+              { value: "giveItem", label: "Give Item to Player" },
+              { value: "setFlag", label: "Set Game Flag" },
+              { value: "teleport", label: "Teleport Player" }
             ];
 
             // Set default if not set
             if (!nodeData.data.eventType) {
-              nodeData.data.eventType = 'offerStarter';
+              nodeData.data.eventType = "offerStarter";
             }
 
             // Initialize params if they don't exist
@@ -2531,18 +2348,25 @@ if (e.target.closest('.storyboard-port')) {
             }
 
             // Generate event options
-            eventOptionsHtml = eventTypes.map(event => `
-    <option value="${event.value}" ${nodeData.data.eventType === event.value ? 'selected' : ''}>
+            eventOptionsHtml = eventTypes
+              .map(
+                (event) => `
+    <option value="${event.value}" ${
+                  nodeData.data.eventType === event.value ? "selected" : ""
+                }>
       ${event.label}
     </option>
-  `).join('');
+  `
+              )
+              .join("");
 
             // Generate parameter form based on event type
-            paramsHtml = '';
+            paramsHtml = "";
             switch (nodeData.data.eventType) {
-              case 'giveItem':
+              case "giveItem":
                 // Get item name if available
-                const itemName = nodeData.data.params?.itemName || 'No item selected';
+                const itemName =
+                  nodeData.data.params?.itemName || "No item selected";
 
                 paramsHtml = `
                   <div class="param-group" style="margin-top: 16px;">
@@ -2554,22 +2378,32 @@ if (e.target.closest('.storyboard-port')) {
                       </sl-button>
                     </div>
                     
-                    ${nodeData.data.params?.itemId ? `
+                    ${
+                      nodeData.data.params?.itemId
+                        ? `
                       <div class="selected-item-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
                         <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                          <img src="${this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId)?.thumbnail || ''}" 
+                          <img src="${
+                            this.resourceManager.resources.textures.props.get(
+                              nodeData.data.params.itemId
+                            )?.thumbnail || ""
+                          }" 
                                style="width: 100%; height: 100%; object-fit: contain;">
                         </div>
                         <div style="flex: 1;">
                           <div style="font-weight: 500;">${itemName}</div>
-                          <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.itemId}</div>
+                          <div style="font-size: 0.9em; color: #aaa;">ID: ${
+                            nodeData.data.params.itemId
+                          }</div>
                         </div>
                       </div>
-                    ` : `
+                    `
+                        : `
                       <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
                         No item selected yet. Click "Browse Items" to choose one.
                       </div>
-                    `}
+                    `
+                    }
                   </div>
                   
                   <div class="param-group" style="margin-top: 16px;">
@@ -2588,7 +2422,7 @@ if (e.target.closest('.storyboard-port')) {
                       <input 
                         type="checkbox" 
                         id="item-horizontal-input" 
-                        ${nodeData.data.params?.isHorizontal ? 'checked' : ''}
+                        ${nodeData.data.params?.isHorizontal ? "checked" : ""}
                         style="margin-right: 8px;"
                       >
                       <span>Place horizontally (flat on ground)</span>
@@ -2600,14 +2434,14 @@ if (e.target.closest('.storyboard-port')) {
                 `;
                 break;
 
-              case 'setFlag':
+              case "setFlag":
                 paramsHtml = `
         <div class="param-group" style="margin-top: 16px;">
           <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
           <input 
             type="text" 
             id="flag-name-input" 
-            value="${nodeData.data.params.flag || ''}"
+            value="${nodeData.data.params.flag || ""}"
             style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
             placeholder="Enter flag name"
           >
@@ -2618,14 +2452,18 @@ if (e.target.closest('.storyboard-port')) {
             id="flag-value-input"
             style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
           >
-            <option value="true" ${nodeData.data.params.value === true ? 'selected' : ''}>True</option>
-            <option value="false" ${nodeData.data.params.value === false ? 'selected' : ''}>False</option>
+            <option value="true" ${
+              nodeData.data.params.value === true ? "selected" : ""
+            }>True</option>
+            <option value="false" ${
+              nodeData.data.params.value === false ? "selected" : ""
+            }>False</option>
           </select>
         </div>
       `;
                 break;
 
-              case 'teleport':
+              case "teleport":
                 paramsHtml = `
         <div class="param-group" style="margin-top: 16px; display: flex; gap: 12px;">
           <div style="flex: 1;">
@@ -2706,7 +2544,7 @@ if (e.target.closest('.storyboard-port')) {
   `;
             break;
 
-          case 'combat':
+          case "combat":
             propertiesHtml = `
               <div class="storyboard-property-group">
                 <div class="storyboard-property-label">Enemies</div>
@@ -2714,7 +2552,7 @@ if (e.target.closest('.storyboard-port')) {
                   <sl-button size="small">Select Enemies</sl-button>
                 </div>
                 <div style="font-size:0.9em; color:#777; margin-top:8px;">
-                  Selected: ${nodeData.data.enemies?.length || 'None'}
+                  Selected: ${nodeData.data.enemies?.length || "None"}
                 </div>
               </div>
               
@@ -2727,7 +2565,7 @@ if (e.target.closest('.storyboard-port')) {
             `;
             break;
 
-          case 'reward':
+          case "reward":
             propertiesHtml = `
               <div class="storyboard-property-group">
                 <div class="storyboard-property-label">Items</div>
@@ -2739,7 +2577,9 @@ if (e.target.closest('.storyboard-port')) {
               <div class="storyboard-property-group">
                 <div class="storyboard-property-label">Experience</div>
                 <div class="storyboard-property-field">
-                  <sl-input type="number" name="experience" value="${nodeData.data.experience || 0}"></sl-input>
+                  <sl-input type="number" name="experience" value="${
+                    nodeData.data.experience || 0
+                  }"></sl-input>
                 </div>
               </div>
               
@@ -2752,19 +2592,19 @@ if (e.target.closest('.storyboard-port')) {
             `;
             break;
 
-          case 'condition':
+          case "condition":
             // Define available condition types
             const conditionTypes = [
-              { value: 'hasMonster', label: 'Has Monster' },
-              { value: 'hasItem', label: 'Has Item' },
-              { value: 'hasFlag', label: 'Has Game Flag' },
-              { value: 'monsterLevel', label: 'Monster Level Check' }
+              { value: "hasMonster", label: "Has Monster" },
+              { value: "hasItem", label: "Has Item" },
+              { value: "hasFlag", label: "Has Game Flag" },
+              { value: "monsterLevel", label: "Monster Level Check" }
               // Removed playerLevel as you suggested
             ];
 
             // Set default if not set
             if (!nodeData.data.condition) {
-              nodeData.data.condition = 'hasFlag';
+              nodeData.data.condition = "hasFlag";
             }
 
             // Initialize params if they don't exist
@@ -2773,16 +2613,22 @@ if (e.target.closest('.storyboard-port')) {
             }
 
             // Generate condition options
-            conditionOptionsHtml = conditionTypes.map(cond => `
-                <option value="${cond.value}" ${nodeData.data.condition === cond.value ? 'selected' : ''}>
+            conditionOptionsHtml = conditionTypes
+              .map(
+                (cond) => `
+                <option value="${cond.value}" ${
+                  nodeData.data.condition === cond.value ? "selected" : ""
+                }>
                   ${cond.label}
                 </option>
-              `).join('');
+              `
+              )
+              .join("");
 
             // Generate parameter form based on condition type
-            paramsHtml = '';
+            paramsHtml = "";
             switch (nodeData.data.condition) {
-              case 'hasMonster':
+              case "hasMonster":
                 paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -2793,27 +2639,40 @@ if (e.target.closest('.storyboard-port')) {
                         </sl-button>
                       </div>
                       
-                      ${nodeData.data.params?.monsterId ? `
+                      ${
+                        nodeData.data.params?.monsterId
+                          ? `
                         <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
                           <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                            <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
+                            <img src="${
+                              this.resourceManager.resources.bestiary.get(
+                                nodeData.data.params.monsterId
+                              )?.thumbnail || ""
+                            }" 
                                  style="width: 100%; height: 100%; object-fit: contain;">
                           </div>
                           <div style="flex: 1;">
-                            <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
-                            <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
+                            <div style="font-weight: 500;">${
+                              nodeData.data.params.monsterName ||
+                              "Unknown Monster"
+                            }</div>
+                            <div style="font-size: 0.9em; color: #aaa;">ID: ${
+                              nodeData.data.params.monsterId
+                            }</div>
                           </div>
                         </div>
-                      ` : `
+                      `
+                          : `
                         <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
                           No monster selected yet. Click "Browse Monsters" to choose one.
                         </div>
-                      `}
+                      `
+                      }
                     </div>
                   `;
                 break;
 
-              case 'hasItem':
+              case "hasItem":
                 paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -2824,22 +2683,34 @@ if (e.target.closest('.storyboard-port')) {
                         </sl-button>
                       </div>
                       
-                      ${nodeData.data.params?.itemId ? `
+                      ${
+                        nodeData.data.params?.itemId
+                          ? `
                         <div class="selected-item-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
                           <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                            <img src="${this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId)?.thumbnail || ''}" 
+                            <img src="${
+                              this.resourceManager.resources.textures.props.get(
+                                nodeData.data.params.itemId
+                              )?.thumbnail || ""
+                            }" 
                                  style="width: 100%; height: 100%; object-fit: contain;">
                           </div>
                           <div style="flex: 1;">
-                            <div style="font-weight: 500;">${nodeData.data.params.itemName || 'Unknown Item'}</div>
-                            <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.itemId}</div>
+                            <div style="font-weight: 500;">${
+                              nodeData.data.params.itemName || "Unknown Item"
+                            }</div>
+                            <div style="font-size: 0.9em; color: #aaa;">ID: ${
+                              nodeData.data.params.itemId
+                            }</div>
                           </div>
                         </div>
-                      ` : `
+                      `
+                          : `
                         <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
                           No item selected yet. Click "Browse Items" to choose one.
                         </div>
-                      `}
+                      `
+                      }
                       
                       <div style="margin-top: 12px;">
                         <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Quantity</label>
@@ -2855,14 +2726,14 @@ if (e.target.closest('.storyboard-port')) {
                   `;
                 break;
 
-              case 'hasFlag':
+              case "hasFlag":
                 paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
                       <input 
                         type="text" 
                         id="flag-name-input" 
-                        value="${nodeData.data.params?.flag || ''}"
+                        value="${nodeData.data.params?.flag || ""}"
                         style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
                         placeholder="Enter flag name"
                       >
@@ -2873,14 +2744,20 @@ if (e.target.closest('.storyboard-port')) {
                         id="flag-value-input"
                         style="width: 100%; padding: 8px; border: 1px solid #666; background: #333; color: white; border-radius: 4px;"
                       >
-                        <option value="true" ${nodeData.data.params?.value === true ? 'selected' : ''}>True</option>
-                        <option value="false" ${nodeData.data.params?.value === false ? 'selected' : ''}>False</option>
+                        <option value="true" ${
+                          nodeData.data.params?.value === true ? "selected" : ""
+                        }>True</option>
+                        <option value="false" ${
+                          nodeData.data.params?.value === false
+                            ? "selected"
+                            : ""
+                        }>False</option>
                       </select>
                     </div>
                   `;
                 break;
 
-              case 'monsterLevel':
+              case "monsterLevel":
                 paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
@@ -2891,22 +2768,35 @@ if (e.target.closest('.storyboard-port')) {
                         </sl-button>
                       </div>
                       
-                      ${nodeData.data.params?.monsterId ? `
+                      ${
+                        nodeData.data.params?.monsterId
+                          ? `
                         <div class="selected-monster-preview" style="margin-bottom: 16px; border: 1px solid #444; padding: 12px; border-radius: 4px; background: #333; display: flex; align-items: center; gap: 12px;">
                           <div style="flex-shrink: 0; width: 50px; height: 50px; overflow: hidden; border-radius: 4px;">
-                            <img src="${this.resourceManager.resources.bestiary.get(nodeData.data.params.monsterId)?.thumbnail || ''}" 
+                            <img src="${
+                              this.resourceManager.resources.bestiary.get(
+                                nodeData.data.params.monsterId
+                              )?.thumbnail || ""
+                            }" 
                                  style="width: 100%; height: 100%; object-fit: contain;">
                           </div>
                           <div style="flex: 1;">
-                            <div style="font-weight: 500;">${nodeData.data.params.monsterName || 'Unknown Monster'}</div>
-                            <div style="font-size: 0.9em; color: #aaa;">ID: ${nodeData.data.params.monsterId}</div>
+                            <div style="font-weight: 500;">${
+                              nodeData.data.params.monsterName ||
+                              "Unknown Monster"
+                            }</div>
+                            <div style="font-size: 0.9em; color: #aaa;">ID: ${
+                              nodeData.data.params.monsterId
+                            }</div>
                           </div>
                         </div>
-                      ` : `
+                      `
+                          : `
                         <div style="border: 1px dashed #666; padding: 16px; text-align: center; color: #888; margin-bottom: 16px; border-radius: 4px;">
                           No monster selected yet. Click "Browse Monsters" to choose one.
                         </div>
-                      `}
+                      `
+                      }
                       
                       <div style="margin-top: 12px;">
                         <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Minimum Level</label>
@@ -2958,11 +2848,6 @@ if (e.target.closest('.storyboard-port')) {
               `;
             break;
 
-
-
-
-
-
           default:
             propertiesHtml = `
                 <div class="storyboard-property-group">
@@ -2973,7 +2858,9 @@ if (e.target.closest('.storyboard-port')) {
 
         properties.innerHTML = `
         <div class="storyboard-properties-content" data-node-id="${nodeId}">
-          <h3 style="margin-top:0;">${nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)} Node</h3>
+          <h3 style="margin-top:0;">${
+            nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)
+          } Node</h3>
           ${propertiesHtml}
         </div>
       `;
@@ -2992,33 +2879,35 @@ if (e.target.closest('.storyboard-port')) {
       if (!properties || !nodeData) return;
 
       // Handle dialog node properties
-      if (nodeData.type === 'dialog') {
+      if (nodeData.type === "dialog") {
         // Set up character counter
-        const textArea = properties.querySelector('#dialog-text-area');
-        const charCount = properties.querySelector('.char-count');
+        const textArea = properties.querySelector("#dialog-text-area");
+        const charCount = properties.querySelector(".char-count");
 
         if (textArea && charCount) {
           // Update initial count
           charCount.textContent = textArea.value.length;
 
           // Update count on input
-          textArea.addEventListener('input', () => {
+          textArea.addEventListener("input", () => {
             charCount.textContent = textArea.value.length;
           });
         }
 
         // Apply button handler
-        const applyBtn = properties.querySelector('#apply-dialog-changes');
+        const applyBtn = properties.querySelector("#apply-dialog-changes");
         if (applyBtn) {
-          applyBtn.addEventListener('click', () => {
+          applyBtn.addEventListener("click", () => {
             try {
               // Get current values from inputs
-              const titleInput = properties.querySelector('#dialog-title-input');
-              const textArea = properties.querySelector('#dialog-text-area');
+              const titleInput = properties.querySelector(
+                "#dialog-title-input"
+              );
+              const textArea = properties.querySelector("#dialog-text-area");
 
               // Safer value retrieval
-              const title = titleInput?.value?.trim() || '';
-              const text = textArea?.value?.trim() || '';
+              const title = titleInput?.value?.trim() || "";
+              const text = textArea?.value?.trim() || "";
 
               // Update node data
               nodeData.data.title = title;
@@ -3031,51 +2920,56 @@ if (e.target.closest('.storyboard-port')) {
               this.updateNodeVisual(nodeData);
 
               // Visual feedback
-              if (textArea) textArea.style.borderColor = '#22c55e'; // Success green
+              if (textArea) textArea.style.borderColor = "#22c55e"; // Success green
 
               setTimeout(() => {
-                if (textArea) textArea.style.borderColor = '#6200ee'; // Return to purple
+                if (textArea) textArea.style.borderColor = "#6200ee"; // Return to purple
               }, 1000);
 
               // Show confirmation
-              this.showToast('Node updated', 'success');
+              this.showToast("Node updated", "success");
             } catch (error) {
-              console.error('Error updating node data:', error);
-              this.showToast('Error updating node', 'error');
+              console.error("Error updating node data:", error);
+              this.showToast("Error updating node", "error");
             }
           });
         }
 
-        const selectImageBtn = properties.querySelector('#select-image-btn');
+        const selectImageBtn = properties.querySelector("#select-image-btn");
         if (selectImageBtn) {
-          selectImageBtn.addEventListener('click', () => {
+          selectImageBtn.addEventListener("click", () => {
             // Use the unified resource selector
-            this.showResourceSelector(nodeData, 'splashArt', 'title', (resourceId, resource) => {
-              // Update node data with selected image
-              nodeData.data.image = {
-                id: resourceId,
-                category: 'title'
-              };
+            this.showResourceSelector(
+              nodeData,
+              "splashArt",
+              "title",
+              (resourceId, resource) => {
+                // Update node data with selected image
+                nodeData.data.image = {
+                  id: resourceId,
+                  category: "title"
+                };
 
-              // Mark as dirty
-              this.currentGraph.dirty = true;
+                // Mark as dirty
+                this.currentGraph.dirty = true;
 
-              // Update visual representation
-              this.updateNodeVisual(nodeData);
+                // Update visual representation
+                this.updateNodeVisual(nodeData);
 
-              // Refresh properties panel
-              this.selectNode(nodeData.element);
+                // Refresh properties panel
+                this.selectNode(nodeData.element);
 
-              // Show confirmation
-              this.showToast(`Image "${resource.name}" selected`, 'success');
-            });
+                // Show confirmation
+                this.showToast(`Image "${resource.name}" selected`, "success");
+              }
+            );
           });
         }
 
         // Handle remove image button if it exists
-        const removeImageBtn = properties.querySelector('.remove-image-btn');
+        const removeImageBtn = properties.querySelector(".remove-image-btn");
         if (removeImageBtn) {
-          removeImageBtn.addEventListener('click', (e) => {
+          removeImageBtn.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
 
@@ -3091,221 +2985,153 @@ if (e.target.closest('.storyboard-port')) {
         }
       }
 
-      // In setupNodePropertyHandlers method, add this for choice nodes
-      // if (nodeData.type === 'choice') {
-      //   // Apply button handler
-      //   const applyBtn = properties.querySelector('#apply-choice-changes');
-      //   if (applyBtn) {
-      //     applyBtn.addEventListener('click', () => {
-      //       try {
-      //         // Get main question text
-      //         const textArea = properties.querySelector('#choice-text-area');
-      //         const text = textArea?.value?.trim() || '';
-
-      //         // Get all option texts
-      //         const optionTextareas = properties.querySelectorAll('.option-text');
-      //         const options = [];
-
-      //         optionTextareas.forEach(textarea => {
-      //           const index = parseInt(textarea.getAttribute('data-index'));
-      //           const text = textarea.value.trim();
-
-      //           // Preserve existing targetId if available
-      //           const existingOption = nodeData.data.options[index];
-      //           const targetId = existingOption ? existingOption.targetId : null;
-
-      //           options.push({ text, targetId });
-      //         });
-
-      //         // Update node data
-      //         nodeData.data.text = text;
-      //         nodeData.data.options = options;
-
-      //         // Mark as dirty
-      //         this.currentGraph.dirty = true;
-
-      //         // Update visual representation
-      //         this.updateNodeVisual(nodeData);
-
-      //         // Show confirmation
-      //         this.showToast('Choice options updated', 'success');
-      //       } catch (error) {
-      //         console.error('Error updating choice node:', error);
-      //         this.showToast('Error updating choice node', 'error');
-      //       }
-      //     });
-      //   }
-
-      //   // Add option button
-      //   const addOptionBtn = properties.querySelector('#add-option-btn');
-      //   if (addOptionBtn) {
-      //     addOptionBtn.addEventListener('click', () => {
-      //       // Add new option to data
-      //       nodeData.data.options.push({ text: 'New option', targetId: null });
-
-      //       // Refresh properties panel to show new option
-      //       this.selectNode(nodeData.element);
-
-      //       // Show confirmation
-      //       this.showToast('Option added', 'success');
-      //     });
-      //   }
-
-      //   // Delete option buttons
-      //   const deleteButtons = properties.querySelectorAll('.delete-option-btn');
-      //   deleteButtons.forEach(button => {
-      //     button.addEventListener('click', () => {
-      //       const index = parseInt(button.getAttribute('data-index'));
-
-      //       // Need at least one option
-      //       if (nodeData.data.options.length <= 1) {
-      //         this.showToast('Cannot delete last option', 'error');
-      //         return;
-      //       }
-
-      //       // Remove the option
-      //       nodeData.data.options.splice(index, 1);
-
-      //       // Refresh properties panel
-      //       this.selectNode(nodeData.element);
-
-      //       // Show confirmation
-      //       this.showToast('Option deleted', 'success');
-      //     });
-      //   });
-      // }
-
-      if (nodeData.type === 'choice') {
+      if (nodeData.type === "choice") {
         // Apply button handler
-        const applyBtn = properties.querySelector('#apply-choice-changes');
+        const applyBtn = properties.querySelector("#apply-choice-changes");
         if (applyBtn) {
-          applyBtn.addEventListener('click', () => {
+          applyBtn.addEventListener("click", () => {
             try {
               // Get main question text
-              const textArea = properties.querySelector('#choice-text-area');
-              const text = textArea?.value?.trim() || '';
-              
+              const textArea = properties.querySelector("#choice-text-area");
+              const text = textArea?.value?.trim() || "";
+
               // Get all option texts
-              const optionTextareas = properties.querySelectorAll('.option-text');
+              const optionTextareas =
+                properties.querySelectorAll(".option-text");
               const options = [];
-              
-              optionTextareas.forEach(textarea => {
-                const index = parseInt(textarea.getAttribute('data-index'));
+
+              optionTextareas.forEach((textarea) => {
+                const index = parseInt(textarea.getAttribute("data-index"));
                 const text = textarea.value.trim();
-                
+
                 // Preserve existing targetId if available
                 const existingOption = nodeData.data.options[index];
-                const targetId = existingOption ? existingOption.targetId : null;
-                
+                const targetId = existingOption
+                  ? existingOption.targetId
+                  : null;
+
                 options.push({ text, targetId });
               });
-              
+
               // Update node data
               nodeData.data.text = text;
               nodeData.data.options = options;
-              
+
               // Mark as dirty
               this.currentGraph.dirty = true;
-              
+
               // Regenerate the node HTML to update ports
               if (nodeData.element) {
-                const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+                const title =
+                  nodeData.data.title ||
+                  nodeData.type.charAt(0).toUpperCase() +
+                    nodeData.type.slice(1);
                 const body = `
-                  <div>${text || ''}</div>
-                  <div style="color:#777;font-size:0.9em;">${options.length || 0} options</div>
+                  <div>${text || ""}</div>
+                  <div style="color:#777;font-size:0.9em;">${
+                    options.length || 0
+                  } options</div>
                 `;
-                
-                nodeData.element.innerHTML = this.generateNodeHTML(nodeData.type, title, body, nodeData);
-                
+
+                nodeData.element.innerHTML = this.generateNodeHTML(
+                  nodeData.type,
+                  title,
+                  body,
+                  nodeData
+                );
+
                 // Reset event handlers
-                const closeBtn = nodeData.element.querySelector('.storyboard-node-close');
+                const closeBtn = nodeData.element.querySelector(
+                  ".storyboard-node-close"
+                );
                 if (closeBtn) {
-                  closeBtn.addEventListener('click', (e) => {
+                  closeBtn.addEventListener("click", (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     this.deleteNode(nodeData.element);
                   });
                 }
               }
-              
+
               // Update visual representation
               this.updateNodeVisual(nodeData);
-              
+
               // Update connections
               this.updateConnections();
-              
+
               // Show confirmation
-              this.showToast('Choice options updated', 'success');
+              this.showToast("Choice options updated", "success");
             } catch (error) {
-              console.error('Error updating choice node:', error);
-              this.showToast('Error updating choice node', 'error');
+              console.error("Error updating choice node:", error);
+              this.showToast("Error updating choice node", "error");
             }
           });
         }
-        
+
         // Add option button
-        const addOptionBtn = properties.querySelector('#add-option-btn');
+        const addOptionBtn = properties.querySelector("#add-option-btn");
         if (addOptionBtn) {
-          addOptionBtn.addEventListener('click', () => {
+          addOptionBtn.addEventListener("click", () => {
             // Add new option to data
-            nodeData.data.options.push({ text: 'New option', targetId: null });
-            
+            nodeData.data.options.push({ text: "New option", targetId: null });
+
             // Refresh properties panel to show new option
             this.selectNode(nodeData.element);
-            
+
             // Show confirmation
-            this.showToast('Option added', 'success');
+            this.showToast("Option added", "success");
           });
         }
-        
+
         // Delete option buttons
-        const deleteButtons = properties.querySelectorAll('.delete-option-btn');
-        deleteButtons.forEach(button => {
-          button.addEventListener('click', () => {
-            const index = parseInt(button.getAttribute('data-index'));
-            
+        const deleteButtons = properties.querySelectorAll(".delete-option-btn");
+        deleteButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const index = parseInt(button.getAttribute("data-index"));
+
             // Need at least one option
             if (nodeData.data.options.length <= 1) {
-              this.showToast('Cannot delete last option', 'error');
+              this.showToast("Cannot delete last option", "error");
               return;
             }
-            
+
             // Remove the option
             nodeData.data.options.splice(index, 1);
-            
+
             // Refresh properties panel
             this.selectNode(nodeData.element);
-            
+
             // Show confirmation
-            this.showToast('Option deleted', 'success');
+            this.showToast("Option deleted", "success");
           });
         });
       }
-      
 
       // In setupNodePropertyHandlers method, add this for trigger nodes
-      if (nodeData.type === 'trigger') {
+      if (nodeData.type === "trigger") {
         // Set up radius range slider
-        const radiusInput = properties.querySelector('#trigger-radius-input');
-        const radiusValue = properties.querySelector('#radius-value');
+        const radiusInput = properties.querySelector("#trigger-radius-input");
+        const radiusValue = properties.querySelector("#radius-value");
 
         if (radiusInput && radiusValue) {
           // Update value display when slider changes
-          radiusInput.addEventListener('input', () => {
+          radiusInput.addEventListener("input", () => {
             radiusValue.textContent = radiusInput.value;
           });
         }
 
         // Apply button handler
-        const applyBtn = properties.querySelector('#apply-trigger-changes');
+        const applyBtn = properties.querySelector("#apply-trigger-changes");
         if (applyBtn) {
-          applyBtn.addEventListener('click', () => {
+          applyBtn.addEventListener("click", () => {
             try {
               // Get values from inputs
-              const xInput = properties.querySelector('#trigger-x-input');
-              const yInput = properties.querySelector('#trigger-y-input');
-              const radiusInput = properties.querySelector('#trigger-radius-input');
-              const onceInput = properties.querySelector('#trigger-once-input');
+              const xInput = properties.querySelector("#trigger-x-input");
+              const yInput = properties.querySelector("#trigger-y-input");
+              const radiusInput = properties.querySelector(
+                "#trigger-radius-input"
+              );
+              const onceInput = properties.querySelector("#trigger-once-input");
 
               // Parse values (with validation)
               const x = parseFloat(xInput.value) || 0;
@@ -3326,21 +3152,21 @@ if (e.target.closest('.storyboard-port')) {
               this.updateNodeVisual(nodeData);
 
               // Show confirmation
-              this.showToast('Trigger updated', 'success');
+              this.showToast("Trigger updated", "success");
             } catch (error) {
-              console.error('Error updating trigger node:', error);
-              this.showToast('Error updating trigger node', 'error');
+              console.error("Error updating trigger node:", error);
+              this.showToast("Error updating trigger node", "error");
             }
           });
         }
 
         // Pick location button
-        const pickLocationBtn = properties.querySelector('#pick-location-btn');
+        const pickLocationBtn = properties.querySelector("#pick-location-btn");
         if (pickLocationBtn) {
-          pickLocationBtn.addEventListener('click', () => {
+          pickLocationBtn.addEventListener("click", () => {
             // If we have a 3D scene, enable location picking mode
             if (this.scene3D) {
-              this.showToast('Location picking mode enabled', 'info');
+              this.showToast("Location picking mode enabled", "info");
 
               // Close the editor drawer temporarily
               if (this.editor) {
@@ -3349,7 +3175,11 @@ if (e.target.closest('.storyboard-port')) {
 
               // Here you'd connect to your scene's click handler
               // For now, we'll just show a toast with instructions
-              this.showToast('Click on the map to place trigger (not implemented yet)', 'info', 5000);
+              this.showToast(
+                "Click on the map to place trigger (not implemented yet)",
+                "info",
+                5000
+              );
 
               // In a real implementation, you'd have code like:
               /*
@@ -3366,18 +3196,18 @@ if (e.target.closest('.storyboard-port')) {
               });
               */
             } else {
-              this.showToast('3D scene not available for picking', 'error');
+              this.showToast("3D scene not available for picking", "error");
             }
           });
         }
       }
 
       // In setupNodePropertyHandlers method, add this for event nodes
-      if (nodeData.type === 'event') {
+      if (nodeData.type === "event") {
         // Event type change handler
-        const eventTypeSelect = properties.querySelector('#event-type-select');
+        const eventTypeSelect = properties.querySelector("#event-type-select");
         if (eventTypeSelect) {
-          eventTypeSelect.addEventListener('change', () => {
+          eventTypeSelect.addEventListener("change", () => {
             // Update event type
             nodeData.data.eventType = eventTypeSelect.value;
 
@@ -3390,53 +3220,65 @@ if (e.target.closest('.storyboard-port')) {
         }
 
         // Apply button handler
-        const applyBtn = properties.querySelector('#apply-event-changes');
+        const applyBtn = properties.querySelector("#apply-event-changes");
         if (applyBtn) {
-          applyBtn.addEventListener('click', () => {
+          applyBtn.addEventListener("click", () => {
             try {
               // Get event type value
-              const eventType = eventTypeSelect ? eventTypeSelect.value : nodeData.data.eventType;
+              const eventType = eventTypeSelect
+                ? eventTypeSelect.value
+                : nodeData.data.eventType;
 
               // Get parameters based on event type
               const params = {};
 
               switch (eventType) {
-                case 'giveItem':
-                  const selectItemBtn = properties.querySelector('#select-item-btn');
+                case "giveItem":
+                  const selectItemBtn =
+                    properties.querySelector("#select-item-btn");
                   if (selectItemBtn) {
-                    selectItemBtn.addEventListener('click', () => {
+                    selectItemBtn.addEventListener("click", () => {
                       this.showPropsSelector(nodeData);
                     });
                   }
 
                   // Make sure we capture the horizontal flag for our item
-                  const applyBtn = properties.querySelector('#apply-event-changes');
+                  const applyBtn = properties.querySelector(
+                    "#apply-event-changes"
+                  );
                   if (applyBtn) {
                     // We'll enhance the existing apply handler by adding the horizontal flag
-                    applyBtn.addEventListener('click', () => {
+                    applyBtn.addEventListener("click", () => {
                       // Make sure we save the current horizontal flag state when updating
-                      if (nodeData.data.eventType === 'giveItem') {
-                        const horizontalCheckbox = properties.querySelector('#item-horizontal-input');
+                      if (nodeData.data.eventType === "giveItem") {
+                        const horizontalCheckbox = properties.querySelector(
+                          "#item-horizontal-input"
+                        );
                         if (horizontalCheckbox && nodeData.data.params) {
-                          nodeData.data.params.isHorizontal = horizontalCheckbox.checked;
+                          nodeData.data.params.isHorizontal =
+                            horizontalCheckbox.checked;
                         }
                       }
                     });
                   }
                   break;
 
-                case 'setFlag':
-                  const flagNameInput = properties.querySelector('#flag-name-input');
-                  const flagValueInput = properties.querySelector('#flag-value-input');
+                case "setFlag":
+                  const flagNameInput =
+                    properties.querySelector("#flag-name-input");
+                  const flagValueInput =
+                    properties.querySelector("#flag-value-input");
 
-                  params.flag = flagNameInput ? flagNameInput.value.trim() : '';
-                  params.value = flagValueInput ? flagValueInput.value === 'true' : true;
+                  params.flag = flagNameInput ? flagNameInput.value.trim() : "";
+                  params.value = flagValueInput
+                    ? flagValueInput.value === "true"
+                    : true;
                   break;
 
-                case 'teleport':
-                  const xInput = properties.querySelector('#teleport-x-input');
-                  const yInput = properties.querySelector('#teleport-y-input');
-                  const zInput = properties.querySelector('#teleport-z-input');
+                case "teleport":
+                  const xInput = properties.querySelector("#teleport-x-input");
+                  const yInput = properties.querySelector("#teleport-y-input");
+                  const zInput = properties.querySelector("#teleport-z-input");
 
                   params.x = xInput ? parseFloat(xInput.value) || 0 : 0;
                   params.y = yInput ? parseFloat(yInput.value) || 0 : 0;
@@ -3455,76 +3297,76 @@ if (e.target.closest('.storyboard-port')) {
               this.updateNodeVisual(nodeData);
 
               // Show confirmation
-              this.showToast('Event updated', 'success');
+              this.showToast("Event updated", "success");
             } catch (error) {
-              console.error('Error updating event node:', error);
-              this.showToast('Error updating event node', 'error');
+              console.error("Error updating event node:", error);
+              this.showToast("Error updating event node", "error");
             }
           });
         }
 
         // Special event type specific handlers
         switch (nodeData.data.eventType) {
-          case 'teleport':
-            const pickLocationBtn = properties.querySelector('#pick-teleport-location-btn');
+          case "teleport":
+            const pickLocationBtn = properties.querySelector(
+              "#pick-teleport-location-btn"
+            );
             if (pickLocationBtn) {
-              pickLocationBtn.addEventListener('click', () => {
-                this.showToast('Location picking not implemented yet', 'info');
+              pickLocationBtn.addEventListener("click", () => {
+                this.showToast("Location picking not implemented yet", "info");
                 // Similar to trigger location picking
               });
             }
             break;
 
-          // case 'giveItem':
-          //   const selectItemBtn = properties.querySelector('#select-item-btn');
-          //   if (selectItemBtn) {
-          //     selectItemBtn.addEventListener('click', () => {
-          //       this.showToast('Item browser not implemented yet', 'info');
-          //       // Would connect to an item database browser
-          //     });
-          //   }
-          //   break;
-
-          case 'giveItem':
-            const selectItemBtn = properties.querySelector('#select-item-btn');
+          case "giveItem":
+            const selectItemBtn = properties.querySelector("#select-item-btn");
             if (selectItemBtn) {
-              selectItemBtn.addEventListener('click', () => {
-                this.showResourceSelector(nodeData, 'textures', 'props', (resourceId, resource) => {
-                  // Update node data with selected item
-                  if (!nodeData.data.params) {
-                    nodeData.data.params = {};
+              selectItemBtn.addEventListener("click", () => {
+                this.showResourceSelector(
+                  nodeData,
+                  "textures",
+                  "props",
+                  (resourceId, resource) => {
+                    // Update node data with selected item
+                    if (!nodeData.data.params) {
+                      nodeData.data.params = {};
+                    }
+
+                    nodeData.data.params.itemId = resourceId;
+                    nodeData.data.params.itemName = resource.name;
+                    nodeData.data.params.y = 0; // Set default y to 0 for ground placement
+                    nodeData.data.params.isHorizontal = true; // Default to horizontal orientation
+
+                    // Mark as dirty
+                    this.currentGraph.dirty = true;
+
+                    // Refresh properties panel
+                    this.selectNode(nodeData.element);
+
+                    // Show confirmation
+                    this.showToast(
+                      `Item "${resource.name}" selected`,
+                      "success"
+                    );
                   }
-
-                  nodeData.data.params.itemId = resourceId;
-                  nodeData.data.params.itemName = resource.name;
-                  nodeData.data.params.y = 0; // Set default y to 0 for ground placement
-                  nodeData.data.params.isHorizontal = true; // Default to horizontal orientation
-
-                  // Mark as dirty
-                  this.currentGraph.dirty = true;
-
-                  // Refresh properties panel
-                  this.selectNode(nodeData.element);
-
-                  // Show confirmation
-                  this.showToast(`Item "${resource.name}" selected`, 'success');
-                });
+                );
               });
             }
             break;
-
-
         }
       }
 
       // Add this to your setupNodePropertyHandlers method
       // This goes in the if-else chain where other node types are handled
 
-      if (nodeData.type === 'condition') {
+      if (nodeData.type === "condition") {
         // Condition type change handler
-        const conditionTypeSelect = properties.querySelector('#condition-type-select');
+        const conditionTypeSelect = properties.querySelector(
+          "#condition-type-select"
+        );
         if (conditionTypeSelect) {
-          conditionTypeSelect.addEventListener('change', () => {
+          conditionTypeSelect.addEventListener("change", () => {
             // Update condition type
             nodeData.data.condition = conditionTypeSelect.value;
 
@@ -3537,18 +3379,20 @@ if (e.target.closest('.storyboard-port')) {
         }
 
         // Apply button handler
-        const applyBtn = properties.querySelector('#apply-condition-changes');
+        const applyBtn = properties.querySelector("#apply-condition-changes");
         if (applyBtn) {
-          applyBtn.addEventListener('click', () => {
+          applyBtn.addEventListener("click", () => {
             try {
               // Get condition type value
-              const condition = conditionTypeSelect ? conditionTypeSelect.value : nodeData.data.condition;
+              const condition = conditionTypeSelect
+                ? conditionTypeSelect.value
+                : nodeData.data.condition;
 
               // Get parameters based on condition type
               const params = {};
 
               switch (condition) {
-                case 'hasMonster':
+                case "hasMonster":
                   // Keep existing monster data
                   if (nodeData.data.params?.monsterId) {
                     params.monsterId = nodeData.data.params.monsterId;
@@ -3556,40 +3400,56 @@ if (e.target.closest('.storyboard-port')) {
                   }
                   break;
 
-                case 'hasItem':
+                case "hasItem":
                   // Keep existing item data, update quantity
                   if (nodeData.data.params?.itemId) {
                     params.itemId = nodeData.data.params.itemId;
                     params.itemName = nodeData.data.params.itemName;
                   }
 
-                  const quantityInput = properties.querySelector('#item-quantity-input');
-                  params.quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+                  const quantityInput = properties.querySelector(
+                    "#item-quantity-input"
+                  );
+                  params.quantity = quantityInput
+                    ? parseInt(quantityInput.value) || 1
+                    : 1;
                   break;
 
-                case 'hasFlag':
-                  const flagNameInput = properties.querySelector('#flag-name-input');
-                  const flagValueInput = properties.querySelector('#flag-value-input');
+                case "hasFlag":
+                  const flagNameInput =
+                    properties.querySelector("#flag-name-input");
+                  const flagValueInput =
+                    properties.querySelector("#flag-value-input");
 
-                  params.flag = flagNameInput ? flagNameInput.value.trim() : '';
-                  params.value = flagValueInput ? flagValueInput.value === 'true' : true;
+                  params.flag = flagNameInput ? flagNameInput.value.trim() : "";
+                  params.value = flagValueInput
+                    ? flagValueInput.value === "true"
+                    : true;
                   break;
 
-                case 'monsterLevel':
+                case "monsterLevel":
                   // Keep existing monster data, update level
                   if (nodeData.data.params?.monsterId) {
                     params.monsterId = nodeData.data.params.monsterId;
                     params.monsterName = nodeData.data.params.monsterName;
                   }
 
-                  const levelInput = properties.querySelector('#monster-level-input');
-                  params.level = levelInput ? parseInt(levelInput.value) || 1 : 1;
+                  const levelInput = properties.querySelector(
+                    "#monster-level-input"
+                  );
+                  params.level = levelInput
+                    ? parseInt(levelInput.value) || 1
+                    : 1;
                   break;
 
-                case 'playerLevel':
+                case "playerLevel":
                   // Note: This will be replaced later with something more fitting
-                  const playerLevelInput = properties.querySelector('#player-level-input');
-                  params.level = playerLevelInput ? parseInt(playerLevelInput.value) || 1 : 1;
+                  const playerLevelInput = properties.querySelector(
+                    "#player-level-input"
+                  );
+                  params.level = playerLevelInput
+                    ? parseInt(playerLevelInput.value) || 1
+                    : 1;
                   break;
               }
 
@@ -3604,74 +3464,85 @@ if (e.target.closest('.storyboard-port')) {
               this.updateNodeVisual(nodeData);
 
               // Show confirmation
-              this.showToast('Condition updated', 'success');
+              this.showToast("Condition updated", "success");
             } catch (error) {
-              console.error('Error updating condition node:', error);
-              this.showToast('Error updating condition node', 'error');
+              console.error("Error updating condition node:", error);
+              this.showToast("Error updating condition node", "error");
             }
           });
         }
 
         // Resource selection handlers based on condition type
         switch (nodeData.data.condition) {
-          case 'hasMonster':
-          case 'monsterLevel':
-            const selectMonsterBtn = properties.querySelector('#select-monster-btn');
+          case "hasMonster":
+          case "monsterLevel":
+            const selectMonsterBtn = properties.querySelector(
+              "#select-monster-btn"
+            );
             if (selectMonsterBtn) {
-              selectMonsterBtn.addEventListener('click', () => {
-                this.showResourceSelector(nodeData, 'bestiary', '', (monsterId, monster) => {
-                  // Update node data with selected monster
-                  if (!nodeData.data.params) {
-                    nodeData.data.params = {};
+              selectMonsterBtn.addEventListener("click", () => {
+                this.showResourceSelector(
+                  nodeData,
+                  "bestiary",
+                  "",
+                  (monsterId, monster) => {
+                    // Update node data with selected monster
+                    if (!nodeData.data.params) {
+                      nodeData.data.params = {};
+                    }
+
+                    nodeData.data.params.monsterId = monsterId;
+                    nodeData.data.params.monsterName = monster.name;
+
+                    // Mark as dirty
+                    this.currentGraph.dirty = true;
+
+                    // Refresh properties panel
+                    this.selectNode(nodeData.element);
+
+                    // Show confirmation
+                    this.showToast(
+                      `Monster "${monster.name}" selected`,
+                      "success"
+                    );
                   }
-
-                  nodeData.data.params.monsterId = monsterId;
-                  nodeData.data.params.monsterName = monster.name;
-
-                  // Mark as dirty
-                  this.currentGraph.dirty = true;
-
-                  // Refresh properties panel
-                  this.selectNode(nodeData.element);
-
-                  // Show confirmation
-                  this.showToast(`Monster "${monster.name}" selected`, 'success');
-                });
+                );
               });
             }
             break;
 
-          case 'hasItem':
-            const selectItemBtn = properties.querySelector('#select-item-btn');
+          case "hasItem":
+            const selectItemBtn = properties.querySelector("#select-item-btn");
             if (selectItemBtn) {
-              selectItemBtn.addEventListener('click', () => {
-                this.showResourceSelector(nodeData, 'textures', 'props', (itemId, item) => {
-                  // Update node data with selected item
-                  if (!nodeData.data.params) {
-                    nodeData.data.params = {};
+              selectItemBtn.addEventListener("click", () => {
+                this.showResourceSelector(
+                  nodeData,
+                  "textures",
+                  "props",
+                  (itemId, item) => {
+                    // Update node data with selected item
+                    if (!nodeData.data.params) {
+                      nodeData.data.params = {};
+                    }
+
+                    nodeData.data.params.itemId = itemId;
+                    nodeData.data.params.itemName = item.name;
+
+                    // Mark as dirty
+                    this.currentGraph.dirty = true;
+
+                    // Refresh properties panel
+                    this.selectNode(nodeData.element);
+
+                    // Show confirmation
+                    this.showToast(`Item "${item.name}" selected`, "success");
                   }
-
-                  nodeData.data.params.itemId = itemId;
-                  nodeData.data.params.itemName = item.name;
-
-                  // Mark as dirty
-                  this.currentGraph.dirty = true;
-
-                  // Refresh properties panel
-                  this.selectNode(nodeData.element);
-
-                  // Show confirmation
-                  this.showToast(`Item "${item.name}" selected`, 'success');
-                });
+                );
               });
             }
             break;
         }
       }
-
-
-
-
 
       // Add handlers for other node types as needed...
     }
@@ -3685,7 +3556,7 @@ if (e.target.closest('.storyboard-port')) {
       const element = nodeData.element;
 
       // Update title in header
-      const header = element.querySelector('.storyboard-node-header');
+      const header = element.querySelector(".storyboard-node-header");
       if (header) {
         // Get the text node (first child)
         let textNode = null;
@@ -3697,33 +3568,38 @@ if (e.target.closest('.storyboard-port')) {
         }
 
         if (textNode) {
-          textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+          textNode.nodeValue =
+            nodeData.data.title ||
+            nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
         } else {
           // If no text node found, insert one at the beginning
-          const closeButton = header.querySelector('.storyboard-node-close');
+          const closeButton = header.querySelector(".storyboard-node-close");
           if (closeButton) {
             header.insertBefore(
-              document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
+              document.createTextNode(
+                nodeData.data.title ||
+                  nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)
+              ),
               closeButton
             );
           }
         }
       }
 
-      const body = element.querySelector('.storyboard-node-body');
+      const body = element.querySelector(".storyboard-node-body");
       if (body) {
         // Declare variables once at the top level
-        let description = '';
-        let eventTypeName = '';
-        let conditionName = '';
-        let itemName = '';
+        let description = "";
+        let eventTypeName = "";
+        let conditionName = "";
+        let itemName = "";
         let quantity = 0;
-        let orientation = '';
+        let orientation = "";
         let x, y, z;
 
         switch (nodeData.type) {
-          case 'dialog':
-            body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
+          case "dialog":
+            body.innerHTML = `<div>${nodeData.data.text || ""}</div>`;
             if (nodeData.data.image) {
               body.innerHTML += `
               <div style="margin-top: 4px; font-size: 0.8em; color: #888;">
@@ -3735,9 +3611,9 @@ if (e.target.closest('.storyboard-port')) {
             break;
 
           // In the updateNodeVisual method, update the case for choice nodes
-          case 'choice':
+          case "choice":
             body.innerHTML = `
-<div>${nodeData.data.text || 'What would you like to do?'}</div>
+<div>${nodeData.data.text || "What would you like to do?"}</div>
 <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
   ${nodeData.data.options?.length || 0} options
 </div>
@@ -3745,89 +3621,138 @@ if (e.target.closest('.storyboard-port')) {
             break;
 
           // In the updateNodeVisual method, update the case for trigger nodes
-          case 'trigger':
+          case "trigger":
             body.innerHTML = `
-<div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(1)}</div>
+<div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(
+              1
+            )}</div>
 <div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
-<div style="margin-top: 4px; font-size: 0.9em; color: ${nodeData.data.once ? '#4CAF50' : '#FFC107'};">
-  ${nodeData.data.once ? 'Triggers once' : 'Triggers repeatedly'}
+<div style="margin-top: 4px; font-size: 0.9em; color: ${
+              nodeData.data.once ? "#4CAF50" : "#FFC107"
+            };">
+  ${nodeData.data.once ? "Triggers once" : "Triggers repeatedly"}
 </div>
 `;
             break;
 
           // In the updateNodeVisual method, update the case for event nodes
-          case 'event':
+          case "event":
             // Get a human-readable event type name - reuse variables from above
-            eventTypeName = '';
+            eventTypeName = "";
             switch (nodeData.data.eventType) {
-              case 'offerStarter': eventTypeName = 'Offer Starter Monster'; break;
-              case 'showPartyManager': eventTypeName = 'Show Party Manager'; break;
-              case 'giveItem': eventTypeName = 'Give Item'; break;
-              case 'setFlag': eventTypeName = 'Set Flag'; break;
-              case 'teleport': eventTypeName = 'Teleport Player'; break;
-              default: eventTypeName = nodeData.data.eventType || 'Unknown';
+              case "offerStarter":
+                eventTypeName = "Offer Starter Monster";
+                break;
+              case "showPartyManager":
+                eventTypeName = "Show Party Manager";
+                break;
+              case "giveItem":
+                eventTypeName = "Give Item";
+                break;
+              case "setFlag":
+                eventTypeName = "Set Flag";
+                break;
+              case "teleport":
+                eventTypeName = "Teleport Player";
+                break;
+              default:
+                eventTypeName = nodeData.data.eventType || "Unknown";
             }
 
             // Build description based on event type - reuse variables from above
-            description = '';
+            description = "";
             switch (nodeData.data.eventType) {
-              case 'giveItem':
-                itemName = nodeData.data.params?.itemName || nodeData.data.params?.itemId || 'Not set';
+              case "giveItem":
+                itemName =
+                  nodeData.data.params?.itemName ||
+                  nodeData.data.params?.itemId ||
+                  "Not set";
                 quantity = nodeData.data.params?.quantity || 1;
-                orientation = nodeData.data.params?.isHorizontal ? 'Horizontal' : 'Vertical';
+                orientation = nodeData.data.params?.isHorizontal
+                  ? "Horizontal"
+                  : "Vertical";
                 description = `Item: ${itemName}, Qty: ${quantity}, ${orientation}`;
                 break;
-              case 'setFlag':
-                description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
+              case "setFlag":
+                description = `Flag: ${
+                  nodeData.data.params?.flag || "Not set"
+                } = ${nodeData.data.params?.value ? "True" : "False"}`;
                 break;
-              case 'teleport':
+              case "teleport":
                 x = nodeData.data.params?.x || 0;
                 y = nodeData.data.params?.y || 0;
                 z = nodeData.data.params?.z || 0;
-                description = `Position: ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}`;
+                description = `Position: ${x.toFixed(1)}, ${y.toFixed(
+                  1
+                )}, ${z.toFixed(1)}`;
                 break;
             }
 
             body.innerHTML = `
 <div>${eventTypeName}</div>
-${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
+${
+  description
+    ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>`
+    : ""
+}
 `;
             break;
 
-            case 'condition':
-              // Get a human-readable condition type name
-              conditionName = '';
-              switch (nodeData.data.condition) {
-                case 'hasMonster': conditionName = 'Has Monster'; break;
-                case 'hasItem': conditionName = 'Has Item'; break;
-                case 'hasFlag': conditionName = 'Has Flag'; break;
-                case 'monsterLevel': conditionName = 'Monster Level'; break;
-                default: conditionName = nodeData.data.condition || 'Unknown';
-              }
-              
-              // Build description based on condition type
-              description = '';
-              switch (nodeData.data.condition) {
-                case 'hasMonster':
-                  description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}`;
-                  break;
-                case 'hasItem':
-                  description = `Item: ${nodeData.data.params?.itemName || 'Not set'}, Qty: ${nodeData.data.params?.quantity || 1}`;
-                  break;
-                case 'hasFlag':
-                  description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
-                  break;
-                case 'monsterLevel':
-                  description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}, Level: ${nodeData.data.params?.level || 1}+`;
-                  break;
-              }
-              
-              body.innerHTML = `
+          case "condition":
+            // Get a human-readable condition type name
+            conditionName = "";
+            switch (nodeData.data.condition) {
+              case "hasMonster":
+                conditionName = "Has Monster";
+                break;
+              case "hasItem":
+                conditionName = "Has Item";
+                break;
+              case "hasFlag":
+                conditionName = "Has Flag";
+                break;
+              case "monsterLevel":
+                conditionName = "Monster Level";
+                break;
+              default:
+                conditionName = nodeData.data.condition || "Unknown";
+            }
+
+            // Build description based on condition type
+            description = "";
+            switch (nodeData.data.condition) {
+              case "hasMonster":
+                description = `Monster: ${
+                  nodeData.data.params?.monsterName || "Not set"
+                }`;
+                break;
+              case "hasItem":
+                description = `Item: ${
+                  nodeData.data.params?.itemName || "Not set"
+                }, Qty: ${nodeData.data.params?.quantity || 1}`;
+                break;
+              case "hasFlag":
+                description = `Flag: ${
+                  nodeData.data.params?.flag || "Not set"
+                } = ${nodeData.data.params?.value ? "True" : "False"}`;
+                break;
+              case "monsterLevel":
+                description = `Monster: ${
+                  nodeData.data.params?.monsterName || "Not set"
+                }, Level: ${nodeData.data.params?.level || 1}+`;
+                break;
+            }
+
+            body.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span class="material-icons" style="font-size: 18px; color: #FFC107;">help</span>
                   <span>${conditionName}</span>
                 </div>
-                ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
+                ${
+                  description
+                    ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>`
+                    : ""
+                }
                 <div style="margin-top: 8px; font-size: 0.8em; color: #2196F3;">
                   <span style="display: inline-block; width: 10px; height: 10px; background: #2196F3; border-radius: 50%; margin-right: 6px;"></span>
                   Blue: If condition is true
@@ -3837,20 +3762,14 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
                   Red: If condition is false
                 </div>
               `;
-              break;
+            break;
           // Other node types...
 
-
-
-
-
           default:
-            body.innerHTML = '<div>Configure node</div>';
+            body.innerHTML = "<div>Configure node</div>";
         }
       }
     }
-
-
 
     /**
      * Show a unified resource selector for various resource types
@@ -3861,23 +3780,25 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
      */
     showResourceSelector(nodeData, resourceType, category, onSelect) {
       if (!this.resourceManager || !nodeData) {
-        console.error('ResourceManager not available for resource selection');
-        this.showToast('Resource Manager not available', 'error');
+        console.error("ResourceManager not available for resource selection");
+        this.showToast("Resource Manager not available", "error");
         return;
       }
 
       // Create drawer for resource selection
-      const drawer = document.createElement('sl-drawer');
-      drawer.label = `Select ${category.charAt(0).toUpperCase() + category.slice(1)}`;
-      drawer.placement = 'bottom';
-      drawer.style.cssText = '--size: 70vh;';
+      const drawer = document.createElement("sl-drawer");
+      drawer.label = `Select ${
+        category.charAt(0).toUpperCase() + category.slice(1)
+      }`;
+      drawer.placement = "bottom";
+      drawer.style.cssText = "--size: 70vh;";
 
       // Add classes for styling
-      drawer.classList.add('storyboard-drawer');
-      drawer.classList.add('resource-selector-drawer');
+      drawer.classList.add("storyboard-drawer");
+      drawer.classList.add("resource-selector-drawer");
 
       // Add styles for this specific drawer
-      const selectorStyles = document.createElement('style');
+      const selectorStyles = document.createElement("style");
       selectorStyles.textContent = `
     .resource-selector-drawer::part(overlay) {
       left: 280px !important;
@@ -3945,54 +3866,62 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       // Get resources from resource manager
       let resources = [];
 
-      if (resourceType === 'textures') {
+      if (resourceType === "textures") {
         const resourceMap = this.resourceManager.resources.textures[category];
         if (resourceMap && resourceMap.size > 0) {
-          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-            id,
-            name: resource.name || 'Unnamed',
-            thumbnail: resource.thumbnail,
-            data: resource
-          }));
+          resources = Array.from(resourceMap.entries()).map(
+            ([id, resource]) => ({
+              id,
+              name: resource.name || "Unnamed",
+              thumbnail: resource.thumbnail,
+              data: resource
+            })
+          );
         }
-      } else if (resourceType === 'sounds') {
+      } else if (resourceType === "sounds") {
         const resourceMap = this.resourceManager.resources.sounds[category];
         if (resourceMap && resourceMap.size > 0) {
-          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-            id,
-            name: resource.name || 'Unnamed',
-            duration: resource.duration || 0,
-            data: resource
-          }));
+          resources = Array.from(resourceMap.entries()).map(
+            ([id, resource]) => ({
+              id,
+              name: resource.name || "Unnamed",
+              duration: resource.duration || 0,
+              data: resource
+            })
+          );
         }
-      } else if (resourceType === 'splashArt') {
+      } else if (resourceType === "splashArt") {
         const resourceMap = this.resourceManager.resources.splashArt[category];
         if (resourceMap && resourceMap.size > 0) {
-          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-            id,
-            name: resource.name || 'Unnamed',
-            thumbnail: resource.thumbnail,
-            data: resource
-          }));
+          resources = Array.from(resourceMap.entries()).map(
+            ([id, resource]) => ({
+              id,
+              name: resource.name || "Unnamed",
+              thumbnail: resource.thumbnail,
+              data: resource
+            })
+          );
         }
-      } else if (resourceType === 'bestiary') {
+      } else if (resourceType === "bestiary") {
         const resourceMap = this.resourceManager.resources.bestiary;
         if (resourceMap && resourceMap.size > 0) {
-          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-            id,
-            name: resource.name || 'Unnamed',
-            thumbnail: resource.thumbnail,
-            cr: resource.cr,
-            type: resource.type,
-            data: resource
-          }));
+          resources = Array.from(resourceMap.entries()).map(
+            ([id, resource]) => ({
+              id,
+              name: resource.name || "Unnamed",
+              thumbnail: resource.thumbnail,
+              cr: resource.cr,
+              type: resource.type,
+              data: resource
+            })
+          );
         }
       }
 
       // Customize item rendering based on resource type
       let itemRenderer;
 
-      if (resourceType === 'textures' || resourceType === 'splashArt') {
+      if (resourceType === "textures" || resourceType === "splashArt") {
         // For visual resources
         itemRenderer = (resource) => `
       <div class="resource-item" data-id="${resource.id}" style="height: 100%;">
@@ -4004,35 +3933,47 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         </div>
       </div>
     `;
-      } else if (resourceType === 'sounds') {
+      } else if (resourceType === "sounds") {
         // For sound resources
         itemRenderer = (resource) => `
-      <div class="resource-item" data-id="${resource.id}" style="height: 100%; display: flex; flex-direction: column;">
+      <div class="resource-item" data-id="${
+        resource.id
+      }" style="height: 100%; display: flex; flex-direction: column;">
         <div style="flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
           <div class="material-icons" style="font-size: 32px; margin-bottom: 8px; color: #673ab7;">music_note</div>
-          <div style="margin-bottom: 4px; text-align: center;">${resource.name}</div>
-          <div style="font-size: 0.8em; color: #aaa;">${this.formatDuration(resource.duration)}</div>
+          <div style="margin-bottom: 4px; text-align: center;">${
+            resource.name
+          }</div>
+          <div style="font-size: 0.8em; color: #aaa;">${this.formatDuration(
+            resource.duration
+          )}</div>
         </div>
         <div style="padding: 8px; border-top: 1px solid #444; text-align: center;">
-          <sl-button size="small" class="play-sound-btn" data-id="${resource.id}">
+          <sl-button size="small" class="play-sound-btn" data-id="${
+            resource.id
+          }">
             <span class="material-icons" style="font-size: 16px;">play_arrow</span>
             Play
           </sl-button>
         </div>
       </div>
     `;
-      } else if (resourceType === 'bestiary') {
+      } else if (resourceType === "bestiary") {
         // For bestiary resources
         itemRenderer = (resource) => `
       <div class="resource-item" data-id="${resource.id}" style="height: 100%;">
         <div style="height: 120px; overflow: hidden;">
-          <img src="${resource.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;">
+          <img src="${
+            resource.thumbnail
+          }" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         <div style="padding: 8px;">
-          <div style="font-weight: 500; word-break: break-word;">${resource.name}</div>
+          <div style="font-weight: 500; word-break: break-word;">${
+            resource.name
+          }</div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #aaa; margin-top: 4px;">
-            <span>CR ${resource.cr || '?'}</span>
-            <span>${resource.type || 'Monster'}</span>
+            <span>CR ${resource.cr || "?"}</span>
+            <span>${resource.type || "Monster"}</span>
           </div>
         </div>
       </div>
@@ -4054,9 +3995,10 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         overflow-y: auto;
         padding-right: 8px;
       ">
-        ${resources.length > 0 ?
-          resources.map(resource => itemRenderer(resource)).join('') :
-          `<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: #888;">
+        ${
+          resources.length > 0
+            ? resources.map((resource) => itemRenderer(resource)).join("")
+            : `<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: #888;">
             No ${category} available. Add some in the Resource Manager.
           </div>`
         }
@@ -4075,58 +4017,63 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       drawer.show();
 
       // Set up search functionality
-      const searchInput = drawer.querySelector('#resource-search');
+      const searchInput = drawer.querySelector("#resource-search");
       if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener("input", (e) => {
           const searchTerm = e.target.value.toLowerCase();
 
-          drawer.querySelectorAll('.resource-item').forEach(item => {
-            const nameElement = item.querySelector('div > div');
+          drawer.querySelectorAll(".resource-item").forEach((item) => {
+            const nameElement = item.querySelector("div > div");
             if (!nameElement) return;
 
             const name = nameElement.textContent.toLowerCase();
 
             // Show/hide based on search term
             if (name.includes(searchTerm)) {
-              item.style.display = 'block';
+              item.style.display = "block";
             } else {
-              item.style.display = 'none';
+              item.style.display = "none";
             }
           });
         });
       }
 
       // Set up sound play buttons if needed
-      if (resourceType === 'sounds') {
-        drawer.querySelectorAll('.play-sound-btn').forEach(button => {
-          button.addEventListener('click', (e) => {
+      if (resourceType === "sounds") {
+        drawer.querySelectorAll(".play-sound-btn").forEach((button) => {
+          button.addEventListener("click", (e) => {
             e.stopPropagation(); // Don't select when just playing
-            const soundId = button.getAttribute('data-id');
+            const soundId = button.getAttribute("data-id");
             this.resourceManager.playSound(soundId, category);
           });
         });
       }
 
       // Set up item selection
-      drawer.querySelectorAll('.resource-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const resourceId = item.getAttribute('data-id');
+      drawer.querySelectorAll(".resource-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          const resourceId = item.getAttribute("data-id");
           let resource;
 
           // Get the selected resource based on resource type
-          if (resourceType === 'textures') {
-            resource = this.resourceManager.resources.textures[category].get(resourceId);
-          } else if (resourceType === 'sounds') {
-            resource = this.resourceManager.resources.sounds[category].get(resourceId);
-          } else if (resourceType === 'splashArt') {
-            resource = this.resourceManager.resources.splashArt[category].get(resourceId);
-          } else if (resourceType === 'bestiary') {
+          if (resourceType === "textures") {
+            resource =
+              this.resourceManager.resources.textures[category].get(resourceId);
+          } else if (resourceType === "sounds") {
+            resource =
+              this.resourceManager.resources.sounds[category].get(resourceId);
+          } else if (resourceType === "splashArt") {
+            resource =
+              this.resourceManager.resources.splashArt[category].get(
+                resourceId
+              );
+          } else if (resourceType === "bestiary") {
             resource = this.resourceManager.resources.bestiary.get(resourceId);
           }
 
           if (resource) {
             // Use callback for selection if provided
-            if (typeof onSelect === 'function') {
+            if (typeof onSelect === "function") {
               onSelect(resourceId, resource);
             }
 
@@ -4139,13 +4086,13 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       // Set up cancel button
       const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
       if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
+        cancelBtn.addEventListener("click", () => {
           drawer.hide();
         });
       }
 
       // Clean up when drawer is closed
-      drawer.addEventListener('sl-after-hide', () => {
+      drawer.addEventListener("sl-after-hide", () => {
         drawer.remove();
         selectorStyles.remove();
       });
@@ -4153,26 +4100,30 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
 
     // Helper method to format sound duration
     formatDuration(seconds) {
-      if (!seconds) return '0:00';
+      if (!seconds) return "0:00";
 
       const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      const secs = Math.floor(seconds % 60)
+        .toString()
+        .padStart(2, "0");
       return `${mins}:${secs}`;
     }
 
     /**
-* Simplified toast notification method
-*/
-    showToast(message, type = 'info', duration = 3000) {
+     * Simplified toast notification method
+     */
+    showToast(message, type = "info", duration = 3000) {
       // Create toast element
-      const toast = document.createElement('div');
-      toast.className = 'storyboard-toast';
+      const toast = document.createElement("div");
+      toast.className = "storyboard-toast";
       toast.style.cssText = `
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#F44336' : '#2196F3'};
+    background-color: ${
+      type === "success" ? "#4CAF50" : type === "error" ? "#F44336" : "#2196F3"
+    };
     color: white;
     padding: 12px 20px;
     border-radius: 4px;
@@ -4188,12 +4139,12 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
 
       // Animate in
       setTimeout(() => {
-        toast.style.opacity = '1';
+        toast.style.opacity = "1";
       }, 10);
 
       // Remove after duration
       setTimeout(() => {
-        toast.style.opacity = '0';
+        toast.style.opacity = "0";
         setTimeout(() => {
           if (document.body.contains(toast)) {
             document.body.removeChild(toast);
@@ -4206,16 +4157,16 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
      * Helper method to get splash art URL
      */
     getSplashArtUrl(imageData) {
-      if (!imageData || !this.resourceManager) return '';
+      if (!imageData || !this.resourceManager) return "";
 
       try {
         const { id, category } = imageData;
         const art = this.resourceManager.resources.splashArt[category]?.get(id);
 
-        return art?.thumbnail || '';
+        return art?.thumbnail || "";
       } catch (error) {
-        console.error('Error getting splash art URL:', error);
-        return '';
+        console.error("Error getting splash art URL:", error);
+        return "";
       }
     }
 
@@ -4226,7 +4177,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       if (!this.isEditorAvailable()) return;
 
       if (this.editorState.selectedNode) {
-        this.editorState.selectedNode.classList.remove('selected');
+        this.editorState.selectedNode.classList.remove("selected");
         this.editorState.selectedNode = null;
       }
 
@@ -4246,19 +4197,19 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
     updateNodeProperty(nodeData, input) {
       if (!nodeData || !input) return;
 
-      const name = input.getAttribute('name');
+      const name = input.getAttribute("name");
       let value;
 
       // Get value based on input type
-      if (input.tagName.toLowerCase() === 'sl-checkbox') {
+      if (input.tagName.toLowerCase() === "sl-checkbox") {
         value = input.checked;
       } else {
         value = input.value;
       }
 
       // Handle special property cases
-      if (name.startsWith('option_')) {
-        const index = parseInt(name.split('_')[1]);
+      if (name.startsWith("option_")) {
+        const index = parseInt(name.split("_")[1]);
         nodeData.data.options[index].text = value;
       } else {
         // Regular property
@@ -4271,29 +4222,32 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       // Update node display if element exists
       if (nodeData.element) {
         // Update body content based on node type
-        const body = nodeData.element.querySelector('.storyboard-node-body');
+        const body = nodeData.element.querySelector(".storyboard-node-body");
         if (!body) return;
 
-        if (nodeData.type === 'dialog') {
-          body.textContent = nodeData.data.text || '';
-        } else if (nodeData.type === 'choice') {
+        if (nodeData.type === "dialog") {
+          body.textContent = nodeData.data.text || "";
+        } else if (nodeData.type === "choice") {
           body.innerHTML = `
-            <div>${nodeData.data.text || ''}</div>
-            <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
+            <div>${nodeData.data.text || ""}</div>
+            <div style="color:#777;font-size:0.9em;">${
+              nodeData.data.options?.length || 0
+            } options</div>
           `;
-        } else if (nodeData.type === 'trigger') {
-          body.textContent = `X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}`;
+        } else if (nodeData.type === "trigger") {
+          body.textContent = `X: ${nodeData.data.x || 0}, Y: ${
+            nodeData.data.y || 0
+          }, Radius: ${nodeData.data.radius || 1}`;
         }
       }
     }
-
 
     /**
      * Save the current storyboard
      */
     saveStoryboard(editorState) {
       if (!this.isEditorAvailable()) {
-        console.error('Editor not available in saveStoryboard');
+        console.error("Editor not available in saveStoryboard");
         return;
       }
 
@@ -4317,7 +4271,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       });
 
       // Add connections from persistent state
-      editorState.connections.forEach(conn => {
+      editorState.connections.forEach((conn) => {
         storyGraph.connections.push({
           from: conn.from,
           to: conn.to
@@ -4325,7 +4279,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       });
 
       // Create unique ID for this story
-      const storyId = 'story_' + Date.now();
+      const storyId = "story_" + Date.now();
 
       // Add to storyGraphs collection
       this.storyGraphs.set(storyId, storyGraph);
@@ -4334,8 +4288,8 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       this.saveToStorage();
 
       // Show confirmation
-      const toast = document.createElement('sl-alert');
-      toast.variant = 'success';
+      const toast = document.createElement("sl-alert");
+      toast.variant = "success";
       toast.closable = true;
       toast.duration = 3000;
       toast.innerHTML = `
@@ -4357,10 +4311,10 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       };
 
       try {
-        localStorage.setItem('storyboardData', JSON.stringify(storageData));
-        console.log('Storyboard data saved to localStorage');
+        localStorage.setItem("storyboardData", JSON.stringify(storageData));
+        console.log("Storyboard data saved to localStorage");
       } catch (error) {
-        console.error('Error saving storyboard data:', error);
+        console.error("Error saving storyboard data:", error);
       }
     }
 
@@ -4369,7 +4323,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
      */
     loadFromStorage() {
       try {
-        const storageData = localStorage.getItem('storyboardData');
+        const storageData = localStorage.getItem("storyboardData");
 
         if (storageData) {
           const data = JSON.parse(storageData);
@@ -4382,10 +4336,10 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
             this.triggeredStories = new Set(data.triggeredStories);
           }
 
-          console.log('Storyboard data loaded from localStorage');
+          console.log("Storyboard data loaded from localStorage");
         }
       } catch (error) {
-        console.error('Error loading storyboard data:', error);
+        console.error("Error loading storyboard data:", error);
       }
     }
 
@@ -4405,8 +4359,8 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         if (this.triggeredStories.has(storyId)) return;
 
         // Look for trigger nodes
-        const triggerNodes = storyGraph.nodes.filter(node =>
-          node.type === 'trigger' && !node.triggered
+        const triggerNodes = storyGraph.nodes.filter(
+          (node) => node.type === "trigger" && !node.triggered
         );
 
         // Check each trigger node
@@ -4443,17 +4397,19 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       if (!storyGraph) return;
 
       // Find the node
-      const node = storyGraph.nodes.find(n => n.id === nodeId);
+      const node = storyGraph.nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
       console.log(`Executing story node: ${node.type}`);
 
       // Process based on node type
       switch (node.type) {
-        case 'dialog':
+        case "dialog":
           this.showDialog(node.data, () => {
             // Find next node
-            const connection = storyGraph.connections.find(c => c.from === nodeId);
+            const connection = storyGraph.connections.find(
+              (c) => c.from === nodeId
+            );
             if (connection) {
               this.executeStoryNode(storyId, connection.to);
             } else {
@@ -4463,7 +4419,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           });
           break;
 
-        case 'choice':
+        case "choice":
           this.showChoice(node.data, (optionIndex) => {
             // Find the connection for this option
             const selectedOption = node.data.options[optionIndex];
@@ -4472,7 +4428,9 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
               this.executeStoryNode(storyId, selectedOption.targetId);
             } else {
               // Try to find a connection based on index
-              const connections = storyGraph.connections.filter(c => c.from === nodeId);
+              const connections = storyGraph.connections.filter(
+                (c) => c.from === nodeId
+              );
 
               if (connections.length > optionIndex) {
                 this.executeStoryNode(storyId, connections[optionIndex].to);
@@ -4484,10 +4442,12 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           });
           break;
 
-        case 'event':
+        case "event":
           this.executeEvent(node.data, () => {
             // Find next node
-            const connection = storyGraph.connections.find(c => c.from === nodeId);
+            const connection = storyGraph.connections.find(
+              (c) => c.from === nodeId
+            );
             if (connection) {
               this.executeStoryNode(storyId, connection.to);
             } else {
@@ -4497,10 +4457,12 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           });
           break;
 
-        case 'combat':
+        case "combat":
           this.startCombat(node.data, (result) => {
             // Find appropriate connection based on result
-            const connections = storyGraph.connections.filter(c => c.from === nodeId);
+            const connections = storyGraph.connections.filter(
+              (c) => c.from === nodeId
+            );
 
             if (connections.length > 0) {
               if (connections.length === 1) {
@@ -4508,7 +4470,8 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
                 this.executeStoryNode(storyId, connections[0].to);
               } else if (connections.length >= 2) {
                 // Victory or defeat paths
-                const nextNodeId = result === 'victory' ? connections[0].to : connections[1].to;
+                const nextNodeId =
+                  result === "victory" ? connections[0].to : connections[1].to;
                 this.executeStoryNode(storyId, nextNodeId);
               }
             } else {
@@ -4518,11 +4481,13 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           });
           break;
 
-        case 'condition':
+        case "condition":
           this.evaluateCondition(node.data, (result) => {
             // Find appropriate connection based on result
             // We need to find connections from this node that have the right path attribute
-            const connections = storyGraph.connections.filter(c => c.from === nodeId);
+            const connections = storyGraph.connections.filter(
+              (c) => c.from === nodeId
+            );
 
             if (connections.length === 0) {
               // No connections, end of flow
@@ -4531,16 +4496,20 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
             }
 
             // Look for connection with matching path
-            const pathToFollow = result ? 'true' : 'false';
-            const matchingConnection = connections.find(c => c.path === pathToFollow);
+            const pathToFollow = result ? "true" : "false";
+            const matchingConnection = connections.find(
+              (c) => c.path === pathToFollow
+            );
 
             if (matchingConnection) {
               // Follow the matching path
               this.executeStoryNode(storyId, matchingConnection.to);
             } else if (connections.length > 0) {
-              // Fallback: If we can't find a connection with exact path match, use first (true) for true result, 
+              // Fallback: If we can't find a connection with exact path match, use first (true) for true result,
               // second (false) for false result
-              const connectionIndex = result ? 0 : Math.min(1, connections.length - 1);
+              const connectionIndex = result
+                ? 0
+                : Math.min(1, connections.length - 1);
               this.executeStoryNode(storyId, connections[connectionIndex].to);
             } else {
               // End of flow
@@ -4552,7 +4521,9 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         default:
           console.log(`Unhandled node type: ${node.type}`);
           // Continue to next node
-          const connection = storyGraph.connections.find(c => c.from === nodeId);
+          const connection = storyGraph.connections.find(
+            (c) => c.from === nodeId
+          );
           if (connection) {
             this.executeStoryNode(storyId, connection.to);
           } else {
@@ -4579,15 +4550,15 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         this.closeOverlay();
       }
 
-      const overlay = document.createElement('div');
-      overlay.className = 'story-overlay';
+      const overlay = document.createElement("div");
+      overlay.className = "story-overlay";
 
-      let imageHtml = '';
+      let imageHtml = "";
       if (dialogData.image) {
         // Get image URL from resource manager if available
-        const imageUrl = this.resourceManager ?
-          this.resourceManager.getSplashArtUrl(dialogData.image) :
-          dialogData.image;
+        const imageUrl = this.resourceManager
+          ? this.resourceManager.getSplashArtUrl(dialogData.image)
+          : dialogData.image;
 
         imageHtml = `
           <div class="story-image">
@@ -4599,12 +4570,12 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       overlay.innerHTML = `
         <div class="story-content">
           <div class="story-header">
-            ${dialogData.title || 'Dialog'}
+            ${dialogData.title || "Dialog"}
           </div>
           
           <div class="story-body">
             ${imageHtml}
-            <div class="story-text">${dialogData.text || ''}</div>
+            <div class="story-text">${dialogData.text || ""}</div>
           </div>
           
           <div class="story-footer">
@@ -4617,21 +4588,23 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       this.currentOverlay = overlay;
 
       // Set up continue button
-      overlay.querySelector('.story-continue-btn').addEventListener('click', () => {
-        this.closeOverlay();
-        if (typeof onClose === 'function') {
-          onClose();
-        }
-      });
+      overlay
+        .querySelector(".story-continue-btn")
+        .addEventListener("click", () => {
+          this.closeOverlay();
+          if (typeof onClose === "function") {
+            onClose();
+          }
+        });
 
       // Animate in
       setTimeout(() => {
-        overlay.style.opacity = '1';
-        overlay.querySelector('.story-content').style.transform = 'scale(1)';
+        overlay.style.opacity = "1";
+        overlay.querySelector(".story-content").style.transform = "scale(1)";
       }, 10);
 
       // If we have scene3D, pause controls
-      if (this.scene3D && typeof this.scene3D.pauseControls === 'function') {
+      if (this.scene3D && typeof this.scene3D.pauseControls === "function") {
         this.scene3D.pauseControls();
       }
     }
@@ -4644,10 +4617,10 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         this.closeOverlay();
       }
 
-      const overlay = document.createElement('div');
-      overlay.className = 'story-overlay';
+      const overlay = document.createElement("div");
+      overlay.className = "story-overlay";
 
-      let optionsHtml = '';
+      let optionsHtml = "";
       if (choiceData.options && choiceData.options.length) {
         optionsHtml = '<div class="story-choices">';
 
@@ -4659,7 +4632,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           `;
         });
 
-        optionsHtml += '</div>';
+        optionsHtml += "</div>";
       }
 
       overlay.innerHTML = `
@@ -4669,7 +4642,7 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           </div>
           
           <div class="story-body">
-            <div class="story-text">${choiceData.text || ''}</div>
+            <div class="story-text">${choiceData.text || ""}</div>
             ${optionsHtml}
           </div>
         </div>
@@ -4679,12 +4652,12 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       this.currentOverlay = overlay;
 
       // Set up option buttons
-      const optionButtons = overlay.querySelectorAll('.story-choice');
-      optionButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const index = parseInt(button.getAttribute('data-index'));
+      const optionButtons = overlay.querySelectorAll(".story-choice");
+      optionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const index = parseInt(button.getAttribute("data-index"));
           this.closeOverlay();
-          if (typeof onSelect === 'function') {
+          if (typeof onSelect === "function") {
             onSelect(index);
           }
         });
@@ -4692,12 +4665,12 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
 
       // Animate in
       setTimeout(() => {
-        overlay.style.opacity = '1';
-        overlay.querySelector('.story-content').style.transform = 'scale(1)';
+        overlay.style.opacity = "1";
+        overlay.querySelector(".story-content").style.transform = "scale(1)";
       }, 10);
 
       // If we have scene3D, pause controls
-      if (this.scene3D && typeof this.scene3D.pauseControls === 'function') {
+      if (this.scene3D && typeof this.scene3D.pauseControls === "function") {
         this.scene3D.pauseControls();
       }
     }
@@ -4709,59 +4682,63 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       console.log(`Executing game event: ${eventData.eventType}`);
 
       switch (eventData.eventType) {
-        case 'offerStarter':
+        case "offerStarter":
           // Show starter monster selection
           if (window.partyManager) {
-            window.partyManager.checkForStarterMonster()
+            window.partyManager
+              .checkForStarterMonster()
               .then(() => {
-                if (typeof onComplete === 'function') {
+                if (typeof onComplete === "function") {
                   onComplete();
                 }
               })
-              .catch(error => {
-                console.error('Error in starter monster selection:', error);
-                if (typeof onComplete === 'function') {
+              .catch((error) => {
+                console.error("Error in starter monster selection:", error);
+                if (typeof onComplete === "function") {
                   onComplete();
                 }
               });
           } else {
-            console.error('PartyManager not available');
-            if (typeof onComplete === 'function') {
+            console.error("PartyManager not available");
+            if (typeof onComplete === "function") {
               onComplete();
             }
           }
           break;
 
-        case 'showPartyManager':
+        case "showPartyManager":
           // Show party manager
           if (window.partyManager) {
             window.partyManager.showPartyManager();
 
             // Check when dialog closes
             const checkForDialog = setInterval(() => {
-              const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
+              const dialog = document.querySelector(
+                'sl-dialog[label="Monster Party"]'
+              );
               if (!dialog) {
                 clearInterval(checkForDialog);
-                if (typeof onComplete === 'function') {
+                if (typeof onComplete === "function") {
                   onComplete();
                 }
               }
             }, 100);
           } else {
-            console.error('PartyManager not available');
-            if (typeof onComplete === 'function') {
+            console.error("PartyManager not available");
+            if (typeof onComplete === "function") {
               onComplete();
             }
           }
           break;
 
-        case 'teleport':
+        case "teleport":
           // Teleport player
           if (this.scene3D && this.scene3D.player) {
             const { x, y, z } = eventData.params || {};
             if (x !== undefined && z !== undefined) {
               // Y is height, often want to keep the player on the ground
-              const targetY = y !== undefined ? y : this.scene3D.player.position.y;
+              const targetY =
+                y !== undefined ? y : this.scene3D.player.position.y;
 
               // Teleport
               this.scene3D.player.position.set(x, targetY, z);
@@ -4769,21 +4746,21 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
             }
           }
 
-          if (typeof onComplete === 'function') {
+          if (typeof onComplete === "function") {
             onComplete();
           }
           break;
 
-        case 'giveItem':
+        case "giveItem":
           // Give item to player
-          console.log('Give item event - not implemented yet');
+          console.log("Give item event - not implemented yet");
 
-          if (typeof onComplete === 'function') {
+          if (typeof onComplete === "function") {
             onComplete();
           }
           break;
 
-        case 'setFlag':
+        case "setFlag":
           // Set game flag
           if (window.gameFlags) {
             const { flag, value } = eventData.params || {};
@@ -4793,14 +4770,14 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
             }
           }
 
-          if (typeof onComplete === 'function') {
+          if (typeof onComplete === "function") {
             onComplete();
           }
           break;
 
         default:
           console.log(`Unknown event type: ${eventData.eventType}`);
-          if (typeof onComplete === 'function') {
+          if (typeof onComplete === "function") {
             onComplete();
           }
       }
@@ -4820,22 +4797,23 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         }
 
         // Initialize combat
-        window.combatSystem.initiateCombat(enemies)
-          .then(result => {
-            if (typeof onComplete === 'function') {
+        window.combatSystem
+          .initiateCombat(enemies)
+          .then((result) => {
+            if (typeof onComplete === "function") {
               onComplete(result);
             }
           })
-          .catch(error => {
-            console.error('Error in combat:', error);
-            if (typeof onComplete === 'function') {
-              onComplete('defeat');
+          .catch((error) => {
+            console.error("Error in combat:", error);
+            if (typeof onComplete === "function") {
+              onComplete("defeat");
             }
           });
       } else {
-        console.error('CombatSystem not available');
-        if (typeof onComplete === 'function') {
-          onComplete('victory'); // Default to victory if combat not available
+        console.error("CombatSystem not available");
+        if (typeof onComplete === "function") {
+          onComplete("victory"); // Default to victory if combat not available
         }
       }
     }
@@ -4846,10 +4824,10 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
     closeOverlay() {
       if (this.currentOverlay) {
         // Animate out
-        this.currentOverlay.style.opacity = '0';
-        const content = this.currentOverlay.querySelector('.story-content');
+        this.currentOverlay.style.opacity = "0";
+        const content = this.currentOverlay.querySelector(".story-content");
         if (content) {
-          content.style.transform = 'scale(0.95)';
+          content.style.transform = "scale(0.95)";
         }
 
         // Remove after animation
@@ -4858,7 +4836,10 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
           this.currentOverlay = null;
 
           // If we have scene3D, resume controls
-          if (this.scene3D && typeof this.scene3D.resumeControls === 'function') {
+          if (
+            this.scene3D &&
+            typeof this.scene3D.resumeControls === "function"
+          ) {
             this.scene3D.resumeControls();
           }
         }, 300);
@@ -4875,21 +4856,19 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
       const storyGraph = {
         nodes: [
           {
-            id: 'trigger_1',
-            type: 'trigger',
+            id: "trigger_1",
+            type: "trigger",
             position: { x: 0, y: 0 },
             data: { x, y, radius: 1, once: true }
           },
           {
-            id: 'dialog_1',
-            type: 'dialog',
+            id: "dialog_1",
+            type: "dialog",
             position: { x: 200, y: 0 },
             data: { text, image: splashArtId }
           }
         ],
-        connections: [
-          { from: 'trigger_1', to: 'dialog_1' }
-        ]
+        connections: [{ from: "trigger_1", to: "dialog_1" }]
       };
 
       this.storyGraphs.set(id, storyGraph);
@@ -4902,17 +4881,19 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
     isPlayerOnTrigger(playerX, playerY, triggerPos) {
       // Add some tolerance for trigger area
       const tolerance = 1; // One unit tolerance
-      return Math.abs(playerX - triggerPos.x) <= tolerance &&
-        Math.abs(playerY - triggerPos.y) <= tolerance;
+      return (
+        Math.abs(playerX - triggerPos.x) <= tolerance &&
+        Math.abs(playerY - triggerPos.y) <= tolerance
+      );
     }
 
     /**
      * Get splash art URL (backward compatibility)
      */
     getSplashArtUrl(splashArtId) {
-      return this.resourceManager ?
-        this.resourceManager.getSplashArtUrl(splashArtId) :
-        '';
+      return this.resourceManager
+        ? this.resourceManager.getSplashArtUrl(splashArtId)
+        : "";
     }
 
     /**
@@ -4937,10 +4918,8 @@ ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${
         this.triggeredStories = new Set(data.triggeredStories);
       }
     }
-  }
-
-
-};
+  };
+}
 // Create global instance when script loads
 window.initStoryboard = (scene3D, resourceManager) => {
   window.storyboard = new window.Storyboard(scene3D, resourceManager);
