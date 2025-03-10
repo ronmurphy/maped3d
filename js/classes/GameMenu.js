@@ -368,7 +368,7 @@ class GameMenu {
       
       // Add version info
       const versionInfo = document.createElement('div');
-      versionInfo.textContent = 'v0.9.3 Beta';
+      versionInfo.textContent = 'v0.9.5 Beta';
       versionInfo.style.cssText = `
         color: rgba(255, 255, 255, 0.5);
         position: absolute;

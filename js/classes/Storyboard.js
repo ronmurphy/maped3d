@@ -459,8 +459,9 @@ if (typeof window.Storyboard === "undefined") {
               <p>Select a node to edit its properties.</p>
             </div>
           </div>
-          <div style="padding: 12px; border-top: 1px solid #ddd;">
-            <sl-button variant="primary" id="save-storyboard" style="width: 100%;">Save Storyboard</sl-button>
+          <div style="padding: 12px; border-top: 1px solid #ddd; text-align:center;">
+            <sl-button variant="success" id="test-storyboard" style="width: 45%;"><span class="material-icons" style="margin-right: 4px; font-size: 16px;">play_arrow</span>Test Story</sl-button>
+            <sl-button variant="primary" id="save-storyboard" style="width: 45%;">Save Storyboard</sl-button>
           </div>
         </div>
       </div>
@@ -473,6 +474,7 @@ if (typeof window.Storyboard === "undefined") {
     <sl-button variant="primary" id="sb-close-btn">Close</sl-button>
   </div>
     `;
+
       // <sl-button slot="footer" variant="primary" id="sb-close-btn">Close</sl-button>
 
     this.addZoomPanControls();
@@ -641,28 +643,33 @@ if (typeof window.Storyboard === "undefined") {
 
         // Set up test button
 // const saveButton = this.editor.querySelector('#save-storyboard');
-if (saveButton) {
-  // Set up a container for the buttons
-  const buttonsContainer = saveButton.parentElement;
+// if (saveButton) {
+//   // Set up a container for the buttons
+//   const buttonsContainer = saveButton.parentElement;
   
-  // Create test button
-  const testButton = document.createElement('sl-button');
-  testButton.id = 'test-storyboard';
-  testButton.variant = 'success';
-  testButton.innerHTML = `
-    <span class="material-icons" style="margin-right: 4px; font-size: 16px;">play_arrow</span>
-    Test Story
-  `;
-  testButton.style.marginRight = '8px';
+//   // Create test button
+//   const testButton = document.createElement('sl-button');
+//   testButton.id = 'test-storyboard';
+//   testButton.variant = 'success';
+//   testButton.innerHTML = `
+//     <span class="material-icons" style="margin-right: 4px; font-size: 16px;">play_arrow</span>
+//     Test Story
+//   `;
+//   testButton.style.marginRight = '8px';
   
-  // Insert before save button
-  buttonsContainer.insertBefore(testButton, saveButton);
+//   // Insert before save button
+//   buttonsContainer.insertBefore(testButton, saveButton);
   
-  // Add click handler
+
+
+  const testButton = this.editor.querySelector("#test-storyboard");
+    // Add click handler
   testButton.addEventListener('click', () => {
     this.testStoryboard();
   });
-}
+
+  // });
+// }
 
         // Restore nodes from persistent data
         this.restoreNodesFromData(canvas);
@@ -705,6 +712,46 @@ if (saveButton) {
           console.error(`Tool button not found: ${id}`);
         }
       });
+
+      // const toolIds = {
+      //   "sb-tool-dialog": "chat",
+      //   "sb-tool-choice": "menu",
+      //   "sb-tool-trigger": "flash_on",
+      //   "sb-tool-event": "event",
+      //   "sb-tool-condition": "rule",
+      //   "sb-tool-combat": "sports_kabaddi",
+      //   "sb-tool-reward": "card_giftcard"
+      // };
+      
+      // toolIds.forEach((id) => {
+      //   const tool = this.editor.querySelector(`#${id}`);
+      //   if (tool) {
+      //     console.log(`Setting up tool button: ${id}`);
+      
+      //     // Ensure button has an icon
+      //     if (!tool.querySelector(".material-icons")) {
+      //       const icon = document.createElement("span");
+      //       icon.classList.add("material-icons");
+      //       icon.textContent = toolIcons[id] || "help"; // Default icon if not found
+      //       tool.prepend(icon);
+      //     }
+      
+      //     tool.addEventListener("click", (e) => {
+      //       e.preventDefault();
+      //       e.stopPropagation();
+      //       const nodeType = tool.getAttribute("data-type");
+      //       console.log(`Tool clicked: ${nodeType}`);
+      //       this.createNewNode(this.editorState.canvasElement, nodeType);
+      //     });
+      //   } else {
+      //     console.error(`Tool button not found: ${id}`);
+      //   }
+      // });
+      
+
+
+
+
     }
 
     /**
