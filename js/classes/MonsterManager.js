@@ -3,6 +3,42 @@ class MonsterManager {
     this.mapEditor = mapEditor;
     this.monsterDatabase = this.loadDatabase();
     this.baseTokenUrl = "https://5e.tools/img/bestiary/tokens/";
+    // Initialize IndexedDB
+    this.dbInitPromise = this.initDatabase();
+  }
+
+  // Add this method to initialize the database
+  async initDatabase() {
+    try {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open('monster-database', 1);
+        
+        request.onerror = (event) => {
+          console.error('IndexedDB error:', event.target.error);
+          // Fall back to localStorage
+          this.useLocalStorage = true;
+          resolve(false);
+        };
+        
+        request.onsuccess = (event) => {
+          this.db = event.target.result;
+          console.log('Database opened successfully');
+          resolve(true);
+        };
+        
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('monsters')) {
+            db.createObjectStore('monsters', { keyPath: 'id' });
+            console.log('Created monsters object store');
+          }
+        };
+      });
+    } catch (error) {
+      console.error('Error initializing database:', error);
+      this.useLocalStorage = true;
+      return false;
+    }
   }
 
   async storeMonsterImage(imgElement) {
@@ -25,21 +61,252 @@ class MonsterManager {
 
   loadDatabase() {
     try {
-      const dbText = localStorage.getItem("monsterDatabase");
-      return dbText ? JSON.parse(dbText) : { monsters: {} };
+      const data = localStorage.getItem("monsterDatabase");
+      if (data) {
+        return JSON.parse(data);
+      }
     } catch (e) {
       console.error("Error loading monster database:", e);
-      return { monsters: {} };
     }
+    return { monsters: {} };
   }
 
   async saveMonsterToDatabase(monsterData) {
-    const key = monsterData.basic.name.toLowerCase().replace(/\s+/g, "_");
-    this.monsterDatabase.monsters[key] = monsterData;
-    localStorage.setItem(
-      "monsterDatabase",
-      JSON.stringify(this.monsterDatabase)
-    );
+    try {
+      // Wait for database initialization if needed
+      if (!this.db && !this.useLocalStorage) {
+        await this.dbInitPromise;
+      }
+      
+      // First, check storage usage
+      const storageEstimate = await this.getStorageUsage();
+      
+      // If we're close to the limit (>80% used), compress tokens more aggressively
+      let compressionQuality = 0.7; // default quality
+      if (storageEstimate.percentUsed > 80) {
+        compressionQuality = 0.5; // more aggressive compression
+        console.warn(`Storage usage high (${storageEstimate.percentUsed.toFixed(1)}%), using higher compression`);
+      }
+      
+      // Compress token if present
+      if (monsterData.token && monsterData.token.data && monsterData.token.data.startsWith('data:')) {
+        monsterData.token.data = await this.compressTokenImage(monsterData.token.data, compressionQuality);
+      }
+
+      // Generate ID if not exists
+      if (!monsterData.id) {
+        monsterData.id = monsterData.basic?.name?.toLowerCase().replace(/\s+/g, "_") || 
+                         `monster_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      }
+
+      // If IndexedDB isn't available or initialized, use localStorage
+      if (this.useLocalStorage || !this.db) {
+        const key = monsterData.id;
+        this.monsterDatabase.monsters[key] = monsterData;
+        localStorage.setItem("monsterDatabase", JSON.stringify(this.monsterDatabase));
+        return monsterData;
+      }
+      
+      // Otherwise use IndexedDB
+      try {
+        const tx = this.db.transaction(['monsters'], 'readwrite');
+        const store = tx.objectStore('monsters');
+        await store.put(monsterData);
+        return monsterData;
+      } catch (error) {
+        // If we're getting a quota error, try emergency measures
+        if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
+          return await this.handleQuotaExceeded(monsterData);
+        }
+        // Fall back to localStorage if IndexedDB fails for other reasons
+        this.useLocalStorage = true;
+        return this.saveMonsterToDatabase(monsterData);
+      }
+    } catch (error) {
+      console.error('Error saving monster to database:', error);
+      throw error;
+    }
+  }
+
+    // Delete monster from both IndexedDB and localStorage for consistency
+    async deleteMonster(monsterId) {
+      const key = typeof monsterId === 'string' ? 
+          monsterId : 
+          monsterId.basic?.name?.toLowerCase().replace(/\s+/g, "_");
+      
+      let success = false;
+      
+      // Delete from localStorage
+      if (this.monsterDatabase.monsters[key]) {
+        delete this.monsterDatabase.monsters[key];
+        localStorage.setItem("monsterDatabase", JSON.stringify(this.monsterDatabase));
+        success = true;
+      }
+      
+      // Also delete from IndexedDB if available
+      if (this.db) {
+        try {
+          const tx = this.db.transaction(['monsters'], 'readwrite');
+          const store = tx.objectStore('monsters');
+          await store.delete(key);
+          success = true;
+        } catch (e) {
+          console.warn(`Could not delete from IndexedDB: ${e.message}`);
+        }
+      }
+      
+      return success;
+    }  // Compress token image to save space
+    async compressTokenImage(dataUrl, quality = 0.7) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          // Create a canvas for compression
+          const canvas = document.createElement('canvas');
+          // Scale down large images
+          let targetWidth = img.width;
+          let targetHeight = img.height;
+          
+          // Maximum token size - scale down if larger
+          const MAX_TOKEN_SIZE = 256;
+          if (img.width > MAX_TOKEN_SIZE || img.height > MAX_TOKEN_SIZE) {
+            const scaleFactor = MAX_TOKEN_SIZE / Math.max(img.width, img.height);
+            targetWidth = Math.floor(img.width * scaleFactor);
+            targetHeight = Math.floor(img.height * scaleFactor);
+          }
+          
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+          
+          // Use webp for better compression
+          const compressedDataUrl = canvas.toDataURL('image/webp', quality);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => {
+          // If there's an error, just return the original
+          resolve(dataUrl);
+        };
+        img.src = dataUrl;
+      });
+    }
+  
+    // Get storage usage statistics
+    async getStorageUsage() {
+      // Try to use the Storage API if available
+      if (navigator.storage && navigator.storage.estimate) {
+        try {
+          const estimate = await navigator.storage.estimate();
+          return {
+            usage: estimate.usage,
+            quota: estimate.quota,
+            percentUsed: (estimate.usage / estimate.quota) * 100
+          };
+        } catch (e) {
+          console.warn('Error estimating storage', e);
+        }
+      }
+      
+      // Fallback - approximate based on existing monsters
+      try {
+        if (this.db) {
+          const tx = this.db.transaction(['monsters'], 'readonly');
+          const store = tx.objectStore('monsters');
+          const monsters = await store.getAll();
+          
+          // Calculate total size
+          let totalBytes = 0;
+          for (const monster of monsters) {
+            // Estimate size of monster data
+            totalBytes += JSON.stringify(monster).length;
+          }
+          
+          // Assume browser quota is around 5MB
+          const estimatedQuota = 5 * 1024 * 1024;
+          return {
+            usage: totalBytes,
+            quota: estimatedQuota,
+            percentUsed: (totalBytes / estimatedQuota) * 100
+          };
+        } else {
+          // Estimate from localStorage
+          const totalBytes = JSON.stringify(this.monsterDatabase).length;
+          const estimatedQuota = 5 * 1024 * 1024;
+          return {
+            usage: totalBytes,
+            quota: estimatedQuota,
+            percentUsed: (totalBytes / estimatedQuota) * 100
+          };
+        }
+      } catch (e) {
+        return { usage: 0, quota: 1, percentUsed: 0 };
+      }
+    }
+  
+    // Handle quota exceeded by implementing emergency measures
+    async handleQuotaExceeded(newMonster) {
+      console.warn('Storage quota exceeded, implementing emergency measures');
+      
+      // Create an alert to inform the user
+      alert(`
+        Storage limit reached for monster database!
+        
+        To add this monster, you'll need to:
+        1. Export your current bestiary (backup)
+        2. Delete some existing monsters
+        3. Try adding this monster again
+        
+        The monster data will now be added to localStorage as a fallback.
+      `);
+      
+      // Fall back to localStorage for this monster
+      const key = newMonster.id;
+      this.monsterDatabase.monsters[key] = newMonster;
+      localStorage.setItem("monsterDatabase", JSON.stringify(this.monsterDatabase));
+      
+      return newMonster;
+    }
+    
+  //   // Prompt to export current bestiary as backup
+  //   await this.exportBestiary();
+    
+  //   // Throw a more user-friendly error
+  //   throw new Error('Storage quota exceeded. Please delete some monsters and try again.');
+  // }
+  
+  // Add export bestiary functionality
+  async exportBestiary() {
+    try {
+      const tx = this.db.transaction(['monsters'], 'readonly');
+      const store = tx.objectStore('monsters');
+      const monsters = await store.getAll();
+      
+      // Create export file
+      const exportData = {
+        version: '1.0',
+        date: new Date().toISOString(),
+        monsters: monsters
+      };
+      
+      // Convert to blob and download
+      const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bestiary_export_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      return true;
+    } catch (e) {
+      console.error('Error exporting bestiary:', e);
+      return false;
+    }
   }
 
   getTokenUrl(tokenPath) {
@@ -518,224 +785,10 @@ class MonsterManager {
       token: {
         url: null,
         data: null
-      }
+      },
+      actions: []
     };
   }
-// original working code - backup
-  // async parseMonsterHtml(html) {
-  //   //   console.log("Starting to parse monster HTML"); // Debug 1
-  //   const parser = new DOMParser();
-  //   const doc = parser.parseFromString(html, "text/html");
-  //   //   console.log("HTML parsed into document"); // Debug 2
-
-  //   try {
-  //     // Required basic information
-  //     const name =
-  //       doc.querySelector(".stats__h-name")?.textContent?.trim() ||
-  //       "Unknown Monster";
-  //     // console.log("Found name:", name); // Debug 3
-
-  //     const typeInfo =
-  //       doc.querySelector("td i")?.textContent?.trim() ||
-  //       "Medium Unknown, Unaligned";
-  //     // console.log("Found typeInfo:", typeInfo); // Debug 4
-
-  //     // Parse type info with defaults
-  //     const [sizeTypeAlign = ""] = typeInfo.split(",");
-  //     const [size = "Medium", type = "Unknown"] = sizeTypeAlign
-  //       .trim()
-  //       .split(/\s+/);
-  //     const alignment = typeInfo.split(",")[1]?.trim() || "Unaligned";
-
-  //     // Required stats (with safe defaults)
-  //     const stats = {
-  //       ac: parseInt(
-  //         doc.querySelector('[title="Armor Class"] + span')
-  //           ?.textContent || "10"
-  //       ),
-  //       hp: {
-  //         average: parseInt(
-  //           doc.querySelector('[title="Hit Points"] + span')
-  //             ?.textContent || "1"
-  //         ),
-  //         roll:
-  //           doc
-  //             .querySelector('[data-roll-name="Hit Points"]')
-  //             ?.textContent?.trim() || "1d4",
-  //         max: parseInt(
-  //           doc.querySelector('[title="Maximum: "]')?.textContent || "1"
-  //         )
-  //       },
-  //       speed: "30 ft."
-  //     };
-
-  //     // Try to get actual speed
-  //     const speedNode = Array.from(doc.querySelectorAll("strong")).find(
-  //       (el) => el.textContent === "Speed"
-  //     );
-  //     if (speedNode && speedNode.nextSibling) {
-  //       stats.speed = speedNode.nextSibling.textContent.trim();
-  //     }
-
-  //     // Parse ability scores - Updated version
-  //     // console.log("About to parse ability scores");
-  //     // Parse ability scores
-  //     const abilities = {};
-  //     const abilityRows = Array.from(
-  //       doc.querySelectorAll(".stats-tbl-ability-scores__lbl-abv")
-  //     );
-
-  //     abilityRows.forEach((labelCell) => {
-  //       const abilityDiv = labelCell.querySelector(".bold.small-caps");
-  //       if (abilityDiv) {
-  //         const abilityName = abilityDiv.textContent.trim().toLowerCase();
-  //         if (
-  //           ["str", "dex", "con", "int", "wis", "cha"].includes(
-  //             abilityName
-  //           )
-  //         ) {
-  //           try {
-  //             // Get score from the next cell's div directly
-  //             const scoreDiv =
-  //               labelCell.nextElementSibling.querySelector(
-  //                 ".ve-text-center"
-  //               );
-  //             const score = parseInt(scoreDiv?.textContent || "10");
-
-  //             // Get modifier from the next cell's roller span
-  //             const modifierCell =
-  //               scoreDiv?.parentElement.nextElementSibling;
-  //             const modifierText =
-  //               modifierCell?.querySelector(".roller")?.textContent ||
-  //               "0";
-  //             const modifier = parseInt(
-  //               modifierText.match(/[+-]\d+/)?.[0] || "0"
-  //             );
-
-  //             abilities[abilityName] = { score, modifier };
-  //             // console.log(`Parsed ${abilityName}:`, { score, modifier });
-  //           } catch (e) {
-  //             console.error(`Error parsing ${abilityName}:`, e);
-  //             abilities[abilityName] = { score: 10, modifier: 0 };
-  //           }
-  //         }
-  //       }
-  //     });
-  //     // console.log("Abilities parsed successfully:", abilities);
-
-  //     // Optional extras
-  //     let extras = {
-  //       immunities: [],
-  //       resistances: [],
-  //       senses: [],
-  //       languages: "None",
-  //       cr: "0",
-  //       xp: 0,
-  //       proficiencyBonus: 2
-  //     };
-
-  //     try {
-  //       const crNode = doc.querySelector(
-  //         '[title="Challenge Rating"] + span'
-  //       );
-  //       if (crNode) {
-  //         extras.cr = crNode.textContent.split("(")[0].trim();
-  //         const xpMatch = crNode.textContent.match(/XP (\d+)/);
-  //         if (xpMatch) extras.xp = parseInt(xpMatch[1]);
-  //         // console.log("Parsed CR/XP:", extras.cr, extras.xp);
-  //       }
-  //     } catch (e) {
-  //       console.log("Optional: Failed to parse CR/XP");
-  //     }
-
-  //     try {
-  //       const immunityNode = Array.from(
-  //         doc.querySelectorAll("strong")
-  //       ).find((el) => el.textContent === "Immunities");
-  //       if (immunityNode && immunityNode.nextSibling) {
-  //         extras.immunities = immunityNode.nextSibling.textContent
-  //           .split(";")
-  //           .map((i) => i.trim())
-  //           .filter((i) => i);
-  //         // console.log("Parsed immunities:", extras.immunities);
-  //       }
-  //     } catch (e) {
-  //       console.log("Optional: Failed to parse immunities");
-  //     }
-
-  //     try {
-  //       const sensesNode = Array.from(
-  //         doc.querySelectorAll("strong")
-  //       ).find((el) => el.textContent === "Senses");
-  //       if (sensesNode && sensesNode.nextSibling) {
-  //         extras.senses = sensesNode.nextSibling.textContent
-  //           .split(",")
-  //           .map((s) => s.trim())
-  //           .filter((s) => s);
-  //         // console.log("Parsed senses:", extras.senses);
-  //       }
-  //     } catch (e) {
-  //       console.log("Optional: Failed to parse senses");
-  //     }
-
-  //     try {
-  //       const languagesNode = Array.from(
-  //         doc.querySelectorAll("strong")
-  //       ).find((el) => el.textContent === "Languages");
-  //       if (languagesNode && languagesNode.nextSibling) {
-  //         extras.languages =
-  //           languagesNode.nextSibling.textContent.trim() || "None";
-  //         // console.log("Parsed languages:", extras.languages);
-  //       }
-  //     } catch (e) {
-  //       console.log("Optional: Failed to parse languages");
-  //     }
-
-  //     let tokenUrl = null;
-  //     let tokenData = null;
-
-  //     try {
-  //       const tokenDiv = doc.querySelector("#float-token");
-  //       if (tokenDiv) {
-  //         const imgElement = tokenDiv.querySelector("img.stats__token");
-  //         if (imgElement?.src) {
-  //           const path = imgElement.src.replace(/.*\/bestiary\/tokens\//, "");
-  //           tokenUrl = this.getTokenUrl(path);
-  //         }
-  //       }
-  //     } catch (error) {
-  //       console.error("Error handling token:", error);
-  //     }
-
-
-  //     // Include token data in the return object (this should already be in your code)
-  //     return {
-  //       basic: {
-  //         name,
-  //         size,
-  //         type,
-  //         alignment,
-  //         cr: extras.cr,
-  //         xp: extras.xp,
-  //         proficiencyBonus: extras.proficiencyBonus
-  //       },
-  //       stats,
-  //       abilities,
-  //       traits: {
-  //         immunities: extras.immunities,
-  //         senses: extras.senses,
-  //         languages: extras.languages
-  //       },
-  //       token: {
-  //         url: tokenUrl,
-  //         data: tokenData
-  //       }
-  //     };
-  //   } catch (error) {
-  //     console.error("Error parsing monster HTML:", error);
-  //     return this.getDefaultMonsterData();
-  //   }
-  // }
 
   async parseMonsterHtml(html) {
     const parser = new DOMParser();
@@ -931,6 +984,86 @@ class MonsterManager {
         console.error("Error handling token:", error);
       }
 
+      const actions = [];
+    
+      // Find the Actions section header
+      const actionHeader = Array.from(doc.querySelectorAll("h3.stats__sect-header-inner"))
+        .find(el => el.textContent.trim() === "Actions");
+      
+      if (actionHeader) {
+        // Get the parent row then find all following action rows until the next section header
+        const actionHeaderRow = actionHeader.closest("tr");
+        let currentRow = actionHeaderRow.nextElementSibling;
+        
+        // Process each action row
+        while (currentRow && !currentRow.querySelector("h3.stats__sect-header-inner")) {
+          const actionDiv = currentRow.querySelector("[data-roll-name-ancestor]");
+          
+          if (actionDiv) {
+            try {
+              // Extract action name
+              const actionName = actionDiv.getAttribute("data-roll-name-ancestor") || 
+                                actionDiv.querySelector(".entry-title-inner")?.textContent.replace(/\.$/, '') || 
+                                "Unknown Action";
+              
+              // Find attack bonus - look for the first roller with "hit" context
+              const attackRoller = actionDiv.querySelector('.roller[data-packed-dice*=\'"type":"hit"\']') || 
+                                  actionDiv.querySelector('.roller[data-packed-dice*=\'"context":{"type":"hit"}\']');
+              let attackBonus = 0;
+              if (attackRoller) {
+                const bonusText = attackRoller.textContent.trim();
+                attackBonus = parseInt(bonusText.match(/[+-]\d+/)?.[0] || "0");
+              }
+              
+              // Find damage dice - look for roller after "Hit:" text
+              const hitText = Array.from(actionDiv.querySelectorAll("i"))
+                .find(el => el.textContent.trim() === "Hit:");
+              
+              let damageDice = "";
+              let damageType = "";
+              
+              if (hitText) {
+                const damageRoller = hitText.nextElementSibling?.nextElementSibling;
+                if (damageRoller && damageRoller.classList.contains("roller")) {
+                  damageDice = damageRoller.textContent.trim();
+                  
+                  // Get damage type from text after the damage roller
+                  let nextNode = damageRoller.nextSibling;
+                  if (nextNode && nextNode.textContent) {
+                    const damageMatch = nextNode.textContent.match(/\)\s+([A-Za-z]+)\s+damage/);
+                    if (damageMatch && damageMatch[1]) {
+                      damageType = damageMatch[1];
+                    }
+                  }
+                }
+              }
+              
+              // Get full description
+              const description = actionDiv.textContent.trim()
+                .replace(actionName + ".", "")
+                .replace(/Melee Attack Roll:.*?Hit:/, "")
+                .replace(/\(\d+d\d+.*?\)/, "")
+                .trim();
+              
+              // Add to actions array
+              actions.push({
+                name: actionName,
+                attackBonus: attackBonus,
+                damageDice: damageDice,
+                damageType: damageType,
+                description: description
+              });
+            } catch (e) {
+              console.error("Error parsing action:", e);
+            }
+          }
+          
+          // Move to next row
+          currentRow = currentRow.nextElementSibling;
+          if (!currentRow) break;
+        }
+      }
+
 
       // Include token data in the return object (this should already be in your code)
       return {
@@ -955,7 +1088,8 @@ class MonsterManager {
         token: {
           url: tokenUrl,
           data: tokenData
-        }
+        },
+        actions: actions
       };
     } catch (error) {
       console.error("Error parsing monster HTML:", error);

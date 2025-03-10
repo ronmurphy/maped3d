@@ -165,34 +165,87 @@ checkStoryboard(callback) {
     storyboard.openEditor();
   } 
 
-  checkResourceManager(callback) {
-    const resourceManagerBtn = document.getElementById('resourceManagerBtn');
+  // checkResourceManager(callback) {
+  //   const resourceManagerBtn = document.getElementById('resourceManagerBtn');
 
+  //   // Create a temporary script element to test loading
+  //   const script = document.createElement('script');
+  //   script.src = 'js/classes/resource-manager.js';
+  //   script.onload = () => {
+  //     // Resource manager loaded successfully
+  //     this.resourceManager = new ResourceManager();
+
+  //     // Initialize MonsterManager in ResourceManager
+  //     this.resourceManager.initializeMonsterManager(this);
+  //     // Init Storyboard
+  //     this.resourceManager.initStoryboard();
+  //     storyboard.connectToResourceManager(this.resourceManager);
+
+  //     if (resourceManagerBtn) {
+  //       resourceManagerBtn.style.display = 'flex';
+  //       resourceManagerBtn.innerHTML = `
+  //               <span class="material-icons">palette</span>
+  //           `;
+
+  //       // Add click handler
+  //       resourceManagerBtn.addEventListener('click', () => {
+  //         const drawer = this.resourceManager.createResourceManagerUI();
+  //         drawer.show();
+  //       });
+  //     }
+  //     if (callback) callback();
+  //   };
+  //   script.onerror = () => {
+  //     console.warn('Resource manager not available');
+  //     if (resourceManagerBtn) {
+  //       resourceManagerBtn.style.display = 'none';
+  //     }
+  //     if (callback) callback();
+  //   };
+  //   document.head.appendChild(script);
+  // }
+
+    checkResourceManager(callback) {
+    const resourceManagerBtn = document.getElementById('resourceManagerBtn');
+  
     // Create a temporary script element to test loading
     const script = document.createElement('script');
     script.src = 'js/classes/resource-manager.js';
     script.onload = () => {
       // Resource manager loaded successfully
       this.resourceManager = new ResourceManager();
-
+      
+      // IMPORTANT: Make resourceManager available globally
+      window.resourceManager = this.resourceManager;
+      
+      console.log("ResourceManager initialized and set globally");
+  
       // Initialize MonsterManager in ResourceManager
       this.resourceManager.initializeMonsterManager(this);
+      
       // Init Storyboard
       this.resourceManager.initStoryboard();
       storyboard.connectToResourceManager(this.resourceManager);
-
+  
       if (resourceManagerBtn) {
         resourceManagerBtn.style.display = 'flex';
         resourceManagerBtn.innerHTML = `
-                <span class="material-icons">palette</span>
-            `;
-
+          <span class="material-icons">palette</span>
+        `;
+  
         // Add click handler
         resourceManagerBtn.addEventListener('click', () => {
           const drawer = this.resourceManager.createResourceManagerUI();
           drawer.show();
         });
       }
+      
+      // If there's a partyManager already, connect it to resourceManager
+      if (this.partyManager) {
+        console.log("Connecting existing PartyManager to ResourceManager");
+        this.partyManager.resourceManager = this.resourceManager;
+      }
+      
       if (callback) callback();
     };
     script.onerror = () => {

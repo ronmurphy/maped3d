@@ -997,6 +997,239 @@ class PartyManager {
     return styleElement;
   }
 
+    // Add this right after constructor or in the establishConnections method
+  connectToBestiary() {
+    // Try multiple ways to get access to the bestiary
+    if (!window.resourceManager) {
+      console.warn("PartyManager: window.resourceManager not found");
+      return false;
+    }
+    
+    // Store direct reference to resourceManager
+    this.resourceManager = window.resourceManager;
+    
+    if (!this.resourceManager.resources || !this.resourceManager.resources.bestiary) {
+      console.warn("PartyManager: resourceManager.resources.bestiary not found");
+      return false;
+    }
+    
+    console.log(`PartyManager connected to bestiary with ${this.resourceManager.resources.bestiary.size} monsters`);
+    return true;
+  }
+  
+// Add this method to PartyManager to ensure we have a connection to ResourceManager
+ensureResourceManagerConnection() {
+  // Always try to get the latest global resourceManager
+  if (window.resourceManager) {
+    this.resourceManager = window.resourceManager;
+    console.log("Connected PartyManager to global ResourceManager");
+    
+    if (this.resourceManager.resources?.bestiary?.size > 0) {
+      console.log(`ResourceManager has ${this.resourceManager.resources.bestiary.size} monsters available`);
+      return true;
+    } else {
+      console.log("ResourceManager connection established but bestiary is empty or not initialized yet");
+    }
+  } else {
+    console.warn("No global ResourceManager available");
+  }
+  
+  return false;
+}
+
+// Add this method to explicitly set the ResourceManager reference
+connectToResourceManager(resourceManager) {
+  console.log("PartyManager: Explicitly connecting to ResourceManager");
+  
+  // Store direct reference
+  this.resourceManager = resourceManager;
+  
+  if (this.resourceManager) {
+    console.log("ResourceManager connection established");
+    
+    // Check if bestiary is loaded
+    if (this.resourceManager.resources && 
+        this.resourceManager.resources.bestiary && 
+        this.resourceManager.resources.bestiary.size > 0) {
+      console.log(`ResourceManager has ${this.resourceManager.resources.bestiary.size} monsters in bestiary`);
+    } else {
+      console.warn("ResourceManager connected but bestiary is not loaded yet");
+      
+      // If MonsterManager is available, try to load bestiary
+      if (this.resourceManager.monsterManager) {
+        console.log("Attempting to load bestiary from database");
+        this.resourceManager.loadBestiaryFromDatabase();
+      }
+    }
+    
+    return true;
+  }
+  
+  console.error("Failed to connect to ResourceManager - reference is invalid");
+  return false;
+}
+
+async getStarterMonsters(count = 3) {
+  console.log(`Getting ${count} starter monsters from database...`);
+  
+  // Try to get ResourceManager if we don't have it yet
+  if (!this.resourceManager) {
+    if (window.resourceManager) {
+      console.log("Found global ResourceManager");
+      this.resourceManager = window.resourceManager;
+    } else if (this.mapEditor?.resourceManager) {
+      console.log("Found ResourceManager via mapEditor");
+      this.resourceManager = this.mapEditor.resourceManager;
+    }
+  }
+  
+  // Check both this.resourceManager and window.resourceManager
+  let bestiary = null;
+  
+  // First try this.resourceManager
+  if (this.resourceManager?.resources?.bestiary && this.resourceManager.resources.bestiary.size > 0) {
+    console.log(`Found ${this.resourceManager.resources.bestiary.size} monsters in local reference`);
+    bestiary = this.resourceManager.resources.bestiary;
+  }
+  // If not found, try window.resourceManager directly
+  else if (window.resourceManager?.resources?.bestiary && window.resourceManager.resources.bestiary.size > 0) {
+    console.log(`Found ${window.resourceManager.resources.bestiary.size} monsters in global reference`);
+    bestiary = window.resourceManager.resources.bestiary;
+    // Update our reference while we're at it
+    this.resourceManager = window.resourceManager;
+  }
+  
+  // If we still don't have a bestiary, show debug info and return empty array
+  if (!bestiary) {
+    console.warn("No monsters found in bestiary - ResourceManager may not be initialized yet");
+    console.log("ResourceManager debugging info:", {
+      resourceManagerExists: !!this.resourceManager,
+      resourcesExist: !!this.resourceManager?.resources,
+      bestiaryExists: !!this.resourceManager?.resources?.bestiary,
+      bestiarySize: this.resourceManager?.resources?.bestiary?.size || 0,
+      globalResourceManagerExists: !!window.resourceManager,
+      globalBestiarySize: window.resourceManager?.resources?.bestiary?.size || 0
+    });
+    return [];
+  }
+  
+  // Now we have a bestiary, let's process it
+  const allMonsters = Array.from(bestiary.values());
+  console.log(`Found ${allMonsters.length} monsters in bestiary`);
+  
+  // Filter for starter monsters (low CR)
+  const starterCandidates = allMonsters.filter(monster => {
+    const cr = this.parseCR(monster.cr);
+    return cr <= 1; // Only use CR 1 or lower for starters
+  });
+  
+  console.log(`Found ${starterCandidates.length} eligible starter monsters`);
+  
+  if (starterCandidates.length === 0) {
+    return [];
+  }
+  
+  // Group by type for diversity
+  const monstersByType = {};
+  starterCandidates.forEach(monster => {
+    const type = monster.type || 'unknown';
+    if (!monstersByType[type]) {
+      monstersByType[type] = [];
+    }
+    monstersByType[type].push(monster);
+  });
+  
+  // Get diverse selection
+  const selectedMonsters = [];
+  const types = Object.keys(monstersByType);
+  
+  // Try to select one monster from each type until we have enough
+  while (selectedMonsters.length < count && types.length > 0) {
+    const randomTypeIndex = Math.floor(Math.random() * types.length);
+    const type = types[randomTypeIndex];
+    
+    const monstersOfType = monstersByType[type];
+    const randomMonsterIndex = Math.floor(Math.random() * monstersOfType.length);
+    
+    selectedMonsters.push(monstersOfType[randomMonsterIndex]);
+    
+    // Remove this type to avoid duplicates
+    types.splice(randomTypeIndex, 1);
+  }
+  
+  // If we still need more monsters, pick randomly from all candidates
+  if (selectedMonsters.length < count) {
+    const remaining = starterCandidates.filter(m => 
+      !selectedMonsters.some(selected => selected.id === m.id)
+    );
+    
+    while (selectedMonsters.length < count && remaining.length > 0) {
+      const randomIndex = Math.floor(Math.random() * remaining.length);
+      selectedMonsters.push(remaining[randomIndex]);
+      remaining.splice(randomIndex, 1);
+    }
+  }
+  
+  console.log(`Selected ${selectedMonsters.length} starter monsters`);
+  return selectedMonsters;
+}
+
+
+// async getStarterMonsters(count = 3) {
+//   console.log(`Getting ${count} starter monsters from database...`);
+  
+//   // IMPORTANT: Always access the global ResourceManager instance
+//   // This ensures we're always using the most up-to-date data
+//   this.resourceManager = window.resourceManager;
+  
+//   // If we have a resourceManager with bestiary data, use it
+//   if (this.resourceManager?.resources?.bestiary && this.resourceManager.resources.bestiary.size > 0) {
+//     // Convert Map to array
+//     const allMonsters = Array.from(this.resourceManager.resources.bestiary.values());
+//     console.log(`Found ${allMonsters.length} monsters in bestiary`);
+    
+//     // Filter for starter monsters (low CR)
+//     const starterCandidates = allMonsters.filter(monster => {
+//       const cr = this.parseCR(monster.cr);
+//       return cr <= 1; // Only use CR 1 or lower for starters
+//     });
+    
+//     console.log(`Found ${starterCandidates.length} eligible starter monsters`);
+    
+//     // Select random monsters
+//     const selectedMonsters = [];
+//     const availableMonsters = [...starterCandidates];
+    
+//     for (let i = 0; i < Math.min(count, availableMonsters.length); i++) {
+//       const randomIndex = Math.floor(Math.random() * availableMonsters.length);
+//       selectedMonsters.push(availableMonsters[randomIndex]);
+//       availableMonsters.splice(randomIndex, 1);
+//     }
+    
+//     return selectedMonsters;
+//   } else {
+//     console.warn("No monsters found in bestiary - ResourceManager may not be initialized yet");
+    
+//     // IMPORTANT: Try direct access to the global variable as a fallback
+//     if (window.resourceManager?.resources?.bestiary?.size > 0) {
+//       console.log("Found bestiary in global resourceManager, using that instead");
+//       return this.getStarterMonsters(count); // Try again with the global reference
+//     }
+    
+//     // Still no luck - display helpful debug info
+//     console.log("ResourceManager debugging info:", {
+//       resourceManagerExists: !!this.resourceManager,
+//       resourcesExist: !!this.resourceManager?.resources,
+//       bestiaryExists: !!this.resourceManager?.resources?.bestiary,
+//       bestiarySize: this.resourceManager?.resources?.bestiary?.size || 0,
+//       globalResourceManagerExists: !!window.resourceManager,
+//       globalBestiarySize: window.resourceManager?.resources?.bestiary?.size || 0
+//     });
+    
+//     return [];
+//   }
+// }
+
   /**
    * Party Management Methods
    */
@@ -5093,16 +5326,37 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
   }
 
   async checkForStarterMonster() {
+    console.log("Checking for starter monsters");
+    
+    // IMPORTANT: Make sure we have access to the global ResourceManager
+    // This is the key fix - get the latest reference to ResourceManager
+    if (!this.resourceManager && window.resourceManager) {
+      console.log("Connecting to global ResourceManager");
+      this.resourceManager = window.resourceManager;
+    }
+    
+    // Debug check for resource manager
+    if (!this.resourceManager) {
+      console.warn("No ResourceManager available, attempting fallback connection");
+      // Try to get it from MapEditor if available
+      if (this.mapEditor?.resourceManager) {
+        console.log("Found ResourceManager via mapEditor");
+        this.resourceManager = this.mapEditor.resourceManager;
+      }
+    }
+    
     // Get diverse starter monsters (3 by default)
     const starterChoices = await this.getStarterMonsters();
     
     if (starterChoices.length > 0) {
+      console.log(`Found ${starterChoices.length} starter monsters to offer`);
       // Show starter selection UI
       this.showStarterSelection(starterChoices);
     } else {
       console.warn("No starter monsters available");
     }
   }
+
   
   // Update offerStarterMonster to use the new method too
   offerStarterMonster() {
@@ -5125,105 +5379,123 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
  * @param {Number} count - Number of starter monsters to select (default: 3)
  * @returns {Array} - Array of diverse starter monsters
  */
-async getStarterMonsters(count = 3) {
-  console.log(`Getting ${count} diverse starter monsters...`);
+// async getStarterMonsters(count = 3) {
+//   console.log(`Getting ${count} diverse starter monsters...`);
   
-  try {
-    // Step 1: Get eligible low-CR monsters
-    console.log("Finding eligible low-CR monsters...");
-    let eligibleMonsters = [];
+//   try {
+//     // Step 1: Get eligible low-CR monsters
+//     console.log("Finding eligible low-CR monsters...");
+//     let eligibleMonsters = [];
     
-    // Get direct access to database if possible
-    const monsterDatabase = this.monsterDatabase ||
-      (this.monsterManager ? this.monsterManager.loadDatabase() : null);
+//     // Get direct access to database if possible
+//     const monsterDatabase = this.monsterDatabase ||
+//       (this.monsterManager ? this.monsterManager.loadDatabase() : null);
       
-    if (monsterDatabase && monsterDatabase.monsters) {
-      console.log(`Found ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
+//     if (monsterDatabase && monsterDatabase.monsters) {
+//       console.log(`Found ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
       
-      // Process all monsters in the database
-      Object.values(monsterDatabase.monsters).forEach(monster => {
-        try {
-          // Check CR value for eligibility (CR <= 1/2)
-          const cr = monster.basic?.cr || '0';
-          const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
+//       // Process all monsters in the database
+//       Object.values(monsterDatabase.monsters).forEach(monster => {
+//         try {
+//           // Check CR value for eligibility (CR <= 1/2)
+//           const cr = monster.basic?.cr || '0';
+//           const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
           
-          if (isEligible) {
-            eligibleMonsters.push(this.formatMonsterForParty(monster));
-          }
-        } catch (error) {
-          console.error("Error processing monster:", error);
-        }
-      });
-    } else if (this.resourceManager?.resources?.bestiary?.size > 0) {
-      // Try ResourceManager's bestiary
-      console.log(`Checking ${this.resourceManager.resources.bestiary.size} monsters in ResourceManager`);
+//           if (isEligible) {
+//             eligibleMonsters.push(this.formatMonsterForParty(monster));
+//           }
+//         } catch (error) {
+//           console.error("Error processing monster:", error);
+//         }
+//       });
+//     } else if (this.resourceManager?.resources?.bestiary?.size > 0) {
+//       // Try ResourceManager's bestiary
+//       console.log(`Checking ${this.resourceManager.resources.bestiary.size} monsters in ResourceManager`);
       
-      this.resourceManager.resources.bestiary.forEach(monster => {
-        try {
-          // Calculate XP from CR if needed
-          const cr = monster.basic?.cr || monster.cr || '0';
-          const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
+//       this.resourceManager.resources.bestiary.forEach(monster => {
+//         try {
+//           // Calculate XP from CR if needed
+//           const cr = monster.basic?.cr || monster.cr || '0';
+//           const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
           
-          if (isEligible) {
-            eligibleMonsters.push(this.formatMonsterForParty(monster));
-          }
-        } catch (error) {
-          console.error("Error processing monster:", error);
-        }
-      });
-    }
+//           if (isEligible) {
+//             eligibleMonsters.push(this.formatMonsterForParty(monster));
+//           }
+//         } catch (error) {
+//           console.error("Error processing monster:", error);
+//         }
+//       });
+//     }
     
-    console.log(`Found ${eligibleMonsters.length} eligible low-CR monsters`);
+//     console.log(`Found ${eligibleMonsters.length} eligible low-CR monsters`);
     
-    // Step 2: Group monsters by type for diversity
-    if (eligibleMonsters.length < count) {
-      console.warn(`Not enough eligible monsters (only ${eligibleMonsters.length})`);
-      return eligibleMonsters; // Return all we have if fewer than requested
-    }
+//     // Step 2: Group monsters by type for diversity
+//     if (eligibleMonsters.length < count) {
+//       console.warn(`Not enough eligible monsters (only ${eligibleMonsters.length})`);
+//       return eligibleMonsters; // Return all we have if fewer than requested
+//     }
     
-    // Group by type
-    const monstersByType = {};
-    eligibleMonsters.forEach(monster => {
-      const type = monster.type || monster.basic?.type || 
-                 (monster.data?.basic?.type) || "Unknown";
+//     // Group by type
+//     const monstersByType = {};
+//     eligibleMonsters.forEach(monster => {
+//       const type = monster.type || monster.basic?.type || 
+//                  (monster.data?.basic?.type) || "Unknown";
       
-      if (!monstersByType[type]) {
-        monstersByType[type] = [];
-      }
-      monstersByType[type].push(monster);
-    });
+//       if (!monstersByType[type]) {
+//         monstersByType[type] = [];
+//       }
+//       monstersByType[type].push(monster);
+//     });
     
-    const availableTypes = Object.keys(monstersByType);
-    console.log(`Found ${availableTypes.length} different monster types: ${availableTypes.join(', ')}`);
+//     const availableTypes = Object.keys(monstersByType);
+//     console.log(`Found ${availableTypes.length} different monster types: ${availableTypes.join(', ')}`);
     
-    // Step 3: Select diverse monsters if possible
-    if (availableTypes.length >= count) {
-      // Shuffle types
-      const shuffledTypes = [...availableTypes].sort(() => 0.5 - Math.random());
-      const selectedTypes = shuffledTypes.slice(0, count);
+//     // Step 3: Select diverse monsters if possible
+//     if (availableTypes.length >= count) {
+//       // Shuffle types
+//       const shuffledTypes = [...availableTypes].sort(() => 0.5 - Math.random());
+//       const selectedTypes = shuffledTypes.slice(0, count);
       
-      // Get one random monster from each selected type
-      const result = selectedTypes.map(type => {
-        const monstersOfType = monstersByType[type];
-        const randomIndex = Math.floor(Math.random() * monstersOfType.length);
-        return monstersOfType[randomIndex];
-      });
+//       // Get one random monster from each selected type
+//       const result = selectedTypes.map(type => {
+//         const monstersOfType = monstersByType[type];
+//         const randomIndex = Math.floor(Math.random() * monstersOfType.length);
+//         return monstersOfType[randomIndex];
+//       });
       
-      console.log(`Selected ${result.length} monsters of different types: ${selectedTypes.join(', ')}`);
-      return result;
-    }
+//       console.log(`Selected ${result.length} monsters of different types: ${selectedTypes.join(', ')}`);
+//       return result;
+//     }
     
-    // Step 4: Fall back to random selection if not enough types
-    console.log(`Not enough different types, using random selection`);
-    const shuffled = [...eligibleMonsters].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, Math.min(count, shuffled.length));
+//     // Step 4: Fall back to random selection if not enough types
+//     console.log(`Not enough different types, using random selection`);
+//     const shuffled = [...eligibleMonsters].sort(() => 0.5 - Math.random());
+//     return shuffled.slice(0, Math.min(count, shuffled.length));
     
-  } catch (error) {
-    console.error("Error getting starter monsters:", error);
-    // Return empty array if everything fails
-    return [];
+//   } catch (error) {
+//     console.error("Error getting starter monsters:", error);
+//     // Return empty array if everything fails
+//     return [];
+//   }
+// }
+
+// Update the getStarterMonsters method to use the database
+// Add this method to PartyManager to get starters from ResourceManager's bestiary
+
+
+// Add helper method to parse CR values (same as in CombatSystem)
+parseCR(crValue) {
+  if (typeof crValue === 'number') return crValue;
+  
+  if (typeof crValue === 'string' && crValue.includes('/')) {
+    const parts = crValue.split('/');
+    return parseInt(parts[0]) / parseInt(parts[1]);
   }
+  
+  return parseFloat(crValue) || 0;
 }
+
+
 
 // Helper to format monster for party
   formatMonsterForParty(monster) {

@@ -1564,29 +1564,7 @@ class CombatSystem {
 
     // Setup player party
     this.playerParty = [...this.partyManager.party.active];
-    // console.log(`Player party: ${this.playerParty.length} monsters`);
-    // console.log(
-    //   "Player names:",
-    //   this.playerParty.map((p) => p.name).join(", ")
-    // );
 
-//     console.log("=== COMBAT PARTY DEBUG ===");
-// this.playerParty.forEach(monster => {
-//   console.log(`Monster: ${monster.name}, Type: ${monster.type}, Normalized Type: ${this.getNormalizedType(monster.type)}`);
-// });
-// console.log("=========================");
-
-// console.log("Available Combo Keys:", Object.keys(this.comboAbilities).join(", "));
-
-    // Handle enemy setup
-    // console.log(
-    //   "Enemy parameter type:",
-    //   enemies
-    //     ? Array.isArray(enemies)
-    //       ? "Array"
-    //       : typeof enemies
-    //     : "undefined"
-    // );
 
     if (Array.isArray(enemies) && enemies.length > 0) {
       // console.log(`Using provided enemy list: ${enemies.length} enemies`);
@@ -1621,20 +1599,9 @@ class CombatSystem {
       }
     }
 
-    // console.log(`Final enemy party: ${this.enemyParty.length} monsters`);
-    // console.log("Enemy names:", this.enemyParty.map((e) => e.name).join(", "));
 
-    // Roll initiative
     this.rollInitiative();
-    // console.log(
-    //   "Initiative order:",
-    //   this.initiativeOrder
-    //     .map((c) => `${c.monster.name} (${c.initiative})`)
-    //     .join(", ")
-    // );
 
-    // Show combat UI
-    // console.log("Showing combat interface");
     this.showCombatInterface();
     // console.log("========== COMBAT INITIALIZATION COMPLETE ==========");
 
@@ -2674,50 +2641,170 @@ renderActionBar(monster) {
     return false;
   }
 
-  // Process enemy's turn with AI
-  processEnemyTurn() {
-    // Small delay for better UX
+processEnemyTurn() {
+    const currentCombatant = this.initiativeOrder[this.currentTurn];
+    if (!currentCombatant || currentCombatant.side !== "enemy") return;
+  
+    const monster = currentCombatant.monster;
+    
+    // Add a small delay for better UX
     setTimeout(() => {
-      const currentCombatant = this.initiativeOrder[this.currentTurn];
-      if (!currentCombatant || currentCombatant.side !== "enemy") return;
-
-      const monster = currentCombatant.monster;
-
-      // Simple AI: select random ability and random target
+      console.log(`Processing turn for enemy ${monster.name}`);
+      
+      // Choose a target (usually the player with the lowest HP)
+      const validTargets = this.playerParty.filter(p => p.currentHP > 0);
+      
+      if (validTargets.length === 0) {
+        this.addLogEntry(`${monster.name} has no valid targets!`);
+        this.nextTurn();
+        return;
+      }
+      
+      // Sort by current HP and get first (lowest HP)
+      const target = validTargets.sort((a, b) => a.currentHP - b.currentHP)[0];
+      
+      // Visual indicator of targeting
+      const targetCard = document.querySelector(`[data-monster-id="${target.id}"]`);
+      if (targetCard) {
+        targetCard.classList.add('auto-targeted');
+        setTimeout(() => {
+          targetCard.classList.remove('auto-targeted');
+        }, 800);
+      }
+      
+      // -------------------------------------------------------------------------
+      // ATTACK LOGIC PRIORITY:
+      // 1. First check if monster has parsed actions from 5e.tools
+      // 2. If not, fall back to monsterAbilities from the original system
+      // 3. If neither exists, use basic attack
+      // -------------------------------------------------------------------------
+      
+      // OPTION 1: Check if monster has parsed actions from 5e.tools
+      if (monster.data?.actions && Array.isArray(monster.data.actions) && monster.data.actions.length > 0) {
+        // Filter for actions that have attack bonus and damage
+        const attackActions = monster.data.actions.filter(a => 
+          a.attackBonus !== undefined && a.damageDice);
+        
+        if (attackActions.length > 0) {
+          // Pick a random attack action
+          const action = attackActions[Math.floor(Math.random() * attackActions.length)];
+          
+          // Roll attack
+          const attackRoll = this.rollDice(20);
+          const attackTotal = attackRoll + action.attackBonus;
+          const isCritical = attackRoll === 20;
+          const isHit = isCritical || attackTotal >= target.stats.ac;
+          
+          if (isHit) {
+            // Parse damage dice (e.g., "1d6 + 4")
+            const damageParts = action.damageDice.match(/(\d+)d(\d+)\s*([+-])\s*(\d+)/);
+            let damageAmount = 0;
+            
+            if (damageParts) {
+              const [_, diceCount, diceSides, op, bonus] = damageParts;
+              // Roll dice and add/subtract bonus
+              let diceTotal = 0;
+              for (let i = 0; i < parseInt(diceCount); i++) {
+                diceTotal += this.rollDice(parseInt(diceSides));
+              }
+              
+              // Calculate final damage
+              damageAmount = op === '+' 
+                ? diceTotal + parseInt(bonus)
+                : diceTotal - parseInt(bonus);
+            } else {
+              // Try alternative format (just "1d6" without modifier)
+              const simpleDie = action.damageDice.match(/(\d+)d(\d+)/);
+              if (simpleDie) {
+                const [_, diceCount, diceSides] = simpleDie;
+                for (let i = 0; i < parseInt(diceCount); i++) {
+                  damageAmount += this.rollDice(parseInt(diceSides));
+                }
+              } else {
+                // Fallback: just use a basic roll if we can't parse the dice
+                damageAmount = this.rollDice(6) + 2;
+              }
+            }
+            
+            // Apply critical hit damage if needed
+            if (isCritical) {
+              damageAmount = Math.floor(damageAmount * 1.5);
+            }
+            
+            // Apply damage to target
+            this.applyDamage(target, damageAmount, monster, isCritical);
+            
+            // Add entry to combat log
+            this.addVisualLogEntry({
+              type: 'action',
+              attacker: monster,
+              target: target,
+              action: action.name,
+              result: {
+                hit: true,
+                critical: isCritical,
+                damage: damageAmount,
+                damageType: action.damageType || 'damage'
+              }
+            });
+          } else {
+            // Attack missed
+            this.addVisualLogEntry({
+              type: 'action',
+              attacker: monster,
+              target: target,
+              action: action.name,
+              result: {
+                hit: false,
+                roll: attackTotal,
+                ac: target.stats.ac
+              }
+            });
+          }
+          
+          // Move to next turn after a delay
+          setTimeout(() => {
+            this.nextTurn();
+          }, 1500);
+          return;
+        }
+      }
+      
+      // OPTION 2: Fallback to using monsterAbilities if no parsed actions available
       if (monster.monsterAbilities && monster.monsterAbilities.length > 0) {
+        console.log(`Using legacy ability system for ${monster.name} with ${monster.monsterAbilities.length} abilities`);
+        
         // Choose random ability
         const randomAbilityIndex = Math.floor(
           Math.random() * monster.monsterAbilities.length
         );
         const ability = monster.monsterAbilities[randomAbilityIndex];
-
-        // Find valid targets (non-defeated player monsters)
-        const validTargets = this.playerParty.filter((m) => m.currentHP > 0);
-
-        if (validTargets.length > 0) {
-          // Select random target
-          const randomTargetIndex = Math.floor(
-            Math.random() * validTargets.length
-          );
-          const target = validTargets[randomTargetIndex];
-
-          // Use ability
-          this.resolveAbility(monster, ability, target);
-        } else {
-          this.addLogEntry(`${monster.name} has no valid targets.`);
-        }
-      } else {
-        this.addLogEntry(
-          `${monster.name} has no abilities and skips their turn.`
-        );
+        
+        // Use ability on target
+        this.resolveAbility(monster, ability, target);
+        
+        // Log the ability use
+        this.addLogEntry(`${monster.name} uses ${ability.name} on ${target.name}.`);
+        
+        // Move to next turn after a delay
+        setTimeout(() => {
+          this.nextTurn();
+        }, 1500);
+        return;
       }
-
+      
+      // OPTION 3: Basic attack if no abilities found at all
+      const damage = Math.floor(Math.random() * 6) + 1;
+      this.applyDamage(target, damage, monster);
+      
+      this.addLogEntry(`${monster.name} attacks ${target.name} for ${damage} damage.`);
+      
       // Move to next turn
-      this.nextTurn();
+      setTimeout(() => {
+        this.nextTurn();
+      }, 1500);
     }, 1000);
   }
-
-  // Move to next turn - Fixed to skip defeated monsters
 
   nextTurn() {
     // Move to next combatant
@@ -4910,6 +4997,8 @@ formatComboId(comboInfo) {
       }
       // More combinations can be added
     };
+
+    
     
 //     console.log("Combo abilities system initialized");
 //     // Add at the end of initializeComboSystem method
@@ -4923,6 +5012,101 @@ formatComboId(comboInfo) {
 // console.log("Reverse order test:", this.comboAbilities["Fiend-Undead"]);
 // console.log("========================");
   }
+
+// Helper to convert a monster from the database to combat format
+convertMonsterToCombatFormat(monster) {
+  // Create a deep copy to avoid modifying the original
+  const combatMonster = {
+    id: monster.id || `monster_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    name: monster.basic.name,
+    type: monster.basic.type || "unknown",
+    cr: monster.basic.cr,
+    size: monster.basic.size || "medium",
+    maxHP: monster.stats.hp.average || 10,
+    currentHP: monster.stats.hp.average || 10,
+    ac: monster.stats.ac || 10,
+    token: monster.token || null,
+    actions: Array.isArray(monster.actions) ? monster.actions.slice() : [],
+    abilities: { ...monster.abilities },
+    initiative: monster.abilities?.dex?.modifier || 0,
+    resistances: monster.traits?.resistances || [],
+    immunities: monster.traits?.immunities || [],
+    weaknesses: monster.traits?.weaknesses || [],
+    stats: { ...monster.stats },
+    originalData: monster  // Store reference to original data
+  };
+  
+  return combatMonster;
+}
+
+// Add this method to the CombatSystem class
+generateDefaultEnemies(count = 3, options = {}) {
+  console.log("Getting monsters from database for combat...");
+  const enemies = [];
+  
+  try {
+    // Get access to the bestiary via ResourceManager
+    const resourceManager = window.resourceManager || this.mapEditor?.resourceManager;
+    
+    if (!resourceManager?.resources?.bestiary || resourceManager.resources.bestiary.size === 0) {
+      console.error("No monsters found in bestiary");
+      return [];
+    }
+    
+    // Convert the Map to an array so we can filter and select randomly
+    const allMonsters = Array.from(resourceManager.resources.bestiary.values());
+    console.log(`Found ${allMonsters.length} monsters in bestiary`);
+    
+    // Filter by CR if options are provided
+    let availableMonsters = allMonsters;
+    if (options.minCR !== undefined || options.maxCR !== undefined) {
+      const minCR = this.parseCR(options.minCR || 0);
+      const maxCR = this.parseCR(options.maxCR || 30);
+      
+      availableMonsters = allMonsters.filter(monster => {
+        const cr = this.parseCR(monster.cr);
+        return cr >= minCR && cr <= maxCR;
+      });
+      
+      console.log(`Filtered to ${availableMonsters.length} monsters within CR range ${minCR}-${maxCR}`);
+    }
+    
+    // Select random monsters
+    for (let i = 0; i < count; i++) {
+      if (availableMonsters.length === 0) break;
+      
+      const randomIndex = Math.floor(Math.random() * availableMonsters.length);
+      const selectedMonster = availableMonsters[randomIndex].data;
+      
+      // Remove the selected monster from the pool to avoid duplicates
+      availableMonsters.splice(randomIndex, 1);
+      
+      // Convert to combat format
+      const enemy = this.convertMonsterToCombatFormat(selectedMonster);
+      enemies.push(enemy);
+    }
+    
+    console.log(`Selected ${enemies.length} random monsters for combat`);
+    return enemies;
+  } catch (error) {
+    console.error("Error generating monsters for combat:", error);
+    return [];
+  }
+}
+
+// Helper method to parse CR values (including fractions like "1/4")
+parseCR(crValue) {
+  if (typeof crValue === 'number') return crValue;
+  
+  // Handle fractional CR values like "1/4"
+  if (typeof crValue === 'string' && crValue.includes('/')) {
+    const parts = crValue.split('/');
+    return parseInt(parts[0]) / parseInt(parts[1]);
+  }
+  
+  return parseFloat(crValue) || 0;
+}
+
 
   // Add this function to extract base type without size prefix
 getNormalizedType(typeString) {
@@ -5146,6 +5330,7 @@ refreshComboCache() {
     }, 3000);
   }
 
+
 useComboAbility(comboId, activeMonster) {
   console.log(`Processing combo ability: ${comboId}`);
   
@@ -5174,16 +5359,9 @@ useComboAbility(comboId, activeMonster) {
         // Monster 1 is the partner
         partnerMonster = this.playerParty.find(m => m.id === monster1Id);
       } else {
-        // If active monster doesn't match either ID, try to find both monsters
-        const monster1 = this.playerParty.find(m => m.id === monster1Id);
-        const monster2 = this.playerParty.find(m => m.id === monster2Id);
-        
-        // Use whichever one isn't the active monster
-        if (monster1 && monster1.id !== activeMonster.id) {
-          partnerMonster = monster1;
-        } else if (monster2 && monster2.id !== activeMonster.id) {
-          partnerMonster = monster2;
-        }
+        // Neither monster matches the active monster - error case
+        console.error(`Active monster (${activeMonster.id}) is not part of the combo (${monster1Id}, ${monster2Id})`);
+        return false;
       }
       
       if (!partnerMonster) {
@@ -5212,17 +5390,17 @@ useComboAbility(comboId, activeMonster) {
       // Process based on combo type
       switch (combo.type) {
         case 'attack':
-          // Show target selection for attack combos
+          // Single target attack combo
           this.showComboTargetSelection(activeMonster, partnerMonster, combo);
           return true;
         
         case 'area':
-          // Area combos affect all enemies
+          // Area effect combo that hits all enemies
           this.resolveComboAreaAbility(activeMonster, partnerMonster, combo);
           return true;
         
         case 'buff':
-          // Buff combos affect all allies
+          // Buff/healing combo that affects allies
           this.resolveComboBuffAbility(activeMonster, partnerMonster, combo);
           return true;
         
@@ -5232,6 +5410,16 @@ useComboAbility(comboId, activeMonster) {
           return true;
       }
     }
+  }
+  
+  // Also support the simpler combo id format if needed
+  const simpleParts = comboId.split('_');
+  if (simpleParts.length === 3 && simpleParts[0] === 'combo') {
+    const monster1Id = simpleParts[1];
+    const monster2Id = simpleParts[2];
+    
+    // Recursively call with the properly formatted ID 
+    return this.useComboAbility(`combo_monster_${monster1Id}_monster_${monster2Id}`, activeMonster);
   }
   
   // If we get here, something went wrong with the parsing
@@ -5454,7 +5642,8 @@ useComboAbility(comboId, activeMonster) {
     this.updateCombatDisplay();
   }
   
-  // Show a special animation when a combo ability is used
+
+    // Fix the removeElement functionality that was truncated
   showComboAnimation(monster1, monster2, combo) {
     console.log(`Showing combo animation for ${combo.name}`);
     
@@ -5489,7 +5678,7 @@ useComboAbility(comboId, activeMonster) {
       transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
     `;
     
-    // Create animation content
+    // Create animation content with flashy effect
     animation.innerHTML = `
       <div class="combo-flash" style="
         position: absolute;
@@ -5605,11 +5794,14 @@ useComboAbility(comboId, activeMonster) {
       
       // Remove after animation completes
       setTimeout(() => {
-        animation.style.transform = 'scale(1.1)';
         animation.style.opacity = '0';
+        animation.style.transform = 'scale(0.9)';
         
+        // Remove from DOM after fade out
         setTimeout(() => {
-          animationOverlay.remove();
+          if (animationOverlay.parentNode) {
+            animationOverlay.parentNode.removeChild(animationOverlay);
+          }
         }, 500);
       }, 2500);
     }, 100);
