@@ -1562,6 +1562,8 @@ class CombatSystem {
     // Set combat state
     this.inCombat = true;
 
+    this.initCombatUI();
+
     // Setup player party
     this.playerParty = [...this.partyManager.party.active];
 
@@ -4077,8 +4079,36 @@ formatComboId(comboInfo) {
   }
   
 
+  
+
   // Add entry to combat log
   addLogEntry(message, isRoundHeader = false) {
+
+    if (!this.combatLog) {
+      // Create combat log if it doesn't exist yet
+      this.createCombatLog();
+    }
+    
+    // If dialog container is still null, create a temporary one
+    if (!this.dialogContainer) {
+      console.warn("CombatSystem: dialogContainer not initialized, creating temporary container");
+      this.dialogContainer = document.createElement('div');
+      this.dialogContainer.id = 'combat-dialog-container';
+      this.dialogContainer.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 20px;
+        max-width: 300px;
+        z-index: 1000;
+      `;
+      document.body.appendChild(this.dialogContainer);
+    }
+    
+    if (!this.combatLog) {
+      console.warn("CombatSystem: Failed to create combat log, cannot add entry:", message);
+      return;
+    }
+
     // Get log container
     const logEntries = this.dialogContainer.querySelector(".log-entries");
     if (!logEntries) return;
@@ -5885,5 +5915,144 @@ addCombatAnimations() {
     }
   };
 }
+
+// Add these methods to the CombatSystem class
+
+// Method to initialize combat UI elements
+initCombatUI() {
+  console.log("Initializing combat UI elements");
+  
+  // Create dialog container if it doesn't exist
+  if (!this.dialogContainer) {
+    this.dialogContainer = document.createElement('div');
+    this.dialogContainer.id = 'combat-dialog-container';
+    this.dialogContainer.className = 'combat-dialog-container';
+    this.dialogContainer.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      left: 20px;
+      max-width: 300px;
+      z-index: 1000;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    `;
+    document.body.appendChild(this.dialogContainer);
+    console.log("CombatSystem: Created dialog container");
+  }
+  
+  // Instead of calling createCombatLog, initialize it here
+  if (!this.combatLog) {
+    this.combatLog = document.createElement('div');
+    this.combatLog.className = 'combat-log';
+    this.combatLog.style.cssText = `
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      color: white;
+    `;
+    
+    // Add a header
+    const header = document.createElement('div');
+    header.innerHTML = `
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-weight: bold;">Combat Log</span>
+        <span class="material-icons" style="font-size: 16px; cursor: pointer;" title="Clear log">clear</span>
+      </div>
+      <div class="log-entries"></div>
+    `;
+    
+    this.combatLog.appendChild(header);
+    
+    // Add click handler for clear button
+    header.querySelector('.material-icons').addEventListener('click', () => {
+      const entries = this.combatLog.querySelector('.log-entries');
+      if (entries) {
+        entries.innerHTML = '';
+      }
+    });
+    
+    // Only add the log to the container if we're actually in combat
+    if (this.inCombat) {
+      this.dialogContainer.appendChild(this.combatLog);
+    }
+    
+    console.log("CombatSystem: Created combat log");
+  }
+}
+
+// Method to add entries to the combat log
+// addLogEntry(message, type = 'info', animate = true) {
+//   // Make sure we have a combatLog element
+//   if (!this.combatLog) {
+//     console.warn("Cannot add log entry - combat log not initialized");
+//     return;
+//   }
+  
+//   // Make sure the log is in the DOM
+//   if (this.combatLog.parentElement !== this.dialogContainer && this.dialogContainer) {
+//     this.dialogContainer.appendChild(this.combatLog);
+//   }
+  
+//   // Find the log entries container
+//   const logEntries = this.combatLog.querySelector('.log-entries');
+//   if (!logEntries) {
+//     console.warn("Cannot add log entry - log entries container not found");
+//     return;
+//   }
+  
+//   // Create and add the new entry
+//   const entry = document.createElement('div');
+//   entry.className = `log-entry log-${type}`;
+//   entry.style.cssText = `
+//     margin-bottom: 4px;
+//     padding: 4px 0;
+//     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+//     opacity: ${animate ? '0' : '1'};
+//     transform: ${animate ? 'translateY(10px)' : 'none'};
+//     transition: opacity 0.3s ease, transform 0.3s ease;
+//   `;
+  
+//   // Set icon based on type
+//   let icon = 'info';
+//   switch(type) {
+//     case 'damage': icon = 'local_fire_department'; break;
+//     case 'heal': icon = 'favorite'; break;
+//     case 'buff': icon = 'arrow_upward'; break;
+//     case 'debuff': icon = 'arrow_downward'; break;
+//     case 'success': icon = 'check_circle'; break;
+//     case 'error': icon = 'error'; break;
+//   }
+  
+//   entry.innerHTML = `
+//     <div style="display: flex; align-items: center;">
+//       <span class="material-icons" style="font-size: 14px; margin-right: 6px;">${icon}</span>
+//       <span>${message}</span>
+//     </div>
+//   `;
+  
+//   logEntries.appendChild(entry);
+  
+//   // Animate in
+//   if (animate) {
+//     setTimeout(() => {
+//       entry.style.opacity = '1';
+//       entry.style.transform = 'none';
+//     }, 10);
+//   }
+  
+//   // Scroll to bottom
+//   logEntries.scrollTop = logEntries.scrollHeight;
+  
+//   // Limit entries to prevent too many
+//   const entries = logEntries.children;
+//   if (entries.length > 50) {
+//     logEntries.removeChild(entries[0]);
+//   }
+// }
 
 }
