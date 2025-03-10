@@ -59,6 +59,20 @@ class MonsterManager {
     }
   }
 
+    // Add this method to MonsterManager if it's not already there
+  loadFromLocalStorage() {
+    try {
+      const data = localStorage.getItem("monsterDatabase");
+      if (data) {
+        return JSON.parse(data);
+      }
+      return { monsters: {} };
+    } catch (err) {
+      console.warn("MonsterManager: Error loading from localStorage:", err);
+      return { monsters: {} };
+    }
+  }
+
   loadDatabase() {
     try {
       const data = localStorage.getItem("monsterDatabase");
@@ -71,62 +85,115 @@ class MonsterManager {
     return { monsters: {} };
   }
 
-  async saveMonsterToDatabase(monsterData) {
+
+
+async saveMonsterToDatabase(monsterData) {
+  if (!monsterData || !monsterData.id) {
+    console.error("Cannot save monster: Invalid data or missing ID");
+    return false;
+  }
+  
+  console.log(`MonsterManager: Saving monster ${monsterData.id} to database`);
+  
+  // Try to save to IndexedDB first
+  let savedToIndexedDB = false;
+  if (this.db) {
     try {
-      // Wait for database initialization if needed
-      if (!this.db && !this.useLocalStorage) {
-        await this.dbInitPromise;
-      }
-      
-      // First, check storage usage
-      const storageEstimate = await this.getStorageUsage();
-      
-      // If we're close to the limit (>80% used), compress tokens more aggressively
-      let compressionQuality = 0.7; // default quality
-      if (storageEstimate.percentUsed > 80) {
-        compressionQuality = 0.5; // more aggressive compression
-        console.warn(`Storage usage high (${storageEstimate.percentUsed.toFixed(1)}%), using higher compression`);
-      }
-      
-      // Compress token if present
-      if (monsterData.token && monsterData.token.data && monsterData.token.data.startsWith('data:')) {
-        monsterData.token.data = await this.compressTokenImage(monsterData.token.data, compressionQuality);
-      }
+      const tx = this.db.transaction(['monsters'], 'readwrite');
+      const store = tx.objectStore('monsters');
+      await store.put(monsterData);
+      await tx.complete;
+      console.log(`MonsterManager: Successfully saved ${monsterData.id} to IndexedDB`);
+      savedToIndexedDB = true;
+    } catch (err) {
+      console.warn(`MonsterManager: Failed to save to IndexedDB, falling back to localStorage:`, err);
+      // Will fall back to localStorage below
+    }
+  } else {
+    console.warn("MonsterManager: No IndexedDB connection, falling back to localStorage");
+  }
+  
+  // Always save to localStorage as a backup
+  try {
+    let storage = this.loadFromLocalStorage() || { monsters: {} };
+    storage.monsters[monsterData.id] = monsterData;
+    localStorage.setItem('monsterDatabase', JSON.stringify(storage));
+    console.log(`MonsterManager: Saved ${monsterData.id} to localStorage`);
+    return true;
+  } catch (err) {
+    console.error("MonsterManager: Failed to save to localStorage:", err);
+    // If we saved to IndexedDB, return success even if localStorage fails
+    return savedToIndexedDB;
+  }
+}
 
-      // Generate ID if not exists
-      if (!monsterData.id) {
-        monsterData.id = monsterData.basic?.name?.toLowerCase().replace(/\s+/g, "_") || 
-                         `monster_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      }
-
-      // If IndexedDB isn't available or initialized, use localStorage
-      if (this.useLocalStorage || !this.db) {
-        const key = monsterData.id;
-        this.monsterDatabase.monsters[key] = monsterData;
-        localStorage.setItem("monsterDatabase", JSON.stringify(this.monsterDatabase));
-        return monsterData;
-      }
+// Add this method to MonsterManager - The key missing piece
+async loadAllMonsters() {
+  console.log("MonsterManager: Loading all monsters...");
+  
+  // Track where monsters came from for debugging
+  let source = "none";
+  let monsters = [];
+  
+  // Try IndexedDB first
+  if (this.db) {
+    try {
+      console.log("MonsterManager: Attempting to load from IndexedDB");
+      const tx = this.db.transaction(['monsters'], 'readonly');
+      const store = tx.objectStore('monsters');
       
-      // Otherwise use IndexedDB
-      try {
-        const tx = this.db.transaction(['monsters'], 'readwrite');
-        const store = tx.objectStore('monsters');
-        await store.put(monsterData);
-        return monsterData;
-      } catch (error) {
-        // If we're getting a quota error, try emergency measures
-        if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
-          return await this.handleQuotaExceeded(monsterData);
-        }
-        // Fall back to localStorage if IndexedDB fails for other reasons
-        this.useLocalStorage = true;
-        return this.saveMonsterToDatabase(monsterData);
-      }
-    } catch (error) {
-      console.error('Error saving monster to database:', error);
-      throw error;
+      // Use promise to handle async operation properly
+      monsters = await new Promise((resolve, reject) => {
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = (event) => reject(event.target.error);
+      });
+      
+      source = "IndexedDB";
+      console.log(`MonsterManager: Successfully loaded ${monsters.length} monsters from IndexedDB`);
+    } catch (err) {
+      console.warn("MonsterManager: IndexedDB access failed:", err);
     }
   }
+  
+  // If IndexedDB returned no monsters, try localStorage
+  if (monsters.length === 0) {
+    console.log("MonsterManager: Attempting to load from localStorage");
+    const data = this.loadFromLocalStorage();
+    
+    if (data && data.monsters) {
+      monsters = Object.values(data.monsters);
+      source = "localStorage";
+      console.log(`MonsterManager: Successfully loaded ${monsters.length} monsters from localStorage`);
+    } else {
+      console.warn("MonsterManager: No monsters found in localStorage");
+    }
+  }
+  
+  console.log(`MonsterManager: Returning ${monsters.length} monsters from ${source}`);
+  return { monsters, source };
+}
+
+// Improve loadFromLocalStorage to provide more debug info
+loadFromLocalStorage() {
+  try {
+    console.log("MonsterManager: Reading from localStorage...");
+    const data = localStorage.getItem('monsterDatabase');
+    
+    if (data) {
+      const parsed = JSON.parse(data);
+      const monsterCount = parsed?.monsters ? Object.keys(parsed.monsters).length : 0;
+      console.log(`MonsterManager: Found ${monsterCount} monsters in localStorage`);
+      return parsed;
+    }
+    
+    console.log("MonsterManager: No 'monsterDatabase' entry in localStorage");
+    return { monsters: {} };
+  } catch (err) {
+    console.warn("MonsterManager: Error loading from localStorage:", err);
+    return { monsters: {} };
+  }
+}
 
     // Delete monster from both IndexedDB and localStorage for consistency
     async deleteMonster(monsterId) {

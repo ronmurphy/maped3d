@@ -4,28 +4,94 @@
  * Handles monster recruitment, party management, and monster progression
  */
 class PartyManager {
-  constructor(resourceManager, monsterManager) {
+  // constructor(resourceManager, monsterManager) {
+  //   console.log("PartyManager constructor called");
+
+  //   // Store direct references
+  //   this.resourceManager = resourceManager;
+
+  //   // Try multiple paths to get MonsterManager
+  //   this.monsterManager = new MonsterManager(this) ||
+  //     (resourceManager ? resourceManager.monsterManager : null) ||
+  //     window.monsterManager;
+
+  //   console.log("Initial connections:", {
+  //     hasResourceManager: !!this.resourceManager,
+  //     hasMonsterManager: !!this.monsterManager
+  //   });
+
+  //   // Direct access to database if possible
+  //   if (this.monsterManager) {
+  //     this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
+  //     console.log("Access to monster database:", !!this.monsterDatabase);
+  //   }
+
+  //   // Initialize player party data
+  //   this.party = {
+  //     active: [],         // Currently active monsters (max 4-6)
+  //     reserve: [],        // Inactive recruited monsters
+  //     maxActive: 4,       // Starting limit for active party
+  //     maxTotal: 20        // Maximum total monsters that can be recruited
+  //   };
+
+  //   // Initialize inventory for equipment
+  //   this.inventory = {
+  //     weapons: [],
+  //     armor: [],
+  //     misc: []
+  //   };
+
+  //   this.recruitmentAttempts = {
+  //     currentCount: 0,
+  //     maxAttempts: 3,
+  //     currentMarker: null,
+  //     currentMonster: null
+  //   };
+
+  //   // Variables for UI elements
+  //   this.partyDialog = null;
+  //   this.activeTab = 'active';
+  //   this.starterCheckPerformed = false;
+  //   this.initializeRelationshipSystem();
+  //   this.initializeComboSystem();
+
+
+
+  //   // Try to connect to Scene3DController
+  //     let connectionAttempts = 0;
+  //     const tryConnect = () => {
+  //       connectionAttempts++;
+  //       console.log(`Connection attempt ${connectionAttempts} to Scene3DController`);
+        
+  //       if (this.connectToSceneInventory()) {
+  //         console.log('Successfully connected to Scene3DController');
+  //       } else if (connectionAttempts < 5) {
+  //         console.log(`Connection failed, retrying in ${connectionAttempts * 500}ms...`);
+  //         setTimeout(tryConnect, connectionAttempts * 500);
+  //       } else {
+  //         console.warn('Failed to connect to Scene3DController after multiple attempts');
+  //       }
+  //     };
+      
+  //     // Start connection attempts
+  //     setTimeout(tryConnect, 1000);
+
+
+  //   console.log('Party Manager initialized');
+  // }
+
+    constructor(resourceManager, monsterManager) {
     console.log("PartyManager constructor called");
-
-    // Store direct references
+  
+    // Store direct references but don't try to create/initialize anything yet
     this.resourceManager = resourceManager;
-
-    // Try multiple paths to get MonsterManager
-    this.monsterManager = new MonsterManager(this) ||
-      (resourceManager ? resourceManager.monsterManager : null) ||
-      window.monsterManager;
-
+    this.monsterManager = monsterManager || (resourceManager?.monsterManager);
+  
     console.log("Initial connections:", {
       hasResourceManager: !!this.resourceManager,
       hasMonsterManager: !!this.monsterManager
     });
-
-    // Direct access to database if possible
-    if (this.monsterManager) {
-      this.monsterDatabase = this.monsterManager.monsterDatabase || this.monsterManager.loadDatabase();
-      console.log("Access to monster database:", !!this.monsterDatabase);
-    }
-
+    
     // Initialize player party data
     this.party = {
       active: [],         // Currently active monsters (max 4-6)
@@ -33,51 +99,89 @@ class PartyManager {
       maxActive: 4,       // Starting limit for active party
       maxTotal: 20        // Maximum total monsters that can be recruited
     };
-
+  
     // Initialize inventory for equipment
     this.inventory = {
       weapons: [],
       armor: [],
       misc: []
     };
-
+  
     this.recruitmentAttempts = {
       currentCount: 0,
       maxAttempts: 3,
       currentMarker: null,
       currentMonster: null
     };
-
+  
     // Variables for UI elements
     this.partyDialog = null;
     this.activeTab = 'active';
     this.starterCheckPerformed = false;
+    
+    // Initialize systems
     this.initializeRelationshipSystem();
     this.initializeComboSystem();
-
-
-
-    // Try to connect to Scene3DController
-      let connectionAttempts = 0;
-      const tryConnect = () => {
-        connectionAttempts++;
-        console.log(`Connection attempt ${connectionAttempts} to Scene3DController`);
-        
-        if (this.connectToSceneInventory()) {
-          console.log('Successfully connected to Scene3DController');
-        } else if (connectionAttempts < 5) {
-          console.log(`Connection failed, retrying in ${connectionAttempts * 500}ms...`);
-          setTimeout(tryConnect, connectionAttempts * 500);
-        } else {
-          console.warn('Failed to connect to Scene3DController after multiple attempts');
-        }
-      };
-      
-      // Start connection attempts
-      setTimeout(tryConnect, 1000);
-
-
+  
+    // IMPORTANT: Wait for next tick to allow ResourceManager to initialize
+    setTimeout(() => {
+      this.initializeConnections();
+    }, 100);
+  
     console.log('Party Manager initialized');
+  }
+  
+  // New method to initialize connections after constructor completes
+  async initializeConnections() {
+    console.log("PartyManager: Initializing connections...");
+    
+    // Always try to get the most up-to-date ResourceManager
+    if (!this.resourceManager && window.resourceManager) {
+      this.resourceManager = window.resourceManager;
+      console.log("Connected to global ResourceManager");
+    }
+    
+    // Get MonsterManager from ResourceManager if available
+    if (this.resourceManager?.monsterManager && !this.monsterManager) {
+      this.monsterManager = this.resourceManager.monsterManager;
+      console.log("Connected to ResourceManager's MonsterManager");
+    }
+    
+    // Check for bestiary data
+    if (this.resourceManager?.resources?.bestiary) {
+      const size = this.resourceManager.resources.bestiary.size;
+      console.log(`PM-Found bestiary with ${size} monsters`);
+      
+      // If bestiary is empty, try to load it
+      if (size === 0 && this.resourceManager.loadBestiaryFromDatabase) {
+        try {
+          console.log("PM-Loading bestiary from database...");
+          await this.resourceManager.loadBestiaryFromDatabase();
+          console.log(`PM-Loaded ${this.resourceManager.resources.bestiary.size} monsters from database`);
+        } catch (err) {
+          console.error("Failed to load bestiary:", err);
+        }
+      }
+    }
+    
+    // Connect to Scene3DController
+    let connectionAttempts = 0;
+    const tryConnect = () => {
+      connectionAttempts++;
+      console.log(`Connection attempt ${connectionAttempts} to Scene3DController`);
+      
+      if (this.connectToSceneInventory()) {
+        console.log('Successfully connected to Scene3DController');
+      } else if (connectionAttempts < 5) {
+        console.log(`Connection failed, retrying in ${connectionAttempts * 500}ms...`);
+        setTimeout(tryConnect, connectionAttempts * 500);
+      } else {
+        console.warn('Failed to connect to Scene3DController after multiple attempts');
+      }
+    };
+    
+    // Start connection attempts with a delay
+    setTimeout(tryConnect, 500);
   }
 
   // New method to establish connections after page load

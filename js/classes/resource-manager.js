@@ -3809,86 +3809,142 @@ async initializeMonsterManager(mapEditor) {
     return this.monsterManager;
 }
 
+// async loadBestiaryFromDatabase() {
+//     try {
+//         console.log('Loading bestiary from database...');
+        
+//         // Wait for database initialization to complete first
+//         if (this.monsterManager?.dbInitPromise) {
+//             await this.monsterManager.dbInitPromise;
+//             console.log('Database initialization complete');
+//         } else {
+//             console.warn('MonsterManager database initialization promise not found');
+//         }
+        
+//         // Now try to load monsters from IndexedDB
+//         if (this.monsterManager && this.monsterManager.db) {
+//             try {
+//                 // Create a promise-based wrapper for the transaction
+//                 const monsters = await new Promise((resolve, reject) => {
+//                     const tx = this.monsterManager.db.transaction(['monsters'], 'readonly');
+//                     const store = tx.objectStore('monsters');
+//                     const request = store.getAll();
+                    
+//                     request.onsuccess = (event) => resolve(event.target.result);
+//                     request.onerror = (event) => reject(event.target.error);
+                    
+//                     // Also handle transaction errors
+//                     tx.oncomplete = () => {
+//                         if (!request.result) resolve([]);
+//                     };
+//                     tx.onerror = (event) => reject(event.target.error);
+//                 });
+                
+//                 console.log(`Found ${monsters.length} monsters in IndexedDB`);
+                
+//                 // Add monsters to the resource manager (now monsters is definitely an array)
+//                 monsters.forEach(monster => {
+//                     if (monster.id && monster.basic?.name) {
+//                         const key = monster.id;
+//                         this.resources.bestiary.set(key, {
+//                             id: key,
+//                             name: monster.basic.name,
+//                             data: monster,
+//                             thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
+//                             cr: monster.basic.cr,
+//                             type: monster.basic.type,
+//                             size: monster.basic.size,
+//                             dateAdded: monster.dateAdded || new Date().toISOString()
+//                         });
+//                     }
+//                 });
+                
+//                 console.log(`Successfully loaded ${this.resources.bestiary.size} monsters into resource manager`);
+//                 return;
+//             } catch (dbError) {
+//                 console.error('Error loading from IndexedDB:', dbError);
+//                 console.log('Falling back to localStorage');
+//             }
+//         }
+        
+//         // Fallback to localStorage if IndexedDB is not available or failed
+//         console.log('Using localStorage for bestiary');
+//         const monsterDatabase = this.monsterManager?.loadDatabase() || { monsters: {} };
+        
+//         Object.entries(monsterDatabase.monsters).forEach(([key, monster]) => {
+//             this.resources.bestiary.set(key, {
+//                 id: key,
+//                 name: monster.basic.name,
+//                 data: monster,
+//                 thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
+//                 cr: monster.basic.cr,
+//                 type: monster.basic.type,
+//                 size: monster.basic.size,
+//                 dateAdded: monster.dateAdded || new Date().toISOString()
+//             });
+//         });
+        
+//         console.log(`Loaded ${this.resources.bestiary.size} monsters from localStorage`);
+//     } catch (error) {
+//         console.error('Error loading bestiary from database:', error);
+//     }
+// }
+
 async loadBestiaryFromDatabase() {
-    try {
-        console.log('Loading bestiary from database...');
-        
-        // Wait for database initialization to complete first
-        if (this.monsterManager?.dbInitPromise) {
-            await this.monsterManager.dbInitPromise;
-            console.log('Database initialization complete');
-        } else {
-            console.warn('MonsterManager database initialization promise not found');
-        }
-        
-        // Now try to load monsters from IndexedDB
-        if (this.monsterManager && this.monsterManager.db) {
-            try {
-                // Create a promise-based wrapper for the transaction
-                const monsters = await new Promise((resolve, reject) => {
-                    const tx = this.monsterManager.db.transaction(['monsters'], 'readonly');
-                    const store = tx.objectStore('monsters');
-                    const request = store.getAll();
-                    
-                    request.onsuccess = (event) => resolve(event.target.result);
-                    request.onerror = (event) => reject(event.target.error);
-                    
-                    // Also handle transaction errors
-                    tx.oncomplete = () => {
-                        if (!request.result) resolve([]);
-                    };
-                    tx.onerror = (event) => reject(event.target.error);
-                });
-                
-                console.log(`Found ${monsters.length} monsters in IndexedDB`);
-                
-                // Add monsters to the resource manager (now monsters is definitely an array)
-                monsters.forEach(monster => {
-                    if (monster.id && monster.basic?.name) {
-                        const key = monster.id;
-                        this.resources.bestiary.set(key, {
-                            id: key,
-                            name: monster.basic.name,
-                            data: monster,
-                            thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
-                            cr: monster.basic.cr,
-                            type: monster.basic.type,
-                            size: monster.basic.size,
-                            dateAdded: monster.dateAdded || new Date().toISOString()
-                        });
-                    }
-                });
-                
-                console.log(`Successfully loaded ${this.resources.bestiary.size} monsters into resource manager`);
-                return;
-            } catch (dbError) {
-                console.error('Error loading from IndexedDB:', dbError);
-                console.log('Falling back to localStorage');
-            }
-        }
-        
-        // Fallback to localStorage if IndexedDB is not available or failed
-        console.log('Using localStorage for bestiary');
-        const monsterDatabase = this.monsterManager?.loadDatabase() || { monsters: {} };
-        
-        Object.entries(monsterDatabase.monsters).forEach(([key, monster]) => {
-            this.resources.bestiary.set(key, {
-                id: key,
-                name: monster.basic.name,
-                data: monster,
-                thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
-                cr: monster.basic.cr,
-                type: monster.basic.type,
-                size: monster.basic.size,
-                dateAdded: monster.dateAdded || new Date().toISOString()
-            });
-        });
-        
-        console.log(`Loaded ${this.resources.bestiary.size} monsters from localStorage`);
-    } catch (error) {
-        console.error('Error loading bestiary from database:', error);
+    console.log("ResourceManager: Loading bestiary from database...");
+    
+    if (!this.resources.bestiary) {
+      this.resources.bestiary = new Map();
     }
-}
+    
+    // Make sure we have a monsterManager
+    if (!this.monsterManager) {
+      console.log("ResourceManager: Creating new MonsterManager instance");
+      this.monsterManager = new MonsterManager(this.mapEditor);
+      
+      // Wait for DB initialization
+      if (this.monsterManager.dbInitPromise) {
+        console.log("ResourceManager: Waiting for database initialization...");
+        await this.monsterManager.dbInitPromise;
+      }
+    }
+    
+    // Use the new loadAllMonsters method
+    const { monsters, source } = await this.monsterManager.loadAllMonsters();
+    
+    if (monsters && monsters.length > 0) {
+      // Add each monster to the bestiary
+      monsters.forEach(monster => {
+        if (!monster || !monster.id) {
+          console.warn("ResourceManager: Found invalid monster without ID", monster);
+          return;
+        }
+        
+        this.resources.bestiary.set(monster.id, {
+          id: monster.id,
+          name: monster.basic?.name || "Unknown Monster",
+          data: monster,
+          thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
+          cr: monster.basic?.cr || "0",
+          type: monster.basic?.type || "unknown",
+          size: monster.basic?.size || "medium",
+          dateAdded: monster.dateAdded || new Date().toISOString()
+        });
+      });
+      
+      console.log(`ResourceManager: Successfully loaded ${this.resources.bestiary.size} monsters from ${source}`);
+    } else {
+      console.warn("ResourceManager: No monsters found in any storage");
+    }
+    
+    // Import default monsters if bestiary is empty
+    if (this.resources.bestiary.size === 0) {
+      console.log("ResourceManager: Bestiary is empty, importing default monsters");
+      await this.importDefaultMonsters();
+    }
+    
+    return this.resources.bestiary;
+  }
 
     saveDatabase() {
         try {
