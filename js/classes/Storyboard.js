@@ -69,11 +69,11 @@ if (typeof window.Storyboard === 'undefined') {
     /**
      * Initialize CSS styles for story displays
      */
-  // .storyboard-drawer::part(header) {
-  //   background: #333;
-  //   padding: 16px;
-  //   border-bottom: 1px solid #444;
-  // }
+    // .storyboard-drawer::part(header) {
+    //   background: #333;
+    //   padding: 16px;
+    //   border-bottom: 1px solid #444;
+    // }
 
     initStyles() {
       const styles = document.createElement('style');
@@ -306,6 +306,31 @@ if (typeof window.Storyboard === 'undefined') {
         left: 50%;
         transform: translateX(-50%);
       }
+
+      // Add these lines in your initStyles method
+.storyboard-node[data-type="condition"] .storyboard-port.output.true-port {
+  bottom: -7px;
+  left: 30%; /* Position to the left */
+  transform: translateX(-50%);
+}
+
+.storyboard-node[data-type="condition"] .storyboard-port.output.false-port {
+  bottom: -7px;
+  left: 70%; /* Position to the right */
+  transform: translateX(-50%);
+}
+
+.storyboard-node[data-type="combat"] .storyboard-port.output.win-port {
+  bottom: -7px;
+  left: 30%; /* Position to the left */
+  transform: translateX(-50%);
+}
+
+.storyboard-node[data-type="combat"] .storyboard-port.output.lose-port {
+  bottom: -7px;
+  left: 70%; /* Position to the right */
+  transform: translateX(-50%);
+}
       
       .storyboard-toolbox {
         padding: 12px;
@@ -673,13 +698,271 @@ if (typeof window.Storyboard === 'undefined') {
     /**
      * New method to restore a single node
      */
+/**
+ * Generates the HTML for special node types with multiple ports
+ */
+/**
+ * Generates the HTML for special node types with multiple ports
+ */
+generateNodeHTML(nodeType, title, body, nodeData) {
+  switch (nodeType) {
+    case 'condition':
+      return `
+        <div class="storyboard-node-header">
+          ${title}
+          <span class="storyboard-node-close">×</span>
+        </div>
+        <div class="storyboard-node-body">
+          ${body}
+        </div>
+        <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
+          <div class="storyboard-port input"></div>
+          <div class="storyboard-port output true-port" data-path="true" style="background: #2196F3; position: absolute; bottom: -7px; left: 30%; transform: translateX(-50%);"></div>
+          <div class="storyboard-port output false-port" data-path="false" style="background: #F44336; position: absolute; bottom: -7px; left: 70%; transform: translateX(-50%);"></div>
+        </div>
+      `;
+      
+    case 'choice':
+      // Get number of options (limit to 5)
+      const options = nodeData?.data?.options || [];
+      const numOptions = Math.min(options.length, 5);
+      
+      // Generate option ports
+      let portsHTML = '';
+      const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+      
+      // Position the ports evenly
+      for (let i = 0; i < numOptions; i++) {
+        const percentage = numOptions === 1 ? 50 : (i * (100 / (numOptions - 1)));
+        const color = colors[i % colors.length];
+        
+        portsHTML += `
+          <div class="storyboard-port output option-port" 
+               data-option="${i}" 
+               style="background: ${color}; position: absolute; bottom: -7px; left: ${percentage}%; transform: translateX(-50%);"
+               title="Option ${i + 1}"></div>
+        `;
+      }
+      
+      return `
+        <div class="storyboard-node-header">
+          ${title}
+          <span class="storyboard-node-close">×</span>
+        </div>
+        <div class="storyboard-node-body">
+          ${body}
+        </div>
+        <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
+          <div class="storyboard-port input"></div>
+          ${portsHTML}
+        </div>
+      `;
+      
+    case 'combat':
+      return `
+        <div class="storyboard-node-header">
+          ${title}
+          <span class="storyboard-node-close">×</span>
+        </div>
+        <div class="storyboard-node-body">
+          ${body}
+        </div>
+        <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
+          <div class="storyboard-port input"></div>
+          <div class="storyboard-port output win-port" data-path="victory" style="background: #4CAF50; position: absolute; bottom: -7px; left: 30%; transform: translateX(-50%);"></div>
+          <div class="storyboard-port output lose-port" data-path="defeat" style="background: #F44336; position: absolute; bottom: -7px; left: 70%; transform: translateX(-50%);"></div>
+        </div>
+      `;
+      
+    default:
+      return `
+        <div class="storyboard-node-header">
+          ${title}
+          <span class="storyboard-node-close">×</span>
+        </div>
+        <div class="storyboard-node-body">
+          ${body}
+        </div>
+        <div class="storyboard-node-footer">
+          <div class="storyboard-port input"></div>
+          <div class="storyboard-port output"></div>
+        </div>
+      `;
+  }
+}
+
+    // restoreSingleNode(canvas, nodeData, nodeId) {
+    //   // Create node element
+    //   const node = document.createElement('div');
+    //   node.className = 'storyboard-node';
+    //   node.setAttribute('data-type', nodeData.type);
+    //   node.setAttribute('data-id', nodeId);
+    
+    //   // Set position
+    //   if (nodeData.position) {
+    //     node.style.left = `${nodeData.position.x}px`;
+    //     node.style.top = `${nodeData.position.y}px`;
+    //   } else {
+    //     node.style.left = '100px';
+    //     node.style.top = '100px';
+    //   }
+    
+    //   // Set content based on node type
+    //   const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+    //   let body = '';
+    //   let useCustomHtml = false;
+    //   let customHtml = '';
+    
+    //   switch (nodeData.type) {
+    //     case 'dialog':
+    //       body = `<div>${nodeData.data.text || ''}</div>`;
+    //       break;
+    //     case 'choice':
+    //       body = `
+    //         <div>${nodeData.data.text || ''}</div>
+    //         <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
+    //       `;
+          
+    //       // Special structure for choice node
+    //       useCustomHtml = true;
+          
+    //       // Get number of options
+    //       const optionCount = nodeData.data.options?.length || 0;
+          
+    //       // Generate option ports HTML
+    //       let optionPortsHtml = '';
+    //       const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B']; // Colors for up to 5 options
+          
+    //       for (let i = 0; i < optionCount; i++) {
+    //         const color = colors[i % colors.length]; // Cycle through colors
+    //         optionPortsHtml += `
+    //           <div class="storyboard-port output option-port" 
+    //                data-option="${i}" 
+    //                style="background: ${color};"
+    //                title="Option ${i+1}"></div>
+    //         `;
+    //       }
+          
+    //       customHtml = `
+    //         <div class="storyboard-node-header">
+    //           ${title}
+    //           <span class="storyboard-node-close">×</span>
+    //         </div>
+    //         <div class="storyboard-node-body">
+    //           ${body}
+    //         </div>
+    //         <div class="storyboard-node-footer">
+    //           <div class="storyboard-port input"></div>
+    //           <div class="storyboard-ports-container" style="display: flex; width: 100%; justify-content: space-around;">
+    //             ${optionPortsHtml}
+    //           </div>
+    //         </div>
+    //       `;
+    //       break;
+    //     case 'trigger':
+    //       body = `<div>X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}</div>`;
+    //       break;
+    //     case 'event':
+    //       body = `<div>Event: ${nodeData.data.eventType || 'none'}</div>`;
+    //       break;
+    //     case 'condition':
+    //       body = `<div>Condition: ${nodeData.data.condition || 'none'}</div>`;
+          
+    //       // Special structure for condition node
+    //       useCustomHtml = true;
+    //       customHtml = `
+    //         <div class="storyboard-node-header">
+    //           ${title}
+    //           <span class="storyboard-node-close">×</span>
+    //         </div>
+    //         <div class="storyboard-node-body">
+    //           ${body}
+    //         </div>
+    //         <div class="storyboard-node-footer">
+    //           <div class="storyboard-port input"></div>
+    //           <div class="storyboard-ports-container" style="display: flex; width: 100%; justify-content: space-around;">
+    //             <div class="storyboard-port output true-port" data-path="true" style="background: #2196F3;"></div>
+    //             <div class="storyboard-port output false-port" data-path="false" style="background: #F44336;"></div>
+    //           </div>
+    //         </div>
+    //       `;
+    //       break;
+    //     case 'combat':
+    //       body = `<div>Combat with ${nodeData.data.enemies?.length || 0} enemies</div>`;
+          
+    //       // Special structure for combat node
+    //       useCustomHtml = true;
+    //       customHtml = `
+    //         <div class="storyboard-node-header">
+    //           ${title}
+    //           <span class="storyboard-node-close">×</span>
+    //         </div>
+    //         <div class="storyboard-node-body">
+    //           ${body}
+    //         </div>
+    //         <div class="storyboard-node-footer">
+    //           <div class="storyboard-port input"></div>
+    //           <div class="storyboard-ports-container" style="display: flex; width: 100%; justify-content: space-around;">
+    //             <div class="storyboard-port output win-port" data-path="victory" style="background: #4CAF50;"></div>
+    //             <div class="storyboard-port output lose-port" data-path="defeat" style="background: #F44336;"></div>
+    //           </div>
+    //         </div>
+    //       `;
+    //       break;
+    //     case 'reward':
+    //       body = `<div>Rewards: ${nodeData.data.items?.length || 0} items</div>`;
+    //       break;
+    //     default:
+    //       body = '<div>Configure node</div>';
+    //   }
+    
+    //   // Set HTML content based on whether we have custom HTML
+    //   if (useCustomHtml) {
+    //     node.innerHTML = customHtml;
+    //   } else {
+    //     // Default structure for regular nodes
+    //     node.innerHTML = `
+    //       <div class="storyboard-node-header">
+    //         ${title}
+    //         <span class="storyboard-node-close">×</span>
+    //       </div>
+    //       <div class="storyboard-node-body">
+    //         ${body}
+    //       </div>
+    //       <div class="storyboard-node-footer">
+    //         <div class="storyboard-port input"></div>
+    //         <div class="storyboard-port output"></div>
+    //       </div>
+    //     `;
+    //   }
+    
+    //   // Add to canvas
+    //   canvas.appendChild(node);
+    
+    //   // Update the stored node data to include element reference
+    //   nodeData.element = node;
+    
+    //   // Set up delete handler
+    //   const closeBtn = node.querySelector('.storyboard-node-close');
+    //   if (closeBtn) {
+    //     closeBtn.addEventListener('click', (e) => {
+    //       e.preventDefault();
+    //       e.stopPropagation();
+    //       console.log('Delete node clicked');
+    //       this.deleteNode(node);
+    //     });
+    //   }
+    
+    //   console.log(`Restored node: ${nodeId}`);
+    // }
+
     restoreSingleNode(canvas, nodeData, nodeId) {
       // Create node element
       const node = document.createElement('div');
       node.className = 'storyboard-node';
       node.setAttribute('data-type', nodeData.type);
       node.setAttribute('data-id', nodeId);
-
+    
       // Set position
       if (nodeData.position) {
         node.style.left = `${nodeData.position.x}px`;
@@ -688,20 +971,20 @@ if (typeof window.Storyboard === 'undefined') {
         node.style.left = '100px';
         node.style.top = '100px';
       }
-
+    
       // Set content based on node type
       const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
       let body = '';
-
+    
       switch (nodeData.type) {
         case 'dialog':
           body = `<div>${nodeData.data.text || ''}</div>`;
           break;
         case 'choice':
           body = `
-        <div>${nodeData.data.text || ''}</div>
-        <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
-      `;
+            <div>${nodeData.data.text || ''}</div>
+            <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
+          `;
           break;
         case 'trigger':
           body = `<div>X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}</div>`;
@@ -721,27 +1004,16 @@ if (typeof window.Storyboard === 'undefined') {
         default:
           body = '<div>Configure node</div>';
       }
-
-      node.innerHTML = `
-    <div class="storyboard-node-header">
-      ${title}
-      <span class="storyboard-node-close">×</span>
-    </div>
-    <div class="storyboard-node-body">
-      ${body}
-    </div>
-    <div class="storyboard-node-footer">
-      <div class="storyboard-port input"></div>
-      <div class="storyboard-port output"></div>
-    </div>
-  `;
-
+    
+      // Use the helper method to generate HTML based on node type
+      node.innerHTML = this.generateNodeHTML(nodeData.type, title, body, nodeData);
+    
       // Add to canvas
       canvas.appendChild(node);
-
+    
       // Update the stored node data to include element reference
       nodeData.element = node;
-
+    
       // Set up delete handler
       const closeBtn = node.querySelector('.storyboard-node-close');
       if (closeBtn) {
@@ -752,8 +1024,6 @@ if (typeof window.Storyboard === 'undefined') {
           this.deleteNode(node);
         });
       }
-
-      console.log(`Restored node: ${nodeId}`);
     }
 
     /**
@@ -797,11 +1067,48 @@ if (typeof window.Storyboard === 'undefined') {
 
     setupCanvasInteractions(canvas, properties) {
       if (!canvas || !properties) return;
-
+    
       // Store references in case they're needed
       const editorState = this.editorState;
+      
+      // Add canvas state for zoom and pan
+      editorState.canvasScale = 1;
+      editorState.canvasPan = { x: 0, y: 0 };
+      editorState.isPanning = false;
+      editorState.panStart = { x: 0, y: 0 };
+    
+      // Create a container for all nodes
+      let nodesContainer = canvas.querySelector('.nodes-container');
+      if (!nodesContainer) {
+        nodesContainer = document.createElement('div');
+        nodesContainer.className = 'nodes-container';
+        nodesContainer.style.position = 'absolute';
+        nodesContainer.style.width = '100%';
+        nodesContainer.style.height = '100%';
+        nodesContainer.style.transformOrigin = '0 0';
+        nodesContainer.style.transform = 'scale(1)';
+        nodesContainer.style.transition = 'transform 0.1s';
+        
+        // Move any existing nodes into the container
+        const existingNodes = Array.from(canvas.querySelectorAll('.storyboard-node'));
+        existingNodes.forEach(node => nodesContainer.appendChild(node));
+        
+        canvas.appendChild(nodesContainer);
+        editorState.nodesContainer = nodesContainer;
+      }
+
+      
 
       canvas.addEventListener('mousedown', (e) => {
+
+            // Check if middle button
+    if (e.button === 1 || e.buttons === 4) {
+      e.preventDefault();
+      editorState.isPanning = true;
+      editorState.panStart = { x: e.clientX, y: e.clientY };
+      canvas.style.cursor = 'grabbing';
+    }
+
         // Check if we clicked on a node
         let nodeEl = e.target.closest('.storyboard-node');
 
@@ -820,45 +1127,105 @@ if (typeof window.Storyboard === 'undefined') {
             };
           }
 
-          // Handle connection creation
-          if (e.target.closest('.storyboard-port')) {
-            const port = e.target.closest('.storyboard-port');
-            if (port.classList.contains('output')) {
-              editorState.connectingFrom = {
-                node: nodeEl,
-                port: port
-              };
 
-              // Create temporary connection line
-              const conn = document.createElement('div');
-              conn.className = 'storyboard-connection temp-connection';
-              conn.style.cssText = `
-            position: absolute;
-            height: 2px;
-            background: #673ab7;
-            transform-origin: left center;
-          `;
+          // This is part of the setupCanvasInteractions method - just the connection creation part
+// Handle connection creation
+if (e.target.closest('.storyboard-port')) {
+  const port = e.target.closest('.storyboard-port');
+  if (port.classList.contains('output') || port.classList.contains('true-port') || port.classList.contains('false-port') || 
+      port.classList.contains('win-port') || port.classList.contains('lose-port')) {
+    editorState.connectingFrom = {
+      node: nodeEl,
+      port: port
+    };
 
-              const fromRect = port.getBoundingClientRect();
-              const canvasRect = canvas.getBoundingClientRect();
+    // Get port position for connection drawing
+    const portRect = port.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    const x1 = portRect.left + portRect.width / 2 - canvasRect.left;
+    const y1 = portRect.top + portRect.height / 2 - canvasRect.top;
 
-              const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-              const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+    // Create temporary connection line with color based on port type
+    let lineColor = '#673ab7'; // Default purple
+    
+    const nodeType = nodeEl.getAttribute('data-type');
+    const pathType = port.getAttribute('data-path');
+    
+    if (nodeType === 'condition' && pathType) {
+      lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+    } else if (nodeType === 'combat' && pathType) {
+      lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+    }
+    
+    // Create temporary connection
+    const conn = document.createElement('div');
+    conn.className = 'storyboard-connection temp-connection';
+    conn.style.cssText = `
+      position: absolute;
+      height: 2px;
+      background: ${lineColor};
+      transform-origin: left center;
+      left: ${x1}px;
+      top: ${y1}px;
+    `;
 
-              conn.style.left = `${x1}px`;
-              conn.style.top = `${y1}px`;
+    canvas.appendChild(conn);
+    editorState.connectingFrom.tempConnection = conn;
+  }
+}
 
-              canvas.appendChild(conn);
-              editorState.connectingFrom.tempConnection = conn;
-            }
-          }
         } else {
           // Clicked on empty canvas
           this.deselectNode();
         }
       });
 
+
+        // Mouse wheel to zoom
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    
+    // Get mouse position relative to canvas
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Calculate new scale
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newScale = Math.max(0.3, Math.min(2, editorState.canvasScale + delta));
+    
+    // Apply the scale
+    editorState.canvasScale = newScale;
+    
+    // Apply transform
+    updateCanvasTransform(editorState, nodesContainer);
+    
+    // Update all connections
+    this.updateConnections();
+  });
+
       canvas.addEventListener('mousemove', (e) => {
+
+
+        if (editorState.isPanning) {
+          const dx = e.clientX - editorState.panStart.x;
+          const dy = e.clientY - editorState.panStart.y;
+          
+          editorState.canvasPan.x += dx / editorState.canvasScale;
+          editorState.canvasPan.y += dy / editorState.canvasScale;
+          
+          editorState.panStart = { x: e.clientX, y: e.clientY };
+          
+          // Apply transform
+          updateCanvasTransform(editorState, nodesContainer);
+          
+          // Update connections
+          this.updateConnections();
+          
+          return;
+        }
+
         // Handle node dragging
         if (editorState.draggingNode) {
           const canvasRect = canvas.getBoundingClientRect();
@@ -904,6 +1271,12 @@ if (typeof window.Storyboard === 'undefined') {
       });
 
       canvas.addEventListener('mouseup', (e) => {
+
+        if (editorState.isPanning) {
+          editorState.isPanning = false;
+          canvas.style.cursor = 'default';
+        }
+
         // Handle node dragging end
         if (editorState.draggingNode) {
           editorState.draggingNode = null;
@@ -940,6 +1313,41 @@ if (typeof window.Storyboard === 'undefined') {
           editorState.connectingFrom = null;
         }
       });
+
+        // Add keyboard shortcuts for zoom
+  document.addEventListener('keydown', (e) => {
+    if (!editorState.active) return;
+    
+    // Ctrl/Cmd + 0: Reset zoom
+    if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      editorState.canvasScale = 1;
+      editorState.canvasPan = { x: 0, y: 0 };
+      updateCanvasTransform(editorState, nodesContainer);
+      this.updateConnections();
+    }
+    
+    // Ctrl/Cmd + -: Zoom out
+    if ((e.key === '-' || e.key === '_') && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      editorState.canvasScale = Math.max(0.3, editorState.canvasScale - 0.1);
+      updateCanvasTransform(editorState, nodesContainer);
+      this.updateConnections();
+    }
+    
+    // Ctrl/Cmd + +: Zoom in
+    if ((e.key === '=' || e.key === '+') && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      editorState.canvasScale = Math.min(2, editorState.canvasScale + 0.1);
+      updateCanvasTransform(editorState, nodesContainer);
+      this.updateConnections();
+    }
+  });
+
+  function updateCanvasTransform(state, container) {
+    container.style.transform = `scale(${state.canvasScale}) translate(${state.canvasPan.x}px, ${state.canvasPan.y}px)`;
+  }
+
     }
 
 
@@ -1279,20 +1687,96 @@ if (typeof window.Storyboard === 'undefined') {
     /**
      * Create a new node of the specified type
      */
+    // createNewNode(canvas, nodeType) {
+    //   if (!this.isEditorAvailable() || !canvas) {
+    //     console.error('Cannot create node - editor or canvas not available');
+    //     return null;
+    //   }
+
+    //   console.log('Creating new node of type:', nodeType);
+
+    //   // Create unique ID
+    //   const nodeId = 'node_' + Date.now();
+
+    //   // Create default data for this node type
+    //   let data = {};
+
+    //   switch (nodeType) {
+    //     case 'dialog':
+    //       data = { title: 'Dialog', text: 'New dialog text', image: null };
+    //       break;
+    //     case 'choice':
+    //       data = {
+    //         text: 'What would you like to do?',
+    //         options: [
+    //           { text: 'Option 1', targetId: null },
+    //           { text: 'Option 2', targetId: null }
+    //         ]
+    //       };
+    //       break;
+    //     case 'trigger':
+    //       data = { x: 0, y: 0, radius: 1, once: true };
+    //       break;
+    //     case 'event':
+    //       data = { eventType: 'none', params: {} };
+    //       break;
+    //     case 'condition':
+    //       data = { condition: 'none', params: {} };
+    //       break;
+    //     case 'combat':
+    //       data = { enemies: [], background: null };
+    //       break;
+    //     case 'reward':
+    //       data = { items: [], experience: 0, monsters: [] };
+    //       break;
+    //     default:
+    //       data = {};
+    //   }
+
+    //   // Position in center of visible canvas
+    //   const canvasRect = canvas.getBoundingClientRect();
+    //   const scrollLeft = canvas.scrollLeft;
+    //   const scrollTop = canvas.scrollTop;
+    //   const centerX = scrollLeft + canvasRect.width / 2 - 100;
+    //   const centerY = scrollTop + canvasRect.height / 2 - 50;
+
+    //   // Create persistent node data
+    //   const nodeData = {
+    //     type: nodeType,
+    //     position: { x: centerX, y: centerY },
+    //     data: data,
+    //     element: null // Will be set after DOM creation
+    //   };
+
+    //   // Add to persistent graph
+    //   this.currentGraph.nodes.set(nodeId, nodeData);
+    //   this.currentGraph.dirty = true;
+
+    //   // Create DOM element
+    //   this.restoreSingleNode(canvas, nodeData, nodeId);
+
+    //   // Select the new node
+    //   if (nodeData.element) {
+    //     this.selectNode(nodeData.element);
+    //   }
+
+    //   return nodeData.element;
+    // }
+
     createNewNode(canvas, nodeType) {
       if (!this.isEditorAvailable() || !canvas) {
         console.error('Cannot create node - editor or canvas not available');
         return null;
       }
-
+    
       console.log('Creating new node of type:', nodeType);
-
+    
       // Create unique ID
       const nodeId = 'node_' + Date.now();
-
+    
       // Create default data for this node type
       let data = {};
-
+    
       switch (nodeType) {
         case 'dialog':
           data = { title: 'Dialog', text: 'New dialog text', image: null };
@@ -1319,19 +1803,19 @@ if (typeof window.Storyboard === 'undefined') {
           data = { enemies: [], background: null };
           break;
         case 'reward':
-          data = { items: [], experience: 0, monsters: [] };
+          data = { items: [], experience: 0 };
           break;
         default:
           data = {};
       }
-
+    
       // Position in center of visible canvas
       const canvasRect = canvas.getBoundingClientRect();
       const scrollLeft = canvas.scrollLeft;
       const scrollTop = canvas.scrollTop;
       const centerX = scrollLeft + canvasRect.width / 2 - 100;
       const centerY = scrollTop + canvasRect.height / 2 - 50;
-
+    
       // Create persistent node data
       const nodeData = {
         type: nodeType,
@@ -1339,97 +1823,398 @@ if (typeof window.Storyboard === 'undefined') {
         data: data,
         element: null // Will be set after DOM creation
       };
-
+    
       // Add to persistent graph
       this.currentGraph.nodes.set(nodeId, nodeData);
       this.currentGraph.dirty = true;
-
-      // Create DOM element
-      this.restoreSingleNode(canvas, nodeData, nodeId);
-
-      // Select the new node
-      if (nodeData.element) {
-        this.selectNode(nodeData.element);
+    
+      // Create DOM element - use our new generateNodeHTML method
+      const node = document.createElement('div');
+      node.className = 'storyboard-node';
+      node.setAttribute('data-type', nodeType);
+      node.setAttribute('data-id', nodeId);
+      node.style.left = `${centerX}px`;
+      node.style.top = `${centerY}px`;
+    
+      // Get title and default body content
+      const title = data.title || nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
+      let body = '';
+      
+      switch (nodeType) {
+        case 'dialog':
+          body = `<div>${data.text || ''}</div>`;
+          break;
+        case 'choice':
+          body = `
+            <div>${data.text || ''}</div>
+            <div style="color:#777;font-size:0.9em;">${data.options?.length || 0} options</div>
+          `;
+          break;
+        case 'trigger':
+          body = `<div>X: ${data.x || 0}, Y: ${data.y || 0}, Radius: ${data.radius || 1}</div>`;
+          break;
+        case 'event':
+          body = `<div>Event: ${data.eventType || 'none'}</div>`;
+          break;
+        case 'condition':
+          body = `<div>Condition: ${data.condition || 'none'}</div>`;
+          break;
+        case 'combat':
+          body = `<div>Combat with ${data.enemies?.length || 0} enemies</div>`;
+          break;
+        case 'reward':
+          body = `<div>Rewards: ${data.items?.length || 0} items</div>`;
+          break;
+        default:
+          body = '<div>Configure node</div>';
       }
-
-      return nodeData.element;
+    
+      // Use our helper to generate the proper HTML
+      node.innerHTML = this.generateNodeHTML(nodeType, title, body, nodeData);
+      canvas.appendChild(node);
+    
+      // Store the element reference
+      nodeData.element = node;
+    
+      // Set up delete handler
+      const closeBtn = node.querySelector('.storyboard-node-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Delete node clicked');
+          this.deleteNode(node);
+        });
+      }
+    
+      // Select the new node
+      this.selectNode(node);
+    
+      return node;
     }
 
     /**
      * Create a connection between two nodes
      */
+    // createConnection(canvas, connection) {
+    //   if (!canvas || !connection.from || !connection.to) {
+    //     console.error('Invalid connection data');
+    //     return null;
+    //   }
+
+    //   const fromNode = connection.from.node;
+    //   const toNode = connection.to.node;
+    //   const fromId = fromNode.getAttribute('data-id');
+    //   const toId = toNode.getAttribute('data-id');
+
+    //   console.log(`Creating connection from ${fromId} to ${toId}`);
+
+    //   // Create connection element
+    //   const conn = document.createElement('div');
+    //   conn.className = 'storyboard-connection';
+    //   conn.setAttribute('data-from', fromId);
+    //   conn.setAttribute('data-to', toId);
+
+    //   conn.style.cssText = `
+    //     position: absolute;
+    //     height: 2px;
+    //     background: #673ab7;
+    //     transform-origin: left center;
+    //     z-index: 0;
+    //   `;
+
+    //   canvas.appendChild(conn);
+
+    //   // Add to persistent connections
+    //   this.currentGraph.connections.push({
+    //     from: fromId,
+    //     to: toId,
+    //     element: conn
+    //   });
+    //   this.currentGraph.dirty = true;
+
+    //   // Update connection position
+    //   this.updateConnection(conn, fromNode, toNode, canvas);
+
+    //   return conn;
+    // }
+
     createConnection(canvas, connection) {
       if (!canvas || !connection.from || !connection.to) {
         console.error('Invalid connection data');
         return null;
       }
-
+    
       const fromNode = connection.from.node;
       const toNode = connection.to.node;
       const fromId = fromNode.getAttribute('data-id');
       const toId = toNode.getAttribute('data-id');
-
-      console.log(`Creating connection from ${fromId} to ${toId}`);
-
+      
+      // Check if this is a condition node connection and which port was used
+      const fromNodeType = fromNode.getAttribute('data-type');
+      const pathType = connection.from.port.getAttribute('data-path'); // 'true', 'false', 'victory', 'defeat'
+      
+      console.log(`Creating connection from ${fromId} to ${toId}${pathType ? ` (${pathType} path)` : ''}`);
+    
       // Create connection element
       const conn = document.createElement('div');
       conn.className = 'storyboard-connection';
       conn.setAttribute('data-from', fromId);
       conn.setAttribute('data-to', toId);
-
+      
+      // Set path attribute if available
+      if (pathType) {
+        conn.setAttribute('data-path', pathType);
+      }
+      
+      // Set line color based on node type and path
+      let lineColor = '#673ab7'; // Default purple
+      
+      if (fromNodeType === 'condition' && pathType) {
+        lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+      } else if (fromNodeType === 'combat' && pathType) {
+        lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+      }
+      
       conn.style.cssText = `
         position: absolute;
         height: 2px;
-        background: #673ab7;
+        background: ${lineColor};
         transform-origin: left center;
         z-index: 0;
       `;
-
+    
       canvas.appendChild(conn);
-
+    
       // Add to persistent connections
       this.currentGraph.connections.push({
         from: fromId,
         to: toId,
+        path: pathType || null,
         element: conn
       });
+      
       this.currentGraph.dirty = true;
-
+    
       // Update connection position
       this.updateConnection(conn, fromNode, toNode, canvas);
-
+    
       return conn;
     }
+
+    // createConnection(canvas, connection) {
+    //   if (!canvas || !connection.from || !connection.to) {
+    //     console.error('Invalid connection data');
+    //     return null;
+    //   }
+
+    //   const fromNode = connection.from.node;
+    //   const toNode = connection.to.node;
+    //   const fromId = fromNode.getAttribute('data-id');
+    //   const toId = toNode.getAttribute('data-id');
+
+    //   // Check if this is a condition node connection and which port was used
+    //   const isConditionConnection = fromNode.getAttribute('data-type') === 'condition';
+    //   const pathType = connection.from.port.getAttribute('data-path'); // 'true' or 'false'
+
+    //   console.log(`Creating connection from ${fromId} to ${toId}${isConditionConnection ? ` (${pathType} path)` : ''}`);
+
+    //   // Create connection element
+    //   const conn = document.createElement('div');
+    //   conn.className = 'storyboard-connection';
+    //   conn.setAttribute('data-from', fromId);
+    //   conn.setAttribute('data-to', toId);
+
+    //   // For condition nodes, store which path this connection represents
+    //   if (isConditionConnection && pathType) {
+    //     conn.setAttribute('data-path', pathType);
+
+    //     // Color the connection based on the path type
+    //     const lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+    //     conn.style.cssText = `
+    //       position: absolute;
+    //       height: 2px;
+    //       background: ${lineColor};
+    //       transform-origin: left center;
+    //       z-index: 0;
+    //     `;
+    //   } else {
+    //     conn.style.cssText = `
+    //       position: absolute;
+    //       height: 2px;
+    //       background: #673ab7;
+    //       transform-origin: left center;
+    //       z-index: 0;
+    //     `;
+    //   }
+
+    //   canvas.appendChild(conn);
+
+    //   // Add to persistent connections with path info
+    //   this.currentGraph.connections.push({
+    //     from: fromId,
+    //     to: toId,
+    //     path: pathType || null,
+    //     element: conn
+    //   });
+
+    //   this.currentGraph.dirty = true;
+
+    //   // Update connection position
+    //   this.updateConnection(conn, fromNode, toNode, canvas);
+
+    //   return conn;
+    // }
 
     /**
      * Update a single connection's position
      */
+    // updateConnection(connectionEl, fromNode, toNode, canvas) {
+    //   if (!this.isEditorAvailable()) return;
+
+    //   const fromPort = fromNode.querySelector('.storyboard-port.output');
+    //   const toPort = toNode.querySelector('.storyboard-port.input');
+
+    //   const canvasRect = canvas.getBoundingClientRect();
+
+    //   const fromRect = fromPort.getBoundingClientRect();
+    //   const toRect = toPort.getBoundingClientRect();
+
+    //   const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+    //   const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+    //   const x2 = toRect.left + toRect.width / 2 - canvasRect.left;
+    //   const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
+
+    //   const dx = x2 - x1;
+    //   const dy = y2 - y1;
+    //   const length = Math.sqrt(dx * dx + dy * dy);
+    //   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    //   connectionEl.style.left = `${x1}px`;
+    //   connectionEl.style.top = `${y1}px`;
+    //   connectionEl.style.width = `${length}px`;
+    //   connectionEl.style.transform = `rotate(${angle}deg)`;
+    // }
     updateConnection(connectionEl, fromNode, toNode, canvas) {
       if (!this.isEditorAvailable()) return;
-
-      const fromPort = fromNode.querySelector('.storyboard-port.output');
+      
+      // Get the nodesContainer for scale and offset
+      const nodesContainer = this.editorState.nodesContainer || canvas;
+      const scale = this.editorState.canvasScale || 1;
+    
+      // Find the correct output port based on the connection's path
+      let fromPort;
+      const fromNodeType = fromNode.getAttribute('data-type');
+      const connectionPath = connectionEl.getAttribute('data-path');
+      const optionIndex = connectionEl.getAttribute('data-option');
+      
+      if (fromNodeType === 'condition' && connectionPath) {
+        // Find specific port for condition nodes
+        if (connectionPath === 'true') {
+          fromPort = fromNode.querySelector('.storyboard-port.output.true-port');
+        } else {
+          fromPort = fromNode.querySelector('.storyboard-port.output.false-port');
+        }
+      } else if (fromNodeType === 'combat' && connectionPath) {
+        // Find specific port for combat nodes
+        if (connectionPath === 'victory') {
+          fromPort = fromNode.querySelector('.storyboard-port.output.win-port');
+        } else {
+          fromPort = fromNode.querySelector('.storyboard-port.output.lose-port');
+        }
+      } else if (fromNodeType === 'choice' && optionIndex !== null) {
+        // Find specific option port for choice nodes
+        fromPort = fromNode.querySelector(`.storyboard-port.output.option-port[data-option="${optionIndex}"]`);
+      } else {
+        // Default output port
+        fromPort = fromNode.querySelector('.storyboard-port.output');
+      }
+      
       const toPort = toNode.querySelector('.storyboard-port.input');
-
-      const canvasRect = canvas.getBoundingClientRect();
-
+    
+      if (!fromPort || !toPort) {
+        console.error('Could not find ports for connection');
+        return;
+      }
+    
+      // Get positions relative to scaled container
       const fromRect = fromPort.getBoundingClientRect();
       const toRect = toPort.getBoundingClientRect();
-
-      const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
-      const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
-      const x2 = toRect.left + toRect.width / 2 - canvasRect.left;
-      const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
-
+      const containerRect = nodesContainer.getBoundingClientRect();
+      
+      // Calculate positions in the scaled/panned space
+      const x1 = (fromRect.left + fromRect.width / 2 - containerRect.left) / scale;
+      const y1 = (fromRect.top + fromRect.height / 2 - containerRect.top) / scale;
+      const x2 = (toRect.left + toRect.width / 2 - containerRect.left) / scale;
+      const y2 = (toRect.top + toRect.height / 2 - containerRect.top) / scale;
+    
       const dx = x2 - x1;
       const dy = y2 - y1;
       const length = Math.sqrt(dx * dx + dy * dy);
       const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
+    
+      // Position the connection in the scaled space
       connectionEl.style.left = `${x1}px`;
       connectionEl.style.top = `${y1}px`;
       connectionEl.style.width = `${length}px`;
       connectionEl.style.transform = `rotate(${angle}deg)`;
+      connectionEl.style.transformOrigin = 'left center';
     }
+
+    // updateConnection(connectionEl, fromNode, toNode, canvas) {
+    //   if (!this.isEditorAvailable()) return;
+    
+    //   // Find the correct output port based on the connection's path
+    //   let fromPort;
+    //   const fromNodeType = fromNode.getAttribute('data-type');
+    //   const connectionPath = connectionEl.getAttribute('data-path');
+      
+    //   if (fromNodeType === 'condition' && connectionPath) {
+    //     // Find specific port for condition nodes
+    //     if (connectionPath === 'true') {
+    //       fromPort = fromNode.querySelector('.storyboard-port.output.true-port');
+    //     } else {
+    //       fromPort = fromNode.querySelector('.storyboard-port.output.false-port');
+    //     }
+    //   } else if (fromNodeType === 'combat' && connectionPath) {
+    //     // Find specific port for combat nodes
+    //     if (connectionPath === 'victory') {
+    //       fromPort = fromNode.querySelector('.storyboard-port.output.win-port');
+    //     } else {
+    //       fromPort = fromNode.querySelector('.storyboard-port.output.lose-port');
+    //     }
+    //   } else {
+    //     // Default output port
+    //     fromPort = fromNode.querySelector('.storyboard-port.output');
+    //   }
+      
+    //   const toPort = toNode.querySelector('.storyboard-port.input');
+    
+    //   if (!fromPort || !toPort) {
+    //     console.error('Could not find ports for connection');
+    //     return;
+    //   }
+    
+    //   const canvasRect = canvas.getBoundingClientRect();
+    
+    //   const fromRect = fromPort.getBoundingClientRect();
+    //   const toRect = toPort.getBoundingClientRect();
+    
+    //   const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
+    //   const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
+    //   const x2 = toRect.left + toRect.width / 2 - canvasRect.left;
+    //   const y2 = toRect.top + toRect.height / 2 - canvasRect.top;
+    
+    //   const dx = x2 - x1;
+    //   const dy = y2 - y1;
+    //   const length = Math.sqrt(dx * dx + dy * dy);
+    //   const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    
+    //   connectionEl.style.left = `${x1}px`;
+    //   connectionEl.style.top = `${y1}px`;
+    //   connectionEl.style.width = `${length}px`;
+    //   connectionEl.style.transform = `rotate(${angle}deg)`;
+    // }
 
     /**
      * Update all connections in the editor
@@ -1523,11 +2308,11 @@ if (typeof window.Storyboard === 'undefined') {
       const nodeId = nodeEl.getAttribute('data-id');
       const nodeData = this.currentGraph.nodes.get(nodeId);
 
-        let propertiesHtml = '';
-        let paramsHtml = '';
-        let optionsHtml = '';
-        let eventOptionsHtml = '';
-        let conditionOptionsHtml = '';
+      let propertiesHtml = '';
+      let paramsHtml = '';
+      let optionsHtml = '';
+      let eventOptionsHtml = '';
+      let conditionOptionsHtml = '';
 
       if (nodeData) {
 
@@ -1982,38 +2767,38 @@ if (typeof window.Storyboard === 'undefined') {
             `;
             break;
 
-            case 'condition':
-              // Define available condition types
-              const conditionTypes = [
-                { value: 'hasMonster', label: 'Has Monster' },
-                { value: 'hasItem', label: 'Has Item' },
-                { value: 'hasFlag', label: 'Has Game Flag' },
-                { value: 'monsterLevel', label: 'Monster Level Check' }
-                // Removed playerLevel as you suggested
-              ];
-              
-              // Set default if not set
-              if (!nodeData.data.condition) {
-                nodeData.data.condition = 'hasFlag';
-              }
-              
-              // Initialize params if they don't exist
-              if (!nodeData.data.params) {
-                nodeData.data.params = {};
-              }
-            
-              // Generate condition options
-              conditionOptionsHtml = conditionTypes.map(cond => `
+          case 'condition':
+            // Define available condition types
+            const conditionTypes = [
+              { value: 'hasMonster', label: 'Has Monster' },
+              { value: 'hasItem', label: 'Has Item' },
+              { value: 'hasFlag', label: 'Has Game Flag' },
+              { value: 'monsterLevel', label: 'Monster Level Check' }
+              // Removed playerLevel as you suggested
+            ];
+
+            // Set default if not set
+            if (!nodeData.data.condition) {
+              nodeData.data.condition = 'hasFlag';
+            }
+
+            // Initialize params if they don't exist
+            if (!nodeData.data.params) {
+              nodeData.data.params = {};
+            }
+
+            // Generate condition options
+            conditionOptionsHtml = conditionTypes.map(cond => `
                 <option value="${cond.value}" ${nodeData.data.condition === cond.value ? 'selected' : ''}>
                   ${cond.label}
                 </option>
               `).join('');
-            
-              // Generate parameter form based on condition type
-              paramsHtml = '';
-              switch (nodeData.data.condition) {
-                case 'hasMonster':
-                  paramsHtml = `
+
+            // Generate parameter form based on condition type
+            paramsHtml = '';
+            switch (nodeData.data.condition) {
+              case 'hasMonster':
+                paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
@@ -2041,10 +2826,10 @@ if (typeof window.Storyboard === 'undefined') {
                       `}
                     </div>
                   `;
-                  break;
-                  
-                case 'hasItem':
-                  paramsHtml = `
+                break;
+
+              case 'hasItem':
+                paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <label style="color: #aaa; font-size: 0.9em;">Selected Item</label>
@@ -2083,10 +2868,10 @@ if (typeof window.Storyboard === 'undefined') {
                       </div>
                     </div>
                   `;
-                  break;
-                  
-                case 'hasFlag':
-                  paramsHtml = `
+                break;
+
+              case 'hasFlag':
+                paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <label style="display: block; margin-bottom: 4px; color: #aaa; font-size: 0.9em;">Flag Name</label>
                       <input 
@@ -2108,10 +2893,10 @@ if (typeof window.Storyboard === 'undefined') {
                       </select>
                     </div>
                   `;
-                  break;
-                  
-                case 'monsterLevel':
-                  paramsHtml = `
+                break;
+
+              case 'monsterLevel':
+                paramsHtml = `
                     <div class="param-group" style="margin-top: 16px;">
                       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                         <label style="color: #aaa; font-size: 0.9em;">Selected Monster</label>
@@ -2150,10 +2935,10 @@ if (typeof window.Storyboard === 'undefined') {
                       </div>
                     </div>
                   `;
-                  break;
-              }
-            
-              propertiesHtml = `
+                break;
+            }
+
+            propertiesHtml = `
                 <div class="storyboard-property-group">
                   <div class="storyboard-property-label">Condition Type</div>
                   <div class="storyboard-property-field">
@@ -2186,14 +2971,14 @@ if (typeof window.Storyboard === 'undefined') {
                   <sl-button id="apply-condition-changes" variant="primary">Apply Changes</sl-button>
                 </div>
               `;
-              break;       
-  
-  
-  
-  
-  
-  
-  default:
+            break;
+
+
+
+
+
+
+          default:
             propertiesHtml = `
                 <div class="storyboard-property-group">
                   <p>Properties for ${nodeData.type} node</p>
@@ -2286,16 +3071,16 @@ if (typeof window.Storyboard === 'undefined') {
                 id: resourceId,
                 category: 'title'
               };
-    
+
               // Mark as dirty
               this.currentGraph.dirty = true;
-    
+
               // Update visual representation
               this.updateNodeVisual(nodeData);
-    
+
               // Refresh properties panel
               this.selectNode(nodeData.element);
-    
+
               // Show confirmation
               this.showToast(`Image "${resource.name}" selected`, 'success');
             });
@@ -2616,18 +3401,18 @@ if (typeof window.Storyboard === 'undefined') {
                   if (!nodeData.data.params) {
                     nodeData.data.params = {};
                   }
-                  
+
                   nodeData.data.params.itemId = resourceId;
                   nodeData.data.params.itemName = resource.name;
                   nodeData.data.params.y = 0; // Set default y to 0 for ground placement
                   nodeData.data.params.isHorizontal = true; // Default to horizontal orientation
-                  
+
                   // Mark as dirty
                   this.currentGraph.dirty = true;
-          
+
                   // Refresh properties panel
                   this.selectNode(nodeData.element);
-          
+
                   // Show confirmation
                   this.showToast(`Item "${resource.name}" selected`, 'success');
                 });
@@ -2639,157 +3424,157 @@ if (typeof window.Storyboard === 'undefined') {
         }
       }
 
-// Add this to your setupNodePropertyHandlers method
-// This goes in the if-else chain where other node types are handled
+      // Add this to your setupNodePropertyHandlers method
+      // This goes in the if-else chain where other node types are handled
 
-if (nodeData.type === 'condition') {
-  // Condition type change handler
-  const conditionTypeSelect = properties.querySelector('#condition-type-select');
-  if (conditionTypeSelect) {
-    conditionTypeSelect.addEventListener('change', () => {
-      // Update condition type
-      nodeData.data.condition = conditionTypeSelect.value;
-      
-      // Reset parameters for new condition type
-      nodeData.data.params = {};
-      
-      // Refresh panel to show appropriate parameters
-      this.selectNode(nodeData.element);
-    });
-  }
-  
-  // Apply button handler
-  const applyBtn = properties.querySelector('#apply-condition-changes');
-  if (applyBtn) {
-    applyBtn.addEventListener('click', () => {
-      try {
-        // Get condition type value
-        const condition = conditionTypeSelect ? conditionTypeSelect.value : nodeData.data.condition;
-        
-        // Get parameters based on condition type
-        const params = {};
-        
-        switch (condition) {
+      if (nodeData.type === 'condition') {
+        // Condition type change handler
+        const conditionTypeSelect = properties.querySelector('#condition-type-select');
+        if (conditionTypeSelect) {
+          conditionTypeSelect.addEventListener('change', () => {
+            // Update condition type
+            nodeData.data.condition = conditionTypeSelect.value;
+
+            // Reset parameters for new condition type
+            nodeData.data.params = {};
+
+            // Refresh panel to show appropriate parameters
+            this.selectNode(nodeData.element);
+          });
+        }
+
+        // Apply button handler
+        const applyBtn = properties.querySelector('#apply-condition-changes');
+        if (applyBtn) {
+          applyBtn.addEventListener('click', () => {
+            try {
+              // Get condition type value
+              const condition = conditionTypeSelect ? conditionTypeSelect.value : nodeData.data.condition;
+
+              // Get parameters based on condition type
+              const params = {};
+
+              switch (condition) {
+                case 'hasMonster':
+                  // Keep existing monster data
+                  if (nodeData.data.params?.monsterId) {
+                    params.monsterId = nodeData.data.params.monsterId;
+                    params.monsterName = nodeData.data.params.monsterName;
+                  }
+                  break;
+
+                case 'hasItem':
+                  // Keep existing item data, update quantity
+                  if (nodeData.data.params?.itemId) {
+                    params.itemId = nodeData.data.params.itemId;
+                    params.itemName = nodeData.data.params.itemName;
+                  }
+
+                  const quantityInput = properties.querySelector('#item-quantity-input');
+                  params.quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+                  break;
+
+                case 'hasFlag':
+                  const flagNameInput = properties.querySelector('#flag-name-input');
+                  const flagValueInput = properties.querySelector('#flag-value-input');
+
+                  params.flag = flagNameInput ? flagNameInput.value.trim() : '';
+                  params.value = flagValueInput ? flagValueInput.value === 'true' : true;
+                  break;
+
+                case 'monsterLevel':
+                  // Keep existing monster data, update level
+                  if (nodeData.data.params?.monsterId) {
+                    params.monsterId = nodeData.data.params.monsterId;
+                    params.monsterName = nodeData.data.params.monsterName;
+                  }
+
+                  const levelInput = properties.querySelector('#monster-level-input');
+                  params.level = levelInput ? parseInt(levelInput.value) || 1 : 1;
+                  break;
+
+                case 'playerLevel':
+                  // Note: This will be replaced later with something more fitting
+                  const playerLevelInput = properties.querySelector('#player-level-input');
+                  params.level = playerLevelInput ? parseInt(playerLevelInput.value) || 1 : 1;
+                  break;
+              }
+
+              // Update node data
+              nodeData.data.condition = condition;
+              nodeData.data.params = params;
+
+              // Mark as dirty
+              this.currentGraph.dirty = true;
+
+              // Update visual representation
+              this.updateNodeVisual(nodeData);
+
+              // Show confirmation
+              this.showToast('Condition updated', 'success');
+            } catch (error) {
+              console.error('Error updating condition node:', error);
+              this.showToast('Error updating condition node', 'error');
+            }
+          });
+        }
+
+        // Resource selection handlers based on condition type
+        switch (nodeData.data.condition) {
           case 'hasMonster':
-            // Keep existing monster data
-            if (nodeData.data.params?.monsterId) {
-              params.monsterId = nodeData.data.params.monsterId;
-              params.monsterName = nodeData.data.params.monsterName;
-            }
-            break;
-            
-          case 'hasItem':
-            // Keep existing item data, update quantity
-            if (nodeData.data.params?.itemId) {
-              params.itemId = nodeData.data.params.itemId;
-              params.itemName = nodeData.data.params.itemName;
-            }
-            
-            const quantityInput = properties.querySelector('#item-quantity-input');
-            params.quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-            break;
-            
-          case 'hasFlag':
-            const flagNameInput = properties.querySelector('#flag-name-input');
-            const flagValueInput = properties.querySelector('#flag-value-input');
-            
-            params.flag = flagNameInput ? flagNameInput.value.trim() : '';
-            params.value = flagValueInput ? flagValueInput.value === 'true' : true;
-            break;
-            
           case 'monsterLevel':
-            // Keep existing monster data, update level
-            if (nodeData.data.params?.monsterId) {
-              params.monsterId = nodeData.data.params.monsterId;
-              params.monsterName = nodeData.data.params.monsterName;
+            const selectMonsterBtn = properties.querySelector('#select-monster-btn');
+            if (selectMonsterBtn) {
+              selectMonsterBtn.addEventListener('click', () => {
+                this.showResourceSelector(nodeData, 'bestiary', '', (monsterId, monster) => {
+                  // Update node data with selected monster
+                  if (!nodeData.data.params) {
+                    nodeData.data.params = {};
+                  }
+
+                  nodeData.data.params.monsterId = monsterId;
+                  nodeData.data.params.monsterName = monster.name;
+
+                  // Mark as dirty
+                  this.currentGraph.dirty = true;
+
+                  // Refresh properties panel
+                  this.selectNode(nodeData.element);
+
+                  // Show confirmation
+                  this.showToast(`Monster "${monster.name}" selected`, 'success');
+                });
+              });
             }
-            
-            const levelInput = properties.querySelector('#monster-level-input');
-            params.level = levelInput ? parseInt(levelInput.value) || 1 : 1;
             break;
-            
-          case 'playerLevel':
-            // Note: This will be replaced later with something more fitting
-            const playerLevelInput = properties.querySelector('#player-level-input');
-            params.level = playerLevelInput ? parseInt(playerLevelInput.value) || 1 : 1;
+
+          case 'hasItem':
+            const selectItemBtn = properties.querySelector('#select-item-btn');
+            if (selectItemBtn) {
+              selectItemBtn.addEventListener('click', () => {
+                this.showResourceSelector(nodeData, 'textures', 'props', (itemId, item) => {
+                  // Update node data with selected item
+                  if (!nodeData.data.params) {
+                    nodeData.data.params = {};
+                  }
+
+                  nodeData.data.params.itemId = itemId;
+                  nodeData.data.params.itemName = item.name;
+
+                  // Mark as dirty
+                  this.currentGraph.dirty = true;
+
+                  // Refresh properties panel
+                  this.selectNode(nodeData.element);
+
+                  // Show confirmation
+                  this.showToast(`Item "${item.name}" selected`, 'success');
+                });
+              });
+            }
             break;
         }
-        
-        // Update node data
-        nodeData.data.condition = condition;
-        nodeData.data.params = params;
-        
-        // Mark as dirty
-        this.currentGraph.dirty = true;
-        
-        // Update visual representation
-        this.updateNodeVisual(nodeData);
-        
-        // Show confirmation
-        this.showToast('Condition updated', 'success');
-      } catch (error) {
-        console.error('Error updating condition node:', error);
-        this.showToast('Error updating condition node', 'error');
       }
-    });
-  }
-  
-  // Resource selection handlers based on condition type
-  switch (nodeData.data.condition) {
-    case 'hasMonster':
-    case 'monsterLevel':
-      const selectMonsterBtn = properties.querySelector('#select-monster-btn');
-      if (selectMonsterBtn) {
-        selectMonsterBtn.addEventListener('click', () => {
-          this.showResourceSelector(nodeData, 'bestiary', '', (monsterId, monster) => {
-            // Update node data with selected monster
-            if (!nodeData.data.params) {
-              nodeData.data.params = {};
-            }
-            
-            nodeData.data.params.monsterId = monsterId;
-            nodeData.data.params.monsterName = monster.name;
-            
-            // Mark as dirty
-            this.currentGraph.dirty = true;
-
-            // Refresh properties panel
-            this.selectNode(nodeData.element);
-
-            // Show confirmation
-            this.showToast(`Monster "${monster.name}" selected`, 'success');
-          });
-        });
-      }
-      break;
-      
-    case 'hasItem':
-      const selectItemBtn = properties.querySelector('#select-item-btn');
-      if (selectItemBtn) {
-        selectItemBtn.addEventListener('click', () => {
-          this.showResourceSelector(nodeData, 'textures', 'props', (itemId, item) => {
-            // Update node data with selected item
-            if (!nodeData.data.params) {
-              nodeData.data.params = {};
-            }
-            
-            nodeData.data.params.itemId = itemId;
-            nodeData.data.params.itemName = item.name;
-            
-            // Mark as dirty
-            this.currentGraph.dirty = true;
-
-            // Refresh properties panel
-            this.selectNode(nodeData.element);
-
-            // Show confirmation
-            this.showToast(`Item "${item.name}" selected`, 'success');
-          });
-        });
-      }
-      break;
-  }
-}
 
 
 
@@ -2799,336 +3584,208 @@ if (nodeData.type === 'condition') {
     }
 
     /**
-     * old working method to update a node's visual appearance based on its data
+     * method to update a node's visual appearance based on its data
      */
-//     updateNodeVisual(nodeData) {
-//       if (!nodeData || !nodeData.element) return;
+    updateNodeVisual(nodeData) {
+      if (!nodeData || !nodeData.element) return;
 
-//       const element = nodeData.element;
-    
-//       // Update title in header
-//       const header = element.querySelector('.storyboard-node-header');
-//       if (header) {
-//         // Get the text node (first child)
-//         let textNode = null;
-//         for (const child of header.childNodes) {
-//           if (child.nodeType === Node.TEXT_NODE) {
-//             textNode = child;
-//             break;
-//           }
-//         }
+      const element = nodeData.element;
 
-//         if (textNode) {
-//           textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
-//         } else {
-//           // If no text node found, insert one at the beginning
-//           const closeButton = header.querySelector('.storyboard-node-close');
-//           if (closeButton) {
-//             header.insertBefore(
-//               document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
-//               closeButton
-//             );
-//           }
-//         }
-//       }
+      // Update title in header
+      const header = element.querySelector('.storyboard-node-header');
+      if (header) {
+        // Get the text node (first child)
+        let textNode = null;
+        for (const child of header.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            textNode = child;
+            break;
+          }
+        }
 
-//       const body = element.querySelector('.storyboard-node-body');
-//       if (body) {
-//         // Declare variables once at the top level
-//         let description = '';
-//         let eventTypeName = '';
-//         let conditionName = '';
-//         let itemName = '';
-//         let quantity = 0;
-//         let orientation = '';
-        
-//         switch (nodeData.type) {
-//           case 'dialog':
-//             body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
-//             if (nodeData.data.image) {
-//               body.innerHTML += `
-//                   <div style="margin-top: 4px; font-size: 0.8em; color: #888;">
-//                     <span class="material-icons" style="font-size: 14px; vertical-align: middle;">image</span>
-//                     Image attached
-//                   </div>
-//                 `;
-//             }
-//             break;
-
-//           // In the updateNodeVisual method, update the case for choice nodes
-//           case 'choice':
-//             body.innerHTML = `
-//     <div>${nodeData.data.text || 'What would you like to do?'}</div>
-//     <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
-//       ${nodeData.data.options?.length || 0} options
-//     </div>
-//   `;
-//             break;
-
-//           // In the updateNodeVisual method, update the case for trigger nodes
-//           case 'trigger':
-//             body.innerHTML = `
-//     <div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(1)}</div>
-//     <div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
-//     <div style="margin-top: 4px; font-size: 0.9em; color: ${nodeData.data.once ? '#4CAF50' : '#FFC107'};">
-//       ${nodeData.data.once ? 'Triggers once' : 'Triggers repeatedly'}
-//     </div>
-//   `;
-//             break;
-
-//           // In the updateNodeVisual method, update the case for event nodes
-//           case 'event':
-//             // Get a human-readable event type name
-//             let eventTypeName = '';
-//             switch (nodeData.data.eventType) {
-//               case 'offerStarter': eventTypeName = 'Offer Starter Monster'; break;
-//               case 'showPartyManager': eventTypeName = 'Show Party Manager'; break;
-//               case 'giveItem': eventTypeName = 'Give Item'; break;
-//               case 'setFlag': eventTypeName = 'Set Flag'; break;
-//               case 'teleport': eventTypeName = 'Teleport Player'; break;
-//               default: eventTypeName = nodeData.data.eventType || 'Unknown';
-//             }
-
-//             // Build description based on event type
-//             let description = '';
-//             switch (nodeData.data.eventType) {
-//               case 'giveItem':
-//                 const itemName = nodeData.data.params?.itemName || nodeData.data.params?.itemId || 'Not set';
-//                 const quantity = nodeData.data.params?.quantity || 1;
-//                 const orientation = nodeData.data.params?.isHorizontal ? 'Horizontal' : 'Vertical';
-//                 description = `Item: ${itemName}, Qty: ${quantity}, ${orientation}`;
-//                 break;
-//               case 'setFlag':
-//                 description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
-//                 break;
-//               case 'teleport':
-//                 const x = nodeData.data.params?.x || 0;
-//                 const y = nodeData.data.params?.y || 0;
-//                 const z = nodeData.data.params?.z || 0;
-//                 description = `Position: ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}`;
-//                 break;
-//             }
-
-//             body.innerHTML = `
-//     <div>${eventTypeName}</div>
-//     ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
-//   `;
-//             break;
-
-// // condition method goes here
-
-
-
-
-//           // Other node types...
-//         }
-//       }
-//     }
-
-updateNodeVisual(nodeData) {
-  if (!nodeData || !nodeData.element) return;
-
-  const element = nodeData.element;
-
-  // Update title in header
-  const header = element.querySelector('.storyboard-node-header');
-  if (header) {
-    // Get the text node (first child)
-    let textNode = null;
-    for (const child of header.childNodes) {
-      if (child.nodeType === Node.TEXT_NODE) {
-        textNode = child;
-        break;
+        if (textNode) {
+          textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+        } else {
+          // If no text node found, insert one at the beginning
+          const closeButton = header.querySelector('.storyboard-node-close');
+          if (closeButton) {
+            header.insertBefore(
+              document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
+              closeButton
+            );
+          }
+        }
       }
-    }
 
-    if (textNode) {
-      textNode.nodeValue = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
-    } else {
-      // If no text node found, insert one at the beginning
-      const closeButton = header.querySelector('.storyboard-node-close');
-      if (closeButton) {
-        header.insertBefore(
-          document.createTextNode(nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)),
-          closeButton
-        );
-      }
-    }
-  }
+      const body = element.querySelector('.storyboard-node-body');
+      if (body) {
+        // Declare variables once at the top level
+        let description = '';
+        let eventTypeName = '';
+        let conditionName = '';
+        let itemName = '';
+        let quantity = 0;
+        let orientation = '';
+        let x, y, z;
 
-  const body = element.querySelector('.storyboard-node-body');
-  if (body) {
-    // Declare variables once at the top level
-    let description = '';
-    let eventTypeName = '';
-    let conditionName = '';
-    let itemName = '';
-    let quantity = 0;
-    let orientation = '';
-    let x, y, z;
-    
-    switch (nodeData.type) {
-      case 'dialog':
-        body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
-        if (nodeData.data.image) {
-          body.innerHTML += `
+        switch (nodeData.type) {
+          case 'dialog':
+            body.innerHTML = `<div>${nodeData.data.text || ''}</div>`;
+            if (nodeData.data.image) {
+              body.innerHTML += `
               <div style="margin-top: 4px; font-size: 0.8em; color: #888;">
                 <span class="material-icons" style="font-size: 14px; vertical-align: middle;">image</span>
                 Image attached
               </div>
             `;
-        }
-        break;
+            }
+            break;
 
-      // In the updateNodeVisual method, update the case for choice nodes
-      case 'choice':
-        body.innerHTML = `
+          // In the updateNodeVisual method, update the case for choice nodes
+          case 'choice':
+            body.innerHTML = `
 <div>${nodeData.data.text || 'What would you like to do?'}</div>
 <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
   ${nodeData.data.options?.length || 0} options
 </div>
 `;
-        break;
+            break;
 
-      // In the updateNodeVisual method, update the case for trigger nodes
-      case 'trigger':
-        body.innerHTML = `
+          // In the updateNodeVisual method, update the case for trigger nodes
+          case 'trigger':
+            body.innerHTML = `
 <div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(1)}</div>
 <div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
 <div style="margin-top: 4px; font-size: 0.9em; color: ${nodeData.data.once ? '#4CAF50' : '#FFC107'};">
   ${nodeData.data.once ? 'Triggers once' : 'Triggers repeatedly'}
 </div>
 `;
-        break;
-
-      // In the updateNodeVisual method, update the case for event nodes
-      case 'event':
-        // Get a human-readable event type name - reuse variables from above
-        eventTypeName = '';
-        switch (nodeData.data.eventType) {
-          case 'offerStarter': eventTypeName = 'Offer Starter Monster'; break;
-          case 'showPartyManager': eventTypeName = 'Show Party Manager'; break;
-          case 'giveItem': eventTypeName = 'Give Item'; break;
-          case 'setFlag': eventTypeName = 'Set Flag'; break;
-          case 'teleport': eventTypeName = 'Teleport Player'; break;
-          default: eventTypeName = nodeData.data.eventType || 'Unknown';
-        }
-
-        // Build description based on event type - reuse variables from above
-        description = '';
-        switch (nodeData.data.eventType) {
-          case 'giveItem':
-            itemName = nodeData.data.params?.itemName || nodeData.data.params?.itemId || 'Not set';
-            quantity = nodeData.data.params?.quantity || 1;
-            orientation = nodeData.data.params?.isHorizontal ? 'Horizontal' : 'Vertical';
-            description = `Item: ${itemName}, Qty: ${quantity}, ${orientation}`;
             break;
-          case 'setFlag':
-            description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
-            break;
-          case 'teleport':
-            x = nodeData.data.params?.x || 0;
-            y = nodeData.data.params?.y || 0;
-            z = nodeData.data.params?.z || 0;
-            description = `Position: ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}`;
-            break;
-        }
 
-        body.innerHTML = `
+          // In the updateNodeVisual method, update the case for event nodes
+          case 'event':
+            // Get a human-readable event type name - reuse variables from above
+            eventTypeName = '';
+            switch (nodeData.data.eventType) {
+              case 'offerStarter': eventTypeName = 'Offer Starter Monster'; break;
+              case 'showPartyManager': eventTypeName = 'Show Party Manager'; break;
+              case 'giveItem': eventTypeName = 'Give Item'; break;
+              case 'setFlag': eventTypeName = 'Set Flag'; break;
+              case 'teleport': eventTypeName = 'Teleport Player'; break;
+              default: eventTypeName = nodeData.data.eventType || 'Unknown';
+            }
+
+            // Build description based on event type - reuse variables from above
+            description = '';
+            switch (nodeData.data.eventType) {
+              case 'giveItem':
+                itemName = nodeData.data.params?.itemName || nodeData.data.params?.itemId || 'Not set';
+                quantity = nodeData.data.params?.quantity || 1;
+                orientation = nodeData.data.params?.isHorizontal ? 'Horizontal' : 'Vertical';
+                description = `Item: ${itemName}, Qty: ${quantity}, ${orientation}`;
+                break;
+              case 'setFlag':
+                description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
+                break;
+              case 'teleport':
+                x = nodeData.data.params?.x || 0;
+                y = nodeData.data.params?.y || 0;
+                z = nodeData.data.params?.z || 0;
+                description = `Position: ${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}`;
+                break;
+            }
+
+            body.innerHTML = `
 <div>${eventTypeName}</div>
 ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
 `;
-        break;
+            break;
 
-        case 'condition':
-          // Get a human-readable condition type name - reuse variables from above
-          conditionName = '';
-          switch (nodeData.data.condition) {
-            case 'hasMonster': conditionName = 'Has Monster'; break;
-            case 'hasItem': conditionName = 'Has Item'; break;
-            case 'hasFlag': conditionName = 'Has Flag'; break;
-            case 'monsterLevel': conditionName = 'Monster Level'; break;
-            case 'playerLevel': conditionName = 'Player Level'; break;
-            default: conditionName = nodeData.data.condition || 'Unknown';
-          }
-          
-          // Build description based on condition type - reuse variables from above
-          description = '';
-          switch (nodeData.data.condition) {
-            case 'hasMonster':
-              description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}`;
+            case 'condition':
+              // Get a human-readable condition type name
+              conditionName = '';
+              switch (nodeData.data.condition) {
+                case 'hasMonster': conditionName = 'Has Monster'; break;
+                case 'hasItem': conditionName = 'Has Item'; break;
+                case 'hasFlag': conditionName = 'Has Flag'; break;
+                case 'monsterLevel': conditionName = 'Monster Level'; break;
+                default: conditionName = nodeData.data.condition || 'Unknown';
+              }
+              
+              // Build description based on condition type
+              description = '';
+              switch (nodeData.data.condition) {
+                case 'hasMonster':
+                  description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}`;
+                  break;
+                case 'hasItem':
+                  description = `Item: ${nodeData.data.params?.itemName || 'Not set'}, Qty: ${nodeData.data.params?.quantity || 1}`;
+                  break;
+                case 'hasFlag':
+                  description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
+                  break;
+                case 'monsterLevel':
+                  description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}, Level: ${nodeData.data.params?.level || 1}+`;
+                  break;
+              }
+              
+              body.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="material-icons" style="font-size: 18px; color: #FFC107;">help</span>
+                  <span>${conditionName}</span>
+                </div>
+                ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
+                <div style="margin-top: 8px; font-size: 0.8em; color: #2196F3;">
+                  <span style="display: inline-block; width: 10px; height: 10px; background: #2196F3; border-radius: 50%; margin-right: 6px;"></span>
+                  Blue: If condition is true
+                </div>
+                <div style="font-size: 0.8em; color: #F44336;">
+                  <span style="display: inline-block; width: 10px; height: 10px; background: #F44336; border-radius: 50%; margin-right: 6px;"></span>
+                  Red: If condition is false
+                </div>
+              `;
               break;
-            case 'hasItem':
-              description = `Item: ${nodeData.data.params?.itemName || 'Not set'}, Qty: ${nodeData.data.params?.quantity || 1}`;
-              break;
-            case 'hasFlag':
-              description = `Flag: ${nodeData.data.params?.flag || 'Not set'} = ${nodeData.data.params?.value ? 'True' : 'False'}`;
-              break;
-            case 'monsterLevel':
-              description = `Monster: ${nodeData.data.params?.monsterName || 'Not set'}, Level: ${nodeData.data.params?.level || 1}+`;
-              break;
-            case 'playerLevel':
-              description = `Level: ${nodeData.data.params?.level || 1}+`;
-              break;
-          }
-          
-          body.innerHTML = `
-  <div style="display: flex; align-items: center; gap: 6px;">
-    <span class="material-icons" style="font-size: 18px; color: #FFC107;">help</span>
-    <span>${conditionName}</span>
-  </div>
-  ${description ? `<div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">${description}</div>` : ''}
-  <div style="margin-top: 8px; font-size: 0.8em; color: #2196F3;">
-    <span class="material-icons" style="font-size: 12px; vertical-align: middle;">arrow_forward</span> 
-    First branch: If true
-  </div>
-  <div style="font-size: 0.8em; color: #F44336;">
-    <span class="material-icons" style="font-size: 12px; vertical-align: middle;">arrow_forward</span> 
-    Second branch: If false
-  </div>
-  `;
-          break;
-      // Other node types...
+          // Other node types...
 
 
 
 
 
-      default:
-        body.innerHTML = '<div>Configure node</div>';
+          default:
+            body.innerHTML = '<div>Configure node</div>';
+        }
+      }
     }
-  }
-}
 
 
 
-/**
- * Show a unified resource selector for various resource types
- * @param {Object} nodeData - The node data to update with selection
- * @param {string} resourceType - Main resource type: 'textures', 'sounds', 'splashArt', 'bestiary'
- * @param {string} category - Subcategory within the resource type: 'props', 'walls', 'ambient', 'title', etc.
- * @param {Function} onSelect - Callback function when item is selected (receives resourceId and resource)
- */
-showResourceSelector(nodeData, resourceType, category, onSelect) {
-  if (!this.resourceManager || !nodeData) {
-    console.error('ResourceManager not available for resource selection');
-    this.showToast('Resource Manager not available', 'error');
-    return;
-  }
+    /**
+     * Show a unified resource selector for various resource types
+     * @param {Object} nodeData - The node data to update with selection
+     * @param {string} resourceType - Main resource type: 'textures', 'sounds', 'splashArt', 'bestiary'
+     * @param {string} category - Subcategory within the resource type: 'props', 'walls', 'ambient', 'title', etc.
+     * @param {Function} onSelect - Callback function when item is selected (receives resourceId and resource)
+     */
+    showResourceSelector(nodeData, resourceType, category, onSelect) {
+      if (!this.resourceManager || !nodeData) {
+        console.error('ResourceManager not available for resource selection');
+        this.showToast('Resource Manager not available', 'error');
+        return;
+      }
 
-  // Create drawer for resource selection
-  const drawer = document.createElement('sl-drawer');
-  drawer.label = `Select ${category.charAt(0).toUpperCase() + category.slice(1)}`;
-  drawer.placement = 'bottom';
-  drawer.style.cssText = '--size: 70vh;';
-  
-  // Add classes for styling
-  drawer.classList.add('storyboard-drawer');
-  drawer.classList.add('resource-selector-drawer');
+      // Create drawer for resource selection
+      const drawer = document.createElement('sl-drawer');
+      drawer.label = `Select ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+      drawer.placement = 'bottom';
+      drawer.style.cssText = '--size: 70vh;';
 
-  // Add styles for this specific drawer
-  const selectorStyles = document.createElement('style');
-  selectorStyles.textContent = `
+      // Add classes for styling
+      drawer.classList.add('storyboard-drawer');
+      drawer.classList.add('resource-selector-drawer');
+
+      // Add styles for this specific drawer
+      const selectorStyles = document.createElement('style');
+      selectorStyles.textContent = `
     .resource-selector-drawer::part(overlay) {
       left: 280px !important;
       width: calc(100% - 280px) !important;
@@ -3190,61 +3847,61 @@ showResourceSelector(nodeData, resourceType, category, onSelect) {
       transform: translateY(-2px);
     }
   `;
-  document.head.appendChild(selectorStyles);
+      document.head.appendChild(selectorStyles);
 
-  // Get resources from resource manager
-  let resources = [];
-  
-  if (resourceType === 'textures') {
-    const resourceMap = this.resourceManager.resources.textures[category];
-    if (resourceMap && resourceMap.size > 0) {
-      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-        id,
-        name: resource.name || 'Unnamed',
-        thumbnail: resource.thumbnail,
-        data: resource
-      }));
-    }
-  } else if (resourceType === 'sounds') {
-    const resourceMap = this.resourceManager.resources.sounds[category];
-    if (resourceMap && resourceMap.size > 0) {
-      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-        id,
-        name: resource.name || 'Unnamed',
-        duration: resource.duration || 0,
-        data: resource
-      }));
-    }
-  } else if (resourceType === 'splashArt') {
-    const resourceMap = this.resourceManager.resources.splashArt[category];
-    if (resourceMap && resourceMap.size > 0) {
-      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-        id,
-        name: resource.name || 'Unnamed',
-        thumbnail: resource.thumbnail,
-        data: resource
-      }));
-    }
-  } else if (resourceType === 'bestiary') {
-    const resourceMap = this.resourceManager.resources.bestiary;
-    if (resourceMap && resourceMap.size > 0) {
-      resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
-        id,
-        name: resource.name || 'Unnamed',
-        thumbnail: resource.thumbnail,
-        cr: resource.cr,
-        type: resource.type,
-        data: resource
-      }));
-    }
-  }
+      // Get resources from resource manager
+      let resources = [];
 
-  // Customize item rendering based on resource type
-  let itemRenderer;
-  
-  if (resourceType === 'textures' || resourceType === 'splashArt') {
-    // For visual resources
-    itemRenderer = (resource) => `
+      if (resourceType === 'textures') {
+        const resourceMap = this.resourceManager.resources.textures[category];
+        if (resourceMap && resourceMap.size > 0) {
+          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+            id,
+            name: resource.name || 'Unnamed',
+            thumbnail: resource.thumbnail,
+            data: resource
+          }));
+        }
+      } else if (resourceType === 'sounds') {
+        const resourceMap = this.resourceManager.resources.sounds[category];
+        if (resourceMap && resourceMap.size > 0) {
+          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+            id,
+            name: resource.name || 'Unnamed',
+            duration: resource.duration || 0,
+            data: resource
+          }));
+        }
+      } else if (resourceType === 'splashArt') {
+        const resourceMap = this.resourceManager.resources.splashArt[category];
+        if (resourceMap && resourceMap.size > 0) {
+          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+            id,
+            name: resource.name || 'Unnamed',
+            thumbnail: resource.thumbnail,
+            data: resource
+          }));
+        }
+      } else if (resourceType === 'bestiary') {
+        const resourceMap = this.resourceManager.resources.bestiary;
+        if (resourceMap && resourceMap.size > 0) {
+          resources = Array.from(resourceMap.entries()).map(([id, resource]) => ({
+            id,
+            name: resource.name || 'Unnamed',
+            thumbnail: resource.thumbnail,
+            cr: resource.cr,
+            type: resource.type,
+            data: resource
+          }));
+        }
+      }
+
+      // Customize item rendering based on resource type
+      let itemRenderer;
+
+      if (resourceType === 'textures' || resourceType === 'splashArt') {
+        // For visual resources
+        itemRenderer = (resource) => `
       <div class="resource-item" data-id="${resource.id}" style="height: 100%;">
         <div style="height: 120px; overflow: hidden;">
           <img src="${resource.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;">
@@ -3254,9 +3911,9 @@ showResourceSelector(nodeData, resourceType, category, onSelect) {
         </div>
       </div>
     `;
-  } else if (resourceType === 'sounds') {
-    // For sound resources
-    itemRenderer = (resource) => `
+      } else if (resourceType === 'sounds') {
+        // For sound resources
+        itemRenderer = (resource) => `
       <div class="resource-item" data-id="${resource.id}" style="height: 100%; display: flex; flex-direction: column;">
         <div style="flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
           <div class="material-icons" style="font-size: 32px; margin-bottom: 8px; color: #673ab7;">music_note</div>
@@ -3271,9 +3928,9 @@ showResourceSelector(nodeData, resourceType, category, onSelect) {
         </div>
       </div>
     `;
-  } else if (resourceType === 'bestiary') {
-    // For bestiary resources
-    itemRenderer = (resource) => `
+      } else if (resourceType === 'bestiary') {
+        // For bestiary resources
+        itemRenderer = (resource) => `
       <div class="resource-item" data-id="${resource.id}" style="height: 100%;">
         <div style="height: 120px; overflow: hidden;">
           <img src="${resource.thumbnail}" style="width: 100%; height: 100%; object-fit: contain;">
@@ -3287,10 +3944,10 @@ showResourceSelector(nodeData, resourceType, category, onSelect) {
         </div>
       </div>
     `;
-  }
+      }
 
-  // Add drawer content
-  drawer.innerHTML = `
+      // Add drawer content
+      drawer.innerHTML = `
     <div style="padding: 16px;">
       <div style="margin-bottom: 16px;">
         <sl-input placeholder="Search..." clearable id="resource-search"></sl-input>
@@ -3321,94 +3978,94 @@ showResourceSelector(nodeData, resourceType, category, onSelect) {
     </div>
   `;
 
-  document.body.appendChild(drawer);
-  drawer.show();
+      document.body.appendChild(drawer);
+      drawer.show();
 
-  // Set up search functionality
-  const searchInput = drawer.querySelector('#resource-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      const searchTerm = e.target.value.toLowerCase();
+      // Set up search functionality
+      const searchInput = drawer.querySelector('#resource-search');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const searchTerm = e.target.value.toLowerCase();
 
+          drawer.querySelectorAll('.resource-item').forEach(item => {
+            const nameElement = item.querySelector('div > div');
+            if (!nameElement) return;
+
+            const name = nameElement.textContent.toLowerCase();
+
+            // Show/hide based on search term
+            if (name.includes(searchTerm)) {
+              item.style.display = 'block';
+            } else {
+              item.style.display = 'none';
+            }
+          });
+        });
+      }
+
+      // Set up sound play buttons if needed
+      if (resourceType === 'sounds') {
+        drawer.querySelectorAll('.play-sound-btn').forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.stopPropagation(); // Don't select when just playing
+            const soundId = button.getAttribute('data-id');
+            this.resourceManager.playSound(soundId, category);
+          });
+        });
+      }
+
+      // Set up item selection
       drawer.querySelectorAll('.resource-item').forEach(item => {
-        const nameElement = item.querySelector('div > div');
-        if (!nameElement) return;
-        
-        const name = nameElement.textContent.toLowerCase();
+        item.addEventListener('click', () => {
+          const resourceId = item.getAttribute('data-id');
+          let resource;
 
-        // Show/hide based on search term
-        if (name.includes(searchTerm)) {
-          item.style.display = 'block';
-        } else {
-          item.style.display = 'none';
-        }
+          // Get the selected resource based on resource type
+          if (resourceType === 'textures') {
+            resource = this.resourceManager.resources.textures[category].get(resourceId);
+          } else if (resourceType === 'sounds') {
+            resource = this.resourceManager.resources.sounds[category].get(resourceId);
+          } else if (resourceType === 'splashArt') {
+            resource = this.resourceManager.resources.splashArt[category].get(resourceId);
+          } else if (resourceType === 'bestiary') {
+            resource = this.resourceManager.resources.bestiary.get(resourceId);
+          }
+
+          if (resource) {
+            // Use callback for selection if provided
+            if (typeof onSelect === 'function') {
+              onSelect(resourceId, resource);
+            }
+
+            // Close drawer
+            drawer.hide();
+          }
+        });
       });
-    });
-  }
 
-  // Set up sound play buttons if needed
-  if (resourceType === 'sounds') {
-    drawer.querySelectorAll('.play-sound-btn').forEach(button => {
-      button.addEventListener('click', (e) => {
-        e.stopPropagation(); // Don't select when just playing
-        const soundId = button.getAttribute('data-id');
-        this.resourceManager.playSound(soundId, category);
-      });
-    });
-  }
-
-  // Set up item selection
-  drawer.querySelectorAll('.resource-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const resourceId = item.getAttribute('data-id');
-      let resource;
-      
-      // Get the selected resource based on resource type
-      if (resourceType === 'textures') {
-        resource = this.resourceManager.resources.textures[category].get(resourceId);
-      } else if (resourceType === 'sounds') {
-        resource = this.resourceManager.resources.sounds[category].get(resourceId);
-      } else if (resourceType === 'splashArt') {
-        resource = this.resourceManager.resources.splashArt[category].get(resourceId);
-      } else if (resourceType === 'bestiary') {
-        resource = this.resourceManager.resources.bestiary.get(resourceId);
+      // Set up cancel button
+      const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+          drawer.hide();
+        });
       }
 
-      if (resource) {
-        // Use callback for selection if provided
-        if (typeof onSelect === 'function') {
-          onSelect(resourceId, resource);
-        }
-        
-        // Close drawer
-        drawer.hide();
-      }
-    });
-  });
+      // Clean up when drawer is closed
+      drawer.addEventListener('sl-after-hide', () => {
+        drawer.remove();
+        selectorStyles.remove();
+      });
+    }
 
-  // Set up cancel button
-  const cancelBtn = drawer.querySelector('sl-button[variant="text"]');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      drawer.hide();
-    });
-  }
+    // Helper method to format sound duration
+    formatDuration(seconds) {
+      if (!seconds) return '0:00';
 
-  // Clean up when drawer is closed
-  drawer.addEventListener('sl-after-hide', () => {
-    drawer.remove();
-    selectorStyles.remove();
-  });
-}
-
-// Helper method to format sound duration
-formatDuration(seconds) {
-  if (!seconds) return '0:00';
-  
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-  return `${mins}:${secs}`;
-}
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
 
     /**
 * Simplified toast notification method
@@ -3761,6 +4418,37 @@ formatDuration(seconds) {
                 const nextNodeId = result === 'victory' ? connections[0].to : connections[1].to;
                 this.executeStoryNode(storyId, nextNodeId);
               }
+            } else {
+              // End of flow
+              this.completeStory(storyId);
+            }
+          });
+          break;
+
+        case 'condition':
+          this.evaluateCondition(node.data, (result) => {
+            // Find appropriate connection based on result
+            // We need to find connections from this node that have the right path attribute
+            const connections = storyGraph.connections.filter(c => c.from === nodeId);
+
+            if (connections.length === 0) {
+              // No connections, end of flow
+              this.completeStory(storyId);
+              return;
+            }
+
+            // Look for connection with matching path
+            const pathToFollow = result ? 'true' : 'false';
+            const matchingConnection = connections.find(c => c.path === pathToFollow);
+
+            if (matchingConnection) {
+              // Follow the matching path
+              this.executeStoryNode(storyId, matchingConnection.to);
+            } else if (connections.length > 0) {
+              // Fallback: If we can't find a connection with exact path match, use first (true) for true result, 
+              // second (false) for false result
+              const connectionIndex = result ? 0 : Math.min(1, connections.length - 1);
+              this.executeStoryNode(storyId, connections[connectionIndex].to);
             } else {
               // End of flow
               this.completeStory(storyId);
@@ -4157,14 +4845,6 @@ formatDuration(seconds) {
       }
     }
   }
-
-  // // Create global instance when script loads
-  // window.initStoryboard = (scene3D, resourceManager) => {
-  //   window.storyboard = new Storyboard(scene3D, resourceManager);
-  //   return window.storyboard;
-  // };
-
-
 
 
 };

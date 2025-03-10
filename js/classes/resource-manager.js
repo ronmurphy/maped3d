@@ -3682,8 +3682,8 @@ async showStorageManagementDialog() {
   
   dialog.querySelector('.optimize-btn').addEventListener('click', async () => {
     // Show optimization in progress
-    const notification = this.showInfoNotification("Optimizing storage...");
-    
+    // const notification = this.showInfoNotification("Optimizing storage...");
+    this.showSuccessNotification("Optimizing Storage ... ");
     // Move localStorage-only monsters to IndexedDB where possible
     let optimized = 0;
     let total = 0;
@@ -3713,6 +3713,7 @@ async showStorageManagementDialog() {
                   });
                   optimized++;
                 } catch (e) {
+                    this.showErrorNotification(`Failed to optimize storage for monster ${monster.id}: ${e.message}`);
                   console.warn(`Failed to optimize storage for monster ${monster.id}:`, e);
                 }
               }
@@ -3722,10 +3723,12 @@ async showStorageManagementDialog() {
       }
       
       // Update or close notification
-      if (notification) {
-        notification.innerHTML = `Storage optimization complete: ${optimized} of ${total} monsters optimized.`;
-        setTimeout(() => notification.hide(), 3000);
-      }
+    //   if (notification) {
+    //     notification.innerHTML = `Storage optimization complete: ${optimized} of ${total} monsters optimized.`;
+    //     setTimeout(() => notification.hide(), 3000);
+    //   }
+
+      this.showSuccessNotification(`Storage optimization complete: ${optimized} of ${total} monsters optimized.`);
       
       dialog.hide();
       
@@ -3733,11 +3736,13 @@ async showStorageManagementDialog() {
       this.updateBestiaryGallery(document.querySelector('.resource-drawer'));
       
     } catch (e) {
-      console.error("Error during storage optimization:", e);
-      if (notification) {
-        notification.variant = 'danger';
-        notification.innerHTML = `Error optimizing storage: ${e.message}`;
-      }
+
+        console.error("Error during storage optimization:", e);
+this.showErrorNotification(`Error optimizing storage: ${e.message}`);
+        //   if (notification) {
+    //     notification.variant = 'danger';
+    //     notification.innerHTML = `Error optimizing storage: ${e.message}`;
+    //   }
     }
   });
   
