@@ -705,18 +705,24 @@ if (typeof window.Storyboard === 'undefined') {
  * Generates the HTML for special node types with multiple ports
  */
 generateNodeHTML(nodeType, title, body, nodeData) {
+  // Base structure with input port at the top
+  const baseTemplate = `
+    <div class="storyboard-port input" style="position: absolute; top: -7px; left: 50%; transform: translateX(-50%);"></div>
+    <div class="storyboard-node-header">
+      ${title}
+      <span class="storyboard-node-close">×</span>
+    </div>
+    <div class="storyboard-node-body">
+      ${body}
+    </div>
+  `;
+
+  // Add the footer with appropriate output ports based on node type
   switch (nodeType) {
     case 'condition':
       return `
-        <div class="storyboard-node-header">
-          ${title}
-          <span class="storyboard-node-close">×</span>
-        </div>
-        <div class="storyboard-node-body">
-          ${body}
-        </div>
+        ${baseTemplate}
         <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
-          <div class="storyboard-port input"></div>
           <div class="storyboard-port output true-port" data-path="true" style="background: #2196F3; position: absolute; bottom: -7px; left: 30%; transform: translateX(-50%);"></div>
           <div class="storyboard-port output false-port" data-path="false" style="background: #F44336; position: absolute; bottom: -7px; left: 70%; transform: translateX(-50%);"></div>
         </div>
@@ -733,7 +739,7 @@ generateNodeHTML(nodeType, title, body, nodeData) {
       
       // Position the ports evenly
       for (let i = 0; i < numOptions; i++) {
-        const percentage = numOptions === 1 ? 50 : (i * (100 / (numOptions - 1)));
+        const percentage = numOptions <= 1 ? 50 : (i * (100 / (numOptions - 1)));
         const color = colors[i % colors.length];
         
         portsHTML += `
@@ -745,30 +751,16 @@ generateNodeHTML(nodeType, title, body, nodeData) {
       }
       
       return `
-        <div class="storyboard-node-header">
-          ${title}
-          <span class="storyboard-node-close">×</span>
-        </div>
-        <div class="storyboard-node-body">
-          ${body}
-        </div>
+        ${baseTemplate}
         <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
-          <div class="storyboard-port input"></div>
           ${portsHTML}
         </div>
       `;
       
     case 'combat':
       return `
-        <div class="storyboard-node-header">
-          ${title}
-          <span class="storyboard-node-close">×</span>
-        </div>
-        <div class="storyboard-node-body">
-          ${body}
-        </div>
+        ${baseTemplate}
         <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
-          <div class="storyboard-port input"></div>
           <div class="storyboard-port output win-port" data-path="victory" style="background: #4CAF50; position: absolute; bottom: -7px; left: 30%; transform: translateX(-50%);"></div>
           <div class="storyboard-port output lose-port" data-path="defeat" style="background: #F44336; position: absolute; bottom: -7px; left: 70%; transform: translateX(-50%);"></div>
         </div>
@@ -776,16 +768,9 @@ generateNodeHTML(nodeType, title, body, nodeData) {
       
     default:
       return `
-        <div class="storyboard-node-header">
-          ${title}
-          <span class="storyboard-node-close">×</span>
-        </div>
-        <div class="storyboard-node-body">
-          ${body}
-        </div>
+        ${baseTemplate}
         <div class="storyboard-node-footer">
-          <div class="storyboard-port input"></div>
-          <div class="storyboard-port output"></div>
+          <div class="storyboard-port output" style="position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);"></div>
         </div>
       `;
   }
@@ -3107,6 +3092,89 @@ if (e.target.closest('.storyboard-port')) {
       }
 
       // In setupNodePropertyHandlers method, add this for choice nodes
+      // if (nodeData.type === 'choice') {
+      //   // Apply button handler
+      //   const applyBtn = properties.querySelector('#apply-choice-changes');
+      //   if (applyBtn) {
+      //     applyBtn.addEventListener('click', () => {
+      //       try {
+      //         // Get main question text
+      //         const textArea = properties.querySelector('#choice-text-area');
+      //         const text = textArea?.value?.trim() || '';
+
+      //         // Get all option texts
+      //         const optionTextareas = properties.querySelectorAll('.option-text');
+      //         const options = [];
+
+      //         optionTextareas.forEach(textarea => {
+      //           const index = parseInt(textarea.getAttribute('data-index'));
+      //           const text = textarea.value.trim();
+
+      //           // Preserve existing targetId if available
+      //           const existingOption = nodeData.data.options[index];
+      //           const targetId = existingOption ? existingOption.targetId : null;
+
+      //           options.push({ text, targetId });
+      //         });
+
+      //         // Update node data
+      //         nodeData.data.text = text;
+      //         nodeData.data.options = options;
+
+      //         // Mark as dirty
+      //         this.currentGraph.dirty = true;
+
+      //         // Update visual representation
+      //         this.updateNodeVisual(nodeData);
+
+      //         // Show confirmation
+      //         this.showToast('Choice options updated', 'success');
+      //       } catch (error) {
+      //         console.error('Error updating choice node:', error);
+      //         this.showToast('Error updating choice node', 'error');
+      //       }
+      //     });
+      //   }
+
+      //   // Add option button
+      //   const addOptionBtn = properties.querySelector('#add-option-btn');
+      //   if (addOptionBtn) {
+      //     addOptionBtn.addEventListener('click', () => {
+      //       // Add new option to data
+      //       nodeData.data.options.push({ text: 'New option', targetId: null });
+
+      //       // Refresh properties panel to show new option
+      //       this.selectNode(nodeData.element);
+
+      //       // Show confirmation
+      //       this.showToast('Option added', 'success');
+      //     });
+      //   }
+
+      //   // Delete option buttons
+      //   const deleteButtons = properties.querySelectorAll('.delete-option-btn');
+      //   deleteButtons.forEach(button => {
+      //     button.addEventListener('click', () => {
+      //       const index = parseInt(button.getAttribute('data-index'));
+
+      //       // Need at least one option
+      //       if (nodeData.data.options.length <= 1) {
+      //         this.showToast('Cannot delete last option', 'error');
+      //         return;
+      //       }
+
+      //       // Remove the option
+      //       nodeData.data.options.splice(index, 1);
+
+      //       // Refresh properties panel
+      //       this.selectNode(nodeData.element);
+
+      //       // Show confirmation
+      //       this.showToast('Option deleted', 'success');
+      //     });
+      //   });
+      // }
+
       if (nodeData.type === 'choice') {
         // Apply button handler
         const applyBtn = properties.querySelector('#apply-choice-changes');
@@ -3116,32 +3184,56 @@ if (e.target.closest('.storyboard-port')) {
               // Get main question text
               const textArea = properties.querySelector('#choice-text-area');
               const text = textArea?.value?.trim() || '';
-
+              
               // Get all option texts
               const optionTextareas = properties.querySelectorAll('.option-text');
               const options = [];
-
+              
               optionTextareas.forEach(textarea => {
                 const index = parseInt(textarea.getAttribute('data-index'));
                 const text = textarea.value.trim();
-
+                
                 // Preserve existing targetId if available
                 const existingOption = nodeData.data.options[index];
                 const targetId = existingOption ? existingOption.targetId : null;
-
+                
                 options.push({ text, targetId });
               });
-
+              
               // Update node data
               nodeData.data.text = text;
               nodeData.data.options = options;
-
+              
               // Mark as dirty
               this.currentGraph.dirty = true;
-
+              
+              // Regenerate the node HTML to update ports
+              if (nodeData.element) {
+                const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+                const body = `
+                  <div>${text || ''}</div>
+                  <div style="color:#777;font-size:0.9em;">${options.length || 0} options</div>
+                `;
+                
+                nodeData.element.innerHTML = this.generateNodeHTML(nodeData.type, title, body, nodeData);
+                
+                // Reset event handlers
+                const closeBtn = nodeData.element.querySelector('.storyboard-node-close');
+                if (closeBtn) {
+                  closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.deleteNode(nodeData.element);
+                  });
+                }
+              }
+              
               // Update visual representation
               this.updateNodeVisual(nodeData);
-
+              
+              // Update connections
+              this.updateConnections();
+              
               // Show confirmation
               this.showToast('Choice options updated', 'success');
             } catch (error) {
@@ -3150,45 +3242,46 @@ if (e.target.closest('.storyboard-port')) {
             }
           });
         }
-
+        
         // Add option button
         const addOptionBtn = properties.querySelector('#add-option-btn');
         if (addOptionBtn) {
           addOptionBtn.addEventListener('click', () => {
             // Add new option to data
             nodeData.data.options.push({ text: 'New option', targetId: null });
-
+            
             // Refresh properties panel to show new option
             this.selectNode(nodeData.element);
-
+            
             // Show confirmation
             this.showToast('Option added', 'success');
           });
         }
-
+        
         // Delete option buttons
         const deleteButtons = properties.querySelectorAll('.delete-option-btn');
         deleteButtons.forEach(button => {
           button.addEventListener('click', () => {
             const index = parseInt(button.getAttribute('data-index'));
-
+            
             // Need at least one option
             if (nodeData.data.options.length <= 1) {
               this.showToast('Cannot delete last option', 'error');
               return;
             }
-
+            
             // Remove the option
             nodeData.data.options.splice(index, 1);
-
+            
             // Refresh properties panel
             this.selectNode(nodeData.element);
-
+            
             // Show confirmation
             this.showToast('Option deleted', 'success');
           });
         });
       }
+      
 
       // In setupNodePropertyHandlers method, add this for trigger nodes
       if (nodeData.type === 'trigger') {
