@@ -857,19 +857,360 @@ loadFromLocalStorage() {
     };
   }
 
-  async parseMonsterHtml(html) {
+  // async parseMonsterHtml(html) {
+  //   const parser = new DOMParser();
+  //   const doc = parser.parseFromString(html, "text/html");
+  
+  //   try {
+  //     // Required basic information
+  //     const name = doc.querySelector(".stats__h-name")?.textContent?.trim() || "Unknown Monster";
+      
+  //     // Extract source abbreviation - NEW CODE
+  //     let sourceAbbreviation = '';
+  //     const sourceElement = doc.querySelector(".stats__h-source-abbreviation");
+  //     if (sourceElement) {
+  //       // Find the class that starts with "source__"
+  //       const sourceClass = Array.from(sourceElement.classList)
+  //         .find(cls => cls.startsWith('source__'));
+  //       if (sourceClass) {
+  //         sourceAbbreviation = sourceClass.replace('source__', '');
+  //       }
+  //     }
+      
+  //     // Create 5e.tools URL - NEW CODE
+  //     let toolsUrl = '';
+  //     if (name && sourceAbbreviation) {
+  //       const urlSafeName = name.toLowerCase().replace(/\s+/g, '%20');
+  //       toolsUrl = `https://5e.tools/bestiary.html#${urlSafeName}_${sourceAbbreviation.toLowerCase()}`;
+  //     }
+  
+  //     // Rest of existing code for parsing monster info
+  //     // const typeInfo = doc.querySelector("td i")?.textContent?.trim() || "Medium Unknown, Unaligned";
+  //     // const [sizeTypeAlign = ""] = typeInfo.split(",");
+  //     // const [size = "Medium", type = "Unknown"] = sizeTypeAlign.trim().split(/\s+/);
+  //     // const alignment = typeInfo.split(",")[1]?.trim() || "Unaligned";
+  
+
+  //         // Handle size and type with special cases like "Small or Medium Humanoid"
+  //   const typeInfo = doc.querySelector("td i")?.textContent?.trim() || "Medium Unknown, Unaligned";
+  //   const [sizeTypeAlign = "", alignmentPart = "Unaligned"] = typeInfo.split(",").map(s => s.trim());
+    
+  //   // NEW CODE: Handle "Small or Medium" type format
+  //   let size = "Medium";
+  //   let type = "Unknown";
+    
+  //   // Check for common patterns with "or" in the size
+  //   if (sizeTypeAlign.match(/\b(Tiny|Small|Medium|Large|Huge|Gargantuan)\s+or\s+(Tiny|Small|Medium|Large|Huge|Gargantuan)\b/i)) {
+  //     // Example: "Small or Medium Humanoid"
+  //     // Take the second size (usually the larger one) as default
+  //     const match = sizeTypeAlign.match(/\b(Tiny|Small|Medium|Large|Huge|Gargantuan)\s+or\s+(Tiny|Small|Medium|Large|Huge|Gargantuan)\s+(\w+)\b/i);
+  //     if (match) {
+  //       size = match[2]; // Use the second size option
+  //       type = match[3]; // Get the type after the "or" part
+  //     }
+  //   } else {
+  //     // Standard format: "Medium Humanoid"
+  //     const parts = sizeTypeAlign.trim().split(/\s+/);
+  //     size = parts[0] || "Medium";
+  //     type = parts[1] || "Unknown";
+  //   }
+    
+  //   const alignment = alignmentPart || "Unaligned";
+
+  //     // Required stats (with safe defaults)
+  //     const stats = {
+  //       ac: parseInt(
+  //         doc.querySelector('[title="Armor Class"] + span')
+  //           ?.textContent || "10"
+  //       ),
+  //       hp: {
+  //         average: parseInt(
+  //           doc.querySelector('[title="Hit Points"] + span')
+  //             ?.textContent || "1"
+  //         ),
+  //         roll:
+  //           doc
+  //             .querySelector('[data-roll-name="Hit Points"]')
+  //             ?.textContent?.trim() || "1d4",
+  //         max: parseInt(
+  //           doc.querySelector('[title="Maximum: "]')?.textContent || "1"
+  //         )
+  //       },
+  //       speed: "30 ft."
+  //     };
+
+  //     // Try to get actual speed
+  //     const speedNode = Array.from(doc.querySelectorAll("strong")).find(
+  //       (el) => el.textContent === "Speed"
+  //     );
+  //     if (speedNode && speedNode.nextSibling) {
+  //       stats.speed = speedNode.nextSibling.textContent.trim();
+  //     }
+
+  //     // Parse ability scores - Updated version
+  //     // console.log("About to parse ability scores");
+  //     // Parse ability scores
+  //     const abilities = {};
+  //     const abilityRows = Array.from(
+  //       doc.querySelectorAll(".stats-tbl-ability-scores__lbl-abv")
+  //     );
+
+  //     abilityRows.forEach((labelCell) => {
+  //       const abilityDiv = labelCell.querySelector(".bold.small-caps");
+  //       if (abilityDiv) {
+  //         const abilityName = abilityDiv.textContent.trim().toLowerCase();
+  //         if (
+  //           ["str", "dex", "con", "int", "wis", "cha"].includes(
+  //             abilityName
+  //           )
+  //         ) {
+  //           try {
+  //             // Get score from the next cell's div directly
+  //             const scoreDiv =
+  //               labelCell.nextElementSibling.querySelector(
+  //                 ".ve-text-center"
+  //               );
+  //             const score = parseInt(scoreDiv?.textContent || "10");
+
+  //             // Get modifier from the next cell's roller span
+  //             const modifierCell =
+  //               scoreDiv?.parentElement.nextElementSibling;
+  //             const modifierText =
+  //               modifierCell?.querySelector(".roller")?.textContent ||
+  //               "0";
+  //             const modifier = parseInt(
+  //               modifierText.match(/[+-]\d+/)?.[0] || "0"
+  //             );
+
+  //             abilities[abilityName] = { score, modifier };
+  //             // console.log(`Parsed ${abilityName}:`, { score, modifier });
+  //           } catch (e) {
+  //             console.error(`Error parsing ${abilityName}:`, e);
+  //             abilities[abilityName] = { score: 10, modifier: 0 };
+  //           }
+  //         }
+  //       }
+  //     });
+  //     // console.log("Abilities parsed successfully:", abilities);
+
+  //     // Optional extras
+  //     let extras = {
+  //       immunities: [],
+  //       resistances: [],
+  //       senses: [],
+  //       languages: "None",
+  //       cr: "0",
+  //       xp: 0,
+  //       proficiencyBonus: 2
+  //     };
+
+  //     try {
+  //       const crNode = doc.querySelector(
+  //         '[title="Challenge Rating"] + span'
+  //       );
+  //       if (crNode) {
+  //         extras.cr = crNode.textContent.split("(")[0].trim();
+  //         const xpMatch = crNode.textContent.match(/XP (\d+)/);
+  //         if (xpMatch) extras.xp = parseInt(xpMatch[1]);
+  //         // console.log("Parsed CR/XP:", extras.cr, extras.xp);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse CR/XP");
+  //     }
+
+  //     try {
+  //       const immunityNode = Array.from(
+  //         doc.querySelectorAll("strong")
+  //       ).find((el) => el.textContent === "Immunities");
+  //       if (immunityNode && immunityNode.nextSibling) {
+  //         extras.immunities = immunityNode.nextSibling.textContent
+  //           .split(";")
+  //           .map((i) => i.trim())
+  //           .filter((i) => i);
+  //         // console.log("Parsed immunities:", extras.immunities);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse immunities");
+  //     }
+
+  //     try {
+  //       const sensesNode = Array.from(
+  //         doc.querySelectorAll("strong")
+  //       ).find((el) => el.textContent === "Senses");
+  //       if (sensesNode && sensesNode.nextSibling) {
+  //         extras.senses = sensesNode.nextSibling.textContent
+  //           .split(",")
+  //           .map((s) => s.trim())
+  //           .filter((s) => s);
+  //         // console.log("Parsed senses:", extras.senses);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse senses");
+  //     }
+
+  //     try {
+  //       const languagesNode = Array.from(
+  //         doc.querySelectorAll("strong")
+  //       ).find((el) => el.textContent === "Languages");
+  //       if (languagesNode && languagesNode.nextSibling) {
+  //         extras.languages =
+  //           languagesNode.nextSibling.textContent.trim() || "None";
+  //         // console.log("Parsed languages:", extras.languages);
+  //       }
+  //     } catch (e) {
+  //       console.log("Optional: Failed to parse languages");
+  //     }
+
+  //     let tokenUrl = null;
+  //     let tokenData = null;
+
+  //     try {
+  //       const tokenDiv = doc.querySelector("#float-token");
+  //       if (tokenDiv) {
+  //         const imgElement = tokenDiv.querySelector("img.stats__token");
+  //         if (imgElement?.src) {
+  //           const path = imgElement.src.replace(/.*\/bestiary\/tokens\//, "");
+  //           tokenUrl = this.getTokenUrl(path);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error handling token:", error);
+  //     }
+
+  //     const actions = [];
+    
+  //     // Find the Actions section header
+  //     const actionHeader = Array.from(doc.querySelectorAll("h3.stats__sect-header-inner"))
+  //       .find(el => el.textContent.trim() === "Actions");
+      
+  //     if (actionHeader) {
+  //       // Get the parent row then find all following action rows until the next section header
+  //       const actionHeaderRow = actionHeader.closest("tr");
+  //       let currentRow = actionHeaderRow.nextElementSibling;
+        
+  //       // Process each action row
+  //       while (currentRow && !currentRow.querySelector("h3.stats__sect-header-inner")) {
+  //         const actionDiv = currentRow.querySelector("[data-roll-name-ancestor]");
+          
+  //         if (actionDiv) {
+  //           try {
+  //             // Extract action name
+  //             const actionName = actionDiv.getAttribute("data-roll-name-ancestor") || 
+  //                               actionDiv.querySelector(".entry-title-inner")?.textContent.replace(/\.$/, '') || 
+  //                               "Unknown Action";
+              
+  //             // Find attack bonus - look for the first roller with "hit" context
+  //             const attackRoller = actionDiv.querySelector('.roller[data-packed-dice*=\'"type":"hit"\']') || 
+  //                                 actionDiv.querySelector('.roller[data-packed-dice*=\'"context":{"type":"hit"}\']');
+  //             let attackBonus = 0;
+  //             if (attackRoller) {
+  //               const bonusText = attackRoller.textContent.trim();
+  //               attackBonus = parseInt(bonusText.match(/[+-]\d+/)?.[0] || "0");
+  //             }
+              
+  //             // Find damage dice - look for roller after "Hit:" text
+  //             const hitText = Array.from(actionDiv.querySelectorAll("i"))
+  //               .find(el => el.textContent.trim() === "Hit:");
+              
+  //             let damageDice = "";
+  //             let damageType = "";
+              
+  //             if (hitText) {
+  //               const damageRoller = hitText.nextElementSibling?.nextElementSibling;
+  //               if (damageRoller && damageRoller.classList.contains("roller")) {
+  //                 damageDice = damageRoller.textContent.trim();
+                  
+  //                 // Get damage type from text after the damage roller
+  //                 let nextNode = damageRoller.nextSibling;
+  //                 if (nextNode && nextNode.textContent) {
+  //                   const damageMatch = nextNode.textContent.match(/\)\s+([A-Za-z]+)\s+damage/);
+  //                   if (damageMatch && damageMatch[1]) {
+  //                     damageType = damageMatch[1];
+  //                   }
+  //                 }
+  //               }
+  //             }
+              
+  //             // Get full description
+  //             const description = actionDiv.textContent.trim()
+  //               .replace(actionName + ".", "")
+  //               .replace(/Melee Attack Roll:.*?Hit:/, "")
+  //               .replace(/\(\d+d\d+.*?\)/, "")
+  //               .trim();
+              
+  //             // Add to actions array
+  //             actions.push({
+  //               name: actionName,
+  //               attackBonus: attackBonus,
+  //               damageDice: damageDice,
+  //               damageType: damageType,
+  //               description: description
+  //             });
+  //           } catch (e) {
+  //             console.error("Error parsing action:", e);
+  //           }
+  //         }
+          
+  //         // Move to next row
+  //         currentRow = currentRow.nextElementSibling;
+  //         if (!currentRow) break;
+  //       }
+  //     }
+
+
+  //     // Include token data in the return object (this should already be in your code)
+  //     return {
+  //       basic: {
+  //         name,
+  //         size,
+  //         type,
+  //         alignment,
+  //         cr: extras.cr,
+  //         xp: extras.xp,
+  //         proficiencyBonus: extras.proficiencyBonus,
+  //         source: sourceAbbreviation, // Add source abbreviation
+  //         toolsUrl: toolsUrl           // Add URL to 5e.tools
+  //       },
+  //       stats,
+  //       abilities,
+  //       traits: {
+  //         immunities: extras.immunities,
+  //         senses: extras.senses,
+  //         languages: extras.languages
+  //       },
+  //       token: {
+  //         url: tokenUrl,
+  //         data: tokenData
+  //       },
+  //       actions: actions
+  //     };
+  //   } catch (error) {
+  //     console.error("Error parsing monster HTML:", error);
+  //     return this.getDefaultMonsterData();
+  //   }
+  // }
+
+    async parseMonsterHtml(html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-  
+    
     try {
+      console.log("Beginning monster parsing...");
+      
       // Required basic information
       const name = doc.querySelector(".stats__h-name")?.textContent?.trim() || "Unknown Monster";
+      console.log(`Parsing monster: ${name}`);
       
-      // Extract source abbreviation - NEW CODE
+      // CRITICAL FIX: Generate a unique ID for the monster
+      const timestamp = Date.now();
+      const randomSuffix = Math.floor(Math.random() * 10000);
+      const id = `${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${timestamp}_${randomSuffix}`;
+      console.log(`Generated ID: ${id}`);
+      
+      // Extract source abbreviation
       let sourceAbbreviation = '';
       const sourceElement = doc.querySelector(".stats__h-source-abbreviation");
       if (sourceElement) {
-        // Find the class that starts with "source__"
         const sourceClass = Array.from(sourceElement.classList)
           .find(cls => cls.startsWith('source__'));
         if (sourceClass) {
@@ -877,20 +1218,60 @@ loadFromLocalStorage() {
         }
       }
       
-      // Create 5e.tools URL - NEW CODE
+      // Create 5e.tools URL
       let toolsUrl = '';
       if (name && sourceAbbreviation) {
         const urlSafeName = name.toLowerCase().replace(/\s+/g, '%20');
         toolsUrl = `https://5e.tools/bestiary.html#${urlSafeName}_${sourceAbbreviation.toLowerCase()}`;
       }
-  
-      // Rest of existing code for parsing monster info
+    
+      // Handle size and type with special cases like "Small or Medium Humanoid"
       const typeInfo = doc.querySelector("td i")?.textContent?.trim() || "Medium Unknown, Unaligned";
-      const [sizeTypeAlign = ""] = typeInfo.split(",");
-      const [size = "Medium", type = "Unknown"] = sizeTypeAlign.trim().split(/\s+/);
-      const alignment = typeInfo.split(",")[1]?.trim() || "Unaligned";
+      console.log(`Raw type info from HTML: "${typeInfo}"`);
+      
+      const [sizeTypeAlign = "", alignmentPart = "Unaligned"] = typeInfo.split(",").map(s => s.trim());
+      console.log(`Parsed size/type part: "${sizeTypeAlign}"`);
+      
+      // IMPROVED HANDLING for "Small or Medium" format
+      let size = "Medium";
+      let type = "Unknown";
+      
+      // More robust regex that can handle multi-word types (like "Fey Creature")
+      if (sizeTypeAlign.match(/\b(Tiny|Small|Medium|Large|Huge|Gargantuan)\s+or\s+(Tiny|Small|Medium|Large|Huge|Gargantuan)\b/i)) {
+        console.log("Detected special size format with 'or'");
+        
+        // Extract everything after "Size1 or Size2" as the type
+        const match = sizeTypeAlign.match(/\b(Tiny|Small|Medium|Large|Huge|Gargantuan)\s+or\s+(Tiny|Small|Medium|Large|Huge|Gargantuan)\s+(.*?)$/i);
+        if (match) {
+          size = match[2]; // Use the second size option
+          type = match[3].trim(); // Get the rest as type, and trim whitespace
+          console.log(`Special format parsed: size="${size}", type="${type}"`);
+        }
+      } else {
+        // Standard format: "Medium Humanoid"
+        const firstWord = sizeTypeAlign.split(/\s+/)[0];
+        
+        // Check if the first word is a valid size
+        if (["Tiny", "Small", "Medium", "Large", "Huge", "Gargantuan"].includes(firstWord)) {
+          size = firstWord;
+          // Get everything after the size as the type
+          type = sizeTypeAlign.substring(size.length).trim();
+          console.log(`Standard format parsed: size="${size}", type="${type}"`);
+        } else {
+          console.log(`Unknown size format, using defaults: size="Medium", type="${sizeTypeAlign}"`);
+          size = "Medium";
+          type = sizeTypeAlign;
+        }
+      }
+      
+      // If type is still empty or just "or", use a default
+      if (!type || type === "or") {
+        console.warn(`Invalid type "${type}", defaulting to "Unknown"`);
+        type = "Unknown";
+      }
+      
+      const alignment = alignmentPart || "Unaligned";
   
-
       // Required stats (with safe defaults)
       const stats = {
         ac: parseInt(
@@ -912,7 +1293,7 @@ loadFromLocalStorage() {
         },
         speed: "30 ft."
       };
-
+  
       // Try to get actual speed
       const speedNode = Array.from(doc.querySelectorAll("strong")).find(
         (el) => el.textContent === "Speed"
@@ -920,15 +1301,13 @@ loadFromLocalStorage() {
       if (speedNode && speedNode.nextSibling) {
         stats.speed = speedNode.nextSibling.textContent.trim();
       }
-
-      // Parse ability scores - Updated version
-      // console.log("About to parse ability scores");
+  
       // Parse ability scores
       const abilities = {};
       const abilityRows = Array.from(
         doc.querySelectorAll(".stats-tbl-ability-scores__lbl-abv")
       );
-
+  
       abilityRows.forEach((labelCell) => {
         const abilityDiv = labelCell.querySelector(".bold.small-caps");
         if (abilityDiv) {
@@ -945,7 +1324,7 @@ loadFromLocalStorage() {
                   ".ve-text-center"
                 );
               const score = parseInt(scoreDiv?.textContent || "10");
-
+  
               // Get modifier from the next cell's roller span
               const modifierCell =
                 scoreDiv?.parentElement.nextElementSibling;
@@ -955,9 +1334,8 @@ loadFromLocalStorage() {
               const modifier = parseInt(
                 modifierText.match(/[+-]\d+/)?.[0] || "0"
               );
-
+  
               abilities[abilityName] = { score, modifier };
-              // console.log(`Parsed ${abilityName}:`, { score, modifier });
             } catch (e) {
               console.error(`Error parsing ${abilityName}:`, e);
               abilities[abilityName] = { score: 10, modifier: 0 };
@@ -965,8 +1343,7 @@ loadFromLocalStorage() {
           }
         }
       });
-      // console.log("Abilities parsed successfully:", abilities);
-
+  
       // Optional extras
       let extras = {
         immunities: [],
@@ -977,7 +1354,7 @@ loadFromLocalStorage() {
         xp: 0,
         proficiencyBonus: 2
       };
-
+  
       try {
         const crNode = doc.querySelector(
           '[title="Challenge Rating"] + span'
@@ -986,12 +1363,11 @@ loadFromLocalStorage() {
           extras.cr = crNode.textContent.split("(")[0].trim();
           const xpMatch = crNode.textContent.match(/XP (\d+)/);
           if (xpMatch) extras.xp = parseInt(xpMatch[1]);
-          // console.log("Parsed CR/XP:", extras.cr, extras.xp);
         }
       } catch (e) {
         console.log("Optional: Failed to parse CR/XP");
       }
-
+  
       try {
         const immunityNode = Array.from(
           doc.querySelectorAll("strong")
@@ -1001,12 +1377,11 @@ loadFromLocalStorage() {
             .split(";")
             .map((i) => i.trim())
             .filter((i) => i);
-          // console.log("Parsed immunities:", extras.immunities);
         }
       } catch (e) {
         console.log("Optional: Failed to parse immunities");
       }
-
+  
       try {
         const sensesNode = Array.from(
           doc.querySelectorAll("strong")
@@ -1016,12 +1391,11 @@ loadFromLocalStorage() {
             .split(",")
             .map((s) => s.trim())
             .filter((s) => s);
-          // console.log("Parsed senses:", extras.senses);
         }
       } catch (e) {
         console.log("Optional: Failed to parse senses");
       }
-
+  
       try {
         const languagesNode = Array.from(
           doc.querySelectorAll("strong")
@@ -1029,15 +1403,14 @@ loadFromLocalStorage() {
         if (languagesNode && languagesNode.nextSibling) {
           extras.languages =
             languagesNode.nextSibling.textContent.trim() || "None";
-          // console.log("Parsed languages:", extras.languages);
         }
       } catch (e) {
         console.log("Optional: Failed to parse languages");
       }
-
+  
       let tokenUrl = null;
       let tokenData = null;
-
+  
       try {
         const tokenDiv = doc.querySelector("#float-token");
         if (tokenDiv) {
@@ -1050,7 +1423,7 @@ loadFromLocalStorage() {
       } catch (error) {
         console.error("Error handling token:", error);
       }
-
+  
       const actions = [];
     
       // Find the Actions section header
@@ -1130,10 +1503,12 @@ loadFromLocalStorage() {
           if (!currentRow) break;
         }
       }
-
-
-      // Include token data in the return object (this should already be in your code)
+  
+      console.log(`Successfully completed parsing of monster: ${name} (ID: ${id})`);
+  
+      // Include token data and ID in the return object
       return {
+        id, // This is the key addition - ensuring the ID is present
         basic: {
           name,
           size,
@@ -1142,8 +1517,8 @@ loadFromLocalStorage() {
           cr: extras.cr,
           xp: extras.xp,
           proficiencyBonus: extras.proficiencyBonus,
-          source: sourceAbbreviation, // Add source abbreviation
-          toolsUrl: toolsUrl           // Add URL to 5e.tools
+          source: sourceAbbreviation,
+          toolsUrl: toolsUrl
         },
         stats,
         abilities,
@@ -1160,7 +1535,10 @@ loadFromLocalStorage() {
       };
     } catch (error) {
       console.error("Error parsing monster HTML:", error);
-      return this.getDefaultMonsterData();
+      // Even if we fall back to default data, make sure it has an ID
+      const defaultData = this.getDefaultMonsterData();
+      defaultData.id = `unknown_monster_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      return defaultData;
     }
   }
 
@@ -1172,6 +1550,24 @@ loadFromLocalStorage() {
       console.error("Error retrieving stored token:", e);
       return null;
     }
+  }
+
+    // Add this simple helper method
+  async isMonsterInIndexedDB(monsterId) {
+    if (!this.db) return false;
+    
+    return new Promise(resolve => {
+      try {
+        const tx = this.db.transaction(['monsters'], 'readonly');
+        const store = tx.objectStore('monsters');
+        const request = store.get(monsterId);
+        
+        request.onsuccess = () => resolve(!!request.result);
+        request.onerror = () => resolve(false);
+      } catch (e) {
+        resolve(false);
+      }
+    });
   }
 
   cloneEncounter(marker) {

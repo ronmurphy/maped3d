@@ -3565,6 +3565,126 @@ setupEventHandlers(drawer) {
     });
 }
 
+// Add this to your showStorageManagementDialog method (or create it if doesn't exist)
+showStorageManagementDialog() {
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = "Monster Storage Management";
+  
+  // Get current storage statistics
+  this.getStorageUsage().then(stats => {
+    dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="storage-stats">
+          <h3>Storage Usage</h3>
+          <div class="progress-container" style="margin-bottom: 10px;">
+            <div class="progress-bar" style="width: 100%; background-color: #eee; height: 20px; border-radius: 10px; overflow: hidden;">
+              <div style="width: ${stats.percentUsed}%; background-color: ${stats.percentUsed > 80 ? '#f44336' : '#4caf50'}; height: 100%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+              <span>${(stats.usage / (1024 * 1024)).toFixed(2)} MB used</span>
+              <span>${(stats.quota / (1024 * 1024)).toFixed(2)} MB available</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Storage Location Legend -->
+        <div class="storage-legend" style="background: #f5f5f5; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <h3 style="margin-top: 0;">Monster Storage Legend</h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons" style="color: #4CAF50;">visibility</span>
+              <span>Stored in IndexedDB (preferred, large storage capacity)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons" style="color: #FFC107;">visibility</span>
+              <span>Stored in localStorage only (limited storage, ~5MB total)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons" style="color: #FFFFFF;">visibility</span>
+              <span>Stored in both IndexedDB and localStorage (backup)</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="actions">
+          <p>Storage management options:</p>
+          <sl-button class="export-btn" variant="primary">Export Bestiary</sl-button>
+          <sl-button class="optimize-btn" variant="success">Optimize Storage</sl-button>
+          <sl-button class="clear-btn" variant="danger">Clear All Monsters</sl-button>
+        </div>
+        
+        <div class="warning" style="color: #f44336; font-size: 0.9em;">
+          <strong>Note:</strong> "Clear All Monsters" removes monsters from BOTH IndexedDB and localStorage. 
+          Export your bestiary first if you want to keep your monsters!
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.show();
+    
+    // Add event listeners
+    dialog.querySelector('.export-btn').addEventListener('click', () => {
+      this.exportBestiary();
+    });
+    
+    dialog.querySelector('.optimize-btn').addEventListener('click', async () => {
+      // Move localStorage-only monsters to IndexedDB where possible
+      const { monsters } = await this.loadAllMonsters();
+      let optimized = 0;
+      
+      for (const monster of monsters) {
+        const inIndexedDB = await this.isMonsterInIndexedDB(monster.id);
+        if (!inIndexedDB) {
+          try {
+            const tx = this.db.transaction(['monsters'], 'readwrite');
+            const store = tx.objectStore('monsters');
+            await store.put(monster);
+            optimized++;
+          } catch (e) {
+            console.warn(`Failed to optimize storage for monster ${monster.id}:`, e);
+          }
+        }
+      }
+      
+      alert(`Storage optimization complete: ${optimized} monsters moved to IndexedDB.`);
+    });
+    
+    dialog.querySelector('.clear-btn').addEventListener('click', () => {
+      if (confirm('WARNING: This will permanently delete ALL monsters from both IndexedDB and localStorage.\n\nDo you want to continue?')) {
+        this.clearAllMonsters();
+        dialog.hide();
+      }
+    });
+  });
+}
+
+// Add this method to clear monsters from both storage systems
+async clearAllMonsters() {
+  // Clear IndexedDB
+  if (this.db) {
+    try {
+      const tx = this.db.transaction(['monsters'], 'readwrite');
+      const store = tx.objectStore('monsters');
+      await store.clear();
+      console.log("Cleared all monsters from IndexedDB");
+    } catch (e) {
+      console.error("Failed to clear IndexedDB:", e);
+    }
+  }
+  
+  // Clear localStorage
+  try {
+    this.monsterDatabase = { monsters: {} };
+    localStorage.setItem('monsterDatabase', JSON.stringify(this.monsterDatabase));
+    console.log("Cleared all monsters from localStorage");
+  } catch (e) {
+    console.error("Failed to clear localStorage:", e);
+  }
+  
+  alert("All monsters have been removed from storage.");
+}
+
 showPropsImportOptions(drawer) {
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Import Props';
@@ -4786,6 +4906,57 @@ async clearBestiary(showConfirm = true) {
     }
 
 
+    async checkMonsterStorageLocation(monsterId) {
+        // Default to "unknown"
+        let storageLocation = "unknown";
+        
+        try {
+          // Check IndexedDB first
+          let inIndexedDB = false;
+          if (this.monsterManager && this.monsterManager.db) {
+            const tx = this.monsterManager.db.transaction(['monsters'], 'readonly');
+            const store = tx.objectStore('monsters');
+            const request = store.get(monsterId);
+            
+            await new Promise((resolve, reject) => {
+              request.onsuccess = (event) => {
+                inIndexedDB = !!event.target.result;
+                resolve();
+              };
+              request.onerror = (event) => {
+                console.error("Error checking IndexedDB for monster:", event);
+                resolve();
+              };
+            });
+          }
+          
+          // Check localStorage
+          let inLocalStorage = false;
+          const storageData = localStorage.getItem('monsterDatabase');
+          if (storageData) {
+            try {
+              const data = JSON.parse(storageData);
+              inLocalStorage = !!(data?.monsters && data.monsters[monsterId]);
+            } catch (e) {
+              console.error("Error parsing localStorage monster data:", e);
+            }
+          }
+          
+          // Determine storage location
+          if (inIndexedDB && inLocalStorage) {
+            storageLocation = "both";
+          } else if (inIndexedDB) {
+            storageLocation = "indexeddb";
+          } else if (inLocalStorage) {
+            storageLocation = "localstorage";
+          }
+        } catch (error) {
+          console.error("Error checking monster storage location:", error);
+        }
+        
+        return storageLocation;
+      }
+
 updateBestiaryGallery(drawer, view = 'grid') {
     const container = drawer.querySelector('#bestiaryGallery');
     if (!container) {
@@ -4984,9 +5155,9 @@ updateBestiaryGallery(drawer, view = 'grid') {
             `}
             <div slot="footer" class="resource-actions">
                 <sl-button-group>
-                    <sl-button size="small" class="view-btn">
-                        <span class="material-icons">visibility</span>
-                    </sl-button>
+<sl-button size="small" class="view-btn" data-monster-id="${monster.id}">
+    <span class="material-icons">visibility</span>
+</sl-button>
                     <sl-button size="small" class="edit-btn">
                         <span class="material-icons">edit</span>
                     </sl-button>
@@ -5065,6 +5236,27 @@ updateBestiaryGallery(drawer, view = 'grid') {
                 this.updateBestiaryGallery(drawer, view);
             }
         });
+
+                // Add at the end of updateBestiaryGallery function
+        // This will color the eyes based on storage location when the page loads
+        container.querySelectorAll('.view-btn').forEach(async btn => {
+          const monsterId = btn.getAttribute('data-monster-id');
+          if (!monsterId) return;
+          
+          // Check storage location using simple localStorage check
+          const inLocal = localStorage.getItem('monsterDatabase')?.includes(monsterId);
+          const inIndexedDB = await this.monsterManager.isMonsterInIndexedDB(monsterId);
+          
+          // Set eye color
+          const eyeIcon = btn.querySelector('.material-icons');
+          if (inIndexedDB && inLocal) {
+            eyeIcon.style.color = "#FFFFFF"; // White - both storages
+          } else if (inIndexedDB) {
+            eyeIcon.style.color = "#4CAF50"; // Green - IndexedDB only
+          } else if (inLocal) {
+            eyeIcon.style.color = "#FFC107"; // Yellow - localStorage only
+          }
+        });
         
         container.appendChild(card);
     });
@@ -5072,6 +5264,8 @@ updateBestiaryGallery(drawer, view = 'grid') {
     // Debugging
     // this.addDirectSearchToPanel(drawer);
 }
+
+
 
 setupBestiaryFilters(drawer, panelHeader) {
     // Ensure we're targeting elements within the bestiary panel
