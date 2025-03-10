@@ -465,9 +465,18 @@ if (typeof window.Storyboard === "undefined") {
         </div>
       </div>
       
-      <sl-button slot="footer" variant="primary" id="sb-close-btn">Close</sl-button>
+        <!-- Footer container instead of just a button -->
+  <div slot="footer" id="footer-container">
+    <div id="footer-left" style="display: inline-flex; gap: 8px;">
+      <!-- Items will be inserted here -->
+    </div>
+    <sl-button variant="primary" id="sb-close-btn">Close</sl-button>
+  </div>
     `;
+      // <sl-button slot="footer" variant="primary" id="sb-close-btn">Close</sl-button>
 
+    this.addZoomPanControls();
+    
         // Add to DOM
         document.body.appendChild(drawer);
 
@@ -604,6 +613,9 @@ if (typeof window.Storyboard === "undefined") {
 
         // Set up canvas interactions
         this.setupCanvasInteractions(canvas, properties);
+
+            // Add zoom and pan controls
+    this.addZoomPanControls(canvas);
 
         // Set up save button
         const saveButton = this.editor.querySelector("#save-storyboard");
@@ -791,170 +803,6 @@ if (typeof window.Storyboard === "undefined") {
       }
     }
 
-    // restoreSingleNode(canvas, nodeData, nodeId) {
-    //   // Create node element
-    //   const node = document.createElement('div');
-    //   node.className = 'storyboard-node';
-    //   node.setAttribute('data-type', nodeData.type);
-    //   node.setAttribute('data-id', nodeId);
-
-    //   // Set position
-    //   if (nodeData.position) {
-    //     node.style.left = `${nodeData.position.x}px`;
-    //     node.style.top = `${nodeData.position.y}px`;
-    //   } else {
-    //     node.style.left = '100px';
-    //     node.style.top = '100px';
-    //   }
-
-    //   // Set content based on node type
-    //   const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
-    //   let body = '';
-    //   let useCustomHtml = false;
-    //   let customHtml = '';
-
-    //   switch (nodeData.type) {
-    //     case 'dialog':
-    //       body = `<div>${nodeData.data.text || ''}</div>`;
-    //       break;
-    //     case 'choice':
-    //       body = `
-    //         <div>${nodeData.data.text || ''}</div>
-    //         <div style="color:#777;font-size:0.9em;">${nodeData.data.options?.length || 0} options</div>
-    //       `;
-
-    //       // Special structure for choice node
-    //       useCustomHtml = true;
-
-    //       // Get number of options
-    //       const optionCount = nodeData.data.options?.length || 0;
-
-    //       // Generate option ports HTML
-    //       let optionPortsHtml = '';
-    //       const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B']; // Colors for up to 5 options
-
-    //       for (let i = 0; i < optionCount; i++) {
-    //         const color = colors[i % colors.length]; // Cycle through colors
-    //         optionPortsHtml += `
-    //           <div class="storyboard-port output option-port"
-    //                data-option="${i}"
-    //                style="background: ${color};"
-    //                title="Option ${i+1}"></div>
-    //         `;
-    //       }
-
-    //       customHtml = `
-    //         <div class="storyboard-node-header">
-    //           ${title}
-    //           <span class="storyboard-node-close">×</span>
-    //         </div>
-    //         <div class="storyboard-node-body">
-    //           ${body}
-    //         </div>
-    //         <div class="storyboard-node-footer">
-    //           <div class="storyboard-port input"></div>
-    //           <div class="storyboard-ports-container" style="display: flex; width: 100%; justify-content: space-around;">
-    //             ${optionPortsHtml}
-    //           </div>
-    //         </div>
-    //       `;
-    //       break;
-    //     case 'trigger':
-    //       body = `<div>X: ${nodeData.data.x || 0}, Y: ${nodeData.data.y || 0}, Radius: ${nodeData.data.radius || 1}</div>`;
-    //       break;
-    //     case 'event':
-    //       body = `<div>Event: ${nodeData.data.eventType || 'none'}</div>`;
-    //       break;
-    //     case 'condition':
-    //       body = `<div>Condition: ${nodeData.data.condition || 'none'}</div>`;
-
-    //       // Special structure for condition node
-    //       useCustomHtml = true;
-    //       customHtml = `
-    //         <div class="storyboard-node-header">
-    //           ${title}
-    //           <span class="storyboard-node-close">×</span>
-    //         </div>
-    //         <div class="storyboard-node-body">
-    //           ${body}
-    //         </div>
-    //         <div class="storyboard-node-footer">
-    //           <div class="storyboard-port input"></div>
-    //           <div class="storyboard-ports-container" style="display: flex; width: 100%; justify-content: space-around;">
-    //             <div class="storyboard-port output true-port" data-path="true" style="background: #2196F3;"></div>
-    //             <div class="storyboard-port output false-port" data-path="false" style="background: #F44336;"></div>
-    //           </div>
-    //         </div>
-    //       `;
-    //       break;
-    //     case 'combat':
-    //       body = `<div>Combat with ${nodeData.data.enemies?.length || 0} enemies</div>`;
-
-    //       // Special structure for combat node
-    //       useCustomHtml = true;
-    //       customHtml = `
-    //         <div class="storyboard-node-header">
-    //           ${title}
-    //           <span class="storyboard-node-close">×</span>
-    //         </div>
-    //         <div class="storyboard-node-body">
-    //           ${body}
-    //         </div>
-    //         <div class="storyboard-node-footer">
-    //           <div class="storyboard-port input"></div>
-    //           <div class="storyboard-ports-container" style="display: flex; width: 100%; justify-content: space-around;">
-    //             <div class="storyboard-port output win-port" data-path="victory" style="background: #4CAF50;"></div>
-    //             <div class="storyboard-port output lose-port" data-path="defeat" style="background: #F44336;"></div>
-    //           </div>
-    //         </div>
-    //       `;
-    //       break;
-    //     case 'reward':
-    //       body = `<div>Rewards: ${nodeData.data.items?.length || 0} items</div>`;
-    //       break;
-    //     default:
-    //       body = '<div>Configure node</div>';
-    //   }
-
-    //   // Set HTML content based on whether we have custom HTML
-    //   if (useCustomHtml) {
-    //     node.innerHTML = customHtml;
-    //   } else {
-    //     // Default structure for regular nodes
-    //     node.innerHTML = `
-    //       <div class="storyboard-node-header">
-    //         ${title}
-    //         <span class="storyboard-node-close">×</span>
-    //       </div>
-    //       <div class="storyboard-node-body">
-    //         ${body}
-    //       </div>
-    //       <div class="storyboard-node-footer">
-    //         <div class="storyboard-port input"></div>
-    //         <div class="storyboard-port output"></div>
-    //       </div>
-    //     `;
-    //   }
-
-    //   // Add to canvas
-    //   canvas.appendChild(node);
-
-    //   // Update the stored node data to include element reference
-    //   nodeData.element = node;
-
-    //   // Set up delete handler
-    //   const closeBtn = node.querySelector('.storyboard-node-close');
-    //   if (closeBtn) {
-    //     closeBtn.addEventListener('click', (e) => {
-    //       e.preventDefault();
-    //       e.stopPropagation();
-    //       console.log('Delete node clicked');
-    //       this.deleteNode(node);
-    //     });
-    //   }
-
-    //   console.log(`Restored node: ${nodeId}`);
-    // }
 
     restoreSingleNode(canvas, nodeData, nodeId) {
       // Create node element
@@ -1098,7 +946,8 @@ if (typeof window.Storyboard === "undefined") {
       editorState.canvasScale = 1;
       editorState.canvasPan = { x: 0, y: 0 };
       editorState.isPanning = false;
-      editorState.panStart = { x: 0, y: 0 };
+      editorState.lastX = 0;
+      editorState.lastY = 0;
 
       // Create a container for all nodes
       let nodesContainer = canvas.querySelector(".nodes-container");
@@ -1122,165 +971,166 @@ if (typeof window.Storyboard === "undefined") {
         editorState.nodesContainer = nodesContainer;
       }
 
-      canvas.addEventListener("mousedown", (e) => {
-        // Check if middle button
-        if (e.button === 1) {
-          e.preventDefault();
-          editorState.isPanning = true;
-          editorState.lastX = e.clientX;
-          editorState.lastY = e.clientY;
-          canvas.style.cursor = "grabbing";
+    canvas.addEventListener('mousedown', (e) => {
+      // Check if middle button
+      if (e.button === 1) {
+        e.preventDefault();
+        editorState.isPanning = true;
+        editorState.lastX = e.clientX;
+        editorState.lastY = e.clientY;
+        canvas.style.cursor = 'grabbing';
+      }
+  
+      // Check if we clicked on a node
+      let nodeEl = e.target.closest('.storyboard-node');
+  
+      if (nodeEl) {
+        console.log('Node clicked:', nodeEl.getAttribute('data-id'));
+        // Handle node selection
+        this.selectNode(nodeEl);
+  
+        // Handle node dragging
+        if (e.target.closest('.storyboard-node-header')) {
+          const rect = nodeEl.getBoundingClientRect();
+          editorState.draggingNode = nodeEl;
+          editorState.draggingOffset = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+          };
         }
-
-        // Check if we clicked on a node
-        let nodeEl = e.target.closest(".storyboard-node");
-
-        if (nodeEl) {
-          console.log("Node clicked:", nodeEl.getAttribute("data-id"));
-          // Handle node selection
-          this.selectNode(nodeEl);
-
-          // Handle node dragging
-          if (e.target.closest(".storyboard-node-header")) {
-            const rect = nodeEl.getBoundingClientRect();
-            editorState.draggingNode = nodeEl;
-            editorState.draggingOffset = {
-              x: e.clientX - rect.left,
-              y: e.clientY - rect.top
+  
+        // Handle connection creation
+        if (e.target.closest('.storyboard-port')) {
+          const port = e.target.closest('.storyboard-port');
+          if (port.classList.contains('output') || 
+              port.classList.contains('true-port') || 
+              port.classList.contains('false-port') ||
+              port.classList.contains('win-port') || 
+              port.classList.contains('lose-port') ||
+              port.classList.contains('option-port')) {
+            
+            editorState.connectingFrom = {
+              node: nodeEl,
+              port: port
             };
-          }
-
-          // This is part of the setupCanvasInteractions method - just the connection creation part
-          // Handle connection creation
-          if (e.target.closest(".storyboard-port")) {
-            const port = e.target.closest(".storyboard-port");
-            if (
-              port.classList.contains("output") ||
-              port.classList.contains("true-port") ||
-              port.classList.contains("false-port") ||
-              port.classList.contains("win-port") ||
-              port.classList.contains("lose-port")
-            ) {
-              editorState.connectingFrom = {
-                node: nodeEl,
-                port: port
-              };
-
-              // Get port position for connection drawing
-              const portRect = port.getBoundingClientRect();
-              const canvasRect = canvas.getBoundingClientRect();
-
-              const x1 = portRect.left + portRect.width / 2 - canvasRect.left;
-              const y1 = portRect.top + portRect.height / 2 - canvasRect.top;
-
-              // Create temporary connection line with color based on port type
-              let lineColor = "#673ab7"; // Default purple
-
-              const nodeType = nodeEl.getAttribute("data-type");
-              const pathType = port.getAttribute("data-path");
-
-              if (nodeType === "condition" && pathType) {
-                lineColor = pathType === "true" ? "#2196F3" : "#F44336";
-              } else if (nodeType === "combat" && pathType) {
-                lineColor = pathType === "victory" ? "#4CAF50" : "#F44336";
-              }
-
-              // Create temporary connection
-              const conn = document.createElement("div");
-              conn.className = "storyboard-connection temp-connection";
-              conn.style.cssText = `
-      position: absolute;
-      height: 2px;
-      background: ${lineColor};
-      transform-origin: left center;
-      left: ${x1}px;
-      top: ${y1}px;
-    `;
-
-              canvas.appendChild(conn);
-              editorState.connectingFrom.tempConnection = conn;
+  
+            // Get port position for connection drawing
+            const portRect = port.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const x1 = portRect.left + portRect.width / 2 - canvasRect.left;
+            const y1 = portRect.top + portRect.height / 2 - canvasRect.top;
+  
+            // Create temporary connection line with color based on port type
+            let lineColor = '#673ab7'; // Default purple
+            
+            const nodeType = nodeEl.getAttribute('data-type');
+            const pathType = port.getAttribute('data-path');
+            const optionIndex = port.getAttribute('data-option');
+            
+            if (nodeType === 'condition' && pathType) {
+              lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+            } else if (nodeType === 'combat' && pathType) {
+              lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+            } else if (nodeType === 'choice' && optionIndex !== null) {
+              const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+              lineColor = colors[parseInt(optionIndex) % colors.length];
             }
+            
+            // Create temporary connection
+            const conn = document.createElement('div');
+            conn.className = 'storyboard-connection temp-connection';
+            conn.style.cssText = `
+              position: absolute;
+              height: 2px;
+              background: ${lineColor};
+              transform-origin: left center;
+              left: ${x1}px;
+              top: ${y1}px;
+            `;
+  
+            canvas.appendChild(conn);
+            editorState.connectingFrom.tempConnection = conn;
           }
-        } else {
-          // Clicked on empty canvas
-          this.deselectNode();
         }
-      });
+      } else {
+        // Clicked on empty canvas
+        this.deselectNode();
+      }
+    });
 
-      canvas.addEventListener("wheel", (e) => {
+
+
+      canvas.addEventListener('wheel', (e) => {
         if (e.ctrlKey) {
           e.preventDefault();
-
+    
           // Calculate zoom factor (smaller increment for smoother zoom)
           const factor = e.deltaY > 0 ? 0.9 : 1.1;
-          editorState.canvasScale = Math.max(
-            0.1,
-            Math.min(2.0, editorState.canvasScale * factor)
-          );
-
+          editorState.canvasScale = Math.max(0.1, Math.min(2.0, editorState.canvasScale * factor));
+    
           // Apply zoom
           canvas.style.transform = `scale(${editorState.canvasScale})`;
-          canvas.style.transformOrigin = "0 0";
-
+          canvas.style.transformOrigin = '0 0';
+    
           // Update connections after zoom
           this.updateConnections();
         }
       });
 
-      canvas.addEventListener("mousemove", (e) => {
+      canvas.addEventListener('mousemove', (e) => {
         if (editorState.isPanning) {
           e.preventDefault();
-
+    
           // Calculate delta
           const dx = e.clientX - editorState.lastX;
           const dy = e.clientY - editorState.lastY;
-
+    
           // Update scroll position
           canvas.scrollLeft -= dx;
           canvas.scrollTop -= dy;
-
+    
           // Update last position
           editorState.lastX = e.clientX;
           editorState.lastY = e.clientY;
         }
-
+    
         // Handle node dragging
         if (editorState.draggingNode) {
           const canvasRect = canvas.getBoundingClientRect();
           const x = e.clientX - canvasRect.left - editorState.draggingOffset.x;
           const y = e.clientY - canvasRect.top - editorState.draggingOffset.y;
-
+    
           editorState.draggingNode.style.left = `${x}px`;
           editorState.draggingNode.style.top = `${y}px`;
-
+    
           // Update node position in persistent data
-          const nodeId = editorState.draggingNode.getAttribute("data-id");
+          const nodeId = editorState.draggingNode.getAttribute('data-id');
           const nodeData = this.currentGraph.nodes.get(nodeId);
           if (nodeData) {
             nodeData.position = { x, y };
             this.currentGraph.dirty = true;
           }
-
+    
           // Update any connections attached to this node
           this.updateConnections();
         }
-
+    
         // Handle connection creation
         if (editorState.connectingFrom) {
           const canvasRect = canvas.getBoundingClientRect();
-          const fromRect =
-            editorState.connectingFrom.port.getBoundingClientRect();
-
+          const fromRect = editorState.connectingFrom.port.getBoundingClientRect();
+    
           const x1 = fromRect.left + fromRect.width / 2 - canvasRect.left;
           const y1 = fromRect.top + fromRect.height / 2 - canvasRect.top;
           const x2 = e.clientX - canvasRect.left;
           const y2 = e.clientY - canvasRect.top;
-
+    
           const dx = x2 - x1;
           const dy = y2 - y1;
           const length = Math.sqrt(dx * dx + dy * dy);
           const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-
+    
           const conn = editorState.connectingFrom.tempConnection;
           if (conn) {
             conn.style.width = `${length}px`;
@@ -1289,25 +1139,26 @@ if (typeof window.Storyboard === "undefined") {
         }
       });
 
-      canvas.addEventListener("mouseup", (e) => {
+
+      canvas.addEventListener('mouseup', (e) => {
         if (editorState.isPanning) {
           editorState.isPanning = false;
-          canvas.style.cursor = "default";
+          canvas.style.cursor = 'default';
         }
-
+    
         // Handle node dragging end
         if (editorState.draggingNode) {
           editorState.draggingNode = null;
         }
-
+    
         // Handle connection creation end
         if (editorState.connectingFrom) {
-          const targetPort = e.target.closest(".storyboard-port");
-
-          if (targetPort && targetPort.classList.contains("input")) {
+          const targetPort = e.target.closest('.storyboard-port');
+    
+          if (targetPort && targetPort.classList.contains('input')) {
             const fromNode = editorState.connectingFrom.node;
-            const toNode = targetPort.closest(".storyboard-node");
-
+            const toNode = targetPort.closest('.storyboard-node');
+    
             // Don't connect to self
             if (fromNode !== toNode) {
               this.createConnection(canvas, {
@@ -1322,53 +1173,280 @@ if (typeof window.Storyboard === "undefined") {
               });
             }
           }
-
+    
           // Remove temporary connection
           if (editorState.connectingFrom.tempConnection) {
             editorState.connectingFrom.tempConnection.remove();
           }
-
+    
           editorState.connectingFrom = null;
         }
       });
 
-      // Add keyboard shortcuts for zoom
-      document.addEventListener("keydown", (e) => {
-        if (!editorState.active) return;
+        // Add keyboard shortcuts for zoom
+  document.addEventListener('keydown', (e) => {
+    if (!editorState.active) return;
 
-        // Ctrl/Cmd + 0: Reset zoom
-        if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          editorState.canvasScale = 1;
-          editorState.canvasPan = { x: 0, y: 0 };
-          updateCanvasTransform(editorState, nodesContainer);
-          this.updateConnections();
-        }
+    // Ctrl/Cmd + 0: Reset zoom
+    if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      editorState.canvasScale = 1;
+      canvas.style.transform = `scale(${editorState.canvasScale})`;
+      this.updateConnections();
+    }
 
-        // Ctrl/Cmd + -: Zoom out
-        if ((e.key === "-" || e.key === "_") && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          editorState.canvasScale = Math.max(
-            0.3,
-            editorState.canvasScale - 0.1
-          );
-          updateCanvasTransform(editorState, nodesContainer);
-          this.updateConnections();
-        }
+    // Ctrl/Cmd + -: Zoom out
+    if ((e.key === '-' || e.key === '_') && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      editorState.canvasScale = Math.max(0.3, editorState.canvasScale - 0.1);
+      canvas.style.transform = `scale(${editorState.canvasScale})`;
+      this.updateConnections();
+    }
 
-        // Ctrl/Cmd + +: Zoom in
-        if ((e.key === "=" || e.key === "+") && (e.ctrlKey || e.metaKey)) {
-          e.preventDefault();
-          editorState.canvasScale = Math.min(2, editorState.canvasScale + 0.1);
-          updateCanvasTransform(editorState, nodesContainer);
-          this.updateConnections();
-        }
-      });
+    // Ctrl/Cmd + +: Zoom in
+    if ((e.key === '=' || e.key === '+') && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      editorState.canvasScale = Math.min(2, editorState.canvasScale + 0.1);
+      canvas.style.transform = `scale(${editorState.canvasScale})`;
+      this.updateConnections();
+    }
+  });
 
       function updateCanvasTransform(state, container) {
         container.style.transform = `scale(${state.canvasScale}) translate(${state.canvasPan.x}px, ${state.canvasPan.y}px)`;
       }
     }
+
+/**
+ * Add zoom and pan controls to the editor footer
+ */
+addZoomPanControls() {
+  if (!this.editor) return;
+  
+  // Get the footer slot
+  // const footerSlot = this.editor.querySelector('[slot="footer"]');
+  const footerSlot = this.editor.querySelector('#footer-left');
+
+  if (!footerSlot) return;
+  
+  // Create a container for our controls that will sit alongside the close button
+  const controlsContainer = document.createElement('div');
+  controlsContainer.className = 'storyboard-footer-controls';
+  controlsContainer.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto; /* Push close button to the right */
+  `;
+  
+  // Create navigation controls
+  const navControls = document.createElement('div');
+  navControls.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 12px;
+    border-right: 1px solid #444;
+    padding-right: 12px;
+  `;
+  
+  // Navigation buttons
+  const directions = [
+    { key: 'left', icon: '←' },
+    { key: 'up', icon: '↑' },
+    { key: 'down', icon: '↓' },
+    { key: 'right', icon: '→' },
+    { key: 'center', icon: '⦿' }
+  ];
+  
+  for (const dir of directions) {
+    const btn = document.createElement('button');
+    btn.textContent = dir.icon;
+    btn.dataset.direction = dir.key;
+    btn.style.cssText = `
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: #444;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    `;
+    navControls.appendChild(btn);
+  }
+  
+  // Create zoom controls
+  const zoomControls = document.createElement('div');
+  zoomControls.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  `;
+  
+  // Zoom out button
+  const zoomOutBtn = document.createElement('button');
+  zoomOutBtn.innerHTML = '<span style="font-size: 18px;">−</span>';
+  zoomOutBtn.style.cssText = `
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #444;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  // Zoom slider
+  const zoomSlider = document.createElement('input');
+  zoomSlider.type = 'range';
+  zoomSlider.min = '0.2';
+  zoomSlider.max = '2';
+  zoomSlider.step = '0.1';
+  zoomSlider.value = '1';
+  zoomSlider.style.cssText = `
+    width: 100px;
+  `;
+  
+  // Zoom in button
+  const zoomInBtn = document.createElement('button');
+  zoomInBtn.innerHTML = '<span style="font-size: 18px;">+</span>';
+  zoomInBtn.style.cssText = `
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #444;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  // Zoom reset button
+  const zoomResetBtn = document.createElement('button');
+  zoomResetBtn.textContent = '1:1';
+  zoomResetBtn.style.cssText = `
+    border: none;
+    background: #555;
+    color: white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  `;
+  
+  // Zoom display
+  const zoomDisplay = document.createElement('div');
+  zoomDisplay.textContent = '100%';
+  zoomDisplay.style.cssText = `
+    min-width: 50px;
+    text-align: center;
+    font-size: 12px;
+    color: #ccc;
+  `;
+  
+  zoomControls.appendChild(zoomOutBtn);
+  zoomControls.appendChild(zoomSlider);
+  zoomControls.appendChild(zoomInBtn);
+  zoomControls.appendChild(zoomDisplay);
+  zoomControls.appendChild(zoomResetBtn);
+  
+  // Add all controls to container
+  controlsContainer.appendChild(navControls);
+  controlsContainer.appendChild(zoomControls);
+  
+  // Insert before the close button
+  footerSlot.insertBefore(controlsContainer, footerSlot.firstChild);
+  
+  // Get the canvas for transformation
+  const canvas = this.editorState.canvasElement;
+  
+  // Add event handlers
+  const editorState = this.editorState;
+  
+  // Zoom controls
+  zoomOutBtn.addEventListener('click', () => {
+    editorState.canvasScale = Math.max(0.2, editorState.canvasScale - 0.1);
+    zoomSlider.value = editorState.canvasScale;
+    zoomDisplay.textContent = `${Math.round(editorState.canvasScale * 100)}%`;
+    this.applyCanvasTransform(canvas);
+  });
+  
+  zoomInBtn.addEventListener('click', () => {
+    editorState.canvasScale = Math.min(2, editorState.canvasScale + 0.1);
+    zoomSlider.value = editorState.canvasScale;
+    zoomDisplay.textContent = `${Math.round(editorState.canvasScale * 100)}%`;
+    this.applyCanvasTransform(canvas);
+  });
+  
+  zoomSlider.addEventListener('input', () => {
+    editorState.canvasScale = parseFloat(zoomSlider.value);
+    zoomDisplay.textContent = `${Math.round(editorState.canvasScale * 100)}%`;
+    this.applyCanvasTransform(canvas);
+  });
+  
+  zoomResetBtn.addEventListener('click', () => {
+    editorState.canvasScale = 1;
+    editorState.canvasPan = { x: 0, y: 0 };
+    zoomSlider.value = 1;
+    zoomDisplay.textContent = '100%';
+    this.applyCanvasTransform(canvas);
+  });
+  
+  // Navigation controls
+  const panAmount = 50; // Pixels to pan per click
+  
+  navControls.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const direction = btn.dataset.direction;
+      
+      if (direction === 'center') {
+        // Center view - reset pan but keep zoom
+        editorState.canvasPan = { x: 0, y: 0 };
+      } else if (direction === 'up') {
+        editorState.canvasPan.y += panAmount / editorState.canvasScale;
+      } else if (direction === 'down') {
+        editorState.canvasPan.y -= panAmount / editorState.canvasScale;
+      } else if (direction === 'left') {
+        editorState.canvasPan.x += panAmount / editorState.canvasScale;
+      } else if (direction === 'right') {
+        editorState.canvasPan.x -= panAmount / editorState.canvasScale;
+      }
+      
+      this.applyCanvasTransform(canvas);
+    });
+  });
+}
+
+/**
+ * Apply canvas transform based on current scale and pan
+ */
+applyCanvasTransform(canvas) {
+  if (!canvas) return;
+  
+  const state = this.editorState;
+  
+  // Apply transform to the canvas
+  canvas.style.transform = `scale(${state.canvasScale}) translate(${state.canvasPan.x}px, ${state.canvasPan.y}px)`;
+  
+  // Adjust grid scale to ensure it covers the visible area
+  const gridSize = 20; // Base grid size in pixels
+  const scaledGridSize = gridSize * state.canvasScale;
+  
+  // Update the grid background
+  canvas.style.backgroundSize = `${scaledGridSize}px ${scaledGridSize}px`;
+  
+  // Update connections
+  this.updateConnections();
+}
 
     /**
      * sees if the editor is avaliable after being closed
