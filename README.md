@@ -18,4 +18,4 @@ javascript:(function(){const contentDiv=document.getElementById('wrp-pagecontent
 ``
 
 ## Development Credits
-Storyboard.js and the associated narrative engine were co-developed by [Your Name] and Claude (Anthropic's AI assistant) through an extensive collaborative process spanning multiple sessions and iterations. This project demonstrates how human creativity and AI capabilities can combine to build complex, interactive systems.
+Storyboard.js and the associated narrative engine were co-developed by Ron and Claude (Anthropic's AI assistant) through an extensive collaborative process spanning multiple sessions and iterations. This project demonstrates how human creativity and AI capabilities can combine to build complex, interactive systems.
