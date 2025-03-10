@@ -5429,31 +5429,52 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
     }
   }
 
-  async checkForStarterMonster() {
+  // async checkForStarterMonster() {
+  //   console.log("Checking for starter monsters");
+    
+  //   // IMPORTANT: Make sure we have access to the global ResourceManager
+  //   // This is the key fix - get the latest reference to ResourceManager
+  //   if (!this.resourceManager && window.resourceManager) {
+  //     console.log("Connecting to global ResourceManager");
+  //     this.resourceManager = window.resourceManager;
+  //   }
+    
+  //   // Debug check for resource manager
+  //   if (!this.resourceManager) {
+  //     console.warn("No ResourceManager available, attempting fallback connection");
+  //     // Try to get it from MapEditor if available
+  //     if (this.mapEditor?.resourceManager) {
+  //       console.log("Found ResourceManager via mapEditor");
+  //       this.resourceManager = this.mapEditor.resourceManager;
+  //     }
+  //   }
+    
+  //   // Get diverse starter monsters (3 by default)
+  //   const starterChoices = await this.getStarterMonsters();
+    
+  //   if (starterChoices.length > 0) {
+  //     console.log(`Found ${starterChoices.length} starter monsters to offer`);
+  //     // Show starter selection UI
+  //     this.showStarterSelection(starterChoices);
+  //   } else {
+  //     console.warn("No starter monsters available");
+  //   }
+  // }
+
+    async checkForStarterMonster() {
     console.log("Checking for starter monsters");
     
-    // IMPORTANT: Make sure we have access to the global ResourceManager
-    // This is the key fix - get the latest reference to ResourceManager
-    if (!this.resourceManager && window.resourceManager) {
-      console.log("Connecting to global ResourceManager");
+    // CRITICAL FIX: Make sure we have latest reference to ResourceManager and its data
+    if (window.resourceManager) {
       this.resourceManager = window.resourceManager;
-    }
-    
-    // Debug check for resource manager
-    if (!this.resourceManager) {
-      console.warn("No ResourceManager available, attempting fallback connection");
-      // Try to get it from MapEditor if available
-      if (this.mapEditor?.resourceManager) {
-        console.log("Found ResourceManager via mapEditor");
-        this.resourceManager = this.mapEditor.resourceManager;
-      }
+      console.log(`Updated ResourceManager reference, bestiary has ${this.resourceManager.resources?.bestiary?.size || 0} monsters`);
     }
     
     // Get diverse starter monsters (3 by default)
-    const starterChoices = await this.getStarterMonsters();
+    const starterChoices = await this.getStarterMonsters(3);
     
     if (starterChoices.length > 0) {
-      console.log(`Found ${starterChoices.length} starter monsters to offer`);
+      console.log(`Found ${starterChoices.length} starter monsters to offer`, starterChoices);
       // Show starter selection UI
       this.showStarterSelection(starterChoices);
     } else {
@@ -5909,163 +5930,369 @@ parseCR(crValue) {
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
 
-  showStarterSelection(starterMonsters) {
-    // Create overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'party-overlay';
-    overlay.style.opacity = '0';
+//   showStarterSelection(starterMonsters) {
+//     // Create overlay
+//     const overlay = document.createElement('div');
+//     overlay.className = 'party-overlay';
+//     overlay.style.opacity = '0';
   
-    // Create container
-    const container = document.createElement('div');
-    container.className = 'party-container';
-    container.style.maxWidth = '900px';
-    container.style.transform = 'scale(0.95)';
-    container.style.zIndex = '3000';
+//     // Create container
+//     const container = document.createElement('div');
+//     container.className = 'party-container';
+//     container.style.maxWidth = '900px';
+//     container.style.transform = 'scale(0.95)';
+//     container.style.zIndex = '3000';
     
-    // Create header
-    const header = document.createElement('div');
-    header.className = 'party-header';
-    header.innerHTML = `
-      <div style="display: flex; align-items: center;">
-        <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px; ">
-        <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
-      </div>
-    `;
+//     // Create header
+//     const header = document.createElement('div');
+//     header.className = 'party-header';
+//     header.innerHTML = `
+//       <div style="display: flex; align-items: center;">
+//         <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px; ">
+//         <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
+//       </div>
+//     `;
 
-    // Create content
-    const content = document.createElement('div');
-    content.style.padding = '24px';
-    content.style.color = 'white';
-    content.innerHTML = `
-      <p style="margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
-      <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
-      <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
-       </p>
-      <div class="starter-monsters-grid" style="
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 24px;
-        justify-content: center;
-      "></div>
-    `;
+//     // Create content
+//     const content = document.createElement('div');
+//     content.style.padding = '24px';
+//     content.style.color = 'white';
+//     content.innerHTML = `
+//       <p style="margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
+//       <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
+//       <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
+//        </p>
+//       <div class="starter-monsters-grid" style="
+//         display: grid;
+//         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+//         gap: 24px;
+//         justify-content: center;
+//       "></div>
+//     `;
   
-    // Assemble
-    container.appendChild(header);
-    container.appendChild(content);
-    overlay.appendChild(container);
-    document.body.appendChild(overlay);
+//     // Assemble
+//     container.appendChild(header);
+//     container.appendChild(content);
+//     overlay.appendChild(container);
+//     document.body.appendChild(overlay);
   
-    // Add monsters to grid using createMonsterCard method
-    const grid = content.querySelector('.starter-monsters-grid');
+//     // Add monsters to grid using createMonsterCard method
+//     const grid = content.querySelector('.starter-monsters-grid');
     
-    starterMonsters.forEach((monster, index) => {
-      // Use the existing createMonsterCard method to ensure consistency
-      const card = this.createMonsterCard(monster, 'starter', index % 2 !== 0);
+//     starterMonsters.forEach((monster, index) => {
+//       // Use the existing createMonsterCard method to ensure consistency
+//       const card = this.createMonsterCard(monster, 'starter', index % 2 !== 0);
       
-      // Wrap the card in a container for better selection styling
-      const cardContainer = document.createElement('div');
-      cardContainer.className = 'starter-card-container';
-      cardContainer.style.cssText = `
-        position: relative;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      `;
+//       // Wrap the card in a container for better selection styling
+//       const cardContainer = document.createElement('div');
+//       cardContainer.className = 'starter-card-container';
+//       cardContainer.style.cssText = `
+//         position: relative;
+//         cursor: pointer;
+//         transition: all 0.3s ease;
+//       `;
       
-      // Add selection indicator that's initially hidden
-      const selectionIndicator = document.createElement('div');
-      selectionIndicator.className = 'selection-indicator';
-      selectionIndicator.innerHTML = `
-        <span class="material-icons" style="font-size: 36px; color: #4ade80;">check_circle</span>
-      `;
-      selectionIndicator.style.cssText = `
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        background: white;
-        border-radius: 50%;
-        // box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        opacity: 0;
-        transform: scale(0.8);
-        transition: all 0.3s ease;
-        z-index: 10;
-      `;
+//       // Add selection indicator that's initially hidden
+//       const selectionIndicator = document.createElement('div');
+//       selectionIndicator.className = 'selection-indicator';
+//       selectionIndicator.innerHTML = `
+//         <span class="material-icons" style="font-size: 36px; color: #4ade80;">check_circle</span>
+//       `;
+//       selectionIndicator.style.cssText = `
+//         position: absolute;
+//         top: -10px;
+//         right: -10px;
+//         background: white;
+//         border-radius: 50%;
+//         // box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+//         opacity: 0;
+//         transform: scale(0.8);
+//         transition: all 0.3s ease;
+//         z-index: 10;
+//       `;
       
-      // Add click handler
-      cardContainer.addEventListener('click', () => {
-        // Reset all cards
-        document.querySelectorAll('.starter-card-container').forEach(c => {
-          c.style.transform = '';
-          c.style.boxShadow = '';
-          c.querySelector('.selection-indicator').style.opacity = '0';
-          c.querySelector('.selection-indicator').style.transform = 'scale(0.8)';
-        });
+//       // Add click handler
+//       cardContainer.addEventListener('click', () => {
+//         // Reset all cards
+//         document.querySelectorAll('.starter-card-container').forEach(c => {
+//           c.style.transform = '';
+//           c.style.boxShadow = '';
+//           c.querySelector('.selection-indicator').style.opacity = '0';
+//           c.querySelector('.selection-indicator').style.transform = 'scale(0.8)';
+//         });
         
-        // Highlight selected
-        cardContainer.style.transform = 'translateY(-8px)';
-        // cardContainer.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
-        selectionIndicator.style.opacity = '1';
-        selectionIndicator.style.transform = 'scale(1)';
+//         // Highlight selected
+//         cardContainer.style.transform = 'translateY(-8px)';
+//         // cardContainer.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
+//         selectionIndicator.style.opacity = '1';
+//         selectionIndicator.style.transform = 'scale(1)';
         
-        // Store selection
-        this.selectedStarterMonster = monster;
+//         // Store selection
+//         this.selectedStarterMonster = monster;
         
-        // Enable confirm button
-        const confirmBtn = document.querySelector('.confirm-starter-btn');
-        if (confirmBtn) {
-          confirmBtn.removeAttribute('disabled');
-        }
+//         // Enable confirm button
+//         const confirmBtn = document.querySelector('.confirm-starter-btn');
+//         if (confirmBtn) {
+//           confirmBtn.removeAttribute('disabled');
+//         }
+//       });
+      
+//       // Add elements to DOM
+//       cardContainer.appendChild(card);
+//       cardContainer.appendChild(selectionIndicator);
+//       grid.appendChild(cardContainer);
+//     });
+  
+//     // Add confirm button
+//     const buttonContainer = document.createElement('div');
+//     buttonContainer.style.cssText = `
+//       display: flex;
+//       justify-content: center;
+//       margin-top: 32px;
+//     `;
+    
+//     const confirmButton = document.createElement('sl-button');
+//     confirmButton.className = 'confirm-starter-btn';
+//     confirmButton.setAttribute('variant', 'primary');
+//     confirmButton.setAttribute('size', 'large');
+//     confirmButton.setAttribute('disabled', '');
+//     confirmButton.innerHTML = `
+//       <span class="material-icons" style="margin-right: 8px;">pets</span>
+//       Choose This Monster
+//     `;
+    
+//     confirmButton.addEventListener('click', () => {
+//       if (this.selectedStarterMonster) {
+//         // this.addMonster(this.selectedStarterMonster);
+// this.addNamedMonster(this.selectedStarterMonster);
+
+//         // Save party
+//         this.saveParty();
+//     this.refreshPartyDialog();
+//         // Animate out and close
+//         overlay.style.opacity = '0';
+//         container.style.transform = 'scale(0.95)';
+//         setTimeout(() => {
+//           overlay.remove();
+//         }, 300);
+//       }
+//     });
+    
+//     buttonContainer.appendChild(confirmButton);
+//     content.appendChild(buttonContainer);
+  
+//     // Animate in
+//     setTimeout(() => {
+//       overlay.style.opacity = '1';
+//       container.style.transform = 'scale(1)';
+//     }, 10);
+//   }
+
+showStarterSelection(starterMonsters) {
+  console.log("Showing starter monster selection with original overlay UI");
+  
+  // Create overlay with ultra-high z-index to ensure it's on top
+  const overlay = document.createElement('div');
+  overlay.className = 'party-overlay starter-selection-overlay'; // Added class for easier debugging
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100000; /* Ultra high z-index to guarantee it's on top */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+  
+  // Create container
+  const container = document.createElement('div');
+  container.className = 'party-container';
+  container.style.cssText = `
+    background: linear-gradient(to bottom, #1e293b, #0f172a);
+    border-radius: 12px;
+    max-width: 900px;
+    width: 90%;
+    color: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+    position: relative;
+  `;
+  
+  // Create header
+  const header = document.createElement('div');
+  header.className = 'party-header';
+  header.style.cssText = `
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  `;
+  
+  header.innerHTML = `
+    <div style="display: flex; align-items: center;">
+      <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px; ">
+      <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
+    </div>
+  `;
+  
+  // Create content
+  const content = document.createElement('div');
+  content.style.padding = '24px';
+  content.style.color = 'white';
+  content.innerHTML = `
+    <p style="margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
+      Welcome to your adventure! Choose one monster to be your starting companion.
+    </p>
+    <p style="opacity: 0.8; text-align: center; margin-bottom: 32px;">
+      Your starter will join your active party and help you recruit more monsters.
+    </p>
+    <div class="starter-monsters-grid" style="
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px;
+      justify-content: center;
+    "></div>
+  `;
+  
+  // Assemble
+  container.appendChild(header);
+  container.appendChild(content);
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+  
+  // Add monsters to grid using createMonsterCard method
+  const grid = content.querySelector('.starter-monsters-grid');
+  
+  starterMonsters.forEach((monster, index) => {
+    console.log(`Preparing monster ${index + 1} for starter selection:`, {
+      id: monster.id,
+      name: monster.basic?.name || monster.name || "Unknown monster",
+      type: monster.basic?.type || monster.type || "unknown"
+    });
+    
+    // CRITICAL: Prepare monster data to ensure all required fields for createMonsterCard
+    const preparedMonster = this.prepareMonster(monster);
+    
+    // Use the existing createMonsterCard method to ensure consistency with rest of UI
+    const card = this.createMonsterCard(preparedMonster, 'starter', index % 2 !== 0);
+    
+    // Wrap the card in a container for better selection styling
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'starter-card-container';
+    cardContainer.style.cssText = `
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    
+    // Add selection indicator that's initially hidden
+    const selectionIndicator = document.createElement('div');
+    selectionIndicator.className = 'selection-indicator';
+    selectionIndicator.innerHTML = `
+      <span class="material-icons" style="font-size: 36px; color: #4ade80;">check_circle</span>
+    `;
+    selectionIndicator.style.cssText = `
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s ease;
+      z-index: 10;
+    `;
+    
+    // Add click handler
+    cardContainer.addEventListener('click', () => {
+      console.log(`Selected monster: ${preparedMonster.name}`);
+      
+      // Reset all cards
+      document.querySelectorAll('.starter-card-container').forEach(c => {
+        c.style.transform = '';
+        c.style.boxShadow = '';
+        c.querySelector('.selection-indicator').style.opacity = '0';
+        c.querySelector('.selection-indicator').style.transform = 'scale(0.8)';
       });
       
-      // Add elements to DOM
-      cardContainer.appendChild(card);
-      cardContainer.appendChild(selectionIndicator);
-      grid.appendChild(cardContainer);
-    });
-  
-    // Add confirm button
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.cssText = `
-      display: flex;
-      justify-content: center;
-      margin-top: 32px;
-    `;
-    
-    const confirmButton = document.createElement('sl-button');
-    confirmButton.className = 'confirm-starter-btn';
-    confirmButton.setAttribute('variant', 'primary');
-    confirmButton.setAttribute('size', 'large');
-    confirmButton.setAttribute('disabled', '');
-    confirmButton.innerHTML = `
-      <span class="material-icons" style="margin-right: 8px;">pets</span>
-      Choose This Monster
-    `;
-    
-    confirmButton.addEventListener('click', () => {
-      if (this.selectedStarterMonster) {
-        // this.addMonster(this.selectedStarterMonster);
-this.addNamedMonster(this.selectedStarterMonster);
-
-        // Save party
-        this.saveParty();
-    this.refreshPartyDialog();
-        // Animate out and close
-        overlay.style.opacity = '0';
-        container.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          overlay.remove();
-        }, 300);
+      // Highlight selected
+      cardContainer.style.transform = 'translateY(-8px)';
+      selectionIndicator.style.opacity = '1';
+      selectionIndicator.style.transform = 'scale(1)';
+      
+      // Store selection
+      this.selectedStarterMonster = monster;
+      
+      // Enable confirm button
+      const confirmBtn = document.querySelector('.confirm-starter-btn');
+      if (confirmBtn) {
+        confirmBtn.removeAttribute('disabled');
       }
     });
     
-    buttonContainer.appendChild(confirmButton);
-    content.appendChild(buttonContainer);
+    // Add elements to DOM
+    cardContainer.appendChild(card);
+    cardContainer.appendChild(selectionIndicator);
+    grid.appendChild(cardContainer);
+  });
   
-    // Animate in
-    setTimeout(() => {
-      overlay.style.opacity = '1';
-      container.style.transform = 'scale(1)';
-    }, 10);
-  }
+  // Add confirm button
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.cssText = `
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+    padding-bottom: 24px;
+  `;
+  
+  const confirmButton = document.createElement('sl-button');
+  confirmButton.className = 'confirm-starter-btn';
+  confirmButton.setAttribute('variant', 'primary');
+  confirmButton.setAttribute('size', 'large');
+  confirmButton.setAttribute('disabled', '');
+  confirmButton.innerHTML = `
+    <span class="material-icons" style="margin-right: 8px;">pets</span>
+    Choose This Monster
+  `;
+  
+  confirmButton.addEventListener('click', () => {
+    if (this.selectedStarterMonster) {
+      console.log(`Adding selected starter monster: ${this.selectedStarterMonster.basic?.name || this.selectedStarterMonster.name}`);
+      this.addNamedMonster(this.selectedStarterMonster);
+      
+      // Save party
+      this.saveParty();
+      this.refreshPartyDialog();
+      
+      // Animate out and close
+      overlay.style.opacity = '0';
+      container.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
+    }
+  });
+  
+  buttonContainer.appendChild(confirmButton);
+  content.appendChild(buttonContainer);
+  
+  // Animate in
+  setTimeout(() => {
+    overlay.style.opacity = '1';
+    container.style.transform = 'scale(1)';
+  }, 10);
+  
+  // Log that the overlay is now showing
+  console.log("Starter monster selection overlay is now visible");
+}
+
+
 
   /**
    * Helper UI Methods
