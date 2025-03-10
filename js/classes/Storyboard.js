@@ -446,13 +446,13 @@ if (typeof window.Storyboard === "undefined") {
         </div>
         <div class="storyboard-sidebar" id="sb-sidebar">
           <div class="storyboard-toolbox" id="sb-toolbox">
-            <div class="storyboard-tool" id="sb-tool-dialog" data-type="dialog">Dialog</div>
-            <div class="storyboard-tool" id="sb-tool-choice" data-type="choice">Choice</div>
-            <div class="storyboard-tool" id="sb-tool-trigger" data-type="trigger">Trigger</div>
-            <div class="storyboard-tool" id="sb-tool-event" data-type="event">Event</div>
-            <div class="storyboard-tool" id="sb-tool-condition" data-type="condition">Condition</div>
-            <div class="storyboard-tool" id="sb-tool-combat" data-type="combat">Combat</div>
-            <div class="storyboard-tool" id="sb-tool-reward" data-type="reward">Reward</div>
+            <div title="Dialog" class="storyboard-tool" id="sb-tool-dialog" data-type="dialog"><i class="material-icons">chat</i></div>
+            <div title="Choice" class="storyboard-tool" id="sb-tool-choice" data-type="choice"><i class="material-icons">check_circle</i></div>
+            <div title="Trigger" class="storyboard-tool" id="sb-tool-trigger" data-type="trigger"><i class="material-icons">flash_on</i></div>
+            <div title="Event" class="storyboard-tool" id="sb-tool-event" data-type="event"><i class="material-icons">event</i></div>
+            <div title="Condition" class="storyboard-tool" id="sb-tool-condition" data-type="condition"><i class="material-icons">rule</i></div>
+            <div title="Combat" class="storyboard-tool" id="sb-tool-combat" data-type="combat"><i class="material-icons">sports_martial_arts</i></div>
+            <div title="Reward" class="storyboard-tool" id="sb-tool-reward" data-type="reward"><i class="material-icons">card_giftcard</i></div>
           </div>
           <div class="storyboard-properties" id="storyboard-properties">
             <div class="story-no-selection">
@@ -713,44 +713,6 @@ if (typeof window.Storyboard === "undefined") {
         }
       });
 
-      // const toolIds = {
-      //   "sb-tool-dialog": "chat",
-      //   "sb-tool-choice": "menu",
-      //   "sb-tool-trigger": "flash_on",
-      //   "sb-tool-event": "event",
-      //   "sb-tool-condition": "rule",
-      //   "sb-tool-combat": "sports_kabaddi",
-      //   "sb-tool-reward": "card_giftcard"
-      // };
-      
-      // toolIds.forEach((id) => {
-      //   const tool = this.editor.querySelector(`#${id}`);
-      //   if (tool) {
-      //     console.log(`Setting up tool button: ${id}`);
-      
-      //     // Ensure button has an icon
-      //     if (!tool.querySelector(".material-icons")) {
-      //       const icon = document.createElement("span");
-      //       icon.classList.add("material-icons");
-      //       icon.textContent = toolIcons[id] || "help"; // Default icon if not found
-      //       tool.prepend(icon);
-      //     }
-      
-      //     tool.addEventListener("click", (e) => {
-      //       e.preventDefault();
-      //       e.stopPropagation();
-      //       const nodeType = tool.getAttribute("data-type");
-      //       console.log(`Tool clicked: ${nodeType}`);
-      //       this.createNewNode(this.editorState.canvasElement, nodeType);
-      //     });
-      //   } else {
-      //     console.error(`Tool button not found: ${id}`);
-      //   }
-      // });
-      
-
-
-
 
     }
 
@@ -798,16 +760,43 @@ if (typeof window.Storyboard === "undefined") {
      */
     generateNodeHTML(nodeType, title, body, nodeData) {
       // Base structure with input port at the top
-      const baseTemplate = `
+  //     const baseTemplate = `
+  //   <div class="storyboard-port input" style="position: absolute; top: -7px; left: 50%; transform: translateX(-50%);"></div>
+  //   <div class="storyboard-node-header">
+  //     ${title}
+  //     <span class="storyboard-node-close">×</span>
+  //   </div>
+  //   <div class="storyboard-node-body">
+  //     ${body}
+  //   </div>
+  // `;
+
+
+  const iconMap = {
+    "Dialog": "chat",
+    "Choice": "check_circle",
+    "Trigger": "flash_on",
+    "Event": "event",
+    "Condition": "rule",
+    "Combat": "sports_martial_arts",
+    "Reward": "card_giftcard"
+};
+
+const getIconForTitle = (title) => {
+    return iconMap[title] || "help"; // Default to "help" if no match
+};
+
+const baseTemplate = `
     <div class="storyboard-port input" style="position: absolute; top: -7px; left: 50%; transform: translateX(-50%);"></div>
     <div class="storyboard-node-header">
-      ${title}
+      <i class="material-icons">${getIconForTitle(title)}</i> ${title}
       <span class="storyboard-node-close">×</span>
     </div>
     <div class="storyboard-node-body">
       ${body}
     </div>
-  `;
+`;
+
 
       // Add the footer with appropriate output ports based on node type
       switch (nodeType) {
