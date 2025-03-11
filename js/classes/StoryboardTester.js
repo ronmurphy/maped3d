@@ -146,17 +146,6 @@ if (typeof window.StoryboardTester === "undefined") {
             document.body.appendChild(overlay);
             this.currentOverlay = overlay;
 
-            // // Set up continue button
-            // const continueBtn = overlay.querySelector('.story-continue-btn');
-            // if (continueBtn) {
-            //     continueBtn.addEventListener('click', () => {
-            //         this.closeCurrentOverlay();
-            //         if (options.onContinue) {
-            //             options.onContinue();
-            //         }
-            //     });
-            // }
-
            // Set up continue button
 const continueBtn = overlay.querySelector('.story-continue-btn');
 if (continueBtn) {
@@ -275,53 +264,6 @@ console.log('Created UI:', {
             }
         }
 
-        /**
-         * Begin testing a storyboard flow
-         * @param {Object} storyGraph - The story graph to test, or null to use current graph from storyboard
-         */
-        //   startTesting(storyGraph = null) {
-        //     // Use provided graph or get from storyboard
-        //     this.currentStoryGraph = storyGraph || this.storyboard.currentGraph;
-        //     if (!this.currentStoryGraph) {
-        //       this.showTestingDialog('No storyboard available to test.', () => {});
-        //       return;
-        //     }
-
-        //     // Find the starting node (look for trigger nodes first, then fall back to any node)
-        //     let startNodeId = null;
-        //     let startNode = null;
-
-        //     // Look for trigger nodes first
-        //     for (const [nodeId, nodeData] of this.currentStoryGraph.nodes) {
-        //       if (nodeData.type === 'trigger') {
-        //         startNodeId = nodeId;
-        //         startNode = nodeData;
-        //         break;
-        //       }
-        //     }
-
-        //     // If no trigger nodes, use the first node
-        //     if (!startNodeId && this.currentStoryGraph.nodes.size > 0) {
-        //       const firstNode = this.currentStoryGraph.nodes.entries().next().value;
-        //       startNodeId = firstNode[0];
-        //       startNode = firstNode[1];
-        //     }
-
-        //     if (!startNodeId) {
-        //       this.showTestingDialog('No nodes found in the storyboard.', () => {});
-        //       return;
-        //     }
-
-        //     // Start executing the story from the start node
-        //     this.showTestingDialog(`Starting test from: ${startNode.type} node`, () => {
-        //       this.executeTestNode(startNodeId);
-        //     });
-        //   }
-
-        /**
-         * Begin testing a storyboard flow
-         * @param {Object} storyGraph - The story graph to test, or null to use current graph from storyboard
-         */
         /**
          * Begin testing a storyboard flow
          * @param {Object} storyGraph - The story graph to test, or null to use current graph from storyboard
@@ -471,63 +413,7 @@ console.log('Created UI:', {
             }
         }
 
-        /**
-         * Show a simple dialog during testing
-         */
-        //   showTestingDialog(message, onClose) {
-        //     // Close any existing UI
-        //     this.closeCurrentDialog();
-        //     this.closeCurrentOverlay();
 
-        //     if (this.useImmersiveMode) {
-        //       // Use immersive overlay
-        //       const overlay = this.showImmersiveOverlay(`
-        //         <div>${message}</div>
-        //       `, {
-        //         title: 'Story Preview',
-        //         onContinue: onClose
-        //       });
-        //       return overlay;
-        //     } else {
-        //       // Use existing dialog code
-        //       const dialog = document.createElement('sl-dialog');
-        //       dialog.label = 'Story Preview';
-        //       dialog.style.cssText = '--width: 500px;';
-
-        //       // Set content
-        //       dialog.innerHTML = `
-        //         <div style="padding: 16px;">${message}</div>
-        //         <div slot="footer">
-        //           <sl-button variant="primary" class="continue-btn">Continue</sl-button>
-        //         </div>
-        //       `;
-
-        //       // Add to DOM
-        //       document.body.appendChild(dialog);
-        //       this.currentDialog = dialog;
-
-        //       // Add continue button handler
-        //       const continueBtn = dialog.querySelector('.continue-btn');
-        //       if (continueBtn) {
-        //         continueBtn.addEventListener('click', () => {
-        //           dialog.hide();
-        //         });
-        //       }
-
-        //       // Add close handler
-        //       dialog.addEventListener('sl-after-hide', () => {
-        //         dialog.remove();
-        //         this.currentDialog = null;
-        //         if (typeof onClose === 'function') {
-        //           onClose();
-        //         }
-        //       });
-
-        //       // Show dialog
-        //       dialog.show();
-        //       return dialog;
-        //     }
-        //   }
         /**
          * Show a simple dialog during testing
          */
@@ -576,74 +462,7 @@ console.log('Created UI:', {
             }
         }
 
-        /**
-         * Test a dialog node
-         */
-        //   executeTestDialog(nodeData, nodeId) {
-        //     // Get the dialog data
-        //     const title = nodeData.data.title || 'Dialog';
-        //     const text = nodeData.data.text || '';
-        //     const image = nodeData.data.image;
 
-        //     // Close any existing dialog
-        //     this.closeCurrentDialog();
-
-        //     // Create dialog
-        //     const dialog = document.createElement('sl-dialog');
-        //     dialog.label = title;
-        //     dialog.style.cssText = '--width: 600px;';
-
-        //     // Create content with optional image
-        //     let contentHtml = `<div style="padding: 16px;">${text}</div>`;
-
-        //     if (image && this.resourceManager) {
-        //       const imageUrl = this.getSplashArtUrl(image);
-        //       if (imageUrl) {
-        //         contentHtml = `
-        //           <div style="padding: 16px;">
-        //             <div style="margin-bottom: 16px; text-align: center;">
-        //               <img src="${imageUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
-        //             </div>
-        //             <div>${text}</div>
-        //           </div>
-        //         `;
-        //       }
-        //     }
-
-        //     dialog.innerHTML = `
-        //       ${contentHtml}
-        //       <div slot="footer">
-        //         <sl-button variant="primary" class="continue-btn">Continue</sl-button>
-        //       </div>
-        //     `;
-
-        //     // Add to DOM
-        //     document.body.appendChild(dialog);
-        //     this.currentDialog = dialog;
-
-        //     // Add continue button handler
-        //     const continueBtn = dialog.querySelector('.continue-btn');
-        //     if (continueBtn) {
-        //       continueBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //       });
-        //     }
-
-        //     // Add close handler
-        //     dialog.addEventListener('sl-after-hide', () => {
-        //       dialog.remove();
-        //       this.currentDialog = null;
-        //       // Continue to next node
-        //       this.findAndExecuteNextNode(nodeId);
-        //     });
-
-        //     // Show dialog
-        //     dialog.show();
-        //   }
-
-        /**
-         * Test a dialog node
-         */
 /**
  * Test a dialog node
  */
@@ -713,87 +532,6 @@ forceCloseAllUI() {
       this.closeCurrentOverlay();
     }
   }
-
-        /**
-         * Test a choice node
-         */
-        //   executeTestChoice(nodeData, nodeId) {
-        //     // Get the choice data
-        //     const text = nodeData.data.text || 'What would you like to do?';
-        //     const options = nodeData.data.options || [];
-
-        //     // Close any existing dialog
-        //     this.closeCurrentDialog();
-
-        //     // Create dialog
-        //     const dialog = document.createElement('sl-dialog');
-        //     dialog.label = 'Choice';
-        //     dialog.style.cssText = '--width: 500px;';
-
-        //     // Create options HTML
-        //     let optionsHtml = '';
-        //     if (options.length > 0) {
-        //       optionsHtml = '<div class="choice-options" style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">';
-        //       options.forEach((option, index) => {
-        //         optionsHtml += `
-        //           <sl-button class="option-btn" data-index="${index}" style="text-align: left;">
-        //             ${option.text}
-        //           </sl-button>
-        //         `;
-        //       });
-        //       optionsHtml += '</div>';
-        //     } else {
-        //       optionsHtml = '<div style="color: #888; margin-top: 16px;">No options available</div>';
-        //     }
-
-        //     dialog.innerHTML = `
-        //       <div style="padding: 16px;">
-        //         <div>${text}</div>
-        //         ${optionsHtml}
-        //       </div>
-        //     `;
-
-        //     // Add to DOM
-        //     document.body.appendChild(dialog);
-        //     this.currentDialog = dialog;
-
-        //     // Add option button handlers
-        //     const optionBtns = dialog.querySelectorAll('.option-btn');
-        //     optionBtns.forEach(btn => {
-        //       btn.addEventListener('click', () => {
-        //         const index = parseInt(btn.getAttribute('data-index'));
-        //         dialog.hide();
-
-        //         // Find the next node for this option
-        //         // First try explicit targetId from the option
-        //         if (options[index].targetId) {
-        //           this.executeTestNode(options[index].targetId);
-        //           return;
-        //         }
-
-        //         // If no explicit targetId, find connections by option index
-        //         const connections = this.currentStoryGraph.connections.filter(c => c.from === nodeId);
-
-        //         if (connections.length > index) {
-        //           this.executeTestNode(connections[index].to);
-        //         } else if (connections.length > 0) {
-        //           // Fall back to the first connection
-        //           this.executeTestNode(connections[0].to);
-        //         } else {
-        //           this.showTestingDialog('End of story branch reached.', () => {});
-        //         }
-        //       });
-        //     });
-
-        //     // Add close handler for manually closing
-        //     dialog.addEventListener('sl-after-hide', () => {
-        //       dialog.remove();
-        //       this.currentDialog = null;
-        //     });
-
-        //     // Show dialog
-        //     dialog.show();
-        //   }
 
         /**
          * Test a choice node
@@ -876,96 +614,6 @@ forceCloseAllUI() {
 
             return ui;
         }
-
-        /**
-         * Test a condition node
-         */
-        //   executeTestCondition(nodeData, nodeId) {
-        //     // Get the condition data
-        //     const conditionType = nodeData.data.condition || 'unknown';
-        //     let conditionText = '';
-
-        //     switch (conditionType) {
-        //       case 'hasMonster':
-        //         conditionText = `Check if player has monster: ${nodeData.data.params?.monsterName || 'Unknown monster'}`;
-        //         break;
-        //       case 'hasItem':
-        //         conditionText = `Check if player has item: ${nodeData.data.params?.itemName || 'Unknown item'} (Quantity: ${nodeData.data.params?.quantity || 1})`;
-        //         break;
-        //       case 'hasFlag':
-        //         conditionText = `Check if game flag "${nodeData.data.params?.flag || 'Unknown'}" is ${nodeData.data.params?.value ? 'true' : 'false'}`;
-        //         break;
-        //       case 'monsterLevel':
-        //         conditionText = `Check if monster ${nodeData.data.params?.monsterName || 'Unknown'} level is at least ${nodeData.data.params?.level || 1}`;
-        //         break;
-        //       default:
-        //         conditionText = `Condition: ${conditionType}`;
-        //     }
-
-        //     // Close any existing dialog
-        //     this.closeCurrentDialog();
-
-        //     // Create dialog
-        //     const dialog = document.createElement('sl-dialog');
-        //     dialog.label = 'Condition Check';
-        //     dialog.style.cssText = '--width: 500px;';
-
-        //     dialog.innerHTML = `
-        //       <div style="padding: 16px;">
-        //         <div style="font-weight: bold; margin-bottom: 8px;">Testing condition:</div>
-        //         <div style="padding: 8px; background: #333; border-radius: 4px;">
-        //           ${conditionText}
-        //         </div>
-
-        //         <div style="margin-top: 16px; font-style: italic; color: #aaa;">
-        //           For testing purposes, choose which path to follow:
-        //         </div>
-
-        //         <div style="display: flex; gap: 8px; margin-top: 12px;">
-        //           <sl-button class="true-btn" variant="primary" style="--sl-color-primary-600: #2196F3;">
-        //             <span style="display: inline-block; width: 10px; height: 10px; background: #2196F3; border-radius: 50%; margin-right: 8px;"></span>
-        //             True Path
-        //           </sl-button>
-
-        //           <sl-button class="false-btn" variant="primary" style="--sl-color-primary-600: #F44336;">
-        //             <span style="display: inline-block; width: 10px; height: 10px; background: #F44336; border-radius: 50%; margin-right: 8px;"></span>
-        //             False Path
-        //           </sl-button>
-        //         </div>
-        //       </div>
-        //     `;
-
-        //     // Add to DOM
-        //     document.body.appendChild(dialog);
-        //     this.currentDialog = dialog;
-
-        //     // Add button handlers
-        //     const trueBtn = dialog.querySelector('.true-btn');
-        //     const falseBtn = dialog.querySelector('.false-btn');
-
-        //     if (trueBtn) {
-        //       trueBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //         this.followConditionPath(nodeId, true);
-        //       });
-        //     }
-
-        //     if (falseBtn) {
-        //       falseBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //         this.followConditionPath(nodeId, false);
-        //       });
-        //     }
-
-        //     // Add close handler for manually closing
-        //     dialog.addEventListener('sl-after-hide', () => {
-        //       dialog.remove();
-        //       this.currentDialog = null;
-        //     });
-
-        //     // Show dialog
-        //     dialog.show();
-        //   }
 
         /**
          * Test a condition node
@@ -1092,107 +740,6 @@ forceCloseAllUI() {
         /**
          * Test an event node
          */
-        //   executeTestEvent(nodeData, nodeId) {
-        //     // Get the event data
-        //     const eventType = nodeData.data.eventType || 'unknown';
-        //     let eventText = '';
-        //     let imageHtml = '';
-
-        //     switch (eventType) {
-        //       case 'offerStarter':
-        //         eventText = 'Offer starter monster to the player';
-        //         imageHtml = '<div style="font-size: 48px; text-align: center; margin: 20px 0; color: #673ab7;">🐲</div>';
-        //         break;
-        //       case 'showPartyManager':
-        //         eventText = 'Show the party manager to the player';
-        //         imageHtml = '<div style="font-size: 48px; text-align: center; margin: 20px 0; color: #673ab7;">📋</div>';
-        //         break;
-        //       case 'giveItem':
-        //         const itemName = nodeData.data.params?.itemName || 'Unknown item';
-        //         const quantity = nodeData.data.params?.quantity || 1;
-        //         eventText = `Give item to player: ${itemName} (Quantity: ${quantity})`;
-
-        //         // Try to get item image
-        //         if (nodeData.data.params?.itemId && this.resourceManager) {
-        //           const item = this.resourceManager.resources.textures.props.get(nodeData.data.params.itemId);
-        //           if (item && item.thumbnail) {
-        //             imageHtml = `
-        //               <div style="text-align: center; margin: 20px 0;">
-        //                 <img src="${item.thumbnail}" style="max-width: 100px; max-height: 100px; border: 2px solid #444; border-radius: 8px; padding: 4px;">
-        //               </div>
-        //             `;
-        //           }
-        //         }
-
-        //         if (!imageHtml) {
-        //           imageHtml = '<div style="font-size: 48px; text-align: center; margin: 20px 0; color: #673ab7;">🎁</div>';
-        //         }
-        //         break;
-        //       case 'setFlag':
-        //         const flag = nodeData.data.params?.flag || 'Unknown flag';
-        //         const value = nodeData.data.params?.value ? 'true' : 'false';
-        //         eventText = `Set game flag: ${flag} = ${value}`;
-        //         imageHtml = '<div style="font-size: 48px; text-align: center; margin: 20px 0; color: #673ab7;">🚩</div>';
-        //         break;
-        //       case 'teleport':
-        //         const x = nodeData.data.params?.x || 0;
-        //         const y = nodeData.data.params?.y || 0;
-        //         const z = nodeData.data.params?.z || 0;
-        //         eventText = `Teleport player to position: X=${x}, Y=${y}, Z=${z}`;
-        //         imageHtml = '<div style="font-size: 48px; text-align: center; margin: 20px 0; color: #673ab7;">✨</div>';
-        //         break;
-        //       default:
-        //         eventText = `Event: ${eventType}`;
-        //     }
-
-        //     // Close any existing dialog
-        //     this.closeCurrentDialog();
-
-        //     // Create dialog
-        //     const dialog = document.createElement('sl-dialog');
-        //     dialog.label = 'Game Event';
-        //     dialog.style.cssText = '--width: 500px;';
-
-        //     dialog.innerHTML = `
-        //       <div style="padding: 16px;">
-        //         ${imageHtml}
-        //         <div style="font-weight: bold; margin-bottom: 8px;">Event triggered:</div>
-        //         <div style="padding: 8px; background: #333; border-radius: 4px;">
-        //           ${eventText}
-        //         </div>
-        //       </div>
-        //       <div slot="footer">
-        //         <sl-button variant="primary" class="continue-btn">Continue</sl-button>
-        //       </div>
-        //     `;
-
-        //     // Add to DOM
-        //     document.body.appendChild(dialog);
-        //     this.currentDialog = dialog;
-
-        //     // Add continue button handler
-        //     const continueBtn = dialog.querySelector('.continue-btn');
-        //     if (continueBtn) {
-        //       continueBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //       });
-        //     }
-
-        //     // Add close handler
-        //     dialog.addEventListener('sl-after-hide', () => {
-        //       dialog.remove();
-        //       this.currentDialog = null;
-        //       // Continue to next node
-        //       this.findAndExecuteNextNode(nodeId);
-        //     });
-
-        //     // Show dialog
-        //     dialog.show();
-        //   }
-
-        /**
-         * Test an event node
-         */
         executeTestEvent(nodeData, nodeId) {
             // Get the event data
             const eventType = nodeData.data.eventType || 'unknown';
@@ -1261,75 +808,6 @@ forceCloseAllUI() {
                 onContinue: () => this.findAndExecuteNextNode(nodeId)
             });
         }
-
-        /**
-         * Test a combat node
-         */
-        //   executeTestCombat(nodeData, nodeId) {
-        //     // Close any existing dialog
-        //     this.closeCurrentDialog();
-
-        //     // Create dialog
-        //     const dialog = document.createElement('sl-dialog');
-        //     dialog.label = 'Combat Encounter';
-        //     dialog.style.cssText = '--width: 500px;';
-
-        //     dialog.innerHTML = `
-        //       <div style="padding: 16px;">
-        //         <div style="font-size: 48px; text-align: center; margin: 20px 0; color: #F44336;">⚔️</div>
-
-        //         <div style="font-weight: bold; margin-bottom: 8px;">Combat encountered:</div>
-        //         <div style="padding: 8px; background: #333; border-radius: 4px;">
-        //           ${nodeData.data.enemies?.length || 0} enemies
-        //         </div>
-
-        //         <div style="margin-top: 16px; font-style: italic; color: #aaa;">
-        //           For testing purposes, choose battle outcome:
-        //         </div>
-
-        //         <div style="display: flex; gap: 8px; margin-top: 12px;">
-        //           <sl-button class="victory-btn" variant="success">
-        //             Victory
-        //           </sl-button>
-
-        //           <sl-button class="defeat-btn" variant="danger">
-        //             Defeat
-        //           </sl-button>
-        //         </div>
-        //       </div>
-        //     `;
-
-        //     // Add to DOM
-        //     document.body.appendChild(dialog);
-        //     this.currentDialog = dialog;
-
-        //     // Add button handlers
-        //     const victoryBtn = dialog.querySelector('.victory-btn');
-        //     const defeatBtn = dialog.querySelector('.defeat-btn');
-
-        //     if (victoryBtn) {
-        //       victoryBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //         this.followCombatPath(nodeId, true);
-        //       });
-        //     }
-
-        //     if (defeatBtn) {
-        //       defeatBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //         this.followCombatPath(nodeId, false);
-        //       });
-        //     }
-
-        //     // Add close handler for manually closing
-        //     dialog.addEventListener('sl-after-hide', () => {
-        //       dialog.remove();
-        //       this.currentDialog = null;
-        //     });
-
-        //     // Show dialog
-        //     dialog.show();
-        //   }
 
         /**
          * Test a combat node
@@ -1430,57 +908,6 @@ forceCloseAllUI() {
                 this.showTestingDialog('End of story branch reached.', () => { });
             }
         }
-
-        /**
-         * Test a reward node
-         */
-        //   executeTestReward(nodeData, nodeId) {
-        //     // Close any existing dialog
-        //     this.closeCurrentDialog();
-
-        //     // Create dialog
-        //     const dialog = document.createElement('sl-dialog');
-        //     dialog.label = 'Rewards';
-        //     dialog.style.cssText = '--width: 500px;';
-
-        //     dialog.innerHTML = `
-        //       <div style="padding: 16px;">
-        //         <div style="font-size: 48px; text-align: center; margin: 20px 0; color: #FFD700;">🏆</div>
-
-        //         <div style="font-weight: bold; margin-bottom: 8px;">Rewards received:</div>
-        //         <div style="padding: 8px; background: #333; border-radius: 4px;">
-        //           <div>Items: ${nodeData.data.items?.length || 0}</div>
-        //           <div>Experience: ${nodeData.data.experience || 0}</div>
-        //         </div>
-        //       </div>
-        //       <div slot="footer">
-        //         <sl-button variant="primary" class="continue-btn">Continue</sl-button>
-        //       </div>
-        //     `;
-
-        //     // Add to DOM
-        //     document.body.appendChild(dialog);
-        //     this.currentDialog = dialog;
-
-        //     // Add continue button handler
-        //     const continueBtn = dialog.querySelector('.continue-btn');
-        //     if (continueBtn) {
-        //       continueBtn.addEventListener('click', () => {
-        //         dialog.hide();
-        //       });
-        //     }
-
-        //     // Add close handler
-        //     dialog.addEventListener('sl-after-hide', () => {
-        //       dialog.remove();
-        //       this.currentDialog = null;
-        //       // Continue to next node
-        //       this.findAndExecuteNextNode(nodeId);
-        //     });
-
-        //     // Show dialog
-        //     dialog.show();
-        //   }
 
         /**
          * Test a reward node
@@ -1636,22 +1063,6 @@ getSplashArtUrl(imageData) {
                 pathType &&
                 (pathType === "true" || pathType === "false");
         }
-        // isConditionConnection(fromNode, pathType) {
-        //     if (!fromNode) return false;
-
-        //     // Check if the source node is a condition node
-        //     const fromNodeType = fromNode.getAttribute("data-type");
-
-        //     // It's a condition connection if:
-        //     // 1. The node is of type 'condition'
-        //     // 2. The path type is either 'true' or 'false'
-        //     return fromNodeType === "condition" && 
-        //            pathType && 
-        //            (pathType === "true" || pathType === "false");
-        //   }
-        // }
-
-
 
     }
 
