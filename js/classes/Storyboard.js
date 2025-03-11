@@ -5750,9 +5750,87 @@ runInScene3D(scene3D, storyId = null) {
 /**
  * Execute a node in test mode
  */
+// executeTestNode(nodeId) {
+//   // Get the node data
+//   const nodeData = this.currentGraph.nodes.get(nodeId);
+//   if (!nodeData) {
+//     this.showTestingDialog('Error: Node not found', () => {});
+//     return;
+//   }
+  
+//   // Process the node based on its type
+//   switch (nodeData.type) {
+//     case 'dialog':
+//       this.executeTestDialog(nodeData, nodeId);
+//       break;
+      
+//     case 'choice':
+//       this.executeTestChoice(nodeData, nodeId);
+//       break;
+      
+//     case 'condition':
+//       this.executeTestCondition(nodeData, nodeId);
+//       break;
+      
+//     case 'event':
+//       this.executeTestEvent(nodeData, nodeId);
+//       break;
+      
+//     case 'combat':
+//       this.executeTestCombat(nodeData, nodeId);
+//       break;
+      
+//     case 'reward':
+//       this.executeTestReward(nodeData, nodeId);
+//       break;
+      
+//     default:
+//       this.showTestingDialog(`Unsupported node type: ${nodeData.type}`, () => {
+//         this.findAndExecuteNextNode(nodeId);
+//       });
+//   }
+// }
+
+
+
+/**
+ * Execute a node in test mode
+ */
 executeTestNode(nodeId) {
+  console.log(`Executing node: ${nodeId}`);
+  
+  // IMPORTANT CHECK: If we still have an active UI element, don't proceed yet
+  if (this.currentDialog || this.currentOverlay) {
+    console.log('Previous UI still active, waiting before executing next node');
+    
+    // Wait until current UI is closed before continuing
+    const checkForClear = () => {
+      if (this.currentDialog || this.currentOverlay) {
+        // Still showing UI, check again in a bit
+        setTimeout(checkForClear, 100);
+      } else {
+        // UI clear, now safe to proceed
+        console.log('UI now clear, continuing to next node');
+        this._executeNodeInternal(nodeId);
+      }
+    };
+    
+    setTimeout(checkForClear, 100);
+    return;
+  }
+  
+  // No active UI, safe to proceed immediately
+  this._executeNodeInternal(nodeId);
+}
+
+
+/**
+ * Internal method to execute a node once UI is clear
+ * @private
+ */
+_executeNodeInternal(nodeId) {
   // Get the node data
-  const nodeData = this.currentGraph.nodes.get(nodeId);
+  const nodeData = this.currentGraph.nodes.get(nodeId); // this.getNode(nodeId);
   if (!nodeData) {
     this.showTestingDialog('Error: Node not found', () => {});
     return;
@@ -6392,135 +6470,257 @@ findAndExecuteNextNode(currentNodeId) {
   }
 }
 
-/**
- * Show an immersive overlay for story content in 3D mode
- * @param {String} content - HTML content to display
- * @param {Object} options - Display options
- * @returns {HTMLElement} - The created overlay element
- */
-showImmersiveUI(content, options = {}) {
-  // Ensure controls are paused
-  if (this.scene3D && this.scene3D.pauseControls) {
-    this.scene3D.pauseControls();
-  }
+// /**
+//  * Show an immersive overlay for story content in 3D mode
+//  * @param {String} content - HTML content to display
+//  * @param {Object} options - Display options
+//  * @returns {HTMLElement} - The created overlay element
+//  */
+// showImmersiveUI(content, options = {}) {
+//   // Ensure controls are paused
+//   if (this.scene3D && this.scene3D.pauseControls) {
+//     this.scene3D.pauseControls();
+//   }
   
-  // Close any existing overlay
-  if (this.currentOverlay) {
-    this.closeOverlay();
-  }
+//   // Close any existing overlay
+//   if (this.currentOverlay) {
+//     this.closeOverlay();
+//   }
   
-  // Create overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'story-overlay';
-  overlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  `;
+//   // Create overlay
+//   const overlay = document.createElement('div');
+//   overlay.className = 'story-overlay';
+//   overlay.style.cssText = `
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     right: 0;
+//     bottom: 0;
+//     background: rgba(0, 0, 0, 0.7);
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     z-index: 10000;
+//     opacity: 0;
+//     transition: opacity 0.3s ease;
+//   `;
   
-  overlay.innerHTML = `
-    <div class="story-content" style="
-      background: #242424;
-      max-width: 800px;
-      width: 80vw;
-      max-height: 80vh;
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      transform: scale(0.95);
-      transition: transform 0.3s ease;
-    ">
-      ${options.title ? `
-        <div class="story-header" style="
-          padding: 16px;
-          background: linear-gradient(135deg, #673ab7, #9c27b0);
-          color: white;
-          font-weight: bold;
-          font-size: 1.2rem;
-        ">
-          ${options.title}
-        </div>
-      ` : ''}
+//   overlay.innerHTML = `
+//     <div class="story-content" style="
+//       background: #242424;
+//       max-width: 800px;
+//       width: 80vw;
+//       max-height: 80vh;
+//       border-radius: 8px;
+//       overflow: hidden;
+//       display: flex;
+//       flex-direction: column;
+//       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+//       transform: scale(0.95);
+//       transition: transform 0.3s ease;
+//     ">
+//       ${options.title ? `
+//         <div class="story-header" style="
+//           padding: 16px;
+//           background: linear-gradient(135deg, #673ab7, #9c27b0);
+//           color: white;
+//           font-weight: bold;
+//           font-size: 1.2rem;
+//         ">
+//           ${options.title}
+//         </div>
+//       ` : ''}
       
-      <div class="story-body" style="
-        padding: 24px;
-        overflow-y: auto;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        color: #e0e0e0;
-      ">
-        ${content}
-      </div>
+//       <div class="story-body" style="
+//         padding: 24px;
+//         overflow-y: auto;
+//         flex: 1;
+//         display: flex;
+//         flex-direction: column;
+//         gap: 20px;
+//         color: #e0e0e0;
+//       ">
+//         ${content}
+//       </div>
       
-      ${options.showFooter !== false ? `
-        <div class="story-footer" style="
-          padding: 16px;
-          background: #333;
-          border-top: 1px solid #444;
-          display: flex;
-          justify-content: flex-end;
-        ">
-          <button class="story-continue-btn" style="
-            padding: 8px 16px;
-            background: #673ab7;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-          ">Continue</button>
-        </div>
-      ` : ''}
-    </div>
-  `;
+//       ${options.showFooter !== false ? `
+//         <div class="story-footer" style="
+//           padding: 16px;
+//           background: #333;
+//           border-top: 1px solid #444;
+//           display: flex;
+//           justify-content: flex-end;
+//         ">
+//           <button class="story-continue-btn" style="
+//             padding: 8px 16px;
+//             background: #673ab7;
+//             color: white;
+//             border: none;
+//             border-radius: 4px;
+//             font-size: 14px;
+//             cursor: pointer;
+//           ">Continue</button>
+//         </div>
+//       ` : ''}
+//     </div>
+//   `;
   
-  document.body.appendChild(overlay);
-  this.currentOverlay = overlay;
+//   document.body.appendChild(overlay);
+//   this.currentOverlay = overlay;
   
-  // Set up continue button
-  const continueBtn = overlay.querySelector('.story-continue-btn');
-  if (continueBtn) {
-    continueBtn.addEventListener('click', () => {
-      // Close overlay
-      this.closeOverlay();
+//   // Set up continue button
+//   const continueBtn = overlay.querySelector('.story-continue-btn');
+//   if (continueBtn) {
+//     continueBtn.addEventListener('click', () => {
+//       // Close overlay
+//       this.closeOverlay();
       
-      // Run callback if provided
-      if (options.onContinue) {
-        options.onContinue();
-      }
-    });
-  }
+//       // Run callback if provided
+//       if (options.onContinue) {
+//         options.onContinue();
+//       }
+//     });
+//   }
   
-  // Animate in
-  setTimeout(() => {
-    overlay.style.opacity = '1';
-    const content = overlay.querySelector('.story-content');
-    if (content) {
-      content.style.transform = 'scale(1)';
-    }
-  }, 10);
+//   // Animate in
+//   setTimeout(() => {
+//     overlay.style.opacity = '1';
+//     const content = overlay.querySelector('.story-content');
+//     if (content) {
+//       content.style.transform = 'scale(1)';
+//     }
+//   }, 10);
   
-  return overlay;
-}
+//   return overlay;
+// }
+
+// /**
+//  * Show an immersive overlay for story content in 3D mode
+//  * @param {String} content - HTML content to display
+//  * @param {Object} options - Display options
+//  * @returns {HTMLElement} - The created overlay element
+//  */
+// showImmersiveOverlay(content, options = {}) {
+//   console.log("Showing immersive overlay");
+  
+//   // Only pause controls if we're in 3D mode
+//   if (this.in3DMode && this.scene3D && typeof this.scene3D.pauseControls === 'function') {
+//     console.log('Pausing controls for immersive UI');
+//     this.scene3D.pauseControls();
+//   }
+  
+//   // Close any existing overlay
+//   this.closeCurrentOverlay();
+  
+//   // Create overlay
+//   const overlay = document.createElement('div');
+//   overlay.className = 'story-overlay';
+//   overlay.style.cssText = `
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     right: 0;
+//     bottom: 0;
+//     background: rgba(0, 0, 0, 0.7);
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     z-index: 10000;
+//     opacity: 0;
+//     transition: opacity 0.3s ease;
+//   `;
+  
+//   overlay.innerHTML = `
+//     <div class="story-content" style="
+//       background: #242424;
+//       max-width: 800px;
+//       width: 80vw;
+//       max-height: 80vh;
+//       border-radius: 8px;
+//       overflow: hidden;
+//       display: flex;
+//       flex-direction: column;
+//       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+//       transform: scale(0.95);
+//       transition: transform 0.3s ease;
+//     ">
+//       ${options.title ? `
+//         <div class="story-header" style="
+//           padding: 16px;
+//           background: linear-gradient(135deg, #673ab7, #9c27b0);
+//           color: white;
+//           font-weight: bold;
+//           font-size: 1.2rem;
+//         ">
+//           ${options.title}
+//         </div>
+//       ` : ''}
+      
+//       <div class="story-body" style="
+//         padding: 24px;
+//         overflow-y: auto;
+//         flex: 1;
+//         display: flex;
+//         flex-direction: column;
+//         gap: 20px;
+//         color: #e0e0e0;
+//       ">
+//         ${content}
+//       </div>
+      
+//       ${options.showFooter !== false ? `
+//         <div class="story-footer" style="
+//           padding: 16px;
+//           background: #333;
+//           border-top: 1px solid #444;
+//           display: flex;
+//           justify-content: flex-end;
+//         ">
+//           <button class="story-continue-btn" style="
+//             padding: 8px 16px;
+//             background: #673ab7;
+//             color: white;
+//             border: none;
+//             border-radius: 4px;
+//             font-size: 14px;
+//             cursor: pointer;
+//           ">Continue</button>
+//         </div>
+//       ` : ''}
+//     </div>
+//   `;
+  
+//   document.body.appendChild(overlay);
+//   this.currentOverlay = overlay;
+  
+//   // Set up continue button
+//   const continueBtn = overlay.querySelector('.story-continue-btn');
+//   if (continueBtn) {
+//     continueBtn.addEventListener('click', () => {
+//       // Close overlay
+//       this.closeCurrentOverlay();
+      
+//       // Run callback if provided
+//       if (options.onContinue) {
+//         options.onContinue();
+//       }
+//     });
+//   }
+  
+//   // Animate in
+//   setTimeout(() => {
+//     overlay.style.opacity = '1';
+//     const content = overlay.querySelector('.story-content');
+//     if (content) {
+//       content.style.transform = 'scale(1)';
+//     }
+//   }, 10);
+  
+//   return overlay;
+// }
 
 /**
  * Show an immersive overlay for story content in 3D mode
- * @param {String} content - HTML content to display
- * @param {Object} options - Display options
- * @returns {HTMLElement} - The created overlay element
  */
 showImmersiveOverlay(content, options = {}) {
   console.log("Showing immersive overlay");
@@ -6615,16 +6815,21 @@ showImmersiveOverlay(content, options = {}) {
   document.body.appendChild(overlay);
   this.currentOverlay = overlay;
   
-  // Set up continue button
+  // Set up continue button with fixed execution order
   const continueBtn = overlay.querySelector('.story-continue-btn');
   if (continueBtn) {
     continueBtn.addEventListener('click', () => {
+      // Store callback first
+      const callback = options.onContinue;
+      
       // Close overlay
       this.closeCurrentOverlay();
       
-      // Run callback if provided
-      if (options.onContinue) {
-        options.onContinue();
+      // Call callback after a short delay
+      if (callback) {
+        setTimeout(() => {
+          callback();
+        }, 50);
       }
     });
   }
