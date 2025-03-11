@@ -10,6 +10,7 @@ if (typeof window.Storyboard === "undefined") {
       // Core dependencies
       this.scene3D = scene3D;
       this.resourceManager = resourceManager;
+      this.in3DMode = false;
 
       // Story data - persistent between sessions
       this.storyGraphs = new Map(); // Map of story IDs to story graph objects
@@ -1369,6 +1370,129 @@ exportToJSON() {
 }
 
 /**
+ * Import storyboard from a JSON file
+ */
+importFromJSON() {
+  // Create file input element
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'application/json';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+  
+  // Handle file selection
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      fileInput.remove();
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const jsonData = JSON.parse(event.target.result);
+        this.loadGraphFromJSON(jsonData);
+        console.log('Successfully imported storyboard from JSON');
+        
+        // Show confirmation toast
+        const toast = document.createElement("sl-alert");
+        toast.variant = "success";
+        toast.closable = true;
+        toast.duration = 3000;
+        toast.innerHTML = `
+          <sl-icon slot="icon" name="check-circle"></sl-icon>
+          Storyboard imported successfully!
+        `;
+        document.body.appendChild(toast);
+        toast.toast();
+      } catch (error) {
+        console.error('Error importing storyboard:', error);
+        
+        // Show error toast
+        const toast = document.createElement("sl-alert");
+        toast.variant = "danger";
+        toast.closable = true;
+        toast.duration = 3000;
+        toast.innerHTML = `
+          <sl-icon slot="icon" name="exclamation-triangle"></sl-icon>
+          Error importing storyboard: ${error.message}
+        `;
+        document.body.appendChild(toast);
+        toast.toast();
+      }
+      
+      // Clean up
+      fileInput.remove();
+    };
+    
+    reader.readAsText(file);
+  });
+  
+  // Trigger file input
+  fileInput.click();
+}
+
+/**
+ * Load a story graph from JSON data
+ * @param {Object} jsonData - The parsed JSON data
+ */
+loadGraphFromJSON(jsonData) {
+  if (!jsonData.nodes || !jsonData.connections) {
+    throw new Error('Invalid storyboard JSON format');
+  }
+  
+  // Create a new graph
+  const graphId = jsonData.id || `graph_${Date.now()}`;
+  const newGraph = {
+    id: graphId,
+    nodes: new Map(),
+    connections: [],
+    dirty: false
+  };
+  
+  // Process nodes
+  if (typeof jsonData.nodes === 'object') {
+    // Handle nodes object (like the format we exported)
+    Object.entries(jsonData.nodes).forEach(([nodeId, nodeData]) => {
+      newGraph.nodes.set(nodeId, {
+        type: nodeData.type,
+        position: nodeData.position,
+        data: nodeData.data,
+        element: null // Will be set when displayed
+      });
+    });
+  }
+  
+  // Process connections
+  if (Array.isArray(jsonData.connections)) {
+    newGraph.connections = jsonData.connections.map(conn => ({
+      from: conn.from,
+      to: conn.to,
+      path: conn.path || null,
+      option: conn.option || null
+    }));
+  }
+  
+  // Set as current graph
+  this.currentGraph = newGraph;
+  
+  // Save to storyGraphs collection
+  this.storyGraphs.set(graphId, newGraph);
+  
+  // Save to localStorage
+  this.saveToStorage();
+  console.log(`Imported storyboard saved as: ${graphId}`);
+  
+  // Refresh the editor if it's open
+  if (this.editor && this.editorState.canvasElement) {
+    this.restoreNodesFromData(this.editorState.canvasElement);
+  }
+  
+  return newGraph;
+}
+
+/**
  * Add zoom and pan controls to the editor footer
  */
 addZoomPanControls() {
@@ -1504,7 +1628,24 @@ addZoomPanControls() {
     color: #ccc;
   `;
   
-  // Add Export JSON button
+//   // Add Export JSON button
+// const exportBtn = document.createElement("button");
+// exportBtn.textContent = "Export JSON";
+// exportBtn.className = "storyboard-button export-json-btn";
+// exportBtn.style.cssText = `
+//   background-color: #4caf50;
+//   color: white;
+//   margin-right: 8px;
+// `;
+// exportBtn.addEventListener("click", (e) => {
+//   e.preventDefault();
+//   e.stopPropagation();
+//   this.exportToJSON();
+// });
+
+// In the addZoomPanControls method, where you add the export button:
+
+// Add Export JSON button
 const exportBtn = document.createElement("button");
 exportBtn.textContent = "Export JSON";
 exportBtn.className = "storyboard-button export-json-btn";
@@ -1518,6 +1659,25 @@ exportBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   this.exportToJSON();
 });
+
+// Add Load JSON button
+const importBtn = document.createElement("button");
+importBtn.textContent = "Load JSON";
+importBtn.className = "storyboard-button load-json-btn";
+importBtn.style.cssText = `
+  background-color: #2196F3;
+  color: white;
+  margin-right: 8px;
+`;
+importBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  this.importFromJSON();
+});
+
+// Add both buttons to the control container
+zoomControls.appendChild(exportBtn);
+zoomControls.appendChild(importBtn);
 
 
 
@@ -5434,11 +5594,80 @@ case 'reward':
 
 /**
  * Test the current storyboard flow
+ */ // original code collapsed VV
+// testStoryboard() {
+//   // Save any unsaved changes first
+//   if (this.currentGraph.dirty) {
+//     this.saveCurrentGraph();
+//   }
+  
+//   // Find the starting node (look for trigger nodes first, then fall back to any node)
+//   let startNodeId = null;
+//   let startNode = null;
+  
+//   // Look for trigger nodes first
+//   for (const [nodeId, nodeData] of this.currentGraph.nodes) {
+//     if (nodeData.type === 'trigger') {
+//       startNodeId = nodeId;
+//       startNode = nodeData;
+//       break;
+//     }
+//   }
+  
+//   // If no trigger nodes, use the first node
+//   if (!startNodeId && this.currentGraph.nodes.size > 0) {
+//     const firstNode = this.currentGraph.nodes.entries().next().value;
+//     startNodeId = firstNode[0];
+//     startNode = firstNode[1];
+//   }
+  
+//   if (!startNodeId) {
+//     this.showToast('No nodes found in the storyboard.', 'error');
+//     return;
+//   }
+  
+//   // Start executing the story from the start node
+//   this.showTestingDialog(`Starting test from: ${startNode.type} node`, () => {
+//     this.executeTestNode(startNodeId);
+//   });
+// }
+
+/**
+ * Test the current storyboard flow with 3d support
+ * @param {Object|string} storyGraphOrId - The story graph object or ID to test
  */
-testStoryboard() {
+testStoryboard(storyGraphOrId = null) {
+
+  if (this.editor) {
+    // If we're in the editor, ensure we're not in 3D mode
+    this.in3DMode = false;
+    console.log("Editor detected, disabling 3D mode for testing");
+  }
+  
   // Save any unsaved changes first
   if (this.currentGraph.dirty) {
     this.saveCurrentGraph();
+  }
+  
+  // Determine what story to use
+  let storyGraph = null;
+  
+  if (typeof storyGraphOrId === 'string') {
+    // Use the specified story ID
+    if (this.storyGraphs.has(storyGraphOrId)) {
+      storyGraph = this.storyGraphs.get(storyGraphOrId);
+      console.log(`Testing story with ID: ${storyGraphOrId}`);
+    } else {
+      console.warn(`Story ID not found: ${storyGraphOrId}, using default`);
+    }
+  } else if (storyGraphOrId !== null && typeof storyGraphOrId === 'object') {
+    // Use the provided story graph object
+    storyGraph = storyGraphOrId;
+  }
+  
+  // If no valid story provided, use current graph
+  if (!storyGraph) {
+    storyGraph = this.currentGraph;
   }
   
   // Find the starting node (look for trigger nodes first, then fall back to any node)
@@ -5446,7 +5675,7 @@ testStoryboard() {
   let startNode = null;
   
   // Look for trigger nodes first
-  for (const [nodeId, nodeData] of this.currentGraph.nodes) {
+  for (const [nodeId, nodeData] of storyGraph.nodes) {
     if (nodeData.type === 'trigger') {
       startNodeId = nodeId;
       startNode = nodeData;
@@ -5455,14 +5684,14 @@ testStoryboard() {
   }
   
   // If no trigger nodes, use the first node
-  if (!startNodeId && this.currentGraph.nodes.size > 0) {
-    const firstNode = this.currentGraph.nodes.entries().next().value;
+  if (!startNodeId && storyGraph.nodes.size > 0) {
+    const firstNode = storyGraph.nodes.entries().next().value;
     startNodeId = firstNode[0];
     startNode = firstNode[1];
   }
   
   if (!startNodeId) {
-    this.showToast('No nodes found in the storyboard.', 'error');
+    this.showTestingDialog('No nodes found in the storyboard.', () => {});
     return;
   }
   
@@ -5476,33 +5705,46 @@ testStoryboard() {
  * Run a storyboard in 3D environment
  * @param {Object} scene3D - The Scene3DController instance
  * @param {String} storyId - ID of the story to run (optional)
- */
+ */  //  -- original code inthe collapse.
+// runInScene3D(scene3D, storyId = null) {
+//   console.log(`Running storyboard in 3D mode, story ID: ${storyId || 'default'}`);
+  
+//   // Store reference to scene3D
+//   this.scene3D = scene3D;
+  
+//   // Get story graph to test
+//   let storyGraph = null;
+//   if (storyId && this.storyGraphs.has(storyId)) {
+//     storyGraph = this.storyGraphs.get(storyId);
+//   } else if (this.currentGraph) {
+//     storyGraph = this.currentGraph;
+//   } else if (this.storyGraphs.size > 0) {
+//     // Fallback to first available story
+//     const storyId = Array.from(this.storyGraphs.keys())[0];
+//     storyGraph = this.storyGraphs.get(storyId);
+//   }
+  
+//   if (!storyGraph) {
+//     console.error('No valid story found to run');
+//     return;
+//   }
+  
+//   // Start the story flow - using existing test functionality
+//   // this.startTesting(storyGraph);
+//   this.testStoryboard();
+// }
+
 runInScene3D(scene3D, storyId = null) {
   console.log(`Running storyboard in 3D mode, story ID: ${storyId || 'default'}`);
   
-  // Store reference to scene3D
+  // Store reference to scene3D and explicitly set 3D mode flag
   this.scene3D = scene3D;
+  this.in3DMode = true; // Explicitly set flag
   
-  // Get story graph to test
-  let storyGraph = null;
-  if (storyId && this.storyGraphs.has(storyId)) {
-    storyGraph = this.storyGraphs.get(storyId);
-  } else if (this.currentGraph) {
-    storyGraph = this.currentGraph;
-  } else if (this.storyGraphs.size > 0) {
-    // Fallback to first available story
-    const storyId = Array.from(this.storyGraphs.keys())[0];
-    storyGraph = this.storyGraphs.get(storyId);
-  }
+  console.log("3D mode enabled for storyboard");
   
-  if (!storyGraph) {
-    console.error('No valid story found to run');
-    return;
-  }
-  
-  // Start the story flow - using existing test functionality
-  // this.startTesting(storyGraph);
-  this.testStoryboard();
+  // Start the story flow
+  this.testStoryboard(storyId);
 }
 
 /**
@@ -5551,103 +5793,174 @@ executeTestNode(nodeId) {
 
 /**
  * Show a simple dialog during testing
+ */ // - original code in the collapse
+// showTestingDialog(message, onClose) {
+//   // Create dialog
+//   const dialog = document.createElement('sl-dialog');
+//   dialog.label = 'Story Preview';
+//   dialog.style.cssText = '--width: 500px;';
+  
+//   // Set content
+//   dialog.innerHTML = `
+//     <div style="padding: 16px;">${message}</div>
+//     <div slot="footer">
+//       <sl-button variant="primary" class="continue-btn">Continue</sl-button>
+//     </div>
+//   `;
+  
+//   // Add to DOM
+//   document.body.appendChild(dialog);
+  
+//   // Add continue button handler
+//   const continueBtn = dialog.querySelector('.continue-btn');
+//   if (continueBtn) {
+//     continueBtn.addEventListener('click', () => {
+//       dialog.hide();
+//     });
+//   }
+  
+//   // Add close handler
+//   dialog.addEventListener('sl-after-hide', () => {
+//     dialog.remove();
+//     if (typeof onClose === 'function') {
+//       onClose();
+//     }
+//   });
+  
+//   // Show dialog
+//   dialog.show();
+// }
+
+/**
+ * Show a simple dialog during testing
  */
 showTestingDialog(message, onClose) {
-  // Create dialog
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = 'Story Preview';
-  dialog.style.cssText = '--width: 500px;';
+  console.log(`Show testing dialog: ${message}`);
+  console.log(`In 3D mode: ${this.in3DMode}`);
   
-  // Set content
-  dialog.innerHTML = `
-    <div style="padding: 16px;">${message}</div>
-    <div slot="footer">
-      <sl-button variant="primary" class="continue-btn">Continue</sl-button>
-    </div>
-  `;
-  
-  // Add to DOM
-  document.body.appendChild(dialog);
-  
-  // Add continue button handler
-  const continueBtn = dialog.querySelector('.continue-btn');
-  if (continueBtn) {
-    continueBtn.addEventListener('click', () => {
-      dialog.hide();
+  // Only use immersive UI when explicitly set in 3D mode
+  if (this.in3DMode) {
+    console.log("Using immersive UI for testing dialog");
+    return this.showImmersiveOverlay(`<div>${message}</div>`, {
+      title: 'Story Preview',
+      onContinue: onClose
     });
-  }
-  
-  // Add close handler
-  dialog.addEventListener('sl-after-hide', () => {
-    dialog.remove();
-    if (typeof onClose === 'function') {
-      onClose();
+  } else {
+    console.log("Using standard dialog UI for testing");
+    // Use standard dialog in editor mode - keep original code
+    // Create dialog
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Story Preview';
+    dialog.style.cssText = '--width: 500px;';
+    
+    // Set content
+    dialog.innerHTML = `
+      <div style="padding: 16px;">${message}</div>
+      <div slot="footer">
+        <sl-button variant="primary" class="continue-btn">Continue</sl-button>
+      </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(dialog);
+    
+    // Add continue button handler
+    const continueBtn = dialog.querySelector('.continue-btn');
+    if (continueBtn) {
+      continueBtn.addEventListener('click', () => {
+        dialog.hide();
+      });
     }
-  });
-  
-  // Show dialog
-  dialog.show();
+    
+    // Add close handler
+    dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+      if (typeof onClose === 'function') {
+        onClose();
+      }
+    });
+    
+    // Show dialog
+    dialog.show();
+    return dialog;
+  }
 }
 
 /**
  * Test a dialog node
  */
 executeTestDialog(nodeData, nodeId) {
+  console.log(`Executing test dialog for node ID: ${nodeId}`);
+  console.log(`In 3D mode: ${this.in3DMode}`);
+  
   // Get the dialog data
   const title = nodeData.data.title || 'Dialog';
   const text = nodeData.data.text || '';
   const image = nodeData.data.image;
   
-  // Create dialog
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = title;
-  dialog.style.cssText = '--width: 600px;';
-  
-  // Create content with optional image
-  let contentHtml = `<div style="padding: 16px;">${text}</div>`;
+  // Create content for both dialog and immersive modes
+  let contentHtml = `<div>${text}</div>`;
   
   if (image) {
     const imageUrl = this.getSplashArtUrl(image);
     if (imageUrl) {
       contentHtml = `
-        <div style="padding: 16px;">
-          <div style="margin-bottom: 16px; text-align: center;">
-            <img src="${imageUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
-          </div>
-          <div>${text}</div>
+        <div style="margin-bottom: 16px; text-align: center;">
+          <img src="${imageUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
         </div>
+        <div>${text}</div>
       `;
     }
   }
-  
-  dialog.innerHTML = `
-    ${contentHtml}
-    <div slot="footer">
-      <sl-button variant="primary" class="continue-btn">Continue</sl-button>
-    </div>
-  `;
-  
-  // Add to DOM
-  document.body.appendChild(dialog);
-  
-  // Add continue button handler
-  const continueBtn = dialog.querySelector('.continue-btn');
-  if (continueBtn) {
-    continueBtn.addEventListener('click', () => {
-      dialog.hide();
+
+  // Only use immersive UI when explicitly in 3D mode
+  if (this.in3DMode) {
+    console.log("Using immersive UI for dialog");
+    return this.showImmersiveOverlay(contentHtml, {
+      title: title,
+      onContinue: () => {
+        console.log(`Dialog node ${nodeId} completed, moving to next node`);
+        this.findAndExecuteNextNode(nodeId);
+      }
     });
+  } else {
+    console.log("Using standard dialog UI");
+    // Create dialog
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = title;
+    dialog.style.cssText = '--width: 600px;';
+    
+    dialog.innerHTML = `
+      <div style="padding: 16px;">${contentHtml}</div>
+      <div slot="footer">
+        <sl-button variant="primary" class="continue-btn">Continue</sl-button>
+      </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(dialog);
+    
+    // Add continue button handler
+    const continueBtn = dialog.querySelector('.continue-btn');
+    if (continueBtn) {
+      continueBtn.addEventListener('click', () => {
+        dialog.hide();
+      });
+    }
+    
+    // Add close handler
+    dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+      console.log(`Dialog node ${nodeId} completed, moving to next node`);
+      this.findAndExecuteNextNode(nodeId);
+    });
+    
+    // Show dialog
+    dialog.show();
+    return dialog;
   }
-  
-  // Add close handler
-  dialog.addEventListener('sl-after-hide', () => {
-    dialog.remove();
-    // Continue to next node
-    this.findAndExecuteNextNode(nodeId);
-  });
-  
-  // Show dialog
-  dialog.show();
 }
+
 
 /**
  * Test a choice node
@@ -6079,16 +6392,295 @@ findAndExecuteNextNode(currentNodeId) {
   }
 }
 
+/**
+ * Show an immersive overlay for story content in 3D mode
+ * @param {String} content - HTML content to display
+ * @param {Object} options - Display options
+ * @returns {HTMLElement} - The created overlay element
+ */
+showImmersiveUI(content, options = {}) {
+  // Ensure controls are paused
+  if (this.scene3D && this.scene3D.pauseControls) {
+    this.scene3D.pauseControls();
+  }
+  
+  // Close any existing overlay
+  if (this.currentOverlay) {
+    this.closeOverlay();
+  }
+  
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'story-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+  
+  overlay.innerHTML = `
+    <div class="story-content" style="
+      background: #242424;
+      max-width: 800px;
+      width: 80vw;
+      max-height: 80vh;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    ">
+      ${options.title ? `
+        <div class="story-header" style="
+          padding: 16px;
+          background: linear-gradient(135deg, #673ab7, #9c27b0);
+          color: white;
+          font-weight: bold;
+          font-size: 1.2rem;
+        ">
+          ${options.title}
+        </div>
+      ` : ''}
+      
+      <div class="story-body" style="
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        color: #e0e0e0;
+      ">
+        ${content}
+      </div>
+      
+      ${options.showFooter !== false ? `
+        <div class="story-footer" style="
+          padding: 16px;
+          background: #333;
+          border-top: 1px solid #444;
+          display: flex;
+          justify-content: flex-end;
+        ">
+          <button class="story-continue-btn" style="
+            padding: 8px 16px;
+            background: #673ab7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+          ">Continue</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  this.currentOverlay = overlay;
+  
+  // Set up continue button
+  const continueBtn = overlay.querySelector('.story-continue-btn');
+  if (continueBtn) {
+    continueBtn.addEventListener('click', () => {
+      // Close overlay
+      this.closeOverlay();
+      
+      // Run callback if provided
+      if (options.onContinue) {
+        options.onContinue();
+      }
+    });
+  }
+  
+  // Animate in
+  setTimeout(() => {
+    overlay.style.opacity = '1';
+    const content = overlay.querySelector('.story-content');
+    if (content) {
+      content.style.transform = 'scale(1)';
+    }
+  }, 10);
+  
+  return overlay;
+}
 
-  };
-
-
-
-
+/**
+ * Show an immersive overlay for story content in 3D mode
+ * @param {String} content - HTML content to display
+ * @param {Object} options - Display options
+ * @returns {HTMLElement} - The created overlay element
+ */
+showImmersiveOverlay(content, options = {}) {
+  console.log("Showing immersive overlay");
+  
+  // Only pause controls if we're in 3D mode
+  if (this.in3DMode && this.scene3D && typeof this.scene3D.pauseControls === 'function') {
+    console.log('Pausing controls for immersive UI');
+    this.scene3D.pauseControls();
+  }
+  
+  // Close any existing overlay
+  this.closeCurrentOverlay();
+  
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'story-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+  
+  overlay.innerHTML = `
+    <div class="story-content" style="
+      background: #242424;
+      max-width: 800px;
+      width: 80vw;
+      max-height: 80vh;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      transform: scale(0.95);
+      transition: transform 0.3s ease;
+    ">
+      ${options.title ? `
+        <div class="story-header" style="
+          padding: 16px;
+          background: linear-gradient(135deg, #673ab7, #9c27b0);
+          color: white;
+          font-weight: bold;
+          font-size: 1.2rem;
+        ">
+          ${options.title}
+        </div>
+      ` : ''}
+      
+      <div class="story-body" style="
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        color: #e0e0e0;
+      ">
+        ${content}
+      </div>
+      
+      ${options.showFooter !== false ? `
+        <div class="story-footer" style="
+          padding: 16px;
+          background: #333;
+          border-top: 1px solid #444;
+          display: flex;
+          justify-content: flex-end;
+        ">
+          <button class="story-continue-btn" style="
+            padding: 8px 16px;
+            background: #673ab7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+          ">Continue</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  this.currentOverlay = overlay;
+  
+  // Set up continue button
+  const continueBtn = overlay.querySelector('.story-continue-btn');
+  if (continueBtn) {
+    continueBtn.addEventListener('click', () => {
+      // Close overlay
+      this.closeCurrentOverlay();
+      
+      // Run callback if provided
+      if (options.onContinue) {
+        options.onContinue();
+      }
+    });
+  }
+  
+  // Animate in
+  setTimeout(() => {
+    overlay.style.opacity = '1';
+    const content = overlay.querySelector('.story-content');
+    if (content) {
+      content.style.transform = 'scale(1)';
+    }
+  }, 10);
+  
+  return overlay;
 }
 
 
+/**
+ * Close the current overlay if one exists
+ */
+closeCurrentOverlay() {
+  if (this.currentOverlay) {
+    // Animate out
+    this.currentOverlay.style.opacity = '0';
+    const content = this.currentOverlay.querySelector('.story-content');
+    if (content) {
+      content.style.transform = 'scale(0.95)';
+    }
 
+    // Remove after animation
+    setTimeout(() => {
+      if (document.body.contains(this.currentOverlay)) {
+        document.body.removeChild(this.currentOverlay);
+      }
+      this.currentOverlay = null;
+
+      // Only resume controls if we're in 3D mode
+      if (this.in3DMode && this.scene3D && typeof this.scene3D.resumeControls === 'function') {
+        console.log('Resuming controls after immersive UI');
+        this.scene3D.resumeControls();
+      }
+    }, 300);
+  }
+}
+// ^^
+// add more code in here before the curly brace
+
+
+
+// VV
+  };
+// do not add code in here
+}
+
+
+// this area is for globals
 
 // Create global instance when script loads
 window.initStoryboard = (scene3D, resourceManager) => {

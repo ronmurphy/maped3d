@@ -1,0 +1,94 @@
+{
+  "timestamp": "2025-03-11T13:39:15.372Z",
+  "nodes": {
+    "node_sample_1741700252672": {
+      "type": "dialog",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "data": {
+        "title": "Dialog Node",
+        "text": "Welcome to the game!",
+        "image": null
+      }
+    },
+    "node_1741700260503": {
+      "type": "dialog",
+      "position": {
+        "x": 99.5,
+        "y": 269
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "Hello World",
+        "image": null
+      }
+    },
+    "node_1741700276780": {
+      "type": "dialog",
+      "position": {
+        "x": 99.5,
+        "y": 420
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "Next is a Picture Test!",
+        "image": null
+      }
+    },
+    "node_1741700296952": {
+      "type": "dialog",
+      "position": {
+        "x": 102.5,
+        "y": 568
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "Dragon!",
+        "image": {
+          "id": "splashArt_1740329929010",
+          "category": "title"
+        }
+      }
+    },
+    "node_1741700319231": {
+      "type": "dialog",
+      "position": {
+        "x": 331.5,
+        "y": 687
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "The end",
+        "image": null
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700296952",
+      "to": "node_1741700319231",
+      "path": null,
+      "option": null
+    }
+  ]
+}
