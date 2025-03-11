@@ -6099,6 +6099,23 @@ showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", ico
         });
       });
     });
+
+    if (!marker.data?.storyId && window.storyboard && 
+      window.storyboard.storyGraphs && window.storyboard.storyGraphs.size === 1) {
+    const defaultStoryId = window.storyboard.storyGraphs.keys().next().value;
+    
+    if (!marker.data) marker.data = {};
+    marker.data.storyId = defaultStoryId;
+    
+    console.log(`Auto-selected only available story: ${defaultStoryId}`);
+    
+    // Update the visual state of the story option
+    const storyOption = dialog.querySelector(`.story-option[data-id="${defaultStoryId}"]`);
+    if (storyOption) {
+      storyOption.style.backgroundColor = '#333';
+      storyOption.style.fontWeight = 'bold';
+    }
+  }
     
     // Handle open storyboard editor button
     const openStoryboardBtn = dialog.querySelector('#open-storyboard-btn');
@@ -6110,6 +6127,10 @@ showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", ico
         }
       });
     }
+
+
+
+
   }
 
   setupDefaultEventHandlers(dialog, marker) {

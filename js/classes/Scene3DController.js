@@ -223,19 +223,16 @@ class Scene3DController {
       this._gameMenu = null;
     }
 
-    // Add in the cleanup method, where other cleanup operations are performed:
-// Clean up storyboard triggers
-if (this.storyboardTriggers) {
-  // Remove any visual indicators
-  this.storyboardTriggers.forEach(trigger => {
-    if (trigger.indicator) {
-      this.scene.remove(trigger.indicator);
-      if (trigger.indicator.geometry) trigger.indicator.geometry.dispose();
-      if (trigger.indicator.material) trigger.indicator.material.dispose();
-    }
-  });
-  this.storyboardTriggers = null;
+// In the cleanup method, add:
+if (this.storyboardTester) {
+  if (typeof this.storyboardTester.forceCloseAllUI === 'function') {
+    this.storyboardTester.forceCloseAllUI();
+  }
+  this.storyboardTester = null;
 }
+this.activeStoryTrigger = null;
+this._storyInProgress = false;
+this._stopStoryMonitoring = true;
 
 // Clean up storyboard tester if initialized
 if (this.storyboardTester) {
@@ -1577,6 +1574,30 @@ initShaderEffects() {
       //     this.updateWallClipping();
       //   }
       //   break;
+      // In handleKeyDown method, add a case for 'KeyT':
+case "KeyT":
+  // Test trigger nearest story
+  if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
+    const playerPos = this.camera.position;
+    let nearest = null;
+    let minDist = Infinity;
+    
+    this.storyboardTriggers.forEach(trigger => {
+      const dist = playerPos.distanceTo(trigger.position);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = trigger;
+      }
+    });
+    
+    if (nearest) {
+      console.log(`Force-triggering nearest story: ${nearest.id}`);
+      this.handleStoryTrigger(nearest);
+    } else {
+      console.log('No story triggers found');
+    }
+  }
+  break;
       case "KeyI":
         this.toggleInventory();
         break;
@@ -4791,75 +4812,100 @@ if (nearestStoryTrigger && !this.activeStoryTrigger && !this.activeSplashArt) {
  * Handle activating a storyboard trigger
  * @param {Object} trigger - The storyboard trigger data
  */
-// handleStoryTrigger(trigger) {
-//   console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId}`);
-  
-//   // Mark as active to prevent duplicate triggers
-//   this.activeStoryTrigger = trigger;
-  
-//   // Mark as triggered if it's a one-time trigger
-//   if (trigger.triggerOnce) {
-//     trigger.triggered = true;
-//   }
-  
-//   // Initialize StoryboardTester if not already done
-//   if (!this.storyboardTester && window.StoryboardTester) {
-//     // Get storyboard reference if available
-//     const storyboard = window.storyboard;
+  // handleStoryTrigger(trigger) {
+  //   console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId || 'none'}`);
     
-//     // Initialize tester with 3D mode
-//     this.storyboardTester = new window.StoryboardTester(
-//       storyboard,  // The storyboard system
-//       this,        // This scene3D controller
-//       window.resourceManager // Resource manager
-//     );
+  //   // Mark as active to prevent duplicate triggers
+  //   this.activeStoryTrigger = trigger;
     
-//     console.log('Initialized StoryboardTester in 3D mode');
-//   }
-  
-//   // Exit if we can't find the tester or there's no valid storyId
-//   if (!this.storyboardTester || !trigger.storyId) {
-//     console.warn('Cannot trigger story: missing tester or storyId');
-//     this.activeStoryTrigger = null;
-//     return;
-//   }
-  
-//   // Run the specified story
-//   this.storyboardTester.runInScene(this, trigger.storyId);
-  
-//   // Listen for story completion
-//   const checkForCompletion = setInterval(() => {
-//     // Check if the tester is still displaying a dialog/overlay
-//     if (!this.storyboardTester.currentDialog && !this.storyboardTester.currentOverlay) {
-//       clearInterval(checkForCompletion);
-//       console.log('Story completed');
+  //   // Mark as triggered if it's a one-time trigger
+  //   if (trigger.triggerOnce) {
+  //     trigger.triggered = true;
+  //   }
+    
+  //   // Initialize StoryboardTester if not already done
+  //   if (!this.storyboardTester && window.StoryboardTester) {
+  //     console.log('Creating new StoryboardTester instance');
       
-//       // Add a small cooldown to prevent immediate re-trigger
-//       setTimeout(() => {
-//         this.activeStoryTrigger = null;
-//       }, 1000);
-//     }
-//   }, 100);
+  //     // Get storyboard reference
+  //     const storyboard = window.storyboard;
+      
+  //     if (!storyboard) {
+  //       console.error('No storyboard found in window object!');
+  //       this.activeStoryTrigger = null;
+  //       return;
+  //     }
+      
+  //     // Initialize tester with 3D mode
+  //     this.storyboardTester = new window.StoryboardTester(
+  //       storyboard,  // The storyboard system
+  //       this,        // This scene3D controller
+  //       window.resourceManager // Resource manager
+  //     );
+      
+  //     console.log('Initialized StoryboardTester in 3D mode');
+  //   }
+    
+  //   // Log more debug info
+  //   console.log('StoryboardTester available:', !!this.storyboardTester);
+  //   console.log('Stories available:', window.storyboard?.storyGraphs?.size || 0);
+    
+  //   // FIX: Use default story ID if none is specified
+  //   let storyId = trigger.storyId;
+  //   if (!storyId && window.storyboard?.storyGraphs?.size > 0) {
+  //     // Get the first story as default
+  //     storyId = window.storyboard.storyGraphs.keys().next().value;
+  //     console.log(`No story ID specified, using default story: ${storyId}`);
+  //   }
+    
+  //   console.log('Story ID is valid:', !!storyId);
+    
+  //   // Exit if we can't find the tester or there's no valid storyId
+  //   if (!this.storyboardTester || !storyId) {
+  //     console.warn('Cannot trigger story: missing tester or storyId');
+  //     this.activeStoryTrigger = null;
+  //     return;
+  //   }
+    
+  //   // Important: Pause controls BEFORE showing the story
+  //   this.pauseControls();
+  //   console.log('Controls paused for story');
+    
+  //   console.log(`Running story with ID: ${storyId}`);
+    
+  //   // Run the specified story
+  //   this.storyboardTester.runInScene(this, storyId);
+    
+  //   // Listen for story completion
+  //   const checkForCompletion = setInterval(() => {
+  //     // Check if the tester is still displaying a dialog/overlay
+  //     if (!this.storyboardTester.currentDialog && !this.storyboardTester.currentOverlay) {
+  //       clearInterval(checkForCompletion);
+  //       console.log('Story completed, resuming controls');
+        
+  //       // Resume controls when story is done
+  //       this.resumeControls();
+        
+  //       // Add a small cooldown to prevent immediate re-trigger
+  //       setTimeout(() => {
+  //         this.activeStoryTrigger = null;
+  //       }, 1000);
+  //     }
+  //   }, 100);
+  // }
 
-//   console.log('Active storyboard triggers:', this.storyboardTriggers);
-
-// // At the beginning of processInteractiveElements(), add:
-// if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
-//   const playerPos = this.camera.position;
-//   console.log('Player position:', playerPos);
-  
-//   this.storyboardTriggers.forEach(trigger => {
-//     const distance = playerPos.distanceTo(trigger.position);
-//     console.log(`Story trigger ${trigger.id}: distance = ${distance.toFixed(2)}, radius = ${trigger.radius}`);
-//   });
-// }
-// }
-
-  // Helper method for animating effects
-  
-  // Update the handleStoryTrigger method:
+  /**
+ * Handle activating a storyboard trigger
+ * @param {Object} trigger - The storyboard trigger data
+ */
 handleStoryTrigger(trigger) {
-  console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId}`);
+  console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId || 'none'}`);
+  
+  // Check if already triggered
+  if (this.activeStoryTrigger) {
+    console.log('Story already active, ignoring new trigger');
+    return;
+  }
   
   // Mark as active to prevent duplicate triggers
   this.activeStoryTrigger = trigger;
@@ -4873,7 +4919,7 @@ handleStoryTrigger(trigger) {
   if (!this.storyboardTester && window.StoryboardTester) {
     console.log('Creating new StoryboardTester instance');
     
-    // Get storyboard reference - IMPORTANT FIX: Use global storyboard
+    // Get storyboard reference
     const storyboard = window.storyboard;
     
     if (!storyboard) {
@@ -4892,38 +4938,79 @@ handleStoryTrigger(trigger) {
     console.log('Initialized StoryboardTester in 3D mode');
   }
   
-  // Log more debug info
+  // FIX: Use default story ID if none is specified
+  let storyId = trigger.storyId;
+  if (!storyId && window.storyboard?.storyGraphs?.size > 0) {
+    // Get the first story as default
+    storyId = window.storyboard.storyGraphs.keys().next().value;
+    console.log(`No story ID specified, using default story: ${storyId}`);
+  }
+  
   console.log('StoryboardTester available:', !!this.storyboardTester);
-  console.log('Story ID is valid:', !!trigger.storyId);
-  console.log('Stories available:', window.storyboard?.storyGraphs?.size || 0);
+  console.log('Story ID is valid:', !!storyId);
   
   // Exit if we can't find the tester or there's no valid storyId
-  if (!this.storyboardTester || !trigger.storyId) {
+  if (!this.storyboardTester || !storyId) {
     console.warn('Cannot trigger story: missing tester or storyId');
     this.activeStoryTrigger = null;
     return;
   }
   
-  console.log(`Running story with ID: ${trigger.storyId}`);
+  // IMPORTANT: Pause controls BEFORE showing any UI
+  this.pauseControls();
+  console.log('Controls paused for story');
+  
+  // Set a flag to track story completion
+  this._storyInProgress = true;
+  
+  console.log(`Running story with ID: ${storyId}`);
   
   // Run the specified story
-  this.storyboardTester.runInScene(this, trigger.storyId);
+  this.storyboardTester.runInScene(this, storyId);
   
-  // Listen for story completion
-  const checkForCompletion = setInterval(() => {
+  // Create a more robust completion detection that won't be affected by race conditions
+  this._stopStoryMonitoring = false;
+  
+  const monitorStoryCompletion = () => {
+    if (this._stopStoryMonitoring) return;
+    
     // Check if the tester is still displaying a dialog/overlay
-    if (!this.storyboardTester.currentDialog && !this.storyboardTester.currentOverlay) {
-      clearInterval(checkForCompletion);
-      console.log('Story completed');
+    const hasActiveDialog = !!this.storyboardTester.currentDialog;
+    const hasActiveOverlay = !!this.storyboardTester.currentOverlay;
+    const hasVisibleStoryUI = !!document.querySelector('.story-overlay') || 
+                              !!document.querySelector('sl-dialog[open]');
+    
+    console.log('Story monitoring:', { 
+      hasActiveDialog, 
+      hasActiveOverlay, 
+      hasVisibleStoryUI, 
+      inProgress: this._storyInProgress 
+    });
+    
+    // If there's no UI visible, but we still think story is in progress
+    if (!hasActiveDialog && !hasActiveOverlay && !hasVisibleStoryUI && this._storyInProgress) {
+      console.log('Story completed, resuming controls');
+      this._storyInProgress = false;
+      
+      // Ensure we resume controls
+      this.resumeControls();
       
       // Add a small cooldown to prevent immediate re-trigger
       setTimeout(() => {
         this.activeStoryTrigger = null;
       }, 1000);
+      
+      this._stopStoryMonitoring = true;
+      return;
     }
-  }, 100);
-}
+    
+    // Continue monitoring
+    requestAnimationFrame(monitorStoryCompletion);
+  };
   
+  // Start monitoring
+  monitorStoryCompletion();
+}
   
   
   
@@ -5106,6 +5193,35 @@ handleStoryTrigger(trigger) {
       this.encounterPrompt.style.display = 'none';
       this.nearestEncounter = null;
     }
+
+    // storyboard triggers
+    let nearestStoryTrigger = null;
+let storyTriggerDistance = Infinity;
+
+if (this.storyboardTriggers && this.storyboardTriggers.length > 0 && !this.activeStoryTrigger) {
+  const playerPos = this.camera.position;
+  
+  this.storyboardTriggers.forEach(trigger => {
+    // Skip if this has been triggered once and is a one-time trigger
+    if (trigger.triggerOnce && trigger.triggered) {
+      return;
+    }
+    
+    const distance = playerPos.distanceTo(trigger.position);
+    console.log(`Story: ${trigger.id} distance=${distance.toFixed(2)}, radius=${trigger.radius}`);
+    
+    if (distance < trigger.radius && distance < storyTriggerDistance) {
+      storyTriggerDistance = distance;
+      nearestStoryTrigger = trigger;
+    }
+  });
+  
+  // If we found a trigger and we're not already processing a story
+  if (nearestStoryTrigger) {
+    console.log(`Player is in range of story trigger: ${nearestStoryTrigger.id}`);
+    this.handleStoryTrigger(nearestStoryTrigger);
+  }
+}
 
 
     if (this.shaderEffects) {

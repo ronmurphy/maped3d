@@ -1307,6 +1307,67 @@ case 'choice':
       }
     }
 
+    /**
+ * Export the current storyboard to a JSON file
+ */
+exportToJSON() {
+  // Get the current graph
+  const storyGraph = this.currentGraph;
+  if (!storyGraph) {
+    console.error('No story available to export');
+    return;
+  }
+  
+  // Create a JSON-safe copy of the data
+  const graphData = {
+    id: this.currentGraphId,
+    timestamp: new Date().toISOString(),
+    nodes: {},
+    connections: []
+  };
+  
+  // Handle nodes (which should be a Map in your case)
+  if (storyGraph.nodes instanceof Map) {
+    // Convert Map to object
+    for (const [nodeId, nodeData] of storyGraph.nodes) {
+      // Create a clean copy without DOM elements
+      const cleanNode = {...nodeData};
+      delete cleanNode.element; // Remove DOM element references
+      
+      // For data that's complex, ensure it's properly copied
+      if (cleanNode.data) {
+        cleanNode.data = {...cleanNode.data};
+      }
+      
+      graphData.nodes[nodeId] = cleanNode;
+    }
+  }
+  
+  // Copy connections array
+  if (Array.isArray(storyGraph.connections)) {
+    // Deep copy without any DOM elements
+    graphData.connections = storyGraph.connections.map(conn => {
+      const cleanConn = {...conn};
+      if (cleanConn.element) delete cleanConn.element;
+      return cleanConn;
+    });
+  }
+  
+  // Convert to pretty-printed JSON
+  const jsonString = JSON.stringify(graphData, null, 2);
+  
+  // Create a downloadable link
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", `storyboard_${this.currentGraphId || 'default'}_${new Date().getTime()}.json`);
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+  
+  console.log('Exported storyboard to JSON file');
+}
+
 /**
  * Add zoom and pan controls to the editor footer
  */
@@ -1443,11 +1504,29 @@ addZoomPanControls() {
     color: #ccc;
   `;
   
+  // Add Export JSON button
+const exportBtn = document.createElement("button");
+exportBtn.textContent = "Export JSON";
+exportBtn.className = "storyboard-button export-json-btn";
+exportBtn.style.cssText = `
+  background-color: #4caf50;
+  color: white;
+  margin-right: 8px;
+`;
+exportBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  this.exportToJSON();
+});
+
+
+
   zoomControls.appendChild(zoomOutBtn);
   zoomControls.appendChild(zoomSlider);
   zoomControls.appendChild(zoomInBtn);
   zoomControls.appendChild(zoomDisplay);
   zoomControls.appendChild(zoomResetBtn);
+  zoomControls.appendChild(exportBtn);
   
   // Add all controls to container
   controlsContainer.appendChild(navControls);
