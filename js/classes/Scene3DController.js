@@ -5266,7 +5266,10 @@ if (this.storyboardTriggers && this.storyboardTriggers.length > 0 && !this.activ
   // If we found a trigger and we're not already processing a story
   if (nearestStoryTrigger) {
     console.log(`Player is in range of story trigger: ${nearestStoryTrigger.id}`);
-    this.handleStoryTrigger(nearestStoryTrigger);
+    // this.handleStoryTrigger(nearestStoryTrigger);
+    this.pauseControls();
+    this.runStoryboard();
+    this.resumeControls();
   }
 }
 

@@ -4783,7 +4783,7 @@ if (type === "storyboard") {
   if (!data) data = {};
   
   // Set default properties if not provided
-  data.radius = data.radius || 5; //2; // Default trigger radius
+  data.radius = data.radius || 2; // Default trigger radius
   data.triggerOnce = data.triggerOnce !== false; // Default to true
   data.label = data.label || "Story Event"; // Default label
   data.storyId = data.storyId || null; // Story ID reference
