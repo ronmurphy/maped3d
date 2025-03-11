@@ -5473,6 +5473,39 @@ testStoryboard() {
 }
 
 /**
+ * Run a storyboard in 3D environment
+ * @param {Object} scene3D - The Scene3DController instance
+ * @param {String} storyId - ID of the story to run (optional)
+ */
+runInScene3D(scene3D, storyId = null) {
+  console.log(`Running storyboard in 3D mode, story ID: ${storyId || 'default'}`);
+  
+  // Store reference to scene3D
+  this.scene3D = scene3D;
+  
+  // Get story graph to test
+  let storyGraph = null;
+  if (storyId && this.storyGraphs.has(storyId)) {
+    storyGraph = this.storyGraphs.get(storyId);
+  } else if (this.currentGraph) {
+    storyGraph = this.currentGraph;
+  } else if (this.storyGraphs.size > 0) {
+    // Fallback to first available story
+    const storyId = Array.from(this.storyGraphs.keys())[0];
+    storyGraph = this.storyGraphs.get(storyId);
+  }
+  
+  if (!storyGraph) {
+    console.error('No valid story found to run');
+    return;
+  }
+  
+  // Start the story flow - using existing test functionality
+  // this.startTesting(storyGraph);
+  this.testStoryboard();
+}
+
+/**
  * Execute a node in test mode
  */
 executeTestNode(nodeId) {

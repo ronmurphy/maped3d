@@ -1075,6 +1075,20 @@ initShaderEffects() {
     console.log('FPS counter initialized with quality level:', this.qualityLevel || 'medium');
   }
 
+  /**
+ * Run a storyboard in 3D mode
+ * @param {String} storyId - ID of the story to run (optional)
+ */
+runStoryboard(storyId = null) {
+  if (!window.storyboard) {
+    console.error('No storyboard available');
+    return;
+  }
+  
+  console.log(`Running storyboard in 3D mode: ${storyId || 'default'}`);
+  window.storyboard.runInScene3D(this, storyId);
+}
+
   initializeWithData(data) {
     if (!data) return;
 
@@ -1592,6 +1606,11 @@ initShaderEffects() {
           }
         }
         break;
+        // In the handleKeyDown method:
+case "KeyB": // 'B' for storyBoard
+console.log('Running storyboard with B key');
+this.runStoryboard();
+break;
       // case "KeyC":
       //   if (!event.repeat) {
       //     this.renderState.clippingEnabled = !this.renderState.clippingEnabled;
