@@ -1483,6 +1483,30 @@ initShaderEffects() {
 
   handleKeyDown(event) {
     switch (event.code) {
+      case "Escape":
+  // Force resume controls if they're paused
+  if (this._controlsPaused) {
+    console.log('Force-resuming controls with Escape key');
+    
+    // Clean up any active story UI
+    if (this.storyboardTester) {
+      if (this.storyboardTester.currentDialog) {
+        this.storyboardTester.closeCurrentDialog();
+      }
+      if (this.storyboardTester.currentOverlay) {
+        this.storyboardTester.closeCurrentOverlay();
+      }
+    }
+    
+    // Reset story state
+    this.activeStoryTrigger = null;
+    this._storyInProgress = false;
+    this._stopStoryMonitoring = true;
+    
+    // Resume controls
+    this.resumeControls();
+  }
+  break;
       case "ArrowUp":
       case "KeyW":
         this.moveState.forward = true;
@@ -4934,6 +4958,10 @@ handleStoryTrigger(trigger) {
       this,        // This scene3D controller
       window.resourceManager // Resource manager
     );
+
+    // EXPLICITLY set immersive mode
+this.storyboardTester.useImmersiveMode = true;
+console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled');
     
     console.log('Initialized StoryboardTester in 3D mode');
   }

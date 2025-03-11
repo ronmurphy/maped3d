@@ -37,6 +37,13 @@ if (typeof window.StoryboardTester === "undefined") {
             this.currentDialog = null;
             this.currentOverlay = null;
             this.useImmersiveMode = !!scene3D; // Use immersive mode if scene3D is provided
+
+            console.log('StoryboardTester created:', {
+                hasStoryboard: !!this.storyboard,
+                hasScene3D: !!this.scene3D, 
+                hasResourceManager: !!this.resourceManager,
+                useImmersiveMode: this.useImmersiveMode
+              });
         }
 
 
@@ -637,42 +644,62 @@ console.log('Created UI:', {
         /**
          * Test a dialog node
          */
-        executeTestDialog(nodeData, nodeId) {
-            // Get the dialog data
-            const title = nodeData.data.title || 'Dialog';
-            const text = nodeData.data.text || '';
-            const image = nodeData.data.image;
-
-            // Create content with optional image
-            let content = `<div>${text}</div>`;
-
-            if (image && this.resourceManager) {
-                const imageUrl = this.getSplashArtUrl(image);
-                if (imageUrl) {
-                    content = `
+/**
+ * Test a dialog node
+ */
+executeTestDialog(nodeData, nodeId) {
+    // Get the dialog data
+    const title = nodeData.data.title || 'Dialog';
+    const text = nodeData.data.text || '';
+    const image = nodeData.data.image;
+    
+    // Create content with optional image
+    let content = `<div>${text}</div>`;
+    
+    if (image && image.id) {
+      console.log('Dialog has image reference:', image);
+      let imageUrl = '';
+      
+      // Try to get image from the resource manager
+      if (this.resourceManager && image.category && image.id) {
+        // Try to get from splash art resources
+        const art = this.resourceManager.resources?.splashArt?.[image.category]?.get(image.id);
+        if (art && art.data) {
+          imageUrl = art.data;
+          console.log('Found image in resources');
+        } else {
+          console.log('Image not found in resources:', image);
+        }
+      }
+      
+      // If we found an image, add it to the content
+      if (imageUrl) {
+        content = `
           <div style="margin-bottom: 16px; text-align: center;">
             <img src="${imageUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
           </div>
           <div>${text}</div>
         `;
-                }
-            }
-
-            setTimeout(() => {
-                console.log('Dialog UI ready check:', { 
-                  dialog: this.currentDialog,
-                  overlay: this.currentOverlay,
-                  visible: document.querySelector('.story-overlay') || document.querySelector('sl-dialog[open]')
-                });
-              }, 100);
-
-            return this.displayContent({
-                title: title,
-                content: content,
-                dialogCss: '--width: 600px;',
-                onContinue: () => this.findAndExecuteNextNode(nodeId)
-            });
-        }
+      }
+    }
+    
+    // Debug log content
+    console.log('Dialog content:', { 
+      title,
+      hasImage: !!image,
+      contentLength: content.length
+    });
+    
+    return this.displayContent({
+      title: title,
+      content: content,
+      dialogCss: '--width: 600px;',
+      onContinue: () => {
+        console.log(`Dialog node ${nodeId} completed, moving to next node`);
+        this.findAndExecuteNextNode(nodeId);
+      }
+    });
+  }
 
         /**
  * Force close all UI elements
@@ -1532,18 +1559,37 @@ forceCloseAllUI() {
         /**
          * Helper method to get splash art URL
          */
-        getSplashArtUrl(imageData) {
-            if (!imageData || !this.resourceManager) return "";
-
-            try {
-                const { id, category } = imageData;
-                const art = this.resourceManager.resources.splashArt[category]?.get(id);
-                return art?.thumbnail || "";
-            } catch (error) {
-                console.error("Error getting splash art URL:", error);
-                return "";
-            }
+/**
+ * Helper method to get splash art URL
+ */
+getSplashArtUrl(imageData) {
+    if (!imageData || !imageData.id) return "";
+    
+    console.log('Getting splash art URL for:', imageData);
+    
+    try {
+      // Try to get from resourceManager
+      if (this.resourceManager && this.resourceManager.resources && 
+          this.resourceManager.resources.splashArt && 
+          imageData.category && 
+          this.resourceManager.resources.splashArt[imageData.category]) {
+        
+        const art = this.resourceManager.resources.splashArt[imageData.category].get(imageData.id);
+        console.log('Found art resource:', art);
+        
+        if (art) {
+          // Use data or thumbnail, whichever is available
+          return art.data || art.thumbnail || "";
         }
+      }
+      
+      console.log('Art not found in resourceManager');
+      return "";
+    } catch (error) {
+      console.error("Error getting splash art URL:", error);
+      return "";
+    }
+  }
 
         /**
          * Run the tester in a 3D environment without the editor
