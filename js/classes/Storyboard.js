@@ -809,41 +809,70 @@ const baseTemplate = `
         </div>
       `;
 
-        case "choice":
-          // Get number of options (limit to 5)
-          const options = nodeData?.data?.options || [];
-          const numOptions = Math.min(options.length, 5);
+      //   case "choice":
+      //     // Get number of options (limit to 5)
+      //     const options = nodeData?.data?.options || [];
+      //     const numOptions = Math.min(options.length, 5);
 
-          // Generate option ports
-          let portsHTML = "";
-          const colors = [
-            "#4CAF50",
-            "#2196F3",
-            "#FF9800",
-            "#9C27B0",
-            "#607D8B"
-          ];
+      //     // Generate option ports
+      //     let portsHTML = "";
+      //     const colors = [
+      //       "#4CAF50",
+      //       "#2196F3",
+      //       "#FF9800",
+      //       "#9C27B0",
+      //       "#607D8B"
+      //     ];
 
-          // Position the ports evenly
-          for (let i = 0; i < numOptions; i++) {
-            const percentage =
-              numOptions <= 1 ? 50 : i * (100 / (numOptions - 1));
-            const color = colors[i % colors.length];
+      //     // Position the ports evenly
+      //     for (let i = 0; i < numOptions; i++) {
+      //       const percentage =
+      //         numOptions <= 1 ? 50 : i * (100 / (numOptions - 1));
+      //       const color = colors[i % colors.length];
 
-            portsHTML += `
-          <div class="storyboard-port output option-port" 
-               data-option="${i}" 
-               style="background: ${color}; position: absolute; bottom: -7px; left: ${percentage}%; transform: translateX(-50%);"
-               title="Option ${i + 1}"></div>
-        `;
-          }
+      //       portsHTML += `
+      //     <div class="storyboard-port output option-port" 
+      //          data-option="${i}" 
+      //          style="background: ${color}; position: absolute; bottom: -7px; left: ${percentage}%; transform: translateX(-50%);"
+      //          title="Option ${i + 1}"></div>
+      //   `;
+      //     }
 
-          return `
-        ${baseTemplate}
-        <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
-          ${portsHTML}
-        </div>
-      `;
+      //     return `
+      //   ${baseTemplate}
+      //   <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
+      //     ${portsHTML}
+      //   </div>
+      // `;
+
+case 'choice':
+  // Get number of options (limit to 5)
+  const options = nodeData?.data?.options || [];
+  const numOptions = Math.min(options.length, 5);
+  
+  // Generate option ports
+  let portsHTML = '';
+  const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+  
+  // Position the ports evenly
+  for (let i = 0; i < numOptions; i++) {
+    const percentage = numOptions <= 1 ? 50 : i * (100 / (numOptions - 1));
+    const color = colors[i % colors.length];
+    
+    portsHTML += `
+      <div class="storyboard-port output option-port" 
+           data-option="${i}" 
+           style="background: ${color}; position: absolute; bottom: -7px; left: ${percentage}%; transform: translateX(-50%);"
+           title="Option ${i + 1}"></div>
+    `;
+  }
+  
+  return `
+    ${baseTemplate}
+    <div class="storyboard-node-footer" style="position: relative; height: 20px; margin-top: 10px;">
+      ${portsHTML}
+    </div>
+  `;
 
         case "combat":
           return `
@@ -2005,9 +2034,12 @@ applyCanvasTransform(canvas) {
       const fromId = fromNode.getAttribute("data-id");
       const toId = toNode.getAttribute("data-id");
 
+      
+
       // Check if this is a condition node connection and which port was used
       const fromNodeType = fromNode.getAttribute("data-type");
       const pathType = connection.from.port.getAttribute("data-path"); // 'true', 'false', 'victory', 'defeat'
+      const optionIndex = connection.from.port.getAttribute('data-option');
 
       console.log(
         `Creating connection from ${fromId} to ${toId}${
@@ -2029,11 +2061,36 @@ applyCanvasTransform(canvas) {
       // Set line color based on node type and path
       let lineColor = "#673ab7"; // Default purple
 
-      if (fromNodeType === "condition" && pathType) {
-        lineColor = pathType === "true" ? "#2196F3" : "#F44336";
-      } else if (fromNodeType === "combat" && pathType) {
-        lineColor = pathType === "victory" ? "#4CAF50" : "#F44336";
-      }
+      // if (fromNodeType === "condition" && pathType) {
+      //   lineColor = pathType === "true" ? "#2196F3" : "#F44336";
+      // } else if (fromNodeType === "combat" && pathType) {
+      //   lineColor = pathType === "victory" ? "#4CAF50" : "#F44336";
+      // }
+
+  // For condition nodes, store which path this connection represents
+  // if (isConditionConnection && pathType) {
+  //   conn.setAttribute('data-path', pathType);
+  //   lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+  // } else if (fromNodeType === 'choice' && optionIndex !== null) {
+  //   conn.setAttribute('data-option', optionIndex);
+  //   const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+  //   lineColor = colors[parseInt(optionIndex) % colors.length];
+  // } else if (fromNodeType === 'combat' && pathType) {
+  //   conn.setAttribute('data-path', pathType);
+  //   lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+  // }
+
+  if (this.isConditionConnection(fromNode, pathType)) {
+    conn.setAttribute('data-path', pathType);
+    lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+  } else if (fromNodeType === 'choice' && optionIndex !== null) {
+    conn.setAttribute('data-option', optionIndex);
+    const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+    lineColor = colors[parseInt(optionIndex) % colors.length];
+  } else if (fromNodeType === 'combat' && pathType) {
+    conn.setAttribute('data-path', pathType);
+    lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+  }
 
       conn.style.cssText = `
         position: absolute;
@@ -2045,13 +2102,22 @@ applyCanvasTransform(canvas) {
 
       canvas.appendChild(conn);
 
-      // Add to persistent connections
-      this.currentGraph.connections.push({
-        from: fromId,
-        to: toId,
-        path: pathType || null,
-        element: conn
-      });
+      // // Add to persistent connections
+      // this.currentGraph.connections.push({
+      //   from: fromId,
+      //   to: toId,
+      //   path: pathType || null,
+      //   element: conn
+      // });
+
+       // Add to persistent connections with path/option info
+  this.currentGraph.connections.push({
+    from: fromId,
+    to: toId,
+    path: pathType || null,
+    option: optionIndex !== null ? parseInt(optionIndex) : null,
+    element: conn
+  });
 
       this.currentGraph.dirty = true;
 
@@ -2061,6 +2127,25 @@ applyCanvasTransform(canvas) {
       return conn;
     }
 
+    /**
+ * Determines if a connection is from a condition node
+ * @param {HTMLElement} fromNode - The source node element
+ * @param {String} pathType - The path type attribute value ("true" or "false")
+ * @returns {Boolean} - Whether this is a condition-type connection
+ */
+isConditionConnection(fromNode, pathType) {
+  if (!fromNode) return false;
+  
+  // Check if the source node is a condition node
+  const fromNodeType = fromNode.getAttribute("data-type");
+  
+  // It's a condition connection if:
+  // 1. The node is of type 'condition'
+  // 2. The path type is either 'true' or 'false'
+  return fromNodeType === "condition" && 
+         pathType && 
+         (pathType === "true" || pathType === "false");
+}
 
     /**
      * Update a single connection's position
@@ -2100,9 +2185,10 @@ applyCanvasTransform(canvas) {
         }
       } else if (fromNodeType === "choice" && optionIndex !== null) {
         // Find specific option port for choice nodes
-        fromPort = fromNode.querySelector(
-          `.storyboard-port.output.option-port[data-option="${optionIndex}"]`
-        );
+        // fromPort = fromNode.querySelector(
+        //   `.storyboard-port.output.option-port[data-option="${optionIndex}"]`
+        // );
+        fromPort = fromNode.querySelector(`.storyboard-port.output.option-port[data-option="${optionIndex}"]`);
       } else {
         // Default output port
         fromPort = fromNode.querySelector(".storyboard-port.output");
@@ -2704,32 +2790,63 @@ applyCanvasTransform(canvas) {
             `;
             break;
 
-          case "reward":
-            propertiesHtml = `
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Items</div>
-                <div class="storyboard-property-field">
-                  <sl-button size="small">Select Items</sl-button>
-                </div>
-              </div>
+            case 'reward':
+              // Generate item list HTML
+              let itemsHtml = '';
+              if (nodeData.data.items && nodeData.data.items.length > 0) {
+                itemsHtml = `
+                  <div style="margin-top: 12px;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">Reward Items</div>
+                    <div class="reward-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+                `;
+                
+                nodeData.data.items.forEach((item, index) => {
+                  itemsHtml += `
+                    <div class="reward-item" style="display: flex; align-items: center; gap: 8px; background: #333; padding: 8px; border-radius: 4px;">
+                      <div style="width: 36px; height: 36px; overflow: hidden; border-radius: 4px; flex-shrink: 0;">
+                        <img src="${this.resourceManager?.resources?.textures?.props?.get(item.id)?.thumbnail || ''}" style="width: 100%; height: 100%; object-fit: contain;">
+                      </div>
+                      <div style="flex: 1; overflow: hidden;">
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                        <div style="font-size: 0.8em; color: #aaa;">Quantity: ${item.quantity}</div>
+                      </div>
+                      <sl-button class="remove-reward-item" size="small" variant="danger" data-index="${index}">
+                        <span class="material-icons" style="font-size: 16px;">close</span>
+                      </sl-button>
+                    </div>
+                  `;
+                });
+                
+                itemsHtml += `
+                    </div>
+                  </div>
+                `;
+              }
               
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Experience</div>
-                <div class="storyboard-property-field">
-                  <sl-input type="number" name="experience" value="${
-                    nodeData.data.experience || 0
-                  }"></sl-input>
+              propertiesHtml = `
+                <div class="storyboard-property-group">
+                  <div class="storyboard-property-label">Experience Points</div>
+                  <div class="storyboard-property-field">
+                    <sl-input id="reward-exp-input" type="number" min="0" value="${nodeData.data.experience || 0}"></sl-input>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="storyboard-property-group">
-                <div class="storyboard-property-label">Monsters</div>
-                <div class="storyboard-property-field">
-                  <sl-button size="small">Select Monsters</sl-button>
+                
+                <div class="storyboard-property-group">
+                  <div class="storyboard-property-label">Items</div>
+                  <div class="storyboard-property-field">
+                    ${itemsHtml}
+                    <sl-button id="browse-items-btn" size="small" style="margin-top: 8px;">
+                      <span class="material-icons" style="font-size: 16px; margin-right: 4px;">add</span>
+                      Add Item
+                    </sl-button>
+                  </div>
                 </div>
-              </div>
-            `;
-            break;
+                
+                <div class="storyboard-property-actions" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                  <sl-button id="apply-reward-changes" variant="primary">Apply Changes</sl-button>
+                </div>
+              `;
+              break;
 
           case "condition":
             // Define available condition types
@@ -3496,8 +3613,6 @@ applyCanvasTransform(canvas) {
         }
       }
 
-      // Add this to your setupNodePropertyHandlers method
-      // This goes in the if-else chain where other node types are handled
 
       if (nodeData.type === "condition") {
         // Condition type change handler
@@ -3683,6 +3798,88 @@ applyCanvasTransform(canvas) {
         }
       }
 
+      // In setupNodePropertyHandlers, add case for reward node:
+if (nodeData.type === 'reward') {
+  // Apply button handler
+  const applyBtn = properties.querySelector('#apply-reward-changes');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      try {
+        // Get experience value
+        const expInput = properties.querySelector('#reward-exp-input');
+        const experience = expInput ? parseInt(expInput.value) || 0 : 0;
+        
+        // Update node data 
+        nodeData.data.experience = experience;
+        
+        // Mark as dirty
+        this.currentGraph.dirty = true;
+        
+        // Update visual representation
+        this.updateNodeVisual(nodeData);
+        
+        // Show confirmation
+        this.showToast('Reward updated', 'success');
+      } catch (error) {
+        console.error('Error updating reward node:', error);
+        this.showToast('Error updating reward', 'error');
+      }
+    });
+  }
+  
+  // Browse items button
+  const browseItemsBtn = properties.querySelector('#browse-items-btn');
+  if (browseItemsBtn) {
+    browseItemsBtn.addEventListener('click', () => {
+      this.showResourceSelector(nodeData, 'textures', 'props', (itemId, item) => {
+        // Add item to rewards list
+        if (!nodeData.data.items) {
+          nodeData.data.items = [];
+        }
+        
+        nodeData.data.items.push({
+          id: itemId,
+          name: item.name,
+          quantity: 1
+        });
+        
+        // Mark as dirty
+        this.currentGraph.dirty = true;
+        
+        // Refresh properties panel
+        this.selectNode(nodeData.element);
+        
+        // Show confirmation
+        this.showToast(`Item "${item.name}" added to rewards`, 'success');
+      });
+    });
+  }
+  
+  // Remove item buttons
+  const removeItemBtns = properties.querySelectorAll('.remove-reward-item');
+  removeItemBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = parseInt(btn.getAttribute('data-index'));
+      
+      // Remove item from list
+      nodeData.data.items.splice(index, 1);
+      
+      // Mark as dirty
+      this.currentGraph.dirty = true;
+      
+      // Refresh properties panel
+      this.selectNode(nodeData.element);
+      
+      // Show confirmation
+      this.showToast('Item removed from rewards', 'success');
+    });
+  });
+}
+
+
+
+
+
       // Add handlers for other node types as needed...
     }
 
@@ -3750,29 +3947,55 @@ applyCanvasTransform(canvas) {
             break;
 
           // In the updateNodeVisual method, update the case for choice nodes
-          case "choice":
-            body.innerHTML = `
-<div>${nodeData.data.text || "What would you like to do?"}</div>
-<div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
-  ${nodeData.data.options?.length || 0} options
-</div>
-`;
-            break;
+//           case "choice":
+//             body.innerHTML = `
+// <div>${nodeData.data.text || "What would you like to do?"}</div>
+// <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
+//   ${nodeData.data.options?.length || 0} options
+// </div>
+// `;
+//             break;
 
-          // In the updateNodeVisual method, update the case for trigger nodes
-          case "trigger":
-            body.innerHTML = `
-<div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(
-              1
-            )}</div>
-<div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
-<div style="margin-top: 4px; font-size: 0.9em; color: ${
-              nodeData.data.once ? "#4CAF50" : "#FFC107"
-            };">
-  ${nodeData.data.once ? "Triggers once" : "Triggers repeatedly"}
-</div>
-`;
-            break;
+//           // In the updateNodeVisual method, update the case for trigger nodes
+//           case "trigger":
+//             body.innerHTML = `
+// <div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(
+//               1
+//             )}</div>
+// <div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
+// <div style="margin-top: 4px; font-size: 0.9em; color: ${
+//               nodeData.data.once ? "#4CAF50" : "#FFC107"
+//             };">
+//   ${nodeData.data.once ? "Triggers once" : "Triggers repeatedly"}
+// </div>
+// `;
+//             break;
+
+case 'choice':
+  // Get the options to show in the description
+  const optionTexts = nodeData.data.options?.map(opt => opt.text) || [];
+  const limitedOptions = optionTexts.slice(0, 3); // Show first 3 options
+  
+  body.innerHTML = `
+    <div>${nodeData.data.text || 'What would you like to do?'}</div>
+    <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
+      ${nodeData.data.options?.length || 0} options
+    </div>
+    ${limitedOptions.length > 0 ? `
+      <div style="margin-top: 6px; font-size: 0.8em;">
+        ${limitedOptions.map((text, i) => {
+          const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+          const color = colors[i % colors.length];
+          return `<div style="display: flex; align-items: center; margin-top: 2px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: ${color}; border-radius: 50%; margin-right: 6px;"></span>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${text}</span>
+          </div>`;
+        }).join('')}
+        ${optionTexts.length > 3 ? `<div style="margin-top: 2px; color: #777;">+${optionTexts.length - 3} more...</div>` : ''}
+      </div>
+    ` : ''}
+  `;
+  break;
 
           // In the updateNodeVisual method, update the case for event nodes
           case "event":
@@ -3903,6 +4126,33 @@ ${
               `;
             break;
           // Other node types...
+
+case 'combat':
+  body.innerHTML = `
+    <div>Combat Encounter</div>
+    <div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">
+      ${nodeData.data.enemies?.length || 0} enemies
+    </div>
+    <div style="margin-top: 8px; font-size: 0.8em; color: #4CAF50;">
+      <span style="display: inline-block; width: 10px; height: 10px; background: #4CAF50; border-radius: 50%; margin-right: 6px;"></span>
+      Green: Victory path
+    </div>
+    <div style="font-size: 0.8em; color: #F44336;">
+      <span style="display: inline-block; width: 10px; height: 10px; background: #F44336; border-radius: 50%; margin-right: 6px;"></span>
+      Red: Defeat path
+    </div>
+  `;
+  break;
+
+  // In updateNodeVisual method:
+case 'reward':
+  body.innerHTML = `
+    <div>Rewards</div>
+    <div style="margin-top: 4px; font-size: 0.9em; color: #aaa;">
+      ${nodeData.data.items?.length || 0} items, ${nodeData.data.experience || 0} XP
+    </div>
+  `;
+  break;
 
           default:
             body.innerHTML = "<div>Configure node</div>";
