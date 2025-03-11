@@ -2451,7 +2451,8 @@ if (preferencesBtn) {
       teleportTool: "teleport",
       doorTool: "door",
       splashArtTool: "splash-art",       
-      propTool: "prop"
+      propTool: "prop",
+      storyboardTriggerTool: "storyboard"
     };
 
     Object.entries(markerTools).forEach(([toolId, markerType]) => {
@@ -4503,6 +4504,46 @@ if (preferencesBtn) {
           }
         }
       }
+    } // Inside updateMarkerAppearance method, add this block:
+    else if (marker.type === "storyboard") {
+      // Basic marker appearance
+      const radius = marker.data?.radius || 2;
+      
+      marker.element.innerHTML = `
+        <div class="story-trigger-visual" style="
+          width: ${radius * 2}em;
+          height: ${radius * 2}em;
+          background: rgba(103, 58, 183, 0.2);
+          border: 2px solid #673AB7;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: absolute;
+          left: -${radius}em;
+          top: -${radius}em;
+          transform-origin: center;
+        ">
+          <span class="material-icons" style="
+            color: #673AB7;
+            font-size: 1.5em;
+          ">auto_stories</span>
+        </div>
+        ${marker.data?.label ? `
+          <div class="marker-label" style="
+            position: absolute;
+            top: ${radius * 2 + 0.5}em;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            white-space: nowrap;
+          ">${marker.data.label}</div>
+        ` : ''}
+      `;
     }
     // this.fixZoomIssues();
   }
@@ -4629,7 +4670,8 @@ if (preferencesBtn) {
         teleport: "swap_calls",
         door: "door_front",
         prop: "category",
-        "splash-art": "add_photo_alternate" 
+        "splash-art": "add_photo_alternate",
+        storyboard: "auto_stories"
       }[type] || "location_on";
 
       markerElement.innerHTML = `<span class="material-icons">${icon}</span>`;
@@ -4734,6 +4776,56 @@ if (preferencesBtn) {
         }
       };
     }
+
+    // Inside createMarker method, add this block where other marker types are handled:
+if (type === "storyboard") {
+  // Initialize storyboard marker with defaults
+  if (!data) data = {};
+  
+  // Set default properties if not provided
+  data.radius = data.radius || 2; // Default trigger radius
+  data.triggerOnce = data.triggerOnce !== false; // Default to true
+  data.label = data.label || "Story Event"; // Default label
+  data.storyId = data.storyId || null; // Story ID reference
+  
+  // Create special appearance
+  markerElement.style.cursor = "pointer";
+  markerElement.innerHTML = `
+    <div class="story-trigger-visual" style="
+      width: ${data.radius * 2}em;
+      height: ${data.radius * 2}em;
+      background: rgba(103, 58, 183, 0.2);
+      border: 2px solid #673AB7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      left: -${data.radius}em;
+      top: -${data.radius}em;
+      transform-origin: center;
+    ">
+      <span class="material-icons" style="
+        color: #673AB7;
+        font-size: 1.5em;
+      ">auto_stories</span>
+    </div>
+    ${data.label ? `
+      <div class="marker-label" style="
+        position: absolute;
+        top: ${data.radius * 2 + 0.5}em;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        white-space: nowrap;
+      ">${data.label}</div>
+    ` : ''}
+  `;
+}
 
     // Add context menu handler
     markerElement.addEventListener("contextmenu", (e) => {
@@ -4915,6 +5007,9 @@ if (preferencesBtn) {
       case 'splash-art':
           this.setupSplashArtEventHandlers(dialog, marker);
           break;
+      case 'storyboard':
+            this.setupStoryboardEventHandlers(dialog, marker);
+            break;
       default:
           this.setupDefaultEventHandlers(dialog, marker);
   }
@@ -4950,6 +5045,8 @@ if (preferencesBtn) {
         return this.generateSplashArtMarkerHTML(marker);
       default:
         return this.generateDefaultMarkerHTML(marker);
+        case 'storyboard':
+  return this.generateStoryboardMarkerHTML(marker);
     }
   }
 
@@ -5396,6 +5493,77 @@ if (preferencesBtn) {
   `;
 
     return content;
+  }
+
+  generateStoryboardMarkerHTML(marker) {
+    // Create available stories list
+    let storiesOptions = '';
+    
+    // Check if we have a storyboard with stories
+    if (window.storyboard && window.storyboard.storyGraphs && window.storyboard.storyGraphs.size > 0) {
+      storiesOptions = `
+        <div style="margin-top: 12px;">
+          <label style="display: block; margin-bottom: 4px;">Select Story:</label>
+          <div style="max-height: 200px; overflow-y: auto; border: 1px solid #444; border-radius: 4px;">
+            ${Array.from(window.storyboard.storyGraphs.keys()).map(storyId => `
+              <div class="story-option" data-id="${storyId}" 
+                   style="cursor: pointer; padding: 8px; border-bottom: 1px solid #444; ${marker.data?.storyId === storyId ? 'background-color: #333;' : ''}">
+                <div style="font-weight: ${marker.data?.storyId === storyId ? 'bold' : 'normal'};">${storyId}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      storiesOptions = `
+        <div style="margin-top: 12px; color: #888; text-align: center; padding: 12px;">
+          <div class="material-icons" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;">info</div>
+          <p>No stories available. Create a story in the Storyboard editor first.</p>
+          <sl-button id="open-storyboard-btn" size="small" style="margin-top: 8px;">
+            <span class="material-icons" slot="prefix">auto_stories</span>
+            Open Storyboard Editor
+          </sl-button>
+        </div>
+      `;
+    }
+  
+    return `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="text-align: center; padding: 12px;">
+          <span class="material-icons" style="font-size: 48px; color: #673AB7;">auto_stories</span>
+          <div style="margin-top: 8px; font-weight: bold;">Story Trigger</div>
+          <div style="font-size: 0.9em; color: #888; margin-top: 4px;">
+            Triggers a story dialog when player gets nearby
+          </div>
+        </div>
+        
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <div class="form-group">
+            <label for="trigger-radius">Trigger Radius:</label>
+            <sl-range id="trigger-radius" min="1" max="5" step="0.5" value="${marker.data?.radius || 2}"></sl-range>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #888;">
+              <span>Small</span>
+              <span>Large</span>
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-top: 12px;">
+            <sl-switch id="trigger-once" ${marker.data?.triggerOnce !== false ? 'checked' : ''}>
+              Trigger Only Once
+            </sl-switch>
+          </div>
+        </div>
+        
+        ${storiesOptions}
+  
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <div class="form-group">
+            <label for="display-label">Display Label:</label>
+            <sl-input id="display-label" placeholder="Label shown in game" value="${marker.data?.label || 'Story Event'}"></sl-input>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   setupSplashArtEventHandlers(dialog, marker) {
@@ -5886,6 +6054,62 @@ showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", ico
         }
       });
     });
+  }
+
+  setupStoryboardEventHandlers(dialog, marker) {
+    // Handle radius change
+    const radiusSlider = dialog.querySelector('#trigger-radius');
+    if (radiusSlider) {
+      radiusSlider.addEventListener('sl-change', (e) => {
+        if (!marker.data) marker.data = {};
+        marker.data.radius = parseFloat(e.target.value);
+      });
+    }
+    
+    // Handle trigger once option
+    const triggerOnceSwitch = dialog.querySelector('#trigger-once');
+    if (triggerOnceSwitch) {
+      triggerOnceSwitch.addEventListener('sl-change', (e) => {
+        if (!marker.data) marker.data = {};
+        marker.data.triggerOnce = e.target.checked;
+      });
+    }
+    
+    // Handle label change
+    const labelInput = dialog.querySelector('#display-label');
+    if (labelInput) {
+      labelInput.addEventListener('sl-change', (e) => {
+        if (!marker.data) marker.data = {};
+        marker.data.label = e.target.value;
+      });
+    }
+    
+    // Handle story selection
+    const storyOptions = dialog.querySelectorAll('.story-option');
+    storyOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        const storyId = option.dataset.id;
+        if (!marker.data) marker.data = {};
+        marker.data.storyId = storyId;
+        
+        // Update selected state visually
+        storyOptions.forEach(opt => {
+          opt.style.backgroundColor = opt === option ? '#333' : '';
+          opt.style.fontWeight = opt === option ? 'bold' : 'normal';
+        });
+      });
+    });
+    
+    // Handle open storyboard editor button
+    const openStoryboardBtn = dialog.querySelector('#open-storyboard-btn');
+    if (openStoryboardBtn) {
+      openStoryboardBtn.addEventListener('click', () => {
+        dialog.hide();
+        if (this.storyboard) {
+          this.storyboard.openEditor();
+        }
+      });
+    }
   }
 
   setupDefaultEventHandlers(dialog, marker) {
