@@ -222,6 +222,34 @@ class Scene3DController {
       this._gameMenu.dispose();
       this._gameMenu = null;
     }
+
+    // Add in the cleanup method, where other cleanup operations are performed:
+// Clean up storyboard triggers
+if (this.storyboardTriggers) {
+  // Remove any visual indicators
+  this.storyboardTriggers.forEach(trigger => {
+    if (trigger.indicator) {
+      this.scene.remove(trigger.indicator);
+      if (trigger.indicator.geometry) trigger.indicator.geometry.dispose();
+      if (trigger.indicator.material) trigger.indicator.material.dispose();
+    }
+  });
+  this.storyboardTriggers = null;
+}
+
+// Clean up storyboard tester if initialized
+if (this.storyboardTester) {
+  // Close any open dialogs/overlays
+  if (this.storyboardTester.closeCurrentDialog) {
+    this.storyboardTester.closeCurrentDialog();
+  }
+  if (this.storyboardTester.closeCurrentOverlay) {
+    this.storyboardTester.closeCurrentOverlay();
+  }
+  this.storyboardTester = null;
+}
+
+this.activeStoryTrigger = null;
   
     if (this.shaderEffects) {
       console.log('Cleaning up shader effects...');
@@ -589,30 +617,35 @@ class Scene3DController {
     return false;
   }
 
-//   checkFirstRunOffer() {
-
-//     if (!this.firstRunOfferComplete && window.partyManager) {
-//       console.log("Opening Party Manager");
-
-//       // Pause 3D controls while party manager is open
-//       this.pauseControls();
-
-//       // Show party manager
-//       window.partyManager.showPartyManager();
-
-//       // Resume controls when party manager closes
-//       const checkForDialog = setInterval(() => {
-//         const dialog = document.querySelector('sl-dialog[label="Monster Party"]');
-//         if (!dialog) {
-//           this.resumeControls();
-//           this.firstRunOfferComplete = true;
-//           clearInterval(checkForDialog);
-//         }
-//       }, 100);
-//       return true;
-//     }
-// return false;
-// }
+/**
+ * Load StoryboardTester script
+ * @returns {Promise} - Resolves when script is loaded
+ */
+loadStoryboardTester() {
+  return new Promise((resolve, reject) => {
+    if (window.StoryboardTester) {
+      console.log('StoryboardTester already loaded');
+      resolve();
+      return;
+    }
+    
+    console.log('Loading StoryboardTester script...');
+    const script = document.createElement('script');
+    script.src = '/js/classes/StoryboardTester.js';
+    
+    script.onload = () => {
+      console.log('StoryboardTester script loaded successfully');
+      resolve();
+    };
+    
+    script.onerror = (err) => {
+      console.error('Failed to load StoryboardTester:', err);
+      reject(err);
+    };
+    
+    document.head.appendChild(script);
+  });
+}
 
 
 // Add this method to Scene3DController
@@ -2885,6 +2918,73 @@ initShaderEffects() {
           // No mesh needed for these
           break;
 
+          case "storyboard":
+            console.log(`Processing storyboard marker: ${marker.id}`);
+            
+            // Calculate world position
+            const storyX = marker.x / 50 - this.boxWidth / 2;
+            const storyZ = marker.y / 50 - this.boxDepth / 2;
+            
+            // Get elevation at marker position
+            const elevationData = this.getElevationAtPoint(storyX, storyZ);
+            const storyElevation = elevationData.elevation;
+            
+            // Store marker with all needed data
+            const triggerRadius = marker.data?.radius || 5; //2;
+            const storyboardInfo = {
+              id: marker.id,
+              position: new THREE.Vector3(storyX, storyElevation + 0.5, storyZ), // Slightly above ground
+              radius: triggerRadius,
+              storyId: marker.data?.storyId || null,
+              triggerOnce: marker.data?.triggerOnce !== false, // Default to true
+              triggered: false, // Track if this has been triggered
+              label: marker.data?.label || "Story Event"
+            };
+
+            // Always add a visual indicator (not just in debug mode)
+const indicatorGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+const indicatorMaterial = new THREE.MeshBasicMaterial({
+  color: 0xFF00FF, // Bright pink for visibility
+  transparent: true,
+  opacity: 0.7,
+});
+
+const indicatorMesh = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
+indicatorMesh.position.copy(storyboardInfo.position);
+this.scene.add(indicatorMesh);
+storyboardInfo.visualIndicator = indicatorMesh;
+
+// Also add a pulsing light to make it even more visible
+const indicatorLight = new THREE.PointLight(0xFF00FF, 1, 3);
+indicatorLight.position.copy(storyboardInfo.position);
+this.scene.add(indicatorLight);
+storyboardInfo.indicatorLight = indicatorLight;
+            
+            // Store in array for proximity checks
+            if (!this.storyboardTriggers) {
+              this.storyboardTriggers = [];
+            }
+            this.storyboardTriggers.push(storyboardInfo);
+            
+            // Add visual indicator for debugging
+            if (this.debugVisuals) {
+              const geometry = new THREE.CylinderGeometry(triggerRadius, triggerRadius, 0.1, 32);
+              const material = new THREE.MeshBasicMaterial({
+                color: 0x673AB7,
+                transparent: true,
+                opacity: 0.3,
+                visible: true
+              });
+              
+              const indicatorMesh = new THREE.Mesh(geometry, material);
+              indicatorMesh.position.copy(storyboardInfo.position);
+              indicatorMesh.userData.isStoryboardIndicator = true;
+              this.scene.add(indicatorMesh);
+              storyboardInfo.indicator = indicatorMesh;
+            }
+            
+            break;
+
         default:
           console.log(`Skipping unknown marker type: ${marker.type}`);
           break;
@@ -3025,6 +3125,8 @@ initShaderEffects() {
 
 
   async init3DScene(updateStatus) {
+    await this.loadStoryboardTester().catch(err => console.warn('StoryboardTester not available:', err));
+
     const renderState = {
       clippingEnabled: false // true
     };
@@ -4616,6 +4718,37 @@ this.scene.add(floor);
       });
     }
 
+    // Add this in processInteractiveElements() after other proximity checks:
+// Check storyboard triggers
+let nearestStoryTrigger = null;
+let storyTriggerDistance = Infinity;
+
+if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
+  // Only check if we aren't already handling an active story
+  if (!this.activeStoryTrigger) {
+    this.storyboardTriggers.forEach(trigger => {
+      // Skip if this is a one-time trigger that has already been triggered
+      if (trigger.triggerOnce && trigger.triggered) {
+        return;
+      }
+      
+      const distance = playerPosition.distanceTo(trigger.position);
+      
+      // Check if player is within trigger radius
+      if (distance < trigger.radius && distance < storyTriggerDistance) {
+        storyTriggerDistance = distance;
+        nearestStoryTrigger = trigger;
+      }
+    });
+  }
+}
+
+// Handle story trigger
+if (nearestStoryTrigger && !this.activeStoryTrigger && !this.activeSplashArt) {
+  // Don't show prompt, just trigger the story directly when in range
+  this.handleStoryTrigger(nearestStoryTrigger);
+}
+
     // Update UI prompts based on nearest interactive element
     this.updateTeleportPrompt(nearestTeleporter);
     this.updateDoorPrompt(nearestDoor);
@@ -4654,7 +4787,146 @@ this.scene.add(floor);
     }
   }
 
+  /**
+ * Handle activating a storyboard trigger
+ * @param {Object} trigger - The storyboard trigger data
+ */
+// handleStoryTrigger(trigger) {
+//   console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId}`);
+  
+//   // Mark as active to prevent duplicate triggers
+//   this.activeStoryTrigger = trigger;
+  
+//   // Mark as triggered if it's a one-time trigger
+//   if (trigger.triggerOnce) {
+//     trigger.triggered = true;
+//   }
+  
+//   // Initialize StoryboardTester if not already done
+//   if (!this.storyboardTester && window.StoryboardTester) {
+//     // Get storyboard reference if available
+//     const storyboard = window.storyboard;
+    
+//     // Initialize tester with 3D mode
+//     this.storyboardTester = new window.StoryboardTester(
+//       storyboard,  // The storyboard system
+//       this,        // This scene3D controller
+//       window.resourceManager // Resource manager
+//     );
+    
+//     console.log('Initialized StoryboardTester in 3D mode');
+//   }
+  
+//   // Exit if we can't find the tester or there's no valid storyId
+//   if (!this.storyboardTester || !trigger.storyId) {
+//     console.warn('Cannot trigger story: missing tester or storyId');
+//     this.activeStoryTrigger = null;
+//     return;
+//   }
+  
+//   // Run the specified story
+//   this.storyboardTester.runInScene(this, trigger.storyId);
+  
+//   // Listen for story completion
+//   const checkForCompletion = setInterval(() => {
+//     // Check if the tester is still displaying a dialog/overlay
+//     if (!this.storyboardTester.currentDialog && !this.storyboardTester.currentOverlay) {
+//       clearInterval(checkForCompletion);
+//       console.log('Story completed');
+      
+//       // Add a small cooldown to prevent immediate re-trigger
+//       setTimeout(() => {
+//         this.activeStoryTrigger = null;
+//       }, 1000);
+//     }
+//   }, 100);
+
+//   console.log('Active storyboard triggers:', this.storyboardTriggers);
+
+// // At the beginning of processInteractiveElements(), add:
+// if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
+//   const playerPos = this.camera.position;
+//   console.log('Player position:', playerPos);
+  
+//   this.storyboardTriggers.forEach(trigger => {
+//     const distance = playerPos.distanceTo(trigger.position);
+//     console.log(`Story trigger ${trigger.id}: distance = ${distance.toFixed(2)}, radius = ${trigger.radius}`);
+//   });
+// }
+// }
+
   // Helper method for animating effects
+  
+  // Update the handleStoryTrigger method:
+handleStoryTrigger(trigger) {
+  console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId}`);
+  
+  // Mark as active to prevent duplicate triggers
+  this.activeStoryTrigger = trigger;
+  
+  // Mark as triggered if it's a one-time trigger
+  if (trigger.triggerOnce) {
+    trigger.triggered = true;
+  }
+  
+  // Initialize StoryboardTester if not already done
+  if (!this.storyboardTester && window.StoryboardTester) {
+    console.log('Creating new StoryboardTester instance');
+    
+    // Get storyboard reference - IMPORTANT FIX: Use global storyboard
+    const storyboard = window.storyboard;
+    
+    if (!storyboard) {
+      console.error('No storyboard found in window object!');
+      this.activeStoryTrigger = null;
+      return;
+    }
+    
+    // Initialize tester with 3D mode
+    this.storyboardTester = new window.StoryboardTester(
+      storyboard,  // The storyboard system
+      this,        // This scene3D controller
+      window.resourceManager // Resource manager
+    );
+    
+    console.log('Initialized StoryboardTester in 3D mode');
+  }
+  
+  // Log more debug info
+  console.log('StoryboardTester available:', !!this.storyboardTester);
+  console.log('Story ID is valid:', !!trigger.storyId);
+  console.log('Stories available:', window.storyboard?.storyGraphs?.size || 0);
+  
+  // Exit if we can't find the tester or there's no valid storyId
+  if (!this.storyboardTester || !trigger.storyId) {
+    console.warn('Cannot trigger story: missing tester or storyId');
+    this.activeStoryTrigger = null;
+    return;
+  }
+  
+  console.log(`Running story with ID: ${trigger.storyId}`);
+  
+  // Run the specified story
+  this.storyboardTester.runInScene(this, trigger.storyId);
+  
+  // Listen for story completion
+  const checkForCompletion = setInterval(() => {
+    // Check if the tester is still displaying a dialog/overlay
+    if (!this.storyboardTester.currentDialog && !this.storyboardTester.currentOverlay) {
+      clearInterval(checkForCompletion);
+      console.log('Story completed');
+      
+      // Add a small cooldown to prevent immediate re-trigger
+      setTimeout(() => {
+        this.activeStoryTrigger = null;
+      }, 1000);
+    }
+  }, 100);
+}
+  
+  
+  
+  
   animateEffects(deltaTime) {
     // Animate teleporter particles
     this.scene.children.forEach(child => {

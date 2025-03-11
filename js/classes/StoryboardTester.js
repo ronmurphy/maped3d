@@ -71,7 +71,7 @@ showImmersiveOverlay(content, options = {}) {
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 2000;
+      z-index: 10000;
       opacity: 0;
       transition: opacity 0.3s ease;
     `;
