@@ -3080,9 +3080,13 @@ showNameEditor(resource, category, id, cardElement) {
         <span class="material-icons" slot="prefix">save</span>
         Save
     </sl-button>
-    <sl-button variant="default" id="loadResourcePack" style="margin-left: 8px;">
+    <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
         <span class="material-icons" slot="prefix">folder_open</span>
         Load
+    </sl-button>
+        <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
+        <span class="material-icons" slot="prefix">close</span>
+        Close
     </sl-button>
 </div>
 `;
@@ -3145,8 +3149,15 @@ if (packNameInput) {
 setupEventHandlers(drawer) {
     const saveBtn = drawer.querySelector('#saveResourcePack');
     const loadBtn = drawer.querySelector('#loadResourcePack');
+    const exitBtn = drawer.querySelector('#exitResourceManager');
     const exportBestiaryBtn = drawer.querySelector('#exportBestiaryBtn');
     const importBestiaryBtn = drawer.querySelector('#importBestiaryBtn');
+
+    if (exitBtn) {
+        exitBtn.addEventListener('click', () => {
+            drawer.hide();
+        });
+    }
 
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
