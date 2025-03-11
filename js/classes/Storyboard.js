@@ -3893,32 +3893,67 @@ if (nodeData.type === 'reward') {
 
       // Update title in header
       const header = element.querySelector(".storyboard-node-header");
-      if (header) {
-        // Get the text node (first child)
-        let textNode = null;
-        for (const child of header.childNodes) {
-          if (child.nodeType === Node.TEXT_NODE) {
-            textNode = child;
-            break;
-          }
-        }
+      // if (header) {
+      //   // Get the text node (first child)
+      //   let textNode = null;
+      //   for (const child of header.childNodes) {
+      //     if (child.nodeType === Node.TEXT_NODE) {
+      //       textNode = child;
+      //       break;
+      //     }
+      //   }
 
-        if (textNode) {
-          textNode.nodeValue =
-            nodeData.data.title ||
-            nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
-        } else {
-          // If no text node found, insert one at the beginning
-          const closeButton = header.querySelector(".storyboard-node-close");
-          if (closeButton) {
-            header.insertBefore(
-              document.createTextNode(
-                nodeData.data.title ||
-                  nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)
-              ),
-              closeButton
-            );
-          }
+      //   if (textNode) {
+      //     textNode.nodeValue =
+      //       nodeData.data.title ||
+      //       nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+      //   } else {
+      //     // If no text node found, insert one at the beginning
+      //     const closeButton = header.querySelector(".storyboard-node-close");
+      //     if (closeButton) {
+      //       header.insertBefore(
+      //         document.createTextNode(
+      //           nodeData.data.title ||
+      //             nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)
+      //         ),
+      //         closeButton
+      //       );
+      //     }
+      //   }
+      // }
+
+      if (header) {
+        // Instead of trying to update a text node, replace the entire header content
+        const nodeType = nodeData.type;
+        const title = nodeData.data.title || nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+        
+        // Get the appropriate icon for this node type
+        const iconMap = {
+          "dialog": "chat",
+          "choice": "check_circle",
+          "trigger": "flash_on",
+          "event": "event",
+          "condition": "rule",
+          "combat": "sports_martial_arts",
+          "reward": "card_giftcard"
+        };
+        
+        const iconName = iconMap[nodeType] || "help";
+        
+        // Update the header content (preserving the close button)
+        const closeButton = header.querySelector('.storyboard-node-close');
+        header.innerHTML = `<i class="material-icons">${iconName}</i> ${title}`;
+        
+        // Re-append the close button
+        if (closeButton) {
+          header.appendChild(closeButton);
+          
+          // Reattach event listener to close button
+          closeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.deleteNode(element);
+          });
         }
       }
 
