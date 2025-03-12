@@ -2412,7 +2412,8 @@ if (preferencesBtn) {
       doorTool: "door",
       splashArtTool: "splash-art",       
       propTool: "prop",
-      storyboardTriggerTool: "storyboard"
+      storyboardTriggerTool: "storyboard",
+      dungeonTool: "dungeon"
     };
 
     Object.entries(markerTools).forEach(([toolId, markerType]) => {
@@ -4232,6 +4233,17 @@ if (preferencesBtn) {
       return marker;
     }
 
+        // Inside addMarker method, when creating a marker:
+    if (type === "dungeon") {
+      const marker = this.createMarker(type, x, y, {
+        name: data.name || "Mysterious Dungeon",
+        difficulty: data.difficulty || "medium",
+        dungeonId: data.dungeonId || Date.now().toString()
+      });
+      this.markers.push(marker);
+      return marker;
+    }
+
     // Regular markers
     const marker = this.createMarker(type, x, y, data);
     this.markers.push(marker);
@@ -4631,7 +4643,8 @@ if (preferencesBtn) {
         door: "door_front",
         prop: "category",
         "splash-art": "add_photo_alternate",
-        storyboard: "auto_stories"
+        storyboard: "auto_stories",
+        dungeon: "fort",
       }[type] || "location_on";
 
       markerElement.innerHTML = `<span class="material-icons">${icon}</span>`;
@@ -4970,6 +4983,9 @@ if (type === "storyboard") {
       case 'storyboard':
             this.setupStoryboardEventHandlers(dialog, marker);
             break;
+      case 'dungeon':  // Add this case
+            this.setupDungeonEventHandlers(dialog, marker);
+            break;
       default:
           this.setupDefaultEventHandlers(dialog, marker);
   }
@@ -5005,9 +5021,49 @@ if (type === "storyboard") {
         return this.generateSplashArtMarkerHTML(marker);
       default:
         return this.generateDefaultMarkerHTML(marker);
-        case 'storyboard':
-  return this.generateStoryboardMarkerHTML(marker);
+      case 'storyboard':
+        return this.generateStoryboardMarkerHTML(marker);
+      case 'dungeon':
+        return this.generateDungeonMarkerHTML(marker);
     }
+  }
+
+    generateDungeonMarkerHTML(marker) {
+    return `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="text-align: center; padding: 12px;">
+          <span class="material-icons" style="font-size: 48px; color: #8B4513;">castle</span>
+          <div style="margin-top: 8px; font-weight: bold;">Dungeon Entrance</div>
+          <div style="font-size: 0.9em; color: #888; margin-top: 4px;">
+            ${marker.data?.name || "Mysterious Dungeon"}
+          </div>
+        </div>
+        
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <sl-input 
+            id="dungeon-name" 
+            label="Dungeon Name" 
+            value="${marker.data?.name || "Mysterious Dungeon"}"
+            placeholder="Enter dungeon name">
+          </sl-input>
+          
+          <sl-select id="dungeon-difficulty" label="Difficulty Level" value="${marker.data?.difficulty || "medium"}" style="margin-top: 12px;">
+            <sl-option value="easy">Easy</sl-option>
+            <sl-option value="medium">Medium</sl-option>
+            <sl-option value="hard">Hard</sl-option>
+            <sl-option value="epic">Epic</sl-option>
+          </sl-select>
+          
+          <sl-input 
+            id="dungeon-id" 
+            label="Dungeon ID" 
+            value="${marker.data?.dungeonId || marker.id}"
+            placeholder="Unique Dungeon Identifier"
+            style="margin-top: 12px;">
+          </sl-input>
+        </div>
+      </div>
+    `;
   }
 
   generateDoorMarkerHTML(marker) {
@@ -6059,6 +6115,35 @@ showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", ico
 
   setupDefaultEventHandlers(dialog, marker) {
     // Add any default event handlers that should apply to all marker types
+  }
+
+    setupDungeonEventHandlers(dialog, marker) {
+    // Handle dungeon name input
+    const nameInput = dialog.querySelector('#dungeon-name');
+    if (nameInput) {
+      nameInput.addEventListener('sl-change', (e) => {
+        if (!marker.data) marker.data = {};
+        marker.data.name = e.target.value;
+      });
+    }
+    
+    // Handle difficulty selection
+    const difficultySelect = dialog.querySelector('#dungeon-difficulty');
+    if (difficultySelect) {
+      difficultySelect.addEventListener('sl-change', (e) => {
+        if (!marker.data) marker.data = {};
+        marker.data.difficulty = e.target.value;
+      });
+    }
+    
+    // Handle dungeon ID input
+    const dungeonIdInput = dialog.querySelector('#dungeon-id');
+    if (dungeonIdInput) {
+      dungeonIdInput.addEventListener('sl-change', (e) => {
+        if (!marker.data) marker.data = {};
+        marker.data.dungeonId = e.target.value;
+      });
+    }
   }
 
   // Method to load mini bestiary content 

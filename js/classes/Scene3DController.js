@@ -140,11 +140,6 @@ class Scene3DController {
 
     }
 
-    // Initialize visual effects
-    // if (!this.visualEffects) {
-    //   this.visualEffects = new VisualEffectsManager(this);
-    //   this.visualEffects.initPostProcessing();
-    // }
 
     // Initialize day/night cycle if not exists
     if (!this.dayNightCycle) {
@@ -1780,6 +1775,11 @@ break;
     console.log('Teleporter activated via F key');
     this.executeTeleport();
   }
+    // Add this in your handleKeyDown method inside the KeyF case
+    else if (this.currentPromptType === 'dungeon' && this.nearestDungeon) {
+      console.log('Dungeon entry activated via F key');
+      this.enterDungeon(this.nearestDungeon);
+    }
   else if (this.currentPromptType === 'pickup' && this.nearestProp) {
     console.log('Prop pickup activated via F key');
     // Pick up the prop
@@ -3171,6 +3171,38 @@ break;
             
             break;
 
+case "dungeon":
+  console.log(`Processing dungeon marker: ${marker.id}`);
+  
+  // Calculate world position
+  const dungeonX = marker.x / 50 - this.boxWidth / 2;
+  const dungeonZ = marker.y / 50 - this.boxDepth / 2;
+  
+  // Get elevation at marker position
+  const { elevationD } = this.getElevationAtPoint(dungeonX, dungeonZ);
+  
+  // Create visual dungeon entrance
+  const dungeonEntrance = this.createDungeonEntrance(
+    dungeonX, 
+    elevationD + 0.05, 
+    dungeonZ, 
+    marker.data?.name || "Dungeon",
+    marker.data?.difficulty || "normal"
+  );
+  
+  // Store marker data for interaction
+  dungeonEntrance.userData = {
+    type: 'dungeon',
+    id: marker.id,
+    name: marker.data?.name || "Mysterious Dungeon",
+    difficulty: marker.data?.difficulty || "normal",
+    dungeonId: marker.data?.dungeonId || marker.id
+  };
+  
+  this.scene.add(dungeonEntrance);
+  console.log(`Added dungeon entrance to scene: ${marker.id}`);
+  break;
+
         default:
           console.log(`Skipping unknown marker type: ${marker.type}`);
           break;
@@ -3199,6 +3231,117 @@ break;
 
     // 4. Final check for duplicates
     this.checkForDuplicateProps();
+  }
+
+    createDungeonEntrance(x, y, z, name = "Dungeon", difficulty = "normal") {
+    // Create a group to hold all dungeon entrance elements
+    const dungeonGroup = new THREE.Group();
+    dungeonGroup.position.set(x, y, z);
+    
+    // Create the base - a stone circle platform
+    const baseGeometry = new THREE.CylinderGeometry(1.2, 1.4, 0.2, 16);
+    const baseMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x666666, 
+      roughness: 0.9,
+      metalness: 0.1
+    });
+    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+    dungeonGroup.add(base);
+    
+    // Create stairs leading to entrance
+    const stairsGeometry = new THREE.CylinderGeometry(0.9, 1.2, 0.4, 16);
+    const stairsMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x444444,
+      roughness: 0.7
+    });
+    const stairs = new THREE.Mesh(stairsGeometry, stairsMaterial);
+    stairs.position.y = 0.3;
+    dungeonGroup.add(stairs);
+    
+    // Create portal effect - a glowing ring
+    const portalGeometry = new THREE.TorusGeometry(0.7, 0.1, 16, 32);
+    
+    // Choose portal color based on difficulty
+    let portalColor;
+    switch (difficulty.toLowerCase()) {
+      case "easy": portalColor = 0x66ff66; break;      // Green for easy
+      case "medium": portalColor = 0x6666ff; break;    // Blue for medium 
+      case "hard": portalColor = 0xff6666; break;      // Red for hard
+      case "epic": portalColor = 0xaa44aa; break;      // Purple for epic
+      default: portalColor = 0x66ccff;                 // Default blue
+    }
+    
+    const portalMaterial = new THREE.MeshStandardMaterial({
+      color: portalColor,
+      emissive: portalColor,
+      emissiveIntensity: 1.0,
+      transparent: true,
+      opacity: 0.8
+    });
+    
+    const portal = new THREE.Mesh(portalGeometry, portalMaterial);
+    portal.rotation.x = Math.PI / 2; // Lay flat
+    portal.position.y = 0.5;
+    dungeonGroup.add(portal);
+    
+    // Create particles for the portal
+    const particles = this.createDungeonPortalParticles(portalColor);
+    particles.position.y = 0.5;
+    dungeonGroup.add(particles);
+    
+    // Add entrance sign with name
+    // if (this.shaderEffects) {
+    //   // Add floating text if shader effects are available
+    //   this.shaderEffects.createFloatingText({
+    //     text: name,
+    //     position: new THREE.Vector3(0, 1.2, 0),
+    //     color: 0xffffff,
+    //     scale: 0.5,
+    //     parent: dungeonGroup
+    //   });
+    // }
+    
+    // Tag this group for animation
+    dungeonGroup.userData.animatePortal = true;
+    dungeonGroup.userData.portalElement = portal;
+    dungeonGroup.userData.particleSystem = particles;
+    dungeonGroup.userData.creationTime = performance.now();
+    
+    return dungeonGroup;
+  }
+  
+  createDungeonPortalParticles(color = 0x66ccff) {
+    const particleCount = 50;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    
+    // Create particles in a ring pattern
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const radius = 0.7 + (Math.random() * 0.2 - 0.1);
+      positions[i * 3] = Math.cos(angle) * radius;     // x
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 0.5; // y (height variation)
+      positions[i * 3 + 2] = Math.sin(angle) * radius;     // z
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const material = new THREE.PointsMaterial({
+      color: color,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending
+    });
+    
+    const particles = new THREE.Points(geometry, material);
+    particles.userData = {
+      animate: true,
+      initialPositions: [...positions],
+      type: 'dungeonParticles'
+    };
+    
+    return particles;
   }
 
   validatePropPositions() {
@@ -3462,7 +3605,7 @@ break;
     // this.scene.add(floor);
     
 // Simple scaled floor that doesn't stretch the texture
-const floorGeometry = new THREE.PlaneGeometry(this.boxWidth * 2, this.boxDepth * 2);
+const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
 const floorMaterial = new THREE.MeshStandardMaterial({
   map: texture,
   side: THREE.DoubleSide
@@ -3657,27 +3800,27 @@ this.scene.add(floor);
     };
   }
 
-  createPickupPrompt() {
-    if (!this.pickupPrompt) {
-      this.pickupPrompt = document.createElement('div');
-      this.pickupPrompt.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
-          padding: 15px 20px;
-          border-radius: 5px;
-          display: none;
-          font-family: Arial, sans-serif;
-          pointer-events: none;
-          z-index: 1000;
-      `;
-      document.body.appendChild(this.pickupPrompt);
-    }
-    return this.pickupPrompt;
-  }
+  // createPickupPrompt() {
+  //   if (!this.pickupPrompt) {
+  //     this.pickupPrompt = document.createElement('div');
+  //     this.pickupPrompt.style.cssText = `
+  //         position: fixed;
+  //         top: 50%;
+  //         left: 50%;
+  //         transform: translate(-50%, -50%);
+  //         background: rgba(0, 0, 0, 0.8);
+  //         color: white;
+  //         padding: 15px 20px;
+  //         border-radius: 5px;
+  //         display: none;
+  //         font-family: Arial, sans-serif;
+  //         pointer-events: none;
+  //         z-index: 1000;
+  //     `;
+  //     document.body.appendChild(this.pickupPrompt);
+  //   }
+  //   return this.pickupPrompt;
+  // }
 
   setupInventorySystem() {
     console.log('Setting up inventory system');
@@ -4970,91 +5113,6 @@ this.scene.add(floor);
     }
   }
 
-  /**
- * Handle activating a storyboard trigger
- * @param {Object} trigger - The storyboard trigger data
- */
-  // handleStoryTrigger(trigger) {
-  //   console.log(`Triggering storyboard: ${trigger.id} with story ID: ${trigger.storyId || 'none'}`);
-    
-  //   // Mark as active to prevent duplicate triggers
-  //   this.activeStoryTrigger = trigger;
-    
-  //   // Mark as triggered if it's a one-time trigger
-  //   if (trigger.triggerOnce) {
-  //     trigger.triggered = true;
-  //   }
-    
-  //   // Initialize StoryboardTester if not already done
-  //   if (!this.storyboardTester && window.StoryboardTester) {
-  //     console.log('Creating new StoryboardTester instance');
-      
-  //     // Get storyboard reference
-  //     const storyboard = window.storyboard;
-      
-  //     if (!storyboard) {
-  //       console.error('No storyboard found in window object!');
-  //       this.activeStoryTrigger = null;
-  //       return;
-  //     }
-      
-  //     // Initialize tester with 3D mode
-  //     this.storyboardTester = new window.StoryboardTester(
-  //       storyboard,  // The storyboard system
-  //       this,        // This scene3D controller
-  //       window.resourceManager // Resource manager
-  //     );
-      
-  //     console.log('Initialized StoryboardTester in 3D mode');
-  //   }
-    
-  //   // Log more debug info
-  //   console.log('StoryboardTester available:', !!this.storyboardTester);
-  //   console.log('Stories available:', window.storyboard?.storyGraphs?.size || 0);
-    
-  //   // FIX: Use default story ID if none is specified
-  //   let storyId = trigger.storyId;
-  //   if (!storyId && window.storyboard?.storyGraphs?.size > 0) {
-  //     // Get the first story as default
-  //     storyId = window.storyboard.storyGraphs.keys().next().value;
-  //     console.log(`No story ID specified, using default story: ${storyId}`);
-  //   }
-    
-  //   console.log('Story ID is valid:', !!storyId);
-    
-  //   // Exit if we can't find the tester or there's no valid storyId
-  //   if (!this.storyboardTester || !storyId) {
-  //     console.warn('Cannot trigger story: missing tester or storyId');
-  //     this.activeStoryTrigger = null;
-  //     return;
-  //   }
-    
-  //   // Important: Pause controls BEFORE showing the story
-  //   this.pauseControls();
-  //   console.log('Controls paused for story');
-    
-  //   console.log(`Running story with ID: ${storyId}`);
-    
-  //   // Run the specified story
-  //   this.storyboardTester.runInScene(this, storyId);
-    
-  //   // Listen for story completion
-  //   const checkForCompletion = setInterval(() => {
-  //     // Check if the tester is still displaying a dialog/overlay
-  //     if (!this.storyboardTester.currentDialog && !this.storyboardTester.currentOverlay) {
-  //       clearInterval(checkForCompletion);
-  //       console.log('Story completed, resuming controls');
-        
-  //       // Resume controls when story is done
-  //       this.resumeControls();
-        
-  //       // Add a small cooldown to prevent immediate re-trigger
-  //       setTimeout(() => {
-  //         this.activeStoryTrigger = null;
-  //       }, 1000);
-  //     }
-  //   }, 100);
-  // }
 
   /**
  * Handle activating a storyboard trigger
@@ -5232,6 +5290,10 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
 
     this.updateTimeBasedMovement();
 
+
+
+    
+
     const playerPosition = this.camera.position.clone();
     let nearestTeleporter = null;
     let shortestDistance = Infinity;
@@ -5258,8 +5320,7 @@ if (nearestTeleporter) {
   this.activeTeleporter = null;
 }
 
-    // Show/hide teleport prompt based on proximity
-    // this.updateTeleportPrompt(nearestTeleporter);
+
 
     let nearestDoor = null;
     shortestDistance = Infinity;
@@ -5286,8 +5347,6 @@ if (nearestTeleporter) {
       this.activeDoor = null;
     }
     
-    // Show/hide door prompt based on proximity
-    // this.updateDoorPrompt(nearestDoor);
 
     // Animate teleporter particles
     this.scene.children.forEach(child => {
@@ -5305,7 +5364,6 @@ if (nearestTeleporter) {
       }
     });
 
-    // const playerPosition = this.camera.position.clone();
     let nearestSplashArt = null;
     // let shortestDistance = Infinity;
 
@@ -5338,17 +5396,7 @@ if (nearestSplashArt && !this.activeSplashArt) {
   this.nearestSplashArt = null;
 }
     // Show/hide splash art prompt
-    // if (nearestSplashArt && !this.activeSplashArt) {
-    //   const prompt = this.createSplashArtPrompt();
-    //   prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press F to inspect';
-    //   prompt.style.display = 'block';
-    //   this.nearestSplashArt = nearestSplashArt;
-    // } else if (!nearestSplashArt && this.splashArtPrompt) {
-    //   this.splashArtPrompt.style.display = 'none';
-    //   this.nearestSplashArt = null;
-    // }
 
-    // const playerPosition = this.camera.position.clone();
     let nearestProp = null;
 
     this.scene.children.forEach(child => {
@@ -5376,17 +5424,6 @@ if (nearestSplashArt && !this.activeSplashArt) {
 
     // For splash art prompts - replace the existing code with:
 
-
-    // Show/hide pickup prompt
-    // if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
-    //   const prompt = this.createPickupPrompt();
-    //   prompt.textContent = 'Press F to pick up';
-    //   prompt.style.display = 'block';
-    //   this.nearestProp = nearestProp;
-    // } else if (this.pickupPrompt) {
-    //   this.pickupPrompt.style.display = 'none';
-    //   this.nearestProp = null;
-    // }
 
     // // Find nearest encounter marker
     let nearestEncounter = null;
@@ -5418,18 +5455,6 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
   this.hideInteractivePrompt('encounter');
   this.nearestEncounter = null;
 }
-
-    // Show or hide encounter prompt
-    // if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
-    //   const prompt = this.createEncounterPrompt();
-    //   prompt.textContent = 'Press F to approach monster';
-    //   prompt.style.display = 'block';
-    //   this.nearestEncounter = nearestEncounter;
-    // } else if (!nearestEncounter && this.encounterPrompt) {
-    //   this.encounterPrompt.style.display = 'none';
-    //   this.nearestEncounter = null;
-    // }
-
 
 
     // Find nearest storyboard marker (add this in animate() where you check for encounters)
@@ -5468,18 +5493,72 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
       this.nearestStory = null;
     }
     
-    // Show or hide story prompt
-    // if (nearestStory && !this.activeStoryMarker && !this.activeEncounter && !this.activeSplashArt) {
-    //   const prompt = this.createStoryPrompt();
-    //   prompt.textContent = `Press F to ${nearestStory.userData.label || 'Interact'}`;
-    //   prompt.style.display = 'block';
-    //   this.nearestStory = nearestStory;
-    // } else if (!nearestStory && this.storyPrompt) {
-    //   this.storyPrompt.style.display = 'none';
-    //   this.nearestStory = null;
-    // }
-  // this.showInteractivePrompt(nearestStoryTrigger.label || 'Story', 'chat');
 
+  this.scene.children.forEach(child => {
+    if (child.userData?.type === 'dungeon') {
+      const time = Date.now() * 0.001; // Use Date.now() to match teleporter timing
+      
+      // Animate portal ring
+      if (child.userData.portalElement) {
+        const portal = child.userData.portalElement;
+        // Pulsating effect
+        portal.scale.set(
+          1.0 + Math.sin(time * 2) * 0.05,
+          1.0 + Math.sin(time * 2) * 0.05,
+          1.0 + Math.sin(time * 2) * 0.05
+        );
+        // Rotation effect
+        portal.rotation.z = time * 0.5;
+      }
+      
+      // Animate particles (with distinct dungeon swirl pattern)
+      if (child.userData.particleSystem) {
+        const particles = child.userData.particleSystem;
+        const positions = particles.geometry.attributes.position.array;
+        
+        for (let i = 0; i < positions.length; i += 3) {
+          // Move particles in dungeon-specific swirling pattern
+          const idx = i / 3;
+          const angle = time + idx * 0.2;
+          const initialX = particles.userData.initialPositions[i];
+          const initialZ = particles.userData.initialPositions[i + 2];
+          const radius = Math.sqrt(initialX * initialX + initialZ * initialZ);
+          
+          positions[i] = Math.cos(angle) * radius;
+          positions[i + 1] = Math.sin(time * 2 + idx) * 0.1; // Bobbing up and down
+          positions[i + 2] = Math.sin(angle) * radius;
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+      }
+    }
+  });
+
+// Check for nearby dungeon entrances
+let nearestDungeon = null;
+this.scene.children.forEach(object => {
+  if (object.userData && object.userData.type === 'dungeon') {
+    const dist = playerPosition.distanceTo(object.position);
+    const minDungeonDist = 3; // Detection range
+    if (dist < minDungeonDist && (nearestDungeon === null || dist < playerPosition.distanceTo(nearestDungeon.position))) {
+      nearestDungeon = object;
+    }
+  }
+});
+
+// Update the nearest dungeon reference
+this.nearestDungeon = nearestDungeon;
+
+// Show or hide the dungeon prompt
+if (nearestDungeon) {
+  this.showInteractivePrompt(
+    `Enter ${nearestDungeon.userData.name || 'Dungeon'}`, 
+    'door_sliding', // Use a valid Material Icon
+    'F',
+    'dungeon'
+  );
+} else if (!nearestDungeon && this.activePrompts && this.activePrompts.has('dungeon')) {
+  this.hideInteractivePrompt('dungeon');
+}
 
     if (this.shaderEffects) {
       // Update shader effects
@@ -5940,54 +6019,54 @@ this.gameState = 'initializing';
     console.log(`Added ${this.doors.length} door interaction points`);
   }
 
-  updateDoorPrompt(nearestDoor) {
-    if (!this.doorPrompt) {
-      // Create prompt if it doesn't exist
-      this.doorPrompt = document.createElement('div');
-      this.doorPrompt.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        display: none;
-        font-family: Arial, sans-serif;
-        pointer-events: none;
-        z-index: 1000;
-      `;
-      document.body.appendChild(this.doorPrompt);
+  // updateDoorPrompt(nearestDoor) {
+  //   if (!this.doorPrompt) {
+  //     // Create prompt if it doesn't exist
+  //     this.doorPrompt = document.createElement('div');
+  //     this.doorPrompt.style.cssText = `
+  //       position: fixed;
+  //       top: 50%;
+  //       left: 50%;
+  //       transform: translate(-50%, -50%);
+  //       background: rgba(0, 0, 0, 0.8);
+  //       color: white;
+  //       padding: 15px 20px;
+  //       border-radius: 5px;
+  //       display: none;
+  //       font-family: Arial, sans-serif;
+  //       pointer-events: none;
+  //       z-index: 1000;
+  //     `;
+  //     document.body.appendChild(this.doorPrompt);
 
-      // Add keypress listener for door interaction
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyE') {
-          // Handle teleporter interaction
-          if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
-            this.executeTeleport();
-          }
-          // Handle door interaction
-          else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
-            this.executeDoorTeleport();
-          }
-        }
-      });
-    }
+  //     // Add keypress listener for door interaction
+  //     document.addEventListener('keydown', (e) => {
+  //       if (e.code === 'KeyE') {
+  //         // Handle teleporter interaction
+  //         if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
+  //           this.executeTeleport();
+  //         }
+  //         // Handle door interaction
+  //         else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
+  //           this.executeDoorTeleport();
+  //         }
+  //       }
+  //     });
+  //   }
 
-    // Only show door prompt if no teleporter prompt is active
-    const teleporterActive = this.teleportPrompt && this.teleportPrompt.style.display === 'block';
+  //   // Only show door prompt if no teleporter prompt is active
+  //   const teleporterActive = this.teleportPrompt && this.teleportPrompt.style.display === 'block';
 
-    if (nearestDoor && !teleporterActive) {
-      // this.doorPrompt.textContent = 'Press F to open door';
-      this.showInteractivePrompt('Open door', 'door_front', 'F', 'door');
-      this.doorPrompt.style.display = 'block';
-      this.activeDoor = nearestDoor;
-    } else {
-      this.doorPrompt.style.display = 'none';
-      this.activeDoor = null;
-    }
-  }
+  //   if (nearestDoor && !teleporterActive) {
+  //     // this.doorPrompt.textContent = 'Press F to open door';
+  //     this.showInteractivePrompt('Open door', 'door_front', 'F', 'door');
+  //     this.doorPrompt.style.display = 'block';
+  //     this.activeDoor = nearestDoor;
+  //   } else {
+  //     this.doorPrompt.style.display = 'none';
+  //     this.activeDoor = null;
+  //   }
+  // }
 
 
   executeDoorTeleport() {
@@ -7645,6 +7724,333 @@ updateTexturesForQualityLevel(level) {
           if (remainingBudget <= 0) break;
         }
       }
+    }
+  }
+
+  //   enterDungeon(dungeonObject) {
+  //   if (!dungeonObject || !dungeonObject.userData) return;
+    
+  //   console.log(`Entering dungeon: ${dungeonObject.userData.name}`);
+    
+  //   // Start with a visual transition effect
+  //   this.pauseControls();
+    
+  //   // Create flash effect
+  //   const flash = document.createElement('div');
+  //   flash.style.cssText = `
+  //     position: fixed;
+  //     top: 0;
+  //     left: 0;
+  //     right: 0;
+  //     bottom: 0;
+  //     background: ${dungeonObject.userData.portalElement?.material.color.getStyle() || 'white'};
+  //     opacity: 0;
+  //     pointer-events: none;
+  //     transition: opacity 0.8s ease;
+  //     z-index: 9999;
+  //   `;
+  //   document.body.appendChild(flash);
+    
+  //   // Play dungeon enter sound if available
+  //   if (this.resourceManager) {
+  //     this.resourceManager.playSound('dungeon_enter', 'effects');
+  //   }
+    
+  //   // Fade in
+  //   requestAnimationFrame(() => {
+  //     flash.style.opacity = '1';
+      
+  //     setTimeout(() => {
+  //       // Here you would typically load the dungeon map/scene
+  //       // For demonstration, we'll just simulate the transition
+        
+  //       console.log(`Loading dungeon: ${dungeonObject.userData.dungeonId}`);
+        
+  //       // TODO: Replace this with your actual dungeon loading code
+  //       // this.loadDungeon(dungeonObject.userData.dungeonId);
+        
+  //       // Notify any listeners that we're entering a dungeon
+  //       const dungeonEvent = new CustomEvent('dungeonEnter', { 
+  //         detail: {
+  //           dungeonId: dungeonObject.userData.dungeonId,
+  //           name: dungeonObject.userData.name,
+  //           difficulty: dungeonObject.userData.difficulty
+  //         }
+  //       });
+  //       document.dispatchEvent(dungeonEvent);
+        
+  //       // For demonstration, fade out and resume controls
+  //       setTimeout(() => {
+  //         flash.style.opacity = '0';
+          
+  //         setTimeout(() => {
+  //           flash.remove();
+  //           this.resumeControls();
+            
+  //           // Show a notification that dungeon is a placeholder
+  //           this.showNotification(`Entered ${dungeonObject.userData.name}`);
+  //         }, 800);
+  //       }, 1000);
+  //     }, 800);
+  //   });
+  // }
+
+    enterDungeon(dungeonObject) {
+    if (!dungeonObject || !dungeonObject.userData) return;
+    
+    console.log(`Entering dungeon: ${dungeonObject.userData.name}`);
+    
+    // Start with a visual transition effect
+    this.pauseControls();
+    
+    // Create flash effect
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: ${dungeonObject.userData.portalElement?.material.color.getStyle() || 'white'};
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 9999;
+    `;
+    document.body.appendChild(flash);
+    
+    // Play dungeon enter sound if available
+    if (this.resourceManager) {
+      this.resourceManager.playSound('dungeon_enter', 'effects');
+    }
+    
+    // Fade in
+    requestAnimationFrame(() => {
+      flash.style.opacity = '1';
+      
+      setTimeout(() => {
+        // Load the dungeon with the data from the entrance
+        this.loadDungeon(dungeonObject.userData.dungeonId, {
+          name: dungeonObject.userData.name,
+          difficulty: dungeonObject.userData.difficulty
+        });
+        
+        // Fade out the transition effect
+        setTimeout(() => {
+          flash.style.opacity = '0';
+          setTimeout(() => flash.remove(), 800);
+        }, 800);
+      }, 800);
+    });
+  }
+
+
+    /**
+   * Load and enter a procedurally generated dungeon
+   * @param {string} dungeonId - The ID of the dungeon to load
+   * @param {Object} options - Additional options for dungeon generation
+   * @returns {Promise<boolean>} - Whether the dungeon was loaded successfully
+   */
+  async loadDungeon(dungeonId, options = {}) {
+    console.log(`Loading dungeon: ${dungeonId}`, options);
+    
+    // Initialize dungeon generator if needed
+    if (!this.dungeonGenerator) {
+      console.log('Creating new DungeonGenerator');
+      this.dungeonGenerator = new DungeonGenerator(this, this.resourceManager);
+      
+      // Configure difficulty based on options
+      if (options.difficulty) {
+        this.dungeonGenerator.configureDifficulty(options.difficulty);
+      }
+    }
+    
+    // Store current world state to return later
+    this._prevWorldState = {
+      cameraPosition: this.camera.position.clone(),
+      controls: this.controls.enabled
+    };
+    
+    try {
+      // Pause controls during transition
+      this.pauseControls();
+      
+      // Clear existing scene elements that don't belong in the dungeon
+      this.clearNonDungeonElements();
+      
+      // Generate the new dungeon
+      const dungeonData = this.dungeonGenerator.createNew();
+      
+      if (!dungeonData || !dungeonData.playerSpawnPoint) {
+        throw new Error('Failed to generate valid dungeon');
+      }
+      
+      // Teleport the player to the dungeon start point
+      const teleported = this.dungeonGenerator.teleportPlayerToDungeon();
+      if (!teleported) {
+        throw new Error('Failed to teleport player to dungeon');
+      }
+      
+      // Track that we're now in a dungeon
+      this.currentLocation = {
+        type: 'dungeon',
+        id: dungeonId,
+        entryTime: Date.now(),
+        difficulty: options.difficulty || 'normal'
+      };
+      
+      // Adjust lighting and effects for dungeon atmosphere
+      this.setupDungeonLighting();
+      
+      // Show entrance message
+      this.showNotification(`Entered ${options.name || 'Dungeon'}`);
+      
+      // Resume controls
+      this.resumeControls();
+      
+      return true;
+    }
+    catch (error) {
+      console.error('Error loading dungeon:', error);
+      
+      // Attempt to recover by returning to previous position
+      if (this._prevWorldState) {
+        this.camera.position.copy(this._prevWorldState.cameraPosition);
+      }
+      
+      this.resumeControls();
+      this.showNotification('Failed to enter dungeon');
+      return false;
+    }
+  }
+  
+  /**
+   * Remove non-dungeon elements from the scene
+   */
+  clearNonDungeonElements() {
+    const objectsToRemove = [];
+    
+    this.scene.traverse(object => {
+      // Keep essential elements
+      if (object === this.camera || 
+          object === this.scene || 
+          !object.parent ||
+          object.userData?.isPersistent) {
+        return;
+      }
+      
+      // Remove everything except lights and essential UI
+      if (!object.isLight && !object.userData?.isUI) {
+        objectsToRemove.push(object);
+      }
+    });
+    
+    // Remove objects (do this in separate loop to avoid traversal issues)
+    objectsToRemove.forEach(object => {
+      if (object.parent) {
+        object.parent.remove(object);
+      }
+    });
+    
+    // Force garbage collection for removed objects
+    objectsToRemove.forEach(object => {
+      if (object.geometry) object.geometry.dispose();
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach(m => m.dispose());
+        } else {
+          object.material.dispose();
+        }
+      }
+    });
+  }
+  
+  /**
+   * Configure dungeon-specific lighting
+   */
+  setupDungeonLighting() {
+    // Remove existing ambient light
+    this.scene.traverse(object => {
+      if (object.isAmbientLight) {
+        this.scene.remove(object);
+      }
+    });
+    
+    // Add darker ambient light for dungeon atmosphere
+    const ambientLight = new THREE.AmbientLight(0x222222, 0.3);
+    this.scene.add(ambientLight);
+    
+    // Make sure player light is active
+    if (!this.playerLight) {
+      this.addPlayerLight();
+    }
+    this.playerLight.intensity = 0.8;
+    this.playerLight.distance = 10;
+    
+    // Apply fog for atmosphere
+    this.scene.fog = new THREE.Fog(0x000000, 5, 20);
+    
+    // If we have shader effects, apply dungeon-specific effects
+    if (this.shaderEffects) {
+      this.shaderEffects.setAmbientDarkness(0.7);
+    }
+  }
+  
+  /**
+   * Exit the current dungeon and return to the world
+   * @returns {Promise<boolean>} Whether the exit was successful
+   */
+  async exitDungeon() {
+    if (!this._prevWorldState) {
+      console.warn('No previous world state to return to');
+      return false;
+    }
+    
+    try {
+      // Pause controls during transition
+      this.pauseControls();
+      
+      // Clear dungeon elements
+      const dungeonObjects = this.scene.children.filter(obj => 
+        obj.userData && obj.userData.isDungeonElement);
+        
+      dungeonObjects.forEach(obj => {
+        this.scene.remove(obj);
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(m => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+      
+      // Return to previous position
+      this.camera.position.copy(this._prevWorldState.cameraPosition);
+      
+      // Restore world lighting
+      this.scene.fog = null;
+      
+      // Add back ambient light
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+      this.scene.add(ambientLight);
+      
+      // Clear dungeon state
+      this.currentLocation = null;
+      
+      // Show exit message
+      this.showNotification('Exited dungeon');
+      
+      // Resume controls
+      this.resumeControls();
+      
+      return true;
+    }
+    catch (error) {
+      console.error('Error exiting dungeon:', error);
+      this.resumeControls();
+      return false;
     }
   }
 
