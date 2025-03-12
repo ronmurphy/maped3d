@@ -110,11 +110,18 @@ configureDifficulty(difficulty) {
     }
     
     generateRooms() {
+        console.log('Generating dungeon rooms...');
         this.rooms = [];
         const center = Math.floor(this.dungeonSize / 2);
         
-        // Create a few rooms
-        for (let i = 0; i < this.maxRooms; i++) {
+        // Ensure we create at least 3 rooms
+        let roomsCreated = 0;
+        const minRequiredRooms = 3;
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (roomsCreated < minRequiredRooms && attempts < maxAttempts) {
+            attempts++;
             const roomWidth = Math.floor(Math.random() * (this.roomSizeMax - this.roomSizeMin)) + this.roomSizeMin;
             const roomHeight = Math.floor(Math.random() * (this.roomSizeMax - this.roomSizeMin)) + this.roomSizeMin;
             
@@ -144,6 +151,10 @@ configureDifficulty(difficulty) {
             if (!overlaps && 
                 x > 0 && x + roomWidth < this.dungeonSize && 
                 z > 0 && z + roomHeight < this.dungeonSize) {
+                
+                roomsCreated++;
+                console.log(`Created room ${roomsCreated}: ${roomWidth}x${roomHeight} at (${x},${z})`);
+               
                 
                 // Add the room to our list
                 const room = {
@@ -542,8 +553,25 @@ const wallMaterial = new THREE.MeshStandardMaterial({
                     this.scene3D.scene.add(wallMesh);
                     
                     // Add collider
+                    // if (this.physics) {
+                    //     this.physics.addWall(worldX, 0, worldZ, this.cellSize, this.wallHeight);
+                    // }
+
                     if (this.physics) {
-                        this.physics.addWall(worldX, 0, worldZ, this.cellSize, this.wallHeight);
+                        if (typeof this.physics.addWall === 'function') {
+                            this.physics.addWall(worldX, 0, worldZ, this.cellSize, this.wallHeight);
+                        } else {
+                            // Log warning only once
+                            if (!this._physicsFunctionsWarningLogged) {
+                                console.warn('Physics system missing addWall method - using alternative collision detection');
+                                this._physicsFunctionsWarningLogged = true;
+                            }
+                            
+                            // Alternative: Use checkCollision method if available
+                            if (typeof this.physics.addCollisionBox === 'function') {
+                                this.physics.addCollisionBox(worldX, this.wallHeight/2, worldZ, this.cellSize, this.wallHeight, this.cellSize);
+                            }
+                        }
                     }
                 }
             }
