@@ -20,6 +20,7 @@ if (typeof window.Storyboard === "undefined") {
       // Current working graph data - persists between editor sessions
       this.currentGraph = {
         id: "graph_default",
+        name: "Default Story",
         nodes: new Map(), // Persistent node data
         connections: [], // Persistent connection data
         dirty: false // Whether data has changed since last save
@@ -403,6 +404,18 @@ if (typeof window.Storyboard === "undefined") {
         box-shadow: 0 0 10px rgba(255,255,255,0.3);
       }
 
+
+.storyboard-name-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 16px;
+  background: #242424;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
     `;
 
       document.head.appendChild(styles);
@@ -442,11 +455,13 @@ if (typeof window.Storyboard === "undefined") {
         // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
         drawer.innerHTML = `
       <div class="storyboard-editor" id="sb-editor">
+
         <div class="storyboard-canvas" id="storyboard-canvas">
           <!-- Nodes will be added here dynamically -->
         </div>
         <div class="storyboard-sidebar" id="sb-sidebar">
           <div class="storyboard-toolbox" id="sb-toolbox">
+           <input type="text" id="story-name-input" class="storyboard-name-input" placeholder="Story name" value="${this.currentGraph.name || 'Unnamed Story'}"><br>
             <div title="Dialog" class="storyboard-tool" id="sb-tool-dialog" data-type="dialog"><i class="material-icons">chat</i></div>
             <div title="Choice" class="storyboard-tool" id="sb-tool-choice" data-type="choice"><i class="material-icons">check_circle</i></div>
             <div title="Trigger" class="storyboard-tool" id="sb-tool-trigger" data-type="trigger"><i class="material-icons">flash_on</i></div>
@@ -538,6 +553,7 @@ if (typeof window.Storyboard === "undefined") {
 
       // Create clean graph data without DOM references
       const cleanGraph = {
+        name: this.currentGraph.name || "Unnamed Story", // Include the name property
         nodes: [],
         connections: []
       };
@@ -642,24 +658,20 @@ if (typeof window.Storyboard === "undefined") {
           });
         }
 
-        // Set up test button
-// const saveButton = this.editor.querySelector('#save-storyboard');
-// if (saveButton) {
-//   // Set up a container for the buttons
-//   const buttonsContainer = saveButton.parentElement;
-  
-//   // Create test button
-//   const testButton = document.createElement('sl-button');
-//   testButton.id = 'test-storyboard';
-//   testButton.variant = 'success';
-//   testButton.innerHTML = `
-//     <span class="material-icons" style="margin-right: 4px; font-size: 16px;">play_arrow</span>
-//     Test Story
-//   `;
-//   testButton.style.marginRight = '8px';
-  
-//   // Insert before save button
-//   buttonsContainer.insertBefore(testButton, saveButton);
+        const nameInput = this.editor.querySelector('#story-name-input');
+        if (nameInput) {
+          console.log("Setting up story name input");
+          
+          // Initial value
+          nameInput.value = this.currentGraph.name || 'Unnamed Story';
+          
+          // Update name when input changes
+          nameInput.addEventListener('input', (e) => {
+            this.currentGraph.name = e.target.value;
+            this.currentGraph.dirty = true;
+            console.log(`Story name updated: ${this.currentGraph.name}`);
+          });
+        }
   
 
 
@@ -1311,21 +1323,22 @@ case 'choice':
     /**
  * Export the current storyboard to a JSON file
  */
-exportToJSON() {
-  // Get the current graph
-  const storyGraph = this.currentGraph;
-  if (!storyGraph) {
-    console.error('No story available to export');
-    return;
-  }
-  
-  // Create a JSON-safe copy of the data
-  const graphData = {
-    id: this.currentGraphId,
-    timestamp: new Date().toISOString(),
-    nodes: {},
-    connections: []
-  };
+    exportToJSON() {
+      // Get the current graph
+      const storyGraph = this.currentGraph;
+      if (!storyGraph) {
+        console.error('No story available to export');
+        return;
+      }
+      
+      // Create a JSON-safe copy of the data
+      const graphData = {
+        id: this.currentGraphId,
+        name: storyGraph.name || "Unnamed Story", // Include the name
+        timestamp: new Date().toISOString(),
+        nodes: {},
+        connections: []
+      };
   
   // Handle nodes (which should be a Map in your case)
   if (storyGraph.nodes instanceof Map) {
@@ -1361,7 +1374,13 @@ exportToJSON() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
   const downloadAnchorNode = document.createElement('a');
   downloadAnchorNode.setAttribute("href", dataStr);
-  downloadAnchorNode.setAttribute("download", `storyboard_${this.currentGraphId || 'default'}_${new Date().getTime()}.storyboard.json`);
+  // downloadAnchorNode.setAttribute("download", `storyboard_${this.currentGraphId || 'default'}_${new Date().getTime()}.storyboard.json`);
+  
+  const safeFileName = (this.currentGraph.name || 'Unnamed Story')
+  .replace(/[^a-z0-9]/gi, '_')
+  .toLowerCase();
+downloadAnchorNode.setAttribute("download", `${safeFileName}_${new Date().getTime()}.storyboard.json`);
+  
   document.body.appendChild(downloadAnchorNode);
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
@@ -1446,6 +1465,7 @@ loadGraphFromJSON(jsonData) {
   const graphId = jsonData.id || `graph_${Date.now()}`;
   const newGraph = {
     id: graphId,
+    name: jsonData.name || "Imported Story", // Add name handling
     nodes: new Map(),
     connections: [],
     dirty: false
@@ -1629,7 +1649,6 @@ addZoomPanControls() {
   `;
   
 
-// In the addZoomPanControls method, where you add the export button:
 
 // Add Export JSON button
 const exportBtn = document.createElement("button");
@@ -1683,8 +1702,30 @@ importBtn.addEventListener("click", (e) => {
   this.importFromJSON();
 });
 
-// Add both buttons to the control container
-// zoomControls.appendChild(exportBtn);
+const clearAllBtn = document.createElement("button");
+clearAllBtn.textContent = "Clear All Stories";
+clearAllBtn.className = "storyboard-button clear-all-btn";
+clearAllBtn.style.cssText = `
+  background-color: #F44336;
+  margin-right: 8px;
+  padding: 4px;
+height: 36px;
+border: none;
+color: white;
+border-radius: 4px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+`;
+clearAllBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  this.clearAllStoryboards();
+});
+
+// Add to UI
+
 
 
 
@@ -1694,6 +1735,7 @@ importBtn.addEventListener("click", (e) => {
   zoomControls.appendChild(zoomInBtn);
   zoomControls.appendChild(zoomDisplay);
   zoomControls.appendChild(zoomResetBtn);
+  zoomControls.appendChild(clearAllBtn);
   zoomControls.appendChild(importBtn);
   zoomControls.appendChild(exportBtn);
   
@@ -1762,6 +1804,46 @@ importBtn.addEventListener("click", (e) => {
       this.applyCanvasTransform(canvas);
     });
   });
+}
+
+// Add this method to Storyboard class
+clearAllStoryboards() {
+  // Confirm with user
+  if (confirm('Are you sure you want to delete ALL storyboards? This cannot be undone.')) {
+    console.log('Clearing all storyboards');
+    
+    // Clear collections
+    this.storyGraphs.clear();
+    this.triggeredStories.clear();
+    
+    // Reset current graph to empty state
+    this.currentGraph = {
+      id: "graph_default",
+      nodes: new Map(),
+      connections: [],
+      dirty: false
+    };
+    
+    // Save empty state to localStorage
+    this.saveToStorage();
+    
+    // Refresh UI if editor is open
+    if (this.editor && this.editorState.canvasElement) {
+      this.restoreNodesFromData(this.editorState.canvasElement);
+    }
+    
+    // Show confirmation
+    const toast = document.createElement("sl-alert");
+    toast.variant = "success";
+    toast.closable = true;
+    toast.duration = 3000;
+    toast.innerHTML = `
+      <sl-icon slot="icon" name="trash"></sl-icon>
+      All storyboards cleared!
+    `;
+    document.body.appendChild(toast);
+    toast.toast();
+  }
 }
 
 /**
@@ -2106,6 +2188,16 @@ applyCanvasTransform(canvas) {
 
       // Create unique ID
       const nodeId = "node_sample_" + Date.now();
+
+      if (!this.currentGraph.id) {
+        this.currentGraph.id = "graph_" + Date.now();
+      }
+      
+      // Set a default name if not set
+      if (!this.currentGraph.name) {
+        this.currentGraph.name = "My Story";
+        this.currentGraph.dirty = true;
+      }
 
       // Create sample node data
       const nodeData = {

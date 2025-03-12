@@ -1,5 +1,6 @@
 {
-  "timestamp": "2025-03-11T17:42:40.658Z",
+  "name": "Testing Story",
+  "timestamp": "2025-03-12T00:42:31.598Z",
   "nodes": {
     "node_sample_1741700252672": {
       "type": "dialog",
@@ -66,6 +67,54 @@
     }
   },
   "connections": [
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700296952",
+      "to": "node_1741700319231",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700296952",
+      "to": "node_1741700319231",
+      "path": null,
+      "option": null
+    },
     {
       "from": "node_sample_1741700252672",
       "to": "node_1741700260503",

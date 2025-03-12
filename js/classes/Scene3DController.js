@@ -470,6 +470,8 @@ this.activeStoryTrigger = null;
     }, 1000);
   }
 
+  
+
   // Enhanced method to thoroughly dispose of materials including all textures
   disposeMaterial(material) {
     if (!material) return;
@@ -1497,30 +1499,11 @@ runStoryboard(storyId = null) {
 
   handleKeyDown(event) {
     switch (event.code) {
-      case "Escape":
-  // Force resume controls if they're paused
-  if (this._controlsPaused) {
-    console.log('Force-resuming controls with Escape key');
-    
-    // Clean up any active story UI
-    if (this.storyboardTester) {
-      if (this.storyboardTester.currentDialog) {
-        this.storyboardTester.closeCurrentDialog();
-      }
-      if (this.storyboardTester.currentOverlay) {
-        this.storyboardTester.closeCurrentOverlay();
-      }
-    }
-    
-    // Reset story state
-    this.activeStoryTrigger = null;
-    this._storyInProgress = false;
-    this._stopStoryMonitoring = true;
-    
-    // Resume controls
-    this.resumeControls();
-  }
-  break;
+case "KeyH": // H for help
+if (this._controlsPaused) {
+  this.forceResumeControls();
+}
+break;
       case "ArrowUp":
       case "KeyW":
         this.moveState.forward = true;
@@ -1644,40 +1627,156 @@ case "KeyT":
       case "KeyI":
         this.toggleInventory();
         break;
-      case "KeyF":
-        // Handle interactions
-        if (this.nearestProp && !this.inventory.has(this.nearestProp.userData.id)) {
-          // Pick up the prop
-          const propData = {
-            id: this.nearestProp.userData.id,
-            name: this.nearestProp.userData.name || 'Prop',
-            image: this.nearestProp.material?.map?.image?.src
-          };
+        case "KeyF":
+  // Handle different kinds of interactions based on active prompt type
+  if (this.currentPromptType === 'story' && this.nearestStory) {
+    console.log('Story trigger activated via F key');
+    this.handleStoryTrigger(this.nearestStory);
+  }
+  else if (this.currentPromptType === 'encounter' && this.nearestEncounter) {
+    console.log('Encounter activated via F key');
+    this.handleEncounter(this.nearestEncounter);
+  }
+  else if (this.currentPromptType === 'splashArt' && this.nearestSplashArt) {
+    console.log('Splash art activated via F key');
+    this.showSplashArt(this.nearestSplashArt);
+  }
+  else if (this.currentPromptType === 'door' && this.activeDoor) {
+    console.log('Door activated via F key');
+    this.executeDoorTeleport();
+  }
+  else if (this.currentPromptType === 'teleport' && this.activeTeleporter) {
+    console.log('Teleporter activated via F key');
+    this.executeTeleport();
+  }
+  else if (this.currentPromptType === 'pickup' && this.nearestProp) {
+    console.log('Prop pickup activated via F key');
+    // Pick up the prop
+    const propData = {
+      id: this.nearestProp.userData.id,
+      name: this.nearestProp.userData.name || 'Prop',
+      image: this.nearestProp.material?.map?.image?.src
+    };
 
-          this.addToInventory(propData);
+    this.addToInventory(propData);
 
-          // Remove prop from scene
-          this.scene.remove(this.nearestProp);
-          this.nearestProp = null;
+    // Remove prop from scene
+    this.scene.remove(this.nearestProp);
+    this.nearestProp = null;
+    this.hideInteractivePrompt('pickup');
+  }
+  break;
 
-          // Hide prompt
-          if (this.pickupPrompt) {
-            this.pickupPrompt.style.display = 'none';
-          }
-        } else if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
-          this.executeTeleport();
-        }
-        else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
-          this.executeDoorTeleport();
-        }
-        else if (this.nearestSplashArt && !this.activeSplashArt) {
-          this.showSplashArt(this.nearestSplashArt);
-        }
-        else if (this.nearestEncounter) {
-          this.handleEncounter(this.nearestEncounter);
-        }
-        break;
+  case "KeyF":
+  // Handle different kinds of interactions based on active prompt type
+  if (this.currentPromptType === 'story' && this.nearestStory) {
+    console.log('Story trigger activated via F key');
+    this.handleStoryTrigger(this.nearestStory);
+  }
+  else if (this.currentPromptType === 'encounter' && this.nearestEncounter) {
+    console.log('Encounter activated via F key');
+    this.handleEncounter(this.nearestEncounter);
+  }
+  else if (this.currentPromptType === 'splashArt' && this.nearestSplashArt) {
+    console.log('Splash art activated via F key');
+    this.showSplashArt(this.nearestSplashArt);
+  }
+  else if (this.currentPromptType === 'door' && this.activeDoor) {
+    console.log('Door activated via F key');
+    this.executeDoorTeleport();
+  }
+  else if (this.currentPromptType === 'teleport' && this.activeTeleporter) {
+    console.log('Teleporter activated via F key');
+    this.executeTeleport();
+  }
+  else if (this.currentPromptType === 'pickup' && this.nearestProp) {
+    console.log('Prop pickup activated via F key');
+    // Pick up the prop
+    const propData = {
+      id: this.nearestProp.userData.id,
+      name: this.nearestProp.userData.name || 'Prop',
+      image: this.nearestProp.material?.map?.image?.src
+    };
+
+    this.addToInventory(propData);
+
+    // Remove prop from scene
+    this.scene.remove(this.nearestProp);
+    this.nearestProp = null;
+    this.hideInteractivePrompt('pickup');
+  }
+  break;
     }
+
+  //     case "KeyF":
+  // // Check if we have a nearby story marker
+  // if (this.nearestStory && !this.activeStoryMarker) {
+  //   console.log(`Interacting with story marker: ${this.nearestStory.userData.id}`);
+  //   this.activeStoryMarker = this.nearestStory;
+    
+  //   // Mark as triggered if this is a one-time trigger
+  //   if (this.nearestStory.userData.triggerOnce) {
+  //     this.nearestStory.userData.triggered = true;
+  //   }
+    
+  //   // Hide prompt
+  //   if (this.storyPrompt) {
+  //     this.storyPrompt.style.display = 'none';
+  //   }
+    
+  //   // Pause controls
+  //   this.pauseControls();
+    
+  //   // Run the specified story
+  //   const storyId = this.nearestStory.userData.storyId;
+  //   if (storyId) {
+  //     console.log(`Running story with ID: ${storyId}`);
+  //     this.runStoryboard(storyId);
+  //   } else {
+  //     console.log('No specific story ID, using default');
+  //     this.runStoryboard();
+  //   }
+    
+  //   // Set timeout to release marker lock
+  //   setTimeout(() => {
+  //     console.log('Story marker lock released');
+  //     this.activeStoryMarker = null;
+  //   }, 5000);
+  // }
+  
+  // // Then handle other F interactions (doors, etc.)
+  // else if (this.nearestProp && !this.inventory.has(this.nearestProp.userData.id)) {
+  //         // Pick up the prop
+  //         const propData = {
+  //           id: this.nearestProp.userData.id,
+  //           name: this.nearestProp.userData.name || 'Prop',
+  //           image: this.nearestProp.material?.map?.image?.src
+  //         };
+
+  //         this.addToInventory(propData);
+
+  //         // Remove prop from scene
+  //         this.scene.remove(this.nearestProp);
+  //         this.nearestProp = null;
+
+  //         // Hide prompt
+  //         if (this.pickupPrompt) {
+  //           this.pickupPrompt.style.display = 'none';
+  //         }
+  //       } else if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
+  //         this.executeTeleport();
+  //       }
+  //       else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
+  //         this.executeDoorTeleport();
+  //       }
+  //       else if (this.nearestSplashArt && !this.activeSplashArt) {
+  //         this.showSplashArt(this.nearestSplashArt);
+  //       }
+  //       else if (this.nearestEncounter) {
+  //         this.handleEncounter(this.nearestEncounter);
+  //       }
+  //       break;
+  //   }
   }
 
   handleKeyUp(event) {
@@ -1810,6 +1909,25 @@ case "KeyT":
 
       this._controlsPaused = false;
     }
+  }
+
+  forceResumeControls() {
+    console.log('Force-resuming controls');
+    
+    // Reset all control state flags
+    this._controlsPaused = false;
+    this.keysDisabled = false;
+    this.mouseDisabled = false;
+    this.pointerLocked = false;
+    
+    // Re-enable pointer lock
+    if (this.controls && this.controls.isLocked === false) {
+      document.body.style.cursor = 'none';
+      this.controls.lock();
+    }
+    
+    // Re-enable event listeners
+    document.body.style.pointerEvents = 'auto';
   }
 
   createRoomGeometry(room) {
@@ -2993,59 +3111,40 @@ case "KeyT":
             const elevationData = this.getElevationAtPoint(storyX, storyZ);
             const storyElevation = elevationData.elevation;
             
-            // Store marker with all needed data
-            const triggerRadius = marker.data?.radius || 5; //2;
-            const storyboardInfo = {
+            // Create visual marker object
+            const storyGeometry = new THREE.SphereGeometry(0.4, 16, 8);
+            const storyMaterial = new THREE.MeshBasicMaterial({
+              color: 0x9c27b0,  // Purple
+              transparent: true,
+              opacity: 0.8,
+            });
+            
+            const storyMarker = new THREE.Mesh(storyGeometry, storyMaterial);
+            storyMarker.position.set(storyX, storyElevation + 1.2, storyZ);
+            
+            // Add pulsing effect
+            const pulse = () => {
+              if (storyMarker && storyMarker.scale) {
+                const scale = 1 + Math.sin(Date.now() * 0.003) * 0.2;
+                storyMarker.scale.set(scale, scale, scale);
+                requestAnimationFrame(pulse);
+              }
+            };
+            pulse();
+            
+            // Set marker data for interaction
+            storyMarker.userData = {
+              type: 'storyboard',
               id: marker.id,
-              position: new THREE.Vector3(storyX, storyElevation + 0.5, storyZ), // Slightly above ground
-              radius: triggerRadius,
               storyId: marker.data?.storyId || null,
-              triggerOnce: marker.data?.triggerOnce !== false, // Default to true
-              triggered: false, // Track if this has been triggered
+              triggerOnce: marker.data?.triggerOnce !== false,
+              triggered: false,
               label: marker.data?.label || "Story Event"
             };
-
-            // Always add a visual indicator (not just in debug mode)
-const indicatorGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-const indicatorMaterial = new THREE.MeshBasicMaterial({
-  color: 0xFF00FF, // Bright pink for visibility
-  transparent: true,
-  opacity: 0.7,
-});
-
-const indicatorMesh = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
-indicatorMesh.position.copy(storyboardInfo.position);
-this.scene.add(indicatorMesh);
-storyboardInfo.visualIndicator = indicatorMesh;
-
-// Also add a pulsing light to make it even more visible
-const indicatorLight = new THREE.PointLight(0xFF00FF, 1, 3);
-indicatorLight.position.copy(storyboardInfo.position);
-this.scene.add(indicatorLight);
-storyboardInfo.indicatorLight = indicatorLight;
             
-            // Store in array for proximity checks
-            if (!this.storyboardTriggers) {
-              this.storyboardTriggers = [];
-            }
-            this.storyboardTriggers.push(storyboardInfo);
-            
-            // Add visual indicator for debugging
-            if (this.debugVisuals) {
-              const geometry = new THREE.CylinderGeometry(triggerRadius, triggerRadius, 0.1, 32);
-              const material = new THREE.MeshBasicMaterial({
-                color: 0x673AB7,
-                transparent: true,
-                opacity: 0.3,
-                visible: true
-              });
-              
-              const indicatorMesh = new THREE.Mesh(geometry, material);
-              indicatorMesh.position.copy(storyboardInfo.position);
-              indicatorMesh.userData.isStoryboardIndicator = true;
-              this.scene.add(indicatorMesh);
-              storyboardInfo.indicator = indicatorMesh;
-            }
+            // Add to scene
+            this.scene.add(storyMarker);
+            console.log(`Added storyboard marker to scene: ${marker.id}`);
             
             break;
 
@@ -4782,36 +4881,33 @@ this.scene.add(floor);
       });
     }
 
-    // Add this in processInteractiveElements() after other proximity checks:
-// Check storyboard triggers
-let nearestStoryTrigger = null;
-let storyTriggerDistance = Infinity;
-
-if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
-  // Only check if we aren't already handling an active story
-  if (!this.activeStoryTrigger) {
-    this.storyboardTriggers.forEach(trigger => {
-      // Skip if this is a one-time trigger that has already been triggered
-      if (trigger.triggerOnce && trigger.triggered) {
-        return;
-      }
-      
-      const distance = playerPosition.distanceTo(trigger.position);
-      
-      // Check if player is within trigger radius
-      if (distance < trigger.radius && distance < storyTriggerDistance) {
-        storyTriggerDistance = distance;
-        nearestStoryTrigger = trigger;
-      }
-    });
-  }
-}
-
-// Handle story trigger
-if (nearestStoryTrigger && !this.activeStoryTrigger && !this.activeSplashArt) {
-  // Don't show prompt, just trigger the story directly when in range
-  this.handleStoryTrigger(nearestStoryTrigger);
-}
+    let nearestStoryTrigger = null;
+    let storyTriggerDistance = Infinity;
+    
+    if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
+      this.storyboardTriggers.forEach(trigger => {
+        // Skip if this is a one-time trigger that has already been triggered
+        if (trigger.triggerOnce && trigger.triggered) {
+          return;
+        }
+        
+        const distance = playerPosition.distanceTo(trigger.position);
+        
+        // Check if player is within trigger radius
+        if (distance < trigger.radius && distance < storyTriggerDistance) {
+          storyTriggerDistance = distance;
+          nearestStoryTrigger = trigger;
+        }
+      });
+    }
+    
+    // Update the nearest interactive element info
+    if (nearestStoryTrigger && (!this.nearestInteractive || storyTriggerDistance < this.nearestInteractiveDistance)) {
+      this.nearestInteractive = nearestStoryTrigger;
+      this.nearestInteractiveDistance = storyTriggerDistance;
+      this.nearestInteractiveType = 'storyboard';
+      this.showInteractivePrompt(nearestStoryTrigger.label || 'Story', 'chat');
+    }
 
     // Update UI prompts based on nearest interactive element
     this.updateTeleportPrompt(nearestTeleporter);
@@ -5125,8 +5221,22 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
       }
     });
 
+// For teleporter prompts - replace the existing code with:
+if (nearestTeleporter) {
+  this.showInteractivePrompt(
+    'Teleport',
+    'swap_vertical_circle',
+    'F',
+    'teleport'
+  );
+  this.activeTeleporter = nearestTeleporter;
+} else if (!nearestTeleporter && this.activePrompts && this.activePrompts.has('teleport')) {
+  this.hideInteractivePrompt('teleport');
+  this.activeTeleporter = null;
+}
+
     // Show/hide teleport prompt based on proximity
-    this.updateTeleportPrompt(nearestTeleporter);
+    // this.updateTeleportPrompt(nearestTeleporter);
 
     let nearestDoor = null;
     shortestDistance = Infinity;
@@ -5139,8 +5249,22 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
       }
     });
 
+    const teleporterActive = this.activePrompts && this.activePrompts.has('teleport');
+    if (nearestDoor && !teleporterActive) {
+      this.showInteractivePrompt(
+        'Open door',
+        'door_front',
+        'F',
+        'door'
+      );
+      this.activeDoor = nearestDoor;
+    } else if (!nearestDoor && this.activePrompts && this.activePrompts.has('door')) {
+      this.hideInteractivePrompt('door');
+      this.activeDoor = null;
+    }
+    
     // Show/hide door prompt based on proximity
-    this.updateDoorPrompt(nearestDoor);
+    // this.updateDoorPrompt(nearestDoor);
 
     // Animate teleporter particles
     this.scene.children.forEach(child => {
@@ -5178,16 +5302,28 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
       }
     });
 
+if (nearestSplashArt && !this.activeSplashArt) {
+  this.showInteractivePrompt(
+    nearestSplashArt.data.inspectMessage || 'Inspect',
+    'image',
+    'F',
+    'splashArt'
+  );
+  this.nearestSplashArt = nearestSplashArt;
+} else if (!nearestSplashArt && this.activePrompts && this.activePrompts.has('splashArt')) {
+  this.hideInteractivePrompt('splashArt');
+  this.nearestSplashArt = null;
+}
     // Show/hide splash art prompt
-    if (nearestSplashArt && !this.activeSplashArt) {
-      const prompt = this.createSplashArtPrompt();
-      prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press F to inspect';
-      prompt.style.display = 'block';
-      this.nearestSplashArt = nearestSplashArt;
-    } else if (!nearestSplashArt && this.splashArtPrompt) {
-      this.splashArtPrompt.style.display = 'none';
-      this.nearestSplashArt = null;
-    }
+    // if (nearestSplashArt && !this.activeSplashArt) {
+    //   const prompt = this.createSplashArtPrompt();
+    //   prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press F to inspect';
+    //   prompt.style.display = 'block';
+    //   this.nearestSplashArt = nearestSplashArt;
+    // } else if (!nearestSplashArt && this.splashArtPrompt) {
+    //   this.splashArtPrompt.style.display = 'none';
+    //   this.nearestSplashArt = null;
+    // }
 
     // const playerPosition = this.camera.position.clone();
     let nearestProp = null;
@@ -5202,16 +5338,32 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
       }
     });
 
-    // Show/hide pickup prompt
     if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
-      const prompt = this.createPickupPrompt();
-      prompt.textContent = 'Press F to pick up';
-      prompt.style.display = 'block';
+      this.showInteractivePrompt(
+        'Pick up',
+        'pan_tool',
+        'F',
+        'pickup'
+      );
       this.nearestProp = nearestProp;
-    } else if (this.pickupPrompt) {
-      this.pickupPrompt.style.display = 'none';
+    } else if (!nearestProp && this.activePrompts && this.activePrompts.has('pickup')) {
+      this.hideInteractivePrompt('pickup');
       this.nearestProp = null;
     }
+
+    // For splash art prompts - replace the existing code with:
+
+
+    // Show/hide pickup prompt
+    // if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
+    //   const prompt = this.createPickupPrompt();
+    //   prompt.textContent = 'Press F to pick up';
+    //   prompt.style.display = 'block';
+    //   this.nearestProp = nearestProp;
+    // } else if (this.pickupPrompt) {
+    //   this.pickupPrompt.style.display = 'none';
+    //   this.nearestProp = null;
+    // }
 
     // // Find nearest encounter marker
     let nearestEncounter = null;
@@ -5230,48 +5382,80 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
       });
     }
 
-    // Show or hide encounter prompt
-    if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
-      const prompt = this.createEncounterPrompt();
-      prompt.textContent = 'Press F to approach monster';
-      prompt.style.display = 'block';
-      this.nearestEncounter = nearestEncounter;
-    } else if (!nearestEncounter && this.encounterPrompt) {
-      this.encounterPrompt.style.display = 'none';
-      this.nearestEncounter = null;
-    }
-
-    // storyboard triggers
-    let nearestStoryTrigger = null;
-let storyTriggerDistance = Infinity;
-
-if (this.storyboardTriggers && this.storyboardTriggers.length > 0 && !this.activeStoryTrigger) {
-  const playerPos = this.camera.position;
-  
-  this.storyboardTriggers.forEach(trigger => {
-    // Skip if this has been triggered once and is a one-time trigger
-    if (trigger.triggerOnce && trigger.triggered) {
-      return;
-    }
-    
-    const distance = playerPos.distanceTo(trigger.position);
-    console.log(`Story: ${trigger.id} distance=${distance.toFixed(2)}, radius=${trigger.radius}`);
-    
-    if (distance < trigger.radius && distance < storyTriggerDistance) {
-      storyTriggerDistance = distance;
-      nearestStoryTrigger = trigger;
-    }
-  });
-  
-  // If we found a trigger and we're not already processing a story
-  if (nearestStoryTrigger) {
-    console.log(`Player is in range of story trigger: ${nearestStoryTrigger.id}`);
-    // this.handleStoryTrigger(nearestStoryTrigger);
-    this.pauseControls();
-    this.runStoryboard();
-    this.resumeControls();
-  }
+// For encounter prompts - replace the existing code with:
+if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
+  this.showInteractivePrompt(
+    'Approach monster',
+    'pets',
+    'F',
+    'encounter'
+  );
+  this.nearestEncounter = nearestEncounter;
+} else if (!nearestEncounter && this.activePrompts && this.activePrompts.has('encounter')) {
+  this.hideInteractivePrompt('encounter');
+  this.nearestEncounter = null;
 }
+
+    // Show or hide encounter prompt
+    // if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
+    //   const prompt = this.createEncounterPrompt();
+    //   prompt.textContent = 'Press F to approach monster';
+    //   prompt.style.display = 'block';
+    //   this.nearestEncounter = nearestEncounter;
+    // } else if (!nearestEncounter && this.encounterPrompt) {
+    //   this.encounterPrompt.style.display = 'none';
+    //   this.nearestEncounter = null;
+    // }
+
+
+
+    // Find nearest storyboard marker (add this in animate() where you check for encounters)
+    let nearestStory = null;
+    let minStoryDist = 3; // Detection range
+    
+    // Only check if we're not already in an encounter or story
+    if (!this.activeStoryMarker && !this.activeEncounter && !this.activeSplashArt) {
+      // Loop through scene objects to find storyboard markers
+      this.scene.children.forEach(object => {
+        if (object.userData && object.userData.type === 'storyboard') {
+          // Skip if one-time trigger that's already been triggered
+          if (object.userData.triggerOnce && object.userData.triggered) {
+            return;
+          }
+          
+          const dist = playerPosition.distanceTo(object.position);
+          if (dist < minStoryDist && (!nearestStory || dist < shortestDistance)) {
+            shortestDistance = dist;
+            nearestStory = object;
+          }
+        }
+      });
+    }
+
+    if (nearestStory && !this.activeStoryMarker && !this.activeEncounter && !this.activeSplashArt) {
+      this.showInteractivePrompt(
+        nearestStory.userData.label || 'Interact', 
+        'auto_stories', 
+        'F',
+        'story'
+      );
+      this.nearestStory = nearestStory;
+    } else if (!nearestStory && this.activePrompts && this.activePrompts.has('story')) {
+      this.hideInteractivePrompt('story');
+      this.nearestStory = null;
+    }
+    
+    // Show or hide story prompt
+    // if (nearestStory && !this.activeStoryMarker && !this.activeEncounter && !this.activeSplashArt) {
+    //   const prompt = this.createStoryPrompt();
+    //   prompt.textContent = `Press F to ${nearestStory.userData.label || 'Interact'}`;
+    //   prompt.style.display = 'block';
+    //   this.nearestStory = nearestStory;
+    // } else if (!nearestStory && this.storyPrompt) {
+    //   this.storyPrompt.style.display = 'none';
+    //   this.nearestStory = null;
+    // }
+  // this.showInteractivePrompt(nearestStoryTrigger.label || 'Story', 'chat');
 
 
     if (this.shaderEffects) {
@@ -5281,12 +5465,6 @@ if (this.storyboardTriggers && this.storyboardTriggers.length > 0 && !this.activ
       // Create footstep effects if moving
       this.createFootstepEffect();
     }
-
-    // Update physics and camera height
-    // this.camera.position.y = this.physics.update();
-    // this.camera.position.y = this.physics.update(this.deltaTime || 0.016);
-
-    // this.camera.position.y = this.physics.update(this.deltaTime);
 
     // Check if player just landed
     this.camera.position.y = this.physics.update(this.deltaTime);
@@ -5778,7 +5956,8 @@ this.gameState = 'initializing';
     const teleporterActive = this.teleportPrompt && this.teleportPrompt.style.display === 'block';
 
     if (nearestDoor && !teleporterActive) {
-      this.doorPrompt.textContent = 'Press F to open door';
+      // this.doorPrompt.textContent = 'Press F to open door';
+      this.showInteractivePrompt('Open door', 'door_front', 'F', 'door');
       this.doorPrompt.style.display = 'block';
       this.activeDoor = nearestDoor;
     } else {
@@ -6342,56 +6521,203 @@ this.gameState = 'initializing';
     });
   }
 
-  createEncounterPrompt() {
-    if (!this.encounterPrompt) {
-      this.encounterPrompt = document.createElement('div');
-      this.encounterPrompt.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        display: none;
-        font-family: Arial, sans-serif;
-        pointer-events: none;
-        z-index: 1000;
-      `;
-      document.body.appendChild(this.encounterPrompt);
+  // createEncounterPrompt() {
+  //   if (!this.encounterPrompt) {
+  //     this.encounterPrompt = document.createElement('div');
+  //     this.encounterPrompt.style.cssText = `
+  //       position: fixed;
+  //       top: 50%;
+  //       left: 50%;
+  //       transform: translate(-50%, -50%);
+  //       background: rgba(0, 0, 0, 0.8);
+  //       color: white;
+  //       padding: 15px 20px;
+  //       border-radius: 5px;
+  //       display: none;
+  //       font-family: Arial, sans-serif;
+  //       pointer-events: none;
+  //       z-index: 1000;
+  //     `;
+  //     document.body.appendChild(this.encounterPrompt);
 
-      // Add keypress listener for encounter interaction
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyE' && this.nearestEncounter) {
-          this.handleEncounter(this.nearestEncounter);
-        }
-      });
-    }
-    return this.encounterPrompt;
-  }
+  //     // Add keypress listener for encounter interaction
+  //     document.addEventListener('keydown', (e) => {
+  //       if (e.code === 'KeyE' && this.nearestEncounter) {
+  //         this.handleEncounter(this.nearestEncounter);
+  //       }
+  //     });
+  //   }
+  //   return this.encounterPrompt;
+  // }
 
-  createSplashArtPrompt() {
-    if (!this.splashArtPrompt) {
-      this.splashArtPrompt = document.createElement('div');
-      this.splashArtPrompt.style.cssText = `
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: rgba(0, 0, 0, 0.8);
-          color: white;
-          padding: 15px 20px;
-          border-radius: 5px;
-          display: none;
-          font-family: Arial, sans-serif;
-          pointer-events: none;
-          z-index: 1000;
-      `;
-      document.body.appendChild(this.splashArtPrompt);
-    }
-    return this.splashArtPrompt;
+  // createStoryPrompt() {
+  //   if (!this.storyPrompt) {
+  //     this.storyPrompt = document.createElement('div');
+  //     this.storyPrompt.style.cssText = `
+  //       position: fixed;
+  //       top: 50%;
+  //       left: 50%;
+  //       transform: translate(-50%, -50%);
+  //       background: rgba(0, 0, 0, 0.8);
+  //       color: white;
+  //       padding: 15px 20px;
+  //       border-radius: 5px;
+  //       display: none;
+  //       font-family: Arial, sans-serif;
+  //       pointer-events: none;
+  //       z-index: 1000;
+  //     `;
+  //     document.body.appendChild(this.storyPrompt);
+  
+  //     // Add keypress listener for story interaction (F key)
+  //     document.addEventListener('keydown', (e) => {
+  //       if (e.code === 'KeyF' && this.nearestStory && !this.activeStoryMarker) {
+  //         console.log('F key pressed near story trigger');
+  //         this.handleStoryTrigger(this.nearestStory);
+  //       }
+  //     });
+  //   }
+  //   return this.storyPrompt;
+  // }
+
+  // createSplashArtPrompt() {
+  //   if (!this.splashArtPrompt) {
+  //     this.splashArtPrompt = document.createElement('div');
+  //     this.splashArtPrompt.style.cssText = `
+  //         position: fixed;
+  //         top: 50%;
+  //         left: 50%;
+  //         transform: translate(-50%, -50%);
+  //         background: rgba(0, 0, 0, 0.8);
+  //         color: white;
+  //         padding: 15px 20px;
+  //         border-radius: 5px;
+  //         display: none;
+  //         font-family: Arial, sans-serif;
+  //         pointer-events: none;
+  //         z-index: 1000;
+  //     `;
+  //     document.body.appendChild(this.splashArtPrompt);
+  //   }
+  //   return this.splashArtPrompt;
+  // }
+
+
+  /**
+ * Shows an interactive prompt in the center of the screen
+ * @param {string} message - The message to display
+ * @param {string} icon - Material icon name (optional)
+ * @param {string} actionKey - Key to press (default: 'F')
+ * @param {string} promptType - Type identifier for the prompt
+ * @returns {HTMLElement} - The prompt element
+ */
+showInteractivePrompt(message, icon = null, actionKey = 'F', promptType = 'generic') {
+  // Check if we already have a prompt container
+  if (!this.promptContainer) {
+    // Create a container for all prompts
+    this.promptContainer = document.createElement('div');
+    this.promptContainer.className = 'game-prompts-container';
+    this.promptContainer.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1000;
+    `;
+    document.body.appendChild(this.promptContainer);
+    
+    // Initialize active prompts tracking
+    this.activePrompts = new Map();
   }
+  
+  // Check if we already have a prompt of this type
+  let prompt = this.activePrompts.get(promptType);
+  
+  // Create new prompt if needed
+  if (!prompt) {
+    prompt = document.createElement('div');
+    prompt.className = `game-prompt game-prompt-${promptType}`;
+    prompt.style.cssText = `
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    `;
+    this.promptContainer.appendChild(prompt);
+    this.activePrompts.set(promptType, prompt);
+  }
+  
+  // Construct prompt content
+  let promptContent = '';
+  
+  // Add icon if provided
+  if (icon) {
+    promptContent += `<span class="material-icons" style="margin-right: 8px;">${icon}</span>`;
+  }
+  
+  // Add action key if provided
+  if (actionKey) {
+    promptContent += `<span class="key-hint" style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 3px; margin-right: 8px;">Press ${actionKey}</span>`;
+  }
+  
+  // Add message
+  promptContent += message;
+  
+  // Update prompt content and show it
+  prompt.innerHTML = promptContent;
+  prompt.style.opacity = '1';
+  prompt.style.display = 'flex';
+  
+  // Store current prompt type as a property on the scene controller
+  this.currentPromptType = promptType;
+  
+  return prompt;
+}
+
+/**
+ * Hides a specific interactive prompt
+ * @param {string} promptType - Type of prompt to hide
+ */
+hideInteractivePrompt(promptType = 'generic') {
+  if (this.activePrompts && this.activePrompts.has(promptType)) {
+    const prompt = this.activePrompts.get(promptType);
+    prompt.style.opacity = '0';
+    
+    // Remove after fade out
+    setTimeout(() => {
+      prompt.style.display = 'none';
+    }, 200);
+    
+    // If this was the current prompt type, clear it
+    if (this.currentPromptType === promptType) {
+      this.currentPromptType = null;
+    }
+  }
+}
+
+/**
+ * Hides all interactive prompts
+ */
+hideAllPrompts() {
+  if (this.activePrompts) {
+    this.activePrompts.forEach((prompt, type) => {
+      prompt.style.opacity = '0';
+      setTimeout(() => {
+        prompt.style.display = 'none';
+      }, 200);
+    });
+    this.currentPromptType = null;
+  }
+}
 
   // Update the showSplashArt method in Scene3DController
   showSplashArt(marker) {

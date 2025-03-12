@@ -165,46 +165,6 @@ checkStoryboard(callback) {
     storyboard.openEditor();
   } 
 
-  // checkResourceManager(callback) {
-  //   const resourceManagerBtn = document.getElementById('resourceManagerBtn');
-
-  //   // Create a temporary script element to test loading
-  //   const script = document.createElement('script');
-  //   script.src = 'js/classes/resource-manager.js';
-  //   script.onload = () => {
-  //     // Resource manager loaded successfully
-  //     this.resourceManager = new ResourceManager();
-
-  //     // Initialize MonsterManager in ResourceManager
-  //     this.resourceManager.initializeMonsterManager(this);
-  //     // Init Storyboard
-  //     this.resourceManager.initStoryboard();
-  //     storyboard.connectToResourceManager(this.resourceManager);
-
-  //     if (resourceManagerBtn) {
-  //       resourceManagerBtn.style.display = 'flex';
-  //       resourceManagerBtn.innerHTML = `
-  //               <span class="material-icons">palette</span>
-  //           `;
-
-  //       // Add click handler
-  //       resourceManagerBtn.addEventListener('click', () => {
-  //         const drawer = this.resourceManager.createResourceManagerUI();
-  //         drawer.show();
-  //       });
-  //     }
-  //     if (callback) callback();
-  //   };
-  //   script.onerror = () => {
-  //     console.warn('Resource manager not available');
-  //     if (resourceManagerBtn) {
-  //       resourceManagerBtn.style.display = 'none';
-  //     }
-  //     if (callback) callback();
-  //   };
-  //   document.head.appendChild(script);
-  // }
-
     checkResourceManager(callback) {
     const resourceManagerBtn = document.getElementById('resourceManagerBtn');
   
@@ -5496,22 +5456,25 @@ if (type === "storyboard") {
   }
 
   generateStoryboardMarkerHTML(marker) {
-    // Create available stories list
+    // Get available stories for dropdown
     let storiesOptions = '';
     
     // Check if we have a storyboard with stories
     if (window.storyboard && window.storyboard.storyGraphs && window.storyboard.storyGraphs.size > 0) {
+      // Create dropdown options
+      const storyOptions = Array.from(window.storyboard.storyGraphs.entries()).map(([id, graph]) => {
+        // Use the story name if available, otherwise fallback to ID-based name
+        const displayName = graph.name || id.replace('graph_', 'Story ').replace(/(\d{13})/, s => s.substring(0, 4) + '...');
+        return `<option value="${id}" ${marker.data?.storyId === id ? 'selected' : ''}>${displayName}</option>`;
+      });
+      
       storiesOptions = `
         <div style="margin-top: 12px;">
           <label style="display: block; margin-bottom: 4px;">Select Story:</label>
-          <div style="max-height: 200px; overflow-y: auto; border: 1px solid #444; border-radius: 4px;">
-            ${Array.from(window.storyboard.storyGraphs.keys()).map(storyId => `
-              <div class="story-option" data-id="${storyId}" 
-                   style="cursor: pointer; padding: 8px; border-bottom: 1px solid #444; ${marker.data?.storyId === storyId ? 'background-color: #333;' : ''}">
-                <div style="font-weight: ${marker.data?.storyId === storyId ? 'bold' : 'normal'};">${storyId}</div>
-              </div>
-            `).join('')}
-          </div>
+          <select id="story-id-select" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; background-color: white;">
+            <option value="">-- Select a story --</option>
+            ${storyOptions.join('')}
+          </select>
         </div>
       `;
     } else {
@@ -5519,10 +5482,10 @@ if (type === "storyboard") {
         <div style="margin-top: 12px; color: #888; text-align: center; padding: 12px;">
           <div class="material-icons" style="font-size: 32px; opacity: 0.5; margin-bottom: 8px;">info</div>
           <p>No stories available. Create a story in the Storyboard editor first.</p>
-          <sl-button id="open-storyboard-btn" size="small" style="margin-top: 8px;">
-            <span class="material-icons" slot="prefix">auto_stories</span>
+          <button id="open-storyboard-btn" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; margin-top: 8px;">
+            <span class="material-icons" style="font-size: 16px;">auto_stories</span>
             Open Storyboard Editor
-          </sl-button>
+          </button>
         </div>
       `;
     }
@@ -5533,35 +5496,30 @@ if (type === "storyboard") {
           <span class="material-icons" style="font-size: 48px; color: #673AB7;">auto_stories</span>
           <div style="margin-top: 8px; font-weight: bold;">Story Trigger</div>
           <div style="font-size: 0.9em; color: #888; margin-top: 4px;">
-            Triggers a story dialog when player gets nearby
+            Interact with this marker to start a story
           </div>
         </div>
         
         <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
           <div class="form-group">
-            <label for="trigger-radius">Trigger Radius:</label>
-            <sl-range id="trigger-radius" min="1" max="5" step="0.5" value="${marker.data?.radius || 2}"></sl-range>
-            <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #888;">
-              <span>Small</span>
-              <span>Large</span>
-            </div>
+            <label for="display-label">Display Label:</label>
+            <input type="text" id="display-label" placeholder="Label shown in game" 
+                   value="${marker.data?.label || 'Read Story'}" 
+                   style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #ccc;">
           </div>
-          
-          <div class="form-group" style="margin-top: 12px;">
-            <sl-switch id="trigger-once" ${marker.data?.triggerOnce !== false ? 'checked' : ''}>
-              Trigger Only Once
-            </sl-switch>
+        </div>
+        
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <div class="form-group">
+            <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="trigger-once" ${marker.data?.triggerOnce !== false ? 'checked' : ''} 
+                     style="width: 16px; height: 16px;">
+              <span>Trigger Only Once</span>
+            </label>
           </div>
         </div>
         
         ${storiesOptions}
-  
-        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-          <div class="form-group">
-            <label for="display-label">Display Label:</label>
-            <sl-input id="display-label" placeholder="Label shown in game" value="${marker.data?.label || 'Story Event'}"></sl-input>
-          </div>
-        </div>
       </div>
     `;
   }
@@ -6056,81 +6014,47 @@ showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", ico
     });
   }
 
+  
+
   setupStoryboardEventHandlers(dialog, marker) {
-    // Handle radius change
-    const radiusSlider = dialog.querySelector('#trigger-radius');
-    if (radiusSlider) {
-      radiusSlider.addEventListener('sl-change', (e) => {
+    // Handle story selection dropdown
+    const storySelect = dialog.querySelector('#story-id-select');
+    if (storySelect) {
+      storySelect.addEventListener('change', (e) => {
         if (!marker.data) marker.data = {};
-        marker.data.radius = parseFloat(e.target.value);
+        marker.data.storyId = e.target.value;
+        console.log(`Selected story: ${marker.data.storyId}`);
       });
     }
     
-    // Handle trigger once option
-    const triggerOnceSwitch = dialog.querySelector('#trigger-once');
-    if (triggerOnceSwitch) {
-      triggerOnceSwitch.addEventListener('sl-change', (e) => {
-        if (!marker.data) marker.data = {};
-        marker.data.triggerOnce = e.target.checked;
-      });
-    }
-    
-    // Handle label change
+    // Handle display label input
     const labelInput = dialog.querySelector('#display-label');
     if (labelInput) {
-      labelInput.addEventListener('sl-change', (e) => {
+      labelInput.addEventListener('input', (e) => {
         if (!marker.data) marker.data = {};
         marker.data.label = e.target.value;
       });
     }
     
-    // Handle story selection
-    const storyOptions = dialog.querySelectorAll('.story-option');
-    storyOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        const storyId = option.dataset.id;
+    // Handle trigger once checkbox
+    const triggerOnceCheckbox = dialog.querySelector('#trigger-once');
+    if (triggerOnceCheckbox) {
+      triggerOnceCheckbox.addEventListener('change', (e) => {
         if (!marker.data) marker.data = {};
-        marker.data.storyId = storyId;
-        
-        // Update selected state visually
-        storyOptions.forEach(opt => {
-          opt.style.backgroundColor = opt === option ? '#333' : '';
-          opt.style.fontWeight = opt === option ? 'bold' : 'normal';
-        });
+        marker.data.triggerOnce = e.target.checked;
       });
-    });
-
-    if (!marker.data?.storyId && window.storyboard && 
-      window.storyboard.storyGraphs && window.storyboard.storyGraphs.size === 1) {
-    const defaultStoryId = window.storyboard.storyGraphs.keys().next().value;
-    
-    if (!marker.data) marker.data = {};
-    marker.data.storyId = defaultStoryId;
-    
-    console.log(`Auto-selected only available story: ${defaultStoryId}`);
-    
-    // Update the visual state of the story option
-    const storyOption = dialog.querySelector(`.story-option[data-id="${defaultStoryId}"]`);
-    if (storyOption) {
-      storyOption.style.backgroundColor = '#333';
-      storyOption.style.fontWeight = 'bold';
     }
-  }
     
     // Handle open storyboard editor button
     const openStoryboardBtn = dialog.querySelector('#open-storyboard-btn');
     if (openStoryboardBtn) {
       openStoryboardBtn.addEventListener('click', () => {
         dialog.hide();
-        if (this.storyboard) {
-          this.storyboard.openEditor();
+        if (window.storyboard) {
+          window.storyboard.openEditor();
         }
       });
     }
-
-
-
-
   }
 
   setupDefaultEventHandlers(dialog, marker) {
