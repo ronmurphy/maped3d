@@ -129,7 +129,7 @@
   <!-- Add party and combat systems -->
   <script src="js/classes/PartyManager.js"></script>
   <script src="js/classes/CombatSystem.js"></script>
-
+  <script src="js/classes/DungeonGenerator.js"></script>
   <!-- fps-->
   <script src="js/libs/stats.min.js"></script>
 
@@ -180,6 +180,11 @@
             <span class="material-icons">palette</span>
           </sl-button>
         </sl-tooltip>
+        <sl-tooltip content="Storyboard" placement="left-top">
+          <sl-button size="medium" variant="success" outline id="storyboardTool">
+            <span class="material-icons">auto_stories</span>
+          </sl-button>
+        </sl-tooltip>
         <sl-tooltip content="View in 3D" placement="left-top">
           <sl-button size="medium" variant="danger" outline id="create3d">
             <span class="material-icons">view_in_ar</span>
@@ -212,9 +217,9 @@
             <!-- <div class="tool-button" id="screenshotTool" data-tooltip="Take Screenshot [F12]">
               <span class="material-icons">photo_camera</span>
             </div> -->
-            <div class="tool-button" id="storyboardTool" data-tooltip="Story Editor [F11]">
+            <!-- <div class="tool-button" id="storyboardTool" data-tooltip="Story Editor [F11]">
               <span class="material-icons">auto_stories</span>
-            </div>
+            </div> -->
           </div>
         </div>
 
