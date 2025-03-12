@@ -20,7 +20,6 @@ if (typeof window.Storyboard === "undefined") {
       // Current working graph data - persists between editor sessions
       this.currentGraph = {
         id: "graph_default",
-        name: "Default Story",
         nodes: new Map(), // Persistent node data
         connections: [], // Persistent connection data
         dirty: false // Whether data has changed since last save
@@ -404,18 +403,6 @@ if (typeof window.Storyboard === "undefined") {
         box-shadow: 0 0 10px rgba(255,255,255,0.3);
       }
 
-
-.storyboard-name-input {
-  flex: 1;
-  padding: 8px 12px;
-  font-size: 16px;
-  background: #242424;
-  color: white;
-  border: 1px solid #555;
-  border-radius: 4px;
-  margin-right: 8px;
-}
-
     `;
 
       document.head.appendChild(styles);
@@ -455,13 +442,11 @@ if (typeof window.Storyboard === "undefined") {
         // Create editor content - IMPORTANT: We add unique IDs to make debugging easier
         drawer.innerHTML = `
       <div class="storyboard-editor" id="sb-editor">
-
         <div class="storyboard-canvas" id="storyboard-canvas">
           <!-- Nodes will be added here dynamically -->
         </div>
         <div class="storyboard-sidebar" id="sb-sidebar">
           <div class="storyboard-toolbox" id="sb-toolbox">
-           <input type="text" id="story-name-input" class="storyboard-name-input" placeholder="Story name" value="${this.currentGraph.name || 'Unnamed Story'}"><br>
             <div title="Dialog" class="storyboard-tool" id="sb-tool-dialog" data-type="dialog"><i class="material-icons">chat</i></div>
             <div title="Choice" class="storyboard-tool" id="sb-tool-choice" data-type="choice"><i class="material-icons">check_circle</i></div>
             <div title="Trigger" class="storyboard-tool" id="sb-tool-trigger" data-type="trigger"><i class="material-icons">flash_on</i></div>
@@ -553,7 +538,6 @@ if (typeof window.Storyboard === "undefined") {
 
       // Create clean graph data without DOM references
       const cleanGraph = {
-        name: this.currentGraph.name || "Unnamed Story", // Include the name property
         nodes: [],
         connections: []
       };
@@ -658,20 +642,24 @@ if (typeof window.Storyboard === "undefined") {
           });
         }
 
-        const nameInput = this.editor.querySelector('#story-name-input');
-        if (nameInput) {
-          console.log("Setting up story name input");
-          
-          // Initial value
-          nameInput.value = this.currentGraph.name || 'Unnamed Story';
-          
-          // Update name when input changes
-          nameInput.addEventListener('input', (e) => {
-            this.currentGraph.name = e.target.value;
-            this.currentGraph.dirty = true;
-            console.log(`Story name updated: ${this.currentGraph.name}`);
-          });
-        }
+        // Set up test button
+// const saveButton = this.editor.querySelector('#save-storyboard');
+// if (saveButton) {
+//   // Set up a container for the buttons
+//   const buttonsContainer = saveButton.parentElement;
+  
+//   // Create test button
+//   const testButton = document.createElement('sl-button');
+//   testButton.id = 'test-storyboard';
+//   testButton.variant = 'success';
+//   testButton.innerHTML = `
+//     <span class="material-icons" style="margin-right: 4px; font-size: 16px;">play_arrow</span>
+//     Test Story
+//   `;
+//   testButton.style.marginRight = '8px';
+  
+//   // Insert before save button
+//   buttonsContainer.insertBefore(testButton, saveButton);
   
 
 
@@ -1323,22 +1311,21 @@ case 'choice':
     /**
  * Export the current storyboard to a JSON file
  */
-    exportToJSON() {
-      // Get the current graph
-      const storyGraph = this.currentGraph;
-      if (!storyGraph) {
-        console.error('No story available to export');
-        return;
-      }
-      
-      // Create a JSON-safe copy of the data
-      const graphData = {
-        id: this.currentGraphId,
-        name: storyGraph.name || "Unnamed Story", // Include the name
-        timestamp: new Date().toISOString(),
-        nodes: {},
-        connections: []
-      };
+exportToJSON() {
+  // Get the current graph
+  const storyGraph = this.currentGraph;
+  if (!storyGraph) {
+    console.error('No story available to export');
+    return;
+  }
+  
+  // Create a JSON-safe copy of the data
+  const graphData = {
+    id: this.currentGraphId,
+    timestamp: new Date().toISOString(),
+    nodes: {},
+    connections: []
+  };
   
   // Handle nodes (which should be a Map in your case)
   if (storyGraph.nodes instanceof Map) {
@@ -1374,13 +1361,7 @@ case 'choice':
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
   const downloadAnchorNode = document.createElement('a');
   downloadAnchorNode.setAttribute("href", dataStr);
-  // downloadAnchorNode.setAttribute("download", `storyboard_${this.currentGraphId || 'default'}_${new Date().getTime()}.storyboard.json`);
-  
-  const safeFileName = (this.currentGraph.name || 'Unnamed Story')
-  .replace(/[^a-z0-9]/gi, '_')
-  .toLowerCase();
-downloadAnchorNode.setAttribute("download", `${safeFileName}_${new Date().getTime()}.storyboard.json`);
-  
+  downloadAnchorNode.setAttribute("download", `storyboard_${this.currentGraphId || 'default'}_${new Date().getTime()}.json`);
   document.body.appendChild(downloadAnchorNode);
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
@@ -1465,7 +1446,6 @@ loadGraphFromJSON(jsonData) {
   const graphId = jsonData.id || `graph_${Date.now()}`;
   const newGraph = {
     id: graphId,
-    name: jsonData.name || "Imported Story", // Add name handling
     nodes: new Map(),
     connections: [],
     dirty: false
@@ -2189,16 +2169,6 @@ applyCanvasTransform(canvas) {
       // Create unique ID
       const nodeId = "node_sample_" + Date.now();
 
-      if (!this.currentGraph.id) {
-        this.currentGraph.id = "graph_" + Date.now();
-      }
-      
-      // Set a default name if not set
-      if (!this.currentGraph.name) {
-        this.currentGraph.name = "My Story";
-        this.currentGraph.dirty = true;
-      }
-
       // Create sample node data
       const nodeData = {
         type: "dialog",
@@ -2401,6 +2371,25 @@ applyCanvasTransform(canvas) {
       // Set line color based on node type and path
       let lineColor = "#673ab7"; // Default purple
 
+      // if (fromNodeType === "condition" && pathType) {
+      //   lineColor = pathType === "true" ? "#2196F3" : "#F44336";
+      // } else if (fromNodeType === "combat" && pathType) {
+      //   lineColor = pathType === "victory" ? "#4CAF50" : "#F44336";
+      // }
+
+  // For condition nodes, store which path this connection represents
+  // if (isConditionConnection && pathType) {
+  //   conn.setAttribute('data-path', pathType);
+  //   lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
+  // } else if (fromNodeType === 'choice' && optionIndex !== null) {
+  //   conn.setAttribute('data-option', optionIndex);
+  //   const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#607D8B'];
+  //   lineColor = colors[parseInt(optionIndex) % colors.length];
+  // } else if (fromNodeType === 'combat' && pathType) {
+  //   conn.setAttribute('data-path', pathType);
+  //   lineColor = pathType === 'victory' ? '#4CAF50' : '#F44336';
+  // }
+
   if (this.isConditionConnection(fromNode, pathType)) {
     conn.setAttribute('data-path', pathType);
     lineColor = pathType === 'true' ? '#2196F3' : '#F44336';
@@ -2422,6 +2411,14 @@ applyCanvasTransform(canvas) {
       `;
 
       canvas.appendChild(conn);
+
+      // // Add to persistent connections
+      // this.currentGraph.connections.push({
+      //   from: fromId,
+      //   to: toId,
+      //   path: pathType || null,
+      //   element: conn
+      // });
 
        // Add to persistent connections with path/option info
   this.currentGraph.connections.push({
@@ -4206,6 +4203,35 @@ if (nodeData.type === 'reward') {
 
       // Update title in header
       const header = element.querySelector(".storyboard-node-header");
+      // if (header) {
+      //   // Get the text node (first child)
+      //   let textNode = null;
+      //   for (const child of header.childNodes) {
+      //     if (child.nodeType === Node.TEXT_NODE) {
+      //       textNode = child;
+      //       break;
+      //     }
+      //   }
+
+      //   if (textNode) {
+      //     textNode.nodeValue =
+      //       nodeData.data.title ||
+      //       nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1);
+      //   } else {
+      //     // If no text node found, insert one at the beginning
+      //     const closeButton = header.querySelector(".storyboard-node-close");
+      //     if (closeButton) {
+      //       header.insertBefore(
+      //         document.createTextNode(
+      //           nodeData.data.title ||
+      //             nodeData.type.charAt(0).toUpperCase() + nodeData.type.slice(1)
+      //         ),
+      //         closeButton
+      //       );
+      //     }
+      //   }
+      // }
+
       if (header) {
         // Instead of trying to update a text node, replace the entire header content
         const nodeType = nodeData.type;
@@ -4264,6 +4290,31 @@ if (nodeData.type === 'reward') {
             `;
             }
             break;
+
+          // In the updateNodeVisual method, update the case for choice nodes
+//           case "choice":
+//             body.innerHTML = `
+// <div>${nodeData.data.text || "What would you like to do?"}</div>
+// <div style="margin-top: 4px; color: #aaa; font-size: 0.9em;">
+//   ${nodeData.data.options?.length || 0} options
+// </div>
+// `;
+//             break;
+
+//           // In the updateNodeVisual method, update the case for trigger nodes
+//           case "trigger":
+//             body.innerHTML = `
+// <div>Position: X=${nodeData.data.x.toFixed(1)}, Y=${nodeData.data.y.toFixed(
+//               1
+//             )}</div>
+// <div>Radius: ${nodeData.data.radius.toFixed(1)}</div>
+// <div style="margin-top: 4px; font-size: 0.9em; color: ${
+//               nodeData.data.once ? "#4CAF50" : "#FFC107"
+//             };">
+//   ${nodeData.data.once ? "Triggers once" : "Triggers repeatedly"}
+// </div>
+// `;
+//             break;
 
 case 'choice':
   // Get the options to show in the description
@@ -5613,6 +5664,46 @@ case 'reward':
 
 
 /**
+ * Test the current storyboard flow
+ */ // original code collapsed VV
+// testStoryboard() {
+//   // Save any unsaved changes first
+//   if (this.currentGraph.dirty) {
+//     this.saveCurrentGraph();
+//   }
+  
+//   // Find the starting node (look for trigger nodes first, then fall back to any node)
+//   let startNodeId = null;
+//   let startNode = null;
+  
+//   // Look for trigger nodes first
+//   for (const [nodeId, nodeData] of this.currentGraph.nodes) {
+//     if (nodeData.type === 'trigger') {
+//       startNodeId = nodeId;
+//       startNode = nodeData;
+//       break;
+//     }
+//   }
+  
+//   // If no trigger nodes, use the first node
+//   if (!startNodeId && this.currentGraph.nodes.size > 0) {
+//     const firstNode = this.currentGraph.nodes.entries().next().value;
+//     startNodeId = firstNode[0];
+//     startNode = firstNode[1];
+//   }
+  
+//   if (!startNodeId) {
+//     this.showToast('No nodes found in the storyboard.', 'error');
+//     return;
+//   }
+  
+//   // Start executing the story from the start node
+//   this.showTestingDialog(`Starting test from: ${startNode.type} node`, () => {
+//     this.executeTestNode(startNodeId);
+//   });
+// }
+
+/**
  * Test the current storyboard flow with 3d support
  * @param {Object|string} storyGraphOrId - The story graph object or ID to test
  */
@@ -5685,7 +5776,34 @@ testStoryboard(storyGraphOrId = null) {
  * Run a storyboard in 3D environment
  * @param {Object} scene3D - The Scene3DController instance
  * @param {String} storyId - ID of the story to run (optional)
- */ 
+ */  //  -- original code inthe collapse.
+// runInScene3D(scene3D, storyId = null) {
+//   console.log(`Running storyboard in 3D mode, story ID: ${storyId || 'default'}`);
+  
+//   // Store reference to scene3D
+//   this.scene3D = scene3D;
+  
+//   // Get story graph to test
+//   let storyGraph = null;
+//   if (storyId && this.storyGraphs.has(storyId)) {
+//     storyGraph = this.storyGraphs.get(storyId);
+//   } else if (this.currentGraph) {
+//     storyGraph = this.currentGraph;
+//   } else if (this.storyGraphs.size > 0) {
+//     // Fallback to first available story
+//     const storyId = Array.from(this.storyGraphs.keys())[0];
+//     storyGraph = this.storyGraphs.get(storyId);
+//   }
+  
+//   if (!storyGraph) {
+//     console.error('No valid story found to run');
+//     return;
+//   }
+  
+//   // Start the story flow - using existing test functionality
+//   // this.startTesting(storyGraph);
+//   this.testStoryboard();
+// }
 
 runInScene3D(scene3D, storyId = null) {
   console.log(`Running storyboard in 3D mode, story ID: ${storyId || 'default'}`);
@@ -5699,6 +5817,52 @@ runInScene3D(scene3D, storyId = null) {
   // Start the story flow
   this.testStoryboard(storyId);
 }
+
+/**
+ * Execute a node in test mode
+ */
+// executeTestNode(nodeId) {
+//   // Get the node data
+//   const nodeData = this.currentGraph.nodes.get(nodeId);
+//   if (!nodeData) {
+//     this.showTestingDialog('Error: Node not found', () => {});
+//     return;
+//   }
+  
+//   // Process the node based on its type
+//   switch (nodeData.type) {
+//     case 'dialog':
+//       this.executeTestDialog(nodeData, nodeId);
+//       break;
+      
+//     case 'choice':
+//       this.executeTestChoice(nodeData, nodeId);
+//       break;
+      
+//     case 'condition':
+//       this.executeTestCondition(nodeData, nodeId);
+//       break;
+      
+//     case 'event':
+//       this.executeTestEvent(nodeData, nodeId);
+//       break;
+      
+//     case 'combat':
+//       this.executeTestCombat(nodeData, nodeId);
+//       break;
+      
+//     case 'reward':
+//       this.executeTestReward(nodeData, nodeId);
+//       break;
+      
+//     default:
+//       this.showTestingDialog(`Unsupported node type: ${nodeData.type}`, () => {
+//         this.findAndExecuteNextNode(nodeId);
+//       });
+//   }
+// }
+
+
 
 /**
  * Execute a node in test mode
@@ -5776,6 +5940,45 @@ _executeNodeInternal(nodeId) {
   }
 }
 
+/**
+ * Show a simple dialog during testing
+ */ // - original code in the collapse
+// showTestingDialog(message, onClose) {
+//   // Create dialog
+//   const dialog = document.createElement('sl-dialog');
+//   dialog.label = 'Story Preview';
+//   dialog.style.cssText = '--width: 500px;';
+  
+//   // Set content
+//   dialog.innerHTML = `
+//     <div style="padding: 16px;">${message}</div>
+//     <div slot="footer">
+//       <sl-button variant="primary" class="continue-btn">Continue</sl-button>
+//     </div>
+//   `;
+  
+//   // Add to DOM
+//   document.body.appendChild(dialog);
+  
+//   // Add continue button handler
+//   const continueBtn = dialog.querySelector('.continue-btn');
+//   if (continueBtn) {
+//     continueBtn.addEventListener('click', () => {
+//       dialog.hide();
+//     });
+//   }
+  
+//   // Add close handler
+//   dialog.addEventListener('sl-after-hide', () => {
+//     dialog.remove();
+//     if (typeof onClose === 'function') {
+//       onClose();
+//     }
+//   });
+  
+//   // Show dialog
+//   dialog.show();
+// }
 
 /**
  * Show a simple dialog during testing
@@ -5971,11 +6174,6 @@ executeTestChoice(nodeData, nodeId) {
         this.executeTestNode(connections[0].to);
       } else {
         this.showTestingDialog('End of story branch reached.', () => {});
-        this.scene3D.resumeControls();
-        // if (this.in3DMode && this.scene3D && typeof this.scene3D.resumeControls === 'function') {
-        //   console.log('Resuming controls after immersive UI');
-        //   this.scene3D.resumeControls();
-        // }
       }
     });
   });
@@ -6342,6 +6540,255 @@ findAndExecuteNextNode(currentNodeId) {
     this.showTestingDialog('End of story reached.', () => {});
   }
 }
+
+// /**
+//  * Show an immersive overlay for story content in 3D mode
+//  * @param {String} content - HTML content to display
+//  * @param {Object} options - Display options
+//  * @returns {HTMLElement} - The created overlay element
+//  */
+// showImmersiveUI(content, options = {}) {
+//   // Ensure controls are paused
+//   if (this.scene3D && this.scene3D.pauseControls) {
+//     this.scene3D.pauseControls();
+//   }
+  
+//   // Close any existing overlay
+//   if (this.currentOverlay) {
+//     this.closeOverlay();
+//   }
+  
+//   // Create overlay
+//   const overlay = document.createElement('div');
+//   overlay.className = 'story-overlay';
+//   overlay.style.cssText = `
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     right: 0;
+//     bottom: 0;
+//     background: rgba(0, 0, 0, 0.7);
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     z-index: 10000;
+//     opacity: 0;
+//     transition: opacity 0.3s ease;
+//   `;
+  
+//   overlay.innerHTML = `
+//     <div class="story-content" style="
+//       background: #242424;
+//       max-width: 800px;
+//       width: 80vw;
+//       max-height: 80vh;
+//       border-radius: 8px;
+//       overflow: hidden;
+//       display: flex;
+//       flex-direction: column;
+//       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+//       transform: scale(0.95);
+//       transition: transform 0.3s ease;
+//     ">
+//       ${options.title ? `
+//         <div class="story-header" style="
+//           padding: 16px;
+//           background: linear-gradient(135deg, #673ab7, #9c27b0);
+//           color: white;
+//           font-weight: bold;
+//           font-size: 1.2rem;
+//         ">
+//           ${options.title}
+//         </div>
+//       ` : ''}
+      
+//       <div class="story-body" style="
+//         padding: 24px;
+//         overflow-y: auto;
+//         flex: 1;
+//         display: flex;
+//         flex-direction: column;
+//         gap: 20px;
+//         color: #e0e0e0;
+//       ">
+//         ${content}
+//       </div>
+      
+//       ${options.showFooter !== false ? `
+//         <div class="story-footer" style="
+//           padding: 16px;
+//           background: #333;
+//           border-top: 1px solid #444;
+//           display: flex;
+//           justify-content: flex-end;
+//         ">
+//           <button class="story-continue-btn" style="
+//             padding: 8px 16px;
+//             background: #673ab7;
+//             color: white;
+//             border: none;
+//             border-radius: 4px;
+//             font-size: 14px;
+//             cursor: pointer;
+//           ">Continue</button>
+//         </div>
+//       ` : ''}
+//     </div>
+//   `;
+  
+//   document.body.appendChild(overlay);
+//   this.currentOverlay = overlay;
+  
+//   // Set up continue button
+//   const continueBtn = overlay.querySelector('.story-continue-btn');
+//   if (continueBtn) {
+//     continueBtn.addEventListener('click', () => {
+//       // Close overlay
+//       this.closeOverlay();
+      
+//       // Run callback if provided
+//       if (options.onContinue) {
+//         options.onContinue();
+//       }
+//     });
+//   }
+  
+//   // Animate in
+//   setTimeout(() => {
+//     overlay.style.opacity = '1';
+//     const content = overlay.querySelector('.story-content');
+//     if (content) {
+//       content.style.transform = 'scale(1)';
+//     }
+//   }, 10);
+  
+//   return overlay;
+// }
+
+// /**
+//  * Show an immersive overlay for story content in 3D mode
+//  * @param {String} content - HTML content to display
+//  * @param {Object} options - Display options
+//  * @returns {HTMLElement} - The created overlay element
+//  */
+// showImmersiveOverlay(content, options = {}) {
+//   console.log("Showing immersive overlay");
+  
+//   // Only pause controls if we're in 3D mode
+//   if (this.in3DMode && this.scene3D && typeof this.scene3D.pauseControls === 'function') {
+//     console.log('Pausing controls for immersive UI');
+//     this.scene3D.pauseControls();
+//   }
+  
+//   // Close any existing overlay
+//   this.closeCurrentOverlay();
+  
+//   // Create overlay
+//   const overlay = document.createElement('div');
+//   overlay.className = 'story-overlay';
+//   overlay.style.cssText = `
+//     position: fixed;
+//     top: 0;
+//     left: 0;
+//     right: 0;
+//     bottom: 0;
+//     background: rgba(0, 0, 0, 0.7);
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     z-index: 10000;
+//     opacity: 0;
+//     transition: opacity 0.3s ease;
+//   `;
+  
+//   overlay.innerHTML = `
+//     <div class="story-content" style="
+//       background: #242424;
+//       max-width: 800px;
+//       width: 80vw;
+//       max-height: 80vh;
+//       border-radius: 8px;
+//       overflow: hidden;
+//       display: flex;
+//       flex-direction: column;
+//       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+//       transform: scale(0.95);
+//       transition: transform 0.3s ease;
+//     ">
+//       ${options.title ? `
+//         <div class="story-header" style="
+//           padding: 16px;
+//           background: linear-gradient(135deg, #673ab7, #9c27b0);
+//           color: white;
+//           font-weight: bold;
+//           font-size: 1.2rem;
+//         ">
+//           ${options.title}
+//         </div>
+//       ` : ''}
+      
+//       <div class="story-body" style="
+//         padding: 24px;
+//         overflow-y: auto;
+//         flex: 1;
+//         display: flex;
+//         flex-direction: column;
+//         gap: 20px;
+//         color: #e0e0e0;
+//       ">
+//         ${content}
+//       </div>
+      
+//       ${options.showFooter !== false ? `
+//         <div class="story-footer" style="
+//           padding: 16px;
+//           background: #333;
+//           border-top: 1px solid #444;
+//           display: flex;
+//           justify-content: flex-end;
+//         ">
+//           <button class="story-continue-btn" style="
+//             padding: 8px 16px;
+//             background: #673ab7;
+//             color: white;
+//             border: none;
+//             border-radius: 4px;
+//             font-size: 14px;
+//             cursor: pointer;
+//           ">Continue</button>
+//         </div>
+//       ` : ''}
+//     </div>
+//   `;
+  
+//   document.body.appendChild(overlay);
+//   this.currentOverlay = overlay;
+  
+//   // Set up continue button
+//   const continueBtn = overlay.querySelector('.story-continue-btn');
+//   if (continueBtn) {
+//     continueBtn.addEventListener('click', () => {
+//       // Close overlay
+//       this.closeCurrentOverlay();
+      
+//       // Run callback if provided
+//       if (options.onContinue) {
+//         options.onContinue();
+//       }
+//     });
+//   }
+  
+//   // Animate in
+//   setTimeout(() => {
+//     overlay.style.opacity = '1';
+//     const content = overlay.querySelector('.story-content');
+//     if (content) {
+//       content.style.transform = 'scale(1)';
+//     }
+//   }, 10);
+  
+//   return overlay;
+// }
 
 /**
  * Show an immersive overlay for story content in 3D mode

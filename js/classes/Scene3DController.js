@@ -5123,12 +5123,12 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
     const hasVisibleStoryUI = !!document.querySelector('.story-overlay') || 
                               !!document.querySelector('sl-dialog[open]');
     
-    console.log('Story monitoring:', { 
-      hasActiveDialog, 
-      hasActiveOverlay, 
-      hasVisibleStoryUI, 
-      inProgress: this._storyInProgress 
-    });
+    // console.log('Story monitoring:', { 
+    //   hasActiveDialog, 
+    //   hasActiveOverlay, 
+    //   hasVisibleStoryUI, 
+    //   inProgress: this._storyInProgress 
+    // });
     
     // If there's no UI visible, but we still think story is in progress
     if (!hasActiveDialog && !hasActiveOverlay && !hasVisibleStoryUI && this._storyInProgress) {
