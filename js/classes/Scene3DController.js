@@ -471,6 +471,141 @@ this.activeStoryTrigger = null;
   }
 
   
+  cleanupStoryOverlays() {
+    console.log('Cleaning up any leftover story overlays');
+    
+    // Find and remove all story-overlay elements
+    const overlays = document.querySelectorAll('.story-overlay');
+    if (overlays.length > 0) {
+      console.log(`Found ${overlays.length} leftover story overlays to remove`);
+      
+      overlays.forEach(overlay => {
+        console.log('Removing leftover story overlay:', overlay);
+        overlay.remove();
+      });
+      
+      return true;
+    }
+    
+    // Also check for any dialog elements that might be related to stories
+    const storyDialogs = document.querySelectorAll('.story-dialog, [data-story-dialog]');
+    if (storyDialogs.length > 0) {
+      console.log(`Found ${storyDialogs.length} leftover story dialogs to remove`);
+      
+      storyDialogs.forEach(dialog => {
+        console.log('Removing leftover story dialog:', dialog);
+        dialog.remove();
+      });
+      
+      return true;
+    }
+    
+    console.log('No leftover story elements found');
+    return false;
+  }
+
+  setDefaultStoryboard(storyId) {
+    if (!window.storyboard) {
+      console.error('Storyboard system not available');
+      return false;
+    }
+    
+    console.log(`Setting default storyboard to: ${storyId}`);
+    
+    // Store the previous default to restore later if needed
+    this._previousDefaultStoryId = window.storyboard.defaultStoryId || null;
+    
+    // Set the new default
+    window.storyboard.defaultStoryId = storyId;
+    
+    return true;
+  }
+
+  runStoryboardFromMarker(marker) {
+    if (!marker || !marker.userData) {
+      console.error('Invalid marker for storyboard trigger');
+      return false;
+    }
+    
+    console.log('Running storyboard from marker:', marker.userData);
+    
+    // Set as active to prevent duplicate triggers
+    this.activeStoryTrigger = marker;
+    
+    // Mark as triggered if it's a one-time trigger
+    if (marker.userData.triggerOnce) {
+      marker.userData.triggered = true;
+    }
+    
+    // Get the storyId from the marker
+    const storyId = marker.userData.storyId;
+    if (!storyId) {
+      console.warn('No storyId specified in marker');
+      this.activeStoryTrigger = null;
+      return false;
+    }
+    
+    // Set this storyboard as the default
+    this.setDefaultStoryboard(storyId);
+    
+    // Important: Pause controls BEFORE starting the story
+    this.pauseControls();
+    
+    // First cleanup any existing overlays
+    this.cleanupStoryOverlays();
+    
+    // Set a flag to indicate story is in progress
+    this._storyInProgress = true;
+    
+    // Start the storyboard using the reliable B-key method
+    console.log(`Starting storyboard with ID: ${storyId}`);
+    this.runStoryboard(storyId);
+    
+    // Set up a monitor to detect when the story finishes
+    this._stopStoryMonitoring = false;
+    
+    const checkStoryCompletion = () => {
+      if (this._stopStoryMonitoring) return;
+      
+      // Wait a bit to ensure UI has updated
+      setTimeout(() => {
+        // Clean up any leftover overlays
+        const cleaned = this.cleanupStoryOverlays();
+        
+        // Check if the story appears to be complete
+        const hasVisibleStoryUI = document.querySelector('.story-overlay') || 
+                                 document.querySelector('.story-dialog') ||
+                                 document.querySelector('[data-story-dialog]');
+        
+        // If no UI is visible or we cleaned something up, resume controls
+        if (!hasVisibleStoryUI || cleaned) {
+          console.log('Story appears to be complete, resuming controls');
+          this._storyInProgress = false;
+          
+          // Resume controls
+          setTimeout(() => {
+            this.resumeControls();
+            
+            // Reset active trigger after a delay to prevent immediate retrigger
+            setTimeout(() => {
+              this.activeStoryTrigger = null;
+            }, 1000);
+          }, 200);
+          
+          this._stopStoryMonitoring = true;
+          return;
+        }
+        
+        // Keep checking
+        checkStoryCompletion();
+      }, 500); // Check every half second
+    };
+    
+    // Start monitoring for completion
+    setTimeout(checkStoryCompletion, 2000); // Give it 2 seconds to start
+    
+    return true;
+  }
 
   // Enhanced method to thoroughly dispose of materials including all textures
   disposeMaterial(material) {
@@ -1601,29 +1736,23 @@ break;
       //   }
       //   break;
       // In handleKeyDown method, add a case for 'KeyT':
-case "KeyT":
-  // Test trigger nearest story
-  if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
-    const playerPos = this.camera.position;
-    let nearest = null;
-    let minDist = Infinity;
-    
-    this.storyboardTriggers.forEach(trigger => {
-      const dist = playerPos.distanceTo(trigger.position);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = trigger;
-      }
-    });
-    
-    if (nearest) {
-      console.log(`Force-triggering nearest story: ${nearest.id}`);
-      this.handleStoryTrigger(nearest);
-    } else {
-      console.log('No story triggers found');
-    }
-  }
-  break;
+      case "KeyT":
+        // Test trigger nearest story
+        if (this.currentPromptType === 'story' && this.nearestStory) {
+          console.log('Testing improved story trigger method with T key');
+          this.runStoryboardFromMarker(this.nearestStory);
+          
+          // Hide the prompt
+          if (this.activePrompts && this.activePrompts.has('story')) {
+            this.hideInteractivePrompt('story');
+          }
+        } else {
+          // If not near a marker, just force cleanup any leftover overlays
+          this.cleanupStoryOverlays();
+          this.resumeControls();
+        }
+        break;
+        
       case "KeyI":
         this.toggleInventory();
         break;
@@ -1632,6 +1761,8 @@ case "KeyT":
   if (this.currentPromptType === 'story' && this.nearestStory) {
     console.log('Story trigger activated via F key');
     this.handleStoryTrigger(this.nearestStory);
+    const DelElement = document.getElementById("story-overlay")
+    DelElement.remove();
   }
   else if (this.currentPromptType === 'encounter' && this.nearestEncounter) {
     console.log('Encounter activated via F key');
@@ -1667,116 +1798,8 @@ case "KeyT":
   }
   break;
 
-  case "KeyF":
-  // Handle different kinds of interactions based on active prompt type
-  if (this.currentPromptType === 'story' && this.nearestStory) {
-    console.log('Story trigger activated via F key');
-    this.handleStoryTrigger(this.nearestStory);
-  }
-  else if (this.currentPromptType === 'encounter' && this.nearestEncounter) {
-    console.log('Encounter activated via F key');
-    this.handleEncounter(this.nearestEncounter);
-  }
-  else if (this.currentPromptType === 'splashArt' && this.nearestSplashArt) {
-    console.log('Splash art activated via F key');
-    this.showSplashArt(this.nearestSplashArt);
-  }
-  else if (this.currentPromptType === 'door' && this.activeDoor) {
-    console.log('Door activated via F key');
-    this.executeDoorTeleport();
-  }
-  else if (this.currentPromptType === 'teleport' && this.activeTeleporter) {
-    console.log('Teleporter activated via F key');
-    this.executeTeleport();
-  }
-  else if (this.currentPromptType === 'pickup' && this.nearestProp) {
-    console.log('Prop pickup activated via F key');
-    // Pick up the prop
-    const propData = {
-      id: this.nearestProp.userData.id,
-      name: this.nearestProp.userData.name || 'Prop',
-      image: this.nearestProp.material?.map?.image?.src
-    };
-
-    this.addToInventory(propData);
-
-    // Remove prop from scene
-    this.scene.remove(this.nearestProp);
-    this.nearestProp = null;
-    this.hideInteractivePrompt('pickup');
-  }
-  break;
     }
 
-  //     case "KeyF":
-  // // Check if we have a nearby story marker
-  // if (this.nearestStory && !this.activeStoryMarker) {
-  //   console.log(`Interacting with story marker: ${this.nearestStory.userData.id}`);
-  //   this.activeStoryMarker = this.nearestStory;
-    
-  //   // Mark as triggered if this is a one-time trigger
-  //   if (this.nearestStory.userData.triggerOnce) {
-  //     this.nearestStory.userData.triggered = true;
-  //   }
-    
-  //   // Hide prompt
-  //   if (this.storyPrompt) {
-  //     this.storyPrompt.style.display = 'none';
-  //   }
-    
-  //   // Pause controls
-  //   this.pauseControls();
-    
-  //   // Run the specified story
-  //   const storyId = this.nearestStory.userData.storyId;
-  //   if (storyId) {
-  //     console.log(`Running story with ID: ${storyId}`);
-  //     this.runStoryboard(storyId);
-  //   } else {
-  //     console.log('No specific story ID, using default');
-  //     this.runStoryboard();
-  //   }
-    
-  //   // Set timeout to release marker lock
-  //   setTimeout(() => {
-  //     console.log('Story marker lock released');
-  //     this.activeStoryMarker = null;
-  //   }, 5000);
-  // }
-  
-  // // Then handle other F interactions (doors, etc.)
-  // else if (this.nearestProp && !this.inventory.has(this.nearestProp.userData.id)) {
-  //         // Pick up the prop
-  //         const propData = {
-  //           id: this.nearestProp.userData.id,
-  //           name: this.nearestProp.userData.name || 'Prop',
-  //           image: this.nearestProp.material?.map?.image?.src
-  //         };
-
-  //         this.addToInventory(propData);
-
-  //         // Remove prop from scene
-  //         this.scene.remove(this.nearestProp);
-  //         this.nearestProp = null;
-
-  //         // Hide prompt
-  //         if (this.pickupPrompt) {
-  //           this.pickupPrompt.style.display = 'none';
-  //         }
-  //       } else if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
-  //         this.executeTeleport();
-  //       }
-  //       else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
-  //         this.executeDoorTeleport();
-  //       }
-  //       else if (this.nearestSplashArt && !this.activeSplashArt) {
-  //         this.showSplashArt(this.nearestSplashArt);
-  //       }
-  //       else if (this.nearestEncounter) {
-  //         this.handleEncounter(this.nearestEncounter);
-  //       }
-  //       break;
-  //   }
   }
 
   handleKeyUp(event) {
@@ -6520,88 +6543,6 @@ this.gameState = 'initializing';
       }, 150);
     });
   }
-
-  // createEncounterPrompt() {
-  //   if (!this.encounterPrompt) {
-  //     this.encounterPrompt = document.createElement('div');
-  //     this.encounterPrompt.style.cssText = `
-  //       position: fixed;
-  //       top: 50%;
-  //       left: 50%;
-  //       transform: translate(-50%, -50%);
-  //       background: rgba(0, 0, 0, 0.8);
-  //       color: white;
-  //       padding: 15px 20px;
-  //       border-radius: 5px;
-  //       display: none;
-  //       font-family: Arial, sans-serif;
-  //       pointer-events: none;
-  //       z-index: 1000;
-  //     `;
-  //     document.body.appendChild(this.encounterPrompt);
-
-  //     // Add keypress listener for encounter interaction
-  //     document.addEventListener('keydown', (e) => {
-  //       if (e.code === 'KeyE' && this.nearestEncounter) {
-  //         this.handleEncounter(this.nearestEncounter);
-  //       }
-  //     });
-  //   }
-  //   return this.encounterPrompt;
-  // }
-
-  // createStoryPrompt() {
-  //   if (!this.storyPrompt) {
-  //     this.storyPrompt = document.createElement('div');
-  //     this.storyPrompt.style.cssText = `
-  //       position: fixed;
-  //       top: 50%;
-  //       left: 50%;
-  //       transform: translate(-50%, -50%);
-  //       background: rgba(0, 0, 0, 0.8);
-  //       color: white;
-  //       padding: 15px 20px;
-  //       border-radius: 5px;
-  //       display: none;
-  //       font-family: Arial, sans-serif;
-  //       pointer-events: none;
-  //       z-index: 1000;
-  //     `;
-  //     document.body.appendChild(this.storyPrompt);
-  
-  //     // Add keypress listener for story interaction (F key)
-  //     document.addEventListener('keydown', (e) => {
-  //       if (e.code === 'KeyF' && this.nearestStory && !this.activeStoryMarker) {
-  //         console.log('F key pressed near story trigger');
-  //         this.handleStoryTrigger(this.nearestStory);
-  //       }
-  //     });
-  //   }
-  //   return this.storyPrompt;
-  // }
-
-  // createSplashArtPrompt() {
-  //   if (!this.splashArtPrompt) {
-  //     this.splashArtPrompt = document.createElement('div');
-  //     this.splashArtPrompt.style.cssText = `
-  //         position: fixed;
-  //         top: 50%;
-  //         left: 50%;
-  //         transform: translate(-50%, -50%);
-  //         background: rgba(0, 0, 0, 0.8);
-  //         color: white;
-  //         padding: 15px 20px;
-  //         border-radius: 5px;
-  //         display: none;
-  //         font-family: Arial, sans-serif;
-  //         pointer-events: none;
-  //         z-index: 1000;
-  //     `;
-  //     document.body.appendChild(this.splashArtPrompt);
-  //   }
-  //   return this.splashArtPrompt;
-  // }
-
 
   /**
  * Shows an interactive prompt in the center of the screen
