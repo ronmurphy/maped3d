@@ -25,43 +25,6 @@ class DungeonGenerator {
         // Keep track of rooms for enemy placement
         this.rooms = [];
     }
-
-    // Add this method to DungeonGenerator class (around line 28)
-configureDifficulty(difficulty) {
-    console.log(`Setting dungeon difficulty to: ${difficulty}`);
-    
-    // Adjust dungeon parameters based on difficulty
-    switch(difficulty.toLowerCase()) {
-      case 'easy':
-        this.maxRooms = 6;
-        this.roomSizeMax = 10;
-        this.enemyCount = 3;
-        break;
-        
-      case 'medium':
-        this.maxRooms = 8;
-        this.roomSizeMax = 12;
-        this.enemyCount = 5;
-        break;
-        
-      case 'hard':
-        this.maxRooms = 10;
-        this.roomSizeMax = 15;
-        this.enemyCount = 8;
-        break;
-        
-      case 'epic':
-        this.maxRooms = 12;
-        this.roomSizeMax = 18;
-        this.enemyCount = 12;
-        break;
-        
-      default:
-        // Use default settings
-        this.maxRooms = 8;
-        this.enemyCount = 5;
-    }
-  }
     
     // Main creation method
     createNew() {
@@ -347,151 +310,40 @@ configureDifficulty(difficulty) {
         const floorGeometry = new THREE.BoxGeometry(this.cellSize, 0.1, this.cellSize);
         const wallGeometry = new THREE.BoxGeometry(this.cellSize, this.wallHeight, this.cellSize);
         
-// Load textures with fallbacks
-let floorTextures = [];
-let wallTextures = [];
-
-// Try to load from resource manager, use fallbacks if not available
-try {
-    // Try to get floor textures
-    const floor1 = this.resourceManager.getTexture('DungeonFloor1.png');
-    const floor2 = this.resourceManager.getTexture('DungeonFloor2.png');
-    
-    // Check if textures were found
-    if (floor1 && floor2) {
-        floorTextures = [floor1, floor2];
-        console.log('Found dungeon floor textures in resource manager');
-    } else {
-        // Create default textures if not found
-        console.log('Creating default floor textures');
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 128;
-        const ctx = canvas.getContext('2d');
+        // Load textures
+        const floorTextures = [
+            this.resourceManager.getTexture('DungeonFloor1.png'),
+            this.resourceManager.getTexture('DungeonFloor2.png')
+        ];
         
-        // Floor texture 1 - simple gray grid
-        ctx.fillStyle = '#555555';
-        ctx.fillRect(0, 0, 128, 128);
-        ctx.strokeStyle = '#444444';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 128; i += 16) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(128, i);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, 128);
-            ctx.stroke();
-        }
-        const defaultFloor1 = new THREE.CanvasTexture(canvas);
+        const wallTextures = [
+            this.resourceManager.getTexture('DungeonWall1.png'),
+            this.resourceManager.getTexture('DungeonWall2.png')
+        ];
         
-        // Floor texture 2 - different pattern
-        ctx.clearRect(0, 0, 128, 128);
-        ctx.fillStyle = '#666666';
-        ctx.fillRect(0, 0, 128, 128);
-        ctx.fillStyle = '#555555';
-        for (let i = 0; i < 128; i += 32) {
-            for (let j = 0; j < 128; j += 32) {
-                if ((i + j) % 64 === 0) {
-                    ctx.fillRect(i, j, 16, 16);
-                }
-            }
-        }
-        const defaultFloor2 = new THREE.CanvasTexture(canvas);
+        // Process all textures for proper tiling
+        floorTextures.forEach(texture => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+        });
         
-        floorTextures = [defaultFloor1, defaultFloor2];
-    }
-    
-    // Try to get wall textures
-    const wall1 = this.resourceManager.getTexture('DungeonWall1.png');
-    const wall2 = this.resourceManager.getTexture('DungeonWall2.png');
-    
-    // Check if textures were found
-    if (wall1 && wall2) {
-        wallTextures = [wall1, wall2];
-        console.log('Found dungeon wall textures in resource manager');
-    } else {
-        // Create default textures if not found
-        console.log('Creating default wall textures');
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 128;
-        const ctx = canvas.getContext('2d');
+        wallTextures.forEach(texture => {
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, this.wallHeight / this.cellSize);
+        });
         
-        // Wall texture 1 - stone blocks
-        ctx.fillStyle = '#777777';
-        ctx.fillRect(0, 0, 128, 128);
-        ctx.strokeStyle = '#555555';
-        ctx.lineWidth = 4;
-        for (let i = 0; i < 128; i += 32) {
-            for (let j = 0; j < 128; j += 32) {
-                ctx.strokeRect(i, j, 32, 32);
-            }
-        }
-        const defaultWall1 = new THREE.CanvasTexture(canvas);
+        // Create floor and walls using instanced meshes for better performance
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            map: floorTextures[0],
+            roughness: 0.8
+        });
         
-        // Wall texture 2 - different pattern
-        ctx.clearRect(0, 0, 128, 128);
-        ctx.fillStyle = '#888888';
-        ctx.fillRect(0, 0, 128, 128);
-        ctx.strokeStyle = '#666666';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 128; i += 16) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(128, i);
-            ctx.stroke();
-        }
-        const defaultWall2 = new THREE.CanvasTexture(canvas);
-        
-        wallTextures = [defaultWall1, defaultWall2];
-    }
-} catch (e) {
-    console.warn('Error loading textures:', e);
-    // Create very simple fallback textures
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    
-    // Simple floor texture
-    ctx.fillStyle = '#555555';
-    ctx.fillRect(0, 0, 64, 64);
-    const simpleFloor = new THREE.CanvasTexture(canvas);
-    
-    // Simple wall texture
-    ctx.fillStyle = '#777777';
-    ctx.fillRect(0, 0, 64, 64);
-    const simpleWall = new THREE.CanvasTexture(canvas);
-    
-    floorTextures = [simpleFloor, simpleFloor];
-    wallTextures = [simpleWall, simpleWall];
-}
-
-// Process all textures for proper tiling
-floorTextures.forEach(texture => {
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
-});
-
-wallTextures.forEach(texture => {
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, this.wallHeight / this.cellSize);
-});
-
-// Create floor and walls using instanced meshes for better performance
-const floorMaterial = new THREE.MeshStandardMaterial({
-    map: floorTextures[0],
-    roughness: 0.8
-});
-
-const wallMaterial = new THREE.MeshStandardMaterial({
-    map: wallTextures[0],
-    roughness: 0.6
-});
+        const wallMaterial = new THREE.MeshStandardMaterial({
+            map: wallTextures[0],
+            roughness: 0.6
+        });
         
         // Draw dungeon in 3D
         for (let x = 0; x < this.dungeonSize; x++) {
@@ -680,11 +532,6 @@ const wallMaterial = new THREE.MeshStandardMaterial({
         
         return true;
     }
-
-
-
-
 }
 
-window.DungeonGenerator = DungeonGenerator;
-// export default DungeonGenerator;
+export default DungeonGenerator;

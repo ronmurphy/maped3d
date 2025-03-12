@@ -3171,37 +3171,69 @@ break;
             
             break;
 
-case "dungeon":
-  console.log(`Processing dungeon marker: ${marker.id}`);
-  
-  // Calculate world position
-  const dungeonX = marker.x / 50 - this.boxWidth / 2;
-  const dungeonZ = marker.y / 50 - this.boxDepth / 2;
-  
-  // Get elevation at marker position
-  const { elevationD } = this.getElevationAtPoint(dungeonX, dungeonZ);
-  
-  // Create visual dungeon entrance
-  const dungeonEntrance = this.createDungeonEntrance(
-    dungeonX, 
-    elevationD + 0.05, 
-    dungeonZ, 
-    marker.data?.name || "Dungeon",
-    marker.data?.difficulty || "normal"
-  );
-  
-  // Store marker data for interaction
-  dungeonEntrance.userData = {
-    type: 'dungeon',
-    id: marker.id,
-    name: marker.data?.name || "Mysterious Dungeon",
-    difficulty: marker.data?.difficulty || "normal",
-    dungeonId: marker.data?.dungeonId || marker.id
-  };
-  
-  this.scene.add(dungeonEntrance);
-  console.log(`Added dungeon entrance to scene: ${marker.id}`);
-  break;
+            // case "dungeon":
+            //   console.log(`Processing dungeon marker: ${marker.id}`);
+              
+            //   // Calculate world position
+            //   const dungeonX = marker.x / 50 - this.boxWidth / 2;
+            //   const dungeonZ = marker.y / 50 - this.boxDepth / 2;
+              
+            //   // Get elevation at marker position - FIX: use correct variable name
+            //   const { elevation } = this.getElevationAtPoint(dungeonX, dungeonZ);
+              
+            //   // Create visual dungeon entrance
+            //   const dungeonEntrance = this.createDungeonEntrance(
+            //     dungeonX, 
+            //     elevation + 0.05, // FIX: use correct variable
+            //     dungeonZ, 
+            //     marker.data?.name || "Dungeon",
+            //     marker.data?.difficulty || "normal"
+            //   );
+              
+            //   // FIX: Preserve existing userData properties while adding new ones
+            //   Object.assign(dungeonEntrance.userData, {
+            //     type: 'dungeon',
+            //     id: marker.id,
+            //     name: marker.data?.name || "Mysterious Dungeon",
+            //     difficulty: marker.data?.difficulty || "normal",
+            //     dungeonId: marker.data?.dungeonId || marker.id
+            //   });
+              
+            //   this.scene.add(dungeonEntrance);
+            //   console.log(`Added dungeon entrance to scene: ${marker.id}`);
+            //   break;
+
+            case "dungeon":
+              console.log(`Processing dungeon marker: ${marker.id}`);
+              
+              // Calculate world position
+              const dungeonX = marker.x / 50 - this.boxWidth / 2;
+              const dungeonZ = marker.y / 50 - this.boxDepth / 2;
+              
+              // Get elevation at marker position with renamed variable
+              const { elevation: elevationDungeon } = this.getElevationAtPoint(dungeonX, dungeonZ);
+              
+              // Create visual dungeon entrance
+              const dungeonEntrance = this.createDungeonEntrance(
+                dungeonX, 
+                elevationDungeon + 0.05, // Use renamed variable
+                dungeonZ, 
+                marker.data?.name || "Dungeon",
+                marker.data?.difficulty || "normal"
+              );
+              
+              // FIX: Preserve existing userData properties while adding new ones
+              Object.assign(dungeonEntrance.userData, {
+                type: 'dungeon',
+                id: marker.id,
+                name: marker.data?.name || "Mysterious Dungeon",
+                difficulty: marker.data?.difficulty || "normal",
+                dungeonId: marker.data?.dungeonId || marker.id
+              });
+              
+              this.scene.add(dungeonEntrance);
+              console.log(`Added dungeon entrance to scene: ${marker.id}`);
+              break;
 
         default:
           console.log(`Skipping unknown marker type: ${marker.type}`);
@@ -3799,28 +3831,6 @@ this.scene.add(floor);
       cleanup: this.cleanup.bind(this)   // Ensure 'this' binding
     };
   }
-
-  // createPickupPrompt() {
-  //   if (!this.pickupPrompt) {
-  //     this.pickupPrompt = document.createElement('div');
-  //     this.pickupPrompt.style.cssText = `
-  //         position: fixed;
-  //         top: 50%;
-  //         left: 50%;
-  //         transform: translate(-50%, -50%);
-  //         background: rgba(0, 0, 0, 0.8);
-  //         color: white;
-  //         padding: 15px 20px;
-  //         border-radius: 5px;
-  //         display: none;
-  //         font-family: Arial, sans-serif;
-  //         pointer-events: none;
-  //         z-index: 1000;
-  //     `;
-  //     document.body.appendChild(this.pickupPrompt);
-  //   }
-  //   return this.pickupPrompt;
-  // }
 
   setupInventorySystem() {
     console.log('Setting up inventory system');
@@ -6019,55 +6029,6 @@ this.gameState = 'initializing';
     console.log(`Added ${this.doors.length} door interaction points`);
   }
 
-  // updateDoorPrompt(nearestDoor) {
-  //   if (!this.doorPrompt) {
-  //     // Create prompt if it doesn't exist
-  //     this.doorPrompt = document.createElement('div');
-  //     this.doorPrompt.style.cssText = `
-  //       position: fixed;
-  //       top: 50%;
-  //       left: 50%;
-  //       transform: translate(-50%, -50%);
-  //       background: rgba(0, 0, 0, 0.8);
-  //       color: white;
-  //       padding: 15px 20px;
-  //       border-radius: 5px;
-  //       display: none;
-  //       font-family: Arial, sans-serif;
-  //       pointer-events: none;
-  //       z-index: 1000;
-  //     `;
-  //     document.body.appendChild(this.doorPrompt);
-
-  //     // Add keypress listener for door interaction
-  //     document.addEventListener('keydown', (e) => {
-  //       if (e.code === 'KeyE') {
-  //         // Handle teleporter interaction
-  //         if (this.teleportPrompt && this.teleportPrompt.style.display === 'block') {
-  //           this.executeTeleport();
-  //         }
-  //         // Handle door interaction
-  //         else if (this.doorPrompt && this.doorPrompt.style.display === 'block') {
-  //           this.executeDoorTeleport();
-  //         }
-  //       }
-  //     });
-  //   }
-
-  //   // Only show door prompt if no teleporter prompt is active
-  //   const teleporterActive = this.teleportPrompt && this.teleportPrompt.style.display === 'block';
-
-  //   if (nearestDoor && !teleporterActive) {
-  //     // this.doorPrompt.textContent = 'Press F to open door';
-  //     this.showInteractivePrompt('Open door', 'door_front', 'F', 'door');
-  //     this.doorPrompt.style.display = 'block';
-  //     this.activeDoor = nearestDoor;
-  //   } else {
-  //     this.doorPrompt.style.display = 'none';
-  //     this.activeDoor = null;
-  //   }
-  // }
-
 
   executeDoorTeleport() {
     if (!this.activeDoor) return;
@@ -7727,73 +7688,6 @@ updateTexturesForQualityLevel(level) {
     }
   }
 
-  //   enterDungeon(dungeonObject) {
-  //   if (!dungeonObject || !dungeonObject.userData) return;
-    
-  //   console.log(`Entering dungeon: ${dungeonObject.userData.name}`);
-    
-  //   // Start with a visual transition effect
-  //   this.pauseControls();
-    
-  //   // Create flash effect
-  //   const flash = document.createElement('div');
-  //   flash.style.cssText = `
-  //     position: fixed;
-  //     top: 0;
-  //     left: 0;
-  //     right: 0;
-  //     bottom: 0;
-  //     background: ${dungeonObject.userData.portalElement?.material.color.getStyle() || 'white'};
-  //     opacity: 0;
-  //     pointer-events: none;
-  //     transition: opacity 0.8s ease;
-  //     z-index: 9999;
-  //   `;
-  //   document.body.appendChild(flash);
-    
-  //   // Play dungeon enter sound if available
-  //   if (this.resourceManager) {
-  //     this.resourceManager.playSound('dungeon_enter', 'effects');
-  //   }
-    
-  //   // Fade in
-  //   requestAnimationFrame(() => {
-  //     flash.style.opacity = '1';
-      
-  //     setTimeout(() => {
-  //       // Here you would typically load the dungeon map/scene
-  //       // For demonstration, we'll just simulate the transition
-        
-  //       console.log(`Loading dungeon: ${dungeonObject.userData.dungeonId}`);
-        
-  //       // TODO: Replace this with your actual dungeon loading code
-  //       // this.loadDungeon(dungeonObject.userData.dungeonId);
-        
-  //       // Notify any listeners that we're entering a dungeon
-  //       const dungeonEvent = new CustomEvent('dungeonEnter', { 
-  //         detail: {
-  //           dungeonId: dungeonObject.userData.dungeonId,
-  //           name: dungeonObject.userData.name,
-  //           difficulty: dungeonObject.userData.difficulty
-  //         }
-  //       });
-  //       document.dispatchEvent(dungeonEvent);
-        
-  //       // For demonstration, fade out and resume controls
-  //       setTimeout(() => {
-  //         flash.style.opacity = '0';
-          
-  //         setTimeout(() => {
-  //           flash.remove();
-  //           this.resumeControls();
-            
-  //           // Show a notification that dungeon is a placeholder
-  //           this.showNotification(`Entered ${dungeonObject.userData.name}`);
-  //         }, 800);
-  //       }, 1000);
-  //     }, 800);
-  //   });
-  // }
 
     enterDungeon(dungeonObject) {
     if (!dungeonObject || !dungeonObject.userData) return;
@@ -7845,6 +7739,73 @@ updateTexturesForQualityLevel(level) {
   }
 
 
+/**
+ * Load DungeonGenerator and expose it globally
+ */
+// loadDungeonGenerator() {
+//   return new Promise((resolve, reject) => {
+//     // Check if already available globally
+//     if (window.DungeonGenerator) {
+//       console.log('DungeonGenerator already available globally');
+//       resolve();
+//       return;
+//     }
+    
+//     // First check if the script element already exists
+//     const existingScript = document.querySelector('script[src*="DungeonGenerator.js"]');
+    
+//     if (existingScript) {
+//       console.log('DungeonGenerator script exists, adding adapter');
+//       // Add adapter script to expose module exports
+//       const adapter = document.createElement('script');
+//       adapter.textContent = `
+//         // Expose ES module export to global scope
+//         try {
+//           if (typeof DungeonGenerator !== 'undefined') {
+//             window.DungeonGenerator = DungeonGenerator;
+//             console.log('DungeonGenerator exposed to global scope');
+//           }
+//         } catch(e) {
+//           console.error('Failed to expose DungeonGenerator:', e);
+//         }
+//       `;
+//       document.head.appendChild(adapter);
+//       resolve();
+//     } else {
+//       // Script doesn't exist yet, load it and then expose it
+//       console.log('Loading DungeonGenerator script...');
+//       const script = document.createElement('script');
+//       script.src = '/js/classes/DungeonGenerator.js';
+      
+//       script.onload = () => {
+//         console.log('DungeonGenerator script loaded, adding adapter');
+//         // Add adapter script after load
+//         const adapter = document.createElement('script');
+//         adapter.textContent = `
+//           // Expose ES module export to global scope
+//           try {
+//             if (typeof DungeonGenerator !== 'undefined') {
+//               window.DungeonGenerator = DungeonGenerator;
+//               console.log('DungeonGenerator exposed to global scope');
+//             }
+//           } catch(e) {
+//             console.error('Failed to expose DungeonGenerator:', e);
+//           }
+//         `;
+//         document.head.appendChild(adapter);
+//         resolve();
+//       };
+      
+//       script.onerror = (err) => {
+//         console.error('Failed to load DungeonGenerator:', err);
+//         reject(err);
+//       };
+      
+//       document.head.appendChild(script);
+//     }
+//   });
+// }
+
     /**
    * Load and enter a procedurally generated dungeon
    * @param {string} dungeonId - The ID of the dungeon to load
@@ -7854,17 +7815,6 @@ updateTexturesForQualityLevel(level) {
   async loadDungeon(dungeonId, options = {}) {
     console.log(`Loading dungeon: ${dungeonId}`, options);
     
-    // Initialize dungeon generator if needed
-    if (!this.dungeonGenerator) {
-      console.log('Creating new DungeonGenerator');
-      this.dungeonGenerator = new DungeonGenerator(this, this.resourceManager);
-      
-      // Configure difficulty based on options
-      if (options.difficulty) {
-        this.dungeonGenerator.configureDifficulty(options.difficulty);
-      }
-    }
-    
     // Store current world state to return later
     this._prevWorldState = {
       cameraPosition: this.camera.position.clone(),
@@ -7872,6 +7822,42 @@ updateTexturesForQualityLevel(level) {
     };
     
     try {
+      // Check if DungeonGenerator is available, if not wait for it
+      if (typeof DungeonGenerator === 'undefined') {
+        console.log('Waiting for DungeonGenerator to be available...');
+        
+        // Create a promise that resolves when DungeonGenerator is available
+        await new Promise((resolve, reject) => {
+          // Try for up to 5 seconds
+          let attempts = 0;
+          const maxAttempts = 50;
+          
+          const checkInterval = setInterval(() => {
+            attempts++;
+            
+            if (typeof DungeonGenerator !== 'undefined') {
+              clearInterval(checkInterval);
+              console.log('DungeonGenerator is now available');
+              resolve();
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              reject(new Error('DungeonGenerator not available after waiting'));
+            }
+          }, 100); // Check every 100ms
+        });
+      }
+      
+      // Initialize dungeon generator if needed
+      if (!this.dungeonGenerator) {
+        console.log('Creating new DungeonGenerator');
+        this.dungeonGenerator = new DungeonGenerator(this, this.resourceManager);
+        
+        // Configure difficulty based on options
+        if (options.difficulty) {
+          this.dungeonGenerator.configureDifficulty(options.difficulty);
+        }
+      }
+     
       // Pause controls during transition
       this.pauseControls();
       
@@ -7907,10 +7893,9 @@ updateTexturesForQualityLevel(level) {
       
       // Resume controls
       this.resumeControls();
-      
+
       return true;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error loading dungeon:', error);
       
       // Attempt to recover by returning to previous position
@@ -7923,6 +7908,7 @@ updateTexturesForQualityLevel(level) {
       return false;
     }
   }
+
   
   /**
    * Remove non-dungeon elements from the scene
