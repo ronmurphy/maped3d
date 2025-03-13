@@ -7806,6 +7806,41 @@ updateTexturesForQualityLevel(level) {
 //   });
 // }
 
+// Add this helper method to Scene3DController
+loadDungeonGenerator() {
+  return new Promise((resolve, reject) => {
+    // Check if already available globally
+    if (typeof DungeonGenerator !== 'undefined') {
+      console.log('DungeonGenerator is already available');
+      resolve();
+      return;
+    }
+    
+    // Create a script element to load the local DungeonGenerator.js
+    const script = document.createElement('script');
+    script.src = '/js/classes/DungeonGenerator.js';
+    
+    script.onload = () => {
+      console.log('DungeonGenerator script loaded successfully');
+      // Wait a small bit for script to initialize
+      setTimeout(() => {
+        if (typeof DungeonGenerator !== 'undefined') {
+          resolve();
+        } else {
+          reject(new Error('DungeonGenerator not found after loading script'));
+        }
+      }, 100);
+    };
+    
+    script.onerror = (err) => {
+      console.error('Failed to load DungeonGenerator:', err);
+      reject(err);
+    };
+    
+    document.head.appendChild(script);
+  });
+}
+
     /**
    * Load and enter a procedurally generated dungeon
    * @param {string} dungeonId - The ID of the dungeon to load
@@ -7825,26 +7860,7 @@ updateTexturesForQualityLevel(level) {
       // Check if DungeonGenerator is available, if not wait for it
       if (typeof DungeonGenerator === 'undefined') {
         console.log('Waiting for DungeonGenerator to be available...');
-        
-        // Create a promise that resolves when DungeonGenerator is available
-        await new Promise((resolve, reject) => {
-          // Try for up to 5 seconds
-          let attempts = 0;
-          const maxAttempts = 50;
-          
-          const checkInterval = setInterval(() => {
-            attempts++;
-            
-            if (typeof DungeonGenerator !== 'undefined') {
-              clearInterval(checkInterval);
-              console.log('DungeonGenerator is now available');
-              resolve();
-            } else if (attempts >= maxAttempts) {
-              clearInterval(checkInterval);
-              reject(new Error('DungeonGenerator not available after waiting'));
-            }
-          }, 100); // Check every 100ms
-        });
+        await this.loadDungeonGenerator();
       }
       
       // Initialize dungeon generator if needed
@@ -7955,6 +7971,11 @@ updateTexturesForQualityLevel(level) {
    * Configure dungeon-specific lighting
    */
   setupDungeonLighting() {
+
+    if (this._skipDungeonLighting) {
+      console.log("Skipping Scene3DController dungeon lighting (using generator's lighting)");
+      return;
+  }
     // Remove existing ambient light
     this.scene.traverse(object => {
       if (object.isAmbientLight) {

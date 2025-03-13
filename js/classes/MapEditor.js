@@ -5032,7 +5032,7 @@ if (type === "storyboard") {
     return `
       <div style="display: flex; flex-direction: column; gap: 16px;">
         <div style="text-align: center; padding: 12px;">
-          <span class="material-icons" style="font-size: 48px; color: #8B4513;">castle</span>
+          <span class="material-icons" style="font-size: 48px; color: #8B4513;">fort</span>
           <div style="margin-top: 8px; font-weight: bold;">Dungeon Entrance</div>
           <div style="font-size: 0.9em; color: #888; margin-top: 4px;">
             ${marker.data?.name || "Mysterious Dungeon"}
