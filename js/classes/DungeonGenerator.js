@@ -109,8 +109,8 @@ class DungeonGenerator {
         }
         
         // Apply additional scaling if needed
-        // this.dungeonSize = this.dungeonSize * 2; // Double all dungeon sizes
-        this.dungeonSize = this.dungeonSize + this.dungeonSize /2; // 1.5x all dungeon sizes
+        this.dungeonSize = this.dungeonSize * 2; // Double all dungeon sizes
+        // this.dungeonSize = this.dungeonSize + this.dungeonSize /2; // 1.5x all dungeon sizes
 
         
         console.log(`Dungeon configured: size=${this.dungeonSize}, rooms=${this.numRooms}, maxRoomSize=${this.roomSizeMax}`);
@@ -553,6 +553,94 @@ createLargeFloor() {
     
     return floor;
   }
+
+  /**
+ * Create a large ceiling over the dungeon
+ */
+createLargeCeiling() {
+  console.log("Creating unified dungeon ceiling");
+  
+  // Determine the bounds of the dungeon (same as floor bounds)
+  let minX = this.dungeonSize;
+  let maxX = 0;
+  let minZ = this.dungeonSize;
+  let maxZ = 0;
+  
+  // Scan grid to find actual dungeon boundaries
+  for (let x = 0; x < this.grid.length; x++) {
+    for (let z = 0; z < this.grid[0].length; z++) {
+      if (this.grid[x][z] === 2) { // If floor
+        minX = Math.min(minX, x / 2);
+        maxX = Math.max(maxX, x / 2);
+        minZ = Math.min(minZ, z / 2);
+        maxZ = Math.max(maxZ, z / 2);
+      }
+    }
+  }
+  
+  // Convert to the same world coordinate system as walls
+  minX = minX - this.dungeonSize / 2;
+  maxX = maxX - this.dungeonSize / 2;
+  minZ = minZ - this.dungeonSize / 2;
+  maxZ = maxZ - this.dungeonSize / 2;
+  
+  // Add margin to ensure coverage
+  minX = minX - 2;
+  minZ = minZ - 2;
+  maxX = maxX + 2;
+  maxZ = maxZ + 2;
+  
+  const ceilingWidth = maxX - minX;
+  const ceilingDepth = maxZ - minZ;
+  
+  if (ceilingWidth <= 0 || ceilingDepth <= 0) {
+    console.error("Invalid ceiling dimensions:", ceilingWidth, ceilingDepth);
+    return;
+  }
+  
+  const ceilingGeometry = new THREE.PlaneGeometry(ceilingWidth, ceilingDepth);
+  
+  // Create ceiling material - use wall texture or a darker version of floor
+  const ceilingMaterial = new THREE.MeshStandardMaterial({
+    map: this.wallTextures[0] || this.floorTextures[0],
+    color: 0x444444, // Darker than normal to simulate shadow
+    roughness: 0.9,
+    side: THREE.DoubleSide
+  });
+  
+  // Set texture repeat based on ceiling size
+  if (ceilingMaterial.map) {
+    ceilingMaterial.map.wrapS = THREE.RepeatWrapping;
+    ceilingMaterial.map.wrapT = THREE.RepeatWrapping;
+    ceilingMaterial.map.repeat.set(ceilingWidth / 3, ceilingDepth / 3); // Larger repeat for ceiling
+  }
+  
+  const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+  ceiling.rotation.x = Math.PI / 2; // Rotate to be facing down
+  
+  // Position ceiling at the top of the walls
+  ceiling.position.set(
+    minX + ceilingWidth / 2,
+    this.wallHeight,  // Set at the wall height
+    minZ + ceilingDepth / 2
+  );
+  
+  // Mark with userData
+  ceiling.userData = {
+    isDungeonElement: true,
+    isCeiling: true
+  };
+  
+  // Add to scene
+  this.scene3D.scene.add(ceiling);
+  this.dungeonElements.push(ceiling);
+  
+  console.log(`Created ceiling: ${ceilingWidth.toFixed(1)}x${ceilingDepth.toFixed(1)} at height ${this.wallHeight.toFixed(1)}`);
+  
+  return ceiling;
+}
+
+
 /**
  * Extend floors beyond walls to prevent visible gaps
  */
@@ -1289,6 +1377,9 @@ clearRoomContents(room) {
       
         // First create the large unified floor
         this.createLargeFloor();
+
+          // Add ceiling for enclosed dungeon feel
+        this.createLargeCeiling();
       
         // Create optimized walls
         console.log("Attempting to create optimized walls...");
@@ -1313,6 +1404,7 @@ clearRoomContents(room) {
       
         // Add exit marker
         this.createExitMarker();
+        
       
         // Add lighting
         this.createDungeonLighting();
@@ -1594,50 +1686,57 @@ createOptimizedWalls(inputMaterial) {
      * Teleport player to the dungeon starting point
      * @returns {boolean} Whether teleport was successful
      */
-    // teleportPlayerToDungeon() {
-    //     if (!this.playerSpawnPoint) {
-    //       console.error("No player spawn point defined");
-    //       return false;
-    //     }
-        
-    //     // Get the exact player height from physics
-    //     const playerHeight = this.physics?.playerHeight || 1.7;
-        
-    //     // Tell Scene3DController to skip its lighting
-    //     if (this.scene3D) {
-    //       this.scene3D._skipDungeonLighting = true;
-    //     }
-        
-    //     // Get elevation at spawn point
-    //     const { elevation } = this.getElevationAtPoint(
-    //       this.playerSpawnPoint.x,
-    //       this.playerSpawnPoint.z
-    //     );
-        
-    //     // Set player position to spawn point with correct height
-    //     this.scene3D.camera.position.set(
-    //       this.playerSpawnPoint.x,
-    //       elevation + playerHeight,  // Position at correct elevation plus eye height
-    //       this.playerSpawnPoint.z
-    //     );
-        
-    //     // Reset physics state to avoid falling or clipping
-    //     if (this.scene3D.physics) {
-    //       this.scene3D.physics.currentGroundHeight = elevation;
-    //       this.scene3D.physics.isJumping = false;
-    //       this.scene3D.physics.isFalling = false;
-          
-    //       // Ensure good collision detection
-    //       this.scene3D.physics.update(0.1);
-    //     }
-        
-    //     console.log(`Player teleported to (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
-    //     return true;
-    //   }
+// teleportPlayerToDungeon() {
+//   if (!this.playerSpawnPoint) {
+//     console.error("No player spawn point defined");
+//     return false;
+//   }
+  
+//   // Get the exact player height from physics
+//   const playerHeight = this.physics?.playerHeight || 1.7;
+  
+//   // Tell Scene3DController to skip its lighting
+//   if (this.scene3D) {
+//     this.scene3D._skipDungeonLighting = true;
+//   }
+  
+//   // Get elevation at spawn point
+//   const { elevation } = this.getElevationAtPoint(
+//     this.playerSpawnPoint.x,
+//     this.playerSpawnPoint.z
+//   );
+  
+//   // Set player position to spawn point with correct height
+//   this.scene3D.camera.position.set(
+//     this.playerSpawnPoint.x,
+//     elevation + playerHeight,  // Position at correct elevation plus eye height
+//     this.playerSpawnPoint.z
+//   );
+  
+//   // Reset player look direction to face into the dungeon
+//   this.scene3D.camera.lookAt(
+//     this.playerSpawnPoint.x, 
+//     elevation + playerHeight,
+//     this.playerSpawnPoint.z - 1 // Look slightly forward
+//   );
+  
+//   // Reset physics state to avoid falling or clipping
+//   if (this.scene3D.physics) {
+//     this.scene3D.physics.currentGroundHeight = elevation;
+//     this.scene3D.physics.isJumping = false;
+//     this.scene3D.physics.isFalling = false;
+    
+//     // Ensure good collision detection
+//     this.scene3D.physics.update(0.1);
+//   }
+  
+//   // Set up atmospheric effects for the dungeon
+//   this.setupDungeonAtmosphere();
+  
+//   console.log(`Player teleported to safe room at (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
+//   return true;
+// }
 
-    /**
- * Teleport player to the dungeon starting point with improved spawn logic
- */
 teleportPlayerToDungeon() {
   if (!this.playerSpawnPoint) {
     console.error("No player spawn point defined");
@@ -1665,13 +1764,6 @@ teleportPlayerToDungeon() {
     this.playerSpawnPoint.z
   );
   
-  // Reset player look direction to face into the dungeon
-  this.scene3D.camera.lookAt(
-    this.playerSpawnPoint.x, 
-    elevation + playerHeight,
-    this.playerSpawnPoint.z - 1 // Look slightly forward
-  );
-  
   // Reset physics state to avoid falling or clipping
   if (this.scene3D.physics) {
     this.scene3D.physics.currentGroundHeight = elevation;
@@ -1682,12 +1774,135 @@ teleportPlayerToDungeon() {
     this.scene3D.physics.update(0.1);
   }
   
-  // Set up atmospheric effects for the dungeon
+  // Set up atmospheric lighting and effects
   this.setupDungeonAtmosphere();
   
-  console.log(`Player teleported to safe room at (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
+  console.log(`Player teleported to (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
   return true;
 }
+
+/**
+ * Set up atmospheric lighting and effects for the dungeon
+ */
+
+
+// setupDungeonAtmosphere() {
+//   console.log("Setting up dungeon atmosphere");
+  
+//   // Get the current quality level from Scene3DController
+//   const qualityLevel = this.scene3D.qualityLevel || 'medium';
+//   console.log(`Setting up dungeon atmosphere for quality level: ${qualityLevel}`);
+  
+//   // Reduce ambient lighting to create a darker mood
+//   this.adjustDungeonLighting();
+  
+//   // Add torch effects at key locations
+//   this.addTorchesToDungeon(qualityLevel);
+  
+//   // Add atmospheric particles if quality permits
+//   if (qualityLevel !== 'low') {
+//     this.addAtmosphericEffects(qualityLevel);
+//   }
+// }
+
+/**
+ * Adjust the dungeon lighting to be darker and more atmospheric
+ */
+// adjustDungeonLighting() {
+//   // Reduce ambient light intensity
+//   this.dungeonElements.forEach(element => {
+//     if (element instanceof THREE.AmbientLight) {
+//       element.intensity = 0.2; // Reduced from 0.5 to create a darker atmosphere
+//     }
+//   });
+  
+//   // Add a slight fog effect
+//   this.scene3D.scene.fog = new THREE.FogExp2(0x000000, 0.025);
+// }
+
+/**  // unused?
+ * Add torch lighting to the dungeon to create atmosphere
+ */
+// addTorchesToDungeon() {
+//   console.log("Adding atmospheric torch lighting to dungeon");
+  
+//   // Add torch in each room corner for better lighting
+//   this.rooms.forEach(room => {
+//     // Skip the safe room - it will have its own lighting
+//     if (room.isSafeRoom) return;
+    
+//     // Add torches in each corner of larger rooms
+//     if (room.width >= 4 && room.height >= 4) {
+//       // Calculate corner positions
+//       const corners = [
+//         { x: room.x + 1, z: room.z + 1 },  // Top-left
+//         { x: room.x + room.width - 1, z: room.z + 1 },  // Top-right
+//         { x: room.x + 1, z: room.z + room.height - 1 },  // Bottom-left
+//         { x: room.x + room.width - 1, z: room.z + room.height - 1 }  // Bottom-right
+//       ];
+      
+//       // Add a torch in each corner (with some randomness)
+//       corners.forEach(corner => {
+//         if (Math.random() < 0.7) {  // 70% chance for each corner
+//           this.createTorchLight(corner.x, corner.z);
+//         }
+//       });
+//     }
+//   });
+  
+//   // Add special lighting to the safe room
+//   const safeRoom = this.rooms.find(room => room.isSafeRoom);
+//   if (safeRoom) {
+//     // Create a welcoming, brighter light in the safe room
+//     const safeLight = new THREE.PointLight(0xffcc88, 1.5, 10);
+//     safeLight.position.set(safeRoom.centerX, 2, safeRoom.centerZ);
+//     safeLight.userData = { isDungeonElement: true };
+//     this.scene3D.scene.add(safeLight);
+//     this.dungeonElements.push(safeLight);
+//   }
+// }
+
+/**
+ * Add atmospheric effects using ShaderEffectsManager
+ */
+// addAtmosphericEffects() {
+//   // Only continue if ShaderEffectsManager is available
+//   if (!this.scene3D.shaderEffectsManager) return;
+  
+//   const shaderManager = this.scene3D.shaderEffectsManager;
+  
+//   // Add dust particles in larger rooms
+//   this.rooms.forEach(room => {
+//     if (room.width * room.height > 25) {  // Only in larger rooms
+//       const position = {
+//         x: room.centerX,
+//         y: 1.5,
+//         z: room.centerZ
+//       };
+      
+//       // Create dust effect
+//       shaderManager.createDustEffect(position, {
+//         count: 20,
+//         color: 0xaaaaaa,
+//         size: 0.03,
+//         lifetime: 5
+//       });
+//     }
+//   });
+  
+//   // If the safe room has been marked
+//   const safeRoom = this.rooms.find(room => room.isSafeRoom);
+//   if (safeRoom) {
+//     // Add a landing effect when the player teleports in
+//     const landingPosition = {
+//       x: this.playerSpawnPoint.x,
+//       y: 0.1,
+//       z: this.playerSpawnPoint.z
+//     };
+    
+//     shaderManager.createLandingEffect(landingPosition, 1.2);
+//   }
+// }
 
 /**
  * Set up atmospheric lighting and effects for the dungeon
@@ -1695,18 +1910,49 @@ teleportPlayerToDungeon() {
 setupDungeonAtmosphere() {
   console.log("Setting up dungeon atmosphere");
   
-  // Check if we have access to the ShaderEffectsManager
-  const hasShaderEffects = this.scene3D && this.scene3D.shaderEffectsManager;
+  // Get the current quality level from Scene3DController
+  const qualityLevel = this.scene3D.qualityLevel || 'medium';
+  console.log(`Setting up dungeon atmosphere for quality level: ${qualityLevel}`);
+  
+  // Pause day/night cycle when entering dungeon
+  this.pauseDayNightCycle();
   
   // Reduce ambient lighting to create a darker mood
   this.adjustDungeonLighting();
   
-  // Add torch effects at key locations
-  this.addTorchesToDungeon();
+  // Add strategic lights throughout the dungeon
+  this.addStrategicLighting(qualityLevel);
   
-  // Add atmospheric particles if ShaderEffectsManager is available
-  if (hasShaderEffects) {
-    this.addAtmosphericEffects();
+  // Add atmospheric particles if quality permits
+  if (qualityLevel !== 'low' && this.scene3D.shaderEffectsManager) {
+    this.addAtmosphericEffects(qualityLevel);
+  }
+}
+
+/**
+ * Pause day/night cycle when entering dungeon
+ */
+pauseDayNightCycle() {
+  // Store current state to restore when exiting
+  if (this.scene3D.dayNightCycle) {
+    this._dayNightCyclePaused = this.scene3D.dayNightCycle.isPlaying;
+    
+    // Pause if it's playing
+    if (this._dayNightCyclePaused) {
+      console.log("Pausing day/night cycle while in dungeon");
+      this.scene3D.dayNightCycle.pause();
+    }
+  }
+}
+
+/**
+ * Resume day/night cycle when exiting dungeon (to be called by exit method)
+ */
+resumeDayNightCycle() {
+  // Restore previous state
+  if (this.scene3D.dayNightCycle && this._dayNightCyclePaused) {
+    console.log("Resuming day/night cycle");
+    this.scene3D.dayNightCycle.start();
   }
 }
 
@@ -1714,99 +1960,503 @@ setupDungeonAtmosphere() {
  * Adjust the dungeon lighting to be darker and more atmospheric
  */
 adjustDungeonLighting() {
-  // Reduce ambient light intensity
-  this.dungeonElements.forEach(element => {
-    if (element instanceof THREE.AmbientLight) {
-      element.intensity = 0.2; // Reduced from 0.5 to create a darker atmosphere
+  // Remove any existing ambient lights
+  const existingLights = this.dungeonElements.filter(el => 
+    el instanceof THREE.AmbientLight || 
+    (el instanceof THREE.Light && el.userData && el.userData.isDungeonLighting)
+  );
+  
+  existingLights.forEach(light => {
+    this.scene3D.scene.remove(light);
+    const index = this.dungeonElements.indexOf(light);
+    if (index !== -1) {
+      this.dungeonElements.splice(index, 1);
     }
   });
+  
+  // Add a dim ambient light
+  const ambientLight = new THREE.AmbientLight(0x222222, 0.3);
+  ambientLight.userData = { 
+    isDungeonElement: true,
+    isDungeonLighting: true 
+  };
+  this.scene3D.scene.add(ambientLight);
+  this.dungeonElements.push(ambientLight);
   
   // Add a slight fog effect
-  this.scene3D.scene.fog = new THREE.FogExp2(0x000000, 0.025);
+  this.scene3D.scene.fog = new THREE.FogExp2(0x000000, 0.03);
+  
+  console.log("Adjusted dungeon lighting to be darker and more atmospheric");
 }
 
 /**
- * Add torch lighting to the dungeon to create atmosphere
+ * Add strategic lighting throughout the dungeon (room centers and paths)
  */
-addTorchesToDungeon() {
-  console.log("Adding atmospheric torch lighting to dungeon");
+// addStrategicLighting(qualityLevel = 'medium') {
+//   console.log("Adding strategic lighting based on quality level:", qualityLevel);
   
-  // Add torch in each room corner for better lighting
-  this.rooms.forEach(room => {
-    // Skip the safe room - it will have its own lighting
-    if (room.isSafeRoom) return;
+//   // Add room center lights
+//   this.rooms.forEach(room => {
+//     if (!room || room.centerX === undefined || room.centerZ === undefined) {
+//       console.warn("Invalid room data for lighting:", room);
+//       return;
+//     }
     
-    // Add torches in each corner of larger rooms
-    if (room.width >= 4 && room.height >= 4) {
-      // Calculate corner positions
-      const corners = [
-        { x: room.x + 1, z: room.z + 1 },  // Top-left
-        { x: room.x + room.width - 1, z: room.z + 1 },  // Top-right
-        { x: room.x + 1, z: room.z + room.height - 1 },  // Bottom-left
-        { x: room.x + room.width - 1, z: room.z + room.height - 1 }  // Bottom-right
-      ];
-      
-      // Add a torch in each corner (with some randomness)
-      corners.forEach(corner => {
-        if (Math.random() < 0.7) {  // 70% chance for each corner
-          this.createTorchLight(corner.x, corner.z);
-        }
-      });
-    }
-  });
+//     // Get elevation at room center
+//     const { elevation } = this.getElevationAtPoint(room.centerX, room.centerZ);
+    
+//     // Create light at room center
+//     const light = new THREE.PointLight(
+//       0xff9944,  // Warm orange light
+//       1.2,      // Intensity
+//       8,        // Distance
+//       2         // Decay
+//     );
+    
+//     // Position light at proper height
+//     light.position.set(
+//       room.centerX, 
+//       elevation + 2.0,  // Light from above, not floating
+//       room.centerZ
+//     );
+    
+//     light.userData = { 
+//       isDungeonElement: true,
+//       isRoomLight: true
+//     };
+    
+//     this.scene3D.scene.add(light);
+//     this.dungeonElements.push(light);
+    
+//     // Add animated fire effect for medium+ quality - ONLY if all variables are valid
+//     if (qualityLevel !== 'low' && this.scene3D.shaderEffects && 
+//         room.centerX !== undefined && elevation !== undefined && room.centerZ !== undefined) {
+//       this.addFireEffect(room.centerX, elevation, room.centerZ, qualityLevel);
+//     }
+//   });
   
-  // Add special lighting to the safe room
-  const safeRoom = this.rooms.find(room => room.isSafeRoom);
-  if (safeRoom) {
-    // Create a welcoming, brighter light in the safe room
-    const safeLight = new THREE.PointLight(0xffcc88, 1.5, 10);
-    safeLight.position.set(safeRoom.centerX, 2, safeRoom.centerZ);
-    safeLight.userData = { isDungeonElement: true };
-    this.scene3D.scene.add(safeLight);
-    this.dungeonElements.push(safeLight);
-  }
-}
+//   // Add path lighting between rooms for better navigation
+//   this.addPathLighting(qualityLevel);
+// }
 
 /**
- * Add atmospheric effects using ShaderEffectsManager
+ * Add strategic lighting throughout the dungeon (room centers and paths)
  */
-addAtmosphericEffects() {
-  // Only continue if ShaderEffectsManager is available
-  if (!this.scene3D.shaderEffectsManager) return;
+addStrategicLighting(qualityLevel = 'medium') {
+  console.log("Adding strategic lighting based on quality level:", qualityLevel);
   
-  const shaderManager = this.scene3D.shaderEffectsManager;
-  
-  // Add dust particles in larger rooms
+  // Add room center lights
   this.rooms.forEach(room => {
-    if (room.width * room.height > 25) {  // Only in larger rooms
-      const position = {
-        x: room.centerX,
-        y: 1.5,
-        z: room.centerZ
-      };
-      
-      // Create dust effect
-      shaderManager.createDustEffect(position, {
-        count: 20,
-        color: 0xaaaaaa,
-        size: 0.03,
-        lifetime: 5
-      });
+    if (!room || room.centerX === undefined || room.centerZ === undefined) {
+      console.warn("Invalid room data for lighting:", room);
+      return;
     }
-  });
-  
-  // If the safe room has been marked
-  const safeRoom = this.rooms.find(room => room.isSafeRoom);
-  if (safeRoom) {
-    // Add a landing effect when the player teleports in
-    const landingPosition = {
-      x: this.playerSpawnPoint.x,
-      y: 0.1,
-      z: this.playerSpawnPoint.z
+    
+    // Get elevation at room center
+    const { elevation } = this.getElevationAtPoint(room.centerX, room.centerZ);
+    
+    // Create light at room center
+    const light = new THREE.PointLight(
+      0xff9944,  // Warm orange light
+      1.2,      // Intensity
+      8,        // Distance
+      2         // Decay
+    );
+    
+    // Position light at proper height
+    light.position.set(
+      room.centerX, 
+      elevation + 2.0,  // Light from above, not floating
+      room.centerZ
+    );
+    
+    light.userData = { 
+      isDungeonElement: true,
+      isRoomLight: true
     };
     
-    shaderManager.createLandingEffect(landingPosition, 1.2);
+    this.scene3D.scene.add(light);
+    this.dungeonElements.push(light);
+    
+    // Add animated glow effect for medium+ quality
+    if (qualityLevel !== 'low' && this.scene3D.shaderEffectsManager) {
+      this.addGlowEffect(room.centerX, elevation, room.centerZ, qualityLevel);
+    }
+  });
+  
+  // Add path lighting between rooms for better navigation
+  this.addPathLighting(qualityLevel);
+}
+
+/**
+ * Add animated fire effects using ShaderEffectsManager
+ */
+addFireEffect(x, y, z, qualityLevel) {
+  // Skip if ShaderEffectsManager is not available
+  if (!this.scene3D.shaderEffects) {
+    console.warn("ShaderEffectsManager not available for fire effects");
+    return null;
   }
+  
+  // Safely check for the method
+  if (typeof this.scene3D.shaderEffects.createFireEffect !== 'function') {
+    console.warn("createFireEffect method not available in ShaderEffectsManager");
+    return null;
+  }
+  
+  // Safety check for parameters
+  if (x === undefined || y === undefined || z === undefined) {
+    console.warn("Invalid coordinates for fire effect:", x, y, z);
+    return null;
+  }
+  
+  // Set fire effect properties based on quality
+  const fireSize = qualityLevel === 'ultra' ? 0.5 : 
+                   qualityLevel === 'high' ? 0.4 : 0.3;
+  
+  try {
+    // Use position object instead of Vector3
+    const position = { x: x, y: y + 0.1, z: z };
+    
+    const fireEffect = this.scene3D.shaderEffects.createFireEffect(
+      position,  // Use plain object instead of Vector3
+      qualityLevel === 'low' ? 'small' : 'medium',
+      {
+        height: fireSize,
+        width: fireSize * 0.8,
+        color: 0xff6622,
+        intensity: qualityLevel === 'ultra' ? 1.0 : 0.8
+      }
+    );
+    
+    if (fireEffect && fireEffect.mesh) {
+      // Ensure it's marked as a dungeon element for cleanup
+      fireEffect.mesh.userData = { 
+        ...fireEffect.mesh.userData,
+        isDungeonElement: true 
+      };
+      
+      this.dungeonElements.push(fireEffect.mesh);
+      return fireEffect;
+    }
+  } catch (err) {
+    console.error("Error creating fire effect:", err);
+  }
+  
+  return null;
+}
+
+/**
+ * Add glow effects using ShaderEffectsManager (to replace problematic fire effects)
+ */
+addGlowEffect(x, y, z, qualityLevel) {
+  // Skip if ShaderEffectsManager is not available
+  if (!this.scene3D.shaderEffectsManager) {
+    console.warn("ShaderEffectsManager not available for glow effects");
+    return null;
+  }
+  
+  // Safely check for the method
+  if (typeof this.scene3D.shaderEffectsManager.createPropGlowEffect !== 'function') {
+    console.warn("createPropGlowEffect method not available in ShaderEffectsManager");
+    return null;
+  }
+  
+  try {
+    // Create a fake prop object with position
+    const fakeProp = {
+      position: { x: x, y: y + 0.1, z: z },
+      userData: {
+        name: 'torch',
+        type: 'prop'
+      }
+    };
+    
+    // Set glow options based on quality level
+    const glowIntensity = qualityLevel === 'ultra' ? 1.0 : 
+                         qualityLevel === 'high' ? 0.8 : 0.6;
+                         
+    const particleCount = qualityLevel === 'ultra' ? 20 : 
+                          qualityLevel === 'high' ? 15 : 10;
+    
+    // Use createPropGlowEffect which is more stable than createFireEffect
+    const effectData = this.scene3D.shaderEffectsManager.createPropGlowEffect(
+      fakeProp,
+      {
+        color: 0xff6600,        // Orange-red for fire 
+        intensity: glowIntensity,
+        particleCount: particleCount,
+        particleSize: 0.04,
+        height: 0.3,
+        radius: 0.2,
+        blending: THREE.AdditiveBlending
+      }
+    );
+    
+    // Add to dungeon elements for cleanup
+    if (effectData && effectData.container) {
+      effectData.container.userData.isDungeonElement = true;
+      this.dungeonElements.push(effectData.container);
+      return effectData;
+    }
+  } catch (err) {
+    console.error("Error creating glow effect:", err);
+  }
+  
+  return null;
+}
+
+/**
+ * Add lighting along paths between rooms
+ */
+addPathLighting(qualityLevel) {
+  // Only add for medium quality and above
+  if (qualityLevel === 'low') return;
+  
+  // Map all room centers
+  const roomCenters = this.rooms.map(room => ({
+    x: room.centerX,
+    z: room.centerZ
+  }));
+  
+  // Skip if fewer than 2 rooms
+  if (roomCenters.length < 2) return;
+  
+  // For each pair of adjacent rooms, place lights along the connection path
+  for (let i = 0; i < roomCenters.length - 1; i++) {
+    const startPoint = roomCenters[i];
+    const endPoint = roomCenters[i + 1];
+    
+    // Calculate direction vector
+    const dirX = endPoint.x - startPoint.x;
+    const dirZ = endPoint.z - startPoint.z;
+    const distance = Math.sqrt(dirX * dirX + dirZ * dirZ);
+    
+    // Skip if rooms are very close
+    if (distance < 4) continue;
+    
+    // Normalize direction
+    const normalizedDirX = dirX / distance;
+    const normalizedDirZ = dirZ / distance;
+    
+    // Determine number of lights based on distance and quality
+    let numLights;
+    switch (qualityLevel) {
+      case 'ultra':
+      case 'high':
+        numLights = Math.floor(distance / 3) + 1; // Every 3 units
+        break;
+      case 'medium':
+      default:
+        numLights = Math.floor(distance / 5) + 1; // Every 5 units
+    }
+    
+    // Place lights along path
+    for (let j = 1; j < numLights; j++) {
+      const t = j / numLights; // Interpolation factor
+      const lightX = startPoint.x + dirX * t;
+      const lightZ = startPoint.z + dirZ * t;
+      
+      // Get elevation at this point
+      const { elevation } = this.getElevationAtPoint(lightX, lightZ);
+      
+      // Create subtle guide light
+      const light = new THREE.PointLight(0x6688cc, 0.6, 4, 2);
+      
+      // Position at proper height above floor
+      light.position.set(lightX, elevation + 1.5, lightZ);
+      
+      light.userData = { 
+        isDungeonElement: true,
+        isPathLight: true
+      };
+      
+      // Add light to scene
+      this.scene3D.scene.add(light);
+      this.dungeonElements.push(light);
+    }
+  }
+}
+
+/**
+ * Add atmospheric effects like dust particles
+ */
+// addAtmosphericEffects(qualityLevel) {
+//   // Only add these effects for medium quality and above with shader support
+//   if (qualityLevel === 'low' || !this.scene3D.shaderEffects) return;
+  
+//   console.log(`Adding atmospheric effects for quality level: ${qualityLevel}`);
+  
+//   // Add dust particles in rooms
+//   this.rooms.forEach(room => {
+//     // Skip small rooms
+//     if (room.width * room.height < 16) return;
+    
+//     // Determine particle count based on quality and room size
+//     let particleCount;
+//     switch (qualityLevel) {
+//       case 'ultra':
+//         particleCount = Math.min(30, Math.floor(room.width * room.height / 4));
+//         break;
+//       case 'high':
+//         particleCount = Math.min(20, Math.floor(room.width * room.height / 6));
+//         break;
+//       case 'medium':
+//       default:
+//         particleCount = Math.min(10, Math.floor(room.width * room.height / 8));
+//     }
+    
+//     // Skip if particle count is too low
+//     if (particleCount < 5) return;
+    
+//     // Create dust effect
+//     const position = {
+//       x: room.centerX,
+//       y: 1.5,
+//       z: room.centerZ
+//     };
+    
+//     // Use ShaderEffectsManager to create dust
+//     const dustEffect = this.scene3D.shaderEffects.createDustEffect(
+//       position, 
+//       {
+//         count: particleCount,
+//         size: 0.03,
+//         color: 0xaaaaaa,
+//         lifetime: 15,
+//         speed: 0.2
+//       }
+//     );
+    
+//     if (dustEffect && dustEffect.mesh) {
+//       // Ensure it's marked as a dungeon element for cleanup
+//       dustEffect.mesh.userData = { 
+//         ...dustEffect.mesh.userData,
+//         isDungeonElement: true 
+//       };
+      
+//       this.dungeonElements.push(dustEffect.mesh);
+//     }
+//   });
+// }
+
+addAtmosphericEffects(qualityLevel) {
+  // Only add these effects for medium quality and above with shader support
+  if (qualityLevel === 'low' || !this.scene3D.shaderEffectsManager) return;
+  
+  console.log(`Adding atmospheric effects for quality level: ${qualityLevel}`);
+  
+  // Add dust particles in rooms
+  this.rooms.forEach(room => {
+    // Skip small rooms
+    if (room.width * room.height < 16) return;
+    
+    // Determine particle count based on quality and room size
+    let particleCount;
+    switch (qualityLevel) {
+      case 'ultra':
+        particleCount = Math.min(30, Math.floor(room.width * room.height / 4));
+        break;
+      case 'high':
+        particleCount = Math.min(20, Math.floor(room.width * room.height / 6));
+        break;
+      case 'medium':
+      default:
+        particleCount = Math.min(10, Math.floor(room.width * room.height / 8));
+    }
+    
+    // Skip if particle count is too low
+    if (particleCount < 5) return;
+    
+    // Create dust effect
+    const position = {
+      x: room.centerX,
+      y: 1.5,
+      z: room.centerZ
+    };
+    
+    // Use ShaderEffectsManager to create dust
+    if (typeof this.scene3D.shaderEffectsManager.createDustEffect === 'function') {
+      try {
+        const dustEffect = this.scene3D.shaderEffectsManager.createDustEffect(
+          position, 
+          {
+            count: particleCount,
+            size: 0.03,
+            color: 0xaaaaaa,
+            lifetime: 15
+          }
+        );
+        
+        if (dustEffect && dustEffect.mesh) {
+          // Ensure it's marked as a dungeon element for cleanup
+          dustEffect.mesh.userData = { 
+            ...dustEffect.mesh.userData,
+            isDungeonElement: true 
+          };
+          
+          this.dungeonElements.push(dustEffect.mesh);
+        }
+      } catch (err) {
+        console.error("Error creating dust effect:", err);
+      }
+    }
+  });
+}
+
+/**
+ * Exit the dungeon and return to the main world
+ */
+exitDungeon() {
+  console.log("Exiting dungeon and returning to main world");
+  
+  // Resume day/night cycle
+  this.resumeDayNightCycle();
+  
+  // Teleport player back to original position if saved
+  if (this.scene3D._prevWorldState && this.scene3D._prevWorldState.cameraPosition) {
+    // Get the position to return to
+    const returnPos = this.scene3D._prevWorldState.cameraPosition;
+    
+    // Teleport back
+    this.scene3D.camera.position.copy(returnPos);
+    
+    // Reset physics if available
+    if (this.scene3D.physics) {
+      this.scene3D.physics.currentGroundHeight = 0;
+      this.scene3D.physics.update(0.1);
+    }
+  }
+  
+  // Remove all dungeon elements
+  this.clearDungeonElements();
+  
+  // Remove fog
+  if (this.scene3D.scene.fog) {
+    this.scene3D.scene.fog = null;
+  }
+  
+  // Show a notification
+  if (this.scene3D.showNotification) {
+    this.scene3D.showNotification('Returned to world');
+  }
+  
+  return true;
+}
+
+/**
+ * Clear all dungeon elements from the scene
+ */
+clearDungeonElements() {
+  // Remove all elements marked as dungeon elements
+  this.dungeonElements.forEach(element => {
+    if (element && element.parent) {
+      element.parent.remove(element);
+    }
+  });
+  
+  // Clear the array
+  this.dungeonElements = [];
 }
 
     /**
@@ -1973,6 +2623,389 @@ createOptimizedLighting() {
             this.dungeonElements.push(torch);
         }
     }
+
+    /**
+ * Set up atmospheric lighting and effects for the dungeon
+ */
+// setupDungeonAtmosphere() {
+//   console.log("Setting up dungeon atmosphere");
+  
+//   // Get the current quality level from Scene3DController
+//   const qualityLevel = this.scene3D.qualityLevel || 'medium';
+//   console.log(`Setting up dungeon atmosphere for quality level: ${qualityLevel}`);
+  
+//   // Reduce ambient lighting to create a darker mood
+//   this.adjustDungeonLighting();
+  
+//   // Add torch effects at key locations
+//   this.addTorchesToDungeon(qualityLevel);
+  
+//   // Add atmospheric particles if quality permits
+//   if (qualityLevel !== 'low') {
+//     this.addAtmosphericEffects(qualityLevel);
+//   }
+// }
+
+/**
+ * Adjust the dungeon lighting to be darker and more atmospheric
+ */
+adjustDungeonLighting() {
+  // Remove any existing ambient lights
+  const existingLights = this.dungeonElements.filter(el => 
+    el instanceof THREE.AmbientLight || 
+    (el instanceof THREE.Light && el.userData && el.userData.isDungeonLighting)
+  );
+  
+  existingLights.forEach(light => {
+    this.scene3D.scene.remove(light);
+    const index = this.dungeonElements.indexOf(light);
+    if (index !== -1) {
+      this.dungeonElements.splice(index, 1);
+    }
+  });
+  
+  // Add a dim ambient light
+  const ambientLight = new THREE.AmbientLight(0x222222, 0.3);
+  ambientLight.userData = { 
+    isDungeonElement: true,
+    isDungeonLighting: true 
+  };
+  this.scene3D.scene.add(ambientLight);
+  this.dungeonElements.push(ambientLight);
+  
+  // Add a slight fog effect
+  this.scene3D.scene.fog = new THREE.FogExp2(0x000000, 0.03);
+  
+  console.log("Adjusted dungeon lighting to be darker and more atmospheric");
+}
+
+/**
+ * Add torch lighting to the dungeon to create atmosphere
+ * @param {string} qualityLevel - The current quality setting (low, medium, high, ultra)
+ */
+addTorchesToDungeon(qualityLevel = 'medium') {
+  console.log("Adding torch lighting based on quality level:", qualityLevel);
+  
+  // Check if we can use shader effects
+  const hasShaderEffects = this.scene3D.shaderEffects && 
+                          typeof this.scene3D.shaderEffects.createPropGlowEffect === 'function';
+  
+  // Add torch in room corners
+  this.rooms.forEach(room => {
+    // Skip very small rooms
+    if (room.width < 4 || room.height < 4) return;
+    
+    // Calculate corner positions with some offset from walls
+    const corners = [
+      { x: room.x + 1, z: room.z + 1 },  // Top-left
+      { x: room.x + room.width - 1, z: room.z + 1 },  // Top-right
+      { x: room.x + 1, z: room.z + room.height - 1 },  // Bottom-left
+      { x: room.x + room.width - 1, z: room.z + room.height - 1 }  // Bottom-right
+    ];
+    
+    // Determine how many torches to add based on quality level
+    let torchProbability;
+    switch (qualityLevel) {
+      case 'ultra':
+        torchProbability = 0.9; // Almost all corners
+        break;
+      case 'high':
+        torchProbability = 0.7; // Most corners
+        break;
+      case 'medium':
+        torchProbability = 0.5; // Half the corners
+        break;
+      case 'low':
+      default:
+        torchProbability = 0.3; // Fewer corners
+    }
+    
+    // Add torches based on probability
+    corners.forEach(corner => {
+      if (Math.random() < torchProbability) {
+        if (hasShaderEffects && qualityLevel !== 'low') {
+          // Use shader effects for medium, high, ultra
+          this.createEnhancedTorch(corner.x, corner.z, qualityLevel);
+        } else {
+          // Use simple torch for low quality
+          this.createSimpleTorch(corner.x, corner.z);
+        }
+      }
+    });
+  });
+  
+  // Add special lighting to corridors to guide the way
+  this.addCorridorLighting(qualityLevel);
+}
+
+/**
+ * Create a simple torch light (for low quality)
+ */
+createSimpleTorch(x, z) {
+  // Get elevation at torch position
+  const { elevation } = this.getElevationAtPoint(x, z);
+  
+  // Create a simple point light
+  const light = new THREE.PointLight(0xff8844, 1.0, 6, 2);
+  light.position.set(x, elevation + 1.5, z);
+  light.userData = { 
+    isDungeonElement: true,
+    isTorch: true
+  };
+  
+  // Add light to scene
+  this.scene3D.scene.add(light);
+  this.dungeonElements.push(light);
+  
+  // Create simple torch visual
+  const torchGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6);
+  const torchMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x885533,
+    roughness: 0.9
+  });
+  
+  const torch = new THREE.Mesh(torchGeometry, torchMaterial);
+  torch.position.set(x, elevation + 1.2, z);
+  torch.userData = { isDungeonElement: true };
+  
+  this.scene3D.scene.add(torch);
+  this.dungeonElements.push(torch);
+  
+  // Create flame on top
+  const flameGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+  const flameMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xff6600,
+    emissive: 0xff3300,
+    emissiveIntensity: 1
+  });
+  
+  const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+  flame.position.set(x, elevation + 1.5, z);
+  flame.userData = { 
+    isDungeonElement: true,
+    isFlame: true
+  };
+  
+  this.scene3D.scene.add(flame);
+  this.dungeonElements.push(flame);
+  
+  return { light, torch, flame };
+}
+
+/**
+ * Create an enhanced torch using ShaderEffectsManager
+ */
+createEnhancedTorch(x, z, qualityLevel) {
+  // Get elevation at torch position
+  const { elevation } = this.getElevationAtPoint(x, z);
+  
+  // Create a base point light
+  const light = new THREE.PointLight(0xff8844, 1.2, 8, 2);
+  light.position.set(x, elevation + 1.5, z);
+  light.userData = { 
+    isDungeonElement: true,
+    isTorch: true
+  };
+  
+  // Add light to scene
+  this.scene3D.scene.add(light);
+  this.dungeonElements.push(light);
+  
+  // Create torch visual
+  const torchGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 6);
+  const torchMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x885533,
+    roughness: 0.9
+  });
+  
+  const torch = new THREE.Mesh(torchGeometry, torchMaterial);
+  torch.position.set(x, elevation + 1.2, z);
+  torch.userData = { isDungeonElement: true };
+  
+  this.scene3D.scene.add(torch);
+  this.dungeonElements.push(torch);
+  
+  // Use ShaderEffectsManager for the flame effect
+  if (this.scene3D.shaderEffects) {
+    // Create a fake prop object for the ShaderEffectsManager
+    const fakeProp = {
+      position: new THREE.Vector3(x, elevation + 1.5, z),
+      userData: {
+        name: 'torch',
+        type: 'prop'
+      }
+    };
+    
+    // Determine particle count based on quality level
+    let particleCount, intensity;
+    switch (qualityLevel) {
+      case 'ultra':
+        particleCount = 20;
+        intensity = 1.0;
+        break;
+      case 'high':
+        particleCount = 15;
+        intensity = 0.8;
+        break;
+      case 'medium':
+      default:
+        particleCount = 10;
+        intensity = 0.6;
+    }
+    
+    // Create the flame effect
+    const effectData = this.scene3D.shaderEffects.createPropGlowEffect(
+      fakeProp,
+      {
+        color: 0xff6600,
+        intensity: intensity,
+        particleCount: particleCount,
+        particleSize: 0.05,
+        position: new THREE.Vector3(x, elevation + 1.5, z),
+        height: 0.2,
+        radius: 0.15
+      }
+    );
+    
+    // Store effect data for cleanup
+    if (effectData) {
+      this.dungeonElements.push(effectData.container);
+    }
+  }
+  
+  return { light, torch };
+}
+
+/**
+ * Add corridor lighting to guide the player
+ */
+addCorridorLighting(qualityLevel) {
+  // Only add corridor lighting for medium quality and above
+  if (qualityLevel === 'low') return;
+  
+  // Map all room centers
+  const roomCenters = this.rooms.map(room => ({
+    x: room.centerX,
+    z: room.centerZ
+  }));
+  
+  // Skip if fewer than 2 rooms
+  if (roomCenters.length < 2) return;
+  
+  // For each pair of adjacent rooms, place lights along the connection path
+  for (let i = 0; i < roomCenters.length - 1; i++) {
+    const startPoint = roomCenters[i];
+    const endPoint = roomCenters[i + 1];
+    
+    // Calculate direction vector
+    const dirX = endPoint.x - startPoint.x;
+    const dirZ = endPoint.z - startPoint.z;
+    const distance = Math.sqrt(dirX * dirX + dirZ * dirZ);
+    
+    // Skip if rooms are very close
+    if (distance < 4) continue;
+    
+    // Normalize direction
+    const normalizedDirX = dirX / distance;
+    const normalizedDirZ = dirZ / distance;
+    
+    // Determine number of lights based on distance and quality
+    let numLights;
+    switch (qualityLevel) {
+      case 'ultra':
+      case 'high':
+        numLights = Math.floor(distance / 3); // Every 3 units
+        break;
+      case 'medium':
+      default:
+        numLights = Math.floor(distance / 5); // Every 5 units
+    }
+    
+    // Place lights along path
+    for (let j = 1; j < numLights; j++) {
+      const t = j / numLights; // Interpolation factor
+      const lightX = startPoint.x + dirX * t;
+      const lightZ = startPoint.z + dirZ * t;
+      
+      // Get elevation
+      const { elevation } = this.getElevationAtPoint(lightX, lightZ);
+      
+      // Create subtle guide light
+      const light = new THREE.PointLight(0x6688aa, 0.5, 4, 2);
+      light.position.set(lightX, elevation + 0.5, lightZ);
+      light.userData = { 
+        isDungeonElement: true,
+        isCorridorLight: true
+      };
+      
+      this.scene3D.scene.add(light);
+      this.dungeonElements.push(light);
+    }
+  }
+}
+
+/**
+ * Add atmospheric effects like dust particles
+ */
+addAtmosphericEffects(qualityLevel) {
+  // Only add these effects for medium quality and above
+  if (qualityLevel === 'low' || !this.scene3D.shaderEffects) return;
+  
+  console.log(`Adding atmospheric effects for quality level: ${qualityLevel}`);
+  
+  // Add dust particles in rooms
+  this.rooms.forEach(room => {
+    // Skip small rooms
+    if (room.width * room.height < 16) return;
+    
+    // Determine particle count based on quality and room size
+    let particleCount;
+    switch (qualityLevel) {
+      case 'ultra':
+        particleCount = Math.min(30, Math.floor(room.width * room.height / 4));
+        break;
+      case 'high':
+        particleCount = Math.min(20, Math.floor(room.width * room.height / 6));
+        break;
+      case 'medium':
+      default:
+        particleCount = Math.min(10, Math.floor(room.width * room.height / 8));
+    }
+    
+    // Skip if particle count is too low
+    if (particleCount < 5) return;
+    
+    // Create dust effect
+    const position = {
+      x: room.centerX,
+      y: 1.5,
+      z: room.centerZ
+    };
+    
+    // Use ShaderEffectsManager to create dust
+    if (this.scene3D.shaderEffects.createDustEffect) {
+      const dustEffect = this.scene3D.shaderEffects.createDustEffect(
+        position, 
+        {
+          count: particleCount,
+          size: 0.03,
+          color: 0xaaaaaa,
+          lifetime: 15
+        }
+      );
+      
+      if (dustEffect && dustEffect.mesh) {
+        // Ensure it's marked as a dungeon element for cleanup
+        dustEffect.mesh.userData = { 
+          ...dustEffect.mesh.userData,
+          isDungeonElement: true 
+        };
+        
+        this.dungeonElements.push(dustEffect.mesh);
+      }
+    }
+  });
+}
 
 /**
  * Generate room with grid-based content placement
@@ -2305,6 +3338,7 @@ getElevationAtPoint(x, z) {
     };
   }
 
+  
 
 
 }

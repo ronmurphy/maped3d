@@ -3171,37 +3171,6 @@ break;
             
             break;
 
-            // case "dungeon":
-            //   console.log(`Processing dungeon marker: ${marker.id}`);
-              
-            //   // Calculate world position
-            //   const dungeonX = marker.x / 50 - this.boxWidth / 2;
-            //   const dungeonZ = marker.y / 50 - this.boxDepth / 2;
-              
-            //   // Get elevation at marker position - FIX: use correct variable name
-            //   const { elevation } = this.getElevationAtPoint(dungeonX, dungeonZ);
-              
-            //   // Create visual dungeon entrance
-            //   const dungeonEntrance = this.createDungeonEntrance(
-            //     dungeonX, 
-            //     elevation + 0.05, // FIX: use correct variable
-            //     dungeonZ, 
-            //     marker.data?.name || "Dungeon",
-            //     marker.data?.difficulty || "normal"
-            //   );
-              
-            //   // FIX: Preserve existing userData properties while adding new ones
-            //   Object.assign(dungeonEntrance.userData, {
-            //     type: 'dungeon',
-            //     id: marker.id,
-            //     name: marker.data?.name || "Mysterious Dungeon",
-            //     difficulty: marker.data?.difficulty || "normal",
-            //     dungeonId: marker.data?.dungeonId || marker.id
-            //   });
-              
-            //   this.scene.add(dungeonEntrance);
-            //   console.log(`Added dungeon entrance to scene: ${marker.id}`);
-            //   break;
 
             case "dungeon":
               console.log(`Processing dungeon marker: ${marker.id}`);
@@ -7739,74 +7708,7 @@ updateTexturesForQualityLevel(level) {
   }
 
 
-/**
- * Load DungeonGenerator and expose it globally
- */
-// loadDungeonGenerator() {
-//   return new Promise((resolve, reject) => {
-//     // Check if already available globally
-//     if (window.DungeonGenerator) {
-//       console.log('DungeonGenerator already available globally');
-//       resolve();
-//       return;
-//     }
-    
-//     // First check if the script element already exists
-//     const existingScript = document.querySelector('script[src*="DungeonGenerator.js"]');
-    
-//     if (existingScript) {
-//       console.log('DungeonGenerator script exists, adding adapter');
-//       // Add adapter script to expose module exports
-//       const adapter = document.createElement('script');
-//       adapter.textContent = `
-//         // Expose ES module export to global scope
-//         try {
-//           if (typeof DungeonGenerator !== 'undefined') {
-//             window.DungeonGenerator = DungeonGenerator;
-//             console.log('DungeonGenerator exposed to global scope');
-//           }
-//         } catch(e) {
-//           console.error('Failed to expose DungeonGenerator:', e);
-//         }
-//       `;
-//       document.head.appendChild(adapter);
-//       resolve();
-//     } else {
-//       // Script doesn't exist yet, load it and then expose it
-//       console.log('Loading DungeonGenerator script...');
-//       const script = document.createElement('script');
-//       script.src = '/js/classes/DungeonGenerator.js';
-      
-//       script.onload = () => {
-//         console.log('DungeonGenerator script loaded, adding adapter');
-//         // Add adapter script after load
-//         const adapter = document.createElement('script');
-//         adapter.textContent = `
-//           // Expose ES module export to global scope
-//           try {
-//             if (typeof DungeonGenerator !== 'undefined') {
-//               window.DungeonGenerator = DungeonGenerator;
-//               console.log('DungeonGenerator exposed to global scope');
-//             }
-//           } catch(e) {
-//             console.error('Failed to expose DungeonGenerator:', e);
-//           }
-//         `;
-//         document.head.appendChild(adapter);
-//         resolve();
-//       };
-      
-//       script.onerror = (err) => {
-//         console.error('Failed to load DungeonGenerator:', err);
-//         reject(err);
-//       };
-      
-//       document.head.appendChild(script);
-//     }
-//   });
-// }
-
-// Add this helper method to Scene3DController
+// Load Dungeon Generator
 loadDungeonGenerator() {
   return new Promise((resolve, reject) => {
     // Check if already available globally
