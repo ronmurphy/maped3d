@@ -110,7 +110,7 @@ class DungeonGenerator {
         
         // Apply additional scaling if needed
         // this.dungeonSize = this.dungeonSize * 2; // Double all dungeon sizes
-        // this.dungeonSize = this.dungeonSize + this.dungeonSize /2; // 1.5x all dungeon sizes
+        this.dungeonSize = this.dungeonSize + this.dungeonSize /2; // 1.5x all dungeon sizes
 
         
         console.log(`Dungeon configured: size=${this.dungeonSize}, rooms=${this.numRooms}, maxRoomSize=${this.roomSizeMax}`);
@@ -1148,40 +1148,116 @@ addCorridorWalls() {
     /**
      * Determine player spawn and exit locations
      */
-    placePlayerAndExit() {
-        console.log("Determining player spawn and exit locations");
+    // placePlayerAndExit() {
+    //     console.log("Determining player spawn and exit locations");
 
-        if (this.rooms.length === 0) {
-            console.error("No rooms to place player or exit");
-            return;
-        }
+    //     if (this.rooms.length === 0) {
+    //         console.error("No rooms to place player or exit");
+    //         return;
+    //     }
 
-        // Sort rooms by distance from center
-        const sortedRooms = [...this.rooms].sort((a, b) => {
-            const distA = Math.sqrt(Math.pow(a.centerX, 2) + Math.pow(a.centerZ, 2));
-            const distB = Math.sqrt(Math.pow(b.centerX, 2) + Math.pow(b.centerZ, 2));
-            return distA - distB;
-        });
+    //     // Sort rooms by distance from center
+    //     const sortedRooms = [...this.rooms].sort((a, b) => {
+    //         const distA = Math.sqrt(Math.pow(a.centerX, 2) + Math.pow(a.centerZ, 2));
+    //         const distB = Math.sqrt(Math.pow(b.centerX, 2) + Math.pow(b.centerZ, 2));
+    //         return distA - distB;
+    //     });
 
-        // Place player in room closest to center
-        const startRoom = sortedRooms[0];
-        this.playerSpawnPoint = new THREE.Vector3(
-            startRoom.centerX,
-            0, // Will be adjusted by height when teleporting
-            startRoom.centerZ
-        );
+    //     // Place player in room closest to center
+    //     const startRoom = sortedRooms[0];
+    //     this.playerSpawnPoint = new THREE.Vector3(
+    //         startRoom.centerX,
+    //         0, // Will be adjusted by height when teleporting
+    //         startRoom.centerZ
+    //     );
 
-        // Place exit in room farthest from center with a valid path
-        const endRoom = sortedRooms[sortedRooms.length - 1];
-        this.exitPoint = new THREE.Vector3(
-            endRoom.centerX,
-            0.1, // Slightly above ground level for visibility
-            endRoom.centerZ
-        );
+    //     // Place exit in room farthest from center with a valid path
+    //     const endRoom = sortedRooms[sortedRooms.length - 1];
+    //     this.exitPoint = new THREE.Vector3(
+    //         endRoom.centerX,
+    //         0.1, // Slightly above ground level for visibility
+    //         endRoom.centerZ
+    //     );
 
-        console.log(`Player spawn set to (${this.playerSpawnPoint.x.toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)})`);
-        console.log(`Exit set to (${this.exitPoint.x.toFixed(2)}, ${this.exitPoint.z.toFixed(2)})`);
+    //     console.log(`Player spawn set to (${this.playerSpawnPoint.x.toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)})`);
+    //     console.log(`Exit set to (${this.exitPoint.x.toFixed(2)}, ${this.exitPoint.z.toFixed(2)})`);
+    // }
+
+    /**
+ * Designate a safe starting room and an exit location
+ */
+placePlayerAndExit() {
+  console.log("Determining player spawn (safe room) and exit locations");
+
+  if (this.rooms.length === 0) {
+    console.error("No rooms to place player or exit");
+    return;
+  }
+
+  // Sort rooms by distance from center
+  const sortedRooms = [...this.rooms].sort((a, b) => {
+    const distA = Math.sqrt(Math.pow(a.centerX, 2) + Math.pow(a.centerZ, 2));
+    const distB = Math.sqrt(Math.pow(b.centerX, 2) + Math.pow(b.centerZ, 2));
+    return distA - distB;
+  });
+
+  // Mark the closest room as the safe spawn room
+  const startRoom = sortedRooms[0];
+  startRoom.isSafeRoom = true;  // Add this flag
+  startRoom.hasEnemy = false;   // Ensure no enemies in start room
+  startRoom.hasItem = false;    // Also no items (optional, remove if you want items)
+  
+  // Clear any existing enemies in this room (just in case they were placed earlier)
+  this.clearRoomContents(startRoom);
+
+  // Create a more welcoming spawn point
+  this.playerSpawnPoint = new THREE.Vector3(
+    startRoom.centerX,
+    0, // Will be adjusted by height when teleporting
+    startRoom.centerZ
+  );
+
+  // Place exit in room farthest from center with a valid path
+  const endRoom = sortedRooms[sortedRooms.length - 1];
+  this.exitPoint = new THREE.Vector3(
+    endRoom.centerX,
+    0.1, // Slightly above ground level for visibility
+    endRoom.centerZ
+  );
+
+  console.log(`Safe spawn room set at (${this.playerSpawnPoint.x.toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)})`);
+  console.log(`Exit set to (${this.exitPoint.x.toFixed(2)}, ${this.exitPoint.z.toFixed(2)})`);
+}
+
+/**
+ * Clear any existing content from a room (typically the safe room)
+ */
+clearRoomContents(room) {
+  // Remove any enemies or items already placed in this room
+  const elementsToRemove = [];
+  
+  this.dungeonElements.forEach(element => {
+    if (element.userData && element.userData.roomId === room.id) {
+      if (element.userData.isEnemyMarker || element.userData.isItem) {
+        elementsToRemove.push(element);
+      }
     }
+  });
+  
+  // Remove them from the scene and dungeonElements array
+  elementsToRemove.forEach(element => {
+    this.scene3D.scene.remove(element);
+    const index = this.dungeonElements.indexOf(element);
+    if (index !== -1) {
+      this.dungeonElements.splice(index, 1);
+    }
+  });
+  
+  // Also remove from enemySpawnPoints if needed
+  this.enemySpawnPoints = this.enemySpawnPoints.filter(point => point.roomId !== room.id);
+  
+  console.log(`Cleared ${elementsToRemove.length} objects from safe room`);
+}
 
 
     buildDungeon3D() {
@@ -1518,46 +1594,220 @@ createOptimizedWalls(inputMaterial) {
      * Teleport player to the dungeon starting point
      * @returns {boolean} Whether teleport was successful
      */
-    teleportPlayerToDungeon() {
-        if (!this.playerSpawnPoint) {
-          console.error("No player spawn point defined");
-          return false;
-        }
+    // teleportPlayerToDungeon() {
+    //     if (!this.playerSpawnPoint) {
+    //       console.error("No player spawn point defined");
+    //       return false;
+    //     }
         
-        // Get the exact player height from physics
-        const playerHeight = this.physics?.playerHeight || 1.7;
+    //     // Get the exact player height from physics
+    //     const playerHeight = this.physics?.playerHeight || 1.7;
         
-        // Tell Scene3DController to skip its lighting
-        if (this.scene3D) {
-          this.scene3D._skipDungeonLighting = true;
-        }
+    //     // Tell Scene3DController to skip its lighting
+    //     if (this.scene3D) {
+    //       this.scene3D._skipDungeonLighting = true;
+    //     }
         
-        // Get elevation at spawn point
-        const { elevation } = this.getElevationAtPoint(
-          this.playerSpawnPoint.x,
-          this.playerSpawnPoint.z
-        );
+    //     // Get elevation at spawn point
+    //     const { elevation } = this.getElevationAtPoint(
+    //       this.playerSpawnPoint.x,
+    //       this.playerSpawnPoint.z
+    //     );
         
-        // Set player position to spawn point with correct height
-        this.scene3D.camera.position.set(
-          this.playerSpawnPoint.x,
-          elevation + playerHeight,  // Position at correct elevation plus eye height
-          this.playerSpawnPoint.z
-        );
+    //     // Set player position to spawn point with correct height
+    //     this.scene3D.camera.position.set(
+    //       this.playerSpawnPoint.x,
+    //       elevation + playerHeight,  // Position at correct elevation plus eye height
+    //       this.playerSpawnPoint.z
+    //     );
         
-        // Reset physics state to avoid falling or clipping
-        if (this.scene3D.physics) {
-          this.scene3D.physics.currentGroundHeight = elevation;
-          this.scene3D.physics.isJumping = false;
-          this.scene3D.physics.isFalling = false;
+    //     // Reset physics state to avoid falling or clipping
+    //     if (this.scene3D.physics) {
+    //       this.scene3D.physics.currentGroundHeight = elevation;
+    //       this.scene3D.physics.isJumping = false;
+    //       this.scene3D.physics.isFalling = false;
           
-          // Ensure good collision detection
-          this.scene3D.physics.update(0.1);
-        }
+    //       // Ensure good collision detection
+    //       this.scene3D.physics.update(0.1);
+    //     }
         
-        console.log(`Player teleported to (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
-        return true;
-      }
+    //     console.log(`Player teleported to (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
+    //     return true;
+    //   }
+
+    /**
+ * Teleport player to the dungeon starting point with improved spawn logic
+ */
+teleportPlayerToDungeon() {
+  if (!this.playerSpawnPoint) {
+    console.error("No player spawn point defined");
+    return false;
+  }
+  
+  // Get the exact player height from physics
+  const playerHeight = this.physics?.playerHeight || 1.7;
+  
+  // Tell Scene3DController to skip its lighting
+  if (this.scene3D) {
+    this.scene3D._skipDungeonLighting = true;
+  }
+  
+  // Get elevation at spawn point
+  const { elevation } = this.getElevationAtPoint(
+    this.playerSpawnPoint.x,
+    this.playerSpawnPoint.z
+  );
+  
+  // Set player position to spawn point with correct height
+  this.scene3D.camera.position.set(
+    this.playerSpawnPoint.x,
+    elevation + playerHeight,  // Position at correct elevation plus eye height
+    this.playerSpawnPoint.z
+  );
+  
+  // Reset player look direction to face into the dungeon
+  this.scene3D.camera.lookAt(
+    this.playerSpawnPoint.x, 
+    elevation + playerHeight,
+    this.playerSpawnPoint.z - 1 // Look slightly forward
+  );
+  
+  // Reset physics state to avoid falling or clipping
+  if (this.scene3D.physics) {
+    this.scene3D.physics.currentGroundHeight = elevation;
+    this.scene3D.physics.isJumping = false;
+    this.scene3D.physics.isFalling = false;
+    
+    // Ensure good collision detection
+    this.scene3D.physics.update(0.1);
+  }
+  
+  // Set up atmospheric effects for the dungeon
+  this.setupDungeonAtmosphere();
+  
+  console.log(`Player teleported to safe room at (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
+  return true;
+}
+
+/**
+ * Set up atmospheric lighting and effects for the dungeon
+ */
+setupDungeonAtmosphere() {
+  console.log("Setting up dungeon atmosphere");
+  
+  // Check if we have access to the ShaderEffectsManager
+  const hasShaderEffects = this.scene3D && this.scene3D.shaderEffectsManager;
+  
+  // Reduce ambient lighting to create a darker mood
+  this.adjustDungeonLighting();
+  
+  // Add torch effects at key locations
+  this.addTorchesToDungeon();
+  
+  // Add atmospheric particles if ShaderEffectsManager is available
+  if (hasShaderEffects) {
+    this.addAtmosphericEffects();
+  }
+}
+
+/**
+ * Adjust the dungeon lighting to be darker and more atmospheric
+ */
+adjustDungeonLighting() {
+  // Reduce ambient light intensity
+  this.dungeonElements.forEach(element => {
+    if (element instanceof THREE.AmbientLight) {
+      element.intensity = 0.2; // Reduced from 0.5 to create a darker atmosphere
+    }
+  });
+  
+  // Add a slight fog effect
+  this.scene3D.scene.fog = new THREE.FogExp2(0x000000, 0.025);
+}
+
+/**
+ * Add torch lighting to the dungeon to create atmosphere
+ */
+addTorchesToDungeon() {
+  console.log("Adding atmospheric torch lighting to dungeon");
+  
+  // Add torch in each room corner for better lighting
+  this.rooms.forEach(room => {
+    // Skip the safe room - it will have its own lighting
+    if (room.isSafeRoom) return;
+    
+    // Add torches in each corner of larger rooms
+    if (room.width >= 4 && room.height >= 4) {
+      // Calculate corner positions
+      const corners = [
+        { x: room.x + 1, z: room.z + 1 },  // Top-left
+        { x: room.x + room.width - 1, z: room.z + 1 },  // Top-right
+        { x: room.x + 1, z: room.z + room.height - 1 },  // Bottom-left
+        { x: room.x + room.width - 1, z: room.z + room.height - 1 }  // Bottom-right
+      ];
+      
+      // Add a torch in each corner (with some randomness)
+      corners.forEach(corner => {
+        if (Math.random() < 0.7) {  // 70% chance for each corner
+          this.createTorchLight(corner.x, corner.z);
+        }
+      });
+    }
+  });
+  
+  // Add special lighting to the safe room
+  const safeRoom = this.rooms.find(room => room.isSafeRoom);
+  if (safeRoom) {
+    // Create a welcoming, brighter light in the safe room
+    const safeLight = new THREE.PointLight(0xffcc88, 1.5, 10);
+    safeLight.position.set(safeRoom.centerX, 2, safeRoom.centerZ);
+    safeLight.userData = { isDungeonElement: true };
+    this.scene3D.scene.add(safeLight);
+    this.dungeonElements.push(safeLight);
+  }
+}
+
+/**
+ * Add atmospheric effects using ShaderEffectsManager
+ */
+addAtmosphericEffects() {
+  // Only continue if ShaderEffectsManager is available
+  if (!this.scene3D.shaderEffectsManager) return;
+  
+  const shaderManager = this.scene3D.shaderEffectsManager;
+  
+  // Add dust particles in larger rooms
+  this.rooms.forEach(room => {
+    if (room.width * room.height > 25) {  // Only in larger rooms
+      const position = {
+        x: room.centerX,
+        y: 1.5,
+        z: room.centerZ
+      };
+      
+      // Create dust effect
+      shaderManager.createDustEffect(position, {
+        count: 20,
+        color: 0xaaaaaa,
+        size: 0.03,
+        lifetime: 5
+      });
+    }
+  });
+  
+  // If the safe room has been marked
+  const safeRoom = this.rooms.find(room => room.isSafeRoom);
+  if (safeRoom) {
+    // Add a landing effect when the player teleports in
+    const landingPosition = {
+      x: this.playerSpawnPoint.x,
+      y: 0.1,
+      z: this.playerSpawnPoint.z
+    };
+    
+    shaderManager.createLandingEffect(landingPosition, 1.2);
+  }
+}
 
     /**
  * Create the exit marker for the dungeon
@@ -1777,38 +2027,41 @@ generateRoomWithContent(worldX, worldZ, roomWidth, roomHeight) {
       }
     }
     
-    // Calculate content placement density based on room size
-    const roomSize = roomWidth * roomHeight;
-    const contentDensity = Math.min(0.2, 5 / roomSize); // Larger rooms get more sparse content
+// Calculate content placement density based on room size
+const roomSize = roomWidth * roomHeight;
+const contentDensity = Math.min(0.2, 5 / roomSize); // Larger rooms get more sparse content
+
+// Add content to the room using adjusted coordinates
+const numContentSpots = Math.max(1, Math.floor(roomSize * contentDensity));
+
+// Always ensure at least one enemy OR one item per room, UNLESS it's a safe room
+const hasLargeRoom = roomWidth >= 5 && roomHeight >= 5;
+
+// Only place enemies if this isn't marked as a safe room
+if (!room.isSafeRoom) {
+  // Place enemy in center of room if it's large enough
+  if (hasLargeRoom && Math.random() < 0.7) {
+    this.placeEnemyAt(room, room.centerX, room.centerZ);
+    room.hasEnemy = true;
+  }
+  
+  // Add additional content spots with adjusted coordinates
+  for (let i = 0; i < numContentSpots; i++) {
+    // Calculate a position within the room (avoiding edges)
+    const padding = 1.0;
+    const contentX = adjustedX + padding + Math.random() * (roomWidth - padding * 2);
+    const contentZ = adjustedZ + padding + Math.random() * (roomHeight - padding * 2);
     
-    // Add content to the room using adjusted coordinates
-    const numContentSpots = Math.max(1, Math.floor(roomSize * contentDensity));
-    
-    // Always ensure at least one enemy OR one item per room
-    const hasLargeRoom = roomWidth >= 5 && roomHeight >= 5;
-    
-    // Place enemy in center of room if it's large enough
-    if (hasLargeRoom && Math.random() < 0.7) {
-      this.placeEnemyAt(room, room.centerX, room.centerZ);
+    // Decide what to place
+    if (!room.hasEnemy && Math.random() < 0.6) {
+      this.placeEnemyAt(room, contentX, contentZ);
       room.hasEnemy = true;
+    } else if (!room.hasItem && Math.random() < 0.4) {
+      this.placeItemAt(room, contentX, contentZ);
+      room.hasItem = true;
     }
-    
-    // Add additional content spots with adjusted coordinates
-    for (let i = 0; i < numContentSpots; i++) {
-      // Calculate a position within the room (avoiding edges)
-      const padding = 1.0;
-      const contentX = adjustedX + padding + Math.random() * (roomWidth - padding * 2);
-      const contentZ = adjustedZ + padding + Math.random() * (roomHeight - padding * 2);
-      
-      // Decide what to place
-      if (!room.hasEnemy && Math.random() < 0.6) {
-        this.placeEnemyAt(room, contentX, contentZ);
-        room.hasEnemy = true;
-      } else if (!room.hasItem && Math.random() < 0.4) {
-        this.placeItemAt(room, contentX, contentZ);
-        room.hasItem = true;
-      }
-    }
+  }
+}
     
     console.log(`Created room at (${adjustedX.toFixed(2)}, ${adjustedZ.toFixed(2)}) with size ${roomWidth.toFixed(2)}x${roomHeight.toFixed(2)}`);
     return room;
