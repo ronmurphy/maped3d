@@ -251,167 +251,317 @@ connectToResourceManager(resourceManager) {
   /**
    * Load textures from the resource manager with precise targeting
    */
-  loadTextures() {
-    console.log("Loading dungeon textures from resource manager");
-    const floorTextures = [];
-    const wallTextures = [];
+  // loadTextures() {
+  //   console.log("Loading dungeon textures from resource manager");
+  //   const floorTextures = [];
+  //   const wallTextures = [];
     
-    try {
-      // Check if resource manager is available
-      if (!this.resourceManager) {
-        console.warn("⚠️ No resource manager available for texture loading");
-        throw new Error("Resource manager not available");
-      }
+  //   try {
+  //     // Check if resource manager is available
+  //     if (!this.resourceManager) {
+  //       console.warn("⚠️ No resource manager available for texture loading");
+  //       throw new Error("Resource manager not available");
+  //     }
       
-      // Check if we have resources
-      if (!this.resourceManager.resources || !this.resourceManager.resources.textures) {
-        console.warn("No texture resources found in resource manager");
-        throw new Error("No texture resources available");
-      }
+  //     // Check if we have resources
+  //     if (!this.resourceManager.resources || !this.resourceManager.resources.textures) {
+  //       console.warn("No texture resources found in resource manager");
+  //       throw new Error("No texture resources available");
+  //     }
       
-      // Debug log to check structure
-      console.log("Resource manager structure:", {
-        hasTextures: !!this.resourceManager.resources.textures,
-        wallsCategory: !!this.resourceManager.resources.textures.walls,
-        isMap: this.resourceManager.resources.textures.walls instanceof Map,
-        wallsType: typeof this.resourceManager.resources.textures.walls
+  //     // Debug log to check structure
+  //     console.log("Resource manager structure:", {
+  //       hasTextures: !!this.resourceManager.resources.textures,
+  //       wallsCategory: !!this.resourceManager.resources.textures.walls,
+  //       isMap: this.resourceManager.resources.textures.walls instanceof Map,
+  //       wallsType: typeof this.resourceManager.resources.textures.walls
+  //     });
+      
+  //     // Get the walls category - check if it's a Map or a regular object
+  //     const wallsCategory = this.resourceManager.resources.textures.walls;
+      
+  //     if (wallsCategory) {
+  //       // Handle both Map and regular object cases
+  //       const isMapObject = wallsCategory instanceof Map;
+        
+  //       // Try to use specific dungeon textures
+  //       const textureNames = [
+  //         "DungeonFloor1.png", "DungeonFloor2.png", 
+  //         "DungeonWall1.png", "DungeonWall2.png"
+  //       ];
+        
+  //       if (isMapObject) {
+  //         // If it's a Map, we use Map methods
+  //         wallsCategory.forEach((texture, id) => {
+  //           if (texture && texture.name) {
+  //             if (textureNames.includes(texture.name)) {
+  //               try {
+  //                 const loadedTexture = this.resourceManager.getTexture(texture.name, "walls");
+  //                 if (loadedTexture) {
+  //                   if (texture.name.toLowerCase().includes("floor")) {
+  //                     floorTextures.push(loadedTexture);
+  //                     console.log(`✅ Found floor texture: ${texture.name}`);
+  //                   } else {
+  //                     wallTextures.push(loadedTexture);
+  //                     console.log(`✅ Found wall texture: ${texture.name}`);
+  //                   }
+  //                 }
+  //               } catch (err) {
+  //                 console.warn(`Error loading texture ${texture.name}:`, err);
+  //               }
+  //             }
+  //           }
+  //         });
+  //       } else {
+  //         // It's a regular object, use object iteration
+  //         for (const id in wallsCategory) {
+  //           const texture = wallsCategory[id];
+  //           if (texture && texture.name) {
+  //             if (textureNames.includes(texture.name)) {
+  //               try {
+  //                 const loadedTexture = this.resourceManager.getTexture(texture.name, "walls");
+  //                 if (loadedTexture) {
+  //                   if (texture.name.toLowerCase().includes("floor")) {
+  //                     floorTextures.push(loadedTexture);
+  //                     console.log(`✅ Found floor texture: ${texture.name}`);
+  //                   } else {
+  //                     wallTextures.push(loadedTexture);
+  //                     console.log(`✅ Found wall texture: ${texture.name}`);
+  //                   }
+  //                 }
+  //               } catch (err) {
+  //                 console.warn(`Error loading texture ${texture.name}:`, err);
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+      
+  //     // If we still don't have textures, try direct access
+  //     if (floorTextures.length === 0 && wallTextures.length === 0) {
+  //       console.log("Trying direct access to texture data...");
+        
+  //       const directTextures = [
+  //         { name: "DungeonFloor1.png", type: "floor" },
+  //         { name: "DungeonFloor2.png", type: "floor" },
+  //         { name: "DungeonWall1.png", type: "wall" },
+  //         { name: "DungeonWall2.png", type: "wall" }
+  //       ];
+        
+  //       for (const textureInfo of directTextures) {
+  //         try {
+  //           // Try to directly access texture data
+  //           const data = this.resourceManager.resources.textures.walls[`walls_${textureInfo.name.replace('.png', '')}`];
+  //           if (data && data.data) {
+  //             // Create a THREE.js texture from the data
+  //             const loader = new THREE.TextureLoader();
+  //             const texture = loader.load(data.data);
+              
+  //             if (textureInfo.type === "floor") {
+  //               floorTextures.push(texture);
+  //               console.log(`✅ Direct access: Found floor texture ${textureInfo.name}`);
+  //             } else {
+  //               wallTextures.push(texture);
+  //               console.log(`✅ Direct access: Found wall texture ${textureInfo.name}`);
+  //             }
+  //           }
+  //         } catch (err) {
+  //           console.warn(`Direct access failed for ${textureInfo.name}:`, err);
+  //         }
+  //       }
+  //     }
+  //   } catch (e) {
+  //     console.error("Error loading textures:", e);
+  //   }
+    
+  //   // Create fallbacks if needed (your existing code)
+  //   if (floorTextures.length === 0) {
+  //     console.warn("⚠️ No floor textures found - creating fallbacks");
+  //     floorTextures.push(this.createDefaultTexture('floor', 0x555555));
+  //     floorTextures.push(this.createDefaultTexture('floor', 0x666666));
+  //   }
+    
+  //   if (wallTextures.length === 0) {
+  //     console.warn("⚠️ No wall textures found - creating fallbacks");
+  //     wallTextures.push(this.createDefaultTexture('wall', 0x777777));
+  //     wallTextures.push(this.createDefaultTexture('wall', 0x888888));
+  //   }
+    
+  //   // Process textures for tiling
+  //   floorTextures.forEach(texture => {
+  //     if (!texture) return;
+  //     texture.wrapS = THREE.RepeatWrapping;
+  //     texture.wrapT = THREE.RepeatWrapping;
+  //     texture.repeat.set(2, 2);
+  //     texture.colorSpace = THREE.SRGBColorSpace;
+  //     texture.needsUpdate = true;
+  //   });
+    
+  //   wallTextures.forEach(texture => {
+  //     if (!texture) return;
+  //     texture.wrapS = THREE.RepeatWrapping;
+  //     texture.wrapT = THREE.RepeatWrapping;
+  //     texture.repeat.set(1, this.wallHeight / 4);
+  //     texture.colorSpace = THREE.SRGBColorSpace;
+  //     texture.needsUpdate = true;
+  //   });
+    
+  //   this.floorTextures = floorTextures;
+  //   this.wallTextures = wallTextures;
+    
+  //   console.log(`Texture loading complete: ${floorTextures.length} floor textures and ${wallTextures.length} wall textures`);
+  // }
+
+  /**
+ * Load textures from resource manager using the correct access patterns
+ */
+loadTextures() {
+  console.log("Loading dungeon textures using LayersPanel pattern");
+  const floorTextures = [];
+  const wallTextures = [];
+  
+  try {
+    // Check if resource manager is available
+    if (!this.resourceManager) {
+      console.warn("⚠️ No resource manager available for texture loading");
+      throw new Error("Resource manager not available");
+    }
+    
+    // Get wall textures using the CORRECT pattern from LayersPanel.js
+    const wallTexturesCollection = this.resourceManager?.resources?.textures?.walls;
+    
+    if (wallTexturesCollection) {
+      console.log("Found wall textures collection:", {
+        isMap: wallTexturesCollection instanceof Map,
+        size: wallTexturesCollection instanceof Map ? wallTexturesCollection.size : Object.keys(wallTexturesCollection).length
       });
       
-      // Get the walls category - check if it's a Map or a regular object
-      const wallsCategory = this.resourceManager.resources.textures.walls;
-      
-      if (wallsCategory) {
-        // Handle both Map and regular object cases
-        const isMapObject = wallsCategory instanceof Map;
-        
-        // Try to use specific dungeon textures
-        const textureNames = [
-          "DungeonFloor1.png", "DungeonFloor2.png", 
-          "DungeonWall1.png", "DungeonWall2.png"
-        ];
-        
-        if (isMapObject) {
-          // If it's a Map, we use Map methods
-          wallsCategory.forEach((texture, id) => {
-            if (texture && texture.name) {
-              if (textureNames.includes(texture.name)) {
-                try {
-                  const loadedTexture = this.resourceManager.getTexture(texture.name, "walls");
-                  if (loadedTexture) {
-                    if (texture.name.toLowerCase().includes("floor")) {
-                      floorTextures.push(loadedTexture);
-                      console.log(`✅ Found floor texture: ${texture.name}`);
-                    } else {
-                      wallTextures.push(loadedTexture);
-                      console.log(`✅ Found wall texture: ${texture.name}`);
-                    }
-                  }
-                } catch (err) {
-                  console.warn(`Error loading texture ${texture.name}:`, err);
-                }
-              }
-            }
-          });
-        } else {
-          // It's a regular object, use object iteration
-          for (const id in wallsCategory) {
-            const texture = wallsCategory[id];
-            if (texture && texture.name) {
-              if (textureNames.includes(texture.name)) {
-                try {
-                  const loadedTexture = this.resourceManager.getTexture(texture.name, "walls");
-                  if (loadedTexture) {
-                    if (texture.name.toLowerCase().includes("floor")) {
-                      floorTextures.push(loadedTexture);
-                      console.log(`✅ Found floor texture: ${texture.name}`);
-                    } else {
-                      wallTextures.push(loadedTexture);
-                      console.log(`✅ Found wall texture: ${texture.name}`);
-                    }
-                  }
-                } catch (err) {
-                  console.warn(`Error loading texture ${texture.name}:`, err);
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      // If we still don't have textures, try direct access
-      if (floorTextures.length === 0 && wallTextures.length === 0) {
-        console.log("Trying direct access to texture data...");
-        
-        const directTextures = [
-          { name: "DungeonFloor1.png", type: "floor" },
-          { name: "DungeonFloor2.png", type: "floor" },
-          { name: "DungeonWall1.png", type: "wall" },
-          { name: "DungeonWall2.png", type: "wall" }
-        ];
-        
-        for (const textureInfo of directTextures) {
-          try {
-            // Try to directly access texture data
-            const data = this.resourceManager.resources.textures.walls[`walls_${textureInfo.name.replace('.png', '')}`];
-            if (data && data.data) {
-              // Create a THREE.js texture from the data
+      // Handle both Map and regular object cases
+      if (wallTexturesCollection instanceof Map) {
+        // It's a Map object (as in LayersPanel)
+        for (const [id, texture] of wallTexturesCollection.entries()) {
+          console.log(`Processing texture: ${id} (${texture.name})`);
+          
+          if (texture && texture.data) {
+            try {
+              // Create THREE.js texture directly from texture data
               const loader = new THREE.TextureLoader();
-              const texture = loader.load(data.data);
+              const threeTexture = loader.load(texture.data);
               
-              if (textureInfo.type === "floor") {
-                floorTextures.push(texture);
-                console.log(`✅ Direct access: Found floor texture ${textureInfo.name}`);
+              // Determine if it's a floor or wall texture based on name
+              const textureName = texture.name.toLowerCase();
+              if (textureName.includes('floor')) {
+                floorTextures.push(threeTexture);
+                console.log(`✅ Added floor texture: ${texture.name}`);
+              } else if (textureName.includes('wall')) {
+                wallTextures.push(threeTexture);
+                console.log(`✅ Added wall texture: ${texture.name}`);
               } else {
-                wallTextures.push(texture);
-                console.log(`✅ Direct access: Found wall texture ${textureInfo.name}`);
+                // Default to wall texture if unclear
+                wallTextures.push(threeTexture);
+                console.log(`✅ Added generic texture as wall: ${texture.name}`);
               }
+            } catch (err) {
+              console.warn(`Error loading texture ${texture.name}:`, err);
             }
-          } catch (err) {
-            console.warn(`Direct access failed for ${textureInfo.name}:`, err);
+          }
+        }
+      } else {
+        // It's a regular object (handle as fallback)
+        for (const id in wallTexturesCollection) {
+          const texture = wallTexturesCollection[id];
+          console.log(`Processing texture: ${id} (${texture.name})`);
+          
+          if (texture && texture.data) {
+            try {
+              // Create THREE.js texture directly from texture data
+              const loader = new THREE.TextureLoader();
+              const threeTexture = loader.load(texture.data);
+              
+              // Determine if it's a floor or wall texture based on name
+              const textureName = texture.name.toLowerCase();
+              if (textureName.includes('floor')) {
+                floorTextures.push(threeTexture);
+                console.log(`✅ Added floor texture: ${texture.name}`);
+              } else if (textureName.includes('wall')) {
+                wallTextures.push(threeTexture);
+                console.log(`✅ Added wall texture: ${texture.name}`);
+              } else {
+                // Default to wall texture if unclear
+                wallTextures.push(threeTexture);
+                console.log(`✅ Added generic texture as wall: ${texture.name}`);
+              }
+            } catch (err) {
+              console.warn(`Error loading texture ${texture.name}:`, err);
+            }
           }
         }
       }
-    } catch (e) {
-      console.error("Error loading textures:", e);
+    } else {
+      console.warn("No wall textures found in resource manager");
     }
-    
-    // Create fallbacks if needed (your existing code)
-    if (floorTextures.length === 0) {
-      console.warn("⚠️ No floor textures found - creating fallbacks");
-      floorTextures.push(this.createDefaultTexture('floor', 0x555555));
-      floorTextures.push(this.createDefaultTexture('floor', 0x666666));
-    }
-    
-    if (wallTextures.length === 0) {
-      console.warn("⚠️ No wall textures found - creating fallbacks");
-      wallTextures.push(this.createDefaultTexture('wall', 0x777777));
-      wallTextures.push(this.createDefaultTexture('wall', 0x888888));
-    }
-    
-    // Process textures for tiling
-    floorTextures.forEach(texture => {
-      if (!texture) return;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(2, 2);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-    });
-    
-    wallTextures.forEach(texture => {
-      if (!texture) return;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(1, this.wallHeight / 4);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-    });
-    
-    this.floorTextures = floorTextures;
-    this.wallTextures = wallTextures;
-    
-    console.log(`Texture loading complete: ${floorTextures.length} floor textures and ${wallTextures.length} wall textures`);
+  } catch (e) {
+    console.error("Error loading textures:", e);
   }
+  
+  // Create fallbacks if needed
+  if (floorTextures.length === 0) {
+    console.warn("⚠️ No floor textures found - creating fallbacks");
+    floorTextures.push(this.createDefaultTexture('floor', 0x555555));
+  }
+  
+  if (wallTextures.length === 0) {
+    console.warn("⚠️ No wall textures found - creating fallbacks");
+    wallTextures.push(this.createDefaultTexture('wall', 0x777777));
+  }
+  
+  // Process textures for tiling
+  floorTextures.forEach(texture => {
+    if (!texture) return;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2, 2);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+  });
+  
+  // wallTextures.forEach(texture => {
+  //   if (!texture) return;
+  //   texture.wrapS = THREE.RepeatWrapping;
+  //   texture.wrapT = THREE.RepeatWrapping;
+  //   texture.repeat.set(1, this.wallHeight / 4);
+  //   texture.colorSpace = THREE.SRGBColorSpace;
+  //   texture.needsUpdate = true;
+  // });
+
+  // Modified wall texture processing to fix tiling issues
+wallTextures.forEach(texture => {
+  if (!texture) return;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  
+  // Instead of tiling horizontally, make it fit once per wall segment
+  // A typical wall segment might be around 4 units wide
+  // Set horizontal repeat to a small value to prevent excessive repetition
+  const horizontalRepeat = 0.25; // Makes texture wider (fewer repeats horizontally)
+  
+  // For vertical tiling, we want to set a height that looks natural
+  // For a 4.5 unit high wall, a repeat of 1 might be too small
+  // Let's make it visible but not too stretched
+  const verticalRepeat = 0.5; // Makes texture taller (fewer repeats vertically)
+  
+  texture.repeat.set(horizontalRepeat, verticalRepeat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+});
+  
+  this.floorTextures = floorTextures;
+  this.wallTextures = wallTextures;
+  
+  console.log(`Texture loading complete: ${floorTextures.length} floor textures and ${wallTextures.length} wall textures`);
+  return true;
+}
 
   /**
  * Create a material with proper texture settings
@@ -1489,29 +1639,83 @@ createOptimizedWalls(inputMaterial) {
         const blockWidth = width / 2;  // Convert grid units to world units
         const blockDepth = depth / 2;  // Convert grid units to world units
         
-        const wallGeometry = new THREE.BoxGeometry(blockWidth, this.wallHeight, blockDepth);
+        // const wallGeometry = new THREE.BoxGeometry(blockWidth, this.wallHeight, blockDepth);
         
-        // Try the texture material first, but fall back to the colored material if needed
-        let material;
-        try {
-          material = wallMaterial.clone();
-          // If texture is missing or transparent, use fallback
-          if (!material.map || material.transparent) {
-            material = fallbackMaterial;
-          }
-        } catch (e) {
-          console.warn("Error with wall material, using fallback:", e);
-          material = fallbackMaterial;
-        }
+        // // Try the texture material first, but fall back to the colored material if needed
+        // let material;
+        // try {
+        //   material = wallMaterial.clone();
+        //   // If texture is missing or transparent, use fallback
+        //   if (!material.map || material.transparent) {
+        //     material = fallbackMaterial;
+        //   }
+        // } catch (e) {
+        //   console.warn("Error with wall material, using fallback:", e);
+        //   material = fallbackMaterial;
+        // }
         
-        const wall = new THREE.Mesh(wallGeometry, material);
+        // const wall = new THREE.Mesh(wallGeometry, material);
         
-        // Position wall at center of block
-        wall.position.set(
-          worldX + blockWidth / 2,
-          this.wallHeight / 2,  // Half the wall height
-          worldZ + blockDepth / 2
-        );
+        // // Position wall at center of block
+        // wall.position.set(
+        //   worldX + blockWidth / 2,
+        //   this.wallHeight / 2,  // Half the wall height
+        //   worldZ + blockDepth / 2
+        // );
+
+        // Replace with this enhanced texture handling code:
+const wallGeometry = new THREE.BoxGeometry(blockWidth, this.wallHeight, blockDepth);
+let wall;
+
+// Handle texture scaling for better appearance
+if (wallMaterial.map) {
+  // Calculate texture repeats based on wall dimensions
+  const horizontalRepeatX = Math.max(1, Math.round(blockWidth / 4));
+  const horizontalRepeatZ = Math.max(1, Math.round(blockDepth / 4));
+  
+  // Create materials for each face with proper texture scaling
+  const materials = [
+    wallMaterial.clone(), // right side (+X)
+    wallMaterial.clone(), // left side (-X)
+    wallMaterial.clone(), // top (+Y)
+    wallMaterial.clone(), // bottom (-Y)
+    wallMaterial.clone(), // front (+Z)
+    wallMaterial.clone()  // back (-Z)
+  ];
+  
+  // Set texture repeats for all materials
+  materials.forEach(mat => {
+    if (mat.map) {
+      mat.map = mat.map.clone();
+      mat.map.wrapS = THREE.RepeatWrapping;
+      mat.map.wrapT = THREE.RepeatWrapping;
+    }
+  });
+  
+  // X-facing sides
+  if (materials[0].map) materials[0].map.repeat.set(horizontalRepeatZ, 1);
+  if (materials[1].map) materials[1].map.repeat.set(horizontalRepeatZ, 1);
+  
+  // Y-facing sides (top/bottom)
+  if (materials[2].map) materials[2].map.repeat.set(horizontalRepeatX, horizontalRepeatZ);
+  if (materials[3].map) materials[3].map.repeat.set(horizontalRepeatX, horizontalRepeatZ);
+  
+  // Z-facing sides
+  if (materials[4].map) materials[4].map.repeat.set(horizontalRepeatX, 1);
+  if (materials[5].map) materials[5].map.repeat.set(horizontalRepeatX, 1);
+  
+  wall = new THREE.Mesh(wallGeometry, materials);
+} else {
+  // Fallback to single material if no texture
+  wall = new THREE.Mesh(wallGeometry, wallMaterial.clone());
+}
+
+// Position wall at center of block
+wall.position.set(
+  worldX + blockWidth / 2,
+  this.wallHeight / 2,
+  worldZ + blockDepth / 2
+);
         
         console.log(`Created wall block at (${wall.position.x.toFixed(2)}, ${wall.position.y.toFixed(2)}, ${wall.position.z.toFixed(2)}) with size ${blockWidth.toFixed(2)}x${this.wallHeight}x${blockDepth.toFixed(2)}`);
         
