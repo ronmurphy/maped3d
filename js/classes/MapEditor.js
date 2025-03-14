@@ -31,6 +31,7 @@ class MapEditor {
     // Initialize managers in correct order
     this.resourceManager = null;  // Initialize to null first
     this.textureManager = null;   // Initialize to null first
+    this.shapeForge = null;       // Initialize ShapeForge to null
 
     // Setup in correct order
     this.setupTitleHandlers();
@@ -43,6 +44,7 @@ class MapEditor {
       this.scene3D.resourceManager = this.resourceManager;
       this.checkTextureManager(() => {
         console.log('TextureManager initialized:', !!this.textureManager);
+        this.initShapeForge();
         this.setupEventListeners();
       });
     });
@@ -60,6 +62,96 @@ class MapEditor {
     window.applyEditorPreferences = (prefs) => this.applyEditorPreferences(prefs);
 
     // this.fixZoomIssues();
+  }
+
+
+  initShapeForge() {
+    // Only initialize if ShapeForge class exists and we have the resourceManager
+    if (window.ShapeForge && this.resourceManager) {
+      // Check for ShaderEffectsManager
+      if (window.ShaderEffectsManager) {
+        // ShaderEffectsManager is globally available
+        this.shaderEffectsManager = window.ShaderEffectsManager;
+        this.createShapeForge();
+      } else {
+        // Try to load ShaderEffectsManager
+        this.loadShaderEffectsManager(() => {
+          this.createShapeForge();
+        });
+      }
+    } else {
+      console.warn('ShapeForge initialization skipped - missing dependencies');
+    }
+
+    // Debug code to check everything is working
+console.log("ShapeForge status:", {
+  isClassAvailable: !!window.ShapeForge,
+  resourceManagerAvailable: !!this.resourceManager,
+  shaderEffectsManagerAvailable: !!this.shaderEffectsManager,
+  shapeForgeInstance: !!this.shapeForge
+});
+
+// Test ability to show ShapeForge directly
+if (this.shapeForge) {
+  console.log("ShapeForge instance created successfully");
+  // Uncomment this to test direct showing without button click
+
+  if (this.shapeForge) {
+    const shapeForgeBtn = document.getElementById('shapeForgeBtn');
+    shapeForgeBtn.addEventListener('click', () => {
+      this.shapeForge.show();
+        });
+  }
+  // this.shapeForge.show();
+}
+
+  }
+  
+  loadShaderEffectsManager(callback) {
+    console.log("Attempting to load ShaderEffectsManager");
+    const script = document.createElement('script');
+    script.src = 'js/classes/ShaderEffectsManager.js';
+    
+    script.onload = () => {
+      console.log("ShaderEffectsManager script loaded successfully");
+      
+      // Initialize ShaderEffectsManager if possible
+      try {
+        if (window.ShaderEffectsManager) {
+          // If it requires a scene parameter, initialize it with scene3D
+          if (this.scene3D && this.scene3D.scene) {
+            this.shaderEffectsManager = new ShaderEffectsManager(this.scene3D);
+          } else {
+            this.shaderEffectsManager = new ShaderEffectsManager();
+          }
+          console.log("ShaderEffectsManager initialized");
+        } else {
+          console.warn("ShaderEffectsManager script loaded but class not found");
+        }
+      } catch (err) {
+        console.error("Error initializing ShaderEffectsManager:", err);
+      }
+      
+      if (callback) callback();
+    };
+    
+    script.onerror = () => {
+      console.warn('ShaderEffectsManager script not available');
+      if (callback) callback();
+    };
+    
+    document.head.appendChild(script);
+  }
+  
+  createShapeForge() {
+    // Create ShapeForge with available dependencies
+    this.shapeForge = new ShapeForge(
+      this.resourceManager, 
+      this.shaderEffectsManager || null
+    );
+    console.log('ShapeForge initialized');
+
+    
   }
 
 /**
@@ -2184,6 +2276,7 @@ checkStoryboard(callback) {
           }
         });
 
+
         // Button click handlers
         dialog.querySelector(".new-map-btn").addEventListener("click", () => {
           pictureInput.click();
@@ -2206,6 +2299,8 @@ checkStoryboard(callback) {
         dialog.querySelector(".load-resource-btn").addEventListener("click", () => {
           resourceInput.click();
         });
+
+
 
         // Add handler for recent projects button if it exists
         const recentProjectsBtn = dialog.querySelector('.recent-projects-btn');
@@ -2344,9 +2439,13 @@ if (preferencesBtn) {
           case "screenshotTool":
             this.takeScreenshot();
             break;
-          case "storyboardTool":
-              this.openStoryboardEditor();
-              break;
+        //   case "storyboardTool":
+        //       this.openStoryboardEditor();
+        //       break;
+        // case "shapeForgeBtn":
+        //   this.shapeForge.show();
+        //   break;
+
         }
       });
     });

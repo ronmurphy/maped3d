@@ -309,10 +309,14 @@ document.addEventListener("DOMContentLoaded", () => {
       dialog.show();
     }
 
+    
+    
     const editorPrefsBtn = document.getElementById('editorPrefsBtn');
     if (editorPrefsBtn) {
       editorPrefsBtn.addEventListener('click', showEditorPreferencesDialog);
     }
+
+
   
     function showEditorPreferencesDialog() {
       const dialog = document.createElement('sl-dialog');

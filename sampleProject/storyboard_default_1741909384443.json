@@ -1,0 +1,315 @@
+{
+  "timestamp": "2025-03-13T23:43:04.443Z",
+  "nodes": {
+    "node_sample_1741700252672": {
+      "type": "dialog",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "data": {
+        "title": "Dialog Node",
+        "text": "Welcome to the game!",
+        "image": null
+      }
+    },
+    "node_1741700260503": {
+      "type": "dialog",
+      "position": {
+        "x": 99.5,
+        "y": 269
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "Hello World",
+        "image": null
+      }
+    },
+    "node_1741700276780": {
+      "type": "dialog",
+      "position": {
+        "x": 99.5,
+        "y": 420
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "Next is a Picture Test!",
+        "image": null
+      }
+    },
+    "node_1741700296952": {
+      "type": "dialog",
+      "position": {
+        "x": 102.5,
+        "y": 568
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "Dragon!",
+        "image": {
+          "id": "splashArt_1740329929010",
+          "category": "title"
+        }
+      }
+    },
+    "node_1741909228189": {
+      "type": "choice",
+      "position": {
+        "x": 343.5,
+        "y": 93.75
+      },
+      "data": {
+        "text": "See AnotherPicture",
+        "options": [
+          {
+            "text": "YesPlease",
+            "targetId": null
+          },
+          {
+            "text": "HeckNo",
+            "targetId": null
+          }
+        ]
+      }
+    },
+    "node_1741909260555": {
+      "type": "dialog",
+      "position": {
+        "x": 330.5,
+        "y": 361.75
+      },
+      "data": {
+        "title": "Dialog",
+        "text": "",
+        "image": {
+          "id": "splashArt_1740358908007",
+          "category": "title"
+        }
+      }
+    },
+    "node_1741909281532": {
+      "type": "event",
+      "position": {
+        "x": 566.5,
+        "y": 393.75
+      },
+      "data": {
+        "eventType": "showPartyManager",
+        "params": {}
+      }
+    },
+    "node_1741909301545": {
+      "type": "choice",
+      "position": {
+        "x": 589.5,
+        "y": 101.75
+      },
+      "data": {
+        "text": "Ok Then, Open Party Manager?",
+        "options": [
+          {
+            "text": "Yes",
+            "targetId": null
+          },
+          {
+            "text": "No....",
+            "targetId": null
+          }
+        ]
+      }
+    },
+    "node_1741909350061": {
+      "type": "reward",
+      "position": {
+        "x": 811.5,
+        "y": 354.75
+      },
+      "data": {
+        "items": [
+          {
+            "id": "props_1740114439152",
+            "name": "Gold Chest",
+            "quantity": 1
+          }
+        ],
+        "experience": 0
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_sample_1741700252672",
+      "to": "node_1741700260503",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700260503",
+      "to": "node_1741700276780",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700276780",
+      "to": "node_1741700296952",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741700296952",
+      "to": "node_1741909228189",
+      "path": null,
+      "option": null
+    },
+    {
+      "from": "node_1741909228189",
+      "to": "node_1741909260555",
+      "path": null,
+      "option": 0
+    },
+    {
+      "from": "node_1741909228189",
+      "to": "node_1741909301545",
+      "path": null,
+      "option": 1
+    },
+    {
+      "from": "node_1741909301545",
+      "to": "node_1741909281532",
+      "path": null,
+      "option": 0
+    },
+    {
+      "from": "node_1741909301545",
+      "to": "node_1741909350061",
+      "path": null,
+      "option": 1
+    }
+  ]
+}
