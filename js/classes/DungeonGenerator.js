@@ -248,170 +248,6 @@ connectToResourceManager(resourceManager) {
     this.loadTextures();
   }
   
-  /**
-   * Load textures from the resource manager with precise targeting
-   */
-  // loadTextures() {
-  //   console.log("Loading dungeon textures from resource manager");
-  //   const floorTextures = [];
-  //   const wallTextures = [];
-    
-  //   try {
-  //     // Check if resource manager is available
-  //     if (!this.resourceManager) {
-  //       console.warn("⚠️ No resource manager available for texture loading");
-  //       throw new Error("Resource manager not available");
-  //     }
-      
-  //     // Check if we have resources
-  //     if (!this.resourceManager.resources || !this.resourceManager.resources.textures) {
-  //       console.warn("No texture resources found in resource manager");
-  //       throw new Error("No texture resources available");
-  //     }
-      
-  //     // Debug log to check structure
-  //     console.log("Resource manager structure:", {
-  //       hasTextures: !!this.resourceManager.resources.textures,
-  //       wallsCategory: !!this.resourceManager.resources.textures.walls,
-  //       isMap: this.resourceManager.resources.textures.walls instanceof Map,
-  //       wallsType: typeof this.resourceManager.resources.textures.walls
-  //     });
-      
-  //     // Get the walls category - check if it's a Map or a regular object
-  //     const wallsCategory = this.resourceManager.resources.textures.walls;
-      
-  //     if (wallsCategory) {
-  //       // Handle both Map and regular object cases
-  //       const isMapObject = wallsCategory instanceof Map;
-        
-  //       // Try to use specific dungeon textures
-  //       const textureNames = [
-  //         "DungeonFloor1.png", "DungeonFloor2.png", 
-  //         "DungeonWall1.png", "DungeonWall2.png"
-  //       ];
-        
-  //       if (isMapObject) {
-  //         // If it's a Map, we use Map methods
-  //         wallsCategory.forEach((texture, id) => {
-  //           if (texture && texture.name) {
-  //             if (textureNames.includes(texture.name)) {
-  //               try {
-  //                 const loadedTexture = this.resourceManager.getTexture(texture.name, "walls");
-  //                 if (loadedTexture) {
-  //                   if (texture.name.toLowerCase().includes("floor")) {
-  //                     floorTextures.push(loadedTexture);
-  //                     console.log(`✅ Found floor texture: ${texture.name}`);
-  //                   } else {
-  //                     wallTextures.push(loadedTexture);
-  //                     console.log(`✅ Found wall texture: ${texture.name}`);
-  //                   }
-  //                 }
-  //               } catch (err) {
-  //                 console.warn(`Error loading texture ${texture.name}:`, err);
-  //               }
-  //             }
-  //           }
-  //         });
-  //       } else {
-  //         // It's a regular object, use object iteration
-  //         for (const id in wallsCategory) {
-  //           const texture = wallsCategory[id];
-  //           if (texture && texture.name) {
-  //             if (textureNames.includes(texture.name)) {
-  //               try {
-  //                 const loadedTexture = this.resourceManager.getTexture(texture.name, "walls");
-  //                 if (loadedTexture) {
-  //                   if (texture.name.toLowerCase().includes("floor")) {
-  //                     floorTextures.push(loadedTexture);
-  //                     console.log(`✅ Found floor texture: ${texture.name}`);
-  //                   } else {
-  //                     wallTextures.push(loadedTexture);
-  //                     console.log(`✅ Found wall texture: ${texture.name}`);
-  //                   }
-  //                 }
-  //               } catch (err) {
-  //                 console.warn(`Error loading texture ${texture.name}:`, err);
-  //               }
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-      
-  //     // If we still don't have textures, try direct access
-  //     if (floorTextures.length === 0 && wallTextures.length === 0) {
-  //       console.log("Trying direct access to texture data...");
-        
-  //       const directTextures = [
-  //         { name: "DungeonFloor1.png", type: "floor" },
-  //         { name: "DungeonFloor2.png", type: "floor" },
-  //         { name: "DungeonWall1.png", type: "wall" },
-  //         { name: "DungeonWall2.png", type: "wall" }
-  //       ];
-        
-  //       for (const textureInfo of directTextures) {
-  //         try {
-  //           // Try to directly access texture data
-  //           const data = this.resourceManager.resources.textures.walls[`walls_${textureInfo.name.replace('.png', '')}`];
-  //           if (data && data.data) {
-  //             // Create a THREE.js texture from the data
-  //             const loader = new THREE.TextureLoader();
-  //             const texture = loader.load(data.data);
-              
-  //             if (textureInfo.type === "floor") {
-  //               floorTextures.push(texture);
-  //               console.log(`✅ Direct access: Found floor texture ${textureInfo.name}`);
-  //             } else {
-  //               wallTextures.push(texture);
-  //               console.log(`✅ Direct access: Found wall texture ${textureInfo.name}`);
-  //             }
-  //           }
-  //         } catch (err) {
-  //           console.warn(`Direct access failed for ${textureInfo.name}:`, err);
-  //         }
-  //       }
-  //     }
-  //   } catch (e) {
-  //     console.error("Error loading textures:", e);
-  //   }
-    
-  //   // Create fallbacks if needed (your existing code)
-  //   if (floorTextures.length === 0) {
-  //     console.warn("⚠️ No floor textures found - creating fallbacks");
-  //     floorTextures.push(this.createDefaultTexture('floor', 0x555555));
-  //     floorTextures.push(this.createDefaultTexture('floor', 0x666666));
-  //   }
-    
-  //   if (wallTextures.length === 0) {
-  //     console.warn("⚠️ No wall textures found - creating fallbacks");
-  //     wallTextures.push(this.createDefaultTexture('wall', 0x777777));
-  //     wallTextures.push(this.createDefaultTexture('wall', 0x888888));
-  //   }
-    
-  //   // Process textures for tiling
-  //   floorTextures.forEach(texture => {
-  //     if (!texture) return;
-  //     texture.wrapS = THREE.RepeatWrapping;
-  //     texture.wrapT = THREE.RepeatWrapping;
-  //     texture.repeat.set(2, 2);
-  //     texture.colorSpace = THREE.SRGBColorSpace;
-  //     texture.needsUpdate = true;
-  //   });
-    
-  //   wallTextures.forEach(texture => {
-  //     if (!texture) return;
-  //     texture.wrapS = THREE.RepeatWrapping;
-  //     texture.wrapT = THREE.RepeatWrapping;
-  //     texture.repeat.set(1, this.wallHeight / 4);
-  //     texture.colorSpace = THREE.SRGBColorSpace;
-  //     texture.needsUpdate = true;
-  //   });
-    
-  //   this.floorTextures = floorTextures;
-  //   this.wallTextures = wallTextures;
-    
-  //   console.log(`Texture loading complete: ${floorTextures.length} floor textures and ${wallTextures.length} wall textures`);
-  // }
 
   /**
  * Load textures from resource manager using the correct access patterns
@@ -526,14 +362,6 @@ loadTextures() {
     texture.needsUpdate = true;
   });
   
-  // wallTextures.forEach(texture => {
-  //   if (!texture) return;
-  //   texture.wrapS = THREE.RepeatWrapping;
-  //   texture.wrapT = THREE.RepeatWrapping;
-  //   texture.repeat.set(1, this.wallHeight / 4);
-  //   texture.colorSpace = THREE.SRGBColorSpace;
-  //   texture.needsUpdate = true;
-  // });
 
   // Modified wall texture processing to fix tiling issues
 wallTextures.forEach(texture => {
@@ -1384,43 +1212,6 @@ addCorridorWalls() {
     }
 }
 
-    /**
-     * Determine player spawn and exit locations
-     */
-    // placePlayerAndExit() {
-    //     console.log("Determining player spawn and exit locations");
-
-    //     if (this.rooms.length === 0) {
-    //         console.error("No rooms to place player or exit");
-    //         return;
-    //     }
-
-    //     // Sort rooms by distance from center
-    //     const sortedRooms = [...this.rooms].sort((a, b) => {
-    //         const distA = Math.sqrt(Math.pow(a.centerX, 2) + Math.pow(a.centerZ, 2));
-    //         const distB = Math.sqrt(Math.pow(b.centerX, 2) + Math.pow(b.centerZ, 2));
-    //         return distA - distB;
-    //     });
-
-    //     // Place player in room closest to center
-    //     const startRoom = sortedRooms[0];
-    //     this.playerSpawnPoint = new THREE.Vector3(
-    //         startRoom.centerX,
-    //         0, // Will be adjusted by height when teleporting
-    //         startRoom.centerZ
-    //     );
-
-    //     // Place exit in room farthest from center with a valid path
-    //     const endRoom = sortedRooms[sortedRooms.length - 1];
-    //     this.exitPoint = new THREE.Vector3(
-    //         endRoom.centerX,
-    //         0.1, // Slightly above ground level for visibility
-    //         endRoom.centerZ
-    //     );
-
-    //     console.log(`Player spawn set to (${this.playerSpawnPoint.x.toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)})`);
-    //     console.log(`Exit set to (${this.exitPoint.x.toFixed(2)}, ${this.exitPoint.z.toFixed(2)})`);
-    // }
 
     /**
  * Designate a safe starting room and an exit location
@@ -1640,30 +1431,6 @@ createOptimizedWalls(inputMaterial) {
         const blockWidth = width / 2;  // Convert grid units to world units
         const blockDepth = depth / 2;  // Convert grid units to world units
         
-        // const wallGeometry = new THREE.BoxGeometry(blockWidth, this.wallHeight, blockDepth);
-        
-        // // Try the texture material first, but fall back to the colored material if needed
-        // let material;
-        // try {
-        //   material = wallMaterial.clone();
-        //   // If texture is missing or transparent, use fallback
-        //   if (!material.map || material.transparent) {
-        //     material = fallbackMaterial;
-        //   }
-        // } catch (e) {
-        //   console.warn("Error with wall material, using fallback:", e);
-        //   material = fallbackMaterial;
-        // }
-        
-        // const wall = new THREE.Mesh(wallGeometry, material);
-        
-        // // Position wall at center of block
-        // wall.position.set(
-        //   worldX + blockWidth / 2,
-        //   this.wallHeight / 2,  // Half the wall height
-        //   worldZ + blockDepth / 2
-        // );
-
         // Replace with this enhanced texture handling code:
 const wallGeometry = new THREE.BoxGeometry(blockWidth, this.wallHeight, blockDepth);
 let wall;
@@ -1891,56 +1658,6 @@ wall.position.set(
      * Teleport player to the dungeon starting point
      * @returns {boolean} Whether teleport was successful
      */
-// teleportPlayerToDungeon() {
-//   if (!this.playerSpawnPoint) {
-//     console.error("No player spawn point defined");
-//     return false;
-//   }
-  
-//   // Get the exact player height from physics
-//   const playerHeight = this.physics?.playerHeight || 1.7;
-  
-//   // Tell Scene3DController to skip its lighting
-//   if (this.scene3D) {
-//     this.scene3D._skipDungeonLighting = true;
-//   }
-  
-//   // Get elevation at spawn point
-//   const { elevation } = this.getElevationAtPoint(
-//     this.playerSpawnPoint.x,
-//     this.playerSpawnPoint.z
-//   );
-  
-//   // Set player position to spawn point with correct height
-//   this.scene3D.camera.position.set(
-//     this.playerSpawnPoint.x,
-//     elevation + playerHeight,  // Position at correct elevation plus eye height
-//     this.playerSpawnPoint.z
-//   );
-  
-//   // Reset player look direction to face into the dungeon
-//   this.scene3D.camera.lookAt(
-//     this.playerSpawnPoint.x, 
-//     elevation + playerHeight,
-//     this.playerSpawnPoint.z - 1 // Look slightly forward
-//   );
-  
-//   // Reset physics state to avoid falling or clipping
-//   if (this.scene3D.physics) {
-//     this.scene3D.physics.currentGroundHeight = elevation;
-//     this.scene3D.physics.isJumping = false;
-//     this.scene3D.physics.isFalling = false;
-    
-//     // Ensure good collision detection
-//     this.scene3D.physics.update(0.1);
-//   }
-  
-//   // Set up atmospheric effects for the dungeon
-//   this.setupDungeonAtmosphere();
-  
-//   console.log(`Player teleported to safe room at (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
-//   return true;
-// }
 
 teleportPlayerToDungeon() {
   if (!this.playerSpawnPoint) {
@@ -1985,129 +1702,6 @@ teleportPlayerToDungeon() {
   console.log(`Player teleported to (${this.playerSpawnPoint.x.toFixed(2)}, ${(elevation + playerHeight).toFixed(2)}, ${this.playerSpawnPoint.z.toFixed(2)}) with ground at ${elevation.toFixed(2)}`);
   return true;
 }
-
-/**
- * Set up atmospheric lighting and effects for the dungeon
- */
-
-
-// setupDungeonAtmosphere() {
-//   console.log("Setting up dungeon atmosphere");
-  
-//   // Get the current quality level from Scene3DController
-//   const qualityLevel = this.scene3D.qualityLevel || 'medium';
-//   console.log(`Setting up dungeon atmosphere for quality level: ${qualityLevel}`);
-  
-//   // Reduce ambient lighting to create a darker mood
-//   this.adjustDungeonLighting();
-  
-//   // Add torch effects at key locations
-//   this.addTorchesToDungeon(qualityLevel);
-  
-//   // Add atmospheric particles if quality permits
-//   if (qualityLevel !== 'low') {
-//     this.addAtmosphericEffects(qualityLevel);
-//   }
-// }
-
-/**
- * Adjust the dungeon lighting to be darker and more atmospheric
- */
-// adjustDungeonLighting() {
-//   // Reduce ambient light intensity
-//   this.dungeonElements.forEach(element => {
-//     if (element instanceof THREE.AmbientLight) {
-//       element.intensity = 0.2; // Reduced from 0.5 to create a darker atmosphere
-//     }
-//   });
-  
-//   // Add a slight fog effect
-//   this.scene3D.scene.fog = new THREE.FogExp2(0x000000, 0.025);
-// }
-
-/**  // unused?
- * Add torch lighting to the dungeon to create atmosphere
- */
-// addTorchesToDungeon() {
-//   console.log("Adding atmospheric torch lighting to dungeon");
-  
-//   // Add torch in each room corner for better lighting
-//   this.rooms.forEach(room => {
-//     // Skip the safe room - it will have its own lighting
-//     if (room.isSafeRoom) return;
-    
-//     // Add torches in each corner of larger rooms
-//     if (room.width >= 4 && room.height >= 4) {
-//       // Calculate corner positions
-//       const corners = [
-//         { x: room.x + 1, z: room.z + 1 },  // Top-left
-//         { x: room.x + room.width - 1, z: room.z + 1 },  // Top-right
-//         { x: room.x + 1, z: room.z + room.height - 1 },  // Bottom-left
-//         { x: room.x + room.width - 1, z: room.z + room.height - 1 }  // Bottom-right
-//       ];
-      
-//       // Add a torch in each corner (with some randomness)
-//       corners.forEach(corner => {
-//         if (Math.random() < 0.7) {  // 70% chance for each corner
-//           this.createTorchLight(corner.x, corner.z);
-//         }
-//       });
-//     }
-//   });
-  
-//   // Add special lighting to the safe room
-//   const safeRoom = this.rooms.find(room => room.isSafeRoom);
-//   if (safeRoom) {
-//     // Create a welcoming, brighter light in the safe room
-//     const safeLight = new THREE.PointLight(0xffcc88, 1.5, 10);
-//     safeLight.position.set(safeRoom.centerX, 2, safeRoom.centerZ);
-//     safeLight.userData = { isDungeonElement: true };
-//     this.scene3D.scene.add(safeLight);
-//     this.dungeonElements.push(safeLight);
-//   }
-// }
-
-/**
- * Add atmospheric effects using ShaderEffectsManager
- */
-// addAtmosphericEffects() {
-//   // Only continue if ShaderEffectsManager is available
-//   if (!this.scene3D.shaderEffectsManager) return;
-  
-//   const shaderManager = this.scene3D.shaderEffectsManager;
-  
-//   // Add dust particles in larger rooms
-//   this.rooms.forEach(room => {
-//     if (room.width * room.height > 25) {  // Only in larger rooms
-//       const position = {
-//         x: room.centerX,
-//         y: 1.5,
-//         z: room.centerZ
-//       };
-      
-//       // Create dust effect
-//       shaderManager.createDustEffect(position, {
-//         count: 20,
-//         color: 0xaaaaaa,
-//         size: 0.03,
-//         lifetime: 5
-//       });
-//     }
-//   });
-  
-//   // If the safe room has been marked
-//   const safeRoom = this.rooms.find(room => room.isSafeRoom);
-//   if (safeRoom) {
-//     // Add a landing effect when the player teleports in
-//     const landingPosition = {
-//       x: this.playerSpawnPoint.x,
-//       y: 0.1,
-//       z: this.playerSpawnPoint.z
-//     };
-    
-//     shaderManager.createLandingEffect(landingPosition, 1.2);
-//   }
-// }
 
 /**
  * Set up atmospheric lighting and effects for the dungeon
@@ -2193,56 +1787,6 @@ adjustDungeonLighting() {
   
   console.log("Adjusted dungeon lighting to be darker and more atmospheric");
 }
-
-/**
- * Add strategic lighting throughout the dungeon (room centers and paths)
- */
-// addStrategicLighting(qualityLevel = 'medium') {
-//   console.log("Adding strategic lighting based on quality level:", qualityLevel);
-  
-//   // Add room center lights
-//   this.rooms.forEach(room => {
-//     if (!room || room.centerX === undefined || room.centerZ === undefined) {
-//       console.warn("Invalid room data for lighting:", room);
-//       return;
-//     }
-    
-//     // Get elevation at room center
-//     const { elevation } = this.getElevationAtPoint(room.centerX, room.centerZ);
-    
-//     // Create light at room center
-//     const light = new THREE.PointLight(
-//       0xff9944,  // Warm orange light
-//       1.2,      // Intensity
-//       8,        // Distance
-//       2         // Decay
-//     );
-    
-//     // Position light at proper height
-//     light.position.set(
-//       room.centerX, 
-//       elevation + 2.0,  // Light from above, not floating
-//       room.centerZ
-//     );
-    
-//     light.userData = { 
-//       isDungeonElement: true,
-//       isRoomLight: true
-//     };
-    
-//     this.scene3D.scene.add(light);
-//     this.dungeonElements.push(light);
-    
-//     // Add animated fire effect for medium+ quality - ONLY if all variables are valid
-//     if (qualityLevel !== 'low' && this.scene3D.shaderEffects && 
-//         room.centerX !== undefined && elevation !== undefined && room.centerZ !== undefined) {
-//       this.addFireEffect(room.centerX, elevation, room.centerZ, qualityLevel);
-//     }
-//   });
-  
-//   // Add path lighting between rooms for better navigation
-//   this.addPathLighting(qualityLevel);
-// }
 
 /**
  * Add strategic lighting throughout the dungeon (room centers and paths)
@@ -2486,64 +2030,6 @@ addPathLighting(qualityLevel) {
 /**
  * Add atmospheric effects like dust particles
  */
-// addAtmosphericEffects(qualityLevel) {
-//   // Only add these effects for medium quality and above with shader support
-//   if (qualityLevel === 'low' || !this.scene3D.shaderEffects) return;
-  
-//   console.log(`Adding atmospheric effects for quality level: ${qualityLevel}`);
-  
-//   // Add dust particles in rooms
-//   this.rooms.forEach(room => {
-//     // Skip small rooms
-//     if (room.width * room.height < 16) return;
-    
-//     // Determine particle count based on quality and room size
-//     let particleCount;
-//     switch (qualityLevel) {
-//       case 'ultra':
-//         particleCount = Math.min(30, Math.floor(room.width * room.height / 4));
-//         break;
-//       case 'high':
-//         particleCount = Math.min(20, Math.floor(room.width * room.height / 6));
-//         break;
-//       case 'medium':
-//       default:
-//         particleCount = Math.min(10, Math.floor(room.width * room.height / 8));
-//     }
-    
-//     // Skip if particle count is too low
-//     if (particleCount < 5) return;
-    
-//     // Create dust effect
-//     const position = {
-//       x: room.centerX,
-//       y: 1.5,
-//       z: room.centerZ
-//     };
-    
-//     // Use ShaderEffectsManager to create dust
-//     const dustEffect = this.scene3D.shaderEffects.createDustEffect(
-//       position, 
-//       {
-//         count: particleCount,
-//         size: 0.03,
-//         color: 0xaaaaaa,
-//         lifetime: 15,
-//         speed: 0.2
-//       }
-//     );
-    
-//     if (dustEffect && dustEffect.mesh) {
-//       // Ensure it's marked as a dungeon element for cleanup
-//       dustEffect.mesh.userData = { 
-//         ...dustEffect.mesh.userData,
-//         isDungeonElement: true 
-//       };
-      
-//       this.dungeonElements.push(dustEffect.mesh);
-//     }
-//   });
-// }
 
 addAtmosphericEffects(qualityLevel) {
   // Only add these effects for medium quality and above with shader support
@@ -2828,28 +2314,6 @@ createOptimizedLighting() {
             this.dungeonElements.push(torch);
         }
     }
-
-    /**
- * Set up atmospheric lighting and effects for the dungeon
- */
-// setupDungeonAtmosphere() {
-//   console.log("Setting up dungeon atmosphere");
-  
-//   // Get the current quality level from Scene3DController
-//   const qualityLevel = this.scene3D.qualityLevel || 'medium';
-//   console.log(`Setting up dungeon atmosphere for quality level: ${qualityLevel}`);
-  
-//   // Reduce ambient lighting to create a darker mood
-//   this.adjustDungeonLighting();
-  
-//   // Add torch effects at key locations
-//   this.addTorchesToDungeon(qualityLevel);
-  
-//   // Add atmospheric particles if quality permits
-//   if (qualityLevel !== 'low') {
-//     this.addAtmosphericEffects(qualityLevel);
-//   }
-// }
 
 /**
  * Adjust the dungeon lighting to be darker and more atmospheric
