@@ -3043,31 +3043,6 @@ if (preferencesBtn) {
     return { x: xx, y: yy, distance: distance };
   }
 
-  // createDoor(roomOrWall) {
-  //   const door = {
-  //     id: Date.now(),
-  //     parentId: roomOrWall.id,
-  //     width: this.cellSize, // Default 1 grid cell
-  //     height: this.cellSize * 2, // Default door height
-  //     position: { x: 0, y: 0 }, // Will be set when placing
-  //     isOpen: false,
-  //     rotation: 0 // 0 or 90 degrees
-  //   };
-
-  //   // Add visual representation
-  //   const doorElement = document.createElement('div');
-  //   doorElement.className = 'door';
-  //   doorElement.innerHTML = `
-  //   <div class="door-frame"></div>
-  //   <div class="door-panel"></div>
-  // `;
-
-  //   // Add to room/wall
-  //   roomOrWall.doors = roomOrWall.doors || [];
-  //   roomOrWall.doors.push(door);
-
-  //   return door;
-  // }
 
   findNearestWall(x, y) {
     let nearest = null;
@@ -3952,43 +3927,6 @@ if (preferencesBtn) {
     this.render();
   }
 
-  // fixMarkerScaling() {
-  //   console.log("Applying marker scaling fix");
-
-  //   // Fix encounter markers
-  //   document.querySelectorAll('.marker-encounter .monster-token').forEach(token => {
-  //     // Extract current transform to check for rotation
-  //     const currentTransform = token.style.transform || '';
-
-  //     // Remove any scaling transforms
-  //     if (currentTransform.includes('scale')) {
-  //       // If there's rotation, preserve it
-  //       const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
-  //       const rotation = rotateMatch ? rotateMatch[0] : '';
-
-  //       // Apply only rotation, no scaling
-  //       token.style.transform = rotation;
-  //     }
-  //   });
-
-  //   // Fix prop markers
-  //   document.querySelectorAll('.marker-prop .prop-visual').forEach(prop => {
-  //     // Extract current transform to check for rotation
-  //     const currentTransform = prop.style.transform || '';
-
-  //     // Remove any scaling transforms
-  //     if (currentTransform.includes('scale')) {
-  //       // If there's rotation, preserve it
-  //       const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
-  //       const rotation = rotateMatch ? rotateMatch[0] : '';
-
-  //       // Apply only rotation, no scaling
-  //       prop.style.transform = rotation;
-  //     }
-  //   });
-
-  //   console.log("Marker scaling fix applied");
-  // }
 
   centerMap() {
     if (!this.baseImage) return;
@@ -4165,34 +4103,6 @@ if (preferencesBtn) {
     }
   }
 
-  // getElevationAtPoint(x, z) {
-  //   let elevation = 0;
-  //   let isInside = false;
-
-  //   // Check each room for overlap
-  //   for (const room of this.rooms) {
-  //     // Skip non-walls and non-raised blocks early
-  //     if (!room.isRaisedBlock && room.type !== 'wall') continue;
-
-  //     // Quick bounds check
-  //     const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-  //     const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-  //     const roomWidth = room.bounds.width / 50;
-  //     const roomDepth = room.bounds.height / 50;
-
-  //     if (x >= roomX && x <= roomX + roomWidth &&
-  //       z >= roomZ && z <= roomZ + roomDepth) {
-
-  //       if (room.isRaisedBlock) {
-  //         elevation = Math.max(elevation, room.blockHeight || 0);
-  //       } else if (room.type === 'wall') {
-  //         isInside = true;
-  //       }
-  //     }
-  //   }
-
-  //   return { elevation, isInside };
-  // }
 
   createTeleportConnection(pointA, pointB) {
 
@@ -4313,49 +4223,6 @@ if (preferencesBtn) {
       return null;
     }
 
-
-    // if (type === "door") {
-    //   console.log('Finding nearest structure for door placement');
-    //   const nearestStructure = this.rooms.find(room => {
-    //     return this.isNearWall(x, y, room);  // Keep using isNearWall since it works for both
-    //   });
-
-    //   if (nearestStructure) {
-    //     // console.log('Found nearest structure:', nearestStructure);
-    //     // Use snapToStructure instead of snapToWall to get rotation info
-    //     const snappedPosition = this.snapToStructure(x, y, nearestStructure);
-    //     // console.log('Snapped position:', snappedPosition);
-
-    //     // Get texture from resource manager
-    //     const textureCategory = "doors";
-    //     // console.log('Getting door texture from resource manager');
-    //     const texture = this.resourceManager.getSelectedTexture(textureCategory);
-
-    //     if (!texture) {
-    //       // console.warn('No door texture available');
-    //       this.showCustomToast('No door textures available. Please add some in the Resource Manager.');
-    //       // alert('No door textures available. Please add some in the Resource Manager.');
-    //       return null;
-    //     }
-
-    //     // console.log('Creating door marker with texture:', texture);
-    //     const marker = this.createMarker("door", snappedPosition.x, snappedPosition.y, {
-    //       texture: texture,
-    //       door: {
-    //         position: snappedPosition,  // This now includes edge and rotation
-    //         isOpen: false
-    //       },
-    //       parentStructure: nearestStructure
-    //     });
-    //     this.markers.push(marker);
-    //     return marker;
-    //   } else {
-    //     // console.warn('No nearby structure found for door placement');
-    //     this.showCustomToast('No nearby structure found for door placement. Please place it on a wall or room.');
-    //     // alert("Doors must be placed on a wall or room");
-    //     return null;
-    //   }
-    // }
 
     if (type === "door") {
       console.log('Finding nearest wall for door placement');
@@ -4883,26 +4750,6 @@ if (preferencesBtn) {
 
     return { elevation, insideWall };
   }
-
-  // Add new method to handle zoom scaling
-  // updateMarkerZoom(marker) {
-  //   if (!marker.element) return;
-
-  //   const token = marker.element.querySelector(".monster-token");
-  //   if (token) {
-  //     token.style.transform = `scale(${this.scale})`;
-  //     token.style.transformOrigin = "center";
-  //   }
-
-  //   const propToken = marker.element.querySelector(".prop-visual");
-  //   if (propToken) {
-  //     propToken.style.transform = `scale(${this.scale})`;
-  //     propToken.style.transformOrigin = "center";
-  //   }
-
-
-  // }
-
 
 
   // Helper method to create marker elements
