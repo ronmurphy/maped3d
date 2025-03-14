@@ -752,7 +752,8 @@ createLargeCeiling() {
   
   // Create ceiling material - use wall texture or a darker version of floor
   const ceilingMaterial = new THREE.MeshStandardMaterial({
-    map: this.wallTextures[0] || this.floorTextures[0],
+    // map: this.wallTextures[0] || this.floorTextures[0],
+    map: this.floorTextures[0] || this.wallTextures[0],
     color: 0x444444, // Darker than normal to simulate shadow
     roughness: 0.9,
     side: THREE.DoubleSide

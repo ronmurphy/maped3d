@@ -17,16 +17,13 @@ window.TextureManager = class {
         this.textureAssignments = new Map();
     }
 
-createDoorMesh(marker, boxWidth, boxHeight, boxDepth) {
-    // Check for required data
-    if (!marker?.data?.parentStructure) {
-        console.warn('Door marker missing parent structure reference:', marker);
-        return null;
-    }
 
-    const structure = marker.data.parentStructure;
-    const doorPos = marker.data.door?.position;
+createDoorMesh(marker, boxWidth, boxHeight, boxDepth) {
+    // Check for required data - accept either parentStructure or parentWall
+    const parentStructure = marker.data?.parentStructure || marker.data?.parentWall;
     
+    // Get door position data
+    const doorPos = marker.data.door?.position;
     if (!doorPos) {
         console.warn('Door position data missing:', marker);
         return null;
@@ -34,13 +31,15 @@ createDoorMesh(marker, boxWidth, boxHeight, boxDepth) {
 
     // Calculate door dimensions
     const doorHeight = boxHeight * 0.8;
-    const doorWidth = this.mapEditor.cellSize / 50;
+    const doorWidth = 1.0; // Standard door width
     const doorDepth = 0.1;  // Standard door depth
 
     // Create door geometry
     const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
+    
+    // Load door texture
     const doorTexture = new THREE.TextureLoader().load(marker.data.texture.data);
-    doorTexture.encoding = THREE.sRGBEncoding;
+    doorTexture.colorSpace = THREE.SRGBColorSpace; // Modern THREE.js uses colorSpace
 
     const doorMaterial = new THREE.MeshStandardMaterial({
         map: doorTexture,
@@ -48,53 +47,47 @@ createDoorMesh(marker, boxWidth, boxHeight, boxDepth) {
         side: THREE.DoubleSide,
         depthWrite: true,
         depthTest: true,
-        polygonOffset: true,
-        polygonOffsetFactor: -9, // -1
-        polygonOffsetUnits: -9 // -1
+        roughness: 0.7,
+        metalness: 0.3
     });
 
     const doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
 
-    // Get door orientation from position data
-    const isVertical = doorPos.edge === 'left' || doorPos.edge === 'right';
-
-    // Apply rotation based on edge
-    switch(doorPos.edge) {
-        case 'left':
-            doorMesh.rotation.y = Math.PI / 2;
-            doorMesh.position.set(
-                (doorPos.x / 50 - boxWidth / 2) - doorDepth/2,
-                doorHeight / 2,
-                doorPos.y / 50 - boxDepth / 2
-            );
-            break;
-        case 'right':
-            doorMesh.rotation.y = Math.PI / 2;
-            doorMesh.position.set(
-                (doorPos.x / 50 - boxWidth / 2) + doorDepth/2,
-                doorHeight / 2,
-                doorPos.y / 50 - boxDepth / 2
-            );
-            break;
-        case 'top':
-            doorMesh.rotation.y = 0;
-            doorMesh.position.set(
-                doorPos.x / 50 - boxWidth / 2,
-                doorHeight / 2,
-                (doorPos.y / 50 - boxDepth / 2) - doorDepth/2
-            );
-            break;
-        case 'bottom':
-            doorMesh.rotation.y = 0;
-            doorMesh.position.set(
-                doorPos.x / 50 - boxWidth / 2,
-                doorHeight / 2,
-                (doorPos.y / 50 - boxDepth / 2) + doorDepth/2
-            );
-            break;
+    // Get 3D position from door data
+    const x = doorPos.x / 50 - boxWidth / 2;
+    const z = doorPos.y / 50 - boxDepth / 2;
+    const y = doorHeight / 2; // Default position at half door height
+    
+    // Get rotation (in degrees) - use provided rotation or calculate from edge
+    let rotation = doorPos.rotation;
+    
+    // If no rotation provided, calculate from edge
+    if (rotation === undefined && doorPos.edge) {
+        switch(doorPos.edge) {
+            case 'left': rotation = 90; break;
+            case 'right': rotation = -90; break;
+            case 'top': rotation = 0; break;
+            case 'bottom': rotation = 180; break;
+            case 'circle': 
+            case 'polygon':
+                // For these, rotation should be provided directly
+                rotation = doorPos.rotation || 0;
+                break;
+            default: rotation = 0;
+        }
     }
 
-    doorMesh.renderOrder = 1;
+    // Position and rotate the door
+    doorMesh.position.set(x, y, z);
+    doorMesh.rotation.y = rotation * Math.PI / 180; // Convert to radians
+    
+    // Add userData for interaction
+    doorMesh.userData = {
+        type: 'door',
+        id: marker.id,
+        isInteractive: true
+    };
+
     return doorMesh;
 }
 

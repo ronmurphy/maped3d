@@ -2876,31 +2876,198 @@ if (preferencesBtn) {
     }
   }
 
-  createDoor(roomOrWall) {
-    const door = {
-      id: Date.now(),
-      parentId: roomOrWall.id,
-      width: this.cellSize, // Default 1 grid cell
-      height: this.cellSize * 2, // Default door height
-      position: { x: 0, y: 0 }, // Will be set when placing
-      isOpen: false,
-      rotation: 0 // 0 or 90 degrees
-    };
-
-    // Add visual representation
-    const doorElement = document.createElement('div');
-    doorElement.className = 'door';
-    doorElement.innerHTML = `
-    <div class="door-frame"></div>
-    <div class="door-panel"></div>
-  `;
-
-    // Add to room/wall
-    roomOrWall.doors = roomOrWall.doors || [];
-    roomOrWall.doors.push(door);
-
-    return door;
+  findNearestPointOnWall(x, y, wall) {
+    // Rectangle walls - already working, just needs cleanup
+    if (wall.shape === 'rectangle') {
+      return this.findNearestPointOnRectangle(x, y, wall);
+    }
+    // Circle walls
+    else if (wall.shape === 'circle') {
+      return this.findNearestPointOnCircle(x, y, wall);
+    }
+    // Polygon walls
+    else if (wall.shape === 'polygon' && wall.points && wall.points.length > 2) {
+      return this.findNearestPointOnPolygon(x, y, wall);
+    }
+    
+    // Fallback to current implementation
+    return this.snapToStructure(x, y, wall);
   }
+
+  findNearestPointOnRectangle(x, y, wall) {
+    const rect = {
+      left: wall.bounds.x,
+      right: wall.bounds.x + wall.bounds.width,
+      top: wall.bounds.y,
+      bottom: wall.bounds.y + wall.bounds.height
+    };
+    
+    // Find the closest point on the rectangle's perimeter
+    let nearestX, nearestY, edge, rotation;
+    
+    // Determine closest edge
+    const distToLeft = Math.abs(x - rect.left);
+    const distToRight = Math.abs(x - rect.right);
+    const distToTop = Math.abs(y - rect.top);
+    const distToBottom = Math.abs(y - rect.bottom);
+    
+    const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+    
+    if (minDist === distToLeft) {
+      nearestX = rect.left;
+      nearestY = Math.max(rect.top, Math.min(rect.bottom, y));
+      edge = 'left';
+      rotation = 90; // Door faces left
+    } else if (minDist === distToRight) {
+      nearestX = rect.right;
+      nearestY = Math.max(rect.top, Math.min(rect.bottom, y));
+      edge = 'right';
+      rotation = -90; // Door faces right
+    } else if (minDist === distToTop) {
+      nearestX = Math.max(rect.left, Math.min(rect.right, x));
+      nearestY = rect.top;
+      edge = 'top';
+      rotation = 0; // Door faces up
+    } else {
+      nearestX = Math.max(rect.left, Math.min(rect.right, x));
+      nearestY = rect.bottom;
+      edge = 'bottom';
+      rotation = 180; // Door faces down
+    }
+    
+    return { x: nearestX, y: nearestY, edge, rotation };
+  }
+  
+  findNearestPointOnCircle(x, y, wall) {
+    // Calculate center of the circle
+    const centerX = wall.bounds.x + wall.bounds.width / 2;
+    const centerY = wall.bounds.y + wall.bounds.height / 2;
+    
+    // Calculate radius (assuming width and height are equal for circle)
+    const radius = wall.bounds.width / 2;
+    
+    // Calculate angle from center to click point
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const angle = Math.atan2(dy, dx);
+    
+    // Find point on circle perimeter
+    const nearestX = centerX + radius * Math.cos(angle);
+    const nearestY = centerY + radius * Math.sin(angle);
+    
+    // Calculate rotation (perpendicular to radius)
+    const rotation = (angle * 180 / Math.PI + 90) % 360;
+    
+    return { 
+      x: nearestX, 
+      y: nearestY, 
+      edge: 'circle', 
+      rotation: rotation 
+    };
+  }
+  
+  findNearestPointOnPolygon(x, y, wall) {
+    // Adjust for polygon position
+    const offsetX = x - wall.bounds.x;
+    const offsetY = y - wall.bounds.y;
+    
+    let closestDist = Infinity;
+    let closestPoint = null;
+    let closestEdgeAngle = 0;
+    
+    // Check each edge of the polygon
+    for (let i = 0; i < wall.points.length; i++) {
+      const p1 = wall.points[i];
+      const p2 = wall.points[(i + 1) % wall.points.length];
+      
+      // Find nearest point on this edge
+      const result = this.pointToLineSegment(
+        offsetX, offsetY, 
+        p1.x, p1.y, 
+        p2.x, p2.y
+      );
+      
+      if (result.distance < closestDist) {
+        closestDist = result.distance;
+        closestPoint = {
+          x: result.x + wall.bounds.x,
+          y: result.y + wall.bounds.y
+        };
+        
+        // Calculate edge angle for door rotation
+        const edgeAngle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        closestEdgeAngle = (edgeAngle * 180 / Math.PI + 90) % 360;
+      }
+    }
+    
+    return {
+      x: closestPoint.x,
+      y: closestPoint.y,
+      edge: 'polygon',
+      rotation: closestEdgeAngle
+    };
+  }
+  
+  // Helper function to find nearest point on a line segment
+  pointToLineSegment(px, py, x1, y1, x2, y2) {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+    
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    
+    if (lenSq !== 0) {
+      param = dot / lenSq;
+    }
+    
+    let xx, yy;
+    
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+    
+    const dx = px - xx;
+    const dy = py - yy;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    return { x: xx, y: yy, distance: distance };
+  }
+
+  // createDoor(roomOrWall) {
+  //   const door = {
+  //     id: Date.now(),
+  //     parentId: roomOrWall.id,
+  //     width: this.cellSize, // Default 1 grid cell
+  //     height: this.cellSize * 2, // Default door height
+  //     position: { x: 0, y: 0 }, // Will be set when placing
+  //     isOpen: false,
+  //     rotation: 0 // 0 or 90 degrees
+  //   };
+
+  //   // Add visual representation
+  //   const doorElement = document.createElement('div');
+  //   doorElement.className = 'door';
+  //   doorElement.innerHTML = `
+  //   <div class="door-frame"></div>
+  //   <div class="door-panel"></div>
+  // `;
+
+  //   // Add to room/wall
+  //   roomOrWall.doors = roomOrWall.doors || [];
+  //   roomOrWall.doors.push(door);
+
+  //   return door;
+  // }
 
   findNearestWall(x, y) {
     let nearest = null;
@@ -3785,43 +3952,43 @@ if (preferencesBtn) {
     this.render();
   }
 
-  fixMarkerScaling() {
-    console.log("Applying marker scaling fix");
+  // fixMarkerScaling() {
+  //   console.log("Applying marker scaling fix");
 
-    // Fix encounter markers
-    document.querySelectorAll('.marker-encounter .monster-token').forEach(token => {
-      // Extract current transform to check for rotation
-      const currentTransform = token.style.transform || '';
+  //   // Fix encounter markers
+  //   document.querySelectorAll('.marker-encounter .monster-token').forEach(token => {
+  //     // Extract current transform to check for rotation
+  //     const currentTransform = token.style.transform || '';
 
-      // Remove any scaling transforms
-      if (currentTransform.includes('scale')) {
-        // If there's rotation, preserve it
-        const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
-        const rotation = rotateMatch ? rotateMatch[0] : '';
+  //     // Remove any scaling transforms
+  //     if (currentTransform.includes('scale')) {
+  //       // If there's rotation, preserve it
+  //       const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
+  //       const rotation = rotateMatch ? rotateMatch[0] : '';
 
-        // Apply only rotation, no scaling
-        token.style.transform = rotation;
-      }
-    });
+  //       // Apply only rotation, no scaling
+  //       token.style.transform = rotation;
+  //     }
+  //   });
 
-    // Fix prop markers
-    document.querySelectorAll('.marker-prop .prop-visual').forEach(prop => {
-      // Extract current transform to check for rotation
-      const currentTransform = prop.style.transform || '';
+  //   // Fix prop markers
+  //   document.querySelectorAll('.marker-prop .prop-visual').forEach(prop => {
+  //     // Extract current transform to check for rotation
+  //     const currentTransform = prop.style.transform || '';
 
-      // Remove any scaling transforms
-      if (currentTransform.includes('scale')) {
-        // If there's rotation, preserve it
-        const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
-        const rotation = rotateMatch ? rotateMatch[0] : '';
+  //     // Remove any scaling transforms
+  //     if (currentTransform.includes('scale')) {
+  //       // If there's rotation, preserve it
+  //       const rotateMatch = currentTransform.match(/rotate\([^)]+\)/);
+  //       const rotation = rotateMatch ? rotateMatch[0] : '';
 
-        // Apply only rotation, no scaling
-        prop.style.transform = rotation;
-      }
-    });
+  //       // Apply only rotation, no scaling
+  //       prop.style.transform = rotation;
+  //     }
+  //   });
 
-    console.log("Marker scaling fix applied");
-  }
+  //   console.log("Marker scaling fix applied");
+  // }
 
   centerMap() {
     if (!this.baseImage) return;
@@ -3998,34 +4165,34 @@ if (preferencesBtn) {
     }
   }
 
-  getElevationAtPoint(x, z) {
-    let elevation = 0;
-    let isInside = false;
+  // getElevationAtPoint(x, z) {
+  //   let elevation = 0;
+  //   let isInside = false;
 
-    // Check each room for overlap
-    for (const room of this.rooms) {
-      // Skip non-walls and non-raised blocks early
-      if (!room.isRaisedBlock && room.type !== 'wall') continue;
+  //   // Check each room for overlap
+  //   for (const room of this.rooms) {
+  //     // Skip non-walls and non-raised blocks early
+  //     if (!room.isRaisedBlock && room.type !== 'wall') continue;
 
-      // Quick bounds check
-      const roomX = room.bounds.x / 50 - this.boxWidth / 2;
-      const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
-      const roomWidth = room.bounds.width / 50;
-      const roomDepth = room.bounds.height / 50;
+  //     // Quick bounds check
+  //     const roomX = room.bounds.x / 50 - this.boxWidth / 2;
+  //     const roomZ = room.bounds.y / 50 - this.boxDepth / 2;
+  //     const roomWidth = room.bounds.width / 50;
+  //     const roomDepth = room.bounds.height / 50;
 
-      if (x >= roomX && x <= roomX + roomWidth &&
-        z >= roomZ && z <= roomZ + roomDepth) {
+  //     if (x >= roomX && x <= roomX + roomWidth &&
+  //       z >= roomZ && z <= roomZ + roomDepth) {
 
-        if (room.isRaisedBlock) {
-          elevation = Math.max(elevation, room.blockHeight || 0);
-        } else if (room.type === 'wall') {
-          isInside = true;
-        }
-      }
-    }
+  //       if (room.isRaisedBlock) {
+  //         elevation = Math.max(elevation, room.blockHeight || 0);
+  //       } else if (room.type === 'wall') {
+  //         isInside = true;
+  //       }
+  //     }
+  //   }
 
-    return { elevation, isInside };
-  }
+  //   return { elevation, isInside };
+  // }
 
   createTeleportConnection(pointA, pointB) {
 
@@ -4147,45 +4314,89 @@ if (preferencesBtn) {
     }
 
 
+    // if (type === "door") {
+    //   console.log('Finding nearest structure for door placement');
+    //   const nearestStructure = this.rooms.find(room => {
+    //     return this.isNearWall(x, y, room);  // Keep using isNearWall since it works for both
+    //   });
+
+    //   if (nearestStructure) {
+    //     // console.log('Found nearest structure:', nearestStructure);
+    //     // Use snapToStructure instead of snapToWall to get rotation info
+    //     const snappedPosition = this.snapToStructure(x, y, nearestStructure);
+    //     // console.log('Snapped position:', snappedPosition);
+
+    //     // Get texture from resource manager
+    //     const textureCategory = "doors";
+    //     // console.log('Getting door texture from resource manager');
+    //     const texture = this.resourceManager.getSelectedTexture(textureCategory);
+
+    //     if (!texture) {
+    //       // console.warn('No door texture available');
+    //       this.showCustomToast('No door textures available. Please add some in the Resource Manager.');
+    //       // alert('No door textures available. Please add some in the Resource Manager.');
+    //       return null;
+    //     }
+
+    //     // console.log('Creating door marker with texture:', texture);
+    //     const marker = this.createMarker("door", snappedPosition.x, snappedPosition.y, {
+    //       texture: texture,
+    //       door: {
+    //         position: snappedPosition,  // This now includes edge and rotation
+    //         isOpen: false
+    //       },
+    //       parentStructure: nearestStructure
+    //     });
+    //     this.markers.push(marker);
+    //     return marker;
+    //   } else {
+    //     // console.warn('No nearby structure found for door placement');
+    //     this.showCustomToast('No nearby structure found for door placement. Please place it on a wall or room.');
+    //     // alert("Doors must be placed on a wall or room");
+    //     return null;
+    //   }
+    // }
+
     if (type === "door") {
-      console.log('Finding nearest structure for door placement');
-      const nearestStructure = this.rooms.find(room => {
-        return this.isNearWall(x, y, room);  // Keep using isNearWall since it works for both
+      console.log('Finding nearest wall for door placement');
+      const nearestWall = this.rooms.find(room => {
+        return room.type === 'wall' && this.isNearWall(x, y, room);
       });
-
-      if (nearestStructure) {
-        // console.log('Found nearest structure:', nearestStructure);
-        // Use snapToStructure instead of snapToWall to get rotation info
-        const snappedPosition = this.snapToStructure(x, y, nearestStructure);
-        // console.log('Snapped position:', snappedPosition);
-
+    
+      if (nearestWall) {
+        // Use our new function to get precise placement
+        const placement = this.findNearestPointOnWall(x, y, nearestWall);
+        
         // Get texture from resource manager
         const textureCategory = "doors";
-        // console.log('Getting door texture from resource manager');
         const texture = this.resourceManager.getSelectedTexture(textureCategory);
-
+    
         if (!texture) {
-          // console.warn('No door texture available');
           this.showCustomToast('No door textures available. Please add some in the Resource Manager.');
-          // alert('No door textures available. Please add some in the Resource Manager.');
           return null;
         }
-
-        // console.log('Creating door marker with texture:', texture);
-        const marker = this.createMarker("door", snappedPosition.x, snappedPosition.y, {
+    
+        const marker = this.createMarker("door", placement.x, placement.y, {
           texture: texture,
           door: {
-            position: snappedPosition,  // This now includes edge and rotation
+            position: {
+              x: placement.x,
+              y: placement.y,
+              edge: placement.edge,
+              rotation: placement.rotation
+            },
             isOpen: false
           },
-          parentStructure: nearestStructure
+          parentWall: nearestWall
         });
+        
+        // Apply rotation immediately
+        marker.element.style.transform = `rotate(${placement.rotation}deg)`;
+        
         this.markers.push(marker);
         return marker;
       } else {
-        // console.warn('No nearby structure found for door placement');
-        this.showCustomToast('No nearby structure found for door placement. Please place it on a wall or room.');
-        // alert("Doors must be placed on a wall or room");
+        this.showCustomToast('No nearby wall found for door placement. Please place it on a wall.');
         return null;
       }
     }
@@ -4615,6 +4826,27 @@ if (preferencesBtn) {
           ">${marker.data.label}</div>
         ` : ''}
       `;
+    }else if (marker.type === "door" && marker.data.texture) {
+      // Update the door appearance with the texture
+      const doorPanel = marker.element.querySelector('.door-panel');
+      if (doorPanel) {
+        doorPanel.style.backgroundImage = `url('${marker.data.texture.data}')`;
+      }
+      
+      // Apply rotation if specified
+      if (marker.data.door?.position?.rotation !== undefined) {
+        marker.element.style.transform = `rotate(${marker.data.door.position.rotation}deg)`;
+      }
+      
+      // Apply open/closed state if specified
+      if (marker.data.door?.isOpen) {
+        const doorPanel = marker.element.querySelector('.door-panel');
+        if (doorPanel) {
+          doorPanel.style.transform = 'rotateY(70deg)';
+          doorPanel.style.transformOrigin = 'left';
+          doorPanel.style.opacity = '0.7';
+        }
+      }
     }
     // this.fixZoomIssues();
   }
@@ -4653,23 +4885,23 @@ if (preferencesBtn) {
   }
 
   // Add new method to handle zoom scaling
-  updateMarkerZoom(marker) {
-    if (!marker.element) return;
+  // updateMarkerZoom(marker) {
+  //   if (!marker.element) return;
 
-    const token = marker.element.querySelector(".monster-token");
-    if (token) {
-      token.style.transform = `scale(${this.scale})`;
-      token.style.transformOrigin = "center";
-    }
+  //   const token = marker.element.querySelector(".monster-token");
+  //   if (token) {
+  //     token.style.transform = `scale(${this.scale})`;
+  //     token.style.transformOrigin = "center";
+  //   }
 
-    const propToken = marker.element.querySelector(".prop-visual");
-    if (propToken) {
-      propToken.style.transform = `scale(${this.scale})`;
-      propToken.style.transformOrigin = "center";
-    }
+  //   const propToken = marker.element.querySelector(".prop-visual");
+  //   if (propToken) {
+  //     propToken.style.transform = `scale(${this.scale})`;
+  //     propToken.style.transformOrigin = "center";
+  //   }
 
 
-  }
+  // }
 
 
 
@@ -4773,9 +5005,61 @@ if (preferencesBtn) {
       });
     }
 
-    if (type === "door") {
-      markerElement.style.transform = `rotate(${data.door?.position?.rotation || 0}deg)`;
-    }
+    // if (type === "door") {
+    //   markerElement.style.transform = `rotate(${data.door?.position?.rotation || 0}deg)`;
+    // }
+
+// Within createMarker method, replace the current door handling:
+if (type === "door") {
+  // Get door texture
+  const textureUrl = data.texture ? data.texture.data : '';
+  const rotation = data.door?.position?.rotation || 0;
+  
+  // Create proper door visuals
+  markerElement.innerHTML = `
+    <div class="door-visual" style="
+      width: 24px;
+      height: 40px;
+      position: relative;
+      transform-origin: center;
+    ">
+      <div class="door-frame" style="
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #8B4513;
+        background-color: rgba(139, 69, 19, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        ${textureUrl ? `
+          <div class="door-panel" style="
+            position: absolute;
+            width: 80%;
+            height: 90%;
+            background-image: url('${textureUrl}');
+            background-size: cover;
+            background-position: center;
+            border: 1px solid #5D4037;
+          "></div>
+        ` : `
+          <div class="door-panel" style="
+            position: absolute;
+            width: 80%;
+            height: 90%;
+            background-color: #A1887F;
+            border: 1px solid #5D4037;
+          "></div>
+        `}
+      </div>
+    </div>`;
+  
+  // Set rotation
+  markerElement.style.transform = `rotate(${rotation}deg)`;
+}
+
+
     else if (type === "prop" && data.texture) {
       // Default prop settings
       if (!data.prop) {

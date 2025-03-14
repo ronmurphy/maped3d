@@ -1180,33 +1180,6 @@ initShaderEffects() {
     return this.qualityIndicator;
   }
 
-  createStatsPanel() {
-    this.stats = new Stats();
-
-    // Configure stats panel
-    this.stats.dom.style.position = 'absolute';
-    this.stats.dom.style.top = '10px';
-    this.stats.dom.style.left = '10px';
-    this.stats.dom.style.zIndex = '1000';
-
-    // Always add quality indicator too
-    this.updateQualityIndicator();
-    // this.memStats = this.monitorMemory();
-
-    // Set initial visibility based on preferences
-    this.stats.dom.style.display = this.showStats ? 'block' : 'none';
-    this.memStats.style.display = this.showStats ? 'block' : 'none';
-    // Add stats panel to DOM
-    const container = document.querySelector('.drawer-3d-view');
-    if (container) {
-      container.appendChild(this.stats.dom);
-    } else {
-      document.body.appendChild(this.stats.dom);
-    }
-
-    console.log('FPS counter initialized with quality level:', this.qualityLevel || 'medium');
-  }
-
   /**
  * Run a storyboard in 3D mode
  * @param {String} storyId - ID of the story to run (optional)
@@ -1539,63 +1512,6 @@ runStoryboard(storyId = null) {
     return sprite;
   }
 
-  createRoomShape(room) {
-    let geometry;
-
-    switch (room.shape) {
-      case "circle":
-        const radius =
-          Math.max(room.bounds.width, room.bounds.height) / 100;
-        geometry = new THREE.CylinderGeometry(radius, radius, 4, 32);
-        break;
-
-      case "polygon":
-        if (!room.points || room.points.length < 3) return null;
-
-        const shape = new THREE.Shape();
-        room.points.forEach((point, index) => {
-          const x = point.x / 50;
-          const y = point.y / 50;
-          if (index === 0) shape.moveTo(x, y);
-          else shape.lineTo(x, y);
-        });
-        shape.closePath();
-
-        geometry = new THREE.ExtrudeGeometry(shape, {
-          depth: 4,
-          bevelEnabled: false
-        });
-        break;
-
-      default: // rectangle
-        geometry = new THREE.BoxGeometry(
-          room.bounds.width / 50,
-          4,
-          room.bounds.height / 50
-        );
-    }
-
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x808080,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.0 // Make it invisible
-    });
-
-    const mesh = new THREE.Mesh(geometry, material);
-
-    // Position the room correctly
-    mesh.position.set(
-      room.bounds.x / 50,
-      2, // Half of height
-      room.bounds.y / 50
-    );
-
-    return mesh;
-  }
-
-
-
   setupDrawer() {
     const drawer = document.createElement("sl-drawer");
     drawer.label = "3D View";
@@ -1828,17 +1744,6 @@ break;
         }
         break;
     }
-  }
-
-  updateWallClipping() {
-    this.scene.traverse((object) => {
-      if (object.material && object.userData.isWall) {
-        object.material.transparent = !this.renderState.clippingEnabled;
-        object.material.opacity = this.renderState.clippingEnabled ? 1.0 : 0.8;
-        object.material.side = this.renderState.clippingEnabled ? THREE.FrontSide : THREE.DoubleSide;
-        object.material.needsUpdate = true;
-      }
-    });
   }
 
   setupMouseControls() {
@@ -3101,9 +3006,12 @@ break;
           this.scene.add(particles);
           break;
 
+
+
         case "door":
           console.log(`Processing door marker: ${marker.id}`);
           if (marker.data?.texture) {
+            // Change this line from this.createDoorMesh to this.textureManager.createDoorMesh
             const doorMesh = this.textureManager.createDoorMesh(
               marker,
               this.boxWidth,
@@ -3290,17 +3198,6 @@ break;
     particles.position.y = 0.5;
     dungeonGroup.add(particles);
     
-    // Add entrance sign with name
-    // if (this.shaderEffects) {
-    //   // Add floating text if shader effects are available
-    //   this.shaderEffects.createFloatingText({
-    //     text: name,
-    //     position: new THREE.Vector3(0, 1.2, 0),
-    //     color: 0xffffff,
-    //     scale: 0.5,
-    //     parent: dungeonGroup
-    //   });
-    // }
     
     // Tag this group for animation
     dungeonGroup.userData.animatePortal = true;
@@ -3410,58 +3307,12 @@ break;
     }
   }
 
-    // Add this method to Scene3DController class to help debug floor rendering
-  fixFloorRendering() {
-    if (!this.floorMesh) {
-      console.warn('Cannot fix floor - no floor mesh found');
-      return false;
-    }
-    
-    console.log('Attempting to fix floor rendering issues...');
-    
-    // Get the floor material
-    const material = this.floorMesh.material;
-    
-    if (!material || !material.map) {
-      console.warn('Floor has no texture material');
-      return false;
-    }
-    
-    // Fix texture settings
-    const texture = material.map;
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.repeat.set(1, 1);
-    texture.offset.set(0, 0);
-    texture.rotation = 0;
-    texture.center.set(0.5, 0.5);
-    
-    if (material.map.image && material.map.image.width > 0) {
-      material.map.needsUpdate = true;
-    }
-    
-    // Force material update
-    material.needsUpdate = true;
-    
-    // Move floor slightly higher to avoid z-fighting
-    this.floorMesh.position.y = 0.02;
-    
-    // Ensure frustum culling is disabled
-    this.floorMesh.frustumCulled = false;
-    
-    console.log('Floor rendering settings adjusted');
-    return true;
-  }
-
-
   async init3DScene(updateStatus) {
     await this.loadStoryboardTester().catch(err => console.warn('StoryboardTester not available:', err));
 
     const renderState = {
       clippingEnabled: false // true
     };
-    // const scene = new THREE.Scene();
-    // scene.background = new THREE.Color(0x222222);
 
     this.tokens = [];
 
@@ -3508,21 +3359,21 @@ break;
     const boxDepth = this.baseImage.height / 50;
 
     // Handle doors with textures
-    this.markers.forEach(marker => {
-      if (marker.type === 'door' && marker.data.texture) {
-        console.log('Creating 3D door with texture:', marker.data);
-        const doorMesh = this.textureManager.createDoorMesh(
-          marker,
-          this.boxWidth,
-          this.boxHeight,
-          this.boxDepth
-        );
-        if (doorMesh) {
-          this.scene.add(doorMesh);
-          console.log('Door mesh added to scene');
-        }
-      }
-    });
+    // this.markers.forEach(marker => {
+    //   if (marker.type === 'door' && marker.data.texture) {
+    //     console.log('Creating 3D door with texture:', marker.data);
+    //     const doorMesh = this.textureManager.createDoorMesh(
+    //       marker,
+    //       this.boxWidth,
+    //       this.boxHeight,
+    //       this.boxDepth
+    //     );
+    //     if (doorMesh) {
+    //       this.scene.add(doorMesh);
+    //       console.log('Door mesh added to scene');
+    //     }
+    //   }
+    // });
 
 
     this.rooms.forEach((room) => {
@@ -4808,65 +4659,6 @@ this.scene.add(floor);
     };
   }
 
-
-  monitorActualFPS() {
-    console.log('monitorActualFPS called');
-
-    if (this._fpsMonitorActive) {
-      console.log('FPS monitor already active, skipping');
-      return;
-    }
-
-    this._fpsMonitorActive = true;
-    this._frameCount = 0;
-    this._fpsStartTime = performance.now();
-
-    // Create a simple display
-    const fpsMonitor = document.createElement('div');
-    fpsMonitor.style.cssText = `
-    position: fixed;
-    top: 64px;
-    left: 10px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-family: monospace;
-    z-index: 10000;
-  `;
-    document.body.appendChild(fpsMonitor);
-    this._fpsMonitor = fpsMonitor;
-
-    // Update every second
-    const updateFPS = () => {
-      if (!this._fpsMonitorActive) return;
-
-      const now = performance.now();
-      const elapsed = now - this._fpsStartTime;
-
-      if (elapsed >= 1000) {
-        const fps = Math.round((this._frameCount * 1000) / elapsed);
-        fpsMonitor.textContent = `Actual FPS: ${fps} ${this.fpsLimit ? `(Limit: ${this.fpsLimit})` : ''}`;
-
-        this._frameCount = 0;
-        this._fpsStartTime = now;
-      }
-
-      setTimeout(updateFPS, 500);
-    };
-
-    // Start monitoring
-    updateFPS();
-
-    // Count each frame
-    const originalAnimate = this.animate;
-    this.animate = () => {
-      this._frameCount++;
-      originalAnimate.call(this);
-    };
-  }
-
-
   handleEncounter(marker) {
     // Prevent multiple encounters
     if (this.activeEncounter || this.encounterCooldown) return;
@@ -4957,141 +4749,6 @@ this.scene.add(floor);
     // Return the delta time for other time-based calculations
     return cappedDelta;
   }
-
-  processInteractiveElements() {
-    const playerPosition = this.camera.position.clone();
-    let nearestTeleporter = null;
-    let nearestDoor = null;
-    let nearestSplashArt = null;
-    let nearestProp = null;
-    let nearestEncounter = null;
-    let shortestDistance = Infinity;
-
-    // Check teleporters
-    this.teleporters.forEach(teleporter => {
-      const distance = playerPosition.distanceTo(teleporter.position);
-      if (distance < 2 && distance < shortestDistance) {
-        shortestDistance = distance;
-        nearestTeleporter = teleporter;
-      }
-    });
-
-    // Check doors
-    this.doors.forEach(door => {
-      const distance = playerPosition.distanceTo(door.position);
-      if (distance < 2 && distance < shortestDistance) {
-        shortestDistance = distance;
-        nearestDoor = door;
-      }
-    });
-
-    // Check splash art markers
-    this.markers.forEach(marker => {
-      if (marker.type === 'splash-art') {
-        const markerPos = new THREE.Vector3(
-          marker.x / 50 - this.boxWidth / 2,
-          marker.data.height || 1,
-          marker.y / 50 - this.boxDepth / 2
-        );
-        const distance = playerPosition.distanceTo(markerPos);
-        if (distance < 2 && distance < shortestDistance) {
-          shortestDistance = distance;
-          nearestSplashArt = marker;
-        }
-      }
-    });
-
-    // Check props
-    this.scene.children.forEach(child => {
-      if (child.userData?.type === 'prop') {
-        const distance = playerPosition.distanceTo(child.position);
-        if (distance < 2 && distance < shortestDistance) {
-          shortestDistance = distance;
-          nearestProp = child;
-        }
-      }
-    });
-
-    // Check encounters
-    if (!this.encounterCooldown && !this.activeEncounter) {
-      this.scene.children.forEach(object => {
-        if (object.userData && object.userData.type === 'encounter') {
-          const dist = playerPosition.distanceTo(object.position);
-          const minEncounterDist = 3; // Detection range
-          if (dist < minEncounterDist && (!nearestEncounter || dist < shortestDistance)) {
-            nearestEncounter = object;
-            shortestDistance = dist;
-          }
-        }
-      });
-    }
-
-    let nearestStoryTrigger = null;
-    let storyTriggerDistance = Infinity;
-    
-    if (this.storyboardTriggers && this.storyboardTriggers.length > 0) {
-      this.storyboardTriggers.forEach(trigger => {
-        // Skip if this is a one-time trigger that has already been triggered
-        if (trigger.triggerOnce && trigger.triggered) {
-          return;
-        }
-        
-        const distance = playerPosition.distanceTo(trigger.position);
-        
-        // Check if player is within trigger radius
-        if (distance < trigger.radius && distance < storyTriggerDistance) {
-          storyTriggerDistance = distance;
-          nearestStoryTrigger = trigger;
-        }
-      });
-    }
-    
-    // Update the nearest interactive element info
-    if (nearestStoryTrigger && (!this.nearestInteractive || storyTriggerDistance < this.nearestInteractiveDistance)) {
-      this.nearestInteractive = nearestStoryTrigger;
-      this.nearestInteractiveDistance = storyTriggerDistance;
-      this.nearestInteractiveType = 'storyboard';
-      this.showInteractivePrompt(nearestStoryTrigger.label || 'Story', 'chat');
-    }
-
-    // Update UI prompts based on nearest interactive element
-    this.updateTeleportPrompt(nearestTeleporter);
-    this.updateDoorPrompt(nearestDoor);
-
-    // Update splash art prompt
-    if (nearestSplashArt && !this.activeSplashArt) {
-      const prompt = this.createSplashArtPrompt();
-      prompt.textContent = nearestSplashArt.data.inspectMessage || 'Press E to inspect';
-      prompt.style.display = 'block';
-      this.nearestSplashArt = nearestSplashArt;
-    } else if (!nearestSplashArt && this.splashArtPrompt) {
-      this.splashArtPrompt.style.display = 'none';
-      this.nearestSplashArt = null;
-    }
-
-    // Update pickup prompt
-    if (nearestProp && !this.inventory.has(nearestProp.userData.id)) {
-      const prompt = this.createPickupPrompt();
-      prompt.textContent = 'Press F to pick up';
-      prompt.style.display = 'block';
-      this.nearestProp = nearestProp;
-    } else if (this.pickupPrompt) {
-      this.pickupPrompt.style.display = 'none';
-      this.nearestProp = null;
-    }
-
-    // Update encounter prompt
-    if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
-      const prompt = this.createEncounterPrompt();
-      prompt.textContent = 'Press F to approach monster';
-      prompt.style.display = 'block';
-      this.nearestEncounter = nearestEncounter;
-    } else if (!nearestEncounter && this.encounterPrompt) {
-      this.encounterPrompt.style.display = 'none';
-      this.nearestEncounter = null;
-    }
-  }
-
 
   /**
  * Handle activating a storyboard trigger
@@ -5957,46 +5614,6 @@ this.gameState = 'initializing';
     return assignment;
   }
 
-  processDoorMarkers() {
-    const doorMarkers = this.markers.filter(m => m.type === 'door' && m.data.texture);
-
-    doorMarkers.forEach(marker => {
-      console.log('Processing door for interaction:', marker);
-
-      // Convert map coordinates to 3D world coordinates
-      const x = marker.x / 50 - this.boxWidth / 2;
-      const z = marker.y / 50 - this.boxDepth / 2;
-
-      // Get elevation at door position
-      const { elevation } = this.getElevationAtPoint(x, z);
-
-      // Create door interaction point
-      const doorInfo = {
-        marker: marker,
-        position: new THREE.Vector3(x, elevation + 1.0, z), // Position at eye level
-        rotation: marker.data.door?.position?.rotation || 0,
-        id: marker.id
-      };
-
-      // Add a visual indicator for debugging (can be removed later)
-      const geometry = new THREE.SphereGeometry(0.1, 8, 8);
-      const material = new THREE.MeshBasicMaterial({
-        color: 0xff0000,
-        transparent: true,
-        opacity: 0.5,
-        visible: false // Hide in production, set to true for debugging
-      });
-
-      const doorIndicator = new THREE.Mesh(geometry, material);
-      doorIndicator.position.copy(doorInfo.position);
-      this.scene.add(doorIndicator);
-
-      doorInfo.indicator = doorIndicator;
-      this.doors.push(doorInfo);
-    });
-
-    console.log(`Added ${this.doors.length} door interaction points`);
-  }
 
 
   executeDoorTeleport() {
@@ -6214,9 +5831,9 @@ this.gameState = 'initializing';
     console.log(`Player is ${this.insideWallRoom ? 'inside' : 'outside'} a wall room. Wall count: ${wallCount}`);
   }
 
-  processDoorMarkers() {
-    const doorMarkers = this.markers.filter(m => m.type === 'door');
-    console.log(`Found ${doorMarkers.length} door markers`);
+  processDoorMarkers() {  // wrapped door code - keep
+    const doorMarkers = this.markers.filter(m => m.type === 'door' && m.data.texture);
+        console.log(`Found ${doorMarkers.length} door markers`);
 
     if (doorMarkers.length === 0) return;
 
@@ -6416,44 +6033,6 @@ this.gameState = 'initializing';
     particles.userData.animate = true;
 
     return particles;
-  }
-
-  updateTeleportPrompt(nearestTeleporter) {
-    if (!this.teleportPrompt) {
-      // Create prompt if it doesn't exist
-      this.teleportPrompt = document.createElement('div');
-      this.teleportPrompt.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        display: none;
-        font-family: Arial, sans-serif;
-        pointer-events: none;
-        z-index: 1000;
-      `;
-      document.body.appendChild(this.teleportPrompt);
-
-      // Add keypress listener for teleportation
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyE' && this.teleportPrompt.style.display === 'block') {
-          this.executeTeleport();
-        }
-      });
-    }
-
-    if (nearestTeleporter) {
-      this.teleportPrompt.textContent = 'Press F to teleport';
-      this.teleportPrompt.style.display = 'block';
-      this.activeTeleporter = nearestTeleporter;
-    } else {
-      this.teleportPrompt.style.display = 'none';
-      this.activeTeleporter = null;
-    }
   }
 
 
@@ -7134,13 +6713,6 @@ hideAllPrompts() {
         // Determine quality level
         let qualityLevel = 'medium'; // Default
 
-        // if (medianFPS >= 55) {
-        //   qualityLevel = 'high';
-        // } else if (medianFPS >= 30) {
-        //   qualityLevel = 'medium';
-        // } else {
-        //   qualityLevel = 'low';
-        // }
 
         if (medianFPS >= 99) {
           qualityLevel = 'ultra';
@@ -8178,62 +7750,6 @@ loadDungeonGenerator() {
       });
   }
 
-  checkIfLightSource(name) {
-    // Convert to lowercase for case-insensitive matching
-    const lowerName = name.toLowerCase();
-    
-    // Same keywords from your autoDetectLightSources method
-    const lightKeywords = [
-      'fire', 'torch', 'flame', 'candle', 'lantern', 'campfire',
-      'crystal', 'gem', 'magic', 'arcane', 'rune', 'glow',
-      'lava', 'magma', 'ember', 'radiant', 'holy'
-    ];
-    
-    // Return true if name contains any of the keywords
-    return lightKeywords.some(keyword => lowerName.includes(keyword));
-  }
-  
-  // 3. Add this method to remove light effects and store their data
-  removeLightEffects(propId) {
-    // Skip if no light sources tracked
-    if (!this.lightSources || this.lightSources.size === 0) {
-      return null;
-    }
-  
-    // Find light source data for this prop
-    const lightData = this.lightSources.get(propId);
-    if (!lightData) {
-      return null;
-    }
-  
-    console.log(`Removing light effects for ${propId}`);
-  
-    // Store color and intensity for later recreation
-    const lightSourceData = {
-      color: lightData.light.color.getHex(),
-      intensity: lightData.originalIntensity,
-      distance: lightData.originalDistance
-    };
-  
-    // Remove the light from scene
-    if (lightData.light && lightData.light.parent) {
-      lightData.light.parent.remove(lightData.light);
-    }
-  
-    // Remove any particle effects
-    if (lightData.prop && lightData.prop.userData && lightData.prop.userData.effects) {
-      lightData.prop.userData.effects.forEach(effect => {
-        if (effect && effect.parent) {
-          effect.parent.remove(effect);
-        }
-      });
-    }
-  
-    // Delete from tracking map
-    this.lightSources.delete(propId);
-  
-    return lightSourceData;
-  }
 
   addLightEffectToProp(prop, lightData = null) {
     if (!prop || !prop.userData) return;
