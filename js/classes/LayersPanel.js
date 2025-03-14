@@ -8,6 +8,7 @@ class LayersPanel {
         this.folders = [];
         this.setupDragAndDrop();
         this.setupFolderControls();
+        this.initTabSwitcher();
     }
 
     setupFolderControls() {
@@ -88,74 +89,166 @@ class LayersPanel {
         this.updateLayersList();
     }
 
-    createFolderElement(folder) {
-        const folderElement = document.createElement('div');
-        folderElement.className = `layer-folder ${folder.locked ? 'locked' : ''}`;
-        folderElement.dataset.folderId = folder.id;
+//     createFolderElement(folder) {
+//         const folderElement = document.createElement('div');
+//         folderElement.className = `layer-folder ${folder.locked ? 'locked' : ''}`;
+//         folderElement.dataset.folderId = folder.id;
 
-        folderElement.innerHTML = `
-    <div class="folder-header">
-      <span class="material-icons folder-toggle">
-        ${folder.expanded ? 'expand_more' : 'chevron_right'}
-      </span>
-      <span class="material-icons folder-icon" style="color: ${this.getFolderColor(folder)};">
-        folder${folder.expanded ? '_open' : ''}
-      </span>
-      <span class="folder-name">${folder.name}</span>
-      <div class="folder-controls">
-        <span class="material-icons visibility-toggle" style="cursor: pointer;">visibility</span>
-        <span class="material-icons lock-toggle" style="cursor: pointer; color: ${folder.locked ? '#f44336' : '#fff'
-            };">${folder.locked ? 'lock' : 'lock_open'}</span>
-        <span class="material-icons rename-folder">edit</span>
-        <span class="material-icons delete-folder">delete</span>
+//         folderElement.innerHTML = `
+//     <div class="folder-header">
+//       <span class="material-icons folder-toggle">
+//         ${folder.expanded ? 'expand_more' : 'chevron_right'}
+//       </span>
+//       <span class="material-icons folder-icon" style="color: ${this.getFolderColor(folder)};">
+//         folder${folder.expanded ? '_open' : ''}
+//       </span>
+//       <span class="folder-name">${folder.name}</span>
+//       <div class="folder-controls">
+//         <span class="material-icons visibility-toggle" style="cursor: pointer;">visibility</span>
+//         <span class="material-icons lock-toggle" style="cursor: pointer; color: ${folder.locked ? '#f44336' : '#fff'
+//             };">${folder.locked ? 'lock' : 'lock_open'}</span>
+//         <span class="material-icons rename-folder">edit</span>
+//         <span class="material-icons delete-folder">delete</span>
+//       </div>
+//     </div>
+//     <div class="folder-content" style="display: ${folder.expanded ? 'block' : 'none'}">
+//     </div>
+//   `;
+
+//         const lockToggle = folderElement.querySelector('.lock-toggle');
+//         lockToggle.addEventListener('click', (e) => {
+//             e.stopPropagation();
+//             this.toggleFolderLock(folder);
+//         });
+
+//         // Add event handlers
+//         const toggle = folderElement.querySelector('.folder-toggle');
+//         toggle.addEventListener('click', () => {
+//             console.log("Folder toggle clicked");
+//             this.toggleFolder(folder);
+//         });
+
+//         // Add visibility toggle event handler
+//         const visibilityToggle = folderElement.querySelector('.visibility-toggle');
+//         visibilityToggle.addEventListener('click', (e) => {
+//             console.log("Visibility toggle clicked for folder:", folder);
+//             e.stopPropagation();
+//             this.toggleFolderVisibility(folder);
+//         });
+
+//         const deleteBtn = folderElement.querySelector('.delete-folder');
+//         deleteBtn.addEventListener('click', () => {
+//             if (folder.locked) {
+//                 this.editor.showLockedMessage();
+//                 return;
+//             }
+//             this.deleteFolder(folder);
+//         });
+
+//         // Also add locked state check to rename
+//         const renameBtn = folderElement.querySelector('.rename-folder');
+//         renameBtn.addEventListener('click', () => {
+//             if (folder.locked) {
+//                 this.editor.showLockedMessage();
+//                 return;
+//             }
+//             this.renameFolder(folder);
+//         });
+
+//         return folderElement;
+//     }
+
+createFolderElement(folder) {
+    const folderElement = document.createElement('div');
+    folderElement.className = `layer-folder ${folder.locked ? 'locked' : ''}`;
+    folderElement.dataset.folderId = folder.id;
+  
+    // Get folder color - either from property or generate one
+    const folderColor = this.getFolderColor(folder);
+  
+    folderElement.innerHTML = `
+      <div class="folder-header" style="display: flex; align-items: center; padding: 6px 8px; cursor: pointer; background-color: rgba(40, 40, 40, 0.5);">
+        <span class="material-icons folder-toggle" style="margin-right: 4px; font-size: 16px; transition: transform 0.2s;">
+          ${folder.expanded ? 'expand_more' : 'chevron_right'}
+        </span>
+        <span class="material-icons folder-icon" style="margin-right: 6px; color: ${folderColor}; font-size: 18px;">
+          folder${folder.expanded ? '_open' : ''}
+        </span>
+        <span class="folder-name" style="flex: 1; font-weight: bold; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          ${folder.name}
+        </span>
+        <div class="folder-controls" style="display: flex; gap: 4px; margin-left: auto;">
+          <span class="material-icons visibility-toggle" title="${folder.anyVisible ? 'Hide All' : 'Show All'}" 
+                style="cursor: pointer; font-size: 16px; color: ${folder.anyVisible ? '#fff' : '#666'};">
+            ${folder.anyVisible ? 'visibility' : 'visibility_off'}
+          </span>
+          <span class="material-icons lock-toggle" title="${folder.locked ? 'Unlock' : 'Lock'}" 
+                style="cursor: pointer; font-size: 16px; color: ${folder.locked ? '#f44336' : '#fff'};">
+            ${folder.locked ? 'lock' : 'lock_open'}
+          </span>
+          <span class="material-icons rename-folder" title="Rename" 
+                style="cursor: pointer; font-size: 16px; color: #2196F3;">
+            edit
+          </span>
+          <span class="material-icons delete-folder" title="Delete Folder" 
+                style="cursor: pointer; font-size: 16px; color: #f44336;">
+            delete
+          </span>
+        </div>
       </div>
-    </div>
-    <div class="folder-content" style="display: ${folder.expanded ? 'block' : 'none'}">
-    </div>
-  `;
-
-        const lockToggle = folderElement.querySelector('.lock-toggle');
-        lockToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleFolderLock(folder);
-        });
-
-        // Add event handlers
-        const toggle = folderElement.querySelector('.folder-toggle');
-        toggle.addEventListener('click', () => {
-            console.log("Folder toggle clicked");
-            this.toggleFolder(folder);
-        });
-
-        // Add visibility toggle event handler
-        const visibilityToggle = folderElement.querySelector('.visibility-toggle');
-        visibilityToggle.addEventListener('click', (e) => {
-            console.log("Visibility toggle clicked for folder:", folder);
-            e.stopPropagation();
-            this.toggleFolderVisibility(folder);
-        });
-
-        const deleteBtn = folderElement.querySelector('.delete-folder');
-        deleteBtn.addEventListener('click', () => {
-            if (folder.locked) {
-                this.editor.showLockedMessage();
-                return;
-            }
-            this.deleteFolder(folder);
-        });
-
-        // Also add locked state check to rename
-        const renameBtn = folderElement.querySelector('.rename-folder');
-        renameBtn.addEventListener('click', () => {
-            if (folder.locked) {
-                this.editor.showLockedMessage();
-                return;
-            }
-            this.renameFolder(folder);
-        });
-
-        return folderElement;
-    }
+      <div class="folder-content" style="display: ${folder.expanded ? 'block' : 'none'}; padding-left: 12px; border-left: 2px solid ${folderColor};">
+      </div>
+    `;
+  
+    // Add lock toggle handler
+    const lockToggle = folderElement.querySelector('.lock-toggle');
+    lockToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleFolderLock(folder);
+    });
+  
+    // Add folder toggle handler
+    const toggleButton = folderElement.querySelector('.folder-toggle');
+    const folderHeader = folderElement.querySelector('.folder-header');
+    folderHeader.addEventListener('click', (e) => {
+      // Don't toggle if clicking a control button
+      if (e.target.closest('.folder-controls') && 
+          !e.target.classList.contains('folder-toggle')) return;
+      
+      this.toggleFolder(folder);
+    });
+  
+    // Add visibility toggle handler
+    const visibilityToggle = folderElement.querySelector('.visibility-toggle');
+    visibilityToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleFolderVisibility(folder);
+    });
+  
+    // Add delete handler
+    const deleteBtn = folderElement.querySelector('.delete-folder');
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (folder.locked) {
+        this.editor.showLockedMessage();
+        return;
+      }
+      this.deleteFolder(folder);
+    });
+  
+    // Add rename handler
+    const renameBtn = folderElement.querySelector('.rename-folder');
+    renameBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (folder.locked) {
+        this.editor.showLockedMessage();
+        return;
+      }
+      this.renameFolder(folder);
+    });
+  
+    return folderElement;
+  }
 
     toggleFolderLock(folder) {
         folder.locked = !folder.locked;
@@ -423,6 +516,558 @@ class LayersPanel {
             .filter(room => room); // Filter out any undefined rooms
         this.editor.rooms = newOrder;
     }
+
+
+// Add this method to the LayersPanel class
+initTabSwitcher() {
+    // Get the header element where the folder button is
+    const header = document.querySelector('.layers-panel .tool-section-title');
+    if (!header) return;
+    
+    // Create tab switcher container
+    const tabSwitcher = document.createElement('div');
+    tabSwitcher.className = 'tab-switcher';
+    tabSwitcher.style.cssText = `
+      display: flex; 
+      border-radius: 4px; 
+      overflow: hidden;
+      margin-right: auto;
+      border: 1px solid #555;
+    `;
+    
+    // Create Layers tab button
+    const layersTab = document.createElement('button');
+    layersTab.className = 'tab-button active';
+    layersTab.textContent = 'Areas';
+    layersTab.style.cssText = `
+      padding: 4px 8px; 
+      border: none; 
+      background: none; 
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      flex: 1;
+    `;
+    
+    // Create Markers tab button
+    const markersTab = document.createElement('button');
+    markersTab.className = 'tab-button';
+    markersTab.textContent = 'Markers';
+    markersTab.style.cssText = `
+      padding: 4px 8px; 
+      border: none; 
+      background: none; 
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      flex: 1;
+    `;
+    
+    // Add styles for active tab
+    document.head.appendChild(document.createElement('style')).textContent = `
+  .tab-button.active {
+    background-color: #555;
+    color: white;
+  }
+  .tab-button:not(.active) {
+    background-color: transparent;
+    color: #aaa;
+  }
+  .tab-button:hover:not(.active) {
+    background-color: rgba(85, 85, 85, 0.3);
+  }
+  .marker-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
+  }
+  .marker-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  .marker-icon {
+    margin-right: 8px;
+    width: 24px;
+    text-align: center;
+  }
+  .marker-info {
+    flex: 1;
+    overflow: hidden;
+  }
+  .marker-name {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .marker-location {
+    font-size: 10px;
+    color: #999;
+  }
+  .marker-controls {
+    display: flex;
+    gap: 4px;
+  }
+  .marker-controls .material-icons {
+    padding: 2px;
+    cursor: pointer;
+  }
+  .marker-controls .material-icons:hover {
+    opacity: 0.8;
+  }
+  .marker-filter {
+    padding: 8px;
+    background-color: #333;
+    border-bottom: 1px solid #444;
+  }
+  
+  /* Highlight pulse animation */
+  @keyframes highlight-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(33, 150, 243, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(33, 150, 243, 0.8); }
+  }
+  
+  .highlight-pulse {
+    animation: highlight-pulse 1.5s ease-in-out;
+  }
+
+      // Add this to the style element in initTabSwitcher or add it separately
+@keyframes highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(33, 150, 243, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(33, 150, 243, 0.8); }
+}
+
+.highlight-pulse {
+  animation: highlight-pulse 1.5s ease-in-out;
+}
+
+    `;
+    
+    // Add tab buttons to switcher
+    tabSwitcher.appendChild(layersTab);
+    tabSwitcher.appendChild(markersTab);
+    
+    // Add switcher to header (before the folder button)
+    header.insertBefore(tabSwitcher, header.firstChild);
+    
+    // Store DOM references
+    this.layersTab = layersTab;
+    this.markersTab = markersTab;
+    this.folderButton = header.querySelector('sl-button');
+    
+    // Add event listeners
+    layersTab.addEventListener('click', () => {
+      layersTab.classList.add('active');
+      markersTab.classList.remove('active');
+      this.showLayersPanel();
+    });
+    
+    markersTab.addEventListener('click', () => {
+      markersTab.classList.add('active');
+      layersTab.classList.remove('active');
+      this.showMarkersPanel();
+    });
+  }
+  
+  // New method to show the original layers panel
+  showLayersPanel() {
+    // Show the layers list and folder button
+    const layersList = document.getElementById('layersList');
+    if (layersList) layersList.style.display = 'block';
+    
+    // Remove markers panel if it exists
+    const markersPanel = document.getElementById('markersPanel');
+    if (markersPanel) markersPanel.style.display = 'none';
+    
+    // Show folder button
+    if (this.folderButton) this.folderButton.style.display = 'flex';
+    
+    // Update layers list
+    this.updateLayersList();
+  }
+  
+  // New method to show markers panel
+  showMarkersPanel() {
+    // Hide the layers list and folder button
+    const layersList = document.getElementById('layersList');
+    if (layersList) layersList.style.display = 'none';
+    
+    // Hide folder button
+    if (this.folderButton) this.folderButton.style.display = 'none';
+    
+    // Get or create markers panel
+    let markersPanel = document.getElementById('markersPanel');
+    
+    if (!markersPanel) {
+      markersPanel = document.createElement('div');
+      markersPanel.id = 'markersPanel';
+      markersPanel.style.cssText = `
+        height: 100%;
+        overflow-y: auto;
+        color: #fff;
+      `;
+      
+      // Add to the layers panel container
+      const layersPanel = document.querySelector('.layers-panel');
+      layersPanel.appendChild(markersPanel);
+    }
+    
+    markersPanel.style.display = 'block';
+    
+    // Update markers panel content
+    this.updateMarkersPanel();
+  }
+  
+  // Method to update markers panel content
+  updateMarkersPanel() {
+    const markersPanel = document.getElementById('markersPanel');
+    if (!markersPanel) return;
+    
+    // Get markers from editor
+    const markers = this.editor.markers || [];
+    const playerStart = this.editor.playerStart;
+    
+    // Clear existing content
+    markersPanel.innerHTML = '';
+    
+    // Add filter section
+    const filterSection = document.createElement('div');
+    filterSection.className = 'marker-filter';
+    filterSection.innerHTML = `
+      <select id="markerTypeFilter" style="width: 100%; padding: 4px; border-radius: 4px; background: #222; color: #eee; border: 1px solid #555;">
+        <option value="all">All Marker Types</option>
+        <option value="door">Doors</option>
+        <option value="prop">Props</option>
+        <option value="teleport">Teleporters</option>
+        <option value="encounter">Encounters</option>
+        <option value="splash-art">Splash Art</option>
+        <option value="treasure">Treasure</option>
+        <option value="trap">Traps</option>
+        <option value="storyboard">Story Triggers</option>
+      </select>
+    `;
+    markersPanel.appendChild(filterSection);
+    
+    // Hook up filter change event
+    const filter = filterSection.querySelector('#markerTypeFilter');
+    filter.addEventListener('change', () => {
+      this.updateMarkersPanel(); // Refresh with new filter
+    });
+    
+    // Add player start marker if it exists
+    if (playerStart) {
+      const playerStartItem = this.createMarkerItem(playerStart, 'player-start');
+      markersPanel.appendChild(playerStartItem);
+    }
+    
+    // Filter markers if needed
+    const selectedFilter = filter ? filter.value : 'all';
+    const filteredMarkers = selectedFilter === 'all' 
+      ? markers 
+      : markers.filter(m => m.type === selectedFilter);
+    
+    // Add marker count
+    const countInfo = document.createElement('div');
+    countInfo.style.cssText = `
+      padding: 8px; 
+      font-size: 12px; 
+      color: #999; 
+      text-align: center;
+      border-bottom: 1px solid #444;
+    `;
+    countInfo.textContent = `${filteredMarkers.length} marker${filteredMarkers.length !== 1 ? 's' : ''}`;
+    markersPanel.appendChild(countInfo);
+    
+    // Add filtered markers
+    if (filteredMarkers.length > 0) {
+      const markersList = document.createElement('div');
+      markersList.className = 'markers-list';
+      
+      filteredMarkers.forEach(marker => {
+        const markerItem = this.createMarkerItem(marker);
+        markersList.appendChild(markerItem);
+      });
+      
+      markersPanel.appendChild(markersList);
+    } else {
+      // No markers message
+      const emptyMessage = document.createElement('div');
+      emptyMessage.style.cssText = `
+        padding: 20px;
+        text-align: center;
+        color: #888;
+        font-style: italic;
+      `;
+      emptyMessage.textContent = selectedFilter === 'all' 
+        ? 'No markers on this map' 
+        : `No ${selectedFilter} markers on this map`;
+      markersPanel.appendChild(emptyMessage);
+    }
+  }
+  
+  // Helper to create a marker list item
+//   createMarkerItem(marker, forcedType = null) {
+//     const item = document.createElement('div');
+//     item.className = 'marker-item';
+//     item.dataset.markerId = marker.id;
+    
+//     const type = forcedType || marker.type;
+    
+//     // Determine name and icon based on marker type
+//     let name, icon;
+    
+//     switch (type) {
+//       case 'player-start':
+//         name = 'Player Start';
+//         icon = 'person_pin_circle';
+//         break;
+//       case 'door':
+//         name = 'Door';
+//         icon = 'door_front';
+//         break;
+//       case 'prop':
+//         name = marker.data?.texture?.name || 'Prop';
+//         icon = 'category';
+//         break;
+//       case 'teleport':
+//         name = marker.data?.isPointA ? 'Teleport A' : 'Teleport B';
+//         icon = 'swap_calls';
+//         break;
+//       case 'encounter':
+//         name = marker.data?.monster?.basic?.name || 'Encounter';
+//         icon = 'local_fire_department';
+//         break;
+//       case 'splash-art':
+//         name = marker.data?.splashArt?.name || 'Splash Art';
+//         icon = 'add_photo_alternate';
+//         break;
+//       case 'treasure':
+//         name = marker.data?.description || 'Treasure';
+//         icon = 'workspace_premium';
+//         break;
+//       case 'trap':
+//         name = marker.data?.description || 'Trap';
+//         icon = 'warning';
+//         break;
+//       case 'storyboard':
+//         name = marker.data?.label || 'Story Trigger';
+//         icon = 'auto_stories';
+//         break;
+//       default:
+//         name = 'Marker';
+//         icon = 'place';
+//     }
+    
+//     // Format marker position
+//     const x = Math.round(marker.x);
+//     const y = Math.round(marker.y);
+    
+//     item.innerHTML = `
+//       <div class="marker-icon">
+//         <span class="material-icons">${icon}</span>
+//       </div>
+//       <div class="marker-info">
+//         <div class="marker-name">${name}</div>
+//         <div class="marker-location">x: ${x}, y: ${y}</div>
+//       </div>
+//       <div class="marker-controls">
+//         <span class="material-icons locate-marker" title="Locate">my_location</span>
+//         <span class="material-icons edit-marker" title="Edit">edit</span>
+//         <span class="material-icons delete-marker" title="Delete">delete</span>
+//       </div>
+//     `;
+    
+//     // Add event handlers
+//     item.querySelector('.locate-marker').addEventListener('click', e => {
+//       e.stopPropagation();
+//       this.centerOnMarker(marker);
+//     });
+    
+//     item.querySelector('.edit-marker').addEventListener('click', e => {
+//       e.stopPropagation();
+//       this.editMarker(marker);
+//     });
+    
+//     item.querySelector('.delete-marker').addEventListener('click', e => {
+//       e.stopPropagation();
+//       this.deleteMarker(marker);
+//     });
+    
+//     // Main item click centers on marker
+//     item.addEventListener('click', () => {
+//       this.centerOnMarker(marker);
+//     });
+    
+//     return item;
+//   }
+
+// Update the createMarkerItem method to match the colors and styles
+createMarkerItem(marker, forcedType = null) {
+    const item = document.createElement('div');
+    item.className = 'marker-item';
+    item.dataset.markerId = marker.id;
+    
+    const type = forcedType || marker.type;
+    
+    // Determine name and icon based on marker type
+    let name, icon;
+    
+    switch (type) {
+      case 'player-start':
+        name = 'Player Start';
+        icon = 'person_pin_circle';
+        break;
+      case 'door':
+        name = 'Door';
+        icon = 'door_front';
+        break;
+      case 'prop':
+        name = marker.data?.texture?.name || 'Prop';
+        icon = 'category';
+        break;
+      case 'teleport':
+        name = marker.data?.isPointA ? 'Teleport A' : 'Teleport B';
+        icon = 'swap_calls';
+        break;
+      case 'encounter':
+        name = marker.data?.monster?.basic?.name || 'Encounter';
+        icon = 'local_fire_department';
+        break;
+      case 'splash-art':
+        name = marker.data?.splashArt?.name || 'Splash Art';
+        icon = 'add_photo_alternate';
+        break;
+      case 'treasure':
+        name = marker.data?.description || 'Treasure';
+        icon = 'workspace_premium';
+        break;
+      case 'trap':
+        name = marker.data?.description || 'Trap';
+        icon = 'warning';
+        break;
+      case 'storyboard':
+        name = marker.data?.label || 'Story Trigger';
+        icon = 'auto_stories';
+        break;
+      default:
+        name = 'Marker';
+        icon = 'place';
+    }
+    
+    // Format marker position
+    const x = Math.round(marker.x);
+    const y = Math.round(marker.y);
+    
+    item.innerHTML = `
+      <div class="marker-icon">
+        <span class="material-icons">${icon}</span>
+      </div>
+      <div class="marker-info">
+        <div class="marker-name">${name}</div>
+        <div class="marker-location">x: ${x}, y: ${y}</div>
+      </div>
+      <div class="marker-controls">
+        <span class="material-icons locate-marker" title="Locate" 
+              style="color: #FFC107; font-size: 16px;">my_location</span>
+        <span class="material-icons edit-marker" title="Edit" 
+              style="color: #2196F3; font-size: 16px;">edit</span>
+        <span class="material-icons delete-marker" title="Delete" 
+              style="color: #f44336; font-size: 16px;">delete</span>
+      </div>
+    `;
+    
+    // Add event handlers
+    item.querySelector('.locate-marker').addEventListener('click', e => {
+      e.stopPropagation();
+      this.centerOnMarker(marker);
+    });
+    
+    item.querySelector('.edit-marker').addEventListener('click', e => {
+      e.stopPropagation();
+      this.editMarker(marker);
+    });
+    
+    item.querySelector('.delete-marker').addEventListener('click', e => {
+      e.stopPropagation();
+      this.deleteMarker(marker);
+    });
+    
+    // Main item click centers on marker
+    item.addEventListener('click', () => {
+      this.centerOnMarker(marker);
+    });
+    
+    return item;
+  }
+  
+  // Helper method to center on marker
+//   centerOnMarker(marker) {
+//     // Calculate center position
+//     const canvasRect = this.editor.canvas.getBoundingClientRect();
+//     const centerX = canvasRect.width / 2;
+//     const centerY = canvasRect.height / 2;
+    
+//     // Calculate new offset to center on marker
+//     this.editor.offset.x = centerX - marker.x * this.editor.scale;
+//     this.editor.offset.y = centerY - marker.y * this.editor.scale;
+    
+//     // Update and render
+//     this.editor.updateMarkerPositions();
+//     this.editor.render();
+    
+//     // Highlight the marker briefly
+//     if (marker.element) {
+//       marker.element.classList.add('highlighted');
+//       setTimeout(() => {
+//         marker.element.classList.remove('highlighted');
+//       }, 1500);
+//     }
+//   }
+
+// Update centerOnMarker to add a pulse effect
+centerOnMarker(marker) {
+    // Calculate center position
+    const canvasRect = this.editor.canvas.getBoundingClientRect();
+    const centerX = canvasRect.width / 2;
+    const centerY = canvasRect.height / 2;
+    
+    // Calculate new offset to center on marker
+    this.editor.offset.x = centerX - marker.x * this.editor.scale;
+    this.editor.offset.y = centerY - marker.y * this.editor.scale;
+    
+    // Update and render
+    this.editor.updateMarkerPositions();
+    this.editor.render();
+    
+    // Highlight the marker briefly
+    if (marker.element) {
+      marker.element.classList.add('highlight-pulse');
+      setTimeout(() => {
+        marker.element.classList.remove('highlight-pulse');
+      }, 1500);
+    }
+  }
+  
+  // Helper method to edit marker
+  editMarker(marker) {
+    // Open marker context menu using existing method
+    if (typeof this.editor.showMarkerContextMenu === 'function') {
+      this.editor.showMarkerContextMenu(marker, { preventDefault: () => {} });
+    }
+  }
+  
+  // Helper method to delete marker
+  deleteMarker(marker) {
+    // Confirm deletion
+    const confirmDelete = confirm(`Delete this ${marker.type} marker?`);
+    if (confirmDelete) {
+      this.editor.removeMarker(marker);
+      this.updateMarkersPanel();
+    }
+  }
+
+
     setupPanel() {
         // Get the existing Add Room button and set up its event listener
         const addRoomBtn = document.getElementById("addRoomBtn");
@@ -434,57 +1079,210 @@ class LayersPanel {
     }
 
 
-    updateLayersList() {
-        this.layersList.innerHTML = '';
+    // updateLayersList() {
+    //     this.layersList.innerHTML = '';
 
-        // Make sure we have folders initialized
-        if (!this.folders) {
-            this.folders = [];
-        }
+    //     // Make sure we have folders initialized
+    //     if (!this.folders) {
+    //         this.folders = [];
+    //     }
 
-        // Add folders and their contents
-        this.folders.forEach(folder => {
-            const folderElement = this.createFolderElement(folder);
-            this.layersList.appendChild(folderElement);
+    //     // Add folders and their contents
+    //     this.folders.forEach(folder => {
+    //         const folderElement = this.createFolderElement(folder);
+    //         this.layersList.appendChild(folderElement);
 
-            // Add rooms in this folder's content area
-            const folderContent = folderElement.querySelector('.folder-content');
-            folder.rooms.forEach(room => {
-                const roomElement = this.createLayerItem(room);
-                folderContent.appendChild(roomElement);
-            });
-        });
+    //         // Add rooms in this folder's content area
+    //         const folderContent = folderElement.querySelector('.folder-content');
+    //         folder.rooms.forEach(room => {
+    //             const roomElement = this.createLayerItem(room);
+    //             folderContent.appendChild(roomElement);
+    //         });
+    //     });
 
-        // Only show unassigned rooms (not in any folder)
-        const unassignedRooms = this.editor.rooms.filter(room =>
-            !this.folders.some(folder => folder.rooms.includes(room))
-        );
-        unassignedRooms.forEach(room => {
-            const roomElement = this.createLayerItem(room);
-            this.layersList.appendChild(roomElement);
-        });
+    //     // Only show unassigned rooms (not in any folder)
+    //     const unassignedRooms = this.editor.rooms.filter(room =>
+    //         !this.folders.some(folder => folder.rooms.includes(room))
+    //     );
+    //     unassignedRooms.forEach(room => {
+    //         const roomElement = this.createLayerItem(room);
+    //         this.layersList.appendChild(roomElement);
+    //     });
+    // }
+
+    // Updated updateLayersList method
+// updateLayersList() {
+//     if (!this.layersList) return;
+//     this.layersList.innerHTML = '';
+    
+//     // Make sure we have folders initialized
+//     if (!this.folders) {
+//       this.folders = [];
+//     }
+    
+//     // Add folders and their contents
+//     this.folders.forEach(folder => {
+//       const folderElement = this.createFolderElement(folder);
+//       this.layersList.appendChild(folderElement);
+//     });
+    
+//     // Get unassigned rooms (not in any folder)
+//     const unassignedRooms = this.editor.rooms.filter(room =>
+//       !this.folders.some(folder => folder.rooms.includes(room))
+//     );
+    
+//     // Add section for unassigned rooms if any exist
+//     if (unassignedRooms.length > 0) {
+//       // Only add a divider if we have folders
+//       if (this.folders.length > 0) {
+//         const divider = document.createElement('div');
+//         divider.className = 'folder-divider';
+//         divider.style.cssText = `
+//           height: 1px;
+//           background-color: #444;
+//           margin: 8px 0;
+//         `;
+//         this.layersList.appendChild(divider);
+//       }
+      
+//       // Add unassigned rooms section header
+//       const unassignedHeader = document.createElement('div');
+//       unassignedHeader.className = 'unassigned-header';
+//       unassignedHeader.style.cssText = `
+//         padding: 4px 8px;
+//         font-size: 11px;
+//         color: #888;
+//         display: flex;
+//         align-items: center;
+//         justify-content: space-between;
+//         background-color: rgba(0, 0, 0, 0.2);
+//       `;
+//       unassignedHeader.innerHTML = `
+//         <span>Unassigned Areas (${unassignedRooms.length})</span>
+//       `;
+//       this.layersList.appendChild(unassignedHeader);
+      
+//       // Add unassigned rooms with improved layout
+//       unassignedRooms.forEach(room => {
+//         const roomElement = this.createLayerItem(room);
+//         this.layersList.appendChild(roomElement);
+//       });
+//     }
+//   }
+
+
+updateLayersList() {
+    if (!this.layersList) return;
+    this.layersList.innerHTML = '';
+    
+    // Make sure we have folders initialized
+    if (!this.folders) {
+      this.folders = [];
     }
+    
+    // Pre-process folders to check visibility status
+    this.folders.forEach(folder => {
+      folder.anyVisible = folder.rooms.some(room => room.visible);
+    });
+    
+    // Add folders and their contents - this is the critical part
+    this.folders.forEach(folder => {
+      const folderElement = this.createFolderElement(folder);
+      this.layersList.appendChild(folderElement);
+  
+      // Add rooms in this folder's content area
+      const folderContent = folderElement.querySelector('.folder-content');
+      folder.rooms.forEach(room => {
+        const roomElement = this.createLayerItem(room);
+        folderContent.appendChild(roomElement);
+      });
+    });
+    
+    // Get unassigned rooms (not in any folder)
+    const unassignedRooms = this.editor.rooms.filter(room =>
+      !this.folders.some(folder => folder.rooms.includes(room))
+    );
+    
+    // Add section for unassigned rooms if any exist
+    if (unassignedRooms.length > 0) {
+      // Only add a divider if we have folders
+      if (this.folders.length > 0) {
+        const divider = document.createElement('div');
+        divider.className = 'folder-divider';
+        divider.style.cssText = `
+          height: 1px;
+          background-color: #444;
+          margin: 8px 0;
+        `;
+        this.layersList.appendChild(divider);
+      }
+      
+      // Add unassigned rooms section header
+      const unassignedHeader = document.createElement('div');
+      unassignedHeader.className = 'unassigned-header';
+      unassignedHeader.style.cssText = `
+        padding: 4px 8px;
+        font-size: 11px;
+        color: #888;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: rgba(0, 0, 0, 0.2);
+      `;
+      unassignedHeader.innerHTML = `
+        <span>Unassigned Areas (${unassignedRooms.length})</span>
+      `;
+      this.layersList.appendChild(unassignedHeader);
+      
+      // Add unassigned rooms with improved layout
+      unassignedRooms.forEach(room => {
+        const roomElement = this.createLayerItem(room);
+        this.layersList.appendChild(roomElement);
+      });
+    }
+  }
 
+    // toggleFolder(folder) {
+    //     folder.expanded = !folder.expanded;
+    //     const folderElement = document.querySelector(`[data-folder-id="${folder.id}"]`);
+    //     if (folderElement) {
+    //         const folderContent = folderElement.querySelector('.folder-content');
+    //         const folderIcon = folderElement.querySelector('.folder-icon');
+    //         const folderToggle = folderElement.querySelector('.folder-toggle');
+
+    //         if (folder.expanded) {
+    //             folderContent.style.display = 'block';
+    //             folderIcon.textContent = 'folder_open';
+    //             folderToggle.textContent = 'expand_more';
+    //         } else {
+    //             folderContent.style.display = 'none';
+    //             folderIcon.textContent = 'folder';
+    //             folderToggle.textContent = 'chevron_right';
+    //         }
+    //     }
+    // }
 
     toggleFolder(folder) {
         folder.expanded = !folder.expanded;
         const folderElement = document.querySelector(`[data-folder-id="${folder.id}"]`);
         if (folderElement) {
-            const folderContent = folderElement.querySelector('.folder-content');
-            const folderIcon = folderElement.querySelector('.folder-icon');
-            const folderToggle = folderElement.querySelector('.folder-toggle');
-
-            if (folder.expanded) {
-                folderContent.style.display = 'block';
-                folderIcon.textContent = 'folder_open';
-                folderToggle.textContent = 'expand_more';
-            } else {
-                folderContent.style.display = 'none';
-                folderIcon.textContent = 'folder';
-                folderToggle.textContent = 'chevron_right';
-            }
+          const folderContent = folderElement.querySelector('.folder-content');
+          const folderIcon = folderElement.querySelector('.folder-icon');
+          const folderToggle = folderElement.querySelector('.folder-toggle');
+      
+          if (folder.expanded) {
+            folderContent.style.display = 'block';
+            folderIcon.textContent = 'folder_open';
+            folderToggle.textContent = 'expand_more';
+            folderToggle.style.transform = 'rotate(0deg)';
+          } else {
+            folderContent.style.display = 'none';
+            folderIcon.textContent = 'folder';
+            folderToggle.textContent = 'chevron_right';
+            folderToggle.style.transform = 'rotate(0deg)';
+          }
         }
-    }
+      }
 
     toggleFolderVisibility(folder) {
         console.log("toggleFolderVisibility called with folder:", folder);
@@ -636,100 +1434,335 @@ class LayersPanel {
         });
     }
 
-    createLayerItem(room) {
-        const layerItem = document.createElement('div');
+//     createLayerItem(room) {
+//         const layerItem = document.createElement('div');
 
-        if (room.id === this.editor.selectedRoomId) {
-            layerItem.classList.add('selected');
-        }
+//         if (room.id === this.editor.selectedRoomId) {
+//             layerItem.classList.add('selected');
+//         }
 
-        layerItem.className = `layer-item ${room.type}-room ${room.finalized ? '' : 'editing'
-            } ${room.id === this.editor.selectedRoomId ? 'selected' : ''} ${room.locked ? 'locked' : ''
-            }`;
+//         layerItem.className = `layer-item ${room.type}-room ${room.finalized ? '' : 'editing'
+//             } ${room.id === this.editor.selectedRoomId ? 'selected' : ''} ${room.locked ? 'locked' : ''
+//             }`;
 
-        layerItem.draggable = true;
-        layerItem.dataset.roomId = room.id;
+//         layerItem.draggable = true;
+//         layerItem.dataset.roomId = room.id;
 
-        layerItem.addEventListener('mousedown', (e) => {
-            if (room.locked && e.button === 0) { // Left click only
-                e.preventDefault();
-                e.stopPropagation();
-                this.editor.showLockedMessage();
-                return;
-            }
-        });
+//         layerItem.addEventListener('mousedown', (e) => {
+//             if (room.locked && e.button === 0) { // Left click only
+//                 e.preventDefault();
+//                 e.stopPropagation();
+//                 this.editor.showLockedMessage();
+//                 return;
+//             }
+//         });
 
-        // Add data attributes for room type and texture
-        layerItem.setAttribute("data-room-type", room.type);
-        if (room.name === "WallTexture" || room.name === "RoomTexture") {
-            layerItem.setAttribute("data-texture-room", "true");
-        }
+//         // Add data attributes for room type and texture
+//         layerItem.setAttribute("data-room-type", room.type);
+//         if (room.name === "WallTexture" || room.name === "RoomTexture") {
+//             layerItem.setAttribute("data-texture-room", "true");
+//         }
 
-        const getTooltipText = (room) => {
-            if (room.name === "WallTexture")
-                return "Wall Texture Definition - Used for wall surfaces in 3D view";
-            if (room.name === "RoomTexture")
-                return "Room Texture Definition - Used for room surfaces in 3D view";
-            return room.type === "wall" ? "Wall Definition" : "Room Definition";
-        };
+//         const getTooltipText = (room) => {
+//             if (room.name === "WallTexture")
+//                 return "Wall Texture Definition - Used for wall surfaces in 3D view";
+//             if (room.name === "RoomTexture")
+//                 return "Room Texture Definition - Used for room surfaces in 3D view";
+//             return room.type === "wall" ? "Wall Definition" : "Room Definition";
+//         };
 
-        // Add tooltip to layer name
-        const layerName = layerItem.querySelector(".layer-name");
-        if (layerName) {
-            layerName.setAttribute("title", getTooltipText(room));
-        }
+//         // Add tooltip to layer name
+//         const layerName = layerItem.querySelector(".layer-name");
+//         if (layerName) {
+//             layerName.setAttribute("title", getTooltipText(room));
+//         }
 
 
-        layerItem.innerHTML = `
-        <div class="layer-content">
-            <div class="layer-controls">
-                <span class="material-icons visibility-toggle" style="cursor: pointer; color: ${room.visible ? '#fff' : '#666'
-            };">
-                    ${room.visible ? 'visibility' : 'visibility_off'}
-                </span>
-                <span class="material-icons lock-toggle" style="cursor: pointer; color: ${room.locked ? '#f44336' : '#fff'
-            };">
-                    ${room.locked ? 'lock' : 'lock_open'}
-                </span>
-            </div>
-<div class="layer-thumbnail">
-    ${(() => {
-                if (!room.thumbnail) {
-                    room.createThumbnail();
-                }
-                return room.thumbnail ?
-                    `<img src="${room.thumbnail}" alt="Room thumbnail">` :
-                    `<div class="thumbnail-placeholder"></div>`;
-            })()}
-</div>
-            <div class="layer-info">
-                <div class="layer-name">${room.name}</div>
-                <div class="layer-dimensions">${Math.round(room.bounds.width)}×${Math.round(
-                room.bounds.height
-            )}</div>
-            </div>
-            <div class="layer-controls">
-                <span class="material-icons edit-btn" style="color: #2196F3; cursor: pointer;">edit</span>
-                <span class="material-icons delete-btn" style="color: #f44336; cursor: pointer;">delete</span>
-            </div>
+//         layerItem.innerHTML = `
+//         <div class="layer-content">
+//             <div class="layer-controls">
+//                 <span class="material-icons visibility-toggle" style="cursor: pointer; color: ${room.visible ? '#fff' : '#666'
+//             };">
+//                     ${room.visible ? 'visibility' : 'visibility_off'}
+//                 </span>
+//                 <span class="material-icons lock-toggle" style="cursor: pointer; color: ${room.locked ? '#f44336' : '#fff'
+//             };">
+//                     ${room.locked ? 'lock' : 'lock_open'}
+//                 </span>
+//             </div>
+// <div class="layer-thumbnail">
+//     ${(() => {
+//                 if (!room.thumbnail) {
+//                     room.createThumbnail();
+//                 }
+//                 return room.thumbnail ?
+//                     `<img src="${room.thumbnail}" alt="Room thumbnail">` :
+//                     `<div class="thumbnail-placeholder"></div>`;
+//             })()}
+// </div>
+//             <div class="layer-info">
+//                 <div class="layer-name">${room.name}</div>
+//                 <div class="layer-dimensions">${Math.round(room.bounds.width)}×${Math.round(
+//                 room.bounds.height
+//             )}</div>
+//             </div>
+//             <div class="layer-controls">
+//                 <span class="material-icons edit-btn" style="color: #2196F3; cursor: pointer;">edit</span>
+//                 <span class="material-icons delete-btn" style="color: #f44336; cursor: pointer;">delete</span>
+//             </div>
+//         </div>
+//     `;
+
+//         const lockToggle = layerItem.querySelector('.lock-toggle');
+//         lockToggle.addEventListener('click', (e) => {
+//             e.stopPropagation();
+//             if (room.locked) {
+//                 room.locked = false;
+//                 lockToggle.textContent = 'lock_open';
+//                 lockToggle.style.color = '#fff';
+//                 layerItem.classList.remove('locked');
+//             } else {
+//                 room.locked = true;
+//                 lockToggle.textContent = 'lock';
+//                 lockToggle.style.color = '#f44336';
+//                 layerItem.classList.add('locked');
+//             }
+//         });
+
+
+//         // Add hover effect
+//         layerItem.addEventListener("mouseenter", () => {
+//             const roomElement = document.getElementById(`room-${room.id}`);
+//             if (roomElement) {
+//                 roomElement.classList.add("highlighted");
+//             }
+//         });
+
+//         layerItem.addEventListener("mouseleave", () => {
+//             const roomElement = document.getElementById(`room-${room.id}`);
+//             if (roomElement) {
+//                 roomElement.classList.remove("highlighted");
+//             }
+//         });
+
+//         layerItem.addEventListener("mouseenter", () => {
+//             const roomElement = document.getElementById(`room-${room.id}`);
+//             if (roomElement) {
+//                 roomElement.classList.add("highlighted");
+//                 // Force reflow for polygon highlights
+//                 if (room.shape === "polygon") {
+//                     roomElement.style.transform = "translateZ(0)";
+//                 }
+//             }
+//         });
+
+//         layerItem.addEventListener("mouseleave", () => {
+//             const roomElement = document.getElementById(`room-${room.id}`);
+//             if (roomElement) {
+//                 roomElement.classList.remove("highlighted");
+//                 // Reset transform
+//                 if (room.shape === "polygon") {
+//                     roomElement.style.transform = "";
+//                 }
+//             }
+//         });
+
+//         layerItem.addEventListener('click', (e) => {
+//             // Don't trigger for clicks on controls
+//             if (e.target.closest('.layer-controls')) return;
+
+//             // Remove selected class from all items
+//             document.querySelectorAll('.layer-item').forEach(item => {
+//                 item.classList.remove('selected');
+//             });
+
+//             // Add selected class to this item
+//             layerItem.classList.add('selected');
+
+//             // Update editor's selected room id
+//             this.editor.selectedRoomId = room.id;
+
+//             // Optionally, add any selection behaviors here
+//             // For example, highlight the room in the canvas
+//             const roomElement = document.getElementById(`room-${room.id}`);
+//             if (roomElement) {
+//                 roomElement.classList.add('selected-in-canvas');
+
+//                 // Remove the highlight after a delay
+//                 setTimeout(() => {
+//                     roomElement.classList.remove('selected-in-canvas');
+//                 }, 1500);
+//             }
+//         });
+
+//         const visibilityToggle =
+//             layerItem.querySelector(".visibility-toggle");
+//         visibilityToggle.addEventListener("click", (e) => {
+//             e.stopPropagation();
+//             room.toggleVisibility();
+//             visibilityToggle.textContent = room.visible
+//                 ? "visibility"
+//                 : "visibility_off";
+//             visibilityToggle.style.color = room.visible ? "#fff" : "#666";
+//         });
+
+
+
+//         layerItem
+//             .querySelector(".edit-btn")
+//             .addEventListener("click", (e) => {
+//                 e.stopPropagation();
+//                 if (room.locked) {
+//                     this.editor.showLockedMessage();
+//                     return;
+//                 }
+//                 this.showPropertiesDialog(room);
+//             });
+
+//         layerItem
+//             .querySelector(".delete-btn")
+//             .addEventListener("click", (e) => {
+//                 e.stopPropagation();
+//                 if (room.locked) {
+//                     this.editor.showLockedMessage();
+//                     return;
+//                 }
+//                 this.editor.deleteRoom(room);
+//             });
+
+//         // Add double-click handler for renaming
+//         layerItem.addEventListener("dblclick", () => {
+//             this.showPropertiesDialog(room);
+//         });
+
+//         return layerItem;
+//     }
+
+createLayerItem(room) {
+    const layerItem = document.createElement('div');
+    
+    // Add classes for current state
+    layerItem.className = `layer-item ${room.type}-room${room.finalized ? '' : ' editing'}${
+      room.id === this.editor.selectedRoomId ? ' selected' : ''}${
+      room.locked ? ' locked' : ''}`;
+    
+    layerItem.draggable = true;
+    layerItem.dataset.roomId = room.id;
+    
+    // Prevent interaction if locked
+    layerItem.addEventListener('mousedown', (e) => {
+      if (room.locked && e.button === 0) { // Left click only
+        e.preventDefault();
+        e.stopPropagation();
+        this.editor.showLockedMessage();
+        return;
+      }
+    });
+    
+    // Add data attributes for room type and texture
+    layerItem.setAttribute("data-room-type", room.type);
+    if (room.name === "WallTexture" || room.name === "RoomTexture") {
+      layerItem.setAttribute("data-texture-room", "true");
+    }
+    
+    // Determine tooltip text based on room type
+    const getTooltipText = (room) => {
+      if (room.name === "WallTexture")
+        return "Wall Texture Definition - Used for wall surfaces in 3D view";
+      if (room.name === "RoomTexture")
+        return "Room Texture Definition - Used for room surfaces in 3D view";
+      return room.type === "wall" ? "Wall Definition" : "Room Definition";
+    };
+    
+    // Determine icon based on room type and shape
+    let icon = 'crop_square'; // Default icon
+    if (room.shape === 'circle') {
+      icon = 'circle';
+    } else if (room.shape === 'polygon') {
+      icon = 'pentagon';
+    } else if (room.type === 'water') {
+      icon = 'water_drop';
+    }
+    
+    // Create thumbnail or placeholder
+    const thumbnailHtml = room.thumbnail ? 
+      `<img src="${room.thumbnail}" alt="Room thumbnail" style="width: 100%; height: 100%; object-fit: cover;">` :
+      `<div class="thumbnail-placeholder" style="width: 100%; height: 100%; background: #333; display: flex; align-items: center; justify-content: center;">
+        <span class="material-icons" style="color: #666; font-size: 20px;">${icon}</span>
+      </div>`;
+    
+    // Build improved layer item HTML
+    layerItem.innerHTML = `
+      <div class="layer-content" style="display: flex; align-items: center; padding: 6px 8px; gap: 8px;">
+        <!-- Left controls: visibility and lock -->
+        <div class="layer-controls" style="display: flex; flex-direction: column; gap: 4px;">
+          <span class="material-icons visibility-toggle" title="${room.visible ? 'Hide' : 'Show'}" 
+                style="cursor: pointer; color: ${room.visible ? '#fff' : '#666'}; font-size: 16px;">
+            ${room.visible ? 'visibility' : 'visibility_off'}
+          </span>
+          <span class="material-icons lock-toggle" title="${room.locked ? 'Unlock' : 'Lock'}" 
+                style="cursor: pointer; color: ${room.locked ? '#f44336' : '#fff'}; font-size: 16px;">
+            ${room.locked ? 'lock' : 'lock_open'}
+          </span>
         </div>
+        
+        <!-- Thumbnail -->
+        <div class="layer-thumbnail" style="width: 32px; height: 32px; overflow: hidden; border-radius: 2px;">
+          ${thumbnailHtml}
+        </div>
+        
+        <!-- Layer info -->
+        <div class="layer-info" style="flex: 1; overflow: hidden;">
+          <div class="layer-name" title="${getTooltipText(room)}" 
+               style="font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${room.name}
+          </div>
+          <div class="layer-dimensions" style="font-size: 10px; color: #999;">
+            ${Math.round(room.bounds.width)}×${Math.round(room.bounds.height)}
+            ${room.isRaisedBlock ? ` • Height: ${room.blockHeight}` : ''}
+          </div>
+        </div>
+        
+        <!-- Right controls: edit, locate, delete -->
+        <div class="layer-controls" style="display: flex; gap: 4px;">
+          <span class="material-icons edit-btn" title="Edit" 
+                style="color: #2196F3; cursor: pointer; font-size: 16px;">edit</span>
+          <span class="material-icons locate-btn" title="Locate" 
+                style="color: #FFC107; cursor: pointer; font-size: 16px;">my_location</span>
+          <span class="material-icons delete-btn" title="Delete" 
+                style="color: #f44336; cursor: pointer; font-size: 16px;">delete</span>
+        </div>
+      </div>
     `;
 
-        const lockToggle = layerItem.querySelector('.lock-toggle');
-        lockToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (room.locked) {
-                room.locked = false;
-                lockToggle.textContent = 'lock_open';
-                lockToggle.style.color = '#fff';
-                layerItem.classList.remove('locked');
-            } else {
-                room.locked = true;
-                lockToggle.textContent = 'lock';
-                lockToggle.style.color = '#f44336';
-                layerItem.classList.add('locked');
-            }
-        });
+  // Visibility toggle
+  const visibilityToggle = layerItem.querySelector('.visibility-toggle');
+  visibilityToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    room.toggleVisibility();
+    visibilityToggle.textContent = room.visible ? 'visibility' : 'visibility_off';
+    visibilityToggle.style.color = room.visible ? '#fff' : '#666';
+    visibilityToggle.title = room.visible ? 'Hide' : 'Show';
+  });
+  
+  // Lock toggle
+  const lockToggle = layerItem.querySelector('.lock-toggle');
+  lockToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (room.locked) {
+      room.locked = false;
+      lockToggle.textContent = 'lock_open';
+      lockToggle.style.color = '#fff';
+      layerItem.classList.remove('locked');
+      lockToggle.title = 'Lock';
+    } else {
+      room.locked = true;
+      lockToggle.textContent = 'lock';
+      lockToggle.style.color = '#f44336';
+      layerItem.classList.add('locked');
+      lockToggle.title = 'Unlock';
+    }
+  });
 
 
         // Add hover effect
@@ -747,103 +1780,136 @@ class LayersPanel {
             }
         });
 
-        layerItem.addEventListener("mouseenter", () => {
-            const roomElement = document.getElementById(`room-${room.id}`);
-            if (roomElement) {
-                roomElement.classList.add("highlighted");
-                // Force reflow for polygon highlights
-                if (room.shape === "polygon") {
-                    roomElement.style.transform = "translateZ(0)";
-                }
-            }
-        });
+  // Add hover effect for highlighting room on canvas
+  layerItem.addEventListener('mouseenter', () => {
+    const roomElement = document.getElementById(`room-${room.id}`);
+    if (roomElement) {
+      roomElement.classList.add('highlighted');
+      // Force reflow for polygon highlights
+      if (room.shape === 'polygon') {
+        roomElement.style.transform = 'translateZ(0)';
+      }
+    }
+  });
+  
+  layerItem.addEventListener('mouseleave', () => {
+    const roomElement = document.getElementById(`room-${room.id}`);
+    if (roomElement) {
+      roomElement.classList.remove('highlighted');
+      // Reset transform
+      if (room.shape === 'polygon') {
+        roomElement.style.transform = '';
+      }
+    }
+  });
 
-        layerItem.addEventListener("mouseleave", () => {
-            const roomElement = document.getElementById(`room-${room.id}`);
-            if (roomElement) {
-                roomElement.classList.remove("highlighted");
-                // Reset transform
-                if (room.shape === "polygon") {
-                    roomElement.style.transform = "";
-                }
-            }
-        });
+  layerItem.addEventListener('click', (e) => {
+    // Don't trigger for clicks on controls
+    if (e.target.closest('.layer-controls')) return;
+    
+    // Remove selected class from all items
+    document.querySelectorAll('.layer-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+    
+    // Add selected class to this item
+    layerItem.classList.add('selected');
+    
+    // Update editor's selected room id
+    this.editor.selectedRoomId = room.id;
+    
+    // Highlight the room in the canvas
+    const roomElement = document.getElementById(`room-${room.id}`);
+    if (roomElement) {
+      roomElement.classList.add('selected-in-canvas');
+      
+      // Remove the highlight after a delay
+      setTimeout(() => {
+        roomElement.classList.remove('selected-in-canvas');
+      }, 1500);
+    }
+  });
 
-        layerItem.addEventListener('click', (e) => {
-            // Don't trigger for clicks on controls
-            if (e.target.closest('.layer-controls')) return;
-
-            // Remove selected class from all items
-            document.querySelectorAll('.layer-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-
-            // Add selected class to this item
-            layerItem.classList.add('selected');
-
-            // Update editor's selected room id
-            this.editor.selectedRoomId = room.id;
-
-            // Optionally, add any selection behaviors here
-            // For example, highlight the room in the canvas
-            const roomElement = document.getElementById(`room-${room.id}`);
-            if (roomElement) {
-                roomElement.classList.add('selected-in-canvas');
-
-                // Remove the highlight after a delay
-                setTimeout(() => {
-                    roomElement.classList.remove('selected-in-canvas');
-                }, 1500);
-            }
-        });
-
-        const visibilityToggle =
-            layerItem.querySelector(".visibility-toggle");
-        visibilityToggle.addEventListener("click", (e) => {
-            e.stopPropagation();
-            room.toggleVisibility();
-            visibilityToggle.textContent = room.visible
-                ? "visibility"
-                : "visibility_off";
-            visibilityToggle.style.color = room.visible ? "#fff" : "#666";
-        });
+        // const visibilityToggle =
+        //     layerItem.querySelector(".visibility-toggle");
+        // visibilityToggle.addEventListener("click", (e) => {
+        //     e.stopPropagation();
+        //     room.toggleVisibility();
+        //     visibilityToggle.textContent = room.visible
+        //         ? "visibility"
+        //         : "visibility_off";
+        //     visibilityToggle.style.color = room.visible ? "#fff" : "#666";
+        // });
 
 
 
-        layerItem
-            .querySelector(".edit-btn")
-            .addEventListener("click", (e) => {
-                e.stopPropagation();
-                if (room.locked) {
-                    this.editor.showLockedMessage();
-                    return;
-                }
-                this.showRenameDialog(room);
-            });
+  // Edit button
+  layerItem.querySelector('.edit-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (room.locked) {
+      this.editor.showLockedMessage();
+      return;
+    }
+    this.showPropertiesDialog(room);
+  });
 
-        layerItem
-            .querySelector(".delete-btn")
-            .addEventListener("click", (e) => {
-                e.stopPropagation();
-                if (room.locked) {
-                    this.editor.showLockedMessage();
-                    return;
-                }
-                this.editor.deleteRoom(room);
-            });
+// Locate button
+layerItem.querySelector('.locate-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Center the canvas on this room
+    const canvasRect = this.editor.canvas.getBoundingClientRect();
+    const centerX = canvasRect.width / 2;
+    const centerY = canvasRect.height / 2;
+    
+    const roomCenterX = room.bounds.x + room.bounds.width / 2;
+    const roomCenterY = room.bounds.y + room.bounds.height / 2;
+    
+    this.editor.offset.x = centerX - roomCenterX * this.editor.scale;
+    this.editor.offset.y = centerY - roomCenterY * this.editor.scale;
+    
+    this.editor.rooms.forEach(r => r.updateElement());
+    this.editor.updateMarkerPositions();
+    this.editor.render();
+    
+    // Highlight the room briefly
+    const roomElement = document.getElementById(`room-${room.id}`);
+    if (roomElement) {
+      roomElement.classList.add('highlight-pulse');
+      setTimeout(() => {
+        roomElement.classList.remove('highlight-pulse');
+      }, 1500);
+    }
+  });
+  
+  // Delete button
+  layerItem.querySelector('.delete-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (room.locked) {
+      this.editor.showLockedMessage();
+      return;
+    }
+    
+    // Confirm deletion
+    const confirmDelete = confirm(`Delete "${room.name}"?`);
+    if (confirmDelete) {
+      this.editor.deleteRoom(room);
+    }
+  });
 
-        // Add double-click handler for renaming
-        layerItem.addEventListener("dblclick", () => {
-            this.showRenameDialog(room);
-        });
+  // Add double-click handler for editing
+  layerItem.addEventListener('dblclick', () => {
+    if (!room.locked) {
+      this.showPropertiesDialog(room);
+    }
+  });
 
         return layerItem;
     }
 
 
-    // Updated showRenameDialog method for LayersPanel
 // Updated showRenameDialog method for LayersPanel
-async showRenameDialog(room) {
+// now the showPropertiesDialog
+async showPropertiesDialog(room) {
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Area Properties';
     
@@ -854,26 +1920,27 @@ async showRenameDialog(room) {
     const wallTextures = this.editor.resourceManager?.resources.textures.walls;
     const hasTextures = wallTextures && wallTextures.size > 0;
     const currentFolder = this.folders.find(folder => folder.rooms.includes(room));
-  
+    
     // Check for legacy texture setting
     const isLegacyTexture = room.name === "WallTexture";
     
     dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Basic info at the top -->
-        <sl-input 
-          id="roomNameInput" 
-          value="${room.name}" 
-          label="Area Name"
-        ></sl-input>
+        <!-- Name and folder in the same row -->
+        <div style="display: flex; gap: 8px; align-items: flex-end;">
+          <sl-input 
+            id="roomNameInput" 
+            value="${room.name}" 
+            label="Area Name"
+            style="flex: 1;"
+          ></sl-input>
   
-        <!-- Folder Selection -->
-        <div class="form-group">
-          <label for="folderSelect">Folder</label>
           <select 
             id="folderSelect" 
             class="native-select" 
-            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
+            aria-label="Folder"
+            style="width: 40%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
+            title="Assign to folder"
           >
             <option value="">No Folder</option>
             ${this.folders.map(folder => `
@@ -882,126 +1949,162 @@ async showRenameDialog(room) {
           </select>
         </div>
         
-        <!-- Tabbed interface -->
-        <sl-tab-group>
-          <!-- Tab 1: Properties -->
-          <sl-tab slot="nav" panel="properties">Properties</sl-tab>
-          <sl-tab-panel name="properties">
-            <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 0;">
-              <!-- Area Type Selection -->
-              <div class="form-group">
-                <label for="areaTypeSelect">Area Type</label>
-                <select 
-                  id="areaTypeSelect" 
-                  class="native-select" 
-                  style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
-                >
-                  <option value="wall" selected>Wall</option>
-                  <option value="water">Water Area</option>
-                </select>
-              </div>
-
-              <div id="typeChangeHelp" style="color: #666; font-size: 0.9em; margin-top: 4px; display: none;"></div>
-              
-              <!-- Wall Properties - Always visible initially -->
-              <div id="wallProperties">
-                ${hasTextures ? `
-                  <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                    <div style="margin-bottom: 16px;">
-                      <label style="display: block; margin-bottom: 8px; font-weight: bold;">Wall Properties</label>
-                      
-                      <!-- Wall Height Selector -->
-                      <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                          <sl-checkbox id="isRegularWall" 
-                            ${room.isRegularWall ? 'checked' : ''}
-                            ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
-                            Regular Wall (Full Height)
-                          </sl-checkbox>
-                        </div>
-                        
-                        <!-- Block height slider -->
-                        <sl-range 
-                          id="blockHeight" 
-                          label="Height" 
-                          min="0" max="101" 
-                          step="0.5" 
-                          tooltip="top" 
-                          value="${room.blockHeight || '0'}"
-                          help-text="0 = No raised block, 1 = 1 block, etc."
-                          style="margin-bottom: 16px;"
-                          ${room.isRegularWall ? 'disabled' : ''}
-                        ></sl-range>
-                      </div>
-                      
-                      <label style="display: block; margin: 16px 0 8px 0;">Texture:</label>
-                      <div style="max-height: 300px; overflow-y: auto; padding-right: 8px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
-                          ${Array.from(wallTextures.entries()).map(([id, texture]) => `
-                            <div class="texture-option" data-texture-id="${id}" 
-                              style="cursor: pointer; border: 2px solid ${assignedTextureId === id ? 'var(--sl-color-primary-600)' : 'transparent'}; 
-                              padding: 4px; border-radius: 4px; position: relative;">
-                              <img src="${texture.data}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 2px;">
-                              <div style="font-size: 0.8em; text-align: center; margin-top: 4px;">${texture.name}</div>
-                              ${assignedTextureId === id ? `
-                                <span class="material-icons" style="position: absolute; top: 4px; right: 4px; color: #4CAF50; 
-                                  background: rgba(0,0,0,0.5); border-radius: 50%; padding: 2px;">
-                                  check_circle
-                                </span>
-                              ` : ''}
-                            </div>
-                          `).join('')}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ` : '<p>No wall textures available</p>'}
-              </div>
-              
-              <!-- Water Properties - Initially hidden -->
-              <div id="waterProperties" style="display: none;">
-                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
-                  <div style="margin-bottom: 16px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Water Properties</label>
-                    
-                    <!-- Water Depth -->
-                    <sl-range 
-                      id="waterDepth" 
-                      label="Water Depth" 
-                      min="0.1" max="5" 
-                      step="0.1" 
-                      tooltip="top" 
-                      value="${room.waterDepth || '1.0'}"
-                      help-text="Deeper water appears darker and more opaque"
-                      style="margin-bottom: 16px;"
-                    ></sl-range>
-                    
-                    <!-- Water Color -->
-                    <sl-color-picker label="Water Color" value="${room.waterColor || '#4488aa'}" id="waterColor"></sl-color-picker>
-                  </div>
-                </div>
-              </div>
+        <!-- Accordion-style interface instead of tabs -->
+        <sl-details summary="Area Type & Properties" open>
+          <div style="padding: 8px 0; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Area Type Selection -->
+            <div class="form-group">
+              <label for="areaTypeSelect">Area Type</label>
+              <select 
+                id="areaTypeSelect" 
+                class="native-select" 
+                style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
+              >
+                <option value="wall" selected>Wall</option>
+                <option value="water">Water Area</option>
+                <option value="prop">Prop Placeholder</option>
+              </select>
             </div>
-          </sl-tab-panel>
-          
-          <!-- Tab 2: Advanced -->
-          <sl-tab slot="nav" panel="advanced">Advanced</sl-tab>
-          <sl-tab-panel name="advanced">
-            <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 0;">
-              <!-- Legacy options for rectangle rooms -->
-              ${room.shape === 'rectangle' ? `
-                <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+            
+            <!-- Wall properties with combined checkboxes -->
+            <div id="wallProperties">
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px;">
+                <sl-checkbox id="isRegularWall" 
+                  ${room.isRegularWall ? 'checked' : ''}
+                  ${room.blockHeight === 0 && room.type === 'wall' && !room.isRaisedBlock ? 'checked' : ''}>
+                  Full Height
+                </sl-checkbox>
+                
+                ${room.shape === 'rectangle' ? `
                   <sl-checkbox id="setAsTexture" ${isLegacyTexture ? 'checked' : ''}>
-                    Set as Wall Texture Source
+                    Legacy Texture
                   </sl-checkbox>
-                  <div style="color: #666; margin-top: 8px; font-size: 0.9em;">
-                    Legacy option for compatibility with older maps.
-                  </div>
-                </div>
-              ` : ''}
+                ` : ''}
+              </div>
+              
+              <sl-range 
+                id="blockHeight" 
+                label="Height" 
+                min="0" max="20" 
+                step="0.5" 
+                tooltip="top" 
+                value="${room.blockHeight || '0'}"
+                help-text="0 = Full height wall"
+                ${room.isRegularWall ? 'disabled' : ''}
+              ></sl-range>
             </div>
-          </sl-tab-panel>
-        </sl-tab-group>
+            
+            <div id="waterProperties" style="display: none;">
+              <sl-range 
+                id="waterDepth" 
+                label="Water Depth" 
+                min="0.1" max="3" 
+                step="0.1" 
+                tooltip="top" 
+                value="${room.waterDepth || '1.0'}"
+                help-text="Depth affects opacity"
+              ></sl-range>
+              
+              <sl-color-picker 
+                id="waterColor" 
+                label="Water Color" 
+                value="${room.waterColor || '#4488aa'}"
+              ></sl-color-picker>
+            </div>
+            
+            <div id="propProperties" style="display: none;">
+              <div style="color: #666; font-size: 0.9em; margin-bottom: 8px;">
+                Props are placed using the Prop tool in the toolbar.
+              </div>
+              
+              <sl-button id="createPropBtn" size="small">
+                <span slot="prefix" class="material-icons">add_circle</span>
+                Create Prop at Center
+              </sl-button>
+            </div>
+          </div>
+        </sl-details>
+        
+// Replace the entire texture section with this:
+<sl-details summary="Texture" ${hasTextures ? 'open' : ''}>
+  <div style="max-height: 200px; overflow-y: auto; padding: 8px 0;">
+    ${hasTextures ? `
+      <style>
+        /* Scoped styles to ensure consistency */
+        .texture-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          justify-content: space-between;
+        }
+        .texture-item {
+          width: 60px;
+          height: 80px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          border: 2px solid transparent;
+          border-radius: 4px;
+          padding: 3px;
+          cursor: pointer;
+          position: relative;
+        }
+        .texture-item.selected {
+          border-color: var(--sl-color-primary-600);
+          background-color: rgba(var(--sl-color-primary-500-rgb), 0.1);
+        }
+        .texture-image-container {
+          width: 50px;
+          height: 50px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 2px;
+          overflow: hidden;
+        }
+        .texture-image {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
+        }
+        .texture-name {
+          font-size: 9px;
+          text-align: center;
+          margin-top: 3px;
+          width: 100%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .texture-selected-icon {
+          position: absolute;
+          top: 0;
+          right: 0;
+          font-size: 12px;
+          background: rgba(0,0,0,0.5);
+          color: #4CAF50;
+          border-radius: 50%;
+          padding: 1px;
+        }
+      </style>
+      
+      <div class="texture-grid">
+        ${Array.from(wallTextures.entries()).map(([id, texture]) => `
+          <div class="texture-item ${assignedTextureId === id ? 'selected' : ''}" data-texture-id="${id}">
+            <div class="texture-image-container">
+              <img src="${texture.data}" class="texture-image" alt="${texture.name}">
+            </div>
+            <div class="texture-name">${texture.name}</div>
+            ${assignedTextureId === id ? `
+              <span class="material-icons texture-selected-icon">check_circle</span>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    ` : '<p>No wall textures available</p>'}
+  </div>
+</sl-details>
       </div>
       
       <div slot="footer">
@@ -1011,67 +2114,97 @@ async showRenameDialog(room) {
   
     document.body.appendChild(dialog);
   
+    // Show/hide property sections based on area type selection
+    const areaTypeSelect = dialog.querySelector('#areaTypeSelect');
+    const wallProperties = dialog.querySelector('#wallProperties');
+    const waterProperties = dialog.querySelector('#waterProperties');
+    const propProperties = dialog.querySelector('#propProperties');
+    
+    areaTypeSelect.addEventListener('change', (e) => {
+      const selectedType = e.target.value;
+      
+      // Hide all property sections first
+      wallProperties.style.display = 'none';
+      waterProperties.style.display = 'none';
+      propProperties.style.display = 'none';
+      
+      // Show the selected property section
+      if (selectedType === 'wall') {
+        wallProperties.style.display = 'block';
+      } else if (selectedType === 'water') {
+        waterProperties.style.display = 'block';
+      } else if (selectedType === 'prop') {
+        propProperties.style.display = 'block';
+      }
+    });
+    
+    // Handle regular wall checkbox toggling
+    const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
+    const blockHeightSlider = dialog.querySelector('#blockHeight');
+    
+    if (isRegularWallCheckbox && blockHeightSlider) {
+      isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+        blockHeightSlider.disabled = e.target.checked;
+        if (e.target.checked) {
+          blockHeightSlider.value = 0;
+        }
+      });
+    }
+    
+    // Handle texture selection
+    // const textureOptions = dialog.querySelectorAll('.texture-option');
+    // textureOptions.forEach(option => {
+    //   option.addEventListener('click', () => {
+    //     // Clear previous selections
+    //     textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
+        
+    //     // Set new selection
+    //     option.style.border = '2px solid var(--sl-color-primary-600)';
+        
+    //     // Store selected texture ID
+    //     dialog.selectedTextureId = option.dataset.textureId;
+    //   });
+    // });
+
+    // Texture selection handler
+const textureItems = dialog.querySelectorAll('.texture-item');
+textureItems.forEach(item => {
+  item.addEventListener('click', () => {
+    // Clear previous selections
+    textureItems.forEach(opt => opt.classList.remove('selected'));
+    
+    // Set new selection
+    item.classList.add('selected');
+    
+    // Store selected texture ID
+    dialog.selectedTextureId = item.dataset.textureId;
+  });
+});
+    
+    // Create prop button handler
+    const createPropBtn = dialog.querySelector('#createPropBtn');
+    if (createPropBtn) {
+      createPropBtn.addEventListener('click', () => {
+        const center = {
+          x: room.bounds.x + room.bounds.width/2,
+          y: room.bounds.y + room.bounds.height/2
+        };
+        
+        // Use the marker system to create a prop
+        this.editor.addMarker("prop", center.x, center.y);
+        
+        // Close the dialog
+        dialog.hide();
+      });
+    }
+  
     return new Promise((resolve) => {
       const nameInput = dialog.querySelector('#roomNameInput');
       const folderSelect = dialog.querySelector('#folderSelect');
       const setAsTextureCheckbox = dialog.querySelector('#setAsTexture');
-      const areaTypeSelect = dialog.querySelector('#areaTypeSelect');
       const saveBtn = dialog.querySelector('.save-btn');
       const cancelBtn = dialog.querySelector('.cancel-btn');
-      const isRegularWallCheckbox = dialog.querySelector('#isRegularWall');
-      const blockHeightSlider = dialog.querySelector('#blockHeight');
-      const waterDepthSlider = dialog.querySelector('#waterDepth');
-      const waterColorPicker = dialog.querySelector('#waterColor');
   
-      // Type selection changes visibility of properties sections
-      areaTypeSelect.addEventListener('change', (e) => {
-        const newType = e.target.value;
-        
-        // Toggle properties sections
-        const wallProperties = dialog.querySelector('#wallProperties');
-        const waterProperties = dialog.querySelector('#waterProperties');
-        
-        if (wallProperties) wallProperties.style.display = newType === 'wall' ? 'block' : 'none';
-        if (waterProperties) waterProperties.style.display = newType === 'water' ? 'block' : 'none';
-        
-        // Add help text about the type change
-        const helpText = dialog.querySelector('#typeChangeHelp');
-        if (helpText) {
-          if (newType === 'water') {
-            helpText.textContent = 'Converting to water area. Water depth controls how deep the water appears.';
-          } else {
-            helpText.textContent = 'Converting to wall. Block height controls how tall the wall appears.';
-          }
-          helpText.style.display = 'block';
-        }
-      });
-  
-      // Handle regular wall checkbox toggling
-      if (isRegularWallCheckbox && blockHeightSlider) {
-        isRegularWallCheckbox.addEventListener('sl-change', (e) => {
-          blockHeightSlider.disabled = e.target.checked;
-          if (e.target.checked) {
-            blockHeightSlider.value = 0; // Reset height when regular wall selected
-          }
-        });
-      }
-  
-      // Handle texture selection
-      const textureOptions = dialog.querySelectorAll('.texture-option');
-      textureOptions.forEach(option => {
-        option.addEventListener('click', () => {
-          // Clear previous selections
-          textureOptions.forEach(opt => opt.style.border = '2px solid transparent');
-          
-          // Set new selection
-          option.style.border = '2px solid var(--sl-color-primary-600)';
-          
-          // Store selected texture ID
-          dialog.selectedTextureId = option.dataset.textureId;
-        });
-      });
-  
-      // Handle save button
       const handleSave = () => {
         const newName = nameInput.value.trim();
         if (newName) {
@@ -1084,27 +2217,34 @@ async showRenameDialog(room) {
           
           // Handle property-specific settings
           if (newType === 'wall') {
-  // Wall settings - make extra sure these are properly set
-  const heightValue = parseFloat(blockHeightSlider.value);
-  
-  // Handle regular walls vs. raised blocks
-  if (isRegularWallCheckbox.checked) {
-    room.isRegularWall = true;
-    room.isRaisedBlock = false;
-    room.blockHeight = 0;
-    console.log("Setting as regular (full height) wall");
-  } else {
-    room.isRegularWall = false;
-    room.isRaisedBlock = heightValue > 0;
-    room.blockHeight = heightValue;
-    console.log(`Setting as raised block with height: ${heightValue}`);
-  }
+            // Wall settings - make extra sure these are properly set
+            const heightValue = parseFloat(blockHeightSlider.value);
+            
+            // Handle regular walls vs. raised blocks
+            if (isRegularWallCheckbox.checked) {
+              room.isRegularWall = true;
+              room.isRaisedBlock = false;
+              room.blockHeight = 0;
+              console.log("Setting as regular (full height) wall");
+            } else {
+              room.isRegularWall = false;
+              room.isRaisedBlock = heightValue > 0;
+              room.blockHeight = heightValue;
+              console.log(`Setting as raised block with height: ${heightValue}`);
+            }
             
             // Remove water properties
             delete room.waterDepth;
             delete room.waterColor;
+            
+            // Remove water visual style
+            if (room.element) {
+              room.element.classList.remove('water-area');
+              room.element.style.backgroundColor = "";
+              room.element.style.border = "";
+            }
           } 
-          if (newType === 'water') {
+          else if (newType === 'water') {
             // Set BOTH the type AND the name for maximum compatibility
             room.type = 'water';
             room.isWaterArea = true;
@@ -1115,8 +2255,22 @@ async showRenameDialog(room) {
             }
             
             // Store water properties
-            room.waterDepth = parseFloat(waterDepthSlider.value);
-            room.waterColor = waterColorPicker.value;
+            room.waterDepth = parseFloat(dialog.querySelector('#waterDepth').value);
+            room.waterColor = dialog.querySelector('#waterColor').value;
+            
+            // Apply water styling
+            if (room.element) {
+              room.element.classList.add('water-area');
+              
+              // Convert hex to rgba for styling
+              const hex = room.waterColor.replace('#', '');
+              const r = parseInt(hex.substring(0, 2), 16);
+              const g = parseInt(hex.substring(2, 4), 16);
+              const b = parseInt(hex.substring(4, 6), 16);
+              
+              room.element.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${room.waterDepth * 0.2})`;
+              room.element.style.border = `1px solid rgba(${r}, ${g}, ${b}, 0.7)`;
+            }
           }
   
           // Handle texture assignment
@@ -1147,12 +2301,6 @@ async showRenameDialog(room) {
             
             if (room.type === 'water') {
               room.element.classList.add('water-area');
-              room.element.style.backgroundColor = "rgba(0, 100, 255, 0.3)";
-              room.element.style.border = "1px solid rgba(0, 150, 255, 0.7)";
-            } else {
-              room.element.classList.remove('water-area');
-              room.element.style.backgroundColor = "";
-              room.element.style.border = "";
             }
           }
   

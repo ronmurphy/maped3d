@@ -216,7 +216,7 @@ class Room {
 
 
     controls.querySelector(".edit-btn").addEventListener("click", () => {
-      editor.layersPanel.showRenameDialog(this);
+      editor.layersPanel.showPropertiesDialog(this);
     });
 
     controls
