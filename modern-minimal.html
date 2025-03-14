@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en" class="modern-theme">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DnD Map Editor</title>
+    
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/rpg-awesome.min.css">
+
+  <!-- Include WindowManager before other scripts -->
+  <!-- <script src="js/classes/WindowManager.js"></script> -->
+
+  <!-- Load Shoelace components -->
+  <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/dark.css"> -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/themes/light.css" />
+
+  <script src="https://kit.fontawesome.com/187c1afb2a.js" crossorigin="anonymous"></script>
+
+  <!-- Load required Shoelace components -->
+  <script type="module">
+    import { setBasePath } from "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/utilities/base-path.js";
+    setBasePath(
+      "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/"
+    );
+  </script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/button/button.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/button-group/button-group.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/dialog/dialog.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/drawer/drawer.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/icon/icon.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/input/input.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/tooltip/tooltip.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/tab/tab.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/tab-group/tab-group.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/tab-panel/tab-panel.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/drawer/drawer.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/progress-bar/progress-bar.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/radio/radio.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/radio-group/radio-group.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/checkbox/checkbox.js"></script>
+
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/select/select.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/option/option.js"></script>
+
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/range/range.js"></script>
+
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/switch/switch.js"></script>
+
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/alert/alert.js"></script>
+  <!-- html2canvas-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- Three.js  r128, needs it's one pointerlockcontrols-->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script> -->
+
+  <!-- working also 138.8-->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.138.3/three.min.js"></script>
+
+  <!-- working 148 -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.148.0/three.min.js"></script>
+
+  <!-- 158 works, colors slightly washed out-->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script> -->
+
+  <!-- 160.1 last working version i three.min.js file format-->
+  <!-- colors still look washed out-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.1/three.min.js"></script>
+
+  <!-- this is pretty much universal, keep it here-->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/controls/PointerLockControls.js"></script>
+
+  <!-- fps counter -->
+  <!-- <script src="https://mrdoob.github.io/stats.js/build/stats.min.js"></script> -->
+
+
+  <!-- Core Dependencies -->
+  <script src="js/classes/Token.js"></script>
+  <script src="js/classes/Room.js"></script>
+
+  <!-- Resource Management -->
+  <script src="js/classes/resource-manager.js"></script>
+  <script src="js/classes/texture-manager.js"></script>
+
+  <!-- UI and Control Classes -->
+  <script src="js/classes/LayersPanel.js"></script>
+  <!-- Physics -->
+  <script src="js/classes/PhysicsController.js"></script>
+
+  <!-- Add post-processing scripts -->
+  <script src="js/classes/GameMenu.js"></script>
+  <!-- <script src="js/classes/VisualEffectsManager.js"></script> -->
+  <script src="js/classes/day-night-cycle.js"></script>
+  <script src="js/classes/Scene3DController.js"></script>
+  <script src="js/classes/MonsterManager.js"></script>
+  <script src="js/classes/ShaderEffectsManager.js"></script>
+
+  <!-- Main Editor Class -->
+  <script src="js/classes/MapEditor.js"></script>
+  <script src="js/classes/Storyboard.js"></script>
+
+  <!-- Add party and combat systems -->
+  <script src="js/classes/PartyManager.js"></script>
+  <script src="js/classes/CombatSystem.js"></script>
+  <script src="js/classes/DungeonGenerator.js"></script>
+  <script src="js/classes/ShapeForge.js"></script>
+  
+  <!-- fps-->
+  <script src="js/libs/stats.min.js"></script>
+
+  <!-- Initialize Everything -->
+  <script src="js/main.js"></script>
+
+    
+    <style>
+        :root {
+            --app-bg: #1e1e1e;
+            --panel-bg: #252526;
+            --header-bg: #333333;
+            --accent-color: #0078d7;
+            --text-color: #e0e0e0;
+            --border-color: #3c3c3c;
+            --hover-bg: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--app-bg);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .modern-app-container {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            grid-template-columns: minmax(250px, 20%) 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .modern-header {
+            grid-column: 1 / -1;
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: 48px;
+        }
+        
+        .modern-sidebar {
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s;
+        }
+        
+        .sidebar-toggle {
+            position: absolute;
+            left: 250px;
+            top: 60px;
+            z-index: 100;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+            padding: 8px 2px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        
+        .modern-section {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modern-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+        
+        .modern-tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+            gap: 8px;
+        }
+        
+        .modern-tool-button {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .modern-tool-button:hover {
+            background-color: var(--hover-bg);
+            border-color: var(--border-color);
+        }
+        
+        .modern-tool-button.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .modern-canvas-container {
+            background-color: var(--app-bg);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modern-layers-panel {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modern-layers-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        
+        /* Maintain compatibility with existing CSS classes */
+        .modern-app-container .app-container,
+        .modern-app-container .header,
+        .modern-app-container .sidebar,
+        .modern-app-container .layers-panel,
+        .modern-app-container #layersList {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Original structure (hidden but maintained for compatibility) -->
+    <div class="app-container">
+        <!-- Original content here (kept for compatibility) -->
+    </div>
+    
+    <!-- Modern UI -->
+    <div class="modern-app-container">
+        <header class="modern-header">
+            <!-- File Operations (matching original IDs) -->
+            <sl-button-group>
+                <sl-tooltip content="Open Maps" placement="bottom">
+                    <sl-button size="medium" variant="primary" id="openMapBtn">
+                        <span class="material-icons">map</span>
+                    </sl-button>
+                </sl-tooltip>
+                <sl-tooltip content="Save Project" placement="bottom">
+                    <sl-button size="medium" variant="primary" id="saveProjectBtn">
+                        <span class="material-icons">save</span>
+                    </sl-button>
+                </sl-tooltip>
+            </sl-button-group>
+            
+            <!-- Central Title (matching original ID) -->
+            <div class="modern-title" id="mapTitle">
+                <span id="mapTitleText">MapEd 3D</span>
+                <span class="material-icons">edit</span>
+            </div>
+            
+            <!-- Tools (matching original IDs) -->
+            <div class="modern-tool-bar" style="display: flex; gap: 4px; margin-left: auto;">
+                <sl-tooltip content="Rectangle [R]" placement="bottom">
+                    <sl-button size="small" id="selectTool">
+                        <span class="material-icons">crop_square</span>
+                    </sl-button>
+                </sl-tooltip>
+                <sl-tooltip content="Circle [C]" placement="bottom">
+                    <sl-button size="small" id="circleTool">
+                        <span class="material-icons">circle</span>
+                    </sl-button>
+                </sl-tooltip>
+                <sl-tooltip content="Wall [W]" placement="bottom">
+                    <sl-button size="small" id="wallTool">
+                        <span class="material-icons">account_tree</span>
+                    </sl-button>
+                </sl-tooltip>
+                
+                <sl-divider style="margin: 0 8px;"></sl-divider>
+                
+                <!-- More buttons with original IDs -->
+                <sl-tooltip content="3D Preferences" placement="bottom">
+                    <sl-button size="small" id="preferencesBtn">
+                        <span class="material-icons">settings</span>
+                    </sl-button>
+                </sl-tooltip>
+                <sl-tooltip content="Resource Manager" placement="bottom">
+                    <sl-button size="small" id="resourceManagerBtn">
+                        <span class="material-icons">palette</span>
+                    </sl-button>
+                </sl-tooltip>
+                <sl-tooltip content="View in 3D" placement="bottom">
+                    <sl-button size="small" variant="primary" id="create3d">
+                        <span class="material-icons">view_in_ar</span>
+                    </sl-button>
+                </sl-tooltip>
+            </div>
+        </header>
+        
+        <!-- Sidebar Toggle -->
+        <button class="sidebar-toggle">
+            <span class="material-icons">chevron_left</span>
+        </button>
+        
+        <!-- Sidebar with original IDs -->
+        <aside class="modern-sidebar">
+            <!-- Marker Tools Section -->
+            <div class="modern-section">
+                <div class="modern-section-title">Map Markers</div>
+                <div class="modern-tool-grid marker-tools">
+                    <!-- Player Start -->
+                    <div class="modern-tool-button" id="playerStartTool" title="Player Start">
+                        <span class="material-icons">person_pin_circle</span>
+                    </div>
+                    <!-- All other marker tools with original IDs -->
+                    <div class="modern-tool-button" id="encounterTool" title="Add Encounter">
+                        <span class="material-icons">local_fire_department</span>
+                    </div>
+                    <div class="modern-tool-button" id="treasureTool" title="Add Treasure">
+                        <span class="material-icons">workspace_premium</span>
+                    </div>
+                    <div class="modern-tool-button" id="trapTool" title="Add Trap">
+                        <span class="material-icons">warning</span>
+                    </div>
+                    <div class="modern-tool-button" id="teleportTool" title="Add Teleport">
+                        <span class="material-icons">swap_calls</span>
+                    </div>
+                    <div class="modern-tool-button" id="doorTool" title="Add Door">
+                        <span class="material-icons">door_front</span>
+                    </div>
+                    <div class="modern-tool-button" id="propTool" title="Add Prop">
+                        <span class="material-icons">category</span>
+                    </div>
+                    <div class="modern-tool-button" id="splashArtTool" title="Add Splash Art">
+                        <span class="material-icons">add_photo_alternate</span>
+                    </div>
+                    <div class="modern-tool-button" id="storyboardTriggerTool" title="Add Story Trigger">
+                        <span class="material-icons">auto_stories</span>
+                    </div>
+                    <div class="modern-tool-button" id="dungeonTool" title="Add Dungeon">
+                        <span class="material-icons">castle</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Layers Panel (with original IDs) -->
+            <div class="modern-layers-panel layers-panel">
+                <div class="modern-section-title tool-section-title">Rooms
+                    <!-- Add the New Folder button here -->
+                </div>
+                <div class="modern-layers-list" id="layersList">
+                    <!-- Room layers will be added here dynamically -->
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Canvas with original IDs -->
+        <main class="modern-canvas-container canvas-container">
+            <div id="canvasWrapper" style="width: 100%; height: 100%; overflow: auto; background-image: url('images/texture_07.png');">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Toggle sidebar
+        document.querySelector('.sidebar-toggle').addEventListener('click', function() {
+            const sidebar = document.querySelector('.modern-sidebar');
+            const toggle = document.querySelector('.sidebar-toggle');
+            
+            if (sidebar.style.width === '50px') {
+                sidebar.style.width = '';
+                toggle.innerHTML = '<span class="material-icons">chevron_left</span>';
+                toggle.style.left = '250px';
+            } else {
+                sidebar.style.width = '50px';
+                toggle.innerHTML = '<span class="material-icons">chevron_right</span>';
+                toggle.style.left = '50px';
+            }
+        });
+    </script>
+</body>
+</html>
