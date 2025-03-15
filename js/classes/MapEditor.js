@@ -65,6 +65,58 @@ class MapEditor {
   }
 
 
+  getMapWidth() {
+    // If using a background image, get its dimensions
+    if (this.baseImage) {
+      return this.baseImage.width;
+    }
+    
+    // Alternative: Get the width from the map bounds
+    const rooms = this.rooms || [];
+    if (rooms.length > 0) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      
+      rooms.forEach(room => {
+        const bounds = room.bounds;
+        minX = Math.min(minX, bounds.x);
+        maxX = Math.max(maxX, bounds.x + bounds.width);
+      });
+      
+      return maxX - minX;
+    }
+    
+    // Default fallback size
+    return 1000;
+  }
+  
+  getMapHeight() {
+    // If using a background image, get its dimensions
+    if (this.baseImage) {
+      return this.baseImage.height;
+    }
+    
+    // Alternative: Get the height from the map bounds
+    const rooms = this.rooms || [];
+    if (rooms.length > 0) {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      
+      rooms.forEach(room => {
+        const bounds = room.bounds;
+        minY = Math.min(minY, bounds.y);
+        maxY = Math.max(maxY, bounds.y + bounds.height);
+      });
+      
+      return maxY - minY;
+    }
+    
+    // Default fallback size
+    return 1000;
+  }
+
+
+
   initShapeForge() {
     // Only initialize if ShapeForge class exists and we have the resourceManager
     if (window.ShapeForge && this.resourceManager) {
@@ -5447,7 +5499,7 @@ if (type === "door") {
     
         
     return `
-      <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-direction: column;">
         <div style="text-align: center; padding: 12px;">
           <span class="material-icons" style="font-size: 48px; color: ${waterColor};">water_drop</span>
           <div style="margin-top: 8px; font-weight: bold;">Water Surface</div>
@@ -5456,7 +5508,6 @@ if (type === "door") {
           </div>
         </div>
         
-        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
           <style>
             /* Preview styles */
             .water-preview {
@@ -5498,9 +5549,25 @@ if (type === "door") {
                style="background-color: rgba(${this.hexToRgb(waterColor)}, ${transparency});">
           </div>
           
-          <sl-switch id="water-orientation" ${isHorizontal ? 'checked' : ''}>
-            <span style="margin-right: 8px;">Horizontal Surface</span>
-          </sl-switch>
+<div style="display: flex; flex-direction: row; gap: 12px; align-items: center; margin-bottom: 12px;">
+  <sl-switch id="water-orientation" ${isHorizontal ? 'checked' : ''} style="min-width: 0;">
+    <span style="font-size: 0.9em;">Horizontal</span>
+  </sl-switch>
+  
+  <sl-switch id="match-map-width" ${marker.data.water?.matchMapWidth ? 'checked' : ''} style="min-width: 0;">
+    <span style="font-size: 0.9em;">Map Width</span>
+  </sl-switch>
+  
+  <sl-switch id="match-map-height" ${marker.data.water?.matchMapHeight ? 'checked' : ''} style="min-width: 0;">
+    <span style="font-size: 0.9em;">Map Height</span>
+  </sl-switch>
+
+</div>
+
+  <div style="color: #666; font-size: 0.8em; margin-bottom: 0px;">
+  Surface type and auto-sizing options
+</div>
+
           
           <sl-color-picker id="water-color" label="Water Color" value="${waterColor}" 
                            style="margin-top: 12px; width: 100%;"></sl-color-picker>
@@ -5519,11 +5586,9 @@ if (type === "door") {
                     style="margin-top: 12px;">
             <div slot="help-text">Controls water opacity</div>
           </sl-range>
-        </div>
       </div>
 
               <!-- Add size controls -->
-        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
           <h4 style="margin-top: 0; margin-bottom: 12px;">Size & Dimensions</h4>
           
           <sl-range id="water-width" label="Width" min="10" max="1000" step="10" value="${width}"
@@ -5540,7 +5605,6 @@ if (type === "door") {
                   style="margin-top: 12px;">
             <div slot="help-text">Overall scaling factor</div>
           </sl-range>
-        </div>
       </div>
     `;
   } else {
@@ -6199,6 +6263,10 @@ if (type === "door") {
       const heightSlider = dialog.querySelector('#water-height');
       const scaleSlider = dialog.querySelector('#water-scale');
       
+
+      const matchWidthToggle = dialog.querySelector('#match-map-width');
+const matchHeightToggle = dialog.querySelector('#match-map-height');
+
       // Initialize water object if not present
       if (!marker.data.water) {
         marker.data.water = {
@@ -6209,23 +6277,7 @@ if (type === "door") {
         };
       }
 
-      
-      
-      // Helper to update the preview
-      // const updatePreview = () => {
-      //   if (!preview) return;
-        
-      //   const isHorizontal = orientationSwitch.checked;
-      //   const color = colorPicker.value;
-      //   const transparency = transparencySlider.value;
-        
-      //   preview.className = `water-preview ${isHorizontal ? 'horizontal-preview' : 'vertical-preview'}`;
-      //   preview.style.backgroundColor = `rgba(${this.hexToRgb(color)}, ${transparency})`;
-        
-      //   // Update animation speed based on flow speed
-      //   const flowSpeed = flowSlider.value;
-      //   preview.style.animationDuration = `${2/flowSpeed}s`;
-      // };
+
 
       const updatePreview = () => {
         if (!preview) return;
@@ -6344,6 +6396,60 @@ if (type === "door") {
           }
 
           updatePreview();
+        });
+      }
+
+      if (matchWidthToggle) {
+        matchWidthToggle.addEventListener('sl-change', (e) => {
+          if (!marker.data.water) marker.data.water = {};
+          marker.data.water.matchMapWidth = e.target.checked;
+          
+          // If enabled, set the width
+          if (e.target.checked) {
+            // Get map width (this depends on how your map dimensions are stored)
+            const mapWidth = this.getMapWidth(); // You'll need to implement this function
+            marker.data.prop.width = mapWidth;
+            
+            // Update width slider if present
+            const widthSlider = dialog.querySelector('#water-width');
+            if (widthSlider) {
+              widthSlider.value = mapWidth;
+              widthSlider.disabled = e.target.checked; // Disable slider when match is enabled
+            }
+          } else {
+            // Re-enable width slider
+            const widthSlider = dialog.querySelector('#water-width');
+            if (widthSlider) {
+              widthSlider.disabled = false;
+            }
+          }
+        });
+      }
+      
+      if (matchHeightToggle) {
+        matchHeightToggle.addEventListener('sl-change', (e) => {
+          if (!marker.data.water) marker.data.water = {};
+          marker.data.water.matchMapHeight = e.target.checked;
+          
+          // If enabled, set the height
+          if (e.target.checked) {
+            // Get map height
+            const mapHeight = this.getMapHeight(); // You'll need to implement this function
+            marker.data.prop.height = mapHeight;
+            
+            // Update height slider if present
+            const heightSlider = dialog.querySelector('#water-height');
+            if (heightSlider) {
+              heightSlider.value = mapHeight;
+              heightSlider.disabled = e.target.checked;
+            }
+          } else {
+            // Re-enable height slider
+            const heightSlider = dialog.querySelector('#water-height');
+            if (heightSlider) {
+              heightSlider.disabled = false;
+            }
+          }
         });
       }
 

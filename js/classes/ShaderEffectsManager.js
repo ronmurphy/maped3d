@@ -90,27 +90,7 @@ class ShaderEffectsManager {
       create: this.createHolyEffect.bind(this)
     });
     
-    // Area effects
-    // this.registerEffectType('water', {
-    //   keywords: ['water', 'ocean', 'sea', 'lake', 'pond', 'river', 'stream', 'shoreline'],
-    //   create: this.createWaterEffect.bind(this),
-    //   isAreaEffect: true,
-    //   low: {
-    //     waveHeight: 0.05,
-    //     waveSpeed: 0.5,
-    //     detailLevel: 1
-    //   },
-    //   medium: {
-    //     waveHeight: 0.1,
-    //     waveSpeed: 1.0,
-    //     detailLevel: 2
-    //   },
-    //   high: {
-    //     waveHeight: 0.2,
-    //     waveSpeed: 1.5,
-    //     detailLevel: 3
-    //   }
-    // });
+
 
 this.registerEffectType('waterProp', {
   keywords: ['waterProp'],
@@ -123,9 +103,10 @@ this.registerEffectType('waterProp', {
   create: this.createWaterPropEffect.bind(this),
   // Settings for different quality levels
   low: {
-    maxIterations: 3,
-    waveSpeed: 0.7,
-    useParticles: false
+    maxIterations: 2,
+    waveSpeed: 0.5,
+    useParticles: false,
+    useShader:true
   },
   medium: {
     maxIterations: 5,
@@ -452,6 +433,8 @@ createWaterPropEffect(object, definition, qualityLevel = 'medium') {
   const waterDepth = markerData.water?.depth || 1.0;
   const flowSpeed = markerData.water?.flowSpeed || 1.0;
   const transparency = markerData.water?.transparency || 0.7;
+
+  
   
   // Convert hex color to THREE.js color if provided
   let waterColor = new THREE.Color(definition.color);
@@ -587,6 +570,36 @@ createWaterPropEffect(object, definition, qualityLevel = 'medium') {
     transparent: true,
     side: THREE.DoubleSide
   });
+
+    // Simpler shader for low quality
+    if (qualityLevel === 'low') {
+      // Use a simpler fragment shader
+      waterMaterial.fragmentShader = `
+        uniform float time;
+        uniform vec3 baseColor;
+        uniform float transparency;
+        uniform float isHorizontal;
+        
+        varying vec2 vUv;
+        
+        void main() {
+          // Simple water color with subtle animation
+          vec3 waterColor = baseColor;
+          
+          if (isHorizontal > 0.5) {
+            // Simple horizontal water
+            float wave = sin(vUv.x * 10.0 + time) * 0.5 + 0.5;
+            waterColor += vec3(0.0, 0.1, 0.2) * wave;
+          } else {
+            // Simple vertical water
+            float flow = sin(vUv.y * 20.0 - time * 2.0) * 0.5 + 0.5;
+            waterColor += vec3(0.0, 0.05, 0.1) * flow;
+          }
+          
+          gl_FragColor = vec4(waterColor, transparency);
+        }
+      `;
+    }
   
   // Create geometry based on water prop dimensions
   const width = (object.userData.prop?.width || 48) / 50;
@@ -595,18 +608,32 @@ createWaterPropEffect(object, definition, qualityLevel = 'medium') {
   
   let waterGeometry;
   
-  if (isHorizontal) {
-    // Horizontal water surface (pond/lake/ocean)
-    // Higher detail for better waves
-    const detail = qualityLevel === 'high' ? 32 : (qualityLevel === 'medium' ? 16 : 8);
-    waterGeometry = new THREE.PlaneGeometry(width, width, detail, detail);
-    waterGeometry.rotateX(-Math.PI / 2); // Rotate to lay flat
-  } else {
-    // Vertical water surface (waterfall)
-    waterGeometry = new THREE.PlaneGeometry(width, height, 8, 16);
-    // Keep vertical orientation
-  }
+  // if (isHorizontal) {
+  //   // Horizontal water surface (pond/lake/ocean)
+  //   // Higher detail for better waves
+  //   const detail = qualityLevel === 'high' ? 32 : (qualityLevel === 'medium' ? 16 : 8);
+  //   waterGeometry = new THREE.PlaneGeometry(width, width, detail, detail);
+  //   waterGeometry.rotateX(-Math.PI / 2); // Rotate to lay flat
+  // } else {
+  //   // Vertical water surface (waterfall)
+  //   waterGeometry = new THREE.PlaneGeometry(width, height, 8, 16);
+  //   // Keep vertical orientation
+  // }
   
+
+  if (object.userData.water?.matchMapWidth || object.userData.water?.matchMapHeight) {
+    // Increase detail for large water surfaces
+    const detail = qualityLevel === 'high' ? 64 : (qualityLevel === 'medium' ? 32 : 16);
+    
+    if (isHorizontal) {
+      waterGeometry = new THREE.PlaneGeometry(width, width, detail, detail);
+      waterGeometry.rotateX(-Math.PI / 2);
+    } else {
+      waterGeometry = new THREE.PlaneGeometry(width, height, detail/2, detail);
+    }
+  }
+
+
   // Create water mesh
   const waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
   
