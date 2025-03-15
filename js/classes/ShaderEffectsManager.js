@@ -97,6 +97,7 @@ this.registerEffectType('waterProp', {
   color: 0x4488aa,
   intensity: 0.8,
   distance: 4,
+  forceShowOnLow: true,
   particleCount: 12,
   particleSize: 0.03,
   isAreaEffect: false,
@@ -2488,16 +2489,33 @@ getParticleTexture() {
     let waterEffectsCount = 0;
   
     // Update standard effects
-    this.effects.forEach((effectData, objectId) => {
-      if (effectData.type === 'waterProp') {
-        waterEffectsCount++;
-      }
-      this.updateEffect(effectData, deltaTime);
-    });
+    // this.effects.forEach((effectData, objectId) => {
+    //   if (effectData.type === 'waterProp') {
+    //     waterEffectsCount++;
+    //   }
+    //   this.updateEffect(effectData, deltaTime);
+    // });
     
-    if (waterEffectsCount > 0) {
-      console.log(`Updating ${waterEffectsCount} water prop effects`);
+    // if (waterEffectsCount > 0) {
+    //   console.log(`Updating ${waterEffectsCount} water prop effects`);
+    // }
+
+      // Update standard effects
+  this.effects.forEach((effectData, objectId) => {
+    if (effectData.type === 'waterProp') {
+      waterEffectsCount++;
+      console.log(`Updating waterProp effect, quality: ${this.qualityLevel}`);
+      console.log('Container visible:', effectData.container?.visible);
+      console.log('Mesh visible:', effectData.mesh?.visible);
     }
+    this.updateEffect(effectData, deltaTime);
+  });
+  
+  if (waterEffectsCount > 0) {
+    console.log(`Updated ${waterEffectsCount} water prop effects`);
+  } else if (this.qualityLevel === 'low') {
+    console.log('No water prop effects found, quality is low');
+  }
     
     // Update standard effects
     this.effects.forEach((effectData, objectId) => {
@@ -2533,6 +2551,14 @@ getParticleTexture() {
  * @param {number} deltaTime - Time since last frame
  */
 updateEffect(effectData, deltaTime) {
+
+  if (this.qualityLevel === 'low' && 
+    !effectData.definition?.forceShowOnLow && 
+    effectData.type !== 'waterProp') {
+  // Skip complex effects on low quality
+  return;
+}
+
   if (!effectData.animationData) return;
   
   // Update animation time
