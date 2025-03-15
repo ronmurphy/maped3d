@@ -1535,7 +1535,7 @@ sl-tooltip {
   .horizontal-water {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-    height: auto !important; /* Override inline height for horizontal water */
+    /* height: auto !important; Override inline height for horizontal water */
     min-height: 10px;
   }
   

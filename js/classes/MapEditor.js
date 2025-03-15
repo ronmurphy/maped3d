@@ -6552,7 +6552,8 @@ if (type === "door") {
   
   // Get dimensions - use stored dimensions if available, otherwise defaults
   const width = marker.data.prop?.width || 48 * scale;
-  const height = isHorizontal ? Math.min(width/3, 16 * scale) : 48 * scale;
+  // const height = isHorizontal ? Math.min(width/3, 16 * scale) : 48 * scale;
+  const height = marker.data.prop?.height || (isHorizontal ? 24 * scale : 48 * scale);
   
   // Update class for water animation
   propVisual.className = `prop-visual water-prop ${isHorizontal ? 'horizontal-water' : 'vertical-water'}`;
