@@ -454,152 +454,304 @@ createWaterPropEffect(object, definition, qualityLevel = 'medium') {
   // Add to scene
   this.scene3D.scene.add(container);
   
-  // Create water shader material
-  const waterMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      time: { value: 0 },
-      resolution: { value: new THREE.Vector2(512, 512) }, // Default resolution
-      baseColor: { value: waterColor },
-      flowSpeed: { value: flowSpeed },
-      transparency: { value: transparency },
-      isHorizontal: { value: isHorizontal ? 1.0 : 0.0 },
-      maxIterations: { value: settings.maxIterations || 5 },
-      intensity: { value: 0.005 * waterDepth }
-    },
-    vertexShader: `
-      uniform float time;
-      uniform float flowSpeed;
-      uniform float isHorizontal;
-      varying vec2 vUv;
-      varying vec3 vPosition;
+  // // Create water shader material
+  // const waterMaterial = new THREE.ShaderMaterial({
+  //   uniforms: {
+  //     time: { value: 0 },
+  //     resolution: { value: new THREE.Vector2(512, 512) }, // Default resolution
+  //     baseColor: { value: waterColor },
+  //     flowSpeed: { value: flowSpeed },
+  //     transparency: { value: transparency },
+  //     isHorizontal: { value: isHorizontal ? 1.0 : 0.0 },
+  //     maxIterations: { value: settings.maxIterations || 5 },
+  //     intensity: { value: 0.005 * waterDepth }
+  //   },
+  //   vertexShader: `
+  //     uniform float time;
+  //     uniform float flowSpeed;
+  //     uniform float isHorizontal;
+  //     varying vec2 vUv;
+  //     varying vec3 vPosition;
       
-      void main() {
-        vUv = uv;
-        vPosition = position;
+  //     void main() {
+  //       vUv = uv;
+  //       vPosition = position;
         
-        // Add subtle wave movement for horizontal water
-        vec3 newPosition = position;
+  //       // Add subtle wave movement for horizontal water
+  //       vec3 newPosition = position;
         
-        if (isHorizontal > 0.5) {
-          float wave = sin(position.x * 2.0 + time * flowSpeed) * 
-                     cos(position.z * 2.0 + time * flowSpeed * 0.8) * 0.05;
+  //       if (isHorizontal > 0.5) {
+  //         float wave = sin(position.x * 2.0 + time * flowSpeed) * 
+  //                    cos(position.z * 2.0 + time * flowSpeed * 0.8) * 0.05;
           
-          newPosition.y += wave;
-        }
+  //         newPosition.y += wave;
+  //       }
         
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float time;
-      uniform vec2 resolution;
-      uniform vec3 baseColor;
-      uniform float flowSpeed;
-      uniform float transparency;
-      uniform float isHorizontal;
-      uniform int maxIterations;
-      uniform float intensity;
+  //       gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+  //     }
+  //   `,
+  //   fragmentShader: `
+  //     uniform float time;
+  //     uniform vec2 resolution;
+  //     uniform vec3 baseColor;
+  //     uniform float flowSpeed;
+  //     uniform float transparency;
+  //     uniform float isHorizontal;
+  //     uniform int maxIterations;
+  //     uniform float intensity;
       
-      varying vec2 vUv;
-      varying vec3 vPosition;
+  //     varying vec2 vUv;
+  //     varying vec3 vPosition;
       
-      #define TAU 6.28318530718
+  //     #define TAU 6.28318530718
       
-      void main() {
-        vec2 uv = vUv;
+  //     void main() {
+  //       vec2 uv = vUv;
         
-        // Horizontal water uses the Shadertoy effect
-        if (isHorizontal > 0.5) {
-          // Adapted from Shadertoy
-          float waterTime = time * 0.5 * flowSpeed;
+  //       // Horizontal water uses the Shadertoy effect
+  //       if (isHorizontal > 0.5) {
+  //         // Adapted from Shadertoy
+  //         float waterTime = time * 0.5 * flowSpeed;
           
-          // Modify p to avoid tiling artifacts
-          vec2 p = mod(uv * TAU, TAU) - 250.0;
-          vec2 i = vec2(p);
-          float c = 1.0;
+  //         // Modify p to avoid tiling artifacts
+  //         vec2 p = mod(uv * TAU, TAU) - 250.0;
+  //         vec2 i = vec2(p);
+  //         float c = 1.0;
           
-          // Fractal water calculation
-          for (int n = 0; n < 5; n++) {
-            if (n >= maxIterations) break; // Respect maxIterations uniform
+  //         // Fractal water calculation
+  //         for (int n = 0; n < 5; n++) {
+  //           if (n >= maxIterations) break; // Respect maxIterations uniform
             
-            float t = waterTime * (1.0 - (3.5 / float(n+1)));
-            i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-            c += 1.0/length(vec2(p.x / (sin(i.x+t)/intensity), p.y / (cos(i.y+t)/intensity)));
-          }
+  //           float t = waterTime * (1.0 - (3.5 / float(n+1)));
+  //           i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+  //           c += 1.0/length(vec2(p.x / (sin(i.x+t)/intensity), p.y / (cos(i.y+t)/intensity)));
+  //         }
           
-          c /= float(maxIterations);
-          c = 1.17-pow(c, 1.4);
+  //         c /= float(maxIterations);
+  //         c = 1.17-pow(c, 1.4);
           
-          // Create water color with more control
-          vec3 waterColor = vec3(pow(abs(c), 8.0));
+  //         // Create water color with more control
+  //         vec3 waterColor = vec3(pow(abs(c), 8.0));
           
-          // Mix with base color instead of hardcoded blue
-          vec3 targetColor = baseColor + vec3(0.0, 0.15, 0.2);
-          waterColor = clamp(waterColor + targetColor, 0.0, 1.0);
+  //         // Mix with base color instead of hardcoded blue
+  //         vec3 targetColor = baseColor + vec3(0.0, 0.15, 0.2);
+  //         waterColor = clamp(waterColor + targetColor, 0.0, 1.0);
           
-          // Apply alpha
-          gl_FragColor = vec4(waterColor, transparency);
-        }
-        // Vertical water gets a simpler flowing pattern
-        else {
-          // Direction of flow = top to bottom
-          float flowOffset = -time * 2.0 * flowSpeed;
+  //         // Apply alpha
+  //         gl_FragColor = vec4(waterColor, transparency);
+  //       }
+  //       // Vertical water gets a simpler flowing pattern
+  //       else {
+  //         // Direction of flow = top to bottom
+  //         float flowOffset = -time * 2.0 * flowSpeed;
           
-          // Distorted UV for flowing effect
-          vec2 flowUv = vec2(
-            uv.x + sin(uv.y * 10.0 + time * flowSpeed) * 0.05,
-            mod(uv.y + flowOffset, 1.0)
-          );
+  //         // Distorted UV for flowing effect
+  //         vec2 flowUv = vec2(
+  //           uv.x + sin(uv.y * 10.0 + time * flowSpeed) * 0.05,
+  //           mod(uv.y + flowOffset, 1.0)
+  //         );
           
-          // Create waves in the flow
-          float waves = sin(flowUv.y * 20.0) * 0.5 + 0.5;
-          waves *= sin(flowUv.x * 10.0 + time) * 0.5 + 0.5;
+  //         // Create waves in the flow
+  //         float waves = sin(flowUv.y * 20.0) * 0.5 + 0.5;
+  //         waves *= sin(flowUv.x * 10.0 + time) * 0.5 + 0.5;
           
-          // Add foam at edges and top
-          float foam = smoothstep(0.4, 0.5, sin(flowUv.y * 40.0 + time * 3.0) * 0.5 + 0.5);
-          foam *= smoothstep(0.0, 0.1, flowUv.y); // Top foam
+  //         // Add foam at edges and top
+  //         float foam = smoothstep(0.4, 0.5, sin(flowUv.y * 40.0 + time * 3.0) * 0.5 + 0.5);
+  //         foam *= smoothstep(0.0, 0.1, flowUv.y); // Top foam
           
-          // Final color
-          vec3 waterColor = mix(baseColor, vec3(1.0), foam * 0.6 + waves * 0.2);
+  //         // Final color
+  //         vec3 waterColor = mix(baseColor, vec3(1.0), foam * 0.6 + waves * 0.2);
           
-          // Apply alpha
-          gl_FragColor = vec4(waterColor, transparency);
-        }
-      }
-    `,
-    transparent: true,
-    side: THREE.DoubleSide
-  });
+  //         // Apply alpha
+  //         gl_FragColor = vec4(waterColor, transparency);
+  //       }
+  //     }
+  //   `,
+  //   transparent: true,
+  //   side: THREE.DoubleSide
+  // });
 
-    // Simpler shader for low quality
-    if (qualityLevel === 'low') {
-      // Use a simpler fragment shader
-      waterMaterial.fragmentShader = `
-        uniform float time;
-        uniform vec3 baseColor;
-        uniform float transparency;
-        uniform float isHorizontal;
-        
-        varying vec2 vUv;
-        
-        void main() {
-          // Simple water color with subtle animation
-          vec3 waterColor = baseColor;
-          
-          if (isHorizontal > 0.5) {
-            // Simple horizontal water
-            float wave = sin(vUv.x * 10.0 + time) * 0.5 + 0.5;
-            waterColor += vec3(0.0, 0.1, 0.2) * wave;
-          } else {
-            // Simple vertical water
-            float flow = sin(vUv.y * 20.0 - time * 2.0) * 0.5 + 0.5;
-            waterColor += vec3(0.0, 0.05, 0.1) * flow;
-          }
-          
-          gl_FragColor = vec4(waterColor, transparency);
-        }
-      `;
-    }
+ // IMPORTANT: Determine shader code based on quality level BEFORE creating the material
+ let fragmentShaderCode, vertexShaderCode;
+  
+ if (qualityLevel === 'low') {
+   // Simpler shaders for low quality
+   vertexShaderCode = `
+     uniform float time;
+     uniform float flowSpeed;
+     uniform float isHorizontal;
+     
+     varying vec2 vUv;
+     
+     void main() {
+       vUv = uv;
+       
+       // Simple wave movement
+       vec3 newPosition = position;
+       
+       if (isHorizontal > 0.5) {
+         float wave = sin(position.x * 2.0 + time * flowSpeed) * 0.05;
+         newPosition.y += wave + 0.05; // Offset to stay above ground
+       }
+       
+       gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+     }
+   `;
+   
+   fragmentShaderCode = `
+     uniform float time;
+     uniform vec3 baseColor;
+     uniform float flowSpeed;
+     uniform float transparency;
+     uniform float isHorizontal;
+     
+     varying vec2 vUv;
+     
+     void main() {
+       // Simple water color with animation
+       vec3 waterColor = baseColor;
+       
+       if (isHorizontal > 0.5) {
+         // Simple waves
+         float wave1 = sin(vUv.x * 10.0 + time * flowSpeed) * 0.5 + 0.5;
+         float wave2 = sin(vUv.y * 8.0 + time * flowSpeed * 0.7) * 0.5 + 0.5;
+         float waves = wave1 * wave2;
+         
+         // Add simple highlights
+         waterColor += vec3(0.0, 0.1, 0.2) * waves;
+       } else {
+         // Simple waterfall
+         float flow = sin(vUv.y * 20.0 - time * 2.0 * flowSpeed) * 0.5 + 0.5;
+         waterColor += vec3(0.0, 0.05, 0.1) * flow;
+       }
+       
+       gl_FragColor = vec4(waterColor, transparency);
+     }
+   `;
+ } else {
+   // Full quality shader for medium/high
+   vertexShaderCode = `
+     uniform float time;
+     uniform float flowSpeed;
+     uniform float isHorizontal;
+     
+     varying vec2 vUv;
+     varying vec3 vPosition;
+     
+     void main() {
+       vUv = uv;
+       vPosition = position;
+       
+       // Add subtle wave movement for horizontal water
+       vec3 newPosition = position;
+       
+       if (isHorizontal > 0.5) {
+         float wave = sin(position.x * 2.0 + time * flowSpeed) * 
+                    cos(position.z * 2.0 + time * flowSpeed * 0.8) * 0.05;
+         
+         newPosition.y += wave + 0.05; // Added offset to stay above ground
+       }
+       
+       gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+     }
+   `;
+   
+   fragmentShaderCode = `
+     uniform float time;
+     uniform vec2 resolution;
+     uniform vec3 baseColor;
+     uniform float flowSpeed;
+     uniform float transparency;
+     uniform float isHorizontal;
+     uniform int maxIterations;
+     uniform float intensity;
+     
+     varying vec2 vUv;
+     varying vec3 vPosition;
+     
+     #define TAU 6.28318530718
+     
+     void main() {
+       vec2 uv = vUv;
+       
+       // Horizontal water uses the Shadertoy effect
+       if (isHorizontal > 0.5) {
+         // Adapted from Shadertoy
+         float waterTime = time * 0.5 * flowSpeed;
+         
+         // Modify p to avoid tiling artifacts
+         vec2 p = mod(uv * TAU, TAU) - 250.0;
+         vec2 i = vec2(p);
+         float c = 1.0;
+         
+         // Fractal water calculation
+         for (int n = 0; n < 5; n++) {
+           if (n >= maxIterations) break; // Respect maxIterations uniform
+           
+           float t = waterTime * (1.0 - (3.5 / float(n+1)));
+           i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+           c += 1.0/length(vec2(p.x / (sin(i.x+t)/intensity), p.y / (cos(i.y+t)/intensity)));
+         }
+         
+         c /= float(maxIterations);
+         c = 1.17-pow(c, 1.4);
+         
+         // Create water color with more control
+         vec3 waterColor = vec3(pow(abs(c), 8.0));
+         
+         // Mix with base color instead of hardcoded blue
+         vec3 targetColor = baseColor + vec3(0.0, 0.15, 0.2);
+         waterColor = clamp(waterColor + targetColor, 0.0, 1.0);
+         
+         // Apply alpha
+         gl_FragColor = vec4(waterColor, transparency);
+       }
+       // Vertical water gets a simpler flowing pattern
+       else {
+         // Direction of flow = top to bottom
+         float flowOffset = -time * 2.0 * flowSpeed;
+         
+         // Distorted UV for flowing effect
+         vec2 flowUv = vec2(
+           uv.x + sin(uv.y * 10.0 + time * flowSpeed) * 0.05,
+           mod(uv.y + flowOffset, 1.0)
+         );
+         
+         // Create waves in the flow
+         float waves = sin(flowUv.y * 20.0) * 0.5 + 0.5;
+         waves *= sin(flowUv.x * 10.0 + time) * 0.5 + 0.5;
+         
+         // Add foam at edges and top
+         float foam = smoothstep(0.4, 0.5, sin(flowUv.y * 40.0 + time * 3.0) * 0.5 + 0.5);
+         foam *= smoothstep(0.0, 0.1, flowUv.y); // Top foam
+         
+         // Final color
+         vec3 waterColor = mix(baseColor, vec3(1.0), foam * 0.6 + waves * 0.2);
+         
+         // Apply alpha
+         gl_FragColor = vec4(waterColor, transparency);
+       }
+     }
+   `;
+ }
+ 
+ // Now create the material with the selected shaders
+ const waterMaterial = new THREE.ShaderMaterial({
+   uniforms: {
+     time: { value: 0 },
+     resolution: { value: new THREE.Vector2(512, 512) },
+     baseColor: { value: waterColor },
+     flowSpeed: { value: flowSpeed },
+     transparency: { value: transparency },
+     isHorizontal: { value: isHorizontal ? 1.0 : 0.0 },
+     maxIterations: { value: settings.maxIterations || 5 },
+     intensity: { value: 0.005 * waterDepth }
+   },
+   vertexShader: vertexShaderCode,
+   fragmentShader: fragmentShaderCode,
+   transparent: true,
+   side: THREE.DoubleSide
+ });
   
   // Create geometry based on water prop dimensions
   const width = (object.userData.prop?.width || 48) / 50;
