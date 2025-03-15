@@ -2447,6 +2447,16 @@ getParticleTexture() {
         effectData.material.uniforms.waveHeight.value = settings.waveHeight;
         effectData.material.uniforms.waveSpeed.value = settings.waveSpeed;
       }
+      else if (effectData.type === 'waterProp' && effectData.material.uniforms) {
+        console.log(`Updating waterProp quality to ${this.qualityLevel}`);
+        if (effectData.material.uniforms.maxIterations) {
+          effectData.material.uniforms.maxIterations.value = settings.maxIterations || 3;
+        }
+        // Always ensure visibility
+        if (effectData.container) {
+          effectData.container.visible = true;
+        }
+      }
     }
   }
   
