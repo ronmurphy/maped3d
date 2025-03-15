@@ -2980,6 +2980,15 @@ break;
       isWaterProp: marker.data.isWaterProp === true,
       water: marker.data.water || null
     };
+
+    // if (marker.data.isWaterProp) {
+    //   // Make the base prop transparent
+    //   if (propMesh && propMesh.material) {
+    //     propMesh.material.transparent = true;
+    //     propMesh.material.opacity = 0.1; // Almost invisible
+    //     propMesh.material.depthWrite = false; // Avoid z-fighting with water
+    //   }
+    // }
     
     // Check if this should be a light source based on name
     if (this.shaderEffects) {
@@ -3019,6 +3028,13 @@ break;
                 scale: propData.scale
               };
             }
+
+                  // Make water props use transparent material
+      if (propData.isWaterProp && mesh.material) {
+        mesh.material.transparent = true;
+        mesh.material.opacity = 0.1; // Almost invisible 
+        mesh.material.depthWrite = false;
+      }
             
             this.scene.add(mesh);
             console.log(`Added prop mesh: ${marker.id}`);

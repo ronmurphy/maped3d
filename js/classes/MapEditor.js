@@ -5526,7 +5526,7 @@ if (type === "door") {
         <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
           <h4 style="margin-top: 0; margin-bottom: 12px;">Size & Dimensions</h4>
           
-          <sl-range id="water-width" label="Width" min="10" max="300" step="5" value="${width}"
+          <sl-range id="water-width" label="Width" min="10" max="1000" step="10" value="${width}"
                   style="margin-top: 12px;">
             <div slot="help-text">Water surface width</div>
           </sl-range>
@@ -5536,7 +5536,7 @@ if (type === "door") {
             <div slot="help-text">${isHorizontal ? 'Depth appearance' : 'Waterfall height'}</div>
           </sl-range>
           
-          <sl-range id="water-scale" label="Scale" min="0.5" max="5" step="0.1" value="${scale}"
+          <sl-range id="water-scale" label="Scale" min="0.5" max="25" step="0.1" value="${scale}"
                   style="margin-top: 12px;">
             <div slot="help-text">Overall scaling factor</div>
           </sl-range>
@@ -6579,6 +6579,11 @@ if (type === "door") {
   // Remove any previous texture images
   const img = propVisual.querySelector('img');
   if (img) img.remove();
+
+  const propImg = propVisual.querySelector('img');
+if (propImg) {
+  propImg.style.display = 'none';
+}
 }
 
 
