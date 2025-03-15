@@ -2905,7 +2905,63 @@ break;
           }
           break;
 
-        case "prop":
+  //       case "prop":
+  // if (marker.data?.texture) {
+  //   console.log(`Processing prop marker: ${marker.id}`);
+  //   const propData = {
+  //     id: marker.id,
+  //     x: marker.x,
+  //     y: marker.y,
+  //     image: marker.data.texture.data,
+  //     rotation: marker.data.prop?.position?.rotation || 0,
+  //     scale: marker.data.prop?.scale || 1,
+  //     height: marker.data.prop?.height || 1,
+  //     isHorizontal: marker.data.prop?.isHorizontal || false,
+  //     name: marker.data.texture.name || "Prop", // Include the name from the texture data
+  //     description: marker.data.prop?.description || "A mysterious item."
+  //   };
+
+  //   // Check if this should be a light source based on name
+  //   if (this.shaderEffects) {
+  //     const effectType = this.shaderEffects.getEffectTypeForName(propData.name);
+  //     propData.isLightSource = !!effectType;
+  //     propData.lightSourceData = effectType ? { type: effectType } : null;
+  //   } else {
+  //     // Default values if no shader effects manager
+  //     propData.isLightSource = false;
+  //     propData.lightSourceData = null;
+  //   }
+
+  //   // Create prop mesh and add to scene
+  //   propPromises.push(
+  //     this.createPropMesh(propData)
+  //       .then(mesh => {
+  //         if (mesh) {
+  //           // Ensure userData has the lighting properties
+  //           mesh.userData.isLightSource = propData.isLightSource;
+  //           mesh.userData.lightSourceData = propData.lightSourceData;
+            
+  //           this.scene.add(mesh);
+  //           console.log(`Added prop mesh: ${marker.id}`);
+            
+  //           // Apply shader effects if needed
+  //           if (this.shaderEffects && propData.isLightSource) {
+  //             setTimeout(() => {
+  //               this.shaderEffects.processObject(mesh);
+  //             }, 50); // Small delay to ensure mesh is properly added
+  //           }
+  //         }
+  //         return mesh;
+  //       })
+  //       .catch(error => {
+  //         console.error(`Error creating prop ${marker.id}:`, error);
+  //         return null;
+  //       })
+  //   );
+  // }
+  // break;
+
+  case "prop":
   if (marker.data?.texture) {
     console.log(`Processing prop marker: ${marker.id}`);
     const propData = {
@@ -2918,36 +2974,65 @@ break;
       height: marker.data.prop?.height || 1,
       isHorizontal: marker.data.prop?.isHorizontal || false,
       name: marker.data.texture.name || "Prop", // Include the name from the texture data
-      description: marker.data.prop?.description || "A mysterious item."
+      description: marker.data.prop?.description || "A mysterious item.",
+      
+      // Add water prop flag and data
+      isWaterProp: marker.data.isWaterProp === true,
+      water: marker.data.water || null
     };
-
+    
     // Check if this should be a light source based on name
     if (this.shaderEffects) {
-      const effectType = this.shaderEffects.getEffectTypeForName(propData.name);
-      propData.isLightSource = !!effectType;
-      propData.lightSourceData = effectType ? { type: effectType } : null;
+      // For water props, override light source check
+      if (propData.isWaterProp) {
+        propData.isLightSource = false;
+        propData.lightSourceData = null;
+      } else {
+        const effectType = this.shaderEffects.getEffectTypeForName(propData.name);
+        propData.isLightSource = !!effectType;
+        propData.lightSourceData = effectType ? { type: effectType } : null;
+      }
     } else {
       // Default values if no shader effects manager
       propData.isLightSource = false;
       propData.lightSourceData = null;
     }
-
+    
     // Create prop mesh and add to scene
     propPromises.push(
       this.createPropMesh(propData)
         .then(mesh => {
           if (mesh) {
-            // Ensure userData has the lighting properties
+            // Ensure userData has all the required properties
             mesh.userData.isLightSource = propData.isLightSource;
             mesh.userData.lightSourceData = propData.lightSourceData;
+            
+            // Add water prop properties to userData
+            if (propData.isWaterProp) {
+              console.log(`Water prop detected: ${marker.id}`);
+              mesh.userData.isWaterProp = true;
+              mesh.userData.water = propData.water;
+              mesh.userData.prop = {
+                isHorizontal: propData.isHorizontal,
+                width: marker.data.prop?.width,
+                height: marker.data.prop?.height,
+                scale: propData.scale
+              };
+            }
             
             this.scene.add(mesh);
             console.log(`Added prop mesh: ${marker.id}`);
             
             // Apply shader effects if needed
-            if (this.shaderEffects && propData.isLightSource) {
+            if (this.shaderEffects) {
               setTimeout(() => {
-                this.shaderEffects.processObject(mesh);
+                if (propData.isWaterProp) {
+                  // Use detectAndApplyPropEffects for water props
+                  this.shaderEffects.detectAndApplyPropEffects(mesh);
+                } else if (propData.isLightSource) {
+                  // Use processObject for light sources
+                  this.shaderEffects.processObject(mesh);
+                }
               }, 50); // Small delay to ensure mesh is properly added
             }
           }

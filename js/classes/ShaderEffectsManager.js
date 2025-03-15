@@ -111,6 +111,36 @@ class ShaderEffectsManager {
         detailLevel: 3
       }
     });
+
+    this.registerEffectType('waterProp', {
+      keywords: ['waterProp'], // Special keyword for our water props
+      color: 0x4488aa, // Default blue color
+      intensity: 0.8,
+      distance: 4,
+      particleCount: 12,
+      particleSize: 0.03,
+      isAreaEffect: false,
+      create: this.createWaterPropEffect.bind(this),
+      // Settings for different quality levels
+      low: {
+        waveHeight: 0.05,
+        waveSpeed: 0.5,
+        rippleDetail: 1,
+        useReflection: false
+      },
+      medium: {
+        waveHeight: 0.1,
+        waveSpeed: 1.0,
+        rippleDetail: 2,
+        useReflection: true
+      },
+      high: {
+        waveHeight: 0.2,
+        waveSpeed: 1.5,
+        rippleDetail: 3,
+        useReflection: true
+      }
+    });
     
     this.registerEffectType('fog', {
       keywords: ['fog', 'mist', 'haze', 'smoke'],
@@ -363,6 +393,257 @@ class ShaderEffectsManager {
     
     return effectData;
   }
+
+  /**
+ * Create a water prop effect for horizontal surfaces (ponds) or vertical surfaces (waterfalls)
+ * @param {Object3D} object - The water prop object
+ * @param {Object} definition - Effect definition
+ * @param {string} qualityLevel - Quality setting
+ * @returns {Object} Effect data
+ */
+createWaterPropEffect(object, definition, qualityLevel = 'medium') {
+  if (!object || !object.userData) {
+    console.warn('Water prop object invalid or missing userData');
+    return null;
+  }
+  
+  console.log('Creating water prop effect:', object);
+  
+  // Get settings based on quality level
+  const settings = definition[qualityLevel] || definition.medium;
+  
+  // Get water properties from marker data
+  const markerData = object.userData;
+  const isHorizontal = markerData.prop?.isHorizontal !== false;
+  const waterDepth = markerData.water?.depth || 1.0;
+  const flowSpeed = markerData.water?.flowSpeed || 1.0;
+  const transparency = markerData.water?.transparency || 0.7;
+  
+  // Convert hex color to THREE.js color if provided
+  let waterColor = new THREE.Color(definition.color);
+  if (markerData.water?.color) {
+    try {
+      const hex = markerData.water.color.replace('#', '0x');
+      waterColor = new THREE.Color(parseInt(hex, 16));
+    } catch (e) {
+      console.warn('Invalid water color, using default', e);
+    }
+  }
+  
+  // Create container for water effect elements
+  const container = new THREE.Group();
+  container.position.copy(object.position);
+  
+  // Add to scene
+  this.scene3D.scene.add(container);
+  
+  // Create water shader material
+  const waterMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      baseColor: { value: waterColor },
+      transparency: { value: transparency },
+      flowSpeed: { value: flowSpeed * settings.waveSpeed },
+      waveHeight: { value: settings.waveHeight * waterDepth },
+      isHorizontal: { value: isHorizontal ? 1.0 : 0.0 }
+    },
+    vertexShader: `
+      uniform float time;
+      uniform float waveHeight;
+      uniform float flowSpeed;
+      uniform float isHorizontal;
+      
+      varying vec2 vUv;
+      varying vec3 vPosition;
+      
+      void main() {
+        vUv = uv;
+        vPosition = position;
+        
+        // Calculate wave effect for horizontal surfaces
+        float horizontalWave = sin(position.x * 2.0 + time * flowSpeed) * 
+                              cos(position.z * 2.0 + time * flowSpeed * 0.8);
+        
+        // Calculate ripple effect for vertical surfaces (waterfalls)
+        float verticalWave = sin(position.y * 4.0 - time * flowSpeed * 2.0) * 0.5 +
+                            cos(position.x * 3.0 + time * flowSpeed * 0.5) * 0.5;
+        
+        // Apply wave based on orientation
+        vec3 newPosition = position;
+        
+        // For horizontal water (ponds/lakes)
+        if (isHorizontal > 0.5) {
+          newPosition.y += horizontalWave * waveHeight * smoothstep(0.0, 0.1, vUv.y) * smoothstep(1.0, 0.9, vUv.y);
+        } 
+        // For vertical water (waterfalls)
+        else {
+          newPosition.z += verticalWave * waveHeight * 0.3;
+        }
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 baseColor;
+      uniform float time;
+      uniform float transparency;
+      uniform float flowSpeed;
+      uniform float isHorizontal;
+      
+      varying vec2 vUv;
+      varying vec3 vPosition;
+      
+      void main() {
+        // Base water color
+        vec3 color = baseColor;
+        
+        // Add flowing water effect based on orientation
+        float flowEffect;
+        
+        // Horizontal water surface
+        if (isHorizontal > 0.5) {
+          // Ripple pattern for horizontal surfaces
+          flowEffect = sin(vUv.x * 20.0 - time * flowSpeed) * 0.5 + 0.5;
+          flowEffect *= sin(vUv.y * 20.0 - time * flowSpeed * 0.7) * 0.5 + 0.5;
+          
+          // Add edge foam
+          float edgeFoam = smoothstep(0.9, 1.0, vUv.y) + smoothstep(0.1, 0.0, vUv.y);
+          flowEffect = mix(flowEffect, 1.0, edgeFoam * 0.7);
+        } 
+        // Vertical waterfall surface
+        else {
+          // Streaming pattern for vertical surfaces
+          flowEffect = sin(vUv.y * 30.0 - time * flowSpeed * 3.0) * 0.5 + 0.5;
+          
+          // Add horizontal variation
+          flowEffect *= sin(vUv.x * 10.0 + time * flowSpeed * 0.5) * 0.3 + 0.7;
+          
+          // Add top foam
+          float topFoam = smoothstep(0.9, 1.0, vUv.y);
+          flowEffect = mix(flowEffect, 1.0, topFoam * 0.8);
+        }
+        
+        // Lighten color where flow effect is stronger
+        color = mix(color, vec3(1.0), flowEffect * 0.2);
+        
+        // Final color with transparency
+        gl_FragColor = vec4(color, transparency);
+      }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  
+  // Create geometry based on water prop dimensions
+  const width = object.userData.prop?.width || 1.0;
+  const height = object.userData.prop?.height || 0.5;
+  const depth = 0.05; // Thin depth
+  
+  let waterGeometry;
+  
+  if (isHorizontal) {
+    // Horizontal water surface (pond/lake)
+    waterGeometry = new THREE.PlaneGeometry(width / 50, depth / 50, 32, 4);
+    waterGeometry.rotateX(-Math.PI / 2); // Rotate to lay flat
+  } else {
+    // Vertical water surface (waterfall)
+    waterGeometry = new THREE.PlaneGeometry(width / 50, height / 50, 8, 32);
+    // Keep vertical
+  }
+  
+  // Create water mesh
+  const waterMesh = new THREE.Mesh(waterGeometry, waterMaterial);
+  
+  // Position slightly above ground to avoid z-fighting
+  if (isHorizontal) {
+    waterMesh.position.y += 0.01;
+  } else {
+    waterMesh.position.z += 0.01;
+  }
+  
+  container.add(waterMesh);
+  
+  // Add particles for mist/splash effects for higher quality levels
+  if (qualityLevel === 'medium' || qualityLevel === 'high') {
+    const particleCount = qualityLevel === 'high' ? 20 : 10;
+    const particles = this.createWaterParticles(
+      particleCount,
+      waterColor,
+      isHorizontal,
+      width / 50, 
+      height / 50
+    );
+    
+    if (particles) {
+      container.add(particles);
+    }
+  }
+  
+  // Return effect data for tracking and updates
+  return {
+    container,
+    mesh: waterMesh,
+    material: waterMaterial,
+    originalObject: object,
+    animationData: {
+      time: 0,
+      speed: flowSpeed
+    }
+  };
+}
+
+/**
+ * Create water splash/mist particles
+ * @param {number} count - Number of particles
+ * @param {THREE.Color} color - Water color
+ * @param {boolean} isHorizontal - Whether water is horizontal
+ * @param {number} width - Width of water area
+ * @param {number} height - Height of water area
+ * @returns {THREE.Points} Particle system
+ */
+createWaterParticles(count, color, isHorizontal, width, height) {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    
+    if (isHorizontal) {
+      // For horizontal water, particles along the surface
+      const angle = Math.random() * Math.PI * 2;
+      const radius = Math.random() * width * 0.5;
+      positions[i3] = Math.cos(angle) * radius;
+      positions[i3 + 1] = 0.05 + Math.random() * 0.05; // Slightly above surface
+      positions[i3 + 2] = Math.sin(angle) * radius;
+    } else {
+      // For vertical water, particles along the fall
+      positions[i3] = (Math.random() - 0.5) * width;
+      positions[i3 + 1] = Math.random() * height;
+      positions[i3 + 2] = 0.05 + Math.random() * 0.03; // Slightly in front
+    }
+  }
+  
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  
+  // Create particle material
+  const particleMaterial = new THREE.PointsMaterial({
+    color: color,
+    size: 0.05,
+    transparent: true,
+    opacity: 0.4,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  
+  // Create particle system
+  const particles = new THREE.Points(geometry, particleMaterial);
+  
+  // Store original positions for animation
+  particles.userData.positions = positions.slice();
+  particles.userData.time = 0;
+  
+  return particles;
+}
   
   /**
    * Create a fog effect for an area
@@ -1097,6 +1378,18 @@ cleanupModelEffects(model) {
 detectAndApplyPropEffects(prop) {
   // Skip if not enabled
   if (!this.enabled) return null;
+
+  if (prop.userData && prop.userData.isWaterProp === true) {
+    console.log('Detected water prop, applying water effect');
+    
+    // Apply waterProp effect directly
+    const effectDefinition = this.effectDefinitions.get('waterProp');
+    if (effectDefinition && effectDefinition.create) {
+      return effectDefinition.create(prop, effectDefinition, this.qualityLevel);
+    }
+    
+    return null;
+  }
   
   // Check object name/type to determine effect
   const name = prop.name || prop.userData?.name || '';
@@ -1751,6 +2044,53 @@ updateEffect(effectData, deltaTime) {
   // Update animation time
   effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
   const time = effectData.animationData.time;
+
+  // Inside updateEffect, add special handling for waterProp type
+if (effectData.type === 'waterProp') {
+  // Update time uniform for water shader
+  if (effectData.material && effectData.material.uniforms && effectData.material.uniforms.time) {
+    effectData.material.uniforms.time.value = time;
+  }
+  
+  // Animate particles if present
+  if (effectData.container && effectData.container.children.length > 1) {
+    const particles = effectData.container.children[1];
+    
+    if (particles && particles.isPoints) {
+      const positions = particles.geometry.attributes.position.array;
+      const originalPositions = particles.userData.positions;
+      const count = positions.length / 3;
+      
+      // Get orientation from uniforms
+      const isHorizontal = effectData.material.uniforms.isHorizontal.value > 0.5;
+      
+      for (let i = 0; i < count; i++) {
+        const i3 = i * 3;
+        
+        if (isHorizontal) {
+          // Ripple movement for horizontal water
+          positions[i3] = originalPositions[i3] + Math.sin(time * 2 + i) * 0.02;
+          positions[i3 + 1] = originalPositions[i3 + 1] + Math.abs(Math.sin(time * 1.5 + i * 2)) * 0.03;
+          positions[i3 + 2] = originalPositions[i3 + 2] + Math.cos(time * 2 + i) * 0.02;
+        } else {
+          // Falling movement for vertical water
+          positions[i3] = originalPositions[i3] + Math.sin(time * 2 + i) * 0.01;
+          positions[i3 + 1] = originalPositions[i3 + 1] - 0.02; // Constant fall speed
+          
+          // Reset particles that fall too far
+          if (positions[i3 + 1] < 0) {
+            positions[i3 + 1] = originalPositions[i3 + 1] + effectData.mesh.geometry.parameters.height;
+          }
+          
+          positions[i3 + 2] = originalPositions[i3 + 2] + Math.sin(time * 3 + i) * 0.005;
+        }
+      }
+      
+      // Update geometry
+      particles.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+}
   
   // Animate particles if present
   if (effectData.particles) {
