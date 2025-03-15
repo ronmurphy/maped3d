@@ -4852,11 +4852,6 @@ if (preferencesBtn) {
       });
     }
 
-    // if (type === "door") {
-    //   markerElement.style.transform = `rotate(${data.door?.position?.rotation || 0}deg)`;
-    // }
-
-// Within createMarker method, replace the current door handling:
 if (type === "door") {
   // Get door texture
   const textureUrl = data.texture ? data.texture.data : '';
@@ -4980,8 +4975,47 @@ if (type === "door") {
       };
     }
 
-    // Inside createMarker method, add this block where other marker types are handled:
-if (type === "storyboard") {
+    if (type === "prop" && data?.isWaterProp) {
+      // Special handling for water props
+      const propVisual = document.createElement('div');
+      const isHorizontal = data.prop?.isHorizontal !== false; // Default to horizontal
+      propVisual.className = `prop-visual water-prop ${isHorizontal ? 'horizontal-water' : 'vertical-water'}`;
+      
+      // Set dimensions based on scale
+      const baseSize = 48;
+      const scale = data.prop?.scale || 1.0;
+      const width = baseSize * scale;
+      const height = isHorizontal ? baseSize * scale / 3 : baseSize * scale;
+      
+      // Get water properties with defaults
+      const waterColor = data.water?.color || '#4488aa';
+      const transparency = data.water?.transparency || 0.7;
+      const flowSpeed = data.water?.flowSpeed || 1.0;
+      
+      propVisual.style.cssText = `
+        width: ${width}px;
+        height: ${height}px;
+        position: absolute;
+        left: -${width / 2}px;
+        top: -${height / 2}px;
+        background-color: rgba(${this.hexToRgb(waterColor)}, ${transparency});
+        border: 1px solid ${waterColor};
+        transform: rotate(${data.prop?.position?.rotation || 0}deg);
+        transform-origin: center;
+        border-radius: ${isHorizontal ? '4px' : '0'};
+        overflow: hidden;
+      `;
+      
+      // Add flow speed attribute for CSS animations
+      propVisual.setAttribute('data-flow-speed', flowSpeed);
+      
+      markerElement.appendChild(propVisual);
+    }
+
+
+
+
+    if (type === "storyboard") {
   // Initialize storyboard marker with defaults
   if (!data) data = {};
   
@@ -5110,6 +5144,30 @@ if (type === "storyboard") {
       this.playerStart.element.style.top = `${this.playerStart.y * this.scale + this.offset.y
         }px`;
     }
+  }
+
+  createWaterProp(x, y, isHorizontal = true) {
+    // Create data object for the prop
+    const propData = {
+      isWaterProp: true,
+      prop: {
+        scale: 1.0,
+        height: isHorizontal ? 0.1 : 1.0,
+        isHorizontal: isHorizontal,
+        position: {
+          rotation: 0
+        }
+      },
+      water: {
+        depth: 1.0,
+        color: '#4488aa',
+        flowSpeed: 1.0,
+        transparency: 0.7
+      }
+    };
+    
+    // Create the marker using existing system
+    return this.addMarker("prop", x, y, propData);
   }
 
   removeMarker(marker) {
@@ -5249,12 +5307,12 @@ if (type === "storyboard") {
         return this.generateTeleportMarkerHTML(marker);
       case 'splash-art':
         return this.generateSplashArtMarkerHTML(marker);
-      default:
-        return this.generateDefaultMarkerHTML(marker);
       case 'storyboard':
         return this.generateStoryboardMarkerHTML(marker);
       case 'dungeon':
         return this.generateDungeonMarkerHTML(marker);
+      default:
+        return this.generateDefaultMarkerHTML(marker);
     }
   }
 
@@ -5369,6 +5427,125 @@ if (type === "storyboard") {
   }
 
   generatePropMarkerHTML(marker) {
+  
+      // Check if this is a water prop
+  const isWaterProp = marker.data?.isWaterProp === true;
+  
+  if (isWaterProp) {
+    // Get water prop properties with defaults
+    const isHorizontal = marker.data.prop?.isHorizontal ?? true;
+    const waterColor = marker.data.water?.color || '#4488aa';
+    const waterDepth = marker.data.water?.depth || 1.0;
+    const flowSpeed = marker.data.water?.flowSpeed || 1.0;
+    const transparency = marker.data.water?.transparency || 0.7;
+    
+
+        // Get size properties
+        const scale = marker.data.prop?.scale || 1.0;
+        const width = marker.data.prop?.width || 48 * scale;
+        const height = marker.data.prop?.height || (isHorizontal ? Math.min(width/3, 16) : 48 * scale);
+    
+        
+    return `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="text-align: center; padding: 12px;">
+          <span class="material-icons" style="font-size: 48px; color: ${waterColor};">water_drop</span>
+          <div style="margin-top: 8px; font-weight: bold;">Water Surface</div>
+          <div style="font-size: 0.9em; color: #888; margin-top: 4px;">
+            ${isHorizontal ? 'Horizontal Surface (pond/river)' : 'Vertical Surface (waterfall)'}
+          </div>
+        </div>
+        
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <style>
+            /* Preview styles */
+            .water-preview {
+              width: 100%;
+              height: 60px;
+              margin-bottom: 12px;
+              border-radius: 4px;
+              overflow: hidden;
+              position: relative;
+            }
+            .horizontal-preview::before {
+              content: "";
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="10" viewBox="0 0 30 10"><path d="M0,5 Q7.5,0 15,5 Q22.5,10 30,5" stroke="rgba(255,255,255,0.3)" fill="none"/></svg>');
+              background-size: 30px 10px;
+              animation: previewWaterAnim 2s linear infinite;
+            }
+            .vertical-preview::before {
+              content: "";
+              position: absolute;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="30" viewBox="0 0 10 30"><path d="M5,0 Q0,7.5 5,15 Q10,22.5 5,30" stroke="rgba(255,255,255,0.3)" fill="none"/></svg>');
+              background-size: 10px 30px;
+              animation: previewWaterfallAnim 1.5s linear infinite;
+            }
+            @keyframes previewWaterAnim {
+              from { background-position: 0 0; }
+              to { background-position: 30px 0; }
+            }
+            @keyframes previewWaterfallAnim {
+              from { background-position: 0 0; }
+              to { background-position: 0 30px; }
+            }
+          </style>
+          
+          <!-- Water Preview -->
+          <div id="water-preview" class="water-preview ${isHorizontal ? 'horizontal-preview' : 'vertical-preview'}" 
+               style="background-color: rgba(${this.hexToRgb(waterColor)}, ${transparency});">
+          </div>
+          
+          <sl-switch id="water-orientation" ${isHorizontal ? 'checked' : ''}>
+            <span style="margin-right: 8px;">Horizontal Surface</span>
+          </sl-switch>
+          
+          <sl-color-picker id="water-color" label="Water Color" value="${waterColor}" 
+                           style="margin-top: 12px; width: 100%;"></sl-color-picker>
+          
+          <sl-range id="water-depth" label="Water Depth" min="0.1" max="5" step="0.1" value="${waterDepth}"
+                    style="margin-top: 12px;">
+            <div slot="help-text">Controls depth appearance in 3D view</div>
+          </sl-range>
+          
+          <sl-range id="water-flow" label="Flow Speed" min="0.5" max="2" step="0.5" value="${flowSpeed}"
+                    style="margin-top: 12px;">
+            <div slot="help-text">Controls animation speed</div>
+          </sl-range>
+          
+          <sl-range id="water-transparency" label="Transparency" min="0.2" max="1" step="0.1" value="${transparency}"
+                    style="margin-top: 12px;">
+            <div slot="help-text">Controls water opacity</div>
+          </sl-range>
+        </div>
+      </div>
+
+              <!-- Add size controls -->
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <h4 style="margin-top: 0; margin-bottom: 12px;">Size & Dimensions</h4>
+          
+          <sl-range id="water-width" label="Width" min="10" max="300" step="5" value="${width}"
+                  style="margin-top: 12px;">
+            <div slot="help-text">Water surface width</div>
+          </sl-range>
+          
+          <sl-range id="water-height" label="Height" min="5" max="300" step="5" value="${height}"
+                  style="margin-top: 12px;">
+            <div slot="help-text">${isHorizontal ? 'Depth appearance' : 'Waterfall height'}</div>
+          </sl-range>
+          
+          <sl-range id="water-scale" label="Scale" min="0.5" max="5" step="0.1" value="${scale}"
+                  style="margin-top: 12px;">
+            <div slot="help-text">Overall scaling factor</div>
+          </sl-range>
+        </div>
+      </div>
+    `;
+  } else {
+  
+  
     const propTextures = this.resourceManager?.resources.textures.props;
     const envTextures = this.resourceManager?.resources.textures.environmental;
     const hasTextures = (propTextures && propTextures.size > 0) || (envTextures && envTextures.size > 0);
@@ -5433,6 +5610,12 @@ if (type === "storyboard") {
         <span class="material-icons help-icon" 
               style="font-size: 16px; color: #666; cursor: help;"
               data-tooltip="prop-horizontal">help_outline</span>
+
+                      <!-- Add the water toggle  -->
+          <sl-switch id="water-prop-toggle">
+            <span style="margin-right: 8px;">Water Surface</span>
+          </sl-switch>
+
     </div>
 </div>
 </div>
@@ -5472,6 +5655,34 @@ if (type === "storyboard") {
 
     content += '</div>';
     return content;
+  }
+  }
+
+
+
+
+  hexToRgb(hex) {
+    // Handle undefined or null cases
+    if (!hex) {
+      console.warn('Undefined hex color, using default');
+      hex = '#4488aa'; // Default water color
+    }
+    
+    // Remove the # if present
+    hex = hex.replace('#', '');
+    
+    // Parse the hex values
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Handle invalid values
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      console.warn('Invalid hex color, using default values');
+      return '68, 136, 170'; // Default RGB values
+    }
+    
+    return `${r}, ${g}, ${b}`;
   }
 
   generateEncounterMarkerHTML(marker) {
@@ -5972,6 +6183,205 @@ if (type === "storyboard") {
   }
 
   setupPropEventHandlers(dialog, marker) {
+    // First check if this is a water prop
+    const isWaterProp = marker.data?.isWaterProp === true;
+    
+    if (isWaterProp) {
+      // Set up event handlers for water prop specific controls
+      const orientationSwitch = dialog.querySelector('#water-orientation');
+      const colorPicker = dialog.querySelector('#water-color');
+      const depthSlider = dialog.querySelector('#water-depth');
+      const flowSlider = dialog.querySelector('#water-flow');
+      const transparencySlider = dialog.querySelector('#water-transparency');
+      const preview = dialog.querySelector('#water-preview');
+
+      const widthSlider = dialog.querySelector('#water-width');
+      const heightSlider = dialog.querySelector('#water-height');
+      const scaleSlider = dialog.querySelector('#water-scale');
+      
+      // Initialize water object if not present
+      if (!marker.data.water) {
+        marker.data.water = {
+          color: '#4488aa',
+          depth: 1.0,
+          flowSpeed: 1.0,
+          transparency: 0.7
+        };
+      }
+
+      
+      
+      // Helper to update the preview
+      // const updatePreview = () => {
+      //   if (!preview) return;
+        
+      //   const isHorizontal = orientationSwitch.checked;
+      //   const color = colorPicker.value;
+      //   const transparency = transparencySlider.value;
+        
+      //   preview.className = `water-preview ${isHorizontal ? 'horizontal-preview' : 'vertical-preview'}`;
+      //   preview.style.backgroundColor = `rgba(${this.hexToRgb(color)}, ${transparency})`;
+        
+      //   // Update animation speed based on flow speed
+      //   const flowSpeed = flowSlider.value;
+      //   preview.style.animationDuration = `${2/flowSpeed}s`;
+      // };
+
+      const updatePreview = () => {
+        if (!preview) return;
+        
+        const isHorizontal = orientationSwitch?.checked || true;
+        
+        // Safety check for colorPicker
+        let color = '#4488aa'; // Default fallback
+        if (colorPicker && colorPicker.value) {
+          color = colorPicker.value;
+        }
+        
+        // Safety check for transparency
+        let transparency = 0.7; // Default fallback
+        if (transparencySlider && !isNaN(parseFloat(transparencySlider.value))) {
+          transparency = parseFloat(transparencySlider.value);
+        }
+        
+        preview.className = `water-preview ${isHorizontal ? 'horizontal-preview' : 'vertical-preview'}`;
+        
+        try {
+          preview.style.backgroundColor = `rgba(${this.hexToRgb(color)}, ${transparency})`;
+        } catch (error) {
+          console.error('Error setting preview background:', error);
+          preview.style.backgroundColor = 'rgba(68, 136, 170, 0.7)'; // Fallback
+        }
+        
+        // Update animation speed based on flow speed
+        let flowSpeed = 1.0; // Default
+        if (flowSlider && !isNaN(parseFloat(flowSlider.value))) {
+          flowSpeed = parseFloat(flowSlider.value);
+        }
+        preview.style.animationDuration = `${2/flowSpeed}s`;
+        
+        // Update preview height based on orientation
+        if (isHorizontal) {
+          preview.style.height = '30px';
+        } else {
+          preview.style.height = '100px';
+        }
+      };
+
+      
+      // Set up event handlers for each control
+      if (orientationSwitch) {
+        orientationSwitch.addEventListener('sl-change', () => {
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.isHorizontal = orientationSwitch.checked;
+          updatePreview();
+        });
+      }
+      
+      if (colorPicker) {
+        colorPicker.addEventListener('sl-change', () => {
+          if (!marker.data.water) marker.data.water = {};
+          marker.data.water.color = colorPicker.value;
+          updatePreview();
+        });
+      }
+      
+      if (depthSlider) {
+        depthSlider.addEventListener('sl-input', () => {
+          if (!marker.data.water) marker.data.water = {};
+          marker.data.water.depth = parseFloat(depthSlider.value);
+        });
+      }
+      
+      if (flowSlider) {
+        flowSlider.addEventListener('sl-input', () => {
+          if (!marker.data.water) marker.data.water = {};
+          marker.data.water.flowSpeed = parseFloat(flowSlider.value);
+          updatePreview();
+        });
+      }
+      
+      if (transparencySlider) {
+        transparencySlider.addEventListener('sl-input', () => {
+          if (!marker.data.water) marker.data.water = {};
+          marker.data.water.transparency = parseFloat(transparencySlider.value);
+          updatePreview();
+        });
+      }
+
+      if (widthSlider) {
+        widthSlider.addEventListener('sl-input', () => {
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.width = parseFloat(widthSlider.value);
+          updatePreview();
+        });
+      }
+      
+      if (heightSlider) {
+        heightSlider.addEventListener('sl-input', () => {
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.height = parseFloat(heightSlider.value);
+          updatePreview();
+        });
+      }
+      
+      if (scaleSlider) {
+        scaleSlider.addEventListener('sl-input', () => {
+          if (!marker.data.prop) marker.data.prop = {};
+          marker.data.prop.scale = parseFloat(scaleSlider.value);
+          
+          // If width/height not explicitly set, they should update with scale
+          if (!marker.data.prop.width) {
+            const baseWidth = 48;
+            marker.data.prop.width = baseWidth * marker.data.prop.scale;
+            if (widthSlider) widthSlider.value = marker.data.prop.width;
+          }
+          
+          if (!marker.data.prop.height) {
+            const baseHeight = marker.data.prop.isHorizontal ? 16 : 48;
+            marker.data.prop.height = baseHeight * marker.data.prop.scale;
+            if (heightSlider) heightSlider.value = marker.data.prop.height;
+          }
+
+          updatePreview();
+        });
+      }
+
+
+    } else {
+
+
+      const waterToggle = dialog.querySelector('#water-prop-toggle');
+      if (waterToggle) {
+        waterToggle.addEventListener('sl-change', (e) => {
+          if (e.target.checked) {
+            // Convert to water prop
+            marker.data.isWaterProp = true;
+            
+            // Initialize water properties
+            marker.data.water = {
+              color: '#4488aa',
+              depth: 1.0,
+              flowSpeed: 1.0,
+              transparency: 0.7
+            };
+            
+            // Initialize prop properties if needed
+            if (!marker.data.prop) marker.data.prop = {};
+            marker.data.prop.isHorizontal = true;
+            marker.data.prop.height = 0.1;
+            
+            // Close current dialog and reopen with water props
+            dialog.hide();
+            
+            // Slight delay to ensure dialog closes first
+            setTimeout(() => {
+              this.showMarkerContextMenu(marker, { preventDefault: () => {} });
+            }, 100);
+          }
+        });
+      }
+
     // Setup texture selection
     dialog.querySelectorAll('.texture-option').forEach(option => {
       option.addEventListener('click', () => {
@@ -6076,8 +6486,99 @@ if (type === "storyboard") {
       });
     }
 
-  }
+    dialog.addEventListener('sl-after-hide', () => {
+      // If it was converted to a water prop, update its appearance
+      if (marker.data?.isWaterProp) {
+        this.updateWaterPropVisual(marker);
+      }
+    });
 
+  }
+}
+
+  // updateWaterPropVisual(marker) {
+  //   if (!marker.element) return;
+    
+  //   const propVisual = marker.element.querySelector('.prop-visual');
+  //   if (!propVisual) return;
+    
+  //   // Make sure we have water data
+  //   if (!marker.data.water) return;
+    
+  //   // Update classes based on orientation
+  //   propVisual.className = `prop-visual water-prop ${marker.data.prop.isHorizontal ? 'horizontal-water' : 'vertical-water'}`;
+    
+  //   // Update styles based on water properties
+  //   const color = marker.data.water.color;
+  //   const transparency = marker.data.water.transparency;
+  //   propVisual.style.backgroundColor = `rgba(${this.hexToRgb(color)}, ${transparency})`;
+  //   propVisual.style.borderColor = color;
+    
+  //   // Update flow speed
+  //   propVisual.setAttribute('data-flow-speed', marker.data.water.flowSpeed);
+    
+  //   // Update size based on orientation
+  //   const baseSize = 48;
+  //   const scale = marker.data.prop.scale || 1.0;
+  //   const width = baseSize * scale;
+  //   const height = marker.data.prop.isHorizontal ? baseSize * scale / 3 : baseSize * scale;
+    
+  //   propVisual.style.width = `${width}px`;
+  //   propVisual.style.height = `${height}px`;
+  //   propVisual.style.left = `-${width / 2}px`;
+  //   propVisual.style.top = `-${height / 2}px`;
+  //   propVisual.style.borderRadius = marker.data.prop.isHorizontal ? '4px' : '0';
+  // }
+
+  // Add this method to MapEditor
+
+  updateWaterPropVisual(marker) {
+  if (!marker.element || !marker.data?.isWaterProp) return;
+  
+  // Find or create the prop visual element
+  let propVisual = marker.element.querySelector('.prop-visual');
+  if (!propVisual) {
+    propVisual = document.createElement('div');
+    propVisual.className = 'prop-visual';
+    marker.element.appendChild(propVisual);
+  }
+  
+  // Get water properties
+  const isHorizontal = marker.data.prop?.isHorizontal !== false;
+  const waterColor = marker.data.water?.color || '#4488aa';
+  const transparency = marker.data.water?.transparency || 0.7;
+  const flowSpeed = marker.data.water?.flowSpeed || 1.0;
+  const scale = marker.data.prop?.scale || 1.0;
+  
+  // Get dimensions - use stored dimensions if available, otherwise defaults
+  const width = marker.data.prop?.width || 48 * scale;
+  const height = isHorizontal ? Math.min(width/3, 16 * scale) : 48 * scale;
+  
+  // Update class for water animation
+  propVisual.className = `prop-visual water-prop ${isHorizontal ? 'horizontal-water' : 'vertical-water'}`;
+  
+  // Update styles
+  propVisual.style.cssText = `
+    width: ${width}px;
+    height: ${height}px;
+    position: absolute;
+    left: -${width / 2}px;
+    top: -${height / 2}px;
+    background-color: rgba(${this.hexToRgb(waterColor)}, ${transparency});
+    border: 1px solid ${waterColor};
+    transform: rotate(${marker.data.prop?.position?.rotation || 0}deg);
+    transform-origin: center;
+    border-radius: ${isHorizontal ? '4px' : '0'};
+    overflow: hidden;
+  `;
+  
+  // Set flow speed for animation
+  propVisual.setAttribute('data-flow-speed', flowSpeed);
+  
+  // Remove any previous texture images
+  const img = propVisual.querySelector('img');
+  if (img) img.remove();
+}
 
 
 showCustomToast(message, icon = "info", timeout = 3000, bgColor = "#4CAF50", iconColor = "black") {
