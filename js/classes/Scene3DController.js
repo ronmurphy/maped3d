@@ -4942,7 +4942,6 @@ console.log('Initialized StoryboardTester in 3D mode with immersive UI enabled')
       }
     });
 
-// For teleporter prompts - replace the existing code with:
 if (nearestTeleporter) {
   this.showInteractivePrompt(
     'Teleport',
@@ -5058,7 +5057,6 @@ if (nearestSplashArt && !this.activeSplashArt) {
       this.nearestProp = null;
     }
 
-    // For splash art prompts - replace the existing code with:
 
 
     // // Find nearest encounter marker
@@ -5093,7 +5091,6 @@ if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
 }
 
 
-    // Find nearest storyboard marker (add this in animate() where you check for encounters)
     let nearestStory = null;
     let minStoryDist = 3; // Detection range
     

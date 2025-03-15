@@ -1509,7 +1509,6 @@ async showPropertiesDialog(room) {
           </div>
         </sl-details>
         
-// Replace the entire texture section with this:
 <sl-details summary="Texture" ${hasTextures ? 'open' : ''}>
   <div style="max-height: 200px; overflow-y: auto; padding: 8px 0;">
     ${hasTextures ? `
@@ -1522,8 +1521,8 @@ async showPropertiesDialog(room) {
           justify-content: space-between;
         }
         .texture-item {
-          width: 60px;
-          height: 80px;
+          width: 80px;
+          height: 100px;
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -1539,8 +1538,8 @@ async showPropertiesDialog(room) {
           background-color: rgba(var(--sl-color-primary-500-rgb), 0.1);
         }
         .texture-image-container {
-          width: 50px;
-          height: 50px;
+          width: 70px;
+          height: 90px;
           display: flex;
           align-items: center;
           justify-content: center;
