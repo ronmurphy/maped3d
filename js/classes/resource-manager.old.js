@@ -2440,1083 +2440,492 @@ showNameEditor(resource, category, id, cardElement) {
         }
     }
 
-//     createResourceManagerUI() {
-//         // Create the drawer
-//         const drawer = document.createElement('sl-drawer');
-//         drawer.label = "Resource Manager";
-//         drawer.placement = "end";
-//         drawer.classList.add("resource-manager-drawer");
-//         drawer.style.cssText = '--size: calc(100vw - 260px);';
+    createResourceManagerUI() {
+        // Create the drawer
+        const drawer = document.createElement('sl-drawer');
+        drawer.label = "Resource Manager";
+        drawer.placement = "end";
+        drawer.classList.add("resource-manager-drawer");
+        drawer.style.cssText = '--size: calc(100vw - 260px);';
 
-//         // Add embedded styles
-//         const styles = document.createElement('style');
+        // Add embedded styles
+        const styles = document.createElement('style');
 
 
 
-//         styles.textContent = `
+        styles.textContent = `
 
     
-//             .resource-categories {
-//                 margin-bottom: 1rem;
-//             }
+            .resource-categories {
+                margin-bottom: 1rem;
+            }
     
-//             .gallery-grid {
-//                 display: grid;
-//                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//                 gap: 1rem;
-//                 padding: 1rem;
-//             }
+            .gallery-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 1rem;
+                padding: 1rem;
+            }
     
-//             .resource-item {
-//                 border: 1px solid var(--sl-color-neutral-200);
-//                 border-radius: var(--sl-border-radius-medium);
-//                 padding: 0.5rem;
-//                 transition: all 0.2s ease;
-//             }
+            .resource-item {
+                border: 1px solid var(--sl-color-neutral-200);
+                border-radius: var(--sl-border-radius-medium);
+                padding: 0.5rem;
+                transition: all 0.2s ease;
+            }
     
-//             .resource-item:hover {
-//                 border-color: var(--sl-color-primary-500);
-//                 transform: translateY(-2px);
-//             }
+            .resource-item:hover {
+                border-color: var(--sl-color-primary-500);
+                transform: translateY(-2px);
+            }
     
-//             .resource-thumbnail {
-//                 width: 100%;
-//                 aspect-ratio: 1;
-//                 object-fit: cover;
-//                 border-radius: var(--sl-border-radius-small);
-//                 margin-bottom: 0.5rem;
-//             }
+            .resource-thumbnail {
+                width: 100%;
+                aspect-ratio: 1;
+                object-fit: cover;
+                border-radius: var(--sl-border-radius-small);
+                margin-bottom: 0.5rem;
+            }
     
-//             .resource-info {
-//                 font-size: var(--sl-font-size-small);
-//             }
-
-//                 .view-controls {
-//         margin: 1rem 0;
-//         display: flex;
-//         justify-content: flex-end;
-//     }
-
-//     .gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//         padding: 1rem;
-//     }
-
-//     .gallery-list {
-//         display: flex;
-//         flex-direction: column;
-//         gap: 0.5rem;
-//         padding: 1rem;
-//     }
-
-//     .gallery-list .resource-item {
-//         display: flex;
-//         align-items: center;
-//         gap: 1rem;
-//         padding: 0.5rem;
-//     }
-
-//     .gallery-list .resource-thumbnail {
-//         width: 50px;
-//         height: 50px;
-//     }
-
-//     .resource-preview-tooltip {
-//         position: fixed;
-//         z-index: 10000;
-//         background: white;
-//         padding: 4px;
-//         border-radius: 4px;
-//         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-//         pointer-events: none;
-//         display: none;
-//     }
-
-//     .resource-preview-tooltip img {
-//         max-width: 200px;
-//         max-height: 200px;
-//         object-fit: contain;
-//     }
-
-//         .gallery-container {
-//         margin-top: 1rem;
-//         min-height: 200px;
-//     }
-
-//     .gallery-container.gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//     }
-
-//     .gallery-container.gallery-list {
-//         display: flex;
-//         flex-direction: column;
-//         gap: 0.5rem;
-//     }
-
-//     .add-resources {
-//         display: flex;
-//         gap: 1rem;
-//     }
-
-//     sl-tab-panel {
-//         height: calc(100vh - 200px);
-//         overflow-y: auto;
-//     }
-
-//         .panel-header {
-//         display: flex;
-//         align-items: center;
-//         gap: 1rem;
-//         margin-bottom: 1rem;
-//     }
-
-//     .flex-spacer {
-//         flex: 1;
-//     }
-
-//     .panel-header sl-button-group {
-//         flex: 0 0 auto;
-//     }
-
-//     .panel-header .material-icons {
-//         font-size: 18px;
-//     }
-
-//     .bestiary-buttons {
-//     margin-left: auto;
-// }
-
-// #bestiaryGallery .resource-item {
-//     transition: all 0.2s ease;
-//     border: 1px solid var(--sl-color-neutral-200);
-// }
-
-// #bestiaryGallery .resource-item:hover {
-//     transform: translateY(-2px);
-//     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-//     border-color: var(--sl-color-primary-300);
-// }
-
-// #bestiaryGallery .resource-name {
-//     font-weight: 500;
-//     margin-bottom: 4px;
-// }
-
-// #bestiaryGallery .resource-meta {
-//     font-size: 0.8em;
-//     color: var(--sl-color-neutral-600);
-// }
-
-// #bestiaryGallery .monster-badge {
-//     font-size: 0.75rem;
-//     background: rgba(0, 0, 0, 0.7);
-//     color: white;
-//     padding: 2px 6px;
-//     border-radius: 10px;
-//     position: absolute;
-//     top: 6px;
-//     right: 6px;
-// }
-
-// .gallery-grid .resource-thumbnail {
-//     aspect-ratio: 1;
-//     object-fit: cover;
-//     border-radius: 4px;
-//     margin-bottom: 8px;
-// }
-
-// .gallery-list .resource-thumbnail {
-//     width: 60px;
-//     height: 60px;
-//     border-radius: 4px;
-//     object-fit: cover;
-// }
-
-// .monster-filter-bar {
-//     display: flex;
-//     gap: 8px;
-//     margin-bottom: 16px;
-//     flex-wrap: wrap;
-// }
-
-// .monster-filter-bar sl-select {
-//     min-width: 150px;
-// }
-
-// /* Monster detail dialog styles */
-// .monster-detail-dialog::part(panel) {
-//     max-width: 800px;
-// }
-
-// .monster-stat-block {
-//     font-family: "Noto Serif", serif;
-//     line-height: 1.5;
-// }
-
-// .monster-stat-block h3 {
-//     border-bottom: 1px solid #D3C4A2;
-//     padding-bottom: 4px;
-//     font-size: 1.3em;
-// }
-
-// .monster-abilities {
-//     display: grid;
-//     grid-template-columns: repeat(6, 1fr);
-//     text-align: center;
-//     background: #F5F0E5;
-//     padding: 10px;
-//     border-radius: 5px;
-//     margin: 16px 0;
-// }
-
-// .monster-ability-name {
-//     font-weight: bold;
-// }
-
-//     .resource-manager-drawer::part(panel) {
-//         --size: calc(100vw - 280px);
-//         background: #242424;
-//         color: #e0e0e0;
-//     }
-    
-//     .resource-manager-drawer::part(header) {
-//         background: #333;
-//         padding: 16px;
-//         border-bottom: 1px solid #444;
-//         height: 48px;
-//     }
-    
-//     .resource-manager-drawer::part(body) {
-//         padding: 0;
-//     }
-    
-//     .resource-manager-drawer::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//         padding: 12px;
-//     }
-    
-//     /* Tab styling */
-//     .resource-manager-drawer sl-tab-group::part(base) {
-//         background: #242424;
-//     }
-    
-//     .resource-manager-drawer sl-tab-group::part(nav) {
-//         background: #333;
-//         border-bottom: 1px solid #444;
-//     }
-    
-//     .resource-manager-drawer sl-tab::part(base) {
-//         color: #e0e0e0;
-//         border: none;
-//     }
-    
-//     .resource-manager-drawer sl-tab[active]::part(base) {
-//         color: #673ab7;
-//         border-bottom-color: #673ab7;
-//     }
-    
-//     .resource-manager-drawer sl-tab-panel::part(base) {
-//         padding: 16px;
-//     }
-    
-//     /* Button styling */
-//     .resource-manager-drawer sl-button::part(base) {
-//         border: none;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='primary']::part(base) {
-//         background: #673ab7;
-//         color: white;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='primary']:hover::part(base) {
-//         background: #7e57c2;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='default']::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='default']:hover::part(base) {
-//         background: #444;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='danger']::part(base) {
-//         background: #d32f2f;
-//         color: white;
-//     }
-    
-//     /* Form elements */
-//     .resource-manager-drawer sl-input::part(base),
-//     .resource-manager-drawer sl-select::part(base),
-//     .resource-manager-drawer sl-textarea::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//         border-color: #444;
-//     }
-    
-//     .resource-manager-drawer sl-input:focus-within::part(base),
-//     .resource-manager-drawer sl-select:focus-within::part(base),
-//     .resource-manager-drawer sl-textarea:focus-within::part(base) {
-//         border-color: #673ab7;
-//     }
-    
-//     /* Card styling */
-//     .resource-manager-drawer sl-card::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//         border: 1px solid #444;
-//     }
-    
-//     /* Gallery items */
-//     .resource-categories {
-//         margin-bottom: 1rem;
-//         background: #333;
-//         padding: 8px;
-//         border-radius: 4px;
-//     }
-
-//     .gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//         padding: 1rem;
-//     }
-
-//     .resource-item {
-//         border: 1px solid #444;
-//         border-radius: 4px;
-//         padding: 0.5rem;
-//         transition: all 0.2s ease;
-//         background: #333;
-//     }
-
-//     .resource-item:hover {
-//         border-color: #673ab7;
-//         transform: translateY(-2px);
-//     }
-
-//     .resource-thumbnail {
-//         width: 100%;
-//         aspect-ratio: 1;
-//         object-fit: cover;
-//         border-radius: 4px;
-//         margin-bottom: 0.5rem;
-//     }
-
-//     .resource-info {
-//         font-size: 0.9rem;
-//         color: #e0e0e0;
-//     }
-
-//     .view-controls {
-//         margin: 1rem 0;
-//         display: flex;
-//         justify-content: flex-end;
-//         background: #333;
-//         padding: 8px;
-//         border-radius: 4px;
-//     }
-
-//     .gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//         padding: 1rem;
-//     }
-
-//     .gallery-list {
-//         display: flex;
-//         flex-direction: column;
-//         gap: 0.5rem;
-//         padding: 1rem;
-//     }
-    
-//     /* Props section styling */
-//     .props-tag-sidebar {
-//         background: #333 !important;
-//         border: 1px solid #444;
-//     }
-    
-//     .tag-entry {
-//         background: #242424 !important;
-//         border: 1px solid #444 !important;
-//         color: #e0e0e0 !important;
-//     }
-    
-//     .tag-entry:hover {
-//         background: #333 !important;
-//     }
-    
-//     /* Dialog styling */
-//     sl-dialog::part(panel) {
-//         background: #242424;
-//         color: #e0e0e0;
-//     }
-    
-//     sl-dialog::part(header) {
-//         background: #333;
-//         border-bottom: 1px solid #444;
-//     }
-    
-//     sl-dialog::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//     }
-    
-//     /* Toast notifications */
-//     .notification-toast {
-//         background-color: #242424 !important;
-//         color: #e0e0e0 !important;
-//         border: 1px solid #444;
-//     }
-
-//         .resource-manager-drawer::part(panel) {
-//         --size: calc(100vw - 280px);
-//         background: #242424;
-//         color: #e0e0e0;
-//         display: flex;
-//         flex-direction: column;
-//     }
-    
-//     .resource-manager-drawer::part(header) {
-//         background: #333;
-//         padding: 16px;
-//         border-bottom: 1px solid #444;
-//         height: 48px;
-//         min-height: 48px; /* Ensure consistent height */
-//         flex-shrink: 0; /* Prevent shrinking */
-//     }
-    
-//     .resource-manager-drawer::part(body) {
-//         padding: 0;
-//         flex: 1; /* Take up available space */
-//         display: flex;
-//         flex-direction: column;
-//         overflow: hidden; /* Important for proper scrolling */
-//     }
-    
-//     .resource-manager-drawer::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//         padding: 12px;
-//         flex-shrink: 0; /* Prevent shrinking */
-//     }
-    
-//     /* Make tab panels fill the container */
-//     .resource-manager-drawer sl-tab-group {
-//         height: 100%;
-//         display: flex;
-//         flex-direction: column;
-//     }
-    
-//     .resource-manager-drawer sl-tab-panel::part(base) {
-//         height: 100%;
-//         overflow-y: auto; /* Allow scrolling within tabs */
-//     }
-
-//         `;
-
-
-//         drawer.innerHTML = `
-//         ${styles.outerHTML}
-//         <div class="resource-manager-content">
-//             <sl-tab-group>
-//                 <!-- Texture Panel -->
-//                 <sl-tab slot="nav" panel="textures">
-//                     <span class="material-icons">image</span>
-//                     Textures
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="sounds">
-//                     <span class="material-icons">volume_up</span>
-//                     Sounds
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="splashArt">
-//                     <span class="material-icons">photo_library</span>
-//                     Splash Art
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="bestiary">
-//                     <span class="material-icons">pets</span>
-//                     Bestiary
-//                 </sl-tab>
-    
-//                 <!-- Texture Panel -->
-//                 <sl-tab-panel name="textures">
-//                     <div class="panel-header">
-//                         <sl-button-group class="texture-categories">
-//                             <sl-button size="small" data-category="walls">Walls</sl-button>
-//                             <sl-button size="small" data-category="doors">Doors</sl-button>
-//                             <sl-button size="small" data-category="environmental">Environmental</sl-button>
-//                             <sl-button size="small" data-category="props">Props</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="texture-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="image/*" multiple class="texture-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each texture category -->
-//                     <div id="wallsGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="environmentalGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-    
-//                 <!-- Sounds Panel -->
-//                 <sl-tab-panel name="sounds">
-//                     <div class="panel-header">
-//                         <sl-button-group class="sound-categories">
-//                             <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
-//                             <sl-button size="small" data-category="effects">Effects</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="sound-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each sound category -->
-//                     <div id="ambientGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="effectsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-
-// <sl-tab-panel name="splashArt">
-//     <div class="panel-header">
-//         <div class="splash-art-controls" style="display: flex; align-items: center; gap: 16px;">
-//             <sl-button-group>
-//                 <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
-//                 <sl-button size="small" data-category="loading">Loading</sl-button>
-//                 <sl-button size="small" data-category="background">Background</sl-button>
-//             </sl-button-group>
-            
-//             <sl-button size="small" class="splashart-upload-btn" variant="primary">
-//                 <span class="material-icons">add_circle</span>
-//             </sl-button>
-//             <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
-//         </div>
-
-//         <div class="view-controls">
-//             <sl-button-group>
-//                 <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                     <span class="material-icons">grid_view</span>
-//                 </sl-button>
-//                 <sl-button size="small" class="view-toggle" data-view="list">
-//                     <span class="material-icons">view_list</span>
-//                 </sl-button>
-//             </sl-button-group>
-//         </div>
-//     </div>
-
-//     <!-- Splash art galleries -->
-//     <div id="titleGallery" class="gallery-container gallery-grid"></div>
-//     <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//     <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-// </sl-tab-panel>
-
-
-//             <!-- Bestiary Panel -->
-// <sl-tab-panel name="bestiary">
-//     <div class="panel-header">
-
-//         <div class="flex-spacer"></div>
-//         <sl-button size="medium" class="add-monster-btn" variant="primary">
-//             <span class="material-icons" slot="prefix">add_circle</span>
-
-//         </sl-button>
-//     </div>
-
-//     <div class="view-controls">
-//         <sl-button-group>
-//             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                 <span class="material-icons">grid_view</span>
-//             </sl-button>
-//             <sl-button size="small" class="view-toggle" data-view="list">
-//                 <span class="material-icons">view_list</span>
-//             </sl-button>
-//         </sl-button-group>
-//     </div>
-
-//     <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
-// </sl-tab-panel>
-//     </sl-tab-group>
-
-//     <!-- Footer Actions -->
-// <div slot="footer" style="display: flex; justify-content: flex-end; width: 100%;">
-//     <!-- Standard buttons (always visible) -->
-//     <sl-button variant="primary" id="saveResourcePack">
-//         <span class="material-icons" slot="prefix">save</span>
-//         Save
-//     </sl-button>
-//     <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">folder_open</span>
-//         Load
-//     </sl-button>
-//         <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">close</span>
-//         Close
-//     </sl-button>
-// </div>
-// `;
-
-// if (this.mapEditor && !this.monsterManager) {
-//     this.initializeMonsterManager(this.mapEditor).then(() => {
-//         // Load bestiary gallery after initialization
-//         const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-//         if (bestiaryPanel) {
-//             this.updateBestiaryGallery(drawer, 'grid');
-//         }
-//     });
-// }
-
-// const packNameInput = drawer.querySelector('#packNameInput');
-// if (packNameInput) {
-//     packNameInput.addEventListener('sl-change', (e) => {
-//         if (!this.activeResourcePack) {
-//             this.activeResourcePack = {};
-//         }
-//         this.activeResourcePack.name = e.target.value;
-//     });
-// }
-
-//         // Add pack selector to drawer header
-//         const packSelector = document.createElement('sl-select');
-//         packSelector.label = 'Resource Pack';
-
-//         this.loadedPacks.forEach((pack, id) => {
-//             const option = document.createElement('sl-option');
-//             option.value = id;
-//             option.textContent = pack.name;
-//             packSelector.appendChild(option);
-//         });
-
-//         packSelector.value = this.activePackId;
-//         packSelector.addEventListener('sl-change', (e) => {
-//             this.switchResourcePack(e.target.value);
-//         });
-
-//         // Add "Import Pack" button
-//         const importBtn = document.createElement('sl-button');
-//         importBtn.innerHTML = `
-//         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-//         Import Pack
-//     `;
-//         importBtn.addEventListener('click', () => {
-//             // Show pack import dialog
-//             this.showPackImportDialog();
-//         });
-
-//         // Add event handlers
-//         this.setupEventHandlers(drawer);
-
-//         document.body.appendChild(drawer);
-//         return drawer;
-//     }
-
-// Updated method to remove inline styles
-// Replace your existing createResourceManagerUI method with this
-
-// Updated createResourceManagerUI method that uses the initStyles approach
-
-// Add this method to your ResourceManager class
-
-initStyles() {
-    const styles = document.createElement("style");
-    styles.textContent = `
-    /* Resource Manager drawer styling */
-.resource-manager-drawer::part(panel) {
-  --size: calc(100vw - var(--toolbar-width));
-  background: #242424;
-  color: #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  left: var(--toolbar-width);
+            .resource-info {
+                font-size: var(--sl-font-size-small);
+            }
+
+                .view-controls {
+        margin: 1rem 0;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .gallery-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+    }
+
+    .gallery-list .resource-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+
+    .gallery-list .resource-thumbnail {
+        width: 50px;
+        height: 50px;
+    }
+
+    .resource-preview-tooltip {
+        position: fixed;
+        z-index: 10000;
+        background: white;
+        padding: 4px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        pointer-events: none;
+        display: none;
+    }
+
+    .resource-preview-tooltip img {
+        max-width: 200px;
+        max-height: 200px;
+        object-fit: contain;
+    }
+
+        .gallery-container {
+        margin-top: 1rem;
+        min-height: 200px;
+    }
+
+    .gallery-container.gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .gallery-container.gallery-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .add-resources {
+        display: flex;
+        gap: 1rem;
+    }
+
+    sl-tab-panel {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+
+        .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .flex-spacer {
+        flex: 1;
+    }
+
+    .panel-header sl-button-group {
+        flex: 0 0 auto;
+    }
+
+    .panel-header .material-icons {
+        font-size: 18px;
+    }
+
+    .bestiary-buttons {
+    margin-left: auto;
 }
 
-.resource-manager-drawer::part(header) {
-  background: #333;
-  padding: 16px;
-  border-bottom: 1px solid #444;
-  height: 48px;
-  min-height: 48px;
-  flex-shrink: 0;
+#bestiaryGallery .resource-item {
+    transition: all 0.2s ease;
+    border: 1px solid var(--sl-color-neutral-200);
 }
 
-.resource-manager-drawer::part(body) {
-  padding: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+#bestiaryGallery .resource-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--sl-color-primary-300);
 }
 
-.resource-manager-drawer::part(footer) {
-  background: #333;
-  border-top: 1px solid #444;
-  padding: 12px;
-  flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+#bestiaryGallery .resource-name {
+    font-weight: 500;
+    margin-bottom: 4px;
 }
 
-.resource-manager-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding-bottom: 52px; /* Space for footer */
-  overflow: hidden;
+#bestiaryGallery .resource-meta {
+    font-size: 0.8em;
+    color: var(--sl-color-neutral-600);
 }
+
+#bestiaryGallery .monster-badge {
+    font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
+.gallery-grid .resource-thumbnail {
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.gallery-list .resource-thumbnail {
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.monster-filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.monster-filter-bar sl-select {
+    min-width: 150px;
+}
+
+/* Monster detail dialog styles */
+.monster-detail-dialog::part(panel) {
+    max-width: 800px;
+}
+
+.monster-stat-block {
+    font-family: "Noto Serif", serif;
+    line-height: 1.5;
+}
+
+.monster-stat-block h3 {
+    border-bottom: 1px solid #D3C4A2;
+    padding-bottom: 4px;
+    font-size: 1.3em;
+}
+
+.monster-abilities {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    text-align: center;
+    background: #F5F0E5;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 16px 0;
+}
+
+.monster-ability-name {
+    font-weight: bold;
+}
+
+    .resource-manager-drawer::part(panel) {
+        --size: calc(100vw - 280px);
+        background: #242424;
+        color: #e0e0e0;
+    }
     
-    /* Make sure the resource-manager-content fills the height */
-    .resource-manager-drawer .resource-manager-content {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
+    .resource-manager-drawer::part(header) {
+        background: #333;
+        padding: 16px;
+        border-bottom: 1px solid #444;
+        height: 48px;
+    }
+    
+    .resource-manager-drawer::part(body) {
+        padding: 0;
+    }
+    
+    .resource-manager-drawer::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+        padding: 12px;
     }
     
     /* Tab styling */
-    .resource-manager-drawer sl-tab-group {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    
     .resource-manager-drawer sl-tab-group::part(base) {
-      background: #242424;
+        background: #242424;
     }
     
     .resource-manager-drawer sl-tab-group::part(nav) {
-      background: #333;
-      border-bottom: 1px solid #444;
+        background: #333;
+        border-bottom: 1px solid #444;
     }
     
     .resource-manager-drawer sl-tab::part(base) {
-      color: #e0e0e0;
-      border: none;
+        color: #e0e0e0;
+        border: none;
     }
     
     .resource-manager-drawer sl-tab[active]::part(base) {
-      color: #673ab7;
-      border-bottom-color: #673ab7;
+        color: #673ab7;
+        border-bottom-color: #673ab7;
     }
     
-
-
     .resource-manager-drawer sl-tab-panel::part(base) {
-  height: 100%;
-  overflow-y: auto;
-  padding: 16px;
-}
+        padding: 16px;
+    }
     
     /* Button styling */
     .resource-manager-drawer sl-button::part(base) {
-      border: none;
+        border: none;
     }
     
     .resource-manager-drawer sl-button[variant='primary']::part(base) {
-      background: #673ab7;
-      color: white;
+        background: #673ab7;
+        color: white;
     }
     
     .resource-manager-drawer sl-button[variant='primary']:hover::part(base) {
-      background: #7e57c2;
+        background: #7e57c2;
     }
     
     .resource-manager-drawer sl-button[variant='default']::part(base) {
-      background: #333;
-      color: #e0e0e0;
+        background: #333;
+        color: #e0e0e0;
     }
     
     .resource-manager-drawer sl-button[variant='default']:hover::part(base) {
-      background: #444;
+        background: #444;
     }
     
     .resource-manager-drawer sl-button[variant='danger']::part(base) {
-      background: #d32f2f;
-      color: white;
+        background: #d32f2f;
+        color: white;
     }
     
     /* Form elements */
     .resource-manager-drawer sl-input::part(base),
     .resource-manager-drawer sl-select::part(base),
     .resource-manager-drawer sl-textarea::part(base) {
-      background: #333;
-      color: #e0e0e0;
-      border-color: #444;
+        background: #333;
+        color: #e0e0e0;
+        border-color: #444;
     }
     
     .resource-manager-drawer sl-input:focus-within::part(base),
     .resource-manager-drawer sl-select:focus-within::part(base),
     .resource-manager-drawer sl-textarea:focus-within::part(base) {
-      border-color: #673ab7;
+        border-color: #673ab7;
     }
     
     /* Card styling */
     .resource-manager-drawer sl-card::part(base) {
-      background: #333;
-      color: #e0e0e0;
-      border: 1px solid #444;
+        background: #333;
+        color: #e0e0e0;
+        border: 1px solid #444;
     }
     
     /* Gallery items */
     .resource-categories {
-      margin-bottom: 1rem;
-      background: #333;
-      padding: 8px;
-      border-radius: 4px;
+        margin-bottom: 1rem;
+        background: #333;
+        padding: 8px;
+        border-radius: 4px;
     }
-    
+
     .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
     }
-    
+
     .resource-item {
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 0.5rem;
-      transition: all 0.2s ease;
-      background: #333;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 0.5rem;
+        transition: all 0.2s ease;
+        background: #333;
     }
-    
+
     .resource-item:hover {
-      border-color: #673ab7;
-      transform: translateY(-2px);
+        border-color: #673ab7;
+        transform: translateY(-2px);
     }
-    
+
     .resource-thumbnail {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 0.5rem;
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
     }
-    
+
     .resource-info {
-      font-size: 0.9rem;
-      color: #e0e0e0;
+        font-size: 0.9rem;
+        color: #e0e0e0;
     }
-    
+
     .view-controls {
-      margin: 1rem 0;
-      display: flex;
-      justify-content: flex-end;
-      background: #333;
-      padding: 8px;
-      border-radius: 4px;
-      position: sticky;
-      top: 0;
-      z-index: 5;
+        margin: 1rem 0;
+        display: flex;
+        justify-content: flex-end;
+        background: #333;
+        padding: 8px;
+        border-radius: 4px;
     }
-    
+
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+
     .gallery-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
     }
     
     /* Props section styling */
     .props-tag-sidebar {
-      background: #333 !important;
-      border: 1px solid #444;
+        background: #333 !important;
+        border: 1px solid #444;
     }
     
     .tag-entry {
-      background: #242424 !important;
-      border: 1px solid #444 !important;
-      color: #e0e0e0 !important;
+        background: #242424 !important;
+        border: 1px solid #444 !important;
+        color: #e0e0e0 !important;
     }
     
     .tag-entry:hover {
-      background: #333 !important;
+        background: #333 !important;
     }
     
-    /* Make sure panel headers stay at the top */
-    .panel-header {
-      position: sticky;
-      top: 0;
-      background: #242424;
-      z-index: 5;
-      padding-top: 8px;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
+    /* Dialog styling */
+    sl-dialog::part(panel) {
+        background: #242424;
+        color: #e0e0e0;
     }
     
-    .flex-spacer {
-      flex: 1;
+    sl-dialog::part(header) {
+        background: #333;
+        border-bottom: 1px solid #444;
     }
     
-    .panel-header sl-button-group {
-      flex: 0 0 auto;
-    }
-    
-    .panel-header .material-icons {
-      font-size: 18px;
-    }
-    
-    /* Monster bestiary styles */
-    .bestiary-buttons {
-      margin-left: auto;
-    }
-    
-    #bestiaryGallery {
-      flex: 1;
-      overflow-y: auto;
-    }
-    
-    #bestiaryGallery .resource-item {
-      transition: all 0.2s ease;
-      border: 1px solid #444;
-    }
-    
-    #bestiaryGallery .resource-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-color: #673ab7;
-    }
-    
-    #bestiaryGallery .resource-name {
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-    
-    #bestiaryGallery .resource-meta {
-      font-size: 0.8em;
-      color: #999;
-    }
-    
-    .gallery-grid .resource-thumbnail {
-      aspect-ratio: 1;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-bottom: 8px;
-    }
-    
-    .gallery-list .resource-thumbnail {
-      width: 60px;
-      height: 60px;
-      border-radius: 4px;
-      object-fit: cover;
-    }
-    
-    /* Layout containers */
-    .props-layout-container {
-      display: flex;
-      gap: 16px;
-      height: calc(100% - 60px);
-    }
-    
-    .gallery-container {
-      margin-top: 1rem;
-      min-height: 200px;
-    }
-    
-    /* Resource previews */
-    .resource-preview-tooltip {
-      position: fixed;
-      z-index: 10000;
-      background: #333;
-      padding: 4px;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      pointer-events: none;
-      display: none;
-    }
-    
-    .resource-preview-tooltip img {
-      max-width: 200px;
-      max-height: 200px;
-      object-fit: contain;
-    }
-    
-    /* Compatibility with new UI */
-    body.new-ui .resource-manager-drawer::part(panel) {
-      left: var(--toolbar-width);
-      width: calc(100vw - var(--toolbar-width));
-      max-width: calc(100vw - var(--toolbar-width));
-    }
-    
-    /* Hide sidebar when resource manager is open */
-    body.new-ui .resource-manager-drawer[open] ~ .sidebar {
-      visibility: hidden;
-    }
-    
-    /* Make sure the drawer appears above other UI elements */
-    body.new-ui .resource-manager-drawer {
-      z-index: 1100;
+    sl-dialog::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
     }
     
     /* Toast notifications */
     .notification-toast {
-      background-color: #242424 !important;
-      color: #e0e0e0 !important;
-      border: 1px solid #444;
-    }
-    
-    /* Media queries */
-    @media (max-width: 1200px) {
-      .gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      }
+        background-color: #242424 !important;
+        color: #e0e0e0 !important;
+        border: 1px solid #444;
     }
 
+        .resource-manager-drawer::part(panel) {
+        --size: calc(100vw - 280px);
+        background: #242424;
+        color: #e0e0e0;
+        display: flex;
+        flex-direction: column;
+    }
     
-    `;
-  
-    document.head.appendChild(styles);
-  }
-
-createResourceManagerUI() {
-    // Initialize styles first (like Storyboard does)
-    if (!this._stylesInitialized) {
-        this.initStyles();
-        this._stylesInitialized = true;
+    .resource-manager-drawer::part(header) {
+        background: #333;
+        padding: 16px;
+        border-bottom: 1px solid #444;
+        height: 48px;
+        min-height: 48px; /* Ensure consistent height */
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    .resource-manager-drawer::part(body) {
+        padding: 0;
+        flex: 1; /* Take up available space */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Important for proper scrolling */
+    }
+    
+    .resource-manager-drawer::part(footer) {
+        background: #333;
+        border-top: 1px solid #444;
+        padding: 12px;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    /* Make tab panels fill the container */
+    .resource-manager-drawer sl-tab-group {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .resource-manager-drawer sl-tab-panel::part(base) {
+        height: 100%;
+        overflow-y: auto; /* Allow scrolling within tabs */
     }
 
-    // Create the drawer
-    const drawer = document.createElement('sl-drawer');
-    drawer.label = "Resource Manager";
-    drawer.placement = "end";
-    drawer.classList.add("resource-manager-drawer");
-    
-    // No inline styles - now handled by initStyles
-    
-    drawer.innerHTML = `
+        `;
+
+
+        drawer.innerHTML = `
+        ${styles.outerHTML}
         <div class="resource-manager-content">
             <sl-tab-group>
                 <!-- Texture Panel -->
@@ -3732,239 +3141,6 @@ if (packNameInput) {
         document.body.appendChild(drawer);
         return drawer;
     }
-
-
-
-// createResourceManagerUI() {
-//     // Create the drawer
-//     const drawer = document.createElement('sl-drawer');
-//     drawer.label = "Resource Manager";
-//     drawer.placement = "end";
-//     drawer.classList.add("resource-manager-drawer");
-    
-//     // Remove inline style - now handled by CSS
-//     // drawer.style.cssText = '--size: calc(100vw - 260px);';
-
-//     // Add embedded styles - removed, now in external CSS
-//     // const styles = document.createElement('style');
-//     // styles.textContent = `...` - All CSS moved to new-rm-ui.css
-
-//     drawer.innerHTML = `
-//         <div class="resource-manager-content">
-//             <sl-tab-group>
-//                 <!-- Texture Panel -->
-//                 <sl-tab slot="nav" panel="textures">
-//                     <span class="material-icons">image</span>
-//                     Textures
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="sounds">
-//                     <span class="material-icons">volume_up</span>
-//                     Sounds
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="splashArt">
-//                     <span class="material-icons">photo_library</span>
-//                     Splash Art
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="bestiary">
-//                     <span class="material-icons">pets</span>
-//                     Bestiary
-//                 </sl-tab>
-    
-//                 <!-- Texture Panel -->
-//                 <sl-tab-panel name="textures">
-//                     <div class="panel-header">
-//                         <sl-button-group class="texture-categories">
-//                             <sl-button size="small" data-category="walls">Walls</sl-button>
-//                             <sl-button size="small" data-category="doors">Doors</sl-button>
-//                             <sl-button size="small" data-category="environmental">Environmental</sl-button>
-//                             <sl-button size="small" data-category="props">Props</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="texture-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="image/*" multiple class="texture-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each texture category -->
-//                     <div id="wallsGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="environmentalGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-    
-//                 <!-- Sounds Panel -->
-//                 <sl-tab-panel name="sounds">
-//                     <div class="panel-header">
-//                         <sl-button-group class="sound-categories">
-//                             <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
-//                             <sl-button size="small" data-category="effects">Effects</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="sound-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each sound category -->
-//                     <div id="ambientGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="effectsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-
-// <sl-tab-panel name="splashArt">
-//     <div class="panel-header">
-//         <div class="splash-art-controls" style="display: flex; align-items: center; gap: 16px;">
-//             <sl-button-group>
-//                 <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
-//                 <sl-button size="small" data-category="loading">Loading</sl-button>
-//                 <sl-button size="small" data-category="background">Background</sl-button>
-//             </sl-button-group>
-            
-//             <sl-button size="small" class="splashart-upload-btn" variant="primary">
-//                 <span class="material-icons">add_circle</span>
-//             </sl-button>
-//             <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
-//         </div>
-
-//         <div class="view-controls">
-//             <sl-button-group>
-//                 <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                     <span class="material-icons">grid_view</span>
-//                 </sl-button>
-//                 <sl-button size="small" class="view-toggle" data-view="list">
-//                     <span class="material-icons">view_list</span>
-//                 </sl-button>
-//             </sl-button-group>
-//         </div>
-//     </div>
-
-//     <!-- Splash art galleries -->
-//     <div id="titleGallery" class="gallery-container gallery-grid"></div>
-//     <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//     <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-// </sl-tab-panel>
-
-
-//             <!-- Bestiary Panel -->
-// <sl-tab-panel name="bestiary">
-//     <div class="panel-header">
-
-//         <div class="flex-spacer"></div>
-//         <sl-button size="medium" class="add-monster-btn" variant="primary">
-//             <span class="material-icons" slot="prefix">add_circle</span>
-
-//         </sl-button>
-//     </div>
-
-//     <div class="view-controls">
-//         <sl-button-group>
-//             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                 <span class="material-icons">grid_view</span>
-//             </sl-button>
-//             <sl-button size="small" class="view-toggle" data-view="list">
-//                 <span class="material-icons">view_list</span>
-//             </sl-button>
-//         </sl-button-group>
-//     </div>
-
-//     <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
-// </sl-tab-panel>
-//     </sl-tab-group>
-
-//     <!-- Footer Actions -->
-// <div slot="footer" style="display: flex; justify-content: flex-end; width: 100%;">
-//     <!-- Standard buttons (always visible) -->
-//     <sl-button variant="primary" id="saveResourcePack">
-//         <span class="material-icons" slot="prefix">save</span>
-//         Save
-//     </sl-button>
-//     <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">folder_open</span>
-//         Load
-//     </sl-button>
-//         <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">close</span>
-//         Close
-//     </sl-button>
-// </div>
-// `;
-
-// if (this.mapEditor && !this.monsterManager) {
-//     this.initializeMonsterManager(this.mapEditor).then(() => {
-//         // Load bestiary gallery after initialization
-//         const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-//         if (bestiaryPanel) {
-//             this.updateBestiaryGallery(drawer, 'grid');
-//         }
-//     });
-// }
-
-// const packNameInput = drawer.querySelector('#packNameInput');
-// if (packNameInput) {
-//     packNameInput.addEventListener('sl-change', (e) => {
-//         if (!this.activeResourcePack) {
-//             this.activeResourcePack = {};
-//         }
-//         this.activeResourcePack.name = e.target.value;
-//     });
-// }
-
-//         // Add pack selector to drawer header
-//         const packSelector = document.createElement('sl-select');
-//         packSelector.label = 'Resource Pack';
-
-//         this.loadedPacks.forEach((pack, id) => {
-//             const option = document.createElement('sl-option');
-//             option.value = id;
-//             option.textContent = pack.name;
-//             packSelector.appendChild(option);
-//         });
-
-//         packSelector.value = this.activePackId;
-//         packSelector.addEventListener('sl-change', (e) => {
-//             this.switchResourcePack(e.target.value);
-//         });
-
-//         // Add "Import Pack" button
-//         const importBtn = document.createElement('sl-button');
-//         importBtn.innerHTML = `
-//         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-//         Import Pack
-//     `;
-//         importBtn.addEventListener('click', () => {
-//             // Show pack import dialog
-//             this.showPackImportDialog();
-//         });
-
-//         // Add event handlers
-//         this.setupEventHandlers(drawer);
-
-//         document.body.appendChild(drawer);
-//         return drawer;
-//     }
 
 
 setupEventHandlers(drawer) {
