@@ -178,7 +178,48 @@ this.registerEffectType('waterProp', {
       this.zoneEffects.forEach((effectData, zoneId) => {
         this.updateEffectQuality(zoneId, effectData, true);
       });
+
+      this.effects.forEach(effectData => {
+        if (effectData.mesh && effectData.mesh.material && effectData.mesh.material.emissiveIntensity !== undefined) {
+          switch(level) {
+            case 'high':
+              effectData.mesh.material.emissiveIntensity = 1.0;
+              break;
+            case 'medium':
+              effectData.mesh.material.emissiveIntensity = 0.7;
+              break;
+            case 'low':
+              effectData.mesh.material.emissiveIntensity = 0.4;
+              break;
+          }
+        }
+      });
+
+      this.ensureLowQualityEffects();
     }
+  }
+
+  ensureLowQualityEffects() {
+    if (this.qualityLevel !== 'low') return;
+    
+    // For each effect, provide a fallback if needed
+    this.effects.forEach(effectData => {
+      // Ensure the effect is visible even on low quality
+      if (effectData.container) {
+        effectData.container.visible = true;
+      }
+      
+      // For water effects specifically
+      if (effectData.type === 'waterProp') {
+        // Simplify the shader if possible
+        if (effectData.material && effectData.material.uniforms) {
+          // Reduce wave complexity
+          if (effectData.material.uniforms.maxIterations) {
+            effectData.material.uniforms.maxIterations.value = 2;
+          }
+        }
+      }
+    });
   }
   
   /**
@@ -455,124 +496,6 @@ createWaterPropEffect(object, definition, qualityLevel = 'medium') {
   // Add to scene
   this.scene3D.scene.add(container);
   
-  // // Create water shader material
-  // const waterMaterial = new THREE.ShaderMaterial({
-  //   uniforms: {
-  //     time: { value: 0 },
-  //     resolution: { value: new THREE.Vector2(512, 512) }, // Default resolution
-  //     baseColor: { value: waterColor },
-  //     flowSpeed: { value: flowSpeed },
-  //     transparency: { value: transparency },
-  //     isHorizontal: { value: isHorizontal ? 1.0 : 0.0 },
-  //     maxIterations: { value: settings.maxIterations || 5 },
-  //     intensity: { value: 0.005 * waterDepth }
-  //   },
-  //   vertexShader: `
-  //     uniform float time;
-  //     uniform float flowSpeed;
-  //     uniform float isHorizontal;
-  //     varying vec2 vUv;
-  //     varying vec3 vPosition;
-      
-  //     void main() {
-  //       vUv = uv;
-  //       vPosition = position;
-        
-  //       // Add subtle wave movement for horizontal water
-  //       vec3 newPosition = position;
-        
-  //       if (isHorizontal > 0.5) {
-  //         float wave = sin(position.x * 2.0 + time * flowSpeed) * 
-  //                    cos(position.z * 2.0 + time * flowSpeed * 0.8) * 0.05;
-          
-  //         newPosition.y += wave;
-  //       }
-        
-  //       gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-  //     }
-  //   `,
-  //   fragmentShader: `
-  //     uniform float time;
-  //     uniform vec2 resolution;
-  //     uniform vec3 baseColor;
-  //     uniform float flowSpeed;
-  //     uniform float transparency;
-  //     uniform float isHorizontal;
-  //     uniform int maxIterations;
-  //     uniform float intensity;
-      
-  //     varying vec2 vUv;
-  //     varying vec3 vPosition;
-      
-  //     #define TAU 6.28318530718
-      
-  //     void main() {
-  //       vec2 uv = vUv;
-        
-  //       // Horizontal water uses the Shadertoy effect
-  //       if (isHorizontal > 0.5) {
-  //         // Adapted from Shadertoy
-  //         float waterTime = time * 0.5 * flowSpeed;
-          
-  //         // Modify p to avoid tiling artifacts
-  //         vec2 p = mod(uv * TAU, TAU) - 250.0;
-  //         vec2 i = vec2(p);
-  //         float c = 1.0;
-          
-  //         // Fractal water calculation
-  //         for (int n = 0; n < 5; n++) {
-  //           if (n >= maxIterations) break; // Respect maxIterations uniform
-            
-  //           float t = waterTime * (1.0 - (3.5 / float(n+1)));
-  //           i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-  //           c += 1.0/length(vec2(p.x / (sin(i.x+t)/intensity), p.y / (cos(i.y+t)/intensity)));
-  //         }
-          
-  //         c /= float(maxIterations);
-  //         c = 1.17-pow(c, 1.4);
-          
-  //         // Create water color with more control
-  //         vec3 waterColor = vec3(pow(abs(c), 8.0));
-          
-  //         // Mix with base color instead of hardcoded blue
-  //         vec3 targetColor = baseColor + vec3(0.0, 0.15, 0.2);
-  //         waterColor = clamp(waterColor + targetColor, 0.0, 1.0);
-          
-  //         // Apply alpha
-  //         gl_FragColor = vec4(waterColor, transparency);
-  //       }
-  //       // Vertical water gets a simpler flowing pattern
-  //       else {
-  //         // Direction of flow = top to bottom
-  //         float flowOffset = -time * 2.0 * flowSpeed;
-          
-  //         // Distorted UV for flowing effect
-  //         vec2 flowUv = vec2(
-  //           uv.x + sin(uv.y * 10.0 + time * flowSpeed) * 0.05,
-  //           mod(uv.y + flowOffset, 1.0)
-  //         );
-          
-  //         // Create waves in the flow
-  //         float waves = sin(flowUv.y * 20.0) * 0.5 + 0.5;
-  //         waves *= sin(flowUv.x * 10.0 + time) * 0.5 + 0.5;
-          
-  //         // Add foam at edges and top
-  //         float foam = smoothstep(0.4, 0.5, sin(flowUv.y * 40.0 + time * 3.0) * 0.5 + 0.5);
-  //         foam *= smoothstep(0.0, 0.1, flowUv.y); // Top foam
-          
-  //         // Final color
-  //         vec3 waterColor = mix(baseColor, vec3(1.0), foam * 0.6 + waves * 0.2);
-          
-  //         // Apply alpha
-  //         gl_FragColor = vec4(waterColor, transparency);
-  //       }
-  //     }
-  //   `,
-  //   transparent: true,
-  //   side: THREE.DoubleSide
-  // });
-
- // IMPORTANT: Determine shader code based on quality level BEFORE creating the material
  let fragmentShaderCode, vertexShaderCode;
   
  if (qualityLevel === 'low') {
@@ -2108,6 +2031,10 @@ createImpactEffect(position, type = 'footstep', options = {}) {
  * @returns {Object} Effect data for tracking and updates
  */
 createDustEffect(position, options = {}) {
+
+  if (this.qualityLevel === 'low') {
+    return this.createSimpleDustEffect(position, options);
+  }
   // console.log("Dust effect requested at:", position, "with options:", options);
   
   // Skip if disabled or low quality without force override
@@ -2228,6 +2155,145 @@ createDustEffect(position, options = {}) {
   this.ensureCleanupInterval();
 
   // console.log(`Created dust effect with ${count} particles, ID: ${effectId}`);
+  
+  return particleSystem;
+}
+
+/**
+ * Create a simple dust effect for low-quality mode
+ * @param {Object} position {x, y, z} position for the effect
+ * @param {Object} options Optional configuration parameters
+ * @returns {Object} Effect data for tracking and updates
+ */
+createSimpleDustEffect(position, options = {}) {
+  console.log("Creating simple dust effect at:", position);
+  
+  // Skip if disabled
+  if (!this.enabled) return null;
+  
+  // Check for valid position
+  if (isNaN(position.x) || isNaN(position.y) || isNaN(position.z)) {
+    console.error("Dust effect failed: position contains NaN values");
+    return null;
+  }
+  
+  // Skip if we already have too many effects
+  if (this.temporaryEffects && this.temporaryEffects.size >= (this.maxTempEffects || 20)) {
+    return null;
+  }
+  
+  // Set up parameters
+  const count = options.count || 10; // Reduced for performance
+  const lifetime = options.lifetime || 1.0;
+  const size = options.size || 0.05;
+  const color = options.color || 0xcccccc;
+  
+  // Create geometry and material
+  const particlesGeometry = new THREE.BufferGeometry();
+  const particlesMaterial = new THREE.PointsMaterial({
+    color: color,
+    size: size,
+    transparent: true,
+    opacity: 0.6,
+    depthWrite: false
+  });
+  
+  // Create particle positions
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+  
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 0.1 + Math.random() * 0.2;
+    
+    // Starting positions in a circle around the effect point
+    positions[i3] = position.x + Math.cos(angle) * radius;
+    positions[i3 + 1] = position.y + 0.05; // Slightly above ground
+    positions[i3 + 2] = position.z + Math.sin(angle) * radius;
+    
+    // Add random velocities
+    velocities.push({
+      x: (Math.random() - 0.5) * 0.01,
+      y: 0.01 + Math.random() * 0.02,
+      z: (Math.random() - 0.5) * 0.01
+    });
+  }
+  
+  particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  
+  const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+  this.scene3D.scene.add(particles);
+  
+  // Create effect ID and data
+  const effectId = `dust-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  
+  // Create particle system and animation data
+  const particleSystem = {
+    id: effectId,
+    mesh: particles,
+    positions,
+    velocities,
+    lifetime: lifetime,
+    age: 0,
+    created: Date.now(),
+    
+    update: (deltaTime) => {
+      // Update age
+      particleSystem.age += deltaTime;
+      
+      // Check if expired
+      if (particleSystem.age >= particleSystem.lifetime) {
+        if (particleSystem.mesh.parent) {
+          this.scene3D.scene.remove(particleSystem.mesh);
+        }
+        particleSystem.mesh.geometry.dispose();
+        particleSystem.mesh.material.dispose();
+        if (this.temporaryEffects) {
+          this.temporaryEffects.delete(effectId);
+        }
+        return false; // Remove from updates
+      }
+      
+      // Update particles
+      for (let i = 0; i < count; i++) {
+        const i3 = i * 3;
+        
+        // Apply velocities
+        positions[i3] += velocities[i].x;
+        positions[i3 + 1] += velocities[i].y;
+        positions[i3 + 2] += velocities[i].z;
+        
+        // Slow down with friction and gravity
+        velocities[i].x *= 0.98;
+        velocities[i].z *= 0.98;
+        velocities[i].y -= 0.001;
+      }
+      
+      // Fade out
+      const fadeRatio = 1 - (particleSystem.age / particleSystem.lifetime);
+      particlesMaterial.opacity = 0.6 * fadeRatio;
+      
+      // Update buffer
+      particlesGeometry.attributes.position.needsUpdate = true;
+      
+      return true; // Keep updating
+    }
+  };
+  
+  // Add to temporary effects collection if available
+  if (this.temporaryEffects) {
+    this.temporaryEffects.set(effectId, particleSystem);
+  } else {
+    // If temporaryEffects doesn't exist, create it
+    this.temporaryEffects = new Map();
+    this.temporaryEffects.set(effectId, particleSystem);
+  }
+  
+  // Track for updates if not using temporaryEffects collection
+  if (this.emissiveObjects) {
+    this.emissiveObjects.push(particleSystem);
+  }
   
   return particleSystem;
 }
@@ -2488,17 +2554,6 @@ getParticleTexture() {
 
     let waterEffectsCount = 0;
   
-    // Update standard effects
-    // this.effects.forEach((effectData, objectId) => {
-    //   if (effectData.type === 'waterProp') {
-    //     waterEffectsCount++;
-    //   }
-    //   this.updateEffect(effectData, deltaTime);
-    // });
-    
-    // if (waterEffectsCount > 0) {
-    //   console.log(`Updating ${waterEffectsCount} water prop effects`);
-    // }
 
       // Update standard effects
   this.effects.forEach((effectData, objectId) => {
@@ -2522,22 +2577,32 @@ getParticleTexture() {
       this.updateEffect(effectData, deltaTime);
     });
     
-    // Update temporary effects
-    let updatedCount = 0;
-    this.temporaryEffects.forEach((effectData, effectId) => {
-      if (effectData.update) {
-        const keepUpdating = effectData.update(deltaTime);
-        if (!keepUpdating) {
-          this.temporaryEffects.delete(effectId);
-        } else {
-          updatedCount++;
-        }
+// Update temporary effects
+if (this.temporaryEffects && this.temporaryEffects.size > 0) {
+  let updatedCount = 0;
+  this.temporaryEffects.forEach((effectData, effectId) => {
+    if (effectData.update) {
+      const keepUpdating = effectData.update(deltaTime);
+      if (!keepUpdating) {
+        this.temporaryEffects.delete(effectId);
+      } else {
+        updatedCount++;
       }
-    });
-    
-    if (updatedCount > 0 && this.debug) {
-      console.log(`Updated ${updatedCount} temporary effects`);
     }
+  });
+  
+  if (this.debug && updatedCount > 0) {
+    console.log(`Updated ${updatedCount} temporary effects`);
+  }
+}
+
+// Legacy support for emissiveObjects (from VisualEffectsManager)
+if (this.emissiveObjects && this.emissiveObjects.length > 0) {
+  this.emissiveObjects = this.emissiveObjects.filter(obj => {
+    if (obj.update) return obj.update(deltaTime);
+    return true;
+  });
+}
   
   // Update zone effects
   this.zoneEffects.forEach((effectData, zoneId) => {
