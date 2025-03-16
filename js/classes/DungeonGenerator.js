@@ -2962,7 +2962,7 @@ handleExitInteraction() {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.8s ease;
-    z-index: 9999;
+    z-index: 10000;
   `;
   document.body.appendChild(flash);
   

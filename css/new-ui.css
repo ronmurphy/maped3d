@@ -637,3 +637,51 @@ body.new-ui .resource-manager-drawer {
   body.new-ui .resource-manager-drawer::part(panel) {
     max-width: calc(100% - var(--toolbar-width)) !important;
   }
+
+  /* 
+ * Add this to your new-ui.css file or include it in the initStyles method
+ * This ensures dialogs always appear on top of other UI elements
+ */
+
+/* Increase z-index for dialog components */
+sl-dialog::part(base) {
+  --sl-z-index-dialog: 9999;
+  z-index: 9999 !important; /* Higher than any other UI element */
+}
+
+
+
+/* For nested dialogs, we need to ensure proper stacking */
+sl-dialog + sl-dialog::part(base) {
+  z-index: 10000 !important; /* Even higher for nested dialogs */
+}
+
+
+
+/* Ensure modal dialogs are always topmost */
+sl-dialog[data-modal]::part(base),
+sl-dialog[data-important]::part(base) {
+  z-index: 10001 !important; /* Highest priority */
+}
+
+/* Make sure all dialog content is visible (for any dialog children) */
+sl-dialog::part(panel) {
+  z-index: 1; /* Local z-index within the dialog context */
+}
+
+/* For drawers and other UI components, set lower z-indexes */
+sl-drawer::part(base) {
+  --sl-z-index-drawer: 9000;
+  z-index: 9000 !important; /* Lower than dialogs */
+}
+
+
+
+/* Ensure tooltip and notification remain visible */
+sl-tooltip::part(base) {
+  z-index: 9500 !important; /* Between drawers and dialogs */
+}
+
+sl-alert {
+  z-index: 9600 !important; /* Also between drawers and dialogs */
+}

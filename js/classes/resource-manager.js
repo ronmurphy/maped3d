@@ -2440,869 +2440,239 @@ showNameEditor(resource, category, id, cardElement) {
         }
     }
 
-//     createResourceManagerUI() {
-//         // Create the drawer
-//         const drawer = document.createElement('sl-drawer');
-//         drawer.label = "Resource Manager";
-//         drawer.placement = "end";
-//         drawer.classList.add("resource-manager-drawer");
-//         drawer.style.cssText = '--size: calc(100vw - 260px);';
 
-//         // Add embedded styles
-//         const styles = document.createElement('style');
 
-
-
-//         styles.textContent = `
-
-    
-//             .resource-categories {
-//                 margin-bottom: 1rem;
-//             }
-    
-//             .gallery-grid {
-//                 display: grid;
-//                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//                 gap: 1rem;
-//                 padding: 1rem;
-//             }
-    
-//             .resource-item {
-//                 border: 1px solid var(--sl-color-neutral-200);
-//                 border-radius: var(--sl-border-radius-medium);
-//                 padding: 0.5rem;
-//                 transition: all 0.2s ease;
-//             }
-    
-//             .resource-item:hover {
-//                 border-color: var(--sl-color-primary-500);
-//                 transform: translateY(-2px);
-//             }
-    
-//             .resource-thumbnail {
-//                 width: 100%;
-//                 aspect-ratio: 1;
-//                 object-fit: cover;
-//                 border-radius: var(--sl-border-radius-small);
-//                 margin-bottom: 0.5rem;
-//             }
-    
-//             .resource-info {
-//                 font-size: var(--sl-font-size-small);
-//             }
-
-//                 .view-controls {
-//         margin: 1rem 0;
-//         display: flex;
-//         justify-content: flex-end;
-//     }
-
-//     .gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//         padding: 1rem;
-//     }
-
-//     .gallery-list {
-//         display: flex;
-//         flex-direction: column;
-//         gap: 0.5rem;
-//         padding: 1rem;
-//     }
-
-//     .gallery-list .resource-item {
-//         display: flex;
-//         align-items: center;
-//         gap: 1rem;
-//         padding: 0.5rem;
-//     }
-
-//     .gallery-list .resource-thumbnail {
-//         width: 50px;
-//         height: 50px;
-//     }
-
-//     .resource-preview-tooltip {
-//         position: fixed;
-//         z-index: 10000;
-//         background: white;
-//         padding: 4px;
-//         border-radius: 4px;
-//         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-//         pointer-events: none;
-//         display: none;
-//     }
-
-//     .resource-preview-tooltip img {
-//         max-width: 200px;
-//         max-height: 200px;
-//         object-fit: contain;
-//     }
-
-//         .gallery-container {
-//         margin-top: 1rem;
-//         min-height: 200px;
-//     }
-
-//     .gallery-container.gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//     }
-
-//     .gallery-container.gallery-list {
-//         display: flex;
-//         flex-direction: column;
-//         gap: 0.5rem;
-//     }
-
-//     .add-resources {
-//         display: flex;
-//         gap: 1rem;
-//     }
-
-//     sl-tab-panel {
-//         height: calc(100vh - 200px);
-//         overflow-y: auto;
-//     }
-
-//         .panel-header {
-//         display: flex;
-//         align-items: center;
-//         gap: 1rem;
-//         margin-bottom: 1rem;
-//     }
-
-//     .flex-spacer {
-//         flex: 1;
-//     }
-
-//     .panel-header sl-button-group {
-//         flex: 0 0 auto;
-//     }
-
-//     .panel-header .material-icons {
-//         font-size: 18px;
-//     }
-
-//     .bestiary-buttons {
-//     margin-left: auto;
-// }
-
-// #bestiaryGallery .resource-item {
-//     transition: all 0.2s ease;
-//     border: 1px solid var(--sl-color-neutral-200);
-// }
-
-// #bestiaryGallery .resource-item:hover {
-//     transform: translateY(-2px);
-//     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-//     border-color: var(--sl-color-primary-300);
-// }
-
-// #bestiaryGallery .resource-name {
-//     font-weight: 500;
-//     margin-bottom: 4px;
-// }
-
-// #bestiaryGallery .resource-meta {
-//     font-size: 0.8em;
-//     color: var(--sl-color-neutral-600);
-// }
-
-// #bestiaryGallery .monster-badge {
-//     font-size: 0.75rem;
-//     background: rgba(0, 0, 0, 0.7);
-//     color: white;
-//     padding: 2px 6px;
-//     border-radius: 10px;
-//     position: absolute;
-//     top: 6px;
-//     right: 6px;
-// }
-
-// .gallery-grid .resource-thumbnail {
-//     aspect-ratio: 1;
-//     object-fit: cover;
-//     border-radius: 4px;
-//     margin-bottom: 8px;
-// }
-
-// .gallery-list .resource-thumbnail {
-//     width: 60px;
-//     height: 60px;
-//     border-radius: 4px;
-//     object-fit: cover;
-// }
-
-// .monster-filter-bar {
-//     display: flex;
-//     gap: 8px;
-//     margin-bottom: 16px;
-//     flex-wrap: wrap;
-// }
-
-// .monster-filter-bar sl-select {
-//     min-width: 150px;
-// }
-
-// /* Monster detail dialog styles */
-// .monster-detail-dialog::part(panel) {
-//     max-width: 800px;
-// }
-
-// .monster-stat-block {
-//     font-family: "Noto Serif", serif;
-//     line-height: 1.5;
-// }
-
-// .monster-stat-block h3 {
-//     border-bottom: 1px solid #D3C4A2;
-//     padding-bottom: 4px;
-//     font-size: 1.3em;
-// }
-
-// .monster-abilities {
-//     display: grid;
-//     grid-template-columns: repeat(6, 1fr);
-//     text-align: center;
-//     background: #F5F0E5;
-//     padding: 10px;
-//     border-radius: 5px;
-//     margin: 16px 0;
-// }
-
-// .monster-ability-name {
-//     font-weight: bold;
-// }
-
-//     .resource-manager-drawer::part(panel) {
-//         --size: calc(100vw - 280px);
-//         background: #242424;
-//         color: #e0e0e0;
-//     }
-    
-//     .resource-manager-drawer::part(header) {
-//         background: #333;
-//         padding: 16px;
-//         border-bottom: 1px solid #444;
-//         height: 48px;
-//     }
-    
-//     .resource-manager-drawer::part(body) {
-//         padding: 0;
-//     }
-    
-//     .resource-manager-drawer::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//         padding: 12px;
-//     }
-    
-//     /* Tab styling */
-//     .resource-manager-drawer sl-tab-group::part(base) {
-//         background: #242424;
-//     }
-    
-//     .resource-manager-drawer sl-tab-group::part(nav) {
-//         background: #333;
-//         border-bottom: 1px solid #444;
-//     }
-    
-//     .resource-manager-drawer sl-tab::part(base) {
-//         color: #e0e0e0;
-//         border: none;
-//     }
-    
-//     .resource-manager-drawer sl-tab[active]::part(base) {
-//         color: #673ab7;
-//         border-bottom-color: #673ab7;
-//     }
-    
-//     .resource-manager-drawer sl-tab-panel::part(base) {
-//         padding: 16px;
-//     }
-    
-//     /* Button styling */
-//     .resource-manager-drawer sl-button::part(base) {
-//         border: none;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='primary']::part(base) {
-//         background: #673ab7;
-//         color: white;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='primary']:hover::part(base) {
-//         background: #7e57c2;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='default']::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='default']:hover::part(base) {
-//         background: #444;
-//     }
-    
-//     .resource-manager-drawer sl-button[variant='danger']::part(base) {
-//         background: #d32f2f;
-//         color: white;
-//     }
-    
-//     /* Form elements */
-//     .resource-manager-drawer sl-input::part(base),
-//     .resource-manager-drawer sl-select::part(base),
-//     .resource-manager-drawer sl-textarea::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//         border-color: #444;
-//     }
-    
-//     .resource-manager-drawer sl-input:focus-within::part(base),
-//     .resource-manager-drawer sl-select:focus-within::part(base),
-//     .resource-manager-drawer sl-textarea:focus-within::part(base) {
-//         border-color: #673ab7;
-//     }
-    
-//     /* Card styling */
-//     .resource-manager-drawer sl-card::part(base) {
-//         background: #333;
-//         color: #e0e0e0;
-//         border: 1px solid #444;
-//     }
-    
-//     /* Gallery items */
-//     .resource-categories {
-//         margin-bottom: 1rem;
-//         background: #333;
-//         padding: 8px;
-//         border-radius: 4px;
-//     }
-
-//     .gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//         padding: 1rem;
-//     }
-
-//     .resource-item {
-//         border: 1px solid #444;
-//         border-radius: 4px;
-//         padding: 0.5rem;
-//         transition: all 0.2s ease;
-//         background: #333;
-//     }
-
-//     .resource-item:hover {
-//         border-color: #673ab7;
-//         transform: translateY(-2px);
-//     }
-
-//     .resource-thumbnail {
-//         width: 100%;
-//         aspect-ratio: 1;
-//         object-fit: cover;
-//         border-radius: 4px;
-//         margin-bottom: 0.5rem;
-//     }
-
-//     .resource-info {
-//         font-size: 0.9rem;
-//         color: #e0e0e0;
-//     }
-
-//     .view-controls {
-//         margin: 1rem 0;
-//         display: flex;
-//         justify-content: flex-end;
-//         background: #333;
-//         padding: 8px;
-//         border-radius: 4px;
-//     }
-
-//     .gallery-grid {
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-//         gap: 1rem;
-//         padding: 1rem;
-//     }
-
-//     .gallery-list {
-//         display: flex;
-//         flex-direction: column;
-//         gap: 0.5rem;
-//         padding: 1rem;
-//     }
-    
-//     /* Props section styling */
-//     .props-tag-sidebar {
-//         background: #333 !important;
-//         border: 1px solid #444;
-//     }
-    
-//     .tag-entry {
-//         background: #242424 !important;
-//         border: 1px solid #444 !important;
-//         color: #e0e0e0 !important;
-//     }
-    
-//     .tag-entry:hover {
-//         background: #333 !important;
-//     }
-    
-//     /* Dialog styling */
-//     sl-dialog::part(panel) {
-//         background: #242424;
-//         color: #e0e0e0;
-//     }
-    
-//     sl-dialog::part(header) {
-//         background: #333;
-//         border-bottom: 1px solid #444;
-//     }
-    
-//     sl-dialog::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//     }
-    
-//     /* Toast notifications */
-//     .notification-toast {
-//         background-color: #242424 !important;
-//         color: #e0e0e0 !important;
-//         border: 1px solid #444;
-//     }
-
-//         .resource-manager-drawer::part(panel) {
-//         --size: calc(100vw - 280px);
-//         background: #242424;
-//         color: #e0e0e0;
-//         display: flex;
-//         flex-direction: column;
-//     }
-    
-//     .resource-manager-drawer::part(header) {
-//         background: #333;
-//         padding: 16px;
-//         border-bottom: 1px solid #444;
-//         height: 48px;
-//         min-height: 48px; /* Ensure consistent height */
-//         flex-shrink: 0; /* Prevent shrinking */
-//     }
-    
-//     .resource-manager-drawer::part(body) {
-//         padding: 0;
-//         flex: 1; /* Take up available space */
-//         display: flex;
-//         flex-direction: column;
-//         overflow: hidden; /* Important for proper scrolling */
-//     }
-    
-//     .resource-manager-drawer::part(footer) {
-//         background: #333;
-//         border-top: 1px solid #444;
-//         padding: 12px;
-//         flex-shrink: 0; /* Prevent shrinking */
-//     }
-    
-//     /* Make tab panels fill the container */
-//     .resource-manager-drawer sl-tab-group {
-//         height: 100%;
-//         display: flex;
-//         flex-direction: column;
-//     }
-    
-//     .resource-manager-drawer sl-tab-panel::part(base) {
-//         height: 100%;
-//         overflow-y: auto; /* Allow scrolling within tabs */
-//     }
-
-//         `;
-
-
-//         drawer.innerHTML = `
-//         ${styles.outerHTML}
-//         <div class="resource-manager-content">
-//             <sl-tab-group>
-//                 <!-- Texture Panel -->
-//                 <sl-tab slot="nav" panel="textures">
-//                     <span class="material-icons">image</span>
-//                     Textures
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="sounds">
-//                     <span class="material-icons">volume_up</span>
-//                     Sounds
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="splashArt">
-//                     <span class="material-icons">photo_library</span>
-//                     Splash Art
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="bestiary">
-//                     <span class="material-icons">pets</span>
-//                     Bestiary
-//                 </sl-tab>
-    
-//                 <!-- Texture Panel -->
-//                 <sl-tab-panel name="textures">
-//                     <div class="panel-header">
-//                         <sl-button-group class="texture-categories">
-//                             <sl-button size="small" data-category="walls">Walls</sl-button>
-//                             <sl-button size="small" data-category="doors">Doors</sl-button>
-//                             <sl-button size="small" data-category="environmental">Environmental</sl-button>
-//                             <sl-button size="small" data-category="props">Props</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="texture-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="image/*" multiple class="texture-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each texture category -->
-//                     <div id="wallsGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="environmentalGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-    
-//                 <!-- Sounds Panel -->
-//                 <sl-tab-panel name="sounds">
-//                     <div class="panel-header">
-//                         <sl-button-group class="sound-categories">
-//                             <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
-//                             <sl-button size="small" data-category="effects">Effects</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="sound-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each sound category -->
-//                     <div id="ambientGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="effectsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-
-// <sl-tab-panel name="splashArt">
-//     <div class="panel-header">
-//         <div class="splash-art-controls" style="display: flex; align-items: center; gap: 16px;">
-//             <sl-button-group>
-//                 <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
-//                 <sl-button size="small" data-category="loading">Loading</sl-button>
-//                 <sl-button size="small" data-category="background">Background</sl-button>
-//             </sl-button-group>
-            
-//             <sl-button size="small" class="splashart-upload-btn" variant="primary">
-//                 <span class="material-icons">add_circle</span>
-//             </sl-button>
-//             <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
-//         </div>
-
-//         <div class="view-controls">
-//             <sl-button-group>
-//                 <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                     <span class="material-icons">grid_view</span>
-//                 </sl-button>
-//                 <sl-button size="small" class="view-toggle" data-view="list">
-//                     <span class="material-icons">view_list</span>
-//                 </sl-button>
-//             </sl-button-group>
-//         </div>
-//     </div>
-
-//     <!-- Splash art galleries -->
-//     <div id="titleGallery" class="gallery-container gallery-grid"></div>
-//     <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//     <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-// </sl-tab-panel>
-
-
-//             <!-- Bestiary Panel -->
-// <sl-tab-panel name="bestiary">
-//     <div class="panel-header">
-
-//         <div class="flex-spacer"></div>
-//         <sl-button size="medium" class="add-monster-btn" variant="primary">
-//             <span class="material-icons" slot="prefix">add_circle</span>
-
-//         </sl-button>
-//     </div>
-
-//     <div class="view-controls">
-//         <sl-button-group>
-//             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                 <span class="material-icons">grid_view</span>
-//             </sl-button>
-//             <sl-button size="small" class="view-toggle" data-view="list">
-//                 <span class="material-icons">view_list</span>
-//             </sl-button>
-//         </sl-button-group>
-//     </div>
-
-//     <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
-// </sl-tab-panel>
-//     </sl-tab-group>
-
-//     <!-- Footer Actions -->
-// <div slot="footer" style="display: flex; justify-content: flex-end; width: 100%;">
-//     <!-- Standard buttons (always visible) -->
-//     <sl-button variant="primary" id="saveResourcePack">
-//         <span class="material-icons" slot="prefix">save</span>
-//         Save
-//     </sl-button>
-//     <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">folder_open</span>
-//         Load
-//     </sl-button>
-//         <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">close</span>
-//         Close
-//     </sl-button>
-// </div>
-// `;
-
-// if (this.mapEditor && !this.monsterManager) {
-//     this.initializeMonsterManager(this.mapEditor).then(() => {
-//         // Load bestiary gallery after initialization
-//         const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-//         if (bestiaryPanel) {
-//             this.updateBestiaryGallery(drawer, 'grid');
-//         }
-//     });
-// }
-
-// const packNameInput = drawer.querySelector('#packNameInput');
-// if (packNameInput) {
-//     packNameInput.addEventListener('sl-change', (e) => {
-//         if (!this.activeResourcePack) {
-//             this.activeResourcePack = {};
-//         }
-//         this.activeResourcePack.name = e.target.value;
-//     });
-// }
-
-//         // Add pack selector to drawer header
-//         const packSelector = document.createElement('sl-select');
-//         packSelector.label = 'Resource Pack';
-
-//         this.loadedPacks.forEach((pack, id) => {
-//             const option = document.createElement('sl-option');
-//             option.value = id;
-//             option.textContent = pack.name;
-//             packSelector.appendChild(option);
-//         });
-
-//         packSelector.value = this.activePackId;
-//         packSelector.addEventListener('sl-change', (e) => {
-//             this.switchResourcePack(e.target.value);
-//         });
-
-//         // Add "Import Pack" button
-//         const importBtn = document.createElement('sl-button');
-//         importBtn.innerHTML = `
-//         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-//         Import Pack
-//     `;
-//         importBtn.addEventListener('click', () => {
-//             // Show pack import dialog
-//             this.showPackImportDialog();
-//         });
-
-//         // Add event handlers
-//         this.setupEventHandlers(drawer);
-
-//         document.body.appendChild(drawer);
-//         return drawer;
-//     }
-
-// Updated method to remove inline styles
-// Replace your existing createResourceManagerUI method with this
-
-// Updated createResourceManagerUI method that uses the initStyles approach
-
-// Add this method to your ResourceManager class
-
+/**
+ * Updated implementation with consistent card sizes across all sections
+ */
 initStyles() {
     const styles = document.createElement("style");
     styles.textContent = `
-    /* Resource Manager drawer styling */
-.resource-manager-drawer::part(panel) {
-  --size: calc(100vw - var(--toolbar-width));
-  background: #242424;
-  color: #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  left: var(--toolbar-width);
-}
-
-.resource-manager-drawer::part(header) {
-  background: #333;
-  padding: 16px;
-  border-bottom: 1px solid #444;
-  height: 48px;
-  min-height: 48px;
-  flex-shrink: 0;
-}
-
-.resource-manager-drawer::part(body) {
-  padding: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.resource-manager-drawer::part(footer) {
-  background: #333;
-  border-top: 1px solid #444;
-  padding: 12px;
-  flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-
-.resource-manager-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding-bottom: 52px; /* Space for footer */
-  overflow: hidden;
-}
-    
-    /* Make sure the resource-manager-content fills the height */
-    .resource-manager-drawer .resource-manager-content {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    
-    /* Tab styling */
-    .resource-manager-drawer sl-tab-group {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .resource-manager-drawer sl-tab-group::part(base) {
+    /* Resource Manager Styles */
+    .resource-manager-drawer::part(panel) {
+      --size: calc(100vw - var(--toolbar-width));
       background: #242424;
+      color: #e0e0e0;
+      left: var(--toolbar-width);
     }
     
-    .resource-manager-drawer sl-tab-group::part(nav) {
+    .resource-manager-drawer::part(header) {
+      background: #333;
+      border-bottom: 1px solid #444;
+      padding: 0 16px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .resource-manager-drawer::part(body) {
+      padding: 0;
+    }
+    
+    .resource-manager-drawer::part(footer) {
+      background: #333;
+      border-top: 1px solid #444;
+      padding: 12px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    
+    /* Main container structure */
+    .rm-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .rm-tabs-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .rm-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Panel structure */
+    .rm-panel-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .rm-categories-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
       background: #333;
       border-bottom: 1px solid #444;
     }
     
-    .resource-manager-drawer sl-tab::part(base) {
-      color: #e0e0e0;
-      border: none;
+    .rm-categories {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
     
-    .resource-manager-drawer sl-tab[active]::part(base) {
-      color: #673ab7;
-      border-bottom-color: #673ab7;
+    .rm-actions {
+      display: flex;
+      gap: 8px;
     }
     
-
-
-    .resource-manager-drawer sl-tab-panel::part(base) {
-  height: 100%;
-  overflow-y: auto;
-  padding: 16px;
-}
-    
-    /* Button styling */
-    .resource-manager-drawer sl-button::part(base) {
-      border: none;
+    .rm-view-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #444;
     }
     
-    .resource-manager-drawer sl-button[variant='primary']::part(base) {
-      background: #673ab7;
-      color: white;
+    .rm-search {
+      flex: 1;
+      max-width: 300px;
     }
     
-    .resource-manager-drawer sl-button[variant='primary']:hover::part(base) {
-      background: #7e57c2;
+    .rm-view-toggles {
+      display: flex;
+      align-items: center;
     }
     
-    .resource-manager-drawer sl-button[variant='default']::part(base) {
+    /* Content area with props sidebar */
+    .rm-scrollable-content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    
+    .rm-props-sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: #2a2a2a;
+      border-right: 1px solid #444;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .rm-props-tags-header {
+      padding: 12px;
+      border-bottom: 1px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .rm-props-title {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .rm-props-tags-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    
+    .rm-gallery-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    /* Tag items styling */
+    .rm-tag-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 4px;
       background: #333;
-      color: #e0e0e0;
+      transition: background-color 0.15s;
     }
     
-    .resource-manager-drawer sl-button[variant='default']:hover::part(base) {
+    .rm-tag-item:hover {
       background: #444;
     }
     
-    .resource-manager-drawer sl-button[variant='danger']::part(base) {
-      background: #d32f2f;
-      color: white;
+    .rm-tag-label {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
-    /* Form elements */
-    .resource-manager-drawer sl-input::part(base),
-    .resource-manager-drawer sl-select::part(base),
-    .resource-manager-drawer sl-textarea::part(base) {
-      background: #333;
-      color: #e0e0e0;
-      border-color: #444;
+    .rm-tag-count {
+      background: #444;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: #ccc;
     }
     
-    .resource-manager-drawer sl-input:focus-within::part(base),
-    .resource-manager-drawer sl-select:focus-within::part(base),
-    .resource-manager-drawer sl-textarea:focus-within::part(base) {
-      border-color: #673ab7;
+    .rm-tag-back {
+      background: #444;
+      border-left: 3px solid #666;
     }
     
-    /* Card styling */
-    .resource-manager-drawer sl-card::part(base) {
-      background: #333;
-      color: #e0e0e0;
-      border: 1px solid #444;
-    }
-    
-    /* Gallery items */
-    .resource-categories {
-      margin-bottom: 1rem;
-      background: #333;
-      padding: 8px;
+    .rm-current-folder {
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: #444;
       border-radius: 4px;
     }
     
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
+    .rm-current-folder-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      margin-bottom: 4px;
     }
     
+    .rm-current-folder-count {
+      font-size: 12px;
+      color: #aaa;
+    }
+    
+    .rm-no-tags, .rm-no-subfolders {
+      padding: 16px;
+      text-align: center;
+      color: #888;
+    }
+    
+    .rm-no-tags-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    .rm-no-tags-text {
+      font-size: 13px;
+    }
+    
+    /* Gallery styling - CONSISTENT ACROSS ALL SECTIONS */
+    .gallery-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    
+    .gallery-container.gallery-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    /* Resource item styling - same as original */
     .resource-item {
       border: 1px solid #444;
       border-radius: 4px;
@@ -3329,76 +2699,36 @@ initStyles() {
       color: #e0e0e0;
     }
     
-    .view-controls {
-      margin: 1rem 0;
+    .resource-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #e0e0e0;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      max-width: 90%;
+    }
+    
+    .resource-meta {
+      font-size: 0.8em;
+      color: #999;
+    }
+    
+    .resource-tags {
       display: flex;
-      justify-content: flex-end;
-      background: #333;
-      padding: 8px;
-      border-radius: 4px;
-      position: sticky;
-      top: 0;
-      z-index: 5;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
     }
     
-    .gallery-list {
+    /* Preserve original resource actions styling */
+    .resource-actions {
+      margin-top: 8px;
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 1rem;
+      justify-content: center;
     }
     
-    /* Props section styling */
-    .props-tag-sidebar {
-      background: #333 !important;
-      border: 1px solid #444;
-    }
-    
-    .tag-entry {
-      background: #242424 !important;
-      border: 1px solid #444 !important;
-      color: #e0e0e0 !important;
-    }
-    
-    .tag-entry:hover {
-      background: #333 !important;
-    }
-    
-    /* Make sure panel headers stay at the top */
-    .panel-header {
-      position: sticky;
-      top: 0;
-      background: #242424;
-      z-index: 5;
-      padding-top: 8px;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    
-    .flex-spacer {
-      flex: 1;
-    }
-    
-    .panel-header sl-button-group {
-      flex: 0 0 auto;
-    }
-    
-    .panel-header .material-icons {
-      font-size: 18px;
-    }
-    
-    /* Monster bestiary styles */
-    .bestiary-buttons {
-      margin-left: auto;
-    }
-    
-    #bestiaryGallery {
-      flex: 1;
-      overflow-y: auto;
-    }
-    
+    /* Bestiary specific styles - match original */
     #bestiaryGallery .resource-item {
       transition: all 0.2s ease;
       border: 1px solid #444;
@@ -3420,6 +2750,18 @@ initStyles() {
       color: #999;
     }
     
+    #bestiaryGallery .monster-badge {
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 2px 5px;
+      border-radius: 10px;
+      position: absolute;
+      top: 6px;
+      right: 6px;
+    }
+    
+    /* Grid/List view styles */
     .gallery-grid .resource-thumbnail {
       aspect-ratio: 1;
       object-fit: cover;
@@ -3434,537 +2776,851 @@ initStyles() {
       object-fit: cover;
     }
     
-    /* Layout containers */
-    .props-layout-container {
+    .gallery-list .resource-item {
       display: flex;
-      gap: 16px;
-      height: calc(100% - 60px);
+      align-items: center;
+      gap: 12px;
     }
     
-    .gallery-container {
-      margin-top: 1rem;
-      min-height: 200px;
+    .gallery-list .resource-info {
+      flex: 1;
     }
     
-    /* Resource previews */
-    .resource-preview-tooltip {
-      position: fixed;
-      z-index: 10000;
-      background: #333;
-      padding: 4px;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      pointer-events: none;
-      display: none;
+    /* Tab panel styling */
+    .resource-manager-drawer sl-tab-group::part(base) {
+      height: 100%;
     }
     
-    .resource-preview-tooltip img {
-      max-width: 200px;
-      max-height: 200px;
-      object-fit: contain;
+    .resource-manager-drawer sl-tab-panel::part(base) {
+      height: 100%;
+      padding: 0;
     }
     
-    /* Compatibility with new UI */
-    body.new-ui .resource-manager-drawer::part(panel) {
-      left: var(--toolbar-width);
-      width: calc(100vw - var(--toolbar-width));
-      max-width: calc(100vw - var(--toolbar-width));
+    /* Button styling */
+    .resource-manager-drawer sl-button[variant="primary"]::part(base) {
+      background: #673ab7;
+      border-color: #673ab7;
     }
     
-    /* Hide sidebar when resource manager is open */
-    body.new-ui .resource-manager-drawer[open] ~ .sidebar {
-      visibility: hidden;
+    .resource-manager-drawer sl-button[variant="primary"]:hover::part(base) {
+      background: #7e57c2;
+      border-color: #7e57c2;
     }
     
-    /* Make sure the drawer appears above other UI elements */
-    body.new-ui .resource-manager-drawer {
-      z-index: 1100;
+    /* Footer styling */
+    .rm-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
     }
-    
-    /* Toast notifications */
-    .notification-toast {
-      background-color: #242424 !important;
-      color: #e0e0e0 !important;
-      border: 1px solid #444;
-    }
-    
-    /* Media queries */
-    @media (max-width: 1200px) {
-      .gallery-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      }
-    }
-
-    
     `;
-  
+    
     document.head.appendChild(styles);
   }
-
-createResourceManagerUI() {
-    // Initialize styles first (like Storyboard does)
+  
+  /**
+   * Create the resource manager UI with consistent card sizes and preserved functionality
+   */
+  createResourceManagerUI() {
+    // Initialize styles once
     if (!this._stylesInitialized) {
-        this.initStyles();
-        this._stylesInitialized = true;
+      this.initStyles();
+      this._stylesInitialized = true;
     }
-
+  
     // Create the drawer
     const drawer = document.createElement('sl-drawer');
     drawer.label = "Resource Manager";
     drawer.placement = "end";
     drawer.classList.add("resource-manager-drawer");
     
-    // No inline styles - now handled by initStyles
-    
+    // Main content structure
     drawer.innerHTML = `
-        <div class="resource-manager-content">
-            <sl-tab-group>
-                <!-- Texture Panel -->
-                <sl-tab slot="nav" panel="textures">
-                    <span class="material-icons">image</span>
-                    Textures
-                </sl-tab>
-                <sl-tab slot="nav" panel="sounds">
-                    <span class="material-icons">volume_up</span>
-                    Sounds
-                </sl-tab>
-                <sl-tab slot="nav" panel="splashArt">
-                    <span class="material-icons">photo_library</span>
-                    Splash Art
-                </sl-tab>
-                <sl-tab slot="nav" panel="bestiary">
-                    <span class="material-icons">pets</span>
-                    Bestiary
-                </sl-tab>
-    
-                <!-- Texture Panel -->
-                <sl-tab-panel name="textures">
-                    <div class="panel-header">
-                        <sl-button-group class="texture-categories">
-                            <sl-button size="small" data-category="walls">Walls</sl-button>
-                            <sl-button size="small" data-category="doors">Doors</sl-button>
-                            <sl-button size="small" data-category="environmental">Environmental</sl-button>
-                            <sl-button size="small" data-category="props">Props</sl-button>
-                        </sl-button-group>
-                        
-                        <sl-button size="small" class="texture-upload-btn" variant="primary">
-                            <span class="material-icons">add_circle</span>
-                        </sl-button>
-                        <input type="file" hidden accept="image/*" multiple class="texture-file-input">
+      <div class="rm-container">
+        <!-- Tab Navigation -->
+        <div class="rm-tabs-container">
+          <sl-tab-group id="rmTabGroup">
+            <sl-tab slot="nav" panel="textures" class="rm-tab">
+              <span class="material-icons">image</span>
+              <span class="rm-tab-label">Textures</span>
+            </sl-tab>
+            <sl-tab slot="nav" panel="sounds" class="rm-tab">
+              <span class="material-icons">volume_up</span>
+              <span class="rm-tab-label">Sounds</span>
+            </sl-tab>
+            <sl-tab slot="nav" panel="splashArt" class="rm-tab">
+              <span class="material-icons">photo_library</span>
+              <span class="rm-tab-label">Splash Art</span>
+            </sl-tab>
+            <sl-tab slot="nav" panel="bestiary" class="rm-tab">
+              <span class="material-icons">pets</span>
+              <span class="rm-tab-label">Bestiary</span>
+            </sl-tab>
+            
+            <!-- Textures Panel -->
+            <sl-tab-panel name="textures">
+              <div class="rm-panel-container">
+                <!-- Texture Categories Bar -->
+                <div class="rm-categories-bar">
+                  <div class="rm-categories">
+                    <sl-button-group class="texture-categories">
+                      <sl-button size="small" data-category="walls">Walls</sl-button>
+                      <sl-button size="small" data-category="doors">Doors</sl-button>
+                      <sl-button size="small" data-category="environmental">Environmental</sl-button>
+                      <sl-button size="small" data-category="props">Props</sl-button>
+                    </sl-button-group>
+                  </div>
+                  <div class="rm-actions">
+                    <sl-button size="small" class="texture-upload-btn" variant="primary">
+                      <span class="material-icons">add_circle</span>
+                      <span>Add</span>
+                    </sl-button>
+                    <input type="file" hidden accept="image/*" multiple class="texture-file-input">
+                  </div>
+                </div>
+                
+                <!-- View Controls -->
+                <div class="rm-view-controls">
+                  <div class="rm-search">
+                    <sl-input placeholder="Search..." size="small" clearable id="textureSearch">
+                      <span slot="prefix" class="material-icons">search</span>
+                    </sl-input>
+                  </div>
+                  <div class="rm-view-toggles">
+                    <sl-button-group>
+                      <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                        <span class="material-icons">grid_view</span>
+                      </sl-button>
+                      <sl-button size="small" class="view-toggle" data-view="list">
+                        <span class="material-icons">view_list</span>
+                      </sl-button>
+                    </sl-button-group>
+                  </div>
+                </div>
+                
+                <!-- Content Area -->
+                <div class="rm-scrollable-content">
+                  <!-- Props Sidebar (only visible in props category) -->
+                  <div class="rm-props-sidebar" id="propsSidebar" style="display: none;">
+                    <div class="rm-props-tags-header">
+                      <div class="rm-props-title">Categories</div>
+                      <sl-button size="small" class="rm-clear-tags-btn" circle>
+                        <span class="material-icons">filter_alt_off</span>
+                      </sl-button>
                     </div>
-    
-                    <div class="view-controls">
-                        <sl-button-group>
-                            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                                <span class="material-icons">grid_view</span>
-                            </sl-button>
-                            <sl-button size="small" class="view-toggle" data-view="list">
-                                <span class="material-icons">view_list</span>
-                            </sl-button>
-                        </sl-button-group>
+                    <div class="rm-props-tags-list" id="propsTagsList">
+                      <!-- Tags will be added here dynamically -->
                     </div>
-    
-                    <!-- Create containers for each texture category -->
+                  </div>
+                  
+                  <!-- Gallery Containers -->
+                  <div class="rm-gallery-wrapper">
                     <div id="wallsGallery" class="gallery-container gallery-grid"></div>
                     <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
                     <div id="environmentalGallery" class="gallery-container gallery-grid" style="display: none;"></div>
                     <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-                </sl-tab-panel>
-    
-                <!-- Sounds Panel -->
-                <sl-tab-panel name="sounds">
-                    <div class="panel-header">
-                        <sl-button-group class="sound-categories">
-                            <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
-                            <sl-button size="small" data-category="effects">Effects</sl-button>
-                        </sl-button-group>
-                        
-                        <sl-button size="small" class="sound-upload-btn" variant="primary">
-                            <span class="material-icons">add_circle</span>
-                        </sl-button>
-                        <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
-                    </div>
-    
-                    <div class="view-controls">
-                        <sl-button-group>
-                            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                                <span class="material-icons">grid_view</span>
-                            </sl-button>
-                            <sl-button size="small" class="view-toggle" data-view="list">
-                                <span class="material-icons">view_list</span>
-                            </sl-button>
-                        </sl-button-group>
-                    </div>
-    
-                    <!-- Create containers for each sound category -->
+                  </div>
+                </div>
+              </div>
+            </sl-tab-panel>
+            
+            <!-- Sounds Panel -->
+            <sl-tab-panel name="sounds">
+              <div class="rm-panel-container">
+                <!-- Sound Categories -->
+                <div class="rm-categories-bar">
+                  <div class="rm-categories">
+                    <sl-button-group class="sound-categories">
+                      <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
+                      <sl-button size="small" data-category="effects">Effects</sl-button>
+                    </sl-button-group>
+                  </div>
+                  <div class="rm-actions">
+                    <sl-button size="small" class="sound-upload-btn" variant="primary">
+                      <span class="material-icons">add_circle</span>
+                      <span>Add</span>
+                    </sl-button>
+                    <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
+                  </div>
+                </div>
+                
+                <!-- View Controls -->
+                <div class="rm-view-controls">
+                  <div class="rm-search">
+                    <sl-input placeholder="Search sounds..." size="small" clearable id="soundSearch">
+                      <span slot="prefix" class="material-icons">search</span>
+                    </sl-input>
+                  </div>
+                  <div class="rm-view-toggles">
+                    <sl-button-group>
+                      <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                        <span class="material-icons">grid_view</span>
+                      </sl-button>
+                      <sl-button size="small" class="view-toggle" data-view="list">
+                        <span class="material-icons">view_list</span>
+                      </sl-button>
+                    </sl-button-group>
+                  </div>
+                </div>
+                
+                <!-- Content Area -->
+                <div class="rm-scrollable-content">
+                  <div class="rm-gallery-wrapper">
                     <div id="ambientGallery" class="gallery-container gallery-grid"></div>
                     <div id="effectsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-                </sl-tab-panel>
-
-<sl-tab-panel name="splashArt">
-    <div class="panel-header">
-        <div class="splash-art-controls" style="display: flex; align-items: center; gap: 16px;">
-            <sl-button-group>
-                <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
-                <sl-button size="small" data-category="loading">Loading</sl-button>
-                <sl-button size="small" data-category="background">Background</sl-button>
-            </sl-button-group>
+                  </div>
+                </div>
+              </div>
+            </sl-tab-panel>
             
-            <sl-button size="small" class="splashart-upload-btn" variant="primary">
-                <span class="material-icons">add_circle</span>
-            </sl-button>
-            <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
-        </div>
-
-        <div class="view-controls">
-            <sl-button-group>
-                <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                    <span class="material-icons">grid_view</span>
-                </sl-button>
-                <sl-button size="small" class="view-toggle" data-view="list">
-                    <span class="material-icons">view_list</span>
-                </sl-button>
-            </sl-button-group>
-        </div>
-    </div>
-
-    <!-- Splash art galleries -->
-    <div id="titleGallery" class="gallery-container gallery-grid"></div>
-    <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-    <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-</sl-tab-panel>
-
-
+            <!-- Splash Art Panel -->
+            <sl-tab-panel name="splashArt">
+              <div class="rm-panel-container">
+                <!-- Splash Art Categories -->
+                <div class="rm-categories-bar">
+                  <div class="rm-categories">
+                    <sl-button-group>
+                      <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
+                      <sl-button size="small" data-category="loading">Loading</sl-button>
+                      <sl-button size="small" data-category="background">Background</sl-button>
+                    </sl-button-group>
+                  </div>
+                  <div class="rm-actions">
+                    <sl-button size="small" class="splashart-upload-btn" variant="primary">
+                      <span class="material-icons">add_circle</span>
+                      <span>Add</span>
+                    </sl-button>
+                    <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
+                  </div>
+                </div>
+                
+                <!-- View Controls -->
+                <div class="rm-view-controls">
+                  <div class="rm-search">
+                    <sl-input placeholder="Search..." size="small" clearable id="splashArtSearch">
+                      <span slot="prefix" class="material-icons">search</span>
+                    </sl-input>
+                  </div>
+                  <div class="rm-view-toggles">
+                    <sl-button-group>
+                      <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                        <span class="material-icons">grid_view</span>
+                      </sl-button>
+                      <sl-button size="small" class="view-toggle" data-view="list">
+                        <span class="material-icons">view_list</span>
+                      </sl-button>
+                    </sl-button-group>
+                  </div>
+                </div>
+                
+                <!-- Content Area -->
+                <div class="rm-scrollable-content">
+                  <div class="rm-gallery-wrapper">
+                    <div id="titleGallery" class="gallery-container gallery-grid"></div>
+                    <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+                    <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
+                  </div>
+                </div>
+              </div>
+            </sl-tab-panel>
+            
             <!-- Bestiary Panel -->
-<sl-tab-panel name="bestiary">
-    <div class="panel-header">
-
-        <div class="flex-spacer"></div>
-        <sl-button size="medium" class="add-monster-btn" variant="primary">
-            <span class="material-icons" slot="prefix">add_circle</span>
-
-        </sl-button>
-    </div>
-
-    <div class="view-controls">
-        <sl-button-group>
-            <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-                <span class="material-icons">grid_view</span>
-            </sl-button>
-            <sl-button size="small" class="view-toggle" data-view="list">
-                <span class="material-icons">view_list</span>
-            </sl-button>
-        </sl-button-group>
-    </div>
-
-    <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
-</sl-tab-panel>
-    </sl-tab-group>
-
-    <!-- Footer Actions -->
-<div slot="footer" style="display: flex; justify-content: flex-end; width: 100%;">
-    <!-- Standard buttons (always visible) -->
-    <sl-button variant="primary" id="saveResourcePack">
+            <sl-tab-panel name="bestiary">
+              <div class="rm-panel-container">
+                <!-- Bestiary Controls -->
+                <div class="rm-categories-bar">
+                  <div class="rm-categories">
+                    <sl-select size="small" placeholder="Filter by type" id="monsterTypeFilter">
+                      <sl-option value="">All Types</sl-option>
+                      <sl-option value="humanoid">Humanoid</sl-option>
+                      <sl-option value="beast">Beast</sl-option>
+                      <sl-option value="monstrosity">Monstrosity</sl-option>
+                      <sl-option value="dragon">Dragon</sl-option>
+                      <sl-option value="undead">Undead</sl-option>
+                      <sl-option value="fiend">Fiend</sl-option>
+                    </sl-select>
+                    <sl-select size="small" placeholder="Filter by CR" id="monsterCrFilter">
+                      <sl-option value="">All CRs</sl-option>
+                      <sl-option value="0-1">CR 0-1</sl-option>
+                      <sl-option value="2-5">CR 2-5</sl-option>
+                      <sl-option value="6-10">CR 6-10</sl-option>
+                      <sl-option value="11-15">CR 11-15</sl-option>
+                      <sl-option value="16+">CR 16+</sl-option>
+                    </sl-select>
+                  </div>
+                  <div class="rm-actions">
+                    <sl-button size="small" class="add-monster-btn" variant="primary">
+                      <span class="material-icons">add_circle</span>
+                      <span>Add Monster</span>
+                    </sl-button>
+                  </div>
+                </div>
+                
+                <!-- View Controls -->
+                <div class="rm-view-controls">
+                  <div class="rm-search">
+                    <sl-input placeholder="Search monsters..." size="small" clearable id="monsterSearch">
+                      <span slot="prefix" class="material-icons">search</span>
+                    </sl-input>
+                  </div>
+                  <div class="rm-view-toggles">
+                    <sl-button-group>
+                      <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+                        <span class="material-icons">grid_view</span>
+                      </sl-button>
+                      <sl-button size="small" class="view-toggle" data-view="list">
+                        <span class="material-icons">view_list</span>
+                      </sl-button>
+                    </sl-button-group>
+                  </div>
+                </div>
+                
+                <!-- Content Area -->
+                <div class="rm-scrollable-content">
+                  <div class="rm-gallery-wrapper">
+                    <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
+                  </div>
+                </div>
+              </div>
+            </sl-tab-panel>
+          </sl-tab-group>
+        </div>
+      </div>
+    `;
+    
+    // Add footer
+    const footerDiv = document.createElement('div');
+    footerDiv.setAttribute('slot', 'footer');
+    footerDiv.className = 'rm-footer';
+    footerDiv.innerHTML = `
+      <sl-button variant="primary" id="saveResourcePack">
         <span class="material-icons" slot="prefix">save</span>
         Save
-    </sl-button>
-    <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
+      </sl-button>
+      <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
         <span class="material-icons" slot="prefix">folder_open</span>
         Load
-    </sl-button>
-        <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
+      </sl-button>
+      <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
         <span class="material-icons" slot="prefix">close</span>
         Close
-    </sl-button>
-</div>
-`;
-
-if (this.mapEditor && !this.monsterManager) {
-    this.initializeMonsterManager(this.mapEditor).then(() => {
+      </sl-button>
+    `;
+    drawer.appendChild(footerDiv);
+    
+    // Initialize functionality
+    if (this.mapEditor && !this.monsterManager) {
+      this.initializeMonsterManager(this.mapEditor).then(() => {
         // Load bestiary gallery after initialization
         const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
         if (bestiaryPanel) {
-            this.updateBestiaryGallery(drawer, 'grid');
+          this.updateBestiaryGallery(drawer, 'grid');
         }
-    });
-}
-
-const packNameInput = drawer.querySelector('#packNameInput');
-if (packNameInput) {
-    packNameInput.addEventListener('sl-change', (e) => {
-        if (!this.activeResourcePack) {
-            this.activeResourcePack = {};
-        }
-        this.activeResourcePack.name = e.target.value;
-    });
-}
-
-        // Add pack selector to drawer header
-        const packSelector = document.createElement('sl-select');
-        packSelector.label = 'Resource Pack';
-
-        this.loadedPacks.forEach((pack, id) => {
-            const option = document.createElement('sl-option');
-            option.value = id;
-            option.textContent = pack.name;
-            packSelector.appendChild(option);
-        });
-
-        packSelector.value = this.activePackId;
-        packSelector.addEventListener('sl-change', (e) => {
-            this.switchResourcePack(e.target.value);
-        });
-
-        // Add "Import Pack" button
-        const importBtn = document.createElement('sl-button');
-        importBtn.innerHTML = `
-        <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-        Import Pack
-    `;
-        importBtn.addEventListener('click', () => {
-            // Show pack import dialog
-            this.showPackImportDialog();
-        });
-
-        // Add event handlers
-        this.setupEventHandlers(drawer);
-
-        document.body.appendChild(drawer);
-        return drawer;
+      });
     }
-
-
-
-// createResourceManagerUI() {
-//     // Create the drawer
-//     const drawer = document.createElement('sl-drawer');
-//     drawer.label = "Resource Manager";
-//     drawer.placement = "end";
-//     drawer.classList.add("resource-manager-drawer");
     
-//     // Remove inline style - now handled by CSS
-//     // drawer.style.cssText = '--size: calc(100vw - 260px);';
-
-//     // Add embedded styles - removed, now in external CSS
-//     // const styles = document.createElement('style');
-//     // styles.textContent = `...` - All CSS moved to new-rm-ui.css
-
-//     drawer.innerHTML = `
-//         <div class="resource-manager-content">
-//             <sl-tab-group>
-//                 <!-- Texture Panel -->
-//                 <sl-tab slot="nav" panel="textures">
-//                     <span class="material-icons">image</span>
-//                     Textures
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="sounds">
-//                     <span class="material-icons">volume_up</span>
-//                     Sounds
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="splashArt">
-//                     <span class="material-icons">photo_library</span>
-//                     Splash Art
-//                 </sl-tab>
-//                 <sl-tab slot="nav" panel="bestiary">
-//                     <span class="material-icons">pets</span>
-//                     Bestiary
-//                 </sl-tab>
+    // Add event handlers
+    this.setupEventHandlers(drawer);
+    this.setupPropsTagging(drawer);
+    this.setupSearchFiltering(drawer);
     
-//                 <!-- Texture Panel -->
-//                 <sl-tab-panel name="textures">
-//                     <div class="panel-header">
-//                         <sl-button-group class="texture-categories">
-//                             <sl-button size="small" data-category="walls">Walls</sl-button>
-//                             <sl-button size="small" data-category="doors">Doors</sl-button>
-//                             <sl-button size="small" data-category="environmental">Environmental</sl-button>
-//                             <sl-button size="small" data-category="props">Props</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="texture-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="image/*" multiple class="texture-file-input">
-//                     </div>
+    // Add drawer to document
+    document.body.appendChild(drawer);
+    return drawer;
+  }
+  
+  /**
+   * Setup props tagging functionality 
+   */
+  setupPropsTagging(drawer) {
+    // Get relevant elements
+    const propsSidebar = drawer.querySelector('#propsSidebar');
+    const propsTagsList = drawer.querySelector('#propsTagsList');
+    const clearTagsBtn = drawer.querySelector('.rm-clear-tags-btn');
     
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
+    if (!propsSidebar || !propsTagsList) return;
     
-//                     <!-- Create containers for each texture category -->
-//                     <div id="wallsGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="doorsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="environmentalGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                     <div id="propsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-    
-//                 <!-- Sounds Panel -->
-//                 <sl-tab-panel name="sounds">
-//                     <div class="panel-header">
-//                         <sl-button-group class="sound-categories">
-//                             <sl-button size="small" data-category="ambient" variant="primary">Ambient</sl-button>
-//                             <sl-button size="small" data-category="effects">Effects</sl-button>
-//                         </sl-button-group>
-                        
-//                         <sl-button size="small" class="sound-upload-btn" variant="primary">
-//                             <span class="material-icons">add_circle</span>
-//                         </sl-button>
-//                         <input type="file" hidden accept="audio/*" multiple class="sound-file-input">
-//                     </div>
-    
-//                     <div class="view-controls">
-//                         <sl-button-group>
-//                             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                                 <span class="material-icons">grid_view</span>
-//                             </sl-button>
-//                             <sl-button size="small" class="view-toggle" data-view="list">
-//                                 <span class="material-icons">view_list</span>
-//                             </sl-button>
-//                         </sl-button-group>
-//                     </div>
-    
-//                     <!-- Create containers for each sound category -->
-//                     <div id="ambientGallery" class="gallery-container gallery-grid"></div>
-//                     <div id="effectsGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//                 </sl-tab-panel>
-
-// <sl-tab-panel name="splashArt">
-//     <div class="panel-header">
-//         <div class="splash-art-controls" style="display: flex; align-items: center; gap: 16px;">
-//             <sl-button-group>
-//                 <sl-button size="small" data-category="title" variant="primary">Title Screen</sl-button>
-//                 <sl-button size="small" data-category="loading">Loading</sl-button>
-//                 <sl-button size="small" data-category="background">Background</sl-button>
-//             </sl-button-group>
+    // Function to update props tags list
+    const updateTagsList = () => {
+      if (!this.propFolderMap || this.propFolderMap.size === 0) {
+        propsTagsList.innerHTML = `
+          <div class="rm-no-tags">
+            <div class="rm-no-tags-icon">
+              <span class="material-icons">folder_off</span>
+            </div>
+            <div class="rm-no-tags-text">
+              Import folder of props to enable tagging
+            </div>
+          </div>
+        `;
+        return;
+      }
+      
+      // Clear previous tags
+      propsTagsList.innerHTML = '';
+      
+      // Determine which tags to show
+      let tagsToShow = new Map();
+      
+      if (this.activeTagFilter) {
+        // Add back button for navigation
+        if (this.activeTagFilter.includes('-')) {
+          const upBtn = document.createElement('div');
+          upBtn.className = 'rm-tag-item rm-tag-back';
+          
+          const tagParts = this.activeTagFilter.split('-');
+          tagParts.pop();
+          const parentFolder = tagParts.join('-');
+          
+          const parentData = this.propFolderMap.get(parentFolder) || {};
+          const parentName = parentData.label || 'Back';
+          
+          upBtn.innerHTML = `
+            <span class="material-icons">arrow_upward</span>
+            <span class="rm-tag-label">${parentName}</span>
+          `;
+          
+          upBtn.addEventListener('click', () => {
+            this.setPropsTagFilter(drawer, parentFolder);
+          });
+          
+          propsTagsList.appendChild(upBtn);
+        }
+        
+        // Show current folder info
+        const currentFolder = this.propFolderMap.get(this.activeTagFilter);
+        if (currentFolder) {
+          const folderInfo = document.createElement('div');
+          folderInfo.className = 'rm-current-folder';
+          folderInfo.innerHTML = `
+            <div class="rm-current-folder-name">
+              <span class="material-icons">folder_open</span>
+              <span>${currentFolder.label}</span>
+            </div>
+            <div class="rm-current-folder-count">
+              ${currentFolder.files ? currentFolder.files.length : 0} items
+            </div>
+          `;
+          propsTagsList.appendChild(folderInfo);
+        }
+        
+        // Show child folders
+        const parentTag = this.activeTagFilter;
+        this.propFolderMap.forEach((data, tag) => {
+          if (tag !== parentTag && tag.startsWith(parentTag + '-')) {
+            // Direct child only
+            const tagParts = tag.split('-');
+            const parentParts = parentTag.split('-');
             
-//             <sl-button size="small" class="splashart-upload-btn" variant="primary">
-//                 <span class="material-icons">add_circle</span>
-//             </sl-button>
-//             <input type="file" hidden accept="image/*" multiple class="splashart-file-input">
-//         </div>
+            if (tagParts.length === parentParts.length + 1) {
+              tagsToShow.set(tag, data);
+            }
+          }
+        });
+      } else {
+        // Show top-level folders
+        this.propFolderMap.forEach((data, tag) => {
+          const tagParts = tag.split('-');
+          if (tagParts.length === 1) {
+            tagsToShow.set(tag, data);
+          }
+        });
+      }
+      
+      // Create tag items
+      tagsToShow.forEach((data, tag) => {
+        const tagItem = document.createElement('div');
+        tagItem.className = 'rm-tag-item';
+        
+        // Just show the last part of the tag name
+        const displayName = this.formatTagDisplay(tag).split(' › ').pop();
+        
+        tagItem.innerHTML = `
+          <span class="material-icons">folder</span>
+          <span class="rm-tag-label">${displayName}</span>
+          <span class="rm-tag-count">${data.files ? data.files.length : 0}</span>
+        `;
+        
+        tagItem.addEventListener('click', () => {
+          this.setPropsTagFilter(drawer, tag);
+        });
+        
+        propsTagsList.appendChild(tagItem);
+      });
+    };
+    
+    // Handle category button clicks
+    const categoryButtons = drawer.querySelectorAll('.texture-categories sl-button');
+    categoryButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const category = btn.dataset.category;
+        
+        // Show/hide props sidebar
+        if (category === 'props') {
+          propsSidebar.style.display = 'flex';
+          updateTagsList();
+        } else {
+          propsSidebar.style.display = 'none';
+        }
+      });
+    });
+    
+    // Clear filter button
+    if (clearTagsBtn) {
+      clearTagsBtn.addEventListener('click', () => {
+        this.activeTagFilter = null;
+        this.updateGallery(drawer, 'props');
+        updateTagsList();
+      });
+    }
+    
+    // Enhance tag filtering with update for the sidebar
+    const originalSetPropsTagFilter = this.setPropsTagFilter;
+    this.setPropsTagFilter = (drawer, tag) => {
+      originalSetPropsTagFilter.call(this, drawer, tag);
+      updateTagsList();
+    };
+  }
+  
+  /**
+   * Setup search filtering in all panels
+   */
+  setupSearchFiltering(drawer) {
+    // Texture search
+    const textureSearch = drawer.querySelector('#textureSearch');
+    if (textureSearch) {
+      textureSearch.addEventListener('input', () => {
+        const searchTerm = textureSearch.value.toLowerCase();
+        const activeCategory = drawer.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category;
+        if (!activeCategory) return;
+        
+        const galleryItems = drawer.querySelectorAll(`#${activeCategory}Gallery .resource-item`);
+        
+        galleryItems.forEach(item => {
+          const nameElement = item.querySelector('.resource-name');
+          if (!nameElement) return;
+          
+          const name = nameElement.textContent.toLowerCase();
+          const isMatch = !searchTerm || name.includes(searchTerm);
+          
+          item.style.display = isMatch ? '' : 'none';
+        });
+      });
+    }
+    
+    // Sound search
+    const soundSearch = drawer.querySelector('#soundSearch');
+    if (soundSearch) {
+      soundSearch.addEventListener('input', () => {
+        const searchTerm = soundSearch.value.toLowerCase();
+        const activeCategory = drawer.querySelector('.sound-categories sl-button[variant="primary"]')?.dataset.category;
+        if (!activeCategory) return;
+        
+        const galleryItems = drawer.querySelectorAll(`#${activeCategory}Gallery .resource-item`);
+        
+        galleryItems.forEach(item => {
+          const nameElement = item.querySelector('.resource-name');
+          if (!nameElement) return;
+          
+          const name = nameElement.textContent.toLowerCase();
+          const isMatch = !searchTerm || name.includes(searchTerm);
+          
+          item.style.display = isMatch ? '' : 'none';
+        });
+      });
+    }
+    
+    // Splash art search
+    const splashArtSearch = drawer.querySelector('#splashArtSearch');
+    if (splashArtSearch) {
+      splashArtSearch.addEventListener('input', () => {
+        const searchTerm = splashArtSearch.value.toLowerCase();
+        const activeCategory = drawer.querySelector('.splash-art-controls sl-button[variant="primary"]')?.dataset.category || 'title';
+        
+        const galleryItems = drawer.querySelectorAll(`#${activeCategory}Gallery .resource-item`);
+        
+        galleryItems.forEach(item => {
+          const nameElement = item.querySelector('.resource-name');
+          if (!nameElement) return;
+          
+          const name = nameElement.textContent.toLowerCase();
+          const isMatch = !searchTerm || name.includes(searchTerm);
+          
+          item.style.display = isMatch ? '' : 'none';
+        });
+      });
+    }
+    
+    // Bestiary search (more advanced)
+    const monsterSearch = drawer.querySelector('#monsterSearch');
+    const typeFilter = drawer.querySelector('#monsterTypeFilter');
+    const crFilter = drawer.querySelector('#monsterCrFilter');
+    
+    const applyBestiaryFilters = () => {
+      const searchTerm = monsterSearch?.value.toLowerCase() || '';
+      const typeValue = typeFilter?.value || '';
+      const crValue = crFilter?.value || '';
+      
+      const bestiaryItems = drawer.querySelectorAll('#bestiaryGallery .resource-item');
+      
+      bestiaryItems.forEach(item => {
+        const nameElement = item.querySelector('.resource-name');
+        const typeElement = item.querySelector('.resource-meta');
+        if (!nameElement) return;
+        
+        const name = nameElement.textContent.toLowerCase();
+        const typeText = typeElement?.textContent.toLowerCase() || '';
+        
+        // Match by name
+        const nameMatch = !searchTerm || name.includes(searchTerm);
+        
+        // Match by type
+        const typeMatch = !typeValue || typeText.includes(typeValue.toLowerCase());
+        
+        // Match by CR range (this needs data attributes on monsters)
+        let crMatch = true;
+        if (crValue) {
+          const cr = parseFloat(item.dataset.cr || '0');
+          
+          if (crValue === '0-1') {
+            crMatch = cr >= 0 && cr <= 1;
+          } else if (crValue === '2-5') {
+            crMatch = cr >= 2 && cr <= 5;
+          } else if (crValue === '6-10') {
+            crMatch = cr >= 6 && cr <= 10;
+          } else if (crValue === '11-15') {
+            crMatch = cr >= 11 && cr <= 15;
+          } else if (crValue === '16+') {
+            crMatch = cr >= 16;
+          }
+        }
+        
+        // Apply all filters
+        item.style.display = nameMatch && typeMatch && crMatch ? '' : 'none';
+      });
+    };
+    
+    // Apply filters when inputs change
+    if (monsterSearch) monsterSearch.addEventListener('input', applyBestiaryFilters);
+    if (typeFilter) typeFilter.addEventListener('sl-change', applyBestiaryFilters);
+    if (crFilter) crFilter.addEventListener('sl-change', applyBestiaryFilters);
+  }
+  
+  /**
+   * Update gallery container with proper card sizes and layout
+   * This is a modified version to ensure consistent card sizes
+   */
+  updateGallery(drawer, category, view = 'grid') {
+    // Determine which tab panel to use
+    let tabPanelName;
+    if (['ambient', 'effects'].includes(category)) {
+      tabPanelName = 'sounds';
+    } else if (['walls', 'doors', 'environmental', 'props'].includes(category)) {
+      tabPanelName = 'textures';
+    } else if (['title', 'loading', 'background'].includes(category)) {
+      tabPanelName = 'splashArt';
+    } else {
+      tabPanelName = category;
+    }
+    
+    // Find the tab panel
+    const tabPanel = drawer.querySelector(`sl-tab-panel[name="${tabPanelName}"]`);
+    if (!tabPanel) {
+      console.error(`Tab panel ${tabPanelName} not found`);
+      return;
+    }
+    
+    // Find or create container
+    let container = drawer.querySelector(`#${category}Gallery`);
+    if (!container) {
+      console.log(`Creating new gallery container for ${category}`);
+      container = document.createElement('div');
+      container.id = `${category}Gallery`;
+      container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+      
+      const galleryWrapper = tabPanel.querySelector('.rm-gallery-wrapper');
+      if (galleryWrapper) {
+        galleryWrapper.appendChild(container);
+      } else {
+        tabPanel.appendChild(container);
+      }
+    }
+  
+    // Hide all other galleries in the same tab panel and show this one
+    tabPanel.querySelectorAll('.gallery-container').forEach(gallery => {
+      gallery.style.display = gallery.id === `${category}Gallery` ? '' : 'none';
+    });
+  
+    // Update container class based on view
+    container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+    
+    // Get resources
+    let resources;
+    if (['title', 'loading', 'background'].includes(category)) {
+      resources = this.resources.splashArt[category];
+      if (!resources) {
+        this.resources.splashArt[category] = new Map();
+        resources = this.resources.splashArt[category];
+      }
+    } else if (category === 'ambient' || category === 'effects') {
+      resources = this.resources.sounds[category];
+    } else {
+      resources = this.resources.textures[category];
+    }
+  
+    // Apply tag filter for props
+    let filteredResources = resources;
+    if (category === 'props' && this.activeTagFilter) {
+      // Get list of file IDs that belong to this tag
+      const tagData = this.propFolderMap?.get(this.activeTagFilter);
+      if (tagData && tagData.files) {
+        // Filter resources to only include files with this tag
+        filteredResources = new Map();
+        tagData.files.forEach(fileId => {
+          if (resources.has(fileId)) {
+            filteredResources.set(fileId, resources.get(fileId));
+          }
+        });
+      }
+    }
+    
+    // Handle empty resources case
+    if (!filteredResources || filteredResources.size === 0) {
+      container.innerHTML = `
+        <sl-card class="empty-gallery">
+          <div style="text-align: center; padding: 2rem;">
+            ${category === 'ambient' || category === 'effects' ? 
+                '<span class="material-icons" style="font-size: 3rem; opacity: 0.5;">volume_off</span>' :
+                '<span class="material-icons" style="font-size: 3rem; opacity: 0.5;">image_not_supported</span>'
+            }
+            <p>No ${category} added yet</p>
+          </div>
+        </sl-card>
+      `;
+      return;
+    }
+  
+    // Clear the container
+    container.innerHTML = '';
+  
+    // Create cards for each resource - using the ORIGINAL card format for consistency
+    filteredResources.forEach((resource, id) => {
+      const card = document.createElement('sl-card');
+      card.className = 'resource-item';
+  
+      // Build card HTML - maintain original format
+      card.innerHTML = `
+      ${view === 'grid' ? `
+          <img 
+              src="${resource.thumbnail}" 
+              alt="${resource.name}"
+              class="resource-thumbnail"
+          />
+          <div class="resource-info">
+              <div class="resource-name" style="color: #e0e0e0; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+              <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+              ${resource.originalFilename ? 
+                  `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+              
+              ${category === 'props' && resource.tags && resource.tags.length > 0 ? 
+                  `<div class="resource-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                      ${resource.tags.map(tag => 
+                          `<sl-tag size="small" style="cursor: pointer; max-width: 100%; overflow: hidden;" 
+                                  data-tag="${tag}" 
+                                  title="${this.formatTagDisplay(tag)}">
+                              <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+                              ${this.formatTagDisplay(tag).split(' › ').pop()}
+                          </sl-tag>`
+                      ).join('')}
+                  </div>` : ''}
+          </div>
+      ` : `
+          <div style="display: flex; align-items: center; gap: 1rem;">
+              <img 
+                  src="${resource.thumbnail}" 
+                  alt="${resource.name}"
+                  class="resource-thumbnail"
+                  style="width: 50px; height: 50px;"
+              />
+              <div class="resource-info">
+                  <div class="resource-name" style="color: #e0e0e0; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${resource.name}</div>
+                  <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(resource.dateAdded)}</div>
+                  ${resource.originalFilename ? 
+                      `<div class="resource-filename" style="color: #999; font-size: 0.8em; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${resource.originalFilename}</div>` : ''}
+                  
+                  ${category === 'props' && resource.tags && resource.tags.length > 0 ? 
+                      `<div class="resource-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                          ${resource.tags.map(tag => 
+                              `<sl-tag size="small" style="cursor: pointer; max-width: 100%; overflow: hidden;" 
+                                      data-tag="${tag}" 
+                                      title="${this.formatTagDisplay(tag)}">
+                                  <span class="material-icons" style="font-size: 12px; margin-right: 4px;">folder</span>
+                                  ${this.formatTagDisplay(tag).split(' › ').pop()}
+                              </sl-tag>`
+                          ).join('')}
+                      </div>` : ''}
+              </div>
+          </div>
+      `}
+      <div slot="footer" class="resource-actions">
+          <sl-button-group>
+              <sl-button size="small" class="preview-btn">
+                  <span class="material-icons">visibility</span>
+              </sl-button>
+              ${category === 'props' ? `
+              <sl-button size="small" class="edit-name-btn">
+                  <span class="material-icons">edit</span>
+              </sl-button>
+              ` : ''}
+              <sl-button size="small" class="delete-btn" variant="danger">
+                  <span class="material-icons">delete</span>
+              </sl-button>
+          </sl-button-group>
+      </div>
+      `;
+  
+      // Add tag click handlers for props
+      if (category === 'props') {
+        const tagElements = card.querySelectorAll('.resource-tags sl-tag');
+        tagElements.forEach(tag => {
+          tag.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const tagValue = tag.dataset.tag;
+            this.setPropsTagFilter(drawer, tagValue);
+          });
+        });
+      }
+  
+      // Add button handlers - using original handlers
+      card.querySelector('.preview-btn').addEventListener('click', () => {
+        this.showResourcePreview(resource);
+      });
+  
+      if (category === 'props') {
+        card.querySelector('.edit-name-btn').addEventListener('click', () => {
+          this.showNameEditor(resource, category, id, card);
+        });
+      }
+  
+      // Add delete button handler
+      card.querySelector('.delete-btn').addEventListener('click', () => {
+        const confirmMessage = `Delete ${category === 'ambient' || category === 'effects' ? 'sound' : 'resource'} "${resource.name}"?`;
+  
+        if (confirm(confirmMessage)) {
+          if (category === 'ambient' || category === 'effects') {
+            this.deleteSound(id, category);
+          } else {
+            this.deleteResource(category, id);
+          }
+          this.updateGallery(drawer, category, view);
+        }
+      });
+  
+      container.appendChild(card);
+    });
+  }
 
-//         <div class="view-controls">
-//             <sl-button-group>
-//                 <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                     <span class="material-icons">grid_view</span>
-//                 </sl-button>
-//                 <sl-button size="small" class="view-toggle" data-view="list">
-//                     <span class="material-icons">view_list</span>
-//                 </sl-button>
-//             </sl-button-group>
-//         </div>
-//     </div>
 
-//     <!-- Splash art galleries -->
-//     <div id="titleGallery" class="gallery-container gallery-grid"></div>
-//     <div id="loadingGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-//     <div id="backgroundGallery" class="gallery-container gallery-grid" style="display: none;"></div>
-// </sl-tab-panel>
-
-
-//             <!-- Bestiary Panel -->
-// <sl-tab-panel name="bestiary">
-//     <div class="panel-header">
-
-//         <div class="flex-spacer"></div>
-//         <sl-button size="medium" class="add-monster-btn" variant="primary">
-//             <span class="material-icons" slot="prefix">add_circle</span>
-
-//         </sl-button>
-//     </div>
-
-//     <div class="view-controls">
-//         <sl-button-group>
-//             <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
-//                 <span class="material-icons">grid_view</span>
-//             </sl-button>
-//             <sl-button size="small" class="view-toggle" data-view="list">
-//                 <span class="material-icons">view_list</span>
-//             </sl-button>
-//         </sl-button-group>
-//     </div>
-
-//     <div id="bestiaryGallery" class="gallery-container gallery-grid"></div>
-// </sl-tab-panel>
-//     </sl-tab-group>
-
-//     <!-- Footer Actions -->
-// <div slot="footer" style="display: flex; justify-content: flex-end; width: 100%;">
-//     <!-- Standard buttons (always visible) -->
-//     <sl-button variant="primary" id="saveResourcePack">
-//         <span class="material-icons" slot="prefix">save</span>
-//         Save
-//     </sl-button>
-//     <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">folder_open</span>
-//         Load
-//     </sl-button>
-//         <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
-//         <span class="material-icons" slot="prefix">close</span>
-//         Close
-//     </sl-button>
-// </div>
-// `;
-
-// if (this.mapEditor && !this.monsterManager) {
-//     this.initializeMonsterManager(this.mapEditor).then(() => {
-//         // Load bestiary gallery after initialization
-//         const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-//         if (bestiaryPanel) {
-//             this.updateBestiaryGallery(drawer, 'grid');
-//         }
-//     });
-// }
-
-// const packNameInput = drawer.querySelector('#packNameInput');
-// if (packNameInput) {
-//     packNameInput.addEventListener('sl-change', (e) => {
-//         if (!this.activeResourcePack) {
-//             this.activeResourcePack = {};
-//         }
-//         this.activeResourcePack.name = e.target.value;
-//     });
-// }
-
-//         // Add pack selector to drawer header
-//         const packSelector = document.createElement('sl-select');
-//         packSelector.label = 'Resource Pack';
-
-//         this.loadedPacks.forEach((pack, id) => {
-//             const option = document.createElement('sl-option');
-//             option.value = id;
-//             option.textContent = pack.name;
-//             packSelector.appendChild(option);
-//         });
-
-//         packSelector.value = this.activePackId;
-//         packSelector.addEventListener('sl-change', (e) => {
-//             this.switchResourcePack(e.target.value);
-//         });
-
-//         // Add "Import Pack" button
-//         const importBtn = document.createElement('sl-button');
-//         importBtn.innerHTML = `
-//         <sl-icon slot="prefix" name="plus-circle"></sl-icon>
-//         Import Pack
-//     `;
-//         importBtn.addEventListener('click', () => {
-//             // Show pack import dialog
-//             this.showPackImportDialog();
-//         });
-
-//         // Add event handlers
-//         this.setupEventHandlers(drawer);
-
-//         document.body.appendChild(drawer);
-//         return drawer;
-//     }
 
 
 setupEventHandlers(drawer) {
@@ -4417,6 +4073,84 @@ setupEventHandlers(drawer) {
             await this.showMonsterImporter();
         });
     }
+
+    /**
+ * Add this to the setupEventHandlers method in ResourceManager
+ * This ensures the Splash Art section buttons work correctly
+ */
+
+// Fix for splash art category buttons
+const splashArtButtons = drawer.querySelectorAll('.rm-panel-container sl-button-group sl-button[data-category]');
+splashArtButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Update active state in the same button group
+    const buttonGroup = btn.closest('sl-button-group');
+    if (!buttonGroup) return;
+    
+    buttonGroup.querySelectorAll('sl-button').forEach(b => {
+      b.setAttribute('variant', 'default');
+    });
+    btn.setAttribute('variant', 'primary');
+    
+    // Get the category
+    const category = btn.dataset.category;
+    if (!category) return;
+    
+    // Get the current view mode
+    const viewButtons = drawer.querySelectorAll('.rm-view-toggles sl-button');
+    const isGridView = viewButtons[0]?.getAttribute('variant') === 'primary';
+    
+    // Update gallery with the right category and view
+    this.updateGallery(drawer, category, isGridView ? 'grid' : 'list');
+  });
+});
+
+// Additional fix for initial display - call this at the end of createResourceManagerUI
+setTimeout(() => {
+  // Find and trigger click on the first splash art category button to show initial content
+  const firstSplashArtButton = drawer.querySelector('sl-tab-panel[name="splashArt"] sl-button[data-category="title"]');
+  if (firstSplashArtButton) {
+    firstSplashArtButton.click();
+  }
+}, 100);
+
+/**
+ * Also modify the event handler setup for view toggles to ensure they update the display correctly
+ */
+drawer.querySelectorAll('.rm-view-toggles sl-button-group sl-button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Update button states in the same group
+    const buttonGroup = btn.closest('sl-button-group');
+    if (!buttonGroup) return;
+    
+    buttonGroup.querySelectorAll('sl-button').forEach(b => {
+      b.setAttribute('variant', 'default');
+    });
+    btn.setAttribute('variant', 'primary');
+    
+    // Get current category
+    let category;
+    
+    const tabPanel = btn.closest('sl-tab-panel');
+    if (!tabPanel) return;
+    
+    const panelName = tabPanel.getAttribute('name');
+    
+    if (panelName === 'textures') {
+      category = tabPanel.querySelector('.texture-categories sl-button[variant="primary"]')?.dataset.category || 'walls';
+    } else if (panelName === 'sounds') {
+      category = tabPanel.querySelector('.sound-categories sl-button[variant="primary"]')?.dataset.category || 'ambient';
+    } else if (panelName === 'splashArt') {
+      category = tabPanel.querySelector('sl-button[data-category][variant="primary"]')?.dataset.category || 'title';
+    } else if (panelName === 'bestiary') {
+      category = 'bestiary';
+    }
+    
+    if (category) {
+      this.updateGallery(drawer, category, btn.dataset.view);
+    }
+  });
+});
 
     // Add close handler
     drawer.addEventListener('sl-after-hide', () => {

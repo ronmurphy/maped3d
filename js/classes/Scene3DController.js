@@ -1057,7 +1057,7 @@ initShaderEffects() {
     padding: 5px;
     font-family: monospace;
     font-size: 12px;
-    z-index: 1000;
+    z-index: 10000;
     border-radius: 3px;
     width: 80px;
     text-align: center;
@@ -1147,7 +1147,7 @@ initShaderEffects() {
       padding: 5px 10px;
       font-family: monospace;
       font-size: 12px;
-      z-index: 1000;
+      z-index: 10000;
       border-radius: 3px;
       width: 60px;
       text-align: center;
@@ -1519,13 +1519,13 @@ runStoryboard(storyId = null) {
     drawer.classList.add("drawer-3d-view");
 
     // Calculate width based on viewport and sidebar
-    const sidebar = document.querySelector(".sidebar");
-    const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
-    const availableWidth = window.innerWidth - sidebarWidth;
+   // const sidebar = document.querySelector(".sidebar");
+    const sidebarWidth = 48; // sidebar ? sidebar.offsetWidth : 0;
+    const availableWidth = window.innerWidth + 240 - sidebarWidth;
     const drawerWidth = `${Math.floor(availableWidth)}px`; // Use pixels instead of vw
 
     // Set drawer width
-    drawer.style.setProperty("--size", drawerWidth);
+    drawer.style.setProperty("--size ",  drawerWidth);
 
     // Container for Three.js
     const container = document.createElement("div");
@@ -2925,14 +2925,6 @@ break;
       water: marker.data.water || null
     };
 
-    // if (marker.data.isWaterProp) {
-    //   // Make the base prop transparent
-    //   if (propMesh && propMesh.material) {
-    //     propMesh.material.transparent = true;
-    //     propMesh.material.opacity = 0.1; // Almost invisible
-    //     propMesh.material.depthWrite = false; // Avoid z-fighting with water
-    //   }
-    // }
     
     // Check if this should be a light source based on name
     if (this.shaderEffects) {
@@ -3403,23 +3395,6 @@ break;
     const boxHeight = 4.5; // 4; // Wall height
     const boxDepth = this.baseImage.height / 50;
 
-    // Handle doors with textures
-    // this.markers.forEach(marker => {
-    //   if (marker.type === 'door' && marker.data.texture) {
-    //     console.log('Creating 3D door with texture:', marker.data);
-    //     const doorMesh = this.textureManager.createDoorMesh(
-    //       marker,
-    //       this.boxWidth,
-    //       this.boxHeight,
-    //       this.boxDepth
-    //     );
-    //     if (doorMesh) {
-    //       this.scene.add(doorMesh);
-    //       console.log('Door mesh added to scene');
-    //     }
-    //   }
-    // });
-
 
     this.rooms.forEach((room) => {
       if (room.name === "WallTexture" || room.name === "RoomTexture") {
@@ -3494,12 +3469,6 @@ break;
     });
 
 
-    // Add floor - old
-    // const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
-    // const floor = new THREE.Mesh(floorGeometry, materials[0]);
-    // floor.rotation.x = -Math.PI / 2;
-    // floor.position.y = 0.01; // Slightly above ground to prevent z-fighting
-    // this.scene.add(floor);
     
 // Simple scaled floor that doesn't stretch the texture
 const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
@@ -3539,51 +3508,6 @@ this.scene.add(floor);
       );
     }
 
-
-
-    // const createTokenMesh = (token) => {
-    //   // Debug log the token data
-    //   // console.log("Creating token mesh with data:", token);
-
-    //   return new Promise((resolve, reject) => {
-    //     const textureLoader = new THREE.TextureLoader();
-
-    //     textureLoader.load(
-    //       token.image,
-    //       (texture) => {
-    //         const spriteMaterial = new THREE.SpriteMaterial({
-    //           map: texture,
-    //           sizeAttenuation: true
-    //         });
-
-    //         const sprite = new THREE.Sprite(spriteMaterial);
-    //         const scale = token.size * (this.cellSize / 25);
-    //         const aspectRatio = texture.image.width / texture.image.height;
-    //         sprite.scale.set(scale * aspectRatio, scale, 1);
-
-    //         // Position at grid location
-    //         const x = token.x / 50 - this.boxWidth / 2;
-    //         const z = token.y / 50 - this.boxDepth / 2;
-    //         const y = token.size * (this.cellSize / 50); // Height adjustment
-
-    //         sprite.position.set(x, y, z);
-
-    //         console.log("Token sprite created:", {
-    //           position: sprite.position,
-    //           scale: sprite.scale,
-    //           aspectRatio
-    //         });
-
-    //         resolve(sprite);
-    //       },
-    //       undefined,
-    //       (error) => {
-    //         console.error("Error loading token texture:", error);
-    //         reject(error);
-    //       }
-    //     );
-    //   });
-    // };
 
     // token mesh processing
     if (this.tokens && this.tokens.length > 0) {
@@ -4532,7 +4456,7 @@ this.scene.add(floor);
     font-family: Arial, sans-serif;
     font-size: 16px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    z-index: 2000;
+    z-index: 10000;
     opacity: 0;
     transition: opacity 0.3s, transform 0.3s;
     display: flex;
@@ -4579,7 +4503,7 @@ this.scene.add(floor);
     font-family: Arial, sans-serif;
     font-size: 16px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    z-index: 2000;
+    z-index: 10000;
     opacity: 0;
     transition: opacity 0.3s, transform 0.3s;
   `;
@@ -4704,57 +4628,6 @@ this.scene.add(floor);
     };
   }
 
-  // handleEncounter(marker) {
-  //   // Prevent multiple encounters
-  //   if (this.activeEncounter || this.encounterCooldown) return;
-
-  //   // Hide the prompt
-  //   if (this.encounterPrompt) {
-  //     this.encounterPrompt.style.display = 'none';
-  //   }
-
-  //   console.log('Handling encounter:', marker);
-
-  //   // Set active encounter
-  //   this.activeEncounter = marker;
-
-  //   // Check if we have monster data
-  //   if (marker.userData && marker.userData.monster) {
-  //     console.log('Monster data found:', marker.userData.monster);
-
-  //     // If we have a party manager, show recruitment dialog
-  //     if (window.partyManager) {
-
-  //       this.pauseControls();
-
-  //       // window.partyManager.showRecruitmentDialog(marker.userData.monster);
-  //       window.partyManager.showRecruitmentDialog(marker.userData.monster, marker);
-
-
-
-
-  //       // Add dialog close handler
-  //       const cleanup = () => {
-  //         this.activeEncounter = null;
-  //         // Set cooldown to prevent immediate re-trigger
-  //         this.encounterCooldown = true;
-  //         setTimeout(() => {
-  //           this.encounterCooldown = false;
-  //         }, 1000); // 1 second cooldown
-  //       };
-
-  //       // Find and monitor the recruitment dialog
-  //       const checkDialog = setInterval(() => {
-  //         const dialog = document.querySelector('.recruitment-overlay');
-  //         if (!dialog) {
-  //           clearInterval(checkDialog);
-  //           cleanup();
-  //           this.resumeControls();
-  //         }
-  //       }, 100);
-  //     }
-  //   }
-  // }
 
 /**
  * Enhanced handleEncounter to support dungeon monsters
@@ -5167,38 +5040,6 @@ if (nearestSplashArt && !this.activeSplashArt) {
       this.nearestProp = null;
     }
 
-
-
-//     // // Find nearest encounter marker
-//     let nearestEncounter = null;
-//     let minEncounterDist = 3; // Detection range
-
-//     // Only check for encounters if we're not in cooldown and don't have an active encounter
-//     if (!this.encounterCooldown && !this.activeEncounter) {
-//       // Loop through scene objects to find encounter markers
-//       this.scene.children.forEach(object => {
-//         if (object.userData && object.userData.type === 'encounter') {
-//           const dist = playerPosition.distanceTo(object.position);
-//           if (dist < minEncounterDist && (!nearestEncounter || dist < minEncounterDist)) {
-//             nearestEncounter = object;
-//           }
-//         }
-//       });
-//     }
-
-// // For encounter prompts - replace the existing code with:
-// if (nearestEncounter && !this.activeEncounter && !this.activeSplashArt) {
-//   this.showInteractivePrompt(
-//     'Approach monster',
-//     'pets',
-//     'F',
-//     'encounter'
-//   );
-//   this.nearestEncounter = nearestEncounter;
-// } else if (!nearestEncounter && this.activePrompts && this.activePrompts.has('encounter')) {
-//   this.hideInteractivePrompt('encounter');
-//   this.nearestEncounter = null;
-// }
 
   // ADDED: Check for dungeon exit detection
   // ADDED: Handle dungeon-specific updates
@@ -5626,7 +5467,7 @@ getFloorPosition(position) {
 
       // Calculate dimensions
       const sidebar = document.querySelector(".sidebar");
-      const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+      const sidebarWidth = 24 // sidebar ? sidebar.offsetWidth : 0;
       const availableWidth = window.innerWidth - sidebarWidth;
 
       // Initialize the scene
@@ -6335,7 +6176,7 @@ showInteractivePrompt(message, icon = null, actionKey = 'F', promptType = 'gener
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 1000;
+      z-index: 10000;
     `;
     document.body.appendChild(this.promptContainer);
     
@@ -6466,7 +6307,7 @@ hideAllPrompts() {
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 2000;
+      z-index: 10000;
       opacity: 0;
       transition: opacity 0.3s ease;
   `;
@@ -7498,257 +7339,6 @@ loadDungeonGenerator() {
   });
 }
 
-    /**
-   * Load and enter a procedurally generated dungeon
-   * @param {string} dungeonId - The ID of the dungeon to load
-   * @param {Object} options - Additional options for dungeon generation
-   * @returns {Promise<boolean>} - Whether the dungeon was loaded successfully
-   */
-  // async loadDungeon(dungeonId, options = {}) {
-  //   console.log(`Loading dungeon: ${dungeonId}`, options);
-    
-  //   // Store current world state to return later
-  //   this._prevWorldState = {
-  //     cameraPosition: this.camera.position.clone(),
-  //     controls: this.controls.enabled
-  //   };
-    
-  //   try {
-  //     // Check if DungeonGenerator is available, if not wait for it
-  //     if (typeof DungeonGenerator === 'undefined') {
-  //       console.log('Waiting for DungeonGenerator to be available...');
-  //       await this.loadDungeonGenerator();
-  //     }
-      
-  //     // Initialize dungeon generator if needed
-  //     if (!this.dungeonGenerator) {
-  //       console.log('Creating new DungeonGenerator');
-  //       this.dungeonGenerator = new DungeonGenerator(this, this.resourceManager);
-        
-  //       // Configure difficulty based on options
-  //       if (options.difficulty) {
-  //         this.dungeonGenerator.configureDifficulty(options.difficulty);
-  //       }
-  //     }
-     
-  //     // Pause controls during transition
-  //     this.pauseControls();
-      
-  //     // Clear existing scene elements that don't belong in the dungeon
-  //     this.clearNonDungeonElements();
-      
-  //     // Generate the new dungeon
-  //     const dungeonData = this.dungeonGenerator.createNew();
-      
-  //     if (!dungeonData || !dungeonData.playerSpawnPoint) {
-  //       throw new Error('Failed to generate valid dungeon');
-  //     }
-      
-  //     // Teleport the player to the dungeon start point
-  //     const teleported = this.dungeonGenerator.teleportPlayerToDungeon();
-  //     if (!teleported) {
-  //       throw new Error('Failed to teleport player to dungeon');
-  //     }
-      
-  //     // Track that we're now in a dungeon
-  //     this.currentLocation = {
-  //       type: 'dungeon',
-  //       id: dungeonId,
-  //       entryTime: Date.now(),
-  //       difficulty: options.difficulty || 'normal'
-  //     };
-      
-  //     // Adjust lighting and effects for dungeon atmosphere
-  //     this.setupDungeonLighting();
-      
-  //     // Show entrance message
-  //     this.showNotification(`Entered ${options.name || 'Dungeon'}`);
-      
-  //     // Resume controls
-  //     this.resumeControls();
-
-  //     return true;
-  //   } catch (error) {
-  //     console.error('Error loading dungeon:', error);
-      
-  //     // Attempt to recover by returning to previous position
-  //     if (this._prevWorldState) {
-  //       this.camera.position.copy(this._prevWorldState.cameraPosition);
-  //     }
-      
-  //     this.resumeControls();
-  //     this.showNotification('Failed to enter dungeon');
-  //     return false;
-  //   }
-  // }
-
-
-/**
- * Load and enter a procedurally generated dungeon with party-based seed
- * @param {string} dungeonId - The ID of the dungeon to load
- * @param {Object} options - Additional options for dungeon generation
- * @returns {Promise<boolean>} - Whether the dungeon was loaded successfully
- */
-// async loadDungeon(dungeonId, options = {}) {
-//   console.log(`Loading dungeon: ${dungeonId}`, options);
-  
-//   // Store current world state to return later
-//   this._prevWorldState = {
-//     cameraPosition: this.camera.position.clone(),
-//     controls: this.controls.enabled
-//   };
-  
-//   try {
-//     // Check if DungeonGenerator is available, if not wait for it
-//     if (typeof DungeonGenerator === 'undefined') {
-//       console.log('Waiting for DungeonGenerator to be available...');
-//       await this.loadDungeonGenerator();
-//     }
-    
-//     // Initialize dungeon generator if needed
-//     if (!this.dungeonGenerator) {
-//       console.log('Creating new DungeonGenerator');
-//       this.dungeonGenerator = new DungeonGenerator(this, this.resourceManager);
-//     }
-    
-//     // Configure difficulty based on options
-//     const difficulty = options.difficulty || 'medium';
-    
-//     // ----- FIXED: Generate a numeric seed from party data -----
-//     let seed = Date.now();  // Default fallback seed
-//     let seedSource = "timestamp";
-    
-//     try {
-//       // Try to get party data from localStorage
-//       const partyDataString = localStorage.getItem('partyData');
-//       if (partyDataString) {
-//         const partyData = JSON.parse(partyDataString);
-//         // Validate party data
-//         if (partyData && (partyData.members || partyData.monsters)) {
-//           // Get party members from either format
-//           const members = partyData.members || partyData.monsters || [];
-          
-//           if (members.length > 0) {
-//             console.log(`Found party data in localStorage with ${members.length} members`);
-//             seedSource = "localStorage party";
-            
-//             // Generate a numeric seed from the members
-//             const seedValues = [];
-//             members.forEach(monster => {
-//               // Collect values that will make the seed unique
-//               if (monster.hp) seedValues.push(monster.hp);
-//               if (monster.level) seedValues.push(monster.level * 100);
-//               if (monster.name) seedValues.push(monster.name.length * 50);
-//               if (monster.exp) seedValues.push(monster.exp);
-//             });
-            
-//             // Create a simple hash from the values
-//             if (seedValues.length > 0) {
-//               seed = seedValues.reduce((acc, val) => acc + val, 0) * members.length;
-//               seed = Math.abs(seed) || Date.now();  // Ensure positive non-zero
-//             }
-//           }
-//         }
-//       } 
-//       // Alternative: Check for party managers
-//       else if (window.partyManager) {
-//         let members = [];
-        
-//         // Try different party manager formats
-//         if (window.partyManager.getParty) {
-//           members = window.partyManager.getParty();
-//         }
-//         else if (window.partyManager.party) {
-//           members = window.partyManager.party;
-//         }
-        
-//         if (members && members.length > 0) {
-//           seedSource = "partyManager";
-//           console.log(`Found ${members.length} party members from partyManager`);
-          
-//           // Minimal seed calculation from members
-//           seed = (members.length * 1000) + Date.now() % 10000;
-          
-//           // Add some monster data if available
-//           members.forEach((monster, idx) => {
-//             if (monster.basic) {
-//               seed += (monster.basic.hp || 10) * (idx + 1);
-//               seed += (monster.basic.level || 1) * 100 * (idx + 1);
-//             }
-//           });
-          
-//           seed = Math.abs(seed) || Date.now();  // Ensure positive non-zero
-//         }
-//       }
-//     } catch (error) {
-//       console.warn('Error accessing party data:', error);
-//       seedSource = "error-fallback";
-//       seed = Date.now();  // Fallback to timestamp
-//     }
-    
-//     console.log(`Using ${seedSource} seed for dungeon generation: ${seed}`);
-//     // ----- END FIXED CODE -----
-    
-//     // Pause controls during transition
-//     this.pauseControls();
-    
-//     // Clear existing scene elements that don't belong in the dungeon
-//     this.clearNonDungeonElements();
-    
-//     // ----- FIXED: Use simple numeric seed -----
-//     const dungeonData = this.dungeonGenerator.createNew({
-//       difficulty: difficulty,
-//       seed: seed  // Using numeric seed now
-//     });
-    
-//     if (!dungeonData || !dungeonData.playerSpawnPoint) {
-//       throw new Error('Failed to generate valid dungeon');
-//     }
-    
-//     // ----- UPDATED CODE: Teleport the player with monster animation options -----
-//     const teleported = this.dungeonGenerator.teleportPlayerToDungeon({
-//       spawnMonsters: true,
-//       animatedMonsters: true, // Enable monster animations
-//       withAI: true  // Enable AI if available
-//     });
-    
-//     if (!teleported) {
-//       throw new Error('Failed to teleport player to dungeon');
-//     }
-    
-//     // Track that we're now in a dungeon
-//     this.currentLocation = {
-//       type: 'dungeon',
-//       id: dungeonId,
-//       entryTime: Date.now(),
-//       difficulty: difficulty,
-//       seed: seed // Store the seed for reference
-//     };
-    
-//     // Adjust lighting and effects for dungeon atmosphere
-//     this.setupDungeonLighting();
-    
-//     // Show entrance message with seed info for debugging
-//     const seedInfo = seedSource !== "timestamp" ? ` (${seedSource} seed)` : '';
-//     this.showNotification(`Entered ${options.name || 'Dungeon'}${seedInfo}`);
-    
-//     // Resume controls
-//     this.resumeControls();
-
-//     return true;
-//   } catch (error) {
-//     console.error('Error loading dungeon:', error);
-    
-//     // Attempt to recover by returning to previous position
-//     if (this._prevWorldState) {
-//       this.camera.position.copy(this._prevWorldState.cameraPosition);
-//     }
-    
-//     this.resumeControls();
-//     this.showNotification('Failed to enter dungeon');
-//     return false;
-//   }
-// }
 
 /**
  * Enhanced version of loadDungeon that supports monster drop system and exit
@@ -7918,139 +7508,6 @@ async loadDungeon(dungeonId, options = {}) {
   }
 }
 
-  /**
- * Load and enter a procedurally generated dungeon with party-based seed
- * @param {string} dungeonId - The ID of the dungeon to load
- * @param {Object} options - Additional options for dungeon generation
- * @returns {Promise<boolean>} - Whether the dungeon was loaded successfully
- */
-// async loadDungeon(dungeonId, options = {}) {
-//   console.log(`Loading dungeon: ${dungeonId}`, options);
-  
-//   // Store current world state to return later
-//   this._prevWorldState = {
-//     cameraPosition: this.camera.position.clone(),
-//     controls: this.controls.enabled
-//   };
-  
-//   try {
-//     // Check if DungeonGenerator is available, if not wait for it
-//     if (typeof DungeonGenerator === 'undefined') {
-//       console.log('Waiting for DungeonGenerator to be available...');
-//       await this.loadDungeonGenerator();
-//     }
-    
-//     // Initialize dungeon generator if needed
-//     if (!this.dungeonGenerator) {
-//       console.log('Creating new DungeonGenerator');
-//       this.dungeonGenerator = new DungeonGenerator(this, this.resourceManager);
-//     }
-    
-//     // Configure difficulty based on options
-//     const difficulty = options.difficulty || 'medium';
-    
-//     // ----- NEW CODE: Get party data from localStorage if available -----
-//     let partyData = null;
-//     try {
-//       // Try to get party data from localStorage
-//       const partyDataString = localStorage.getItem('partyData');
-//       if (partyDataString) {
-//         partyData = JSON.parse(partyDataString);
-//         console.log('Found party data in localStorage for dungeon seed');
-//       } 
-      
-//       // Alternative: Check if partyManager has data (global reference)
-//       else if (window.partyManager && window.partyManager.getParty) {
-//         partyData = window.partyManager.getParty();
-//         console.log('Found party data from partyManager for dungeon seed');
-//       }
-      
-//       // If no party data found, check for party manager with different API
-//       else if (window.partyManager && window.partyManager.party) {
-//         // Convert from the partyManager format to what the dungeon generator expects
-//         const members = [];
-//         window.partyManager.party.forEach(monster => {
-//           members.push({
-//             name: monster.basic?.name || 'Unknown',
-//             level: monster.basic?.level || 1,
-//             hp: monster.basic?.hp || 10,
-//             ac: monster.basic?.ac || 10,
-//             exp: monster.basic?.exp || 0
-//           });
-//         });
-        
-//         if (members.length > 0) {
-//           partyData = { members };
-//           console.log(`Found ${members.length} party members for dungeon seed`);
-//         }
-//       }
-//     } catch (error) {
-//       console.warn('Error accessing party data:', error);
-//       partyData = null;
-//     }
-//     // ----- END NEW CODE -----
-    
-//     // Pause controls during transition
-//     this.pauseControls();
-    
-//     // Clear existing scene elements that don't belong in the dungeon
-//     this.clearNonDungeonElements();
-    
-//     // ----- UPDATED CODE: Generate the new dungeon with party data seed -----
-//     const dungeonData = this.dungeonGenerator.createNew({
-//       difficulty: difficulty,
-//       seed: partyData || Date.now() // Use party data for seed if available, otherwise use time
-//     });
-    
-//     if (!dungeonData || !dungeonData.playerSpawnPoint) {
-//       throw new Error('Failed to generate valid dungeon');
-//     }
-    
-//     // ----- UPDATED CODE: Teleport the player with monster animation options -----
-//     const teleported = this.dungeonGenerator.teleportPlayerToDungeon({
-//       spawnMonsters: true,
-//       animatedMonsters: true, // Enable monster animations
-//       withAI: true  // Enable AI if available
-//     });
-    
-//     if (!teleported) {
-//       throw new Error('Failed to teleport player to dungeon');
-//     }
-    
-//     // Track that we're now in a dungeon
-//     this.currentLocation = {
-//       type: 'dungeon',
-//       id: dungeonId,
-//       entryTime: Date.now(),
-//       difficulty: difficulty,
-//       seed: dungeonData.seed // Store the seed for reference
-//     };
-    
-//     // Adjust lighting and effects for dungeon atmosphere
-//     this.setupDungeonLighting();
-    
-//     // Show entrance message with seed info for debugging
-//     const seedInfo = partyData ? ' (party seeded)' : '';
-//     this.showNotification(`Entered ${options.name || 'Dungeon'}${seedInfo}`);
-    
-//     // Resume controls
-//     this.resumeControls();
-
-//     return true;
-//   } catch (error) {
-//     console.error('Error loading dungeon:', error);
-    
-//     // Attempt to recover by returning to previous position
-//     if (this._prevWorldState) {
-//       this.camera.position.copy(this._prevWorldState.cameraPosition);
-//     }
-    
-//     this.resumeControls();
-//     this.showNotification('Failed to enter dungeon');
-//     return false;
-//   }
-// }
-
   
   /**
    * Remove non-dungeon elements from the scene
@@ -8129,64 +7586,6 @@ async loadDungeon(dungeonId, options = {}) {
     }
   }
   
-  // /**
-  //  * Exit the current dungeon and return to the world
-  //  * @returns {Promise<boolean>} Whether the exit was successful
-  //  */
-  // async exitDungeon() {
-  //   if (!this._prevWorldState) {
-  //     console.warn('No previous world state to return to');
-  //     return false;
-  //   }
-    
-  //   try {
-  //     // Pause controls during transition
-  //     this.pauseControls();
-      
-  //     // Clear dungeon elements
-  //     const dungeonObjects = this.scene.children.filter(obj => 
-  //       obj.userData && obj.userData.isDungeonElement);
-        
-  //     dungeonObjects.forEach(obj => {
-  //       this.scene.remove(obj);
-  //       if (obj.geometry) obj.geometry.dispose();
-  //       if (obj.material) {
-  //         if (Array.isArray(obj.material)) {
-  //           obj.material.forEach(m => m.dispose());
-  //         } else {
-  //           obj.material.dispose();
-  //         }
-  //       }
-  //     });
-      
-  //     // Return to previous position
-  //     this.camera.position.copy(this._prevWorldState.cameraPosition);
-      
-  //     // Restore world lighting
-  //     this.scene.fog = null;
-      
-  //     // Add back ambient light
-  //     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-  //     this.scene.add(ambientLight);
-      
-  //     // Clear dungeon state
-  //     this.currentLocation = null;
-      
-  //     // Show exit message
-  //     this.showNotification('Exited dungeon');
-      
-  //     // Resume controls
-  //     this.resumeControls();
-      
-  //     return true;
-  //   }
-  //   catch (error) {
-  //     console.error('Error exiting dungeon:', error);
-  //     this.resumeControls();
-  //     return false;
-  //   }
-  // }
-
   /**
  * Enhanced exitDungeon method to better handle transitions
  */
@@ -8249,17 +7648,6 @@ exitDungeon() {
   }
 }
 
-  // Example: Adding torches to your scene
-  // initializeTorches() {
-  //   if (this.visualEffects) {
-  //     // Position the torch on a wall
-  //     const torch = this.visualEffects.createTorch({
-  //       x: wallX,
-  //       y: wallY + 2, // Mount height
-  //       z: wallZ
-  //     });
-  //   }
-  // }
 
   addPlayerLight() {
     if (this.playerLight) return;
@@ -8289,7 +7677,7 @@ exitDungeon() {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 1000;
+    z-index: 10000;
   `;
 
     // Add click handler to toggle the flashlight
@@ -8631,7 +8019,7 @@ exitDungeon() {
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 1000;
+      z-index: 10000;
     `;
   
     // Add click handler to show controls
@@ -8698,7 +8086,7 @@ createTestWaterArea() {
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 1000;
+      z-index: 10000;
     `;
 
     // Add click handler to show party manager
@@ -8786,7 +8174,7 @@ createTestWaterArea() {
     transform: rotate(-3deg);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     border: 2px solid rgba(255, 255, 255, 0.3);
-    z-index: 1000;
+    z-index: 10000;
     transition: transform 0.3s ease;
     user-select: none;
   `;

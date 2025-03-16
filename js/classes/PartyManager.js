@@ -210,7 +210,7 @@ class PartyManager {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 2000;
+        z-index: 10000;
         opacity: 0;
         transition: opacity 0.3s ease;
       }
@@ -4033,7 +4033,7 @@ contentHtml += this.createComboAbilitiesSection(monster);
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 2000;
+      z-index: 10000;
       opacity: 0;
       transition: opacity 0.3s ease;
     `;
@@ -8066,7 +8066,7 @@ offerGift(item, giftType, effectiveness, monster, recruitmentOverlay) {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 3000;
+    z-index: 10000;
     opacity: 0;
     transition: opacity 0.3s ease;
   `;
