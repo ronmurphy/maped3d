@@ -27,6 +27,12 @@ class MapEditor {
     this.dockingDistance = 5; // Distance in pixels to trigger docking
     this.dockedRooms = new Map(); // Store docked room relationships
     this.isDraggingDocked = false; // Prevent recursive drag handling
+    this.isFreehandDrawing = false;
+this.freehandPoints = [];
+this.freehandMinDistance = 10; // Minimum distance between points (in pixels)
+this.freehandPreviewElement = null;
+this.lastFreehandPoint = null;
+this.freehandActive = false;
 
     // Initialize managers in correct order
     this.resourceManager = null;  // Initialize to null first
@@ -1292,9 +1298,6 @@ checkStoryboard(callback) {
       }
 
       // Update all marker positions
-      // this.markers.forEach(marker => {
-      //   this.updateMarkerPosition(marker);
-      // });
       this.updateMarkerPositions();
       // Update display
       this.centerMap();
@@ -2491,9 +2494,9 @@ if (preferencesBtn) {
           case "screenshotTool":
             this.takeScreenshot();
             break;
-        //   case "storyboardTool":
-        //       this.openStoryboardEditor();
-        //       break;
+          case "freehandTool":
+            this.setTool("freehand");
+            break;
         // case "shapeForgeBtn":
         //   this.shapeForge.show();
         //   break;
@@ -2550,6 +2553,13 @@ if (preferencesBtn) {
         e.target.tagName !== "INPUT"
       ) {
         this.toggleMarkerEditMode();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      // Add escape key handler to cancel freehand drawing
+      if (e.key === "Escape" && this.isFreehandDrawing) {
+        this.cancelFreehandDrawing();
       }
     });
 
@@ -2735,13 +2745,67 @@ if (preferencesBtn) {
     }
   }
 
+  // setTool(tool) {
+  //   if (this.currentTool === "wall") {
+  //     this.cleanupWallTool();
+  //   } 
+  //   this.currentTool = tool;
+  //   this.updateWallClickBehavior();
+
+  //   // Update UI
+  //   const toolButtons = document.querySelectorAll(".tool-button");
+  //   toolButtons.forEach((button) => {
+  //     button.classList.remove("active");
+  //     if (
+  //       (tool === "rectangle" && button.id === "selectTool") ||
+  //       (tool === "circle" && button.id === "circleTool") ||
+  //       (tool === "wall" && button.id === "wallTool") ||
+  //       (tool === "pan" && button.id === "panTool")
+  //     ) {
+  //       button.classList.add("active");
+  //     }
+  //   });
+
+  //   if (tool === "wall") {
+  //     this.startWallCreation();
+  //   }
+
+  //   // Update cursor style
+  //   const wrapper = document.getElementById("canvasWrapper");
+  //   if (tool === "pan") {
+  //     wrapper.style.cursor = "grab";
+  //   } else if (["rectangle", "circle", "wall"].includes(tool)) {
+  //     wrapper.style.cursor = "crosshair";
+  //   } else {
+  //     wrapper.style.cursor = "default";
+  //   }
+
+  //   // Update room pointer events
+  //   const rooms = document.querySelectorAll(".room-block");
+  //   rooms.forEach((room) => {
+  //     room.style.pointerEvents = tool.startsWith("marker-")
+  //       ? "none"
+  //       : "auto";
+  //     room
+  //       .querySelectorAll(".room-controls, .resize-handle")
+  //       .forEach((element) => {
+  //         element.style.pointerEvents = "auto";
+  //       });
+  //   });
+
+  // }
+
   setTool(tool) {
+    // First, clean up any active tool
     if (this.currentTool === "wall") {
       this.cleanupWallTool();
+    } else if (this.currentTool === "freehand") {
+      this.cleanupFreehandDrawing();
     }
+    
     this.currentTool = tool;
     this.updateWallClickBehavior();
-
+  
     // Update UI
     const toolButtons = document.querySelectorAll(".tool-button");
     toolButtons.forEach((button) => {
@@ -2750,26 +2814,29 @@ if (preferencesBtn) {
         (tool === "rectangle" && button.id === "selectTool") ||
         (tool === "circle" && button.id === "circleTool") ||
         (tool === "wall" && button.id === "wallTool") ||
+        (tool === "freehand" && button.id === "freehandTool") ||
         (tool === "pan" && button.id === "panTool")
       ) {
         button.classList.add("active");
       }
     });
-
+  
     if (tool === "wall") {
       this.startWallCreation();
+    } else if (tool === "freehand") {
+      this.startFreehandDrawing();
     }
-
+  
     // Update cursor style
     const wrapper = document.getElementById("canvasWrapper");
     if (tool === "pan") {
       wrapper.style.cursor = "grab";
-    } else if (["rectangle", "circle", "wall"].includes(tool)) {
+    } else if (["rectangle", "circle", "wall", "freehand"].includes(tool)) {
       wrapper.style.cursor = "crosshair";
     } else {
       wrapper.style.cursor = "default";
     }
-
+  
     // Update room pointer events
     const rooms = document.querySelectorAll(".room-block");
     rooms.forEach((room) => {
@@ -2782,7 +2849,6 @@ if (preferencesBtn) {
           element.style.pointerEvents = "auto";
         });
     });
-
   }
 
   updateWallClickBehavior() {
@@ -3237,6 +3303,334 @@ if (preferencesBtn) {
     }
 
     return snappedPos;
+  }
+
+  startFreehandDrawing() {
+    if (!this.baseImage) {
+      this.showCustomToast("Please load a map first", "warning", 3000);
+      return;
+    }
+  
+    // Create preview element for freehand drawing
+    this.freehandPreviewElement = document.createElement("div");
+    this.freehandPreviewElement.className = "freehand-preview";
+    document.querySelector(".canvas-container").appendChild(this.freehandPreviewElement);
+    
+    // Reset freehand points
+    this.freehandPoints = [];
+    this.lastFreehandPoint = null;
+    this.isFreehandDrawing = true;
+    this.freehandActive = false;
+    
+    // Set cursor
+    const wrapper = document.getElementById("canvasWrapper");
+    wrapper.style.cursor = "crosshair";
+    
+    // Add mouse handlers for freehand drawing
+    this.setupFreehandMouseHandlers();
+  }
+  
+  setupFreehandMouseHandlers() {
+    const wrapper = document.getElementById("canvasWrapper");
+    
+    // Create mousedown handler
+    this.freehandMouseDownHandler = (e) => {
+      if (e.button !== 0) return; // Only respond to left mouse button
+      e.preventDefault();
+      e.stopPropagation();
+      
+      this.freehandActive = true;
+      const rect = wrapper.getBoundingClientRect();
+      const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+      const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+      
+      // Add first point
+      this.freehandPoints.push({ x, y });
+      this.lastFreehandPoint = { x, y };
+      this.updateFreehandPreview();
+    };
+    
+    // Create mousemove handler
+    this.freehandMouseMoveHandler = (e) => {
+      if (!this.freehandActive) return;
+      
+      const rect = wrapper.getBoundingClientRect();
+      const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+      const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+      
+      // Only add points if we've moved far enough
+      if (this.lastFreehandPoint) {
+        const distance = Math.sqrt(
+          Math.pow(x - this.lastFreehandPoint.x, 2) + 
+          Math.pow(y - this.lastFreehandPoint.y, 2)
+        );
+        
+        // Calculate minimum distance based on grid cell size
+        const minDistance = this.cellSize ? this.cellSize / 4 : this.freehandMinDistance;
+        
+        if (distance >= minDistance) {
+          this.freehandPoints.push({ x, y });
+          this.lastFreehandPoint = { x, y };
+          this.updateFreehandPreview();
+        }
+      }
+    };
+    
+    // Create mouseup handler
+    this.freehandMouseUpHandler = (e) => {
+      if (e.button !== 0) return; // Only respond to left mouse button
+      
+      this.freehandActive = false;
+      
+      // If we have enough points and the path is almost closed, finalize it
+      if (this.freehandPoints.length > 3) {
+        const first = this.freehandPoints[0];
+        const last = this.freehandPoints[this.freehandPoints.length - 1];
+        const distance = Math.sqrt(
+          Math.pow(last.x - first.x, 2) + 
+          Math.pow(last.y - first.y, 2)
+        );
+        
+        if (distance < this.cellSize / 2) {
+          // Close the path
+          this.finalizeFreehandDrawing();
+        }
+      }
+    };
+    
+    // Add right click handler for cancellation
+    this.freehandContextMenuHandler = (e) => {
+      if (this.isFreehandDrawing) {
+        e.preventDefault();
+        this.showFreehandCancelDialog();
+        return false;
+      }
+    };
+    
+    // Add handlers to wrapper
+    wrapper.addEventListener("mousedown", this.freehandMouseDownHandler);
+    wrapper.addEventListener("mousemove", this.freehandMouseMoveHandler);
+    wrapper.addEventListener("mouseup", this.freehandMouseUpHandler);
+    wrapper.addEventListener("contextmenu", this.freehandContextMenuHandler);
+  }
+  
+  updateFreehandPreview() {
+    if (!this.freehandPreviewElement || this.freehandPoints.length === 0) return;
+    
+    // Create SVG path string
+    let pathData = "";
+    this.freehandPoints.forEach((point, index) => {
+      const x = point.x * this.scale + this.offset.x;
+      const y = point.y * this.scale + this.offset.y;
+      pathData += index === 0 ? `M ${x},${y} ` : `L ${x},${y} `;
+    });
+    
+    // Update preview element
+    this.freehandPreviewElement.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    `;
+    
+    this.freehandPreviewElement.innerHTML = `
+      <svg style="width: 100%; height: 100%;">
+        <path d="${pathData}" 
+              stroke="#4CAF50" 
+              stroke-width="2" 
+              fill="rgba(76, 175, 80, 0.2)" 
+              stroke-dasharray="4 4"/>
+      </svg>
+    `;
+    
+    // Add point markers for visual feedback
+    this.freehandPoints.forEach((point, index) => {
+      // Only show every 3rd point to avoid clutter
+      if (index % 3 === 0 || index === this.freehandPoints.length - 1) {
+        const marker = document.createElement("div");
+        marker.className = "freehand-point";
+        marker.style.cssText = `
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          background: #4CAF50;
+          border: 1px solid white;
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          left: ${point.x * this.scale + this.offset.x}px;
+          top: ${point.y * this.scale + this.offset.y}px;
+          ${index === 0 ? "background: white; border-color: #4CAF50;" : ""}
+        `;
+        this.freehandPreviewElement.appendChild(marker);
+      }
+    });
+  }
+  
+  finalizeFreehandDrawing() {
+    if (!this.isFreehandDrawing || this.freehandPoints.length < 3) return;
+  
+    // Optional - simplify the polygon to reduce number of points
+    const simplifiedPoints = this.simplifyFreehandPoints(this.freehandPoints);
+    
+    // Calculate bounding box
+    const xs = simplifiedPoints.map((p) => p.x);
+    const ys = simplifiedPoints.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+  
+    // Create wall room
+    const freehandWall = new Room(
+      Date.now(),
+      {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+        points: simplifiedPoints.map((p) => ({
+          x: p.x - minX,
+          y: p.y - minY
+        }))
+      },
+      "Freehand Wall",
+      "polygon",
+      "wall" // Set type as wall
+    );
+  
+    console.log("Created freehand wall with", simplifiedPoints.length, "points");
+  
+    this.rooms.push(freehandWall);
+    const wallElement = freehandWall.createDOMElement(this);
+    document.querySelector(".canvas-container").appendChild(wallElement);
+    this.layersPanel.updateLayersList();
+  
+    // Clean up
+    this.cleanupFreehandDrawing();
+  }
+  
+  simplifyFreehandPoints(points) {
+    // Very basic simplification to remove points that are too close together
+    // For a more advanced algorithm, Douglas-Peucker could be implemented
+    
+    // Use different tolerance based on zoom level
+    const tolerance = this.cellSize ? this.cellSize / 10 : 5;
+    
+    if (points.length <= 3) return points;
+    
+    const result = [points[0]];
+    
+    for (let i = 1; i < points.length; i++) {
+      const prev = result[result.length - 1];
+      const curr = points[i];
+      
+      const distance = Math.sqrt(
+        Math.pow(curr.x - prev.x, 2) + 
+        Math.pow(curr.y - prev.y, 2)
+      );
+      
+      if (distance > tolerance) {
+        result.push(curr);
+      }
+    }
+    
+    // If simplified too much, return original
+    if (result.length < 3) return points;
+    
+    // Ensure the path is closed by adding the first point as the last one
+    // if it's not already closed
+    const first = result[0];
+    const last = result[result.length - 1];
+    const distance = Math.sqrt(
+      Math.pow(last.x - first.x, 2) + 
+      Math.pow(last.y - first.y, 2)
+    );
+    
+    if (distance > tolerance) {
+      result.push({ ...first });
+    }
+    
+    return result;
+  }
+  
+  cancelFreehandDrawing() {
+    this.cleanupFreehandDrawing();
+    this.showCustomToast("Freehand drawing cancelled", "info", 2000);
+  }
+  
+  cleanupFreehandDrawing() {
+    // Remove preview element
+    if (this.freehandPreviewElement) {
+      this.freehandPreviewElement.remove();
+      this.freehandPreviewElement = null;
+    }
+    
+    // Remove event handlers
+    const wrapper = document.getElementById("canvasWrapper");
+    if (this.freehandMouseDownHandler) {
+      wrapper.removeEventListener("mousedown", this.freehandMouseDownHandler);
+    }
+    if (this.freehandMouseMoveHandler) {
+      wrapper.removeEventListener("mousemove", this.freehandMouseMoveHandler);
+    }
+    if (this.freehandMouseUpHandler) {
+      wrapper.removeEventListener("mouseup", this.freehandMouseUpHandler);
+    }
+    if (this.freehandContextMenuHandler) {
+      wrapper.removeEventListener("contextmenu", this.freehandContextMenuHandler);
+    }
+    
+    // Reset state
+    this.isFreehandDrawing = false;
+    this.freehandPoints = [];
+    this.lastFreehandPoint = null;
+    this.freehandActive = false;
+    
+    // Reset cursor
+    wrapper.style.cursor = "default";
+  }
+  
+  showFreehandCancelDialog() {
+    // Create dialog to ask user if they want to quit or finalize
+    const dialog = document.createElement("sl-dialog");
+    dialog.label = "Freehand Drawing";
+    
+    dialog.innerHTML = `
+      <div style="text-align: center; margin-bottom: 20px;">
+        <p>What would you like to do with your current drawing?</p>
+      </div>
+      <div slot="footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+        <sl-button class="cancel-btn" variant="danger">
+          <span class="material-icons" slot="prefix">delete</span>
+          Cancel Drawing
+        </sl-button>
+        <sl-button class="finalize-btn" variant="success">
+          <span class="material-icons" slot="prefix">check_circle</span>
+          Complete Drawing
+        </sl-button>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Add handlers
+    dialog.querySelector(".cancel-btn").addEventListener("click", () => {
+      this.cancelFreehandDrawing();
+      dialog.hide();
+    });
+    
+    dialog.querySelector(".finalize-btn").addEventListener("click", () => {
+      this.finalizeFreehandDrawing();
+      dialog.hide();
+    });
+    
+    dialog.addEventListener("sl-after-hide", () => {
+      dialog.remove();
+    });
+    
+    dialog.show();
   }
 
   startCircleRoom() {
