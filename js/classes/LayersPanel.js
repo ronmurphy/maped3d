@@ -480,7 +480,7 @@ initTabSwitcher() {
       flex: 1;
     `;
     
-    // Create Markers tab button
+    // // Create Markers tab button
     const markersTab = document.createElement('button');
     markersTab.className = 'tab-button';
     markersTab.textContent = 'Markers';

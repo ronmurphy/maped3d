@@ -2048,54 +2048,36 @@ checkStoryboard(callback) {
         dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
           <sl-button size="large" class="new-map-btn" style="justify-content: flex-start;">
-              <span slot="prefix" class="material-icons">add_circle</span>
+              <span slot="prefix" class="material-icons md-24">add_circle</span>
               New Map
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                  Start fresh with a new map (clears everything)
-              </div>
           </sl-button>
 
           <sl-button size="large" class="change-picture-btn" style="justify-content: flex-start;">
-              <span slot="prefix" class="material-icons">image</span>
+              <span slot="prefix" class="material-icons md-24">image</span>
               Change Background
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                  Change map background while keeping rooms and markers
-              </div>
           </sl-button>
           
           <sl-divider></sl-divider>
           
           <!-- Add Recent Projects button -->
           <sl-button size="large" class="recent-projects-btn" style="justify-content: flex-start;">
-              <span slot="prefix" class="material-icons">history</span>
+              <span slot="prefix" class="material-icons md-24">history</span>
               Recent Projects
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                  Open a recently saved project
-              </div>
           </sl-button>
 
           <sl-button size="large" class="load-project-btn" style="justify-content: flex-start;">
-              <span slot="prefix" class="material-icons">folder_open</span>
+              <span slot="prefix" class="material-icons md-24">folder_open</span>
               Open Project File
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                  Open a complete project with resources and map
-              </div>
           </sl-button>
 
           <sl-button size="large" class="load-map-btn" style="justify-content: flex-start;">
-              <span slot="prefix" class="material-icons">map</span>
+              <span slot="prefix" class="material-icons md-24">map</span>
               Open Map File
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                  Open only a map file (.map.json)
-              </div>
           </sl-button>
           
           <sl-button size="large" class="load-resource-btn" style="justify-content: flex-start;">
-              <span slot="prefix" class="material-icons">texture</span>
+              <span slot="prefix" class="material-icons md-24">texture</span>
               Open Resource Pack
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                  Open only a resource pack (.resource.json)
-              </div>
           </sl-button>
       </div>
   `;
