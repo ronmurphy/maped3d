@@ -77,7 +77,7 @@ body {
     padding-bottom: 4px;
 }
 
-.tool-section-title {
+/* .tool-section-title {
     font-size: 0.75rem;
     text-transform: uppercase;
     color: #888;
@@ -85,7 +85,7 @@ body {
     padding: 0 8px;
     font-weight: 600;
     letter-spacing: 0.5px;
-}
+} */
 
 .tool-grid {
     display: grid;

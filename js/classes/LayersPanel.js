@@ -6,25 +6,27 @@ class LayersPanel {
         // this.setupPanel();
         this.draggedItem = null;
         this.folders = [];
-        this.setupDragAndDrop();
-        this.setupFolderControls();
+
+        // this.setupFolderControls();
         this.initTabSwitcher();
+
+                this.setupDragAndDrop();
     }
 
-    setupFolderControls() {
-        // Add "New Folder" button to the panel header
-        const header = document.querySelector('.layers-panel .tool-section-title');
-        header.style.display = 'flex';
-        header.style.justifyContent = 'space-between';
-        header.style.alignItems = 'center';
+    // setupFolderControls() {
+    //     // Add "New Folder" button to the panel header
+    //     const header = document.querySelector('.layers-panel .tool-section-title');
+    //     header.style.display = 'flex';
+    //     header.style.justifyContent = 'space-between';
+    //     header.style.alignItems = 'center';
 
-        const newFolderBtn = document.createElement('sl-button');
-        newFolderBtn.size = 'small';
-        newFolderBtn.innerHTML = '<span class="material-icons">create_new_folder</span>';
-        newFolderBtn.style.marginLeft = 'auto';
-        newFolderBtn.addEventListener('click', () => this.createNewFolder());
-        header.appendChild(newFolderBtn);
-    }
+    //     const newFolderBtn = document.createElement('sl-button');
+    //     newFolderBtn.size = 'small';
+    //     newFolderBtn.innerHTML = '<span class="material-icons">create_new_folder</span>';
+    //     newFolderBtn.style.marginLeft = 'auto';
+    //     newFolderBtn.addEventListener('click', () => this.createNewFolder());
+    //     header.appendChild(newFolderBtn);
+    // }
 
     async createNewFolder() {
         const dialog = document.createElement('sl-dialog');
@@ -449,208 +451,213 @@ createFolderElement(folder) {
     }
 
 
-// Add this method to the LayersPanel class
-initTabSwitcher() {
-    // Get the header element where the folder button is
+  initTabSwitcher() {
+    // Get the header element where we'll put the tabs
     const header = document.querySelector('.layers-panel .tool-section-title');
     if (!header) return;
     
-    // Create tab switcher container
-    const tabSwitcher = document.createElement('div');
-    tabSwitcher.className = 'tab-switcher';
-    tabSwitcher.style.cssText = `
+    // Clear existing content from header
+    while (header.firstChild) {
+      header.removeChild(header.firstChild);
+    }
+    
+    // Create a styled container for the tabs (similar to the original tabSwitcher)
+    const tabContainer = document.createElement('div');
+    tabContainer.style.cssText = `
       display: flex; 
       border-radius: 4px; 
       overflow: hidden;
       margin-right: auto;
-      border: 1px solid #555;
+      width: 100%;
     `;
     
-    // Create Layers tab button
-    const layersTab = document.createElement('button');
-    layersTab.className = 'tab-button active';
-    layersTab.textContent = 'Areas';
-    layersTab.style.cssText = `
-      padding: 4px 8px; 
-      border: none; 
-      background: none; 
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-      flex: 1;
-    `;
+    // Create a Shoelace tab group with custom styling
+    const tabGroup = document.createElement('sl-tab-group');
+    tabGroup.placement = "top";
+    tabGroup.style.flex = "1";
     
-    // // Create Markers tab button
-    const markersTab = document.createElement('button');
-    markersTab.className = 'tab-button';
-    markersTab.textContent = 'Markers';
-    markersTab.style.cssText = `
-      padding: 4px 8px; 
-      border: none; 
-      background: none; 
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-      flex: 1;
-    `;
-    
-    // Add styles for active tab
-    document.head.appendChild(document.createElement('style')).textContent = `
-  .tab-button.active {
-    background-color: #555;
-    color: white;
-  }
-  .tab-button:not(.active) {
-    background-color: transparent;
-    color: #aaa;
-  }
-  .tab-button:hover:not(.active) {
-    background-color: rgba(85, 85, 85, 0.3);
-  }
-  .marker-item {
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    border-bottom: 1px solid #444;
-    cursor: pointer;
-  }
-  .marker-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-  }
-  .marker-icon {
-    margin-right: 8px;
-    width: 24px;
-    text-align: center;
-  }
-  .marker-info {
-    flex: 1;
-    overflow: hidden;
-  }
-  .marker-name {
-    font-size: 12px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .marker-location {
-    font-size: 10px;
-    color: #999;
-  }
-  .marker-controls {
-    display: flex;
-    gap: 4px;
-  }
-  .marker-controls .material-icons {
-    padding: 2px;
-    cursor: pointer;
-  }
-  .marker-controls .material-icons:hover {
-    opacity: 0.8;
-  }
-  .marker-filter {
-    padding: 8px;
-    background-color: #333;
-    border-bottom: 1px solid #444;
-  }
-  
-  /* Highlight pulse animation */
-  @keyframes highlight-pulse {
-    0%, 100% { box-shadow: 0 0 0 rgba(33, 150, 243, 0.5); }
-    50% { box-shadow: 0 0 30px rgba(33, 150, 243, 0.8); }
-  }
-  
-  .highlight-pulse {
-    animation: highlight-pulse 1.5s ease-in-out;
-  }
-
-      // Add this to the style element in initTabSwitcher or add it separately
-@keyframes highlight-pulse {
-  0%, 100% { box-shadow: 0 0 0 rgba(33, 150, 243, 0.5); }
-  50% { box-shadow: 0 0 30px rgba(33, 150, 243, 0.8); }
-}
-
-.highlight-pulse {
-  animation: highlight-pulse 1.5s ease-in-out;
-}
-
-    `;
-    
-    // Add tab buttons to switcher
-    tabSwitcher.appendChild(layersTab);
-    tabSwitcher.appendChild(markersTab);
-    
-    // Add switcher to header (before the folder button)
-    header.insertBefore(tabSwitcher, header.firstChild);
-    
-    // Store DOM references
-    this.layersTab = layersTab;
-    this.markersTab = markersTab;
-    this.folderButton = header.querySelector('sl-button');
-    
-    // Add event listeners
-    layersTab.addEventListener('click', () => {
-      layersTab.classList.add('active');
-      markersTab.classList.remove('active');
-      this.showLayersPanel();
+    // Apply custom styles to the Shoelace component
+    tabGroup.addEventListener('sl-after-show', () => {
+      // Style the tab buttons after they're rendered
+      const tabs = tabGroup.querySelectorAll('sl-tab');
+      tabs.forEach(tab => {
+        tab.style.cssText = `
+          padding: 4px 8px; 
+          border: none; 
+          background: none; 
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: bold;
+          flex: 1;
+          min-height: unset;
+        `;
+      });
     });
     
-    markersTab.addEventListener('click', () => {
-      markersTab.classList.add('active');
-      layersTab.classList.remove('active');
-      this.showMarkersPanel();
+    // Create the tabs and panels
+    tabGroup.innerHTML = `
+      <sl-tab slot="nav" panel="areas-panel">Areas</sl-tab>
+      <sl-tab slot="nav" panel="markers-panel">Markers</sl-tab>
+      
+      <sl-tab-panel name="areas-panel">
+        <div id="layersList" style="height: 100%; overflow-y: auto;"></div>
+      </sl-tab-panel>
+      
+      <sl-tab-panel name="markers-panel">
+        <div id="markersPanel" style="height: 100%; overflow-y: auto;"></div>
+      </sl-tab-panel>
+    `;
+    
+    // Add the tabs to the container
+    tabContainer.appendChild(tabGroup);
+    
+    // Add tab container to header
+    header.appendChild(tabContainer);
+    
+    // Find and use the existing folder button from the HTML
+    const existingFolderBtn = document.getElementById('newFolderBtn');
+    if (existingFolderBtn) {
+      // Remove any existing click listeners
+      const newBtn = existingFolderBtn.cloneNode(true);
+      existingFolderBtn.parentNode.replaceChild(newBtn, existingFolderBtn);
+      newBtn.innerHTML = '<span class="material-icons">create_new_folder</span>';
+      // Add our event listener to the button
+      newBtn.addEventListener('click', () => this.createNewFolder());
+      
+      // Store reference to the button
+      this.folderButton = newBtn;
+    }
+    
+    // Store reference to tabGroup
+    this.tabGroup = tabGroup;
+    
+    // Add event listeners for tab switching
+    tabGroup.addEventListener('sl-tab-show', (e) => {
+      const panel = e.detail.name;
+      
+      if (panel === 'areas-panel') {
+        this.showLayersPanel();
+        if (this.folderButton) this.folderButton.style.display = 'inline-flex';
+      } else if (panel === 'markers-panel') {
+        this.showMarkersPanel();
+        if (this.folderButton) this.folderButton.style.display = 'none';
+      }
     });
+    
+    // Add CSS styles from the original implementation
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      /* Custom styles for sl-tab-group */
+      sl-tab-group::part(base) {
+        --border-width: 0;
+      }
+      
+      sl-tab-group::part(nav) {
+        background: transparent;
+      }
+      
+      sl-tab[active]::part(base) {
+        background-color: #555;
+        color: white;
+      }
+      
+      sl-tab:not([active])::part(base) {
+        background-color: transparent;
+        color: #aaa;
+      }
+      
+      sl-tab:not([active]):hover::part(base) {
+        background-color: rgba(85, 85, 85, 0.3);
+      }
+      
+      /* Original marker styles */
+      .marker-item {
+        display: flex;
+        align-items: center;
+        width: 300px;
+        padding: 6px 8px;
+        border-bottom: 1px solid #444;
+        cursor: pointer;
+      }
+      .marker-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      .marker-icon {
+        margin-right: 8px;
+        width: 24px;
+        text-align: center;
+      }
+      .marker-info {
+        flex: 1;
+        overflow: hidden;
+      }
+      .marker-name {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .marker-location {
+        font-size: 10px;
+        color: #999;
+      }
+      .marker-controls {
+        display: flex;
+        gap: 4px;
+      }
+      .marker-controls .material-icons {
+        padding: 2px;
+        cursor: pointer;
+      }
+      .marker-controls .material-icons:hover {
+        opacity: 0.8;
+      }
+      .marker-filter {
+        padding: 8px;
+        background-color: #333;
+        border-bottom: 1px solid #444;
+      }
+      
+      /* Highlight pulse animation */
+      @keyframes highlight-pulse {
+        0%, 100% { box-shadow: 0 0 0 rgba(33, 150, 243, 0.5); }
+        50% { box-shadow: 0 0 30px rgba(33, 150, 243, 0.8); }
+      }
+      
+      .highlight-pulse {
+        animation: highlight-pulse 1.5s ease-in-out;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    // Replace the layersList reference with the new one
+    this.layersList = document.getElementById("layersList");
+    
+    // Initially show areas panel
+    this.showLayersPanel();
   }
   
-  // New method to show the original layers panel
+  // Update showLayersPanel method to work with new tab structure
   showLayersPanel() {
-    // Show the layers list and folder button
-    const layersList = document.getElementById('layersList');
-    if (layersList) layersList.style.display = 'block';
-    
-    // Remove markers panel if it exists
-    const markersPanel = document.getElementById('markersPanel');
-    if (markersPanel) markersPanel.style.display = 'none';
-    
-    // Show folder button
-    if (this.folderButton) this.folderButton.style.display = 'flex';
+    // Make sure layersList exists (may have been recreated in the tabs)
+    this.layersList = document.getElementById('layersList');
+    if (!this.layersList) return;
     
     // Update layers list
     this.updateLayersList();
   }
   
-  // New method to show markers panel
+  // Update showMarkersPanel method to work with new tab structure
   showMarkersPanel() {
-    // Hide the layers list and folder button
-    const layersList = document.getElementById('layersList');
-    if (layersList) layersList.style.display = 'none';
-    
-    // Hide folder button
-    if (this.folderButton) this.folderButton.style.display = 'none';
-    
-    // Get or create markers panel
-    let markersPanel = document.getElementById('markersPanel');
-    
-    if (!markersPanel) {
-      markersPanel = document.createElement('div');
-      markersPanel.id = 'markersPanel';
-      markersPanel.style.cssText = `
-        height: 100%;
-        overflow-y: auto;
-        color: #fff;
-      `;
-      
-      // Add to the layers panel container
-      const layersPanel = document.querySelector('.layers-panel');
-      layersPanel.appendChild(markersPanel);
-    }
-    
-    markersPanel.style.display = 'block';
+    // Make sure markersPanel exists (should be created in tabs)
+    const markersPanel = document.getElementById('markersPanel');
+    if (!markersPanel) return;
     
     // Update markers panel content
     this.updateMarkersPanel();
   }
   
-  // Method to update markers panel content
+  // Fixed updateMarkersPanel method to ensure filter works properly
   updateMarkersPanel() {
     const markersPanel = document.getElementById('markersPanel');
     if (!markersPanel) return;
@@ -662,9 +669,11 @@ initTabSwitcher() {
     // Clear existing content
     markersPanel.innerHTML = '';
     
-    // Add filter section
+    // Add filter section with original styling
     const filterSection = document.createElement('div');
     filterSection.className = 'marker-filter';
+    
+    // Use native select to match original styling
     filterSection.innerHTML = `
       <select id="markerTypeFilter" style="width: 100%; padding: 4px; border-radius: 4px; background: #222; color: #eee; border: 1px solid #555;">
         <option value="all">All Marker Types</option>
@@ -682,8 +691,13 @@ initTabSwitcher() {
     
     // Hook up filter change event
     const filter = filterSection.querySelector('#markerTypeFilter');
-    filter.addEventListener('change', () => {
-      this.updateMarkersPanel(); // Refresh with new filter
+    filter.addEventListener('change', (e) => {
+      // Store the selected value
+      const selectedValue = e.target.value || 'all';
+      console.log('Filter changed to:', selectedValue);
+      
+      // Refresh markers list with the filter
+      this.filterMarkers(selectedValue);
     });
     
     // Add player start marker if it exists
@@ -692,11 +706,31 @@ initTabSwitcher() {
       markersPanel.appendChild(playerStartItem);
     }
     
+    // Add empty container for marker items
+    const markersList = document.createElement('div');
+    markersList.id = 'markers-list-container';
+    markersList.className = 'markers-list';
+    markersPanel.appendChild(markersList);
+    
+    // Initial filter with "all"
+    this.filterMarkers('all');
+  }
+  
+  // New method to handle marker filtering
+  filterMarkers(filterType) {
+    const markersContainer = document.getElementById('markers-list-container');
+    if (!markersContainer) return;
+    
+    // Clear existing markers
+    markersContainer.innerHTML = '';
+    
+    // Get markers from editor
+    const markers = this.editor.markers || [];
+    
     // Filter markers if needed
-    const selectedFilter = filter ? filter.value : 'all';
-    const filteredMarkers = selectedFilter === 'all' 
+    const filteredMarkers = filterType === 'all' 
       ? markers 
-      : markers.filter(m => m.type === selectedFilter);
+      : markers.filter(m => m.type === filterType);
     
     // Add marker count
     const countInfo = document.createElement('div');
@@ -708,19 +742,14 @@ initTabSwitcher() {
       border-bottom: 1px solid #444;
     `;
     countInfo.textContent = `${filteredMarkers.length} marker${filteredMarkers.length !== 1 ? 's' : ''}`;
-    markersPanel.appendChild(countInfo);
+    markersContainer.appendChild(countInfo);
     
     // Add filtered markers
     if (filteredMarkers.length > 0) {
-      const markersList = document.createElement('div');
-      markersList.className = 'markers-list';
-      
       filteredMarkers.forEach(marker => {
         const markerItem = this.createMarkerItem(marker);
-        markersList.appendChild(markerItem);
+        markersContainer.appendChild(markerItem);
       });
-      
-      markersPanel.appendChild(markersList);
     } else {
       // No markers message
       const emptyMessage = document.createElement('div');
@@ -730,13 +759,12 @@ initTabSwitcher() {
         color: #888;
         font-style: italic;
       `;
-      emptyMessage.textContent = selectedFilter === 'all' 
+      emptyMessage.textContent = filterType === 'all' 
         ? 'No markers on this map' 
-        : `No ${selectedFilter} markers on this map`;
-      markersPanel.appendChild(emptyMessage);
+        : `No ${filterType} markers on this map`;
+      markersContainer.appendChild(emptyMessage);
     }
   }
-  
 
 // Update the createMarkerItem method to match the colors and styles
 createMarkerItem(marker, forcedType = null) {
