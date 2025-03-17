@@ -3287,212 +3287,471 @@ if (preferencesBtn) {
     return snappedPos;
   }
 
-  startFreehandDrawing() {
-    if (!this.baseImage) {
-      this.showCustomToast("Please load a map first", "warning", 3000);
-      return;
-    }
+  // startFreehandDrawing() {
+  //   if (!this.baseImage) {
+  //     this.showCustomToast("Please load a map first", "warning", 3000);
+  //     return;
+  //   }
   
-    // Create preview element for freehand drawing
-    this.freehandPreviewElement = document.createElement("div");
-    this.freehandPreviewElement.className = "freehand-preview";
-    document.querySelector(".canvas-container").appendChild(this.freehandPreviewElement);
+  //   // Create preview element for freehand drawing
+  //   this.freehandPreviewElement = document.createElement("div");
+  //   this.freehandPreviewElement.className = "freehand-preview";
+  //   document.querySelector(".canvas-container").appendChild(this.freehandPreviewElement);
     
-    // Reset freehand points
-    this.freehandPoints = [];
-    this.lastFreehandPoint = null;
-    this.isFreehandDrawing = true;
+  //   // Reset freehand points
+  //   this.freehandPoints = [];
+  //   this.lastFreehandPoint = null;
+  //   this.isFreehandDrawing = true;
+  //   this.freehandActive = false;
+    
+  //   // Set cursor
+  //   const wrapper = document.getElementById("canvasWrapper");
+  //   wrapper.style.cursor = "crosshair";
+    
+  //   // Add mouse handlers for freehand drawing
+  //   this.setupFreehandMouseHandlers();
+  // }
+  
+  // setupFreehandMouseHandlers() {
+  //   const wrapper = document.getElementById("canvasWrapper");
+    
+  //   // Create mousedown handler
+  //   this.freehandMouseDownHandler = (e) => {
+  //     if (e.button !== 0) return; // Only respond to left mouse button
+  //     e.preventDefault();
+  //     e.stopPropagation();
+      
+  //     this.freehandActive = true;
+  //     const rect = wrapper.getBoundingClientRect();
+  //     const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+  //     const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+      
+  //     // Add first point
+  //     this.freehandPoints.push({ x, y });
+  //     this.lastFreehandPoint = { x, y };
+  //     this.updateFreehandPreview();
+  //   };
+    
+  //   // Create mousemove handler
+  //   this.freehandMouseMoveHandler = (e) => {
+  //     if (!this.freehandActive) return;
+      
+  //     const rect = wrapper.getBoundingClientRect();
+  //     const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+  //     const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+      
+  //     // Only add points if we've moved far enough
+  //     if (this.lastFreehandPoint) {
+  //       const distance = Math.sqrt(
+  //         Math.pow(x - this.lastFreehandPoint.x, 2) + 
+  //         Math.pow(y - this.lastFreehandPoint.y, 2)
+  //       );
+        
+  //       // Calculate minimum distance based on grid cell size
+  //       const minDistance = this.cellSize ? this.cellSize / 4 : this.freehandMinDistance;
+        
+  //       if (distance >= minDistance) {
+  //         this.freehandPoints.push({ x, y });
+  //         this.lastFreehandPoint = { x, y };
+  //         this.updateFreehandPreview();
+  //       }
+  //     }
+  //   };
+    
+  //   // Create mouseup handler
+  //   this.freehandMouseUpHandler = (e) => {
+  //     if (e.button !== 0) return; // Only respond to left mouse button
+      
+  //     this.freehandActive = false;
+      
+  //     // If we have enough points and the path is almost closed, finalize it
+  //     if (this.freehandPoints.length > 3) {
+  //       const first = this.freehandPoints[0];
+  //       const last = this.freehandPoints[this.freehandPoints.length - 1];
+  //       const distance = Math.sqrt(
+  //         Math.pow(last.x - first.x, 2) + 
+  //         Math.pow(last.y - first.y, 2)
+  //       );
+        
+  //       if (distance < this.cellSize / 2) {
+  //         // Close the path
+  //         this.finalizeFreehandDrawing();
+  //       }
+  //     }
+  //   };
+    
+  //   // Add right click handler for cancellation
+  //   this.freehandContextMenuHandler = (e) => {
+  //     if (this.isFreehandDrawing) {
+  //       e.preventDefault();
+  //       this.showFreehandCancelDialog();
+  //       return false;
+  //     }
+  //   };
+    
+  //   // Add handlers to wrapper
+  //   wrapper.addEventListener("mousedown", this.freehandMouseDownHandler);
+  //   wrapper.addEventListener("mousemove", this.freehandMouseMoveHandler);
+  //   wrapper.addEventListener("mouseup", this.freehandMouseUpHandler);
+  //   wrapper.addEventListener("contextmenu", this.freehandContextMenuHandler);
+  // }
+  
+  // updateFreehandPreview() {
+  //   if (!this.freehandPreviewElement || this.freehandPoints.length === 0) return;
+    
+  //   // Create SVG path string
+  //   let pathData = "";
+  //   this.freehandPoints.forEach((point, index) => {
+  //     const x = point.x * this.scale + this.offset.x;
+  //     const y = point.y * this.scale + this.offset.y;
+  //     pathData += index === 0 ? `M ${x},${y} ` : `L ${x},${y} `;
+  //   });
+    
+  //   // Update preview element
+  //   this.freehandPreviewElement.style.cssText = `
+  //     position: absolute;
+  //     top: 0;
+  //     left: 0;
+  //     width: 100%;
+  //     height: 100%;
+  //     pointer-events: none;
+  //   `;
+    
+  //   this.freehandPreviewElement.innerHTML = `
+  //     <svg style="width: 100%; height: 100%;">
+  //       <path d="${pathData}" 
+  //             stroke="#4CAF50" 
+  //             stroke-width="2" 
+  //             fill="rgba(76, 175, 80, 0.2)" 
+  //             stroke-dasharray="4 4"/>
+  //     </svg>
+  //   `;
+    
+  //   // Add point markers for visual feedback
+  //   this.freehandPoints.forEach((point, index) => {
+  //     // Only show every 3rd point to avoid clutter
+  //     if (index % 3 === 0 || index === this.freehandPoints.length - 1) {
+  //       const marker = document.createElement("div");
+  //       marker.className = "freehand-point";
+  //       marker.style.cssText = `
+  //         position: absolute;
+  //         width: 6px;
+  //         height: 6px;
+  //         background: #4CAF50;
+  //         border: 1px solid white;
+  //         border-radius: 50%;
+  //         transform: translate(-50%, -50%);
+  //         left: ${point.x * this.scale + this.offset.x}px;
+  //         top: ${point.y * this.scale + this.offset.y}px;
+  //         ${index === 0 ? "background: white; border-color: #4CAF50;" : ""}
+  //       `;
+  //       this.freehandPreviewElement.appendChild(marker);
+  //     }
+  //   });
+  // }
+  
+  // finalizeFreehandDrawing() {
+  //   if (!this.isFreehandDrawing || this.freehandPoints.length < 3) return;
+  
+  //   // Optional - simplify the polygon to reduce number of points
+  //   const simplifiedPoints = this.simplifyFreehandPoints(this.freehandPoints);
+    
+  //   // Calculate bounding box
+  //   const xs = simplifiedPoints.map((p) => p.x);
+  //   const ys = simplifiedPoints.map((p) => p.y);
+  //   const minX = Math.min(...xs);
+  //   const maxX = Math.max(...xs);
+  //   const minY = Math.min(...ys);
+  //   const maxY = Math.max(...ys);
+  
+  //   // Create wall room
+  //   const freehandWall = new Room(
+  //     Date.now(),
+  //     {
+  //       x: minX,
+  //       y: minY,
+  //       width: maxX - minX,
+  //       height: maxY - minY,
+  //       points: simplifiedPoints.map((p) => ({
+  //         x: p.x - minX,
+  //         y: p.y - minY
+  //       }))
+  //     },
+  //     "Freehand Wall",
+  //     "polygon",
+  //     "wall" // Set type as wall
+  //   );
+  
+  //   console.log("Created freehand wall with", simplifiedPoints.length, "points");
+  
+  //   this.rooms.push(freehandWall);
+  //   const wallElement = freehandWall.createDOMElement(this);
+  //   document.querySelector(".canvas-container").appendChild(wallElement);
+  //   this.layersPanel.updateLayersList();
+  
+  //   // Clean up
+  //   this.cleanupFreehandDrawing();
+  // }
+  
+  // Add these methods to the MapEditor class to implement the freehand drawing stabilizer
+
+// Initialize the freehand drawing with stabilization support
+startFreehandDrawing() {
+  if (!this.baseImage) {
+    this.showCustomToast("Please load a map first", "warning", 3000);
+    return;
+  }
+
+  // Create preview element for freehand drawing
+  this.freehandPreviewElement = document.createElement("div");
+  this.freehandPreviewElement.className = "freehand-preview";
+  document.querySelector(".canvas-container").appendChild(this.freehandPreviewElement);
+  
+  // Reset freehand points and state
+  this.freehandPoints = [];
+  this.stabilizedPoints = []; // New array for stabilized points
+  this.lastFreehandPoint = null;
+  this.isFreehandDrawing = true;
+  this.freehandActive = false;
+  
+  // Get stabilizer settings from editor preferences
+  const editorPrefs = JSON.parse(localStorage.getItem('editorPreferences') || '{}');
+  this.useStabilizer = editorPrefs.freehandStabilizer || false;
+  this.stabilizerStrength = editorPrefs.freehandSensitivity || 0.5;
+  
+  // Set cursor
+  const wrapper = document.getElementById("canvasWrapper");
+  wrapper.style.cursor = "crosshair";
+  
+  // Add mouse handlers for freehand drawing
+  this.setupFreehandMouseHandlers();
+}
+
+// Modified setupFreehandMouseHandlers to support stabilization
+setupFreehandMouseHandlers() {
+  const wrapper = document.getElementById("canvasWrapper");
+  
+  // Create mousedown handler
+  this.freehandMouseDownHandler = (e) => {
+    if (e.button !== 0) return; // Only respond to left mouse button
+    e.preventDefault();
+    e.stopPropagation();
+    
+    this.freehandActive = true;
+    const rect = wrapper.getBoundingClientRect();
+    const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+    const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+    
+    // Add first point
+    this.freehandPoints.push({ x, y });
+    this.stabilizedPoints.push({ x, y }); // Initial point is the same
+    this.lastFreehandPoint = { x, y };
+    this.updateFreehandPreview();
+  };
+  
+  // Create mousemove handler with stabilization
+  this.freehandMouseMoveHandler = (e) => {
+    if (!this.freehandActive) return;
+    
+    const rect = wrapper.getBoundingClientRect();
+    const x = (e.clientX - rect.left - this.offset.x) / this.scale;
+    const y = (e.clientY - rect.top - this.offset.y) / this.scale;
+    
+    // Only add points if we've moved far enough
+    if (this.lastFreehandPoint) {
+      const distance = Math.sqrt(
+        Math.pow(x - this.lastFreehandPoint.x, 2) + 
+        Math.pow(y - this.lastFreehandPoint.y, 2)
+      );
+      
+      // Calculate minimum distance based on grid cell size
+      const minDistance = this.cellSize ? this.cellSize / 4 : this.freehandMinDistance;
+      
+      if (distance >= minDistance) {
+        // Add the raw point
+        this.freehandPoints.push({ x, y });
+        this.lastFreehandPoint = { x, y };
+        
+        // Calculate stabilized point if stabilizer is enabled
+        if (this.useStabilizer && this.freehandPoints.length > 1) {
+          const newStabilizedPoint = this.calculateStabilizedPoint();
+          this.stabilizedPoints.push(newStabilizedPoint);
+        } else {
+          // If stabilizer is off, just use the raw point
+          this.stabilizedPoints.push({ x, y });
+        }
+        
+        this.updateFreehandPreview();
+      }
+    }
+  };
+  
+  // Create mouseup handler
+  this.freehandMouseUpHandler = (e) => {
+    if (e.button !== 0) return; // Only respond to left mouse button
+    
     this.freehandActive = false;
     
-    // Set cursor
-    const wrapper = document.getElementById("canvasWrapper");
-    wrapper.style.cursor = "crosshair";
-    
-    // Add mouse handlers for freehand drawing
-    this.setupFreehandMouseHandlers();
-  }
+    // If we have enough points and the path is almost closed, finalize it
+    if (this.stabilizedPoints.length > 3) {
+      const first = this.stabilizedPoints[0];
+      const last = this.stabilizedPoints[this.stabilizedPoints.length - 1];
+      const distance = Math.sqrt(
+        Math.pow(last.x - first.x, 2) + 
+        Math.pow(last.y - first.y, 2)
+      );
+      
+      if (distance < this.cellSize / 2) {
+        // Close the path
+        this.finalizeFreehandDrawing();
+      }
+    }
+  };
   
-  setupFreehandMouseHandlers() {
-    const wrapper = document.getElementById("canvasWrapper");
-    
-    // Create mousedown handler
-    this.freehandMouseDownHandler = (e) => {
-      if (e.button !== 0) return; // Only respond to left mouse button
+  // Add right click handler for cancellation
+  this.freehandContextMenuHandler = (e) => {
+    if (this.isFreehandDrawing) {
       e.preventDefault();
-      e.stopPropagation();
-      
-      this.freehandActive = true;
-      const rect = wrapper.getBoundingClientRect();
-      const x = (e.clientX - rect.left - this.offset.x) / this.scale;
-      const y = (e.clientY - rect.top - this.offset.y) / this.scale;
-      
-      // Add first point
-      this.freehandPoints.push({ x, y });
-      this.lastFreehandPoint = { x, y };
-      this.updateFreehandPreview();
-    };
-    
-    // Create mousemove handler
-    this.freehandMouseMoveHandler = (e) => {
-      if (!this.freehandActive) return;
-      
-      const rect = wrapper.getBoundingClientRect();
-      const x = (e.clientX - rect.left - this.offset.x) / this.scale;
-      const y = (e.clientY - rect.top - this.offset.y) / this.scale;
-      
-      // Only add points if we've moved far enough
-      if (this.lastFreehandPoint) {
-        const distance = Math.sqrt(
-          Math.pow(x - this.lastFreehandPoint.x, 2) + 
-          Math.pow(y - this.lastFreehandPoint.y, 2)
-        );
-        
-        // Calculate minimum distance based on grid cell size
-        const minDistance = this.cellSize ? this.cellSize / 4 : this.freehandMinDistance;
-        
-        if (distance >= minDistance) {
-          this.freehandPoints.push({ x, y });
-          this.lastFreehandPoint = { x, y };
-          this.updateFreehandPreview();
-        }
-      }
-    };
-    
-    // Create mouseup handler
-    this.freehandMouseUpHandler = (e) => {
-      if (e.button !== 0) return; // Only respond to left mouse button
-      
-      this.freehandActive = false;
-      
-      // If we have enough points and the path is almost closed, finalize it
-      if (this.freehandPoints.length > 3) {
-        const first = this.freehandPoints[0];
-        const last = this.freehandPoints[this.freehandPoints.length - 1];
-        const distance = Math.sqrt(
-          Math.pow(last.x - first.x, 2) + 
-          Math.pow(last.y - first.y, 2)
-        );
-        
-        if (distance < this.cellSize / 2) {
-          // Close the path
-          this.finalizeFreehandDrawing();
-        }
-      }
-    };
-    
-    // Add right click handler for cancellation
-    this.freehandContextMenuHandler = (e) => {
-      if (this.isFreehandDrawing) {
-        e.preventDefault();
-        this.showFreehandCancelDialog();
-        return false;
-      }
-    };
-    
-    // Add handlers to wrapper
-    wrapper.addEventListener("mousedown", this.freehandMouseDownHandler);
-    wrapper.addEventListener("mousemove", this.freehandMouseMoveHandler);
-    wrapper.addEventListener("mouseup", this.freehandMouseUpHandler);
-    wrapper.addEventListener("contextmenu", this.freehandContextMenuHandler);
+      this.showFreehandCancelDialog();
+      return false;
+    }
+  };
+  
+  // Add handlers to wrapper
+  wrapper.addEventListener("mousedown", this.freehandMouseDownHandler);
+  wrapper.addEventListener("mousemove", this.freehandMouseMoveHandler);
+  wrapper.addEventListener("mouseup", this.freehandMouseUpHandler);
+  wrapper.addEventListener("contextmenu", this.freehandContextMenuHandler);
+}
+
+// New method to calculate stabilized points using weighted average
+calculateStabilizedPoint() {
+  const numPoints = this.freehandPoints.length;
+  const rawPoint = this.freehandPoints[numPoints - 1];
+  
+  if (numPoints < 3) {
+    return rawPoint; // Not enough points to stabilize yet
   }
   
-  updateFreehandPreview() {
-    if (!this.freehandPreviewElement || this.freehandPoints.length === 0) return;
-    
-    // Create SVG path string
-    let pathData = "";
-    this.freehandPoints.forEach((point, index) => {
-      const x = point.x * this.scale + this.offset.x;
-      const y = point.y * this.scale + this.offset.y;
-      pathData += index === 0 ? `M ${x},${y} ` : `L ${x},${y} `;
-    });
-    
-    // Update preview element
-    this.freehandPreviewElement.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    `;
-    
-    this.freehandPreviewElement.innerHTML = `
-      <svg style="width: 100%; height: 100%;">
-        <path d="${pathData}" 
-              stroke="#4CAF50" 
-              stroke-width="2" 
-              fill="rgba(76, 175, 80, 0.2)" 
-              stroke-dasharray="4 4"/>
-      </svg>
-    `;
-    
-    // Add point markers for visual feedback
-    this.freehandPoints.forEach((point, index) => {
-      // Only show every 3rd point to avoid clutter
-      if (index % 3 === 0 || index === this.freehandPoints.length - 1) {
-        const marker = document.createElement("div");
-        marker.className = "freehand-point";
-        marker.style.cssText = `
-          position: absolute;
-          width: 6px;
-          height: 6px;
-          background: #4CAF50;
-          border: 1px solid white;
-          border-radius: 50%;
-          transform: translate(-50%, -50%);
-          left: ${point.x * this.scale + this.offset.x}px;
-          top: ${point.y * this.scale + this.offset.y}px;
-          ${index === 0 ? "background: white; border-color: #4CAF50;" : ""}
-        `;
-        this.freehandPreviewElement.appendChild(marker);
-      }
-    });
-  }
+  // Get the last stabilized point
+  const lastStabilized = this.stabilizedPoints[this.stabilizedPoints.length - 1];
   
-  finalizeFreehandDrawing() {
-    if (!this.isFreehandDrawing || this.freehandPoints.length < 3) return;
+  // Calculate weighted average
+  // Stabilizer strength determines how much weight to give to the previous point
+  // Higher strength = smoother lines but less responsive
+  const strength = this.stabilizerStrength;
   
-    // Optional - simplify the polygon to reduce number of points
-    const simplifiedPoints = this.simplifyFreehandPoints(this.freehandPoints);
-    
-    // Calculate bounding box
-    const xs = simplifiedPoints.map((p) => p.x);
-    const ys = simplifiedPoints.map((p) => p.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
+  return {
+    x: rawPoint.x * (1 - strength) + lastStabilized.x * strength,
+    y: rawPoint.y * (1 - strength) + lastStabilized.y * strength
+  };
+}
+
+// Modified updateFreehandPreview to use stabilized points
+updateFreehandPreview() {
+  if (!this.freehandPreviewElement || this.stabilizedPoints.length === 0) return;
   
-    // Create wall room
-    const freehandWall = new Room(
-      Date.now(),
-      {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY,
-        points: simplifiedPoints.map((p) => ({
-          x: p.x - minX,
-          y: p.y - minY
-        }))
-      },
-      "Freehand Wall",
-      "polygon",
-      "wall" // Set type as wall
-    );
+  // Use stabilizedPoints for drawing
+  const pointsToUse = this.stabilizedPoints;
   
-    console.log("Created freehand wall with", simplifiedPoints.length, "points");
+  // Create SVG path string
+  let pathData = "";
+  pointsToUse.forEach((point, index) => {
+    const x = point.x * this.scale + this.offset.x;
+    const y = point.y * this.scale + this.offset.y;
+    pathData += index === 0 ? `M ${x},${y} ` : `L ${x},${y} `;
+  });
   
-    this.rooms.push(freehandWall);
-    const wallElement = freehandWall.createDOMElement(this);
-    document.querySelector(".canvas-container").appendChild(wallElement);
-    this.layersPanel.updateLayersList();
+  // Update preview element
+  this.freehandPreviewElement.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  `;
   
-    // Clean up
-    this.cleanupFreehandDrawing();
-  }
+  this.freehandPreviewElement.innerHTML = `
+    <svg style="width: 100%; height: 100%;">
+      <path d="${pathData}" 
+            stroke="#4CAF50" 
+            stroke-width="2" 
+            fill="rgba(76, 175, 80, 0.2)" 
+            stroke-dasharray="4 4"/>
+    </svg>
+  `;
   
+  // Add point markers for visual feedback (we'll show fewer points with stabilizer on)
+  const skipInterval = this.useStabilizer ? 6 : 3; // Show fewer points when stabilizer is on
+  pointsToUse.forEach((point, index) => {
+    // Only show some points to avoid clutter
+    if (index % skipInterval === 0 || index === pointsToUse.length - 1) {
+      const marker = document.createElement("div");
+      marker.className = "freehand-point";
+      marker.style.cssText = `
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #4CAF50;
+        border: 1px solid white;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        left: ${point.x * this.scale + this.offset.x}px;
+        top: ${point.y * this.scale + this.offset.y}px;
+        ${index === 0 ? "background: white; border-color: #4CAF50;" : ""}
+      `;
+      this.freehandPreviewElement.appendChild(marker);
+    }
+  });
+}
+
+// Modified finalizeFreehandDrawing to use stabilized points
+finalizeFreehandDrawing() {
+  if (!this.isFreehandDrawing || this.stabilizedPoints.length < 3) return;
+
+  // Use simplified stabilized points
+  const pointsToUse = this.simplifyFreehandPoints(this.stabilizedPoints);
+  
+  // Calculate bounding box
+  const xs = pointsToUse.map((p) => p.x);
+  const ys = pointsToUse.map((p) => p.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  // Create wall room
+  const freehandWall = new Room(
+    Date.now(),
+    {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      points: pointsToUse.map((p) => ({
+        x: p.x - minX,
+        y: p.y - minY
+      }))
+    },
+    "Freehand Wall",
+    "polygon",
+    "wall" // Set type as wall
+  );
+
+  console.log("Created freehand wall with", pointsToUse.length, "points");
+
+  this.rooms.push(freehandWall);
+  const wallElement = freehandWall.createDOMElement(this);
+  document.querySelector(".canvas-container").appendChild(wallElement);
+  this.layersPanel.updateLayersList();
+
+  // Clean up
+  this.cleanupFreehandDrawing();
+}
+
+  // Simplify freehand points using a basic algorithm
+  // original code
   simplifyFreehandPoints(points) {
     // Very basic simplification to remove points that are too close together
     // For a more advanced algorithm, Douglas-Peucker could be implemented
@@ -7986,6 +8245,80 @@ getPreferences() {
 }
 
 // Add to MapEditor class
+// applyEditorPreferences(prefs) {
+//   if (!prefs) {
+//     // Load preferences if not provided
+//     try {
+//       const savedPrefs = localStorage.getItem('editorPreferences');
+//       if (savedPrefs) {
+//         prefs = JSON.parse(savedPrefs);
+//       } else {
+//         return; // No preferences to apply
+//       }
+//     } catch (e) {
+//       console.error('Error loading editor preferences:', e);
+//       return;
+//     }
+//   }
+  
+//   // Store for access by other methods (for snapToGrid, etc.)
+//   this.editorPreferences = prefs;
+  
+//   // Apply grid settings
+//   if (prefs.showGrid !== undefined) {
+//     // Update grid visibility
+//     this.showGrid = prefs.showGrid;
+//     this.render(); // Re-render to show/hide grid
+//   }
+  
+//   if (prefs.gridOpacity !== undefined) {
+//     // Update grid opacity
+//     this.gridOpacity = prefs.gridOpacity;
+//     this.render(); // Re-render to update grid
+//   }
+  
+//   // Setup auto-save if enabled
+//   if (prefs.autoSaveInterval > 0) {
+//     // Clear any existing auto-save interval
+//     if (this._autoSaveInterval) {
+//       clearInterval(this._autoSaveInterval);
+//     }
+    
+//     // Set up new auto-save
+//     this._autoSaveInterval = setInterval(() => {
+//       // Only auto-save if map has been modified
+//       if (this.mapModified) {
+//         console.log('Auto-saving map...');
+//         this.saveMap()
+//           .then(() => {
+//             console.log('Auto-save complete');
+//             // Show a subtle notification
+//             this.showToast('Map auto-saved', 'info', 2000);
+//           })
+//           .catch(err => {
+//             console.error('Auto-save failed:', err);
+//           });
+//       }
+//     }, prefs.autoSaveInterval * 1000);
+    
+//     console.log(`Auto-save enabled at ${prefs.autoSaveInterval} second intervals`);
+//   } else if (this._autoSaveInterval) {
+//     // Disable auto-save if it was previously enabled
+//     clearInterval(this._autoSaveInterval);
+//     this._autoSaveInterval = null;
+//     console.log('Auto-save disabled');
+//   }
+  
+//   // Update UI based on thumbnail preference
+//   if (prefs.showThumbnails !== undefined) {
+//     document.querySelectorAll('.room-thumbnail').forEach(thumb => {
+//       thumb.style.display = prefs.showThumbnails ? 'block' : 'none';
+//     });
+//   }
+  
+//   console.log('Editor preferences applied:', prefs);
+// }
+
 applyEditorPreferences(prefs) {
   if (!prefs) {
     // Load preferences if not provided
@@ -8016,6 +8349,11 @@ applyEditorPreferences(prefs) {
     // Update grid opacity
     this.gridOpacity = prefs.gridOpacity;
     this.render(); // Re-render to update grid
+  }
+  
+  // Apply floor background color if set
+  if (prefs.floorBackgroundColor && this.scene3D) {
+    this.scene3D.setFloorBackgroundColor(prefs.floorBackgroundColor);
   }
   
   // Setup auto-save if enabled

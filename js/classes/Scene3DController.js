@@ -77,6 +77,7 @@ class Scene3DController {
   }
 
 
+
   initialize(container, width, height) {
     // Initialize core Three.js components
     this.scene = new THREE.Scene();
@@ -1192,6 +1193,54 @@ runStoryboard(storyId = null) {
   
   console.log(`Running storyboard in 3D mode: ${storyId || 'default'}`);
   window.storyboard.runInScene3D(this, storyId);
+}
+
+setFloorBackgroundColor(color) {
+  if (!this.scene || !color) return;
+  
+  // Store the color for future use
+  this.floorBackgroundColor = color;
+  
+  // Find all floor meshes and update their material
+  this.scene.traverse(object => {
+    if (object.userData && object.userData.isFloor) {
+      this.updateFloorMaterial(object, color);
+    }
+  });
+  
+  console.log(`Floor background color set to ${color}`);
+}
+
+// Helper method to update floor material to handle transparency correctly
+updateFloorMaterial(floorMesh, backgroundColor) {
+  if (!floorMesh || !floorMesh.material) return;
+  
+  const material = floorMesh.material;
+  
+  // Convert hex color to Three.js color
+  const color = new THREE.Color(backgroundColor);
+  
+  // If the material is already set up for transparency
+  if (material.map && material.transparent) {
+    // Set the base color for transparent areas
+    material.color = color;
+  } 
+  // If we need to create a new material
+  else if (material.map) {
+    // Clone the texture
+    const texture = material.map;
+    
+    // Create a new material that handles transparency
+    const newMaterial = new THREE.MeshStandardMaterial({
+      map: texture,
+      transparent: true,
+      color: color,
+      side: THREE.DoubleSide
+    });
+    
+    // Replace the material
+    floorMesh.material = newMaterial;
+  }
 }
 
   initializeWithData(data) {
@@ -3469,12 +3518,34 @@ break;
     });
 
 
-    
+    // old floor code
+// // Simple scaled floor that doesn't stretch the texture
+// const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
+// const floorMaterial = new THREE.MeshStandardMaterial({
+//   map: texture,
+//   side: THREE.DoubleSide
+// });
+
+// // Make sure texture isn't repeating
+// texture.wrapS = THREE.ClampToEdgeWrapping;
+// texture.wrapT = THREE.ClampToEdgeWrapping;
+// texture.repeat.set(1, 1);
+
+// const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+// floor.rotation.x = -Math.PI / 2;
+// floor.position.y = 0.01;
+// floor.frustumCulled = false;
+// this.floorMesh = floor;
+// this.scene.add(floor);
+
 // Simple scaled floor that doesn't stretch the texture
 const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
+
+// Add support for transparency with background color
 const floorMaterial = new THREE.MeshStandardMaterial({
   map: texture,
-  side: THREE.DoubleSide
+  side: THREE.DoubleSide,
+  transparent: true // Enable transparency
 });
 
 // Make sure texture isn't repeating
@@ -3486,6 +3557,15 @@ const floor = new THREE.Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 floor.position.y = 0.01;
 floor.frustumCulled = false;
+
+// Mark this as a floor mesh for background color updates
+floor.userData.isFloor = true;
+
+// Apply floor background color if set
+if (this.floorBackgroundColor) {
+  this.updateFloorMaterial(floor, this.floorBackgroundColor);
+}
+
 this.floorMesh = floor;
 this.scene.add(floor);
 

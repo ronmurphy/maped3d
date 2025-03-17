@@ -316,137 +316,329 @@ document.addEventListener("DOMContentLoaded", () => {
       editorPrefsBtn.addEventListener('click', showEditorPreferencesDialog);
     }
 
-
+// Updated function in main.js to add freehand stabilizer and background color options
+function showEditorPreferencesDialog() {
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'Map Editor Settings';
+  dialog.style.setProperty('--width', '500px');
   
-    function showEditorPreferencesDialog() {
-      const dialog = document.createElement('sl-dialog');
-      dialog.label = 'Map Editor Settings';
-      dialog.style.setProperty('--width', '500px');
-      
-      // Get current settings from localStorage or use defaults
-      const editorPrefs = JSON.parse(localStorage.getItem('editorPreferences') || '{}');
-      const gridSnapping = editorPrefs.gridSnapping || 'soft';
-      const showGrid = editorPrefs.showGrid !== undefined ? editorPrefs.showGrid : true;
-      const gridOpacity = editorPrefs.gridOpacity !== undefined ? editorPrefs.gridOpacity : 0.1;
-      const autoSaveInterval = editorPrefs.autoSaveInterval || 0; // 0 means disabled
-      
-      dialog.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-          <!-- Grid Settings Section -->
-          <div>
-            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Grid Settings</h3>
-            
-            <div style="margin-bottom: 16px;">
-              <sl-switch id="showGrid" ${showGrid ? 'checked' : ''}>
-                Show Grid
-              </sl-switch>
-            </div>
-            
-            <div style="margin-bottom: 16px;">
-              <sl-select id="gridSnapping" label="Grid Snapping" value="${gridSnapping}">
-                <sl-option value="soft">Soft Snap (Default)</sl-option>
-                <sl-option value="strict">Strict Snap</sl-option>
-                <sl-option value="none">No Snap</sl-option>
-              </sl-select>
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                Controls how rooms and objects align to the grid
-              </div>
-            </div>
-            
-            <div style="margin-bottom: 16px;">
-              <sl-range id="gridOpacity" 
-                       label="Grid Opacity" 
-                       min="0.05" 
-                       max="0.5" 
-                       step="0.05" 
-                       value="${gridOpacity}"
-                       tooltip="top">
-              </sl-range>
-            </div>
-          </div>
-          
-          <!-- Auto-Save Section -->
-          <div>
-            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Auto-Save</h3>
-            
-            <div style="margin-bottom: 16px;">
-              <sl-select id="autoSaveInterval" label="Auto-Save Interval" value="${autoSaveInterval}">
-                <sl-option value="0">Disabled</sl-option>
-                <sl-option value="60">Every 1 minute</sl-option>
-                <sl-option value="300">Every 5 minutes</sl-option>
-                <sl-option value="600">Every 10 minutes</sl-option>
-                <sl-option value="1800">Every 30 minutes</sl-option>
-              </sl-select>
-              <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                Automatically save your work at regular intervals
-              </div>
-            </div>
-          </div>
-          
-          <!-- UI Settings Section -->
-          <div>
-            <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">UI Settings</h3>
-            
-            <div style="margin-bottom: 16px;">
-              <sl-switch id="showThumbnails" checked>
-                Show Room Thumbnails
-              </sl-switch>
-            </div>
-            
-            <div style="margin-bottom: 16px;">
-              <sl-switch id="confirmLayerDeletion" checked>
-                Confirm Layer Deletion
-              </sl-switch>
-            </div>
+  // Get current settings from localStorage or use defaults
+  const editorPrefs = JSON.parse(localStorage.getItem('editorPreferences') || '{}');
+  const gridSnapping = editorPrefs.gridSnapping || 'soft';
+  const showGrid = editorPrefs.showGrid !== undefined ? editorPrefs.showGrid : true;
+  const gridOpacity = editorPrefs.gridOpacity !== undefined ? editorPrefs.gridOpacity : 0.1;
+  const autoSaveInterval = editorPrefs.autoSaveInterval || 0; // 0 means disabled
+  
+  // New settings with defaults
+  const freehandStabilizer = editorPrefs.freehandStabilizer !== undefined ? editorPrefs.freehandStabilizer : false;
+  const freehandSensitivity = editorPrefs.freehandSensitivity || 0.5;
+  const floorBackgroundColor = editorPrefs.floorBackgroundColor || '#2e7d32'; // Default to a nice green
+  
+  dialog.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 20px; overflow-y: auto; max-height: 70vh;">
+      <!-- Grid Settings Section -->
+      <div>
+        <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Grid Settings</h3>
+        
+        <div style="margin-bottom: 16px;">
+          <sl-switch id="showGrid" ${showGrid ? 'checked' : ''}>
+            Show Grid
+          </sl-switch>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <sl-select id="gridSnapping" label="Grid Snapping" value="${gridSnapping}">
+            <sl-option value="soft">Soft Snap (Default)</sl-option>
+            <sl-option value="strict">Strict Snap</sl-option>
+            <sl-option value="none">No Snap</sl-option>
+          </sl-select>
+          <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+            Controls how rooms and objects align to the grid
           </div>
         </div>
         
-        <div slot="footer">
-          <sl-button id="resetEditorDefaults" variant="text">Reset to Defaults</sl-button>
-          <sl-button id="cancelEditorPrefs" variant="neutral">Cancel</sl-button>
-          <sl-button id="saveEditorPrefs" variant="primary">Save Changes</sl-button>
+        <div style="margin-bottom: 16px;">
+          <sl-range id="gridOpacity" 
+                   label="Grid Opacity" 
+                   min="0.05" 
+                   max="0.5" 
+                   step="0.05" 
+                   value="${gridOpacity}"
+                   tooltip="top">
+          </sl-range>
         </div>
-      `;
+      </div>
       
-      // Add to document body
-      document.body.appendChild(dialog);
-      
-      // Button handlers
-      dialog.querySelector('#resetEditorDefaults').addEventListener('click', () => {
-        dialog.querySelector('#gridSnapping').value = 'soft';
-        dialog.querySelector('#showGrid').checked = true;
-        dialog.querySelector('#gridOpacity').value = 0.1;
-        dialog.querySelector('#autoSaveInterval').value = '0';
-        dialog.querySelector('#showThumbnails').checked = true;
-        dialog.querySelector('#confirmLayerDeletion').checked = true;
-      });
-      
-      dialog.querySelector('#cancelEditorPrefs').addEventListener('click', () => {
-        dialog.hide();
-      });
-      
-      dialog.querySelector('#saveEditorPrefs').addEventListener('click', () => {
-        // Get values from the form
-        const prefs = {
-          gridSnapping: dialog.querySelector('#gridSnapping').value,
-          showGrid: dialog.querySelector('#showGrid').checked,
-          gridOpacity: parseFloat(dialog.querySelector('#gridOpacity').value),
-          autoSaveInterval: parseInt(dialog.querySelector('#autoSaveInterval').value),
-          showThumbnails: dialog.querySelector('#showThumbnails').checked,
-          confirmLayerDeletion: dialog.querySelector('#confirmLayerDeletion').checked
-        };
+      <!-- Freehand Tool Settings Section -->
+      <div>
+        <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Freehand Tool</h3>
         
-        // Save to localStorage
-        localStorage.setItem('editorPreferences', JSON.stringify(prefs));
+        <div style="margin-bottom: 16px;">
+          <sl-switch id="freehandStabilizer" ${freehandStabilizer ? 'checked' : ''}>
+            Enable Stabilizer
+          </sl-switch>
+          <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+            Smooths out hand-drawn lines by reducing jitter
+          </div>
+        </div>
         
-        // Apply settings immediately
-        window.applyEditorPreferences?.(prefs);
-        
-        dialog.hide();
-      });
+        <div style="margin-bottom: 16px; ${freehandStabilizer ? '' : 'opacity: 0.5; pointer-events: none;'}" id="sensitivityContainer">
+          <sl-range id="freehandSensitivity" 
+                   label="Stabilizer Strength" 
+                   min="0.1" 
+                   max="0.9" 
+                   step="0.1" 
+                   value="${freehandSensitivity}"
+                   tooltip="top">
+          </sl-range>
+          <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+            Higher values create smoother lines but may feel less responsive
+          </div>
+        </div>
+      </div>
       
-      dialog.show();
-    }
+      <!-- 3D View Settings Section -->
+      <div>
+        <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">3D View Settings</h3>
+        
+        <div style="margin-bottom: 16px;">
+          <label for="floorBackgroundColor" style="display: block; margin-bottom: 8px;">Floor Background Color</label>
+          <sl-color-picker id="floorBackgroundColor" value="${floorBackgroundColor}"></sl-color-picker>
+          <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+            Background color for transparent areas in floor textures
+          </div>
+        </div>
+      </div>
+      
+      <!-- Auto-Save Section -->
+      <div>
+        <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Auto-Save</h3>
+        
+        <div style="margin-bottom: 16px;">
+          <sl-select id="autoSaveInterval" label="Auto-Save Interval" value="${autoSaveInterval}">
+            <sl-option value="0">Disabled</sl-option>
+            <sl-option value="60">Every 1 minute</sl-option>
+            <sl-option value="300">Every 5 minutes</sl-option>
+            <sl-option value="600">Every 10 minutes</sl-option>
+            <sl-option value="1800">Every 30 minutes</sl-option>
+          </sl-select>
+          <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+            Automatically save your work at regular intervals
+          </div>
+        </div>
+      </div>
+      
+      <!-- UI Settings Section -->
+      <div>
+        <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">UI Settings</h3>
+        
+        <div style="margin-bottom: 16px;">
+          <sl-switch id="showThumbnails" ${editorPrefs.showThumbnails !== false ? 'checked' : ''}>
+            Show Room Thumbnails
+          </sl-switch>
+        </div>
+        
+        <div style="margin-bottom: 16px;">
+          <sl-switch id="confirmLayerDeletion" ${editorPrefs.confirmLayerDeletion !== false ? 'checked' : ''}>
+            Confirm Layer Deletion
+          </sl-switch>
+        </div>
+      </div>
+    </div>
+    
+    <div slot="footer">
+      <sl-button id="resetEditorDefaults" variant="text">Reset to Defaults</sl-button>
+      <sl-button id="cancelEditorPrefs" variant="neutral">Cancel</sl-button>
+      <sl-button id="saveEditorPrefs" variant="primary">Save Changes</sl-button>
+    </div>
+  `;
+  
+  // Add to document body
+  document.body.appendChild(dialog);
+  
+  // Toggle sensitivity slider based on stabilizer toggle
+  const stabilizerToggle = dialog.querySelector('#freehandStabilizer');
+  const sensitivityContainer = dialog.querySelector('#sensitivityContainer');
+  
+  stabilizerToggle.addEventListener('sl-change', (e) => {
+    sensitivityContainer.style.opacity = e.target.checked ? '1' : '0.5';
+    sensitivityContainer.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+  });
+  
+  // Button handlers
+  dialog.querySelector('#resetEditorDefaults').addEventListener('click', () => {
+    dialog.querySelector('#gridSnapping').value = 'soft';
+    dialog.querySelector('#showGrid').checked = true;
+    dialog.querySelector('#gridOpacity').value = 0.1;
+    dialog.querySelector('#autoSaveInterval').value = '0';
+    dialog.querySelector('#showThumbnails').checked = true;
+    dialog.querySelector('#confirmLayerDeletion').checked = true;
+    dialog.querySelector('#freehandStabilizer').checked = false;
+    dialog.querySelector('#freehandSensitivity').value = 0.5;
+    dialog.querySelector('#floorBackgroundColor').value = '#2e7d32';
+    sensitivityContainer.style.opacity = '0.5';
+    sensitivityContainer.style.pointerEvents = 'none';
+  });
+  
+  dialog.querySelector('#cancelEditorPrefs').addEventListener('click', () => {
+    dialog.hide();
+  });
+  
+  dialog.querySelector('#saveEditorPrefs').addEventListener('click', () => {
+    // Get values from the form
+    const prefs = {
+      gridSnapping: dialog.querySelector('#gridSnapping').value,
+      showGrid: dialog.querySelector('#showGrid').checked,
+      gridOpacity: parseFloat(dialog.querySelector('#gridOpacity').value),
+      autoSaveInterval: parseInt(dialog.querySelector('#autoSaveInterval').value),
+      showThumbnails: dialog.querySelector('#showThumbnails').checked,
+      confirmLayerDeletion: dialog.querySelector('#confirmLayerDeletion').checked,
+      freehandStabilizer: dialog.querySelector('#freehandStabilizer').checked,
+      freehandSensitivity: parseFloat(dialog.querySelector('#freehandSensitivity').value),
+      floorBackgroundColor: dialog.querySelector('#floorBackgroundColor').value
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('editorPreferences', JSON.stringify(prefs));
+    
+    // Apply settings immediately
+    window.applyEditorPreferences?.(prefs);
+    
+    dialog.hide();
+  });
+  
+  dialog.show();
+}
+  
+    // function showEditorPreferencesDialog() {
+    //   const dialog = document.createElement('sl-dialog');
+    //   dialog.label = 'Map Editor Settings';
+    //   dialog.style.setProperty('--width', '500px');
+      
+    //   // Get current settings from localStorage or use defaults
+    //   const editorPrefs = JSON.parse(localStorage.getItem('editorPreferences') || '{}');
+    //   const gridSnapping = editorPrefs.gridSnapping || 'soft';
+    //   const showGrid = editorPrefs.showGrid !== undefined ? editorPrefs.showGrid : true;
+    //   const gridOpacity = editorPrefs.gridOpacity !== undefined ? editorPrefs.gridOpacity : 0.1;
+    //   const autoSaveInterval = editorPrefs.autoSaveInterval || 0; // 0 means disabled
+      
+    //   dialog.innerHTML = `
+    //     <div style="display: flex; flex-direction: column; gap: 20px;">
+    //       <!-- Grid Settings Section -->
+    //       <div>
+    //         <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Grid Settings</h3>
+            
+    //         <div style="margin-bottom: 16px;">
+    //           <sl-switch id="showGrid" ${showGrid ? 'checked' : ''}>
+    //             Show Grid
+    //           </sl-switch>
+    //         </div>
+            
+    //         <div style="margin-bottom: 16px;">
+    //           <sl-select id="gridSnapping" label="Grid Snapping" value="${gridSnapping}">
+    //             <sl-option value="soft">Soft Snap (Default)</sl-option>
+    //             <sl-option value="strict">Strict Snap</sl-option>
+    //             <sl-option value="none">No Snap</sl-option>
+    //           </sl-select>
+    //           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+    //             Controls how rooms and objects align to the grid
+    //           </div>
+    //         </div>
+            
+    //         <div style="margin-bottom: 16px;">
+    //           <sl-range id="gridOpacity" 
+    //                    label="Grid Opacity" 
+    //                    min="0.05" 
+    //                    max="0.5" 
+    //                    step="0.05" 
+    //                    value="${gridOpacity}"
+    //                    tooltip="top">
+    //           </sl-range>
+    //         </div>
+    //       </div>
+          
+    //       <!-- Auto-Save Section -->
+    //       <div>
+    //         <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">Auto-Save</h3>
+            
+    //         <div style="margin-bottom: 16px;">
+    //           <sl-select id="autoSaveInterval" label="Auto-Save Interval" value="${autoSaveInterval}">
+    //             <sl-option value="0">Disabled</sl-option>
+    //             <sl-option value="60">Every 1 minute</sl-option>
+    //             <sl-option value="300">Every 5 minutes</sl-option>
+    //             <sl-option value="600">Every 10 minutes</sl-option>
+    //             <sl-option value="1800">Every 30 minutes</sl-option>
+    //           </sl-select>
+    //           <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
+    //             Automatically save your work at regular intervals
+    //           </div>
+    //         </div>
+    //       </div>
+          
+    //       <!-- UI Settings Section -->
+    //       <div>
+    //         <h3 style="margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 8px;">UI Settings</h3>
+            
+    //         <div style="margin-bottom: 16px;">
+    //           <sl-switch id="showThumbnails" checked>
+    //             Show Room Thumbnails
+    //           </sl-switch>
+    //         </div>
+            
+    //         <div style="margin-bottom: 16px;">
+    //           <sl-switch id="confirmLayerDeletion" checked>
+    //             Confirm Layer Deletion
+    //           </sl-switch>
+    //         </div>
+    //       </div>
+    //     </div>
+        
+    //     <div slot="footer">
+    //       <sl-button id="resetEditorDefaults" variant="text">Reset to Defaults</sl-button>
+    //       <sl-button id="cancelEditorPrefs" variant="neutral">Cancel</sl-button>
+    //       <sl-button id="saveEditorPrefs" variant="primary">Save Changes</sl-button>
+    //     </div>
+    //   `;
+      
+    //   // Add to document body
+    //   document.body.appendChild(dialog);
+      
+    //   // Button handlers
+    //   dialog.querySelector('#resetEditorDefaults').addEventListener('click', () => {
+    //     dialog.querySelector('#gridSnapping').value = 'soft';
+    //     dialog.querySelector('#showGrid').checked = true;
+    //     dialog.querySelector('#gridOpacity').value = 0.1;
+    //     dialog.querySelector('#autoSaveInterval').value = '0';
+    //     dialog.querySelector('#showThumbnails').checked = true;
+    //     dialog.querySelector('#confirmLayerDeletion').checked = true;
+    //   });
+      
+    //   dialog.querySelector('#cancelEditorPrefs').addEventListener('click', () => {
+    //     dialog.hide();
+    //   });
+      
+    //   dialog.querySelector('#saveEditorPrefs').addEventListener('click', () => {
+    //     // Get values from the form
+    //     const prefs = {
+    //       gridSnapping: dialog.querySelector('#gridSnapping').value,
+    //       showGrid: dialog.querySelector('#showGrid').checked,
+    //       gridOpacity: parseFloat(dialog.querySelector('#gridOpacity').value),
+    //       autoSaveInterval: parseInt(dialog.querySelector('#autoSaveInterval').value),
+    //       showThumbnails: dialog.querySelector('#showThumbnails').checked,
+    //       confirmLayerDeletion: dialog.querySelector('#confirmLayerDeletion').checked
+    //     };
+        
+    //     // Save to localStorage
+    //     localStorage.setItem('editorPreferences', JSON.stringify(prefs));
+        
+    //     // Apply settings immediately
+    //     window.applyEditorPreferences?.(prefs);
+        
+    //     dialog.hide();
+    //   });
+      
+    //   dialog.show();
+    // }
 
 
   });

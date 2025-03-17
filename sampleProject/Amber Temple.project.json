@@ -1,0 +1,19 @@
+{
+  "name": "Amber Temple",
+  "version": "1.0",
+  "timestamp": "2025-03-17T12:58:57.561Z",
+  "resources": {
+    "filename": "Amber Temple.resource.json",
+    "relativePath": "./",
+    "lastModified": "2025-03-17T12:58:57.561Z"
+  },
+  "map": {
+    "filename": "Amber Temple.map.json",
+    "relativePath": "./",
+    "lastModified": "2025-03-17T12:58:57.561Z"
+  },
+  "settings": {
+    "defaultView": "2D",
+    "autoSave": false
+  }
+}
