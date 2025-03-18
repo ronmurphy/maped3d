@@ -164,6 +164,9 @@ return this;
     // this.drawer.style.setProperty('--size', '70%');
     this.drawer.style.setProperty ('--size','calc(100vw - 260px');
     
+// removed as how the import handles effects also --  <sl-button id="load-project" size="small">Load</sl-button>
+
+
     // Create drawer content
     this.drawer.innerHTML = `
       <div id="shape-forge-container" style="display: flex; height: 100%; overflow: hidden;">
@@ -175,7 +178,6 @@ return this;
             <sl-input id="project-name" label="Name" placeholder="Untitled Project"></sl-input>
             <div style="display: flex; gap: 6px; margin-top: 10px;">
               <sl-button id="new-project" size="small">New</sl-button>
-              <sl-button id="load-project" size="small">Load</sl-button>
               <sl-button id="save-project" size="small">Save</sl-button>
             </div>
           </div>
@@ -1025,7 +1027,17 @@ setupBasicCameraControls() {
     if (!propertiesContainer) return;
     
     // Clear existing properties
-    propertiesContainer.innerHTML = '';
+    // propertiesContainer.innerHTML = '';
+
+    while (propertiesContainer.firstChild) {
+      // If it's a Shoelace element, remove it properly
+      if (propertiesContainer.firstChild.tagName && 
+          propertiesContainer.firstChild.tagName.startsWith('SL-')) {
+        propertiesContainer.firstChild.remove();
+      } else {
+        propertiesContainer.removeChild(propertiesContainer.firstChild);
+      }
+    }
     
     // Create name input
     const nameInput = document.createElement('sl-input');
@@ -1889,27 +1901,27 @@ setupBasicCameraControls() {
    * Remove an object by index
    * @param {number} index - Index of object to remove
    */
-  removeObject(index) {
-    if (index < 0 || index >= this.objects.length) return;
+  // removeObject(index) {
+  //   if (index < 0 || index >= this.objects.length) return;
     
-    const object = this.objects[index];
+  //   const object = this.objects[index];
     
-    // Remove from scene
-    if (object.mesh && this.previewScene) {
-      this.previewScene.remove(object.mesh);
-    }
+  //   // Remove from scene
+  //   if (object.mesh && this.previewScene) {
+  //     this.previewScene.remove(object.mesh);
+  //   }
     
-    // Remove from objects array
-    this.objects.splice(index, 1);
+  //   // Remove from objects array
+  //   this.objects.splice(index, 1);
     
-    // Update selected object
-    if (this.selectedObject === index) {
-      this.selectedObject = null;
-      this.updatePropertyPanels(null);
-    } else if (this.selectedObject > index) {
-      this.selectedObject--;
-    }
-  }
+  //   // Update selected object
+  //   if (this.selectedObject === index) {
+  //     this.selectedObject = null;
+  //     this.updatePropertyPanels(null);
+  //   } else if (this.selectedObject > index) {
+  //     this.selectedObject--;
+  //   }
+  // }
   
   /**
    * Restore a previously deleted object
@@ -2320,6 +2332,9 @@ setupBasicCameraControls() {
       object: newObject
     });
     
+    this.updateObjectsList();
+
+
     console.log(`Duplicated object: ${originalObject.name}`);
   }
   
@@ -2337,6 +2352,7 @@ setupBasicCameraControls() {
     
     // Remove the object
     this.removeObject(this.selectedObject);
+    this.updateObjectsList();
   }
   
  
@@ -2392,6 +2408,8 @@ setupBasicCameraControls() {
       const confirm = window.confirm('Create a new project? All unsaved changes will be lost.');
       if (!confirm) return;
     }
+
+    this.cleanupAllShaderEffects();
     
     // Clear all objects
     this.objects.forEach(obj => {
@@ -2414,6 +2432,7 @@ setupBasicCameraControls() {
     // Update UI
     this.updatePropertyPanels(null);
     this.updateHistoryButtons();
+    this.updateObjectsList();
     
     console.log('Created new project');
   }
@@ -2599,6 +2618,7 @@ setupBasicCameraControls() {
       this.createObjectFromData(objData);
     });
     
+    this.updateObjectsList();
     console.log(`Loaded project "${projectData.name}" with ${projectData.objects.length} objects`);
   }
   
@@ -3539,8 +3559,10 @@ ShapeForge.prototype.updateObjectsList = function() {
     name.textContent = obj.name;
     name.style.cssText = 'flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
     entry.appendChild(name);
-    
-    // Add visibility toggle
+
+
+
+        // Add visibility toggle
     const visToggle = document.createElement('span');
     visToggle.className = 'visibility-toggle';
     visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
@@ -3551,6 +3573,7 @@ ShapeForge.prototype.updateObjectsList = function() {
       visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
     };
     entry.appendChild(visToggle);
+    
     
     // Add click handler for selection
     entry.addEventListener('click', () => {
@@ -5066,54 +5089,54 @@ ShapeForge.prototype.importJson = function() {
  * Load a project from JSON data
  * @param {Object} jsonData - The parsed JSON data
  */
-ShapeForge.prototype.loadProjectFromJson = function(jsonData) {
-  // Validate JSON data
-  if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
-    alert('Invalid JSON format: Missing objects array');
-    return;
-  }
+// ShapeForge.prototype.loadProjectFromJson = function(jsonData) {
+//   // Validate JSON data
+//   if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
+//     alert('Invalid JSON format: Missing objects array');
+//     return;
+//   }
   
-  // Confirm with user if objects already exist
-  if (this.objects.length > 0) {
-    if (!confirm('This will replace existing objects. Continue?')) {
-      return;
-    }
+//   // Confirm with user if objects already exist
+//   if (this.objects.length > 0) {
+//     if (!confirm('This will replace existing objects. Continue?')) {
+//       return;
+//     }
     
-    // Clear existing objects
-    this.objects.forEach(obj => {
-      if (obj.mesh && this.previewScene) {
-        this.previewScene.remove(obj.mesh);
-      }
-    });
+//     // Clear existing objects
+//     this.objects.forEach(obj => {
+//       if (obj.mesh && this.previewScene) {
+//         this.previewScene.remove(obj.mesh);
+//       }
+//     });
     
-    this.objects = [];
-    this.selectedObject = null;
-  }
+//     this.objects = [];
+//     this.selectedObject = null;
+//   }
   
-  // Set project name if provided
-  if (jsonData.name) {
-    const projectNameInput = this.drawer.querySelector('#project-name');
-    if (projectNameInput) {
-      projectNameInput.value = jsonData.name;
-    }
-  }
+//   // Set project name if provided
+//   if (jsonData.name) {
+//     const projectNameInput = this.drawer.querySelector('#project-name');
+//     if (projectNameInput) {
+//       projectNameInput.value = jsonData.name;
+//     }
+//   }
   
-  // Load objects
-  jsonData.objects.forEach(objData => {
-    this.createObjectFromJson(objData);
-  });
+//   // Load objects
+//   jsonData.objects.forEach(objData => {
+//     this.createObjectFromJson(objData);
+//   });
   
-  // Select first object if any were created
-  if (this.objects.length > 0) {
-    this.selectObject(0);
-  }
+//   // Select first object if any were created
+//   if (this.objects.length > 0) {
+//     this.selectObject(0);
+//   }
   
-  // Update UI
-  this.updateObjectsList();
+//   // Update UI
+//   this.updateObjectsList();
   
-  // Show success message
-  alert(`Project loaded with ${this.objects.length} objects`);
-};
+//   // Show success message
+//   alert(`Project loaded with ${this.objects.length} objects`);
+// };
 
 
 /**
@@ -5401,6 +5424,10 @@ ShapeForge.prototype.applyEffectParameters = function(obj, parameters) {
  * @param {Object} jsonData - The parsed JSON data
  */
 ShapeForge.prototype.loadProjectFromJson = function(jsonData) {
+
+  // Cleanup any existing effects
+this.cleanupAllShaderEffects();
+
   // Validate JSON data
   if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
     alert('Invalid JSON format: Missing objects array');
@@ -5481,6 +5508,241 @@ ShapeForge.prototype.addImportExportButtons = function() {
   console.log('Import/Export buttons added');
 };
 
+// ShapeForge.prototype.removeObject = function(index) {
+//   if (index < 0 || index >= this.objects.length) return;
+  
+//   const object = this.objects[index];
+  
+//   // Remove object's mesh from scene
+//   if (object.mesh && this.previewScene) {
+//     this.previewScene.remove(object.mesh);
+//   }
+  
+//   // NEW CODE: Clean up associated shader effects
+//   if (object.effect) {
+//     // Remove containers
+//     if (object.effect.data && object.effect.data.container) {
+//       this.previewScene.remove(object.effect.data.container);
+//     }
+    
+//     // Remove lights
+//     if (object.effect.data && object.effect.data.light) {
+//       this.previewScene.remove(object.effect.data.light);
+//     }
+    
+//     // Remove particles
+//     if (object.effect.data && object.effect.data.particles && 
+//         !object.effect.data.container?.contains(object.effect.data.particles)) {
+//       this.previewScene.remove(object.effect.data.particles);
+//     }
+    
+//     // Dispose of any materials
+//     if (object.effect.data && object.effect.data.material) {
+//       object.effect.data.material.dispose();
+//     }
+//   }
+  
+//   // Remove from objects array
+//   this.objects.splice(index, 1);
+  
+//   // Update selected object
+//   if (this.selectedObject === index) {
+//     this.selectedObject = null;
+//     this.updatePropertyPanels(null);
+//   } else if (this.selectedObject > index) {
+//     this.selectedObject--;
+//   }
+// };
+
+ShapeForge.prototype.removeObject = function(index) {
+  if (index < 0 || index >= this.objects.length) return;
+  
+  const object = this.objects[index];
+  
+  // Remove object's mesh from scene
+  if (object.mesh && this.previewScene) {
+    this.previewScene.remove(object.mesh);
+  }
+  
+  // Clean up associated shader effects
+  if (object.effect && object.effect.data) {
+    // Remove containers
+    if (object.effect.data.container && object.effect.data.container.parent) {
+      this.previewScene.remove(object.effect.data.container);
+    }
+    
+    // Remove lights that aren't already in a removed container
+    if (object.effect.data.light) {
+      // Check if light is a child of the container
+      const isInContainer = object.effect.data.container && 
+                           object.effect.data.light.parent === object.effect.data.container;
+      
+      // Only remove if it's not already removed as part of the container
+      if (!isInContainer && object.effect.data.light.parent) {
+        this.previewScene.remove(object.effect.data.light);
+      }
+    }
+    
+    // Remove particles if not already in a removed container
+    if (object.effect.data.particles) {
+      // Check if particles are a child of the container
+      const isInContainer = object.effect.data.container && 
+                           object.effect.data.particles.parent === object.effect.data.container;
+      
+      // Only remove if it's not already removed as part of the container
+      if (!isInContainer && object.effect.data.particles.parent) {
+        this.previewScene.remove(object.effect.data.particles);
+      }
+    }
+    
+    // Dispose of any materials
+    if (object.effect.data.material) {
+      object.effect.data.material.dispose();
+    }
+  }
+  
+  // Remove from objects array
+  this.objects.splice(index, 1);
+  
+  // Update selected object
+  if (this.selectedObject === index) {
+    this.selectedObject = null;
+    this.updatePropertyPanels(null);
+  } else if (this.selectedObject > index) {
+    this.selectedObject--;
+  }
+  
+  // Update the objects list
+  this.updateObjectsList();
+};
+
+// ShapeForge.prototype.cleanupAllShaderEffects = function() {
+//   if (!this.previewScene) return;
+  
+//   // 1. Clean up known effects associated with objects
+//   this.objects.forEach(obj => {
+//     if (obj.effect && obj.effect.data) {
+//       if (obj.effect.data.container) {
+//         this.previewScene.remove(obj.effect.data.container);
+//       }
+      
+//       if (obj.effect.data.light) {
+//         this.previewScene.remove(obj.effect.data.light);
+//       }
+      
+//       if (obj.effect.data.particles && 
+//           !obj.effect.data.container?.contains(obj.effect.data.particles)) {
+//         this.previewScene.remove(obj.effect.data.particles);
+//       }
+//     }
+//   });
+  
+//   // 2. Clean up "orphaned" effects by checking scene children
+//   const itemsToRemove = [];
+  
+//   this.previewScene.traverse(object => {
+//     // Look for typical effect objects
+//     if (object.type === 'PointLight' || 
+//         object.type === 'Points' || 
+//         (object.type === 'Group' && object.name === '') || // Container groups are usually unnamed
+//         (object.userData && object.userData.isShaderEffect)) {
+      
+//       // Check if this is an "orphaned" effect (not a child of a mesh in objects array)
+//       let isOrphaned = true;
+//       this.objects.forEach(obj => {
+//         if (obj.mesh === object || 
+//             (obj.effect && 
+//              (obj.effect.data.light === object || 
+//               obj.effect.data.particles === object || 
+//               obj.effect.data.container === object))) {
+//           isOrphaned = false;
+//         }
+//       });
+      
+//       if (isOrphaned) {
+//         itemsToRemove.push(object);
+//       }
+//     }
+//   });
+  
+//   // Remove all orphaned effects
+//   itemsToRemove.forEach(item => {
+//     this.previewScene.remove(item);
+    
+//     // Dispose of any materials and geometries
+//     if (item.material) item.material.dispose();
+//     if (item.geometry) item.geometry.dispose();
+//   });
+  
+//   if (itemsToRemove.length > 0) {
+//     console.log(`Cleaned up ${itemsToRemove.length} orphaned shader effects`);
+//   }
+// };
+
+ShapeForge.prototype.cleanupAllShaderEffects = function() {
+  if (!this.previewScene) return;
+  
+  // 1. Clean up known effects associated with objects
+  this.objects.forEach(obj => {
+    if (obj.effect && obj.effect.data) {
+      if (obj.effect.data.container && obj.effect.data.container.parent) {
+        this.previewScene.remove(obj.effect.data.container);
+      }
+      
+      // Remove lights and particles if they're not part of container
+      if (obj.effect.data.light && 
+          (!obj.effect.data.container || obj.effect.data.light.parent !== obj.effect.data.container)) {
+        this.previewScene.remove(obj.effect.data.light);
+      }
+      
+      if (obj.effect.data.particles && 
+          (!obj.effect.data.container || obj.effect.data.particles.parent !== obj.effect.data.container)) {
+        this.previewScene.remove(obj.effect.data.particles);
+      }
+    }
+  });
+  
+  // 2. Clean up "orphaned" effects by checking scene children
+  const itemsToRemove = [];
+  
+  this.previewScene.traverse(object => {
+    // Look for typical effect objects
+    if (object.type === 'PointLight' || 
+        object.type === 'Points' || 
+        (object.type === 'Group' && object.name === '') || // Container groups are usually unnamed
+        (object.userData && object.userData.isShaderEffect)) {
+      
+      // Check if this is an "orphaned" effect (not a child of a mesh in objects array)
+      let isOrphaned = true;
+      this.objects.forEach(obj => {
+        if (obj.mesh === object || 
+            (obj.effect && 
+             (obj.effect.data.light === object || 
+              obj.effect.data.particles === object || 
+              obj.effect.data.container === object))) {
+          isOrphaned = false;
+        }
+      });
+      
+      if (isOrphaned) {
+        itemsToRemove.push(object);
+      }
+    }
+  });
+  
+  // Remove all orphaned effects
+  itemsToRemove.forEach(item => {
+    this.previewScene.remove(item);
+    
+    // Dispose of any materials and geometries
+    if (item.material) item.material.dispose();
+    if (item.geometry) item.geometry.dispose();
+  });
+  
+  if (itemsToRemove.length > 0) {
+    console.log(`Cleaned up ${itemsToRemove.length} orphaned shader effects`);
+  }
+};
 
 // // Add this call to the end of your show() method
 // this.initializeNewFeatures();
