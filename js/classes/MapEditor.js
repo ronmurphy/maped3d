@@ -730,6 +730,7 @@ checkStoryboard(callback) {
           width: this.gridDimensions?.width,
           height: this.gridDimensions?.height
         },
+        floorBackgroundColor: this.editorPreferences?.floorBackgroundColor || '#2e7d32', // Default green
         rooms: this.rooms.map((room) => {
           return {
             id: room.id,
@@ -1036,6 +1037,24 @@ checkStoryboard(callback) {
         cellSize: this.cellSize,
         dimensions: this.gridDimensions
       });
+
+      // Store the floor background color in editor preferences
+if (saveData.floorBackgroundColor) {
+  if (!this.editorPreferences) {
+    this.editorPreferences = {};
+  }
+  this.editorPreferences.floorBackgroundColor = saveData.floorBackgroundColor;
+  
+  // Save to localStorage to persist across sessions
+  const allPrefs = JSON.parse(localStorage.getItem('editorPreferences') || '{}');
+  allPrefs.floorBackgroundColor = saveData.floorBackgroundColor;
+  localStorage.setItem('editorPreferences', JSON.stringify(allPrefs));
+  
+  // Apply immediately if in 3D mode
+  if (this.scene3D) {
+    this.scene3D.setFloorBackgroundColor(saveData.floorBackgroundColor);
+  }
+}
 
       // Restore rooms
       for (const roomData of saveData.rooms) {
@@ -2453,8 +2472,22 @@ if (preferencesBtn) {
 
     const toolButtons = document.querySelectorAll(".tool-button");
     toolButtons.forEach((button) => {
-      button.addEventListener("click", () => {
+      button.addEventListener("click", (e) => {
+
+    //     if (e.target.closest('.room-controls') || 
+    //     e.target.classList.contains('material-icons') ||
+    //     e.target.classList.contains('confirm-btn') ||
+    //     e.target.classList.contains('edit-btn') ||
+    //     e.target.classList.contains('cancel-btn')) {
+    //   console.log("Click on room control detected, ignoring");
+    //   return; // Exit handler immediately
+    // }
+
+
         switch (button.id) {
+          case "selectionTool":
+            this.setTool("selection");
+            break;
           case "selectTool":
             this.setTool("rectangle");
             break;
@@ -2579,6 +2612,13 @@ if (preferencesBtn) {
       });
 
     document.querySelector('.canvas-container').addEventListener('click', (e) => {
+
+      if (e.target.closest('.room-controls') || 
+      e.target.classList.contains('material-icons') ||
+      e.target.tagName === 'BUTTON') {
+    // Don't create markers when clicking controls
+    return;
+  }
       if (this.currentTool?.startsWith('marker-')) {
         // Prevent walls from blocking marker placement
         e.stopPropagation();
@@ -2727,13 +2767,18 @@ if (preferencesBtn) {
     }
   }
 
+
   // setTool(tool) {
+  //   // First, clean up any active tool
   //   if (this.currentTool === "wall") {
   //     this.cleanupWallTool();
-  //   } 
+  //   } else if (this.currentTool === "freehand") {
+  //     this.cleanupFreehandDrawing();
+  //   }
+    
   //   this.currentTool = tool;
   //   this.updateWallClickBehavior();
-
+  
   //   // Update UI
   //   const toolButtons = document.querySelectorAll(".tool-button");
   //   toolButtons.forEach((button) => {
@@ -2742,26 +2787,29 @@ if (preferencesBtn) {
   //       (tool === "rectangle" && button.id === "selectTool") ||
   //       (tool === "circle" && button.id === "circleTool") ||
   //       (tool === "wall" && button.id === "wallTool") ||
+  //       (tool === "freehand" && button.id === "freehandTool") ||
   //       (tool === "pan" && button.id === "panTool")
   //     ) {
   //       button.classList.add("active");
   //     }
   //   });
-
+  
   //   if (tool === "wall") {
   //     this.startWallCreation();
+  //   } else if (tool === "freehand") {
+  //     this.startFreehandDrawing();
   //   }
-
+  
   //   // Update cursor style
   //   const wrapper = document.getElementById("canvasWrapper");
   //   if (tool === "pan") {
   //     wrapper.style.cursor = "grab";
-  //   } else if (["rectangle", "circle", "wall"].includes(tool)) {
+  //   } else if (["rectangle", "circle", "wall", "freehand"].includes(tool)) {
   //     wrapper.style.cursor = "crosshair";
   //   } else {
   //     wrapper.style.cursor = "default";
   //   }
-
+  
   //   // Update room pointer events
   //   const rooms = document.querySelectorAll(".room-block");
   //   rooms.forEach((room) => {
@@ -2774,25 +2822,42 @@ if (preferencesBtn) {
   //         element.style.pointerEvents = "auto";
   //       });
   //   });
-
   // }
 
   setTool(tool) {
-    // First, clean up any active tool
+    console.log(`Tool changing from "${this.currentTool}" to "${tool}"`);
+    
+    // Clean up any active tool
     if (this.currentTool === "wall") {
       this.cleanupWallTool();
     } else if (this.currentTool === "freehand") {
       this.cleanupFreehandDrawing();
+    } else if (this.currentTool?.startsWith("marker-")) {
+      // Clean up any marker tool state
+      if (this.pendingTeleportPair && this.currentTool === "marker-teleport") {
+        // Cleanup incomplete teleport pair
+        console.log("Cleaning up incomplete teleport pair");
+        if (this.pendingTeleportPair.element) {
+          this.pendingTeleportPair.element.remove();
+        }
+        const index = this.markers.indexOf(this.pendingTeleportPair);
+        if (index > -1) {
+          this.markers.splice(index, 1);
+        }
+        this.pendingTeleportPair = null;
+      }
     }
     
     this.currentTool = tool;
-    this.updateWallClickBehavior();
-  
+    
     // Update UI
     const toolButtons = document.querySelectorAll(".tool-button");
     toolButtons.forEach((button) => {
       button.classList.remove("active");
+      
+      // Add new selection tool to mappings
       if (
+        (tool === "selection" && button.id === "selectionTool") ||
         (tool === "rectangle" && button.id === "selectTool") ||
         (tool === "circle" && button.id === "circleTool") ||
         (tool === "wall" && button.id === "wallTool") ||
@@ -2803,6 +2868,7 @@ if (preferencesBtn) {
       }
     });
   
+    // Tool-specific initialization
     if (tool === "wall") {
       this.startWallCreation();
     } else if (tool === "freehand") {
@@ -2811,7 +2877,9 @@ if (preferencesBtn) {
   
     // Update cursor style
     const wrapper = document.getElementById("canvasWrapper");
-    if (tool === "pan") {
+    if (tool === "selection") {
+      wrapper.style.cursor = "default"; // Default cursor for selection
+    } else if (tool === "pan") {
       wrapper.style.cursor = "grab";
     } else if (["rectangle", "circle", "wall", "freehand"].includes(tool)) {
       wrapper.style.cursor = "crosshair";
@@ -2819,17 +2887,31 @@ if (preferencesBtn) {
       wrapper.style.cursor = "default";
     }
   
-    // Update room pointer events
+    // Special handling for selection tool to make controls clickable
     const rooms = document.querySelectorAll(".room-block");
     rooms.forEach((room) => {
-      room.style.pointerEvents = tool.startsWith("marker-")
-        ? "none"
-        : "auto";
-      room
-        .querySelectorAll(".room-controls, .resize-handle")
-        .forEach((element) => {
-          element.style.pointerEvents = "auto";
+      // For selection tool, make sure controls are fully clickable
+      if (tool === "selection") {
+        room.style.pointerEvents = "auto";
+        room.querySelectorAll(".room-controls, .room-controls *").forEach(el => {
+          el.style.pointerEvents = "auto";
+          el.style.cursor = "pointer";
         });
+      } 
+      // For marker tools, make rooms pass-through
+      else if (tool.startsWith("marker-")) {
+        room.style.pointerEvents = "none";
+        room.querySelectorAll(".room-controls").forEach(el => {
+          el.style.pointerEvents = "none";
+        });
+      }
+      // Normal behavior for other tools
+      else {
+        room.style.pointerEvents = "auto";
+        room.querySelectorAll(".room-controls, .resize-handle").forEach(el => {
+          el.style.pointerEvents = "auto";
+        });
+      }
     });
   }
 
@@ -8553,5 +8635,216 @@ createWaterArea() {
 
 
 
+
+
 }
 
+// Add this to the bottom of your MapEditor.js file
+
+// Debug helper to show current tool state
+// You can toggle this with a keyboard shortcut
+MapEditor.prototype.toggleDebugInfo = function() {
+  // Remove existing debug overlay if it exists
+  let debugOverlay = document.getElementById('map-editor-debug');
+  if (debugOverlay) {
+    debugOverlay.remove();
+    return;
+  }
+  
+  // Create debug overlay
+  debugOverlay = document.createElement('div');
+  debugOverlay.id = 'map-editor-debug';
+  debugOverlay.style.cssText = `
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 9999;
+    max-width: 300px;
+    pointer-events: auto;
+  `;
+  
+  // Update function to refresh debug info
+  const updateDebugInfo = () => {
+    debugOverlay.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 5px;">MapEditor Debug</div>
+      <div>Current Tool: <span style="color: #4CAF50;">${this.currentTool || 'none'}</span></div>
+      <div>Selection: <span style="color: #2196F3;">${this.selectedRoomId || 'none'}</span></div>
+      <div>Marker Edit Mode: <span style="color: ${this.isMarkerEditMode ? '#4CAF50' : '#F44336'};">${this.isMarkerEditMode}</span></div>
+      <div>Teleport Pending: <span style="color: ${this.pendingTeleportPair ? '#FFC107' : '#ccc'};">${this.pendingTeleportPair ? 'Yes' : 'No'}</span></div>
+      <div>Markers: ${this.markers.length}</div>
+      <div>Rooms: ${this.rooms.length}</div>
+      <div style="margin-top: 5px; font-size: 10px;">Press Alt + X again to close</div>
+    `;
+  };
+  
+  // Add to document and set up interval
+  document.body.appendChild(debugOverlay);
+  updateDebugInfo();
+  debugOverlay.updateInterval = setInterval(updateDebugInfo, 500);
+  
+  // Add keyboard shortcut
+  document.addEventListener('keydown', function(e) {
+    if (e.key.toLowerCase() === 'd' && e.altKey) {
+      const editor = window.mapEditor; // Assuming your editor instance is accessible
+      if (editor) {
+        editor.toggleDebugInfo();
+      }
+    }
+  });
+};
+
+// Add a keyboard shortcut to toggle the debug overlay
+document.addEventListener('keydown', function(e) {
+  if (e.key.toLowerCase() === 'x' && e.altKey) {
+    const editor = window.mapEditor; // You might need to adjust this to access your editor instance
+    if (editor) {
+      editor.toggleDebugInfo();
+    }
+  }
+});
+
+// Add this to the end of your MapEditor.js file
+
+// Click visualizer for debugging
+MapEditor.prototype.enableClickVisualizer = function() {
+  const wrapper = document.getElementById("canvasWrapper");
+  
+  // Add click visualizer elements
+  const clickInfo = document.createElement('div');
+  clickInfo.id = 'click-info';
+  clickInfo.style.cssText = `
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 9999;
+    pointer-events: none;
+  `;
+  document.body.appendChild(clickInfo);
+  
+  // Function to show click information
+  const visualizeClick = (e) => {
+    // Create a visual marker at click position
+    const marker = document.createElement('div');
+    marker.style.cssText = `
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 0, 0, 0.5);
+      border: 2px solid red;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 9999;
+    `;
+    marker.style.left = `${e.clientX}px`;
+    marker.style.top = `${e.clientY}px`;
+    document.body.appendChild(marker);
+    
+    // Fade out and remove after 1 second
+    setTimeout(() => {
+      marker.style.transition = 'opacity 0.5s ease';
+      marker.style.opacity = '0';
+      setTimeout(() => marker.remove(), 500);
+    }, 1000);
+    
+    // Show click info
+    let targetInfo = '';
+    for (let el = e.target; el && el !== document.body; el = el.parentElement) {
+      targetInfo += `<div>${el.tagName.toLowerCase()}${el.id ? '#'+el.id : ''}${
+        Array.from(el.classList).map(c => '.'+c).join('')
+      }</div>`;
+      if (targetInfo.split('<div>').length > 5) break; // Limit to 5 levels
+    }
+    
+    clickInfo.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 4px;">Click Detected</div>
+      <div>Tool: ${this.currentTool || 'none'}</div>
+      <div>Target:</div>
+      ${targetInfo}
+    `;
+    
+    // Clear info after 3 seconds
+    setTimeout(() => {
+      clickInfo.innerHTML = '';
+    }, 3000);
+  };
+  
+  // Add a capturing event listener to see all clicks
+  document.addEventListener('click', visualizeClick, true);
+  
+  // Show info that visualizer is enabled
+  const notice = document.createElement('div');
+  notice.style.cssText = `
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: #4CAF50;
+    color: white;
+    padding: 8px;
+    border-radius: 4px;
+    z-index: 9999;
+  `;
+  notice.textContent = 'Click Visualizer Enabled';
+  document.body.appendChild(notice);
+  setTimeout(() => {
+    notice.style.transition = 'opacity 0.5s ease';
+    notice.style.opacity = '0';
+    setTimeout(() => notice.remove(), 500);
+  }, 2000);
+  
+  return () => {
+    // Return a function to disable the visualizer
+    document.removeEventListener('click', visualizeClick, true);
+    clickInfo.remove();
+  };
+};
+
+// Add a keyboard shortcut to toggle the click visualizer
+// Press Alt+V to enable/disable
+let clickVisualizerDisable = null;
+
+document.addEventListener('keydown', function(e) {
+  if (e.key.toLowerCase() === 'c' && e.altKey) {
+    const editor = window.mapEditor; // Adjust if your editor instance is named differently
+    if (editor) {
+      if (clickVisualizerDisable) {
+        clickVisualizerDisable();
+        clickVisualizerDisable = null;
+        
+        // Show disabled message
+        const notice = document.createElement('div');
+        notice.style.cssText = `
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          background: #F44336;
+          color: white;
+          padding: 8px;
+          border-radius: 4px;
+          z-index: 9999;
+        `;
+        notice.textContent = 'Click Visualizer Disabled';
+        document.body.appendChild(notice);
+        setTimeout(() => {
+          notice.style.transition = 'opacity 0.5s ease';
+          notice.style.opacity = '0';
+          setTimeout(() => notice.remove(), 500);
+        }, 2000);
+      } else {
+        clickVisualizerDisable = editor.enableClickVisualizer();
+      }
+    }
+  }
+});

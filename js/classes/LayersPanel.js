@@ -1621,6 +1621,7 @@ async showPropertiesDialog(room) {
       <div slot="footer">
         <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
         <sl-button variant="primary" class="save-btn">Save</sl-button>
+        <sl-button variant="primary" class="apply-btn">Apply & Finalize</sl-button>
       </div>`;
   
     document.body.appendChild(dialog);
@@ -1812,10 +1813,54 @@ textureItems.forEach(item => {
         dialog.hide();
         resolve(false);
       });
+      dialog.querySelector('.apply-btn').addEventListener('click', () => {
+        // First apply any changes from inputs
+        
+        // Get name value if it exists
+        const nameInput = dialog.querySelector('#room-name');
+        if (nameInput) {
+          room.name = nameInput.value;
+        }
+        
+        // Apply any other property changes from the dialog
+        const heightInput = dialog.querySelector('#block-height');
+        if (heightInput) {
+          room.blockHeight = parseFloat(heightInput.value) || 0;
+        }
+        
+        const raisedToggle = dialog.querySelector('#is-raised-block');
+        if (raisedToggle) {
+          room.isRaisedBlock = raisedToggle.checked;
+        }
+        
+        const waterToggle = dialog.querySelector('#is-water-area');
+        if (waterToggle) {
+          room.isWaterArea = waterToggle.checked;
+          
+          // Update appearance for water areas
+          if (room.isWaterArea) {
+            room.element.classList.add('water-area');
+            room.element.style.backgroundColor = "rgba(0, 100, 255, 0.3)";
+            room.element.style.border = "1px solid rgba(0, 150, 255, 0.7)";
+          } else {
+            room.element.classList.remove('water-area');
+            room.element.style.backgroundColor = "";
+            room.element.style.border = "";
+          }
+        }
+        
+        // Finally, call finalizeRoom to set the thumbnail and finalize the room
+        this.mapEditor.finalizeRoom(room);
+        
+        dialog.hide();
+      });
   
       dialog.addEventListener('sl-after-hide', () => dialog.remove());
       dialog.show();
     });
+
+
+    
   }
 
 

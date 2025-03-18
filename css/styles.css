@@ -368,6 +368,60 @@ body {
     transform: scale(1.1);
 }
 
+.room-controls {
+    pointer-events: auto !important;
+    z-index: 10; /* Ensure controls are above other elements */
+  }
+  
+  .room-controls .material-icons,
+  .room-controls button {
+    pointer-events: auto !important;
+    position: relative; /* Ensure z-index works */
+    z-index: 11;
+  }
+
+  /* Add this to your CSS file */
+
+/* Ensure room controls always take precedence */
+.room-controls,
+.room-controls *,
+.room-controls .material-icons,
+.confirm-btn,
+.edit-btn,
+.cancel-btn {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+}
+
+/* Make controls visually stand out more */
+.room-controls .material-icons {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  margin: 2px;
+  transition: transform 0.1s ease;
+}
+
+.room-controls .material-icons:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 7px rgba(0,0,0,0.5);
+}
+
+/* Ensure rooms don't block their own controls */
+.room-block::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px; /* Height that covers the controls area */
+  pointer-events: none !important;
+}
+  
+  /* Make sure all tool buttons have proper events */
+  .tool-button {
+    pointer-events: auto !important;
+  }
+
 sl-dialog::part(base) {
     --sl-panel-background-color: white;
     color: black;

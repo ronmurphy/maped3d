@@ -185,14 +185,61 @@ class Room {
     });
     // }
 
-    // Add control buttons
+    // // Add control buttons
+    // const controls = document.createElement("div");
+    // controls.className = "room-controls";
+
+    // controls.style.position = "absolute";
+    // controls.style.zIndex = "2"; // Place controls above SVG
+    // controls.style.pointerEvents = "auto";
+
+    // controls.innerHTML = `
+    //     <span class="material-icons confirm-btn"
+    //           style="padding: 4px; background: #4CAF50; color: white; border-radius: 4px; cursor: pointer;">
+    //         check
+    //     </span>
+    //     <span class="material-icons edit-btn"
+    //           style="padding: 4px; background: #2196F3; color: white; border-radius: 4px; cursor: pointer;">
+    //         edit
+    //     </span>
+    //     <span class="material-icons cancel-btn"
+    //           style="padding: 4px; background: #f44336; color: white; border-radius: 4px; cursor: pointer;">
+    //         close
+    //     </span>
+    // `;
+
+    // controls
+    //   .querySelector(".confirm-btn")
+    //   .addEventListener("click", (e) => {
+    //     e.stopPropagation();
+    //     e.preventDefault();
+    //     editor.finalizeRoom(this);
+    //   });
+
+
+    // controls.querySelector(".edit-btn").addEventListener("click", (e) => {
+    //   e.stopPropagation();
+    //   e.preventDefault();
+    //   editor.layersPanel.showPropertiesDialog(this);
+    // });
+
+    // controls
+    //   .querySelector(".cancel-btn")
+    //   .addEventListener("click", (e) => {
+    //     e.stopPropagation();  
+    //     e.preventDefault();
+    //     editor.deleteRoom(this);
+    //   });
+
+    // roomElement.appendChild(controls);
+
+    // Replace your existing controls code with this:
+
     const controls = document.createElement("div");
     controls.className = "room-controls";
-
     controls.style.position = "absolute";
     controls.style.zIndex = "2"; // Place controls above SVG
     controls.style.pointerEvents = "auto";
-
     controls.innerHTML = `
         <span class="material-icons confirm-btn"
               style="padding: 4px; background: #4CAF50; color: white; border-radius: 4px; cursor: pointer;">
@@ -207,24 +254,73 @@ class Room {
             close
         </span>
     `;
-
-    controls
-      .querySelector(".confirm-btn")
-      .addEventListener("click", () => {
-        editor.finalizeRoom(this);
-      });
-
-
-    controls.querySelector(".edit-btn").addEventListener("click", () => {
-      editor.layersPanel.showPropertiesDialog(this);
+    
+    // Use mousedown instead of click for better capture chance
+    controls.querySelector(".confirm-btn").addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        console.log("Confirm button pressed for room:", this.id);
+        
+        // Use setTimeout to ensure this runs after event handling
+        setTimeout(() => {
+            try {
+                editor.finalizeRoom(this);
+                console.log("finalizeRoom called");
+            } catch (err) {
+                console.error("Error in finalizeRoom:", err);
+            }
+        }, 0);
+        
+        return false; // Try to stop propagation
     });
-
-    controls
-      .querySelector(".cancel-btn")
-      .addEventListener("click", () => {
-        editor.deleteRoom(this);
-      });
-
+    
+    controls.querySelector(".edit-btn").addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        console.log("Edit button pressed for room:", this.id);
+        
+        // Use setTimeout to ensure this runs after event handling
+        setTimeout(() => {
+            try {
+                editor.layersPanel.showPropertiesDialog(this);
+                console.log("showPropertiesDialog called");
+            } catch (err) {
+                console.error("Error in showPropertiesDialog:", err);
+            }
+        }, 0);
+        
+        return false; // Try to stop propagation
+    });
+    
+    controls.querySelector(".cancel-btn").addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        console.log("Cancel button pressed for room:", this.id);
+        
+        // Use setTimeout to ensure this runs after event handling
+        setTimeout(() => {
+            try {
+                editor.deleteRoom(this);
+                console.log("deleteRoom called");
+            } catch (err) {
+                console.error("Error in deleteRoom:", err);
+            }
+        }, 0);
+        
+        return false; // Try to stop propagation
+    });
+    
+    // Also handle mouseup and click for absolute certainty
+    controls.addEventListener("mouseup", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+    }, true);
+    
+    controls.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+    }, true);
+    
     roomElement.appendChild(controls);
 
     // Add dragging functionality (only for non-polygon or finalized polygon)
@@ -246,7 +342,7 @@ class Room {
       }
     });
 
-    // Add height indicator if needed - ADD THIS CODE HERE
+    // Add height indicator if needed 
     if ((this.isRaisedBlock && this.blockHeight > 0) || this.isRegularWall) {
       const heightLabel = document.createElement('div');
       heightLabel.className = 'height-indicator';
