@@ -145,6 +145,20 @@ this.registerEffectType('waterProp', {
       create: this.createPropGlowEffect.bind(this)
     });
     
+      // Add dungeon portal effect
+  this.registerEffectType('portalEffect', {
+    keywords: ['portal', 'dungeon', 'entrance', 'gate', 'doorway', 'vortex'],
+    color: 0x66ccff, // Default blue portal
+    intensity: 1.2,
+    distance: 6,
+    decay: 1.5,
+    particleCount: 50,
+    particleSize: 0.05,
+    animationSpeed: 1.0,
+    forceShowOnLow: true, // Important effect, show even on low quality
+    create: this.createPortalEffect.bind(this)
+  });
+
     // Add more effect types as needed
   }
   
@@ -1609,6 +1623,328 @@ createPropGlowEffect(prop, options = {}) {
 }
 
 /**
+ * Create a portal effect with animated shader and particles
+ * @param {Object3D} object - The object to add effect to
+ * @param {Object} definition - Effect definition
+ * @param {string} qualityLevel - Quality setting
+ * @returns {Object} Effect data
+ */
+/**
+ * Create a portal effect with animated shader and particles
+ * @param {Object3D} object - The object to add effect to
+ * @param {Object} definition - Effect definition
+ * @param {string} qualityLevel - Quality setting
+ * @returns {Object} Effect data
+ */
+createPortalEffect(object, definition, qualityLevel = 'medium') {
+  // Create container for portal effect
+  const container = new THREE.Group();
+  container.position.copy(object.position);
+  this.scene3D.scene.add(container);
+  
+  // Get config from definition or use defaults
+  const color = definition.color || 0x66ccff;
+  const colorObj = new THREE.Color(color);
+  const intensity = definition.intensity || 1.2;
+  const portalSize = definition.portalSize || 0.7;
+  
+  // Create portal light
+  const light = new THREE.PointLight(color, intensity, 8, 2);
+  light.position.y = 0.5;
+  container.add(light);
+  
+  // Create the portal ring with shader material
+  const portalGeometry = new THREE.TorusGeometry(portalSize, 0.1, 32, 64);
+  
+  // Advanced shader material for the portal ring
+  const portalMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      color: { value: new THREE.Color(color) },
+      pulseRate: { value: 0.5 },
+      noiseScale: { value: 10.0 },
+      ringWidth: { value: 0.3 }
+    },
+    vertexShader: `
+      uniform float time;
+      
+      varying vec2 vUv;
+      varying vec3 vPosition;
+      
+      void main() {
+        vUv = uv;
+        vPosition = position;
+        
+        // Add subtle pulsation to the ring
+        vec3 newPosition = position;
+        float pulse = sin(time * 2.0) * 0.03;
+        newPosition *= 1.0 + pulse;
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      uniform vec3 color;
+      uniform float pulseRate;
+      uniform float noiseScale;
+      uniform float ringWidth;
+      
+      varying vec2 vUv;
+      
+      // Simple noise function
+      float noise(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453123);
+      }
+      
+      void main() {
+        // Create a flowing energy effect
+        float t = time * pulseRate;
+        
+        // Radial coordinate for the ring
+        float radius = length(vUv - vec2(0.5, 0.5)) * 2.0;
+        
+        // Animated noise
+        float noiseTime = noise(vUv * noiseScale + vec2(t)) * 0.1;
+        
+        // Edge glow
+        float edge = smoothstep(0.4, 0.5, abs(radius - 0.8 + noiseTime));
+        
+        // Energy pulses along the ring
+        float energy = sin(vUv.x * 20.0 + time * 4.0) * 0.5 + 0.5;
+        energy *= sin(vUv.y * 20.0 + time * 3.0) * 0.5 + 0.5;
+        
+        // Combine effects
+        float alpha = (1.0 - edge) * (0.6 + energy * 0.4);
+        
+        // Add flowing energy patterns
+        float flow = sin(vUv.x * 30.0 + vUv.y * 20.0 + time * 5.0) * 0.5 + 0.5;
+        vec3 flowColor = mix(color, vec3(1.0), flow * 0.3);
+        
+        gl_FragColor = vec4(flowColor, alpha);
+      }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending
+  });
+  
+  const portalRing = new THREE.Mesh(portalGeometry, portalMaterial);
+  portalRing.rotation.x = Math.PI / 2; // Lay flat
+  portalRing.position.y = 0.5;
+  container.add(portalRing);
+  
+  // Create portal center - the vortex effect
+  const vortexGeometry = new THREE.CircleGeometry(portalSize * 0.8, 32);
+  const vortexMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      color: { value: new THREE.Color(color) },
+      depth: { value: 2.0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      uniform vec3 color;
+      uniform float depth;
+      
+      varying vec2 vUv;
+      
+      void main() {
+        // Create a vortex effect
+        vec2 center = vUv - vec2(0.5);
+        float dist = length(center);
+        
+        // Spiral pattern
+        float angle = atan(center.y, center.x);
+        float spiral = sin(dist * 20.0 - time * 2.0 + angle * 5.0) * 0.5 + 0.5;
+        
+        // Outer edge fade
+        float edge = smoothstep(0.0, 0.5, 1.0 - dist * 2.0);
+        
+        // Inner darkness for depth
+        float innerDark = smoothstep(0.0, 0.8, dist * 2.0);
+        
+        // Final color with depth effect
+        vec3 finalColor = mix(color * 0.2, color, spiral * innerDark);
+        
+        // Alpha increases toward center
+        float alpha = edge * 0.8;
+        
+        gl_FragColor = vec4(finalColor, alpha);
+      }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  
+  const vortex = new THREE.Mesh(vortexGeometry, vortexMaterial);
+  vortex.rotation.x = Math.PI / 2; // Lay flat
+  vortex.position.y = 0.5;
+  vortex.position.z = -0.01; // Slightly below ring
+  container.add(vortex);
+  
+  // Create particles for the portal - use quality levels
+  const particleCount = this.getQualityAdjustedValue({
+    low: 20,
+    medium: 50,
+    high: 100
+  }[qualityLevel] || 50);
+  
+  const particleGeometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const particleSizes = new Float32Array(particleCount);
+  const randomVals = new Float32Array(particleCount);
+  
+  // Create particles in a ring pattern with some randomness
+  for (let i = 0; i < particleCount; i++) {
+    const angle = (i / particleCount) * Math.PI * 2;
+    const radius = portalSize + (Math.random() * 0.3 - 0.15);
+    
+    positions[i * 3] = Math.cos(angle) * radius;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 0.5; // Height variation
+    positions[i * 3 + 2] = Math.sin(angle) * radius;
+    
+    particleSizes[i] = Math.random() * 0.05 + 0.02;
+    randomVals[i] = Math.random();
+  }
+  
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+  particleGeometry.setAttribute('random', new THREE.BufferAttribute(randomVals, 1));
+  
+  // Advanced shader for particles
+  const particleMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      color: { value: new THREE.Color(color) },
+      pointTexture: { value: this.getPortalParticleTexture() } // Using the dedicated portal texture
+    },
+    vertexShader: `
+      uniform float time;
+      
+      attribute float size;
+      attribute float random;
+      
+      varying float vRandom;
+      varying vec3 vColor;
+      
+      void main() {
+        vRandom = random;
+        
+        // Animate position
+        vec3 pos = position;
+        
+        // Vertical oscillation
+        pos.y += sin(time * 2.0 + random * 10.0) * 0.1;
+        
+        // Orbit slightly around center
+        float angle = time * (0.1 + random * 0.2);
+        float radius = length(pos.xz);
+        float origAngle = atan(pos.z, pos.x);
+        pos.x = cos(origAngle + angle) * radius;
+        pos.z = sin(origAngle + angle) * radius;
+        
+        // Vary color based on position and time
+        vColor = vec3(
+          0.8 + sin(time + random * 5.0) * 0.2,
+          0.8 + cos(time * 0.7 + random * 5.0) * 0.2,
+          0.8 + sin(time * 0.5 + random * 5.0) * 0.2
+        );
+        
+        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 color;
+      uniform sampler2D pointTexture;
+      
+      varying float vRandom;
+      varying vec3 vColor;
+      
+      void main() {
+        // Use particle texture with soft edges
+        vec4 texColor = texture2D(pointTexture, gl_PointCoord);
+        
+        // Create pulsing opacity
+        float pulse = sin(vRandom * 10.0) * 0.5 + 0.5;
+        
+        // Apply color variation
+        vec3 finalColor = color * vColor;
+        
+        gl_FragColor = vec4(finalColor, texColor.a * pulse);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  particles.position.y = 0.5;
+  container.add(particles);
+  
+  // Store original positions and animation data
+  particles.userData = {
+    initialPositions: [...positions],
+    time: 0
+  };
+  
+  // Return effect data object for tracking
+  return {
+    container,
+    light,
+    portalRing,
+    vortex,
+    particles,
+    originalObject: object,
+    animationData: {
+      time: 0,
+      speed: definition.animationSpeed || 1.0
+    },
+    update: function(deltaTime) {
+      // Increment animation time
+      this.animationData.time += deltaTime * this.animationData.speed;
+      const time = this.animationData.time;
+      
+      // Update shader uniforms
+      if (portalRing && portalRing.material && portalRing.material.uniforms) {
+        portalRing.material.uniforms.time.value = time;
+      }
+      
+      if (vortex && vortex.material && vortex.material.uniforms) {
+        vortex.material.uniforms.time.value = time;
+      }
+      
+      if (particles && particles.material && particles.material.uniforms) {
+        particles.material.uniforms.time.value = time;
+      }
+      
+      // Pulse the light
+      if (light) {
+        light.intensity = intensity * (0.8 + Math.sin(time * 2) * 0.2);
+      }
+      
+      // Rotate the portal ring slightly
+      if (portalRing) {
+        portalRing.rotation.z = time * 0.1;
+      }
+    }
+  };
+}
+
+/**
  * Scan a loaded model for props that might need effects
  * @param {THREE.Group} model - The 3D model to scan
  * @returns {number} Number of effects added
@@ -2453,6 +2789,69 @@ getParticleTexture() {
   }
  
   return this._particleTexture;
+}
+
+/**
+ * Get a particle texture for the portal effect
+ */
+getFourParticleTexture() {
+  if (!this._particleTexture) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Create a soft circular gradient
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.3)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    
+    this._particleTexture = new THREE.CanvasTexture(canvas);
+  }
+  
+  return this._particleTexture;
+}
+
+/**
+ * Get a specialized particle texture for the portal effect
+ * @returns {THREE.Texture} The portal particle texture
+ */
+getPortalParticleTexture() {
+  if (!this._portalParticleTexture) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    // Create a soft circular gradient with portal-specific glow
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.9)');
+    gradient.addColorStop(0.5, 'rgba(220, 220, 255, 0.5)');
+    gradient.addColorStop(0.7, 'rgba(180, 180, 255, 0.3)');
+    gradient.addColorStop(1, 'rgba(100, 100, 255, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    
+    // Add a subtle inner glow
+    const innerGlow = ctx.createRadialGradient(32, 32, 5, 32, 32, 15);
+    innerGlow.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+    innerGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = innerGlow;
+    ctx.fillRect(0, 0, 64, 64);
+    
+    this._portalParticleTexture = new THREE.CanvasTexture(canvas);
+  }
+  
+  return this._portalParticleTexture;
 }
   
   /**
