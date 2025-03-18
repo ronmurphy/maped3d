@@ -183,57 +183,7 @@ class Room {
       });
       roomElement.appendChild(handle);
     });
-    // }
 
-    // // Add control buttons
-    // const controls = document.createElement("div");
-    // controls.className = "room-controls";
-
-    // controls.style.position = "absolute";
-    // controls.style.zIndex = "2"; // Place controls above SVG
-    // controls.style.pointerEvents = "auto";
-
-    // controls.innerHTML = `
-    //     <span class="material-icons confirm-btn"
-    //           style="padding: 4px; background: #4CAF50; color: white; border-radius: 4px; cursor: pointer;">
-    //         check
-    //     </span>
-    //     <span class="material-icons edit-btn"
-    //           style="padding: 4px; background: #2196F3; color: white; border-radius: 4px; cursor: pointer;">
-    //         edit
-    //     </span>
-    //     <span class="material-icons cancel-btn"
-    //           style="padding: 4px; background: #f44336; color: white; border-radius: 4px; cursor: pointer;">
-    //         close
-    //     </span>
-    // `;
-
-    // controls
-    //   .querySelector(".confirm-btn")
-    //   .addEventListener("click", (e) => {
-    //     e.stopPropagation();
-    //     e.preventDefault();
-    //     editor.finalizeRoom(this);
-    //   });
-
-
-    // controls.querySelector(".edit-btn").addEventListener("click", (e) => {
-    //   e.stopPropagation();
-    //   e.preventDefault();
-    //   editor.layersPanel.showPropertiesDialog(this);
-    // });
-
-    // controls
-    //   .querySelector(".cancel-btn")
-    //   .addEventListener("click", (e) => {
-    //     e.stopPropagation();  
-    //     e.preventDefault();
-    //     editor.deleteRoom(this);
-    //   });
-
-    // roomElement.appendChild(controls);
-
-    // Replace your existing controls code with this:
 
     const controls = document.createElement("div");
     controls.className = "room-controls";
