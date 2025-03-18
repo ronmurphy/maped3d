@@ -151,8 +151,22 @@ class ShapeForge {
         this.startPreview();
       }
     }, 500); // Wait 500ms for the drawer to render
-    
-    return this;
+
+// Initialize new features if they haven't been already
+if (!this.featuresInitialized) {
+  // Wait a moment for UI to be ready, then initialize features
+  setTimeout(async () => {
+    try {
+      await this.initializeNewFeatures();
+      this.featuresInitialized = true;
+      console.log('All ShapeForge features initialized');
+    } catch (error) {
+      console.error('Error during ShapeForge feature initialization:', error);
+    }
+  }, 1000);
+}
+
+return this;
   }
   
   /**
@@ -644,16 +658,21 @@ setupBasicCameraControls() {
    */
   animate() {
     if (!this.isPreviewActive) return;
-    
+  
     requestAnimationFrame(this.animate);
+    
+    // Calculate delta time for smooth animations
+    const now = Date.now();
+    const deltaTime = (now - (this.lastFrameTime || now)) / 1000; // in seconds
+    this.lastFrameTime = now;
     
     // Update orbit controls
     if (this.previewControls) {
       this.previewControls.update();
     }
     
-    // Update shader effects if any
-    this.updateEffects();
+    // Update shader effects
+    this.updateEffects(deltaTime);
     
     // Render the scene
     if (this.previewRenderer && this.previewScene && this.previewCamera) {
@@ -1020,60 +1039,60 @@ setupBasicCameraControls() {
    * Add an object to the scene
    * @param {Object} objectData - Data for the new object
    */
-  addObjectToScene(objectData) {
-    if (!this.previewScene) return;
+  // addObjectToScene(objectData) {
+  //   if (!this.previewScene) return;
     
-    // Add mesh to scene
-    this.previewScene.add(objectData.mesh);
+  //   // Add mesh to scene
+  //   this.previewScene.add(objectData.mesh);
     
-    // Add to objects array
-    this.objects.push(objectData);
+  //   // Add to objects array
+  //   this.objects.push(objectData);
     
-    // Select this object
-    this.selectObject(this.objects.length - 1);
+  //   // Select this object
+  //   this.selectObject(this.objects.length - 1);
     
-    // Add to history
-    this.addHistoryStep('create', {
-      objectIndex: this.objects.length - 1,
-      object: objectData
-    });
+  //   // Add to history
+  //   this.addHistoryStep('create', {
+  //     objectIndex: this.objects.length - 1,
+  //     object: objectData
+  //   });
     
-    console.log(`Added ${objectData.type} to scene`);
-  }
+  //   console.log(`Added ${objectData.type} to scene`);
+  // }
   
   /**
    * Select an object by index
    * @param {number} index - Index of object to select
    */
-  selectObject(index) {
-    if (index < 0 || index >= this.objects.length) return;
+  // selectObject(index) {
+  //   if (index < 0 || index >= this.objects.length) return;
     
-    // Deselect current object
-    if (this.selectedObject !== null) {
-      const oldObject = this.objects[this.selectedObject];
-      if (oldObject && oldObject.mesh) {
-        // Remove selection indicator (if we had one)
-        oldObject.mesh.material.emissive = new THREE.Color(0x000000);
-      }
-    }
+  //   // Deselect current object
+  //   if (this.selectedObject !== null) {
+  //     const oldObject = this.objects[this.selectedObject];
+  //     if (oldObject && oldObject.mesh) {
+  //       // Remove selection indicator (if we had one)
+  //       oldObject.mesh.material.emissive = new THREE.Color(0x000000);
+  //     }
+  //   }
     
-    // Set new selected object
-    this.selectedObject = index;
-    const object = this.objects[index];
+  //   // Set new selected object
+  //   this.selectedObject = index;
+  //   const object = this.objects[index];
     
-    // Add selection indicator - highlight the object
-    if (object.mesh.material.emissive !== undefined) {
-      object.mesh.material.emissive = new THREE.Color(0x333333);
-    }
+  //   // Add selection indicator - highlight the object
+  //   if (object.mesh.material.emissive !== undefined) {
+  //     object.mesh.material.emissive = new THREE.Color(0x333333);
+  //   }
     
-    // Update property panels
-    this.updatePropertyPanels(object);
+  //   // Update property panels
+  //   this.updatePropertyPanels(object);
     
-    // Update transform controls
-    this.updateTransformControls(object);
+  //   // Update transform controls
+  //   this.updateTransformControls(object);
     
-    console.log(`Selected object: ${object.name}`);
-  }
+  //   console.log(`Selected object: ${object.name}`);
+  // }
   
   /**
    * Update property panels for the selected object
@@ -1587,58 +1606,7 @@ setupBasicCameraControls() {
   // ShaderEffects Integration
   //-------------------------------------------------------
   
-  /**
-   * Apply shader effect to the selected object
-   * @param {string} effectType - Type of effect to apply
-   */
-  applyShaderEffect(effectType) {
-    if (this.selectedObject === null || !this.shaderEffectsManager) return;
-    
-    const object = this.objects[this.selectedObject];
-    
-    // Remove existing effect if any
-    this.removeExistingEffect(object);
-    
-    // Create new effect based on type
-    let effectData = null;
-    
-    switch (effectType) {
-      case 'glow':
-        effectData = this.createGlowEffect(object);
-        break;
-      case 'fire':
-        effectData = this.createFireEffect(object);
-        break;
-      case 'magic':
-        effectData = this.createMagicEffect(object);
-        break;
-      case 'none':
-        // No effect to apply
-        break;
-      default:
-        console.warn(`Unknown effect type: ${effectType}`);
-        return;
-    }
-    
-    // Store effect data with object
-    if (effectData) {
-      object.effect = {
-        type: effectType,
-        data: effectData
-      };
-      
-      console.log(`Applied ${effectType} effect to ${object.name}`);
-    } else if (effectType !== 'none') {
-      console.warn(`Failed to create ${effectType} effect`);
-    }
-    
-    // Add to history
-    this.addHistoryStep('effect', {
-      objectIndex: this.selectedObject,
-      oldEffect: null, // TODO: Store old effect for undo
-      newEffect: effectType
-    });
-  }
+
   
   /**
    * Remove existing shader effect from an object
@@ -2467,51 +2435,51 @@ setupBasicCameraControls() {
    * Add an object to the scene
    * @param {Object} objectData - Data for the new object
    */
-  addObjectToScene(objectData) {
-    if (!this.previewScene) return;
+  // addObjectToScene(objectData) {
+  //   if (!this.previewScene) return;
     
-    // Add mesh to scene
-    this.previewScene.add(objectData.mesh);
+  //   // Add mesh to scene
+  //   this.previewScene.add(objectData.mesh);
     
-    // Apply transform from object data
-    if (objectData.position) {
-      objectData.mesh.position.set(
-        objectData.position.x,
-        objectData.position.y,
-        objectData.position.z
-      );
-    }
+  //   // Apply transform from object data
+  //   if (objectData.position) {
+  //     objectData.mesh.position.set(
+  //       objectData.position.x,
+  //       objectData.position.y,
+  //       objectData.position.z
+  //     );
+  //   }
     
-    if (objectData.rotation) {
-      objectData.mesh.rotation.set(
-        objectData.rotation.x,
-        objectData.rotation.y,
-        objectData.rotation.z
-      );
-    }
+  //   if (objectData.rotation) {
+  //     objectData.mesh.rotation.set(
+  //       objectData.rotation.x,
+  //       objectData.rotation.y,
+  //       objectData.rotation.z
+  //     );
+  //   }
     
-    if (objectData.scale) {
-      objectData.mesh.scale.set(
-        objectData.scale.x,
-        objectData.scale.y,
-        objectData.scale.z
-      );
-    }
+  //   if (objectData.scale) {
+  //     objectData.mesh.scale.set(
+  //       objectData.scale.x,
+  //       objectData.scale.y,
+  //       objectData.scale.z
+  //     );
+  //   }
     
-    // Add to objects array
-    this.objects.push(objectData);
+  //   // Add to objects array
+  //   this.objects.push(objectData);
     
-    // Select this object
-    this.selectObject(this.objects.length - 1);
+  //   // Select this object
+  //   this.selectObject(this.objects.length - 1);
     
-    // Add to history
-    this.addHistoryStep('create', {
-      objectIndex: this.objects.length - 1,
-      object: objectData
-    });
+  //   // Add to history
+  //   this.addHistoryStep('create', {
+  //     objectIndex: this.objects.length - 1,
+  //     object: objectData
+  //   });
     
-    console.log(`Added ${objectData.type} to scene`);
-  }
+  //   console.log(`Added ${objectData.type} to scene`);
+  // }
   
   /**
    * Update transform for the selected object
@@ -3393,6 +3361,1909 @@ setupBasicCameraControls() {
     console.log("ShapeForge resources disposed");
   }
 }
+
+ShapeForge.prototype.addObjectToScene = function(objectData) {
+  if (!this.previewScene) return;
+  
+  // Add mesh to scene
+  this.previewScene.add(objectData.mesh);
+  
+  // Add to objects array
+  this.objects.push(objectData);
+  
+  // Select this object
+  this.selectObject(this.objects.length - 1);
+  
+  // Add to history
+  this.addHistoryStep('create', {
+    objectIndex: this.objects.length - 1,
+    object: objectData
+  });
+  
+  // Update objects list panel if it exists
+  if (this.objectsListContainer) {
+    this.updateObjectsList();
+  }
+  
+  console.log(`Added ${objectData.type} to scene`);
+};
+
+/**
+ * Make sure object panel is properly updated when selecting an object
+ */
+ShapeForge.prototype.selectObject = function(index) {
+  if (index < 0 || index >= this.objects.length) return;
+  
+  // Deselect current object
+  if (this.selectedObject !== null) {
+    const oldObject = this.objects[this.selectedObject];
+    if (oldObject && oldObject.mesh) {
+      // Remove selection indicator (if we had one)
+      if (oldObject.mesh.material && oldObject.mesh.material.emissive !== undefined) {
+        oldObject.mesh.material.emissive = new THREE.Color(0x000000);
+      }
+    }
+  }
+  
+  // Set new selected object
+  this.selectedObject = index;
+  const object = this.objects[index];
+  
+  // Add selection indicator - highlight the object
+  if (object.mesh.material && object.mesh.material.emissive !== undefined) {
+    object.mesh.material.emissive = new THREE.Color(0x333333);
+  }
+  
+  // Update property panels
+  this.updatePropertyPanels(object);
+  
+  // Update transform controls
+  this.updateTransformControls(object);
+  
+  // Update objects list panel if it exists
+  if (this.objectsListContainer) {
+    this.updateObjectsList();
+  }
+  
+  console.log(`Selected object: ${object.name}`);
+};
+
+/**
+ * Create and show the objects list panel with better styling
+ */
+ShapeForge.prototype.createObjectsListPanel = function() {
+  // Create panel container
+  const panel = document.createElement('div');
+  panel.className = 'objects-list-panel';
+  panel.style.cssText = `
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 200px;
+    max-height: calc(100% - 20px);
+    background: rgba(40, 40, 40, 0.9);
+    border-radius: 4px;
+    padding: 10px;
+    color: white;
+    font-family: sans-serif;
+    font-size: 12px;
+    overflow-y: auto;
+    z-index: 100;
+    border: 1px solid #555;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  `;
+  
+  // Add title
+  const title = document.createElement('div');
+  title.textContent = 'Objects';
+  title.style.cssText = `
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #555;
+    font-size: 14px;
+  `;
+  panel.appendChild(title);
+  
+  // Add list container
+  const listContainer = document.createElement('div');
+  listContainer.className = 'objects-list';
+  listContainer.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  `;
+  panel.appendChild(listContainer);
+  
+  // Add to preview container
+  if (this.previewContainer) {
+    this.previewContainer.appendChild(panel);
+    this.objectsListPanel = panel;
+    this.objectsListContainer = listContainer;
+    
+    // Initial update of the list
+    this.updateObjectsList();
+    console.log('Objects list panel created and added to preview container');
+  } else {
+    console.warn('Preview container not available, objects list not added');
+  }
+  
+  return panel;
+};
+
+/**
+ * Update the objects list to reflect current objects
+ */
+ShapeForge.prototype.updateObjectsList = function() {
+  if (!this.objectsListContainer) {
+    console.warn('Objects list container not available');
+    return;
+  }
+  
+  console.log('Updating objects list with', this.objects.length, 'objects');
+  
+  // Clear current list
+  this.objectsListContainer.innerHTML = '';
+  
+  // Add entry for each object
+  this.objects.forEach((obj, index) => {
+    const entry = document.createElement('div');
+    entry.className = 'object-entry';
+    entry.dataset.index = index;
+    entry.style.cssText = `
+      padding: 5px;
+      margin-bottom: 4px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      ${this.selectedObject === index ? 'background: #3388ff; color: white;' : 'background: #444;'}
+      transition: background-color 0.2s;
+    `;
+    
+    // Add hover effect
+    entry.onmouseover = () => {
+      if (this.selectedObject !== index) {
+        entry.style.backgroundColor = '#555';
+      }
+    };
+    
+    entry.onmouseout = () => {
+      if (this.selectedObject !== index) {
+        entry.style.backgroundColor = '#444';
+      }
+    };
+    
+    // Add icon based on shape type
+    const icon = document.createElement('span');
+    icon.style.cssText = `
+      font-size: 16px;
+      margin-right: 8px;
+      width: 20px;
+      text-align: center;
+    `;
+    
+    // Choose icon based on shape type
+    let iconText = '★'; // Default
+    switch (obj.type) {
+      case 'cube': iconText = '□'; break;
+      case 'sphere': iconText = '○'; break;
+      case 'cylinder': iconText = '⌭'; break;
+      case 'cone': iconText = '▲'; break;
+      case 'torus': iconText = '⊗'; break;
+      case 'plane': iconText = '▬'; break;
+      case 'tetrahedron': iconText = '△'; break;
+      case 'octahedron': iconText = '◇'; break;
+      case 'dodecahedron': iconText = '⬠'; break;
+      case 'icosahedron': iconText = '⬢'; break;
+      case 'd10': iconText = '⯁'; break;
+    }
+    icon.textContent = iconText;
+    entry.appendChild(icon);
+    
+    // Add object name
+    const name = document.createElement('span');
+    name.className = 'object-name';
+    name.textContent = obj.name;
+    name.style.cssText = 'flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+    entry.appendChild(name);
+    
+    // Add visibility toggle
+    const visToggle = document.createElement('span');
+    visToggle.className = 'visibility-toggle';
+    visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
+    visToggle.style.cssText = 'margin-left: 8px; cursor: pointer;';
+    visToggle.onclick = (e) => {
+      e.stopPropagation();
+      obj.mesh.visible = !obj.mesh.visible;
+      visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
+    };
+    entry.appendChild(visToggle);
+    
+    // Add click handler for selection
+    entry.addEventListener('click', () => {
+      console.log(`Clicked on object ${index}: ${obj.name}`);
+      this.selectObject(index);
+    });
+    
+    // Add to list
+    this.objectsListContainer.appendChild(entry);
+  });
+  
+  // Add empty state message if no objects
+  if (this.objects.length === 0) {
+    const emptyMsg = document.createElement('div');
+    emptyMsg.textContent = 'No objects created yet.';
+    emptyMsg.style.cssText = 'color: #aaa; font-style: italic; text-align: center; padding: 10px;';
+    this.objectsListContainer.appendChild(emptyMsg);
+  }
+};
+
+// 2. OBJECT PICKING IN 3D VIEW
+// Add these methods to ShapeForge class
+
+/**
+ * Enable object picking in 3D view
+ */
+ShapeForge.prototype.enableObjectPicking = function() {
+  if (!this.previewContainer || !this.previewRenderer) return;
+  
+  // Create raycaster for picking
+  this.raycaster = new THREE.Raycaster();
+  this.mouse = new THREE.Vector2();
+  
+  // Add click handler
+  this.previewContainer.addEventListener('click', this.handleObjectPick.bind(this));
+  
+  console.log('Object picking enabled');
+};
+
+/**
+ * Handle object picking on click
+ * @param {MouseEvent} event - Mouse click event
+ */
+ShapeForge.prototype.handleObjectPick = function(event) {
+  if (!this.raycaster || !this.previewCamera || !this.objects.length) return;
+  
+  // Calculate mouse position in normalized device coordinates
+  const rect = this.previewRenderer.domElement.getBoundingClientRect();
+  this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  
+  // Update the picking ray
+  this.raycaster.setFromCamera(this.mouse, this.previewCamera);
+  
+  // Get all object meshes
+  const meshes = this.objects.map(obj => obj.mesh);
+  
+  // Find intersections
+  const intersects = this.raycaster.intersectObjects(meshes, false);
+  
+  if (intersects.length > 0) {
+    // Find the index of the intersected object
+    const pickedMesh = intersects[0].object;
+    const objectIndex = this.objects.findIndex(obj => obj.mesh === pickedMesh);
+    
+    if (objectIndex !== -1) {
+      console.log(`Picked object: ${this.objects[objectIndex].name}`);
+      this.selectObject(objectIndex);
+      this.updateObjectsList();
+      
+      // Show visual feedback
+      this.showPickFeedback(pickedMesh.position.clone());
+    }
+  }
+};
+
+/**
+ * Show visual feedback when an object is picked
+ * @param {Vector3} position - Position to show feedback
+ */
+ShapeForge.prototype.showPickFeedback = function(position) {
+  if (!this.previewScene) return;
+  
+  // Create feedback geometry
+  const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+  const material = new THREE.MeshBasicMaterial({ 
+    color: 0xffff00,
+    transparent: true,
+    opacity: 0.8 
+  });
+  
+  const feedback = new THREE.Mesh(geometry, material);
+  feedback.position.copy(position);
+  this.previewScene.add(feedback);
+  
+  // Animate and remove
+  let scale = 1.0;
+  const animate = () => {
+    scale += 0.1;
+    feedback.scale.set(scale, scale, scale);
+    feedback.material.opacity -= 0.05;
+    
+    if (feedback.material.opacity > 0) {
+      requestAnimationFrame(animate);
+    } else {
+      this.previewScene.remove(feedback);
+      feedback.geometry.dispose();
+      feedback.material.dispose();
+    }
+  };
+  
+  animate();
+};
+
+/**
+ * Initialize shader effects panel with proper error handling
+ */
+ShapeForge.prototype.initializeShaderEffects = function() {
+  // Check if ShaderEffectsManager exists and is properly initialized
+  if (!this.shaderEffectsManager) {
+    console.warn('ShaderEffectsManager not available, skipping effects initialization');
+    return;
+  }
+  
+  // Safely check if effectDefinitions exists and is a Map
+  if (!this.shaderEffectsManager.effectDefinitions || 
+      typeof this.shaderEffectsManager.effectDefinitions.entries !== 'function') {
+    console.warn('ShaderEffectsManager.effectDefinitions not available or not a Map');
+    
+    // Create a basic map with just one effect as fallback
+    if (!this.shaderEffectsManager.effectDefinitions) {
+      this.shaderEffectsManager.effectDefinitions = new Map();
+    }
+    
+    // Add a basic glow effect if none exist
+    if (this.shaderEffectsManager.effectDefinitions.size === 0) {
+      this.shaderEffectsManager.effectDefinitions.set('glow', {
+        keywords: ['glow', 'light'],
+        color: 0x66ccff,
+        intensity: 1.0,
+        particleCount: 15,
+        isAreaEffect: false
+      });
+    }
+  }
+  
+  // Find effects container
+  const effectsContainer = this.drawer.querySelector('#effects-container');
+  if (!effectsContainer) {
+    console.warn('Effects container not found in UI');
+    return;
+  }
+  
+  // Get effect type selector
+  const effectTypeSelect = effectsContainer.querySelector('#effect-type');
+  if (!effectTypeSelect) return;
+  
+  try {
+    // Safely get available effects
+    let effectDefinitions = [];
+    if (this.shaderEffectsManager.effectDefinitions && 
+        typeof this.shaderEffectsManager.effectDefinitions.entries === 'function') {
+      effectDefinitions = Array.from(this.shaderEffectsManager.effectDefinitions.entries());
+    } else {
+      console.warn('Using fallback effect definitions');
+      effectDefinitions = [['glow', {
+        keywords: ['glow', 'light'],
+        color: 0x66ccff,
+        intensity: 1.0,
+        particleCount: 15,
+        isAreaEffect: false
+      }]];
+    }
+    
+    // Clear existing options first
+    while (effectTypeSelect.firstChild) {
+      effectTypeSelect.removeChild(effectTypeSelect.firstChild);
+    }
+    
+    // Add none option
+    const noneOption = document.createElement('sl-option');
+    noneOption.value = 'none';
+    noneOption.textContent = 'None';
+    effectTypeSelect.appendChild(noneOption);
+    
+    // Add available effects
+    effectDefinitions.forEach(([type, definition]) => {
+      // Only add relevant effects for props
+      if (!definition.isAreaEffect) {
+        const option = document.createElement('sl-option');
+        option.value = type;
+        option.textContent = this.formatEffectName(type);
+        effectTypeSelect.appendChild(option);
+      }
+    });
+    
+    // Handle effect type changes
+    effectTypeSelect.addEventListener('sl-change', (e) => {
+      const selectedEffect = e.target.value;
+      this.applyShaderEffect(selectedEffect);
+      
+      // Show/hide effect properties
+      const effectProps = effectsContainer.querySelector('#effect-properties');
+      if (effectProps) {
+        effectProps.style.display = selectedEffect === 'none' ? 'none' : 'block';
+        
+        // Populate effect properties
+        if (selectedEffect !== 'none') {
+          this.populateEffectProperties(selectedEffect, effectProps);
+        }
+      }
+    });
+    
+    console.log('Shader effects initialized');
+  } catch (error) {
+    console.error('Error initializing shader effects:', error);
+    // Don't let this error prevent other features from working
+  }
+};
+
+/**
+ * Format effect type name for display
+ * @param {string} type - Effect type identifier
+ * @returns {string} Formatted name
+ */
+ShapeForge.prototype.formatEffectName = function(type) {
+  return type
+    .replace(/([A-Z])/g, ' $1') // Add spaces before capitals
+    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .replace(/Prop$/, '') // Remove 'Prop' suffix
+    .trim();
+};
+
+/**
+ * Populate effect properties panel
+ * @param {string} effectType - Type of effect
+ * @param {HTMLElement} container - Properties container
+ */
+ShapeForge.prototype.populateEffectProperties = function(effectType, container) {
+  if (!this.shaderEffectsManager || !container) return;
+  
+  // Get effect definition
+  const definition = this.shaderEffectsManager.effectDefinitions.get(effectType);
+  if (!definition) return;
+  
+  // Clear container
+  container.innerHTML = '';
+  
+  // Add common properties
+  
+  // Color picker for effect color
+  if (definition.color !== undefined) {
+    const colorContainer = document.createElement('div');
+    colorContainer.style.marginBottom = '10px';
+    
+    const colorLabel = document.createElement('label');
+    colorLabel.textContent = 'Effect Color';
+    colorLabel.style.display = 'block';
+    colorLabel.style.marginBottom = '5px';
+    colorContainer.appendChild(colorLabel);
+    
+    const colorPicker = document.createElement('sl-color-picker');
+    colorPicker.id = 'effect-color';
+    colorPicker.value = '#' + new THREE.Color(definition.color).getHexString();
+    colorContainer.appendChild(colorPicker);
+    
+    colorPicker.addEventListener('sl-change', (e) => {
+      this.updateEffectProperty('color', new THREE.Color(e.target.value));
+    });
+    
+    container.appendChild(colorContainer);
+  }
+  
+  // Intensity slider
+  if (definition.intensity !== undefined) {
+    const intensityRange = document.createElement('sl-range');
+    intensityRange.id = 'effect-intensity';
+    intensityRange.label = 'Intensity';
+    intensityRange.min = 0;
+    intensityRange.max = 2;
+    intensityRange.step = 0.1;
+    intensityRange.value = definition.intensity;
+    intensityRange.style.marginBottom = '10px';
+    
+    intensityRange.addEventListener('sl-change', (e) => {
+      this.updateEffectProperty('intensity', parseFloat(e.target.value));
+    });
+    
+    container.appendChild(intensityRange);
+  }
+  
+  // Particle count slider
+  if (definition.particleCount !== undefined) {
+    const particleRange = document.createElement('sl-range');
+    particleRange.id = 'effect-particles';
+    particleRange.label = 'Particles';
+    particleRange.min = 5;
+    particleRange.max = 50;
+    particleRange.step = 1;
+    particleRange.value = definition.particleCount;
+    particleRange.style.marginBottom = '10px';
+    
+    particleRange.addEventListener('sl-change', (e) => {
+      this.updateEffectProperty('particleCount', parseInt(e.target.value));
+    });
+    
+    container.appendChild(particleRange);
+  }
+  
+  // Animation speed slider
+  if (definition.animationSpeed !== undefined) {
+    const speedRange = document.createElement('sl-range');
+    speedRange.id = 'effect-speed';
+    speedRange.label = 'Animation Speed';
+    speedRange.min = 0.1;
+    speedRange.max = 2;
+    speedRange.step = 0.1;
+    speedRange.value = definition.animationSpeed;
+    speedRange.style.marginBottom = '10px';
+    
+    speedRange.addEventListener('sl-change', (e) => {
+      this.updateEffectProperty('animationSpeed', parseFloat(e.target.value));
+    });
+    
+    container.appendChild(speedRange);
+  }
+  
+  // Add effect-specific properties based on type
+  switch (effectType) {
+    case 'fire':
+      // Fire-specific properties
+      break;
+    case 'magic':
+      // Magic-specific properties
+      break;
+    case 'glow':
+      // Glow-specific properties
+      break;
+    // Add more effect types as needed
+  }
+};
+
+/**
+ * Safe wrapper for applyShaderEffect to prevent errors
+ */
+/**
+ * Apply shader effect (completely self-contained version)
+ * @param {string} effectType - Type of effect to apply
+ */
+ShapeForge.prototype.applyShaderEffect = function(effectType) {
+  if (this.selectedObject === null) {
+    console.warn('No object selected, cannot apply shader effect');
+    return;
+  }
+  
+  // Handle 'none' case - remove current effect
+  if (effectType === 'none') {
+    const object = this.objects[this.selectedObject];
+    if (object.effect) {
+      console.log('Removing shader effect from object');
+      // Remove existing effect if any
+      if (object.effect.container && object.effect.container.parent) {
+        this.previewScene.remove(object.effect.container);
+      }
+      
+      if (object.effect.light && object.effect.light.parent) {
+        this.previewScene.remove(object.effect.light);
+      }
+      
+      if (object.effect.particles && object.effect.particles.parent) {
+        this.previewScene.remove(object.effect.particles);
+      }
+      
+      // Reset emissive if it was changed
+      if (object.mesh.material && object.mesh.material.emissive !== undefined && 
+          object.mesh.userData.originalEmissive) {
+        object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+        if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+          object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+        }
+      }
+      
+      // Clear effect data
+      delete object.effect;
+    }
+    return;
+  }
+  
+  const object = this.objects[this.selectedObject];
+  
+  try {
+    // Remove existing effect if any
+    if (object.effect) {
+      // Remove from scene first
+      if (object.effect.container && object.effect.container.parent) {
+        this.previewScene.remove(object.effect.container);
+      }
+      
+      if (object.effect.light && object.effect.light.parent) {
+        this.previewScene.remove(object.effect.light);
+      }
+      
+      if (object.effect.particles && object.effect.particles.parent) {
+        this.previewScene.remove(object.effect.particles);
+      }
+      
+      // Reset emissive if it was changed
+      if (object.mesh.material && object.mesh.material.emissive !== undefined && 
+          object.mesh.userData.originalEmissive) {
+        object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+        if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+          object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+        }
+      }
+      
+      delete object.effect;
+    }
+    
+    // Get effect options from ShaderEffectsManager if available
+    let effectOptions = {
+      color: 0x66ccff,
+      intensity: 1.0
+    };
+    
+    if (this.shaderEffectsManager && this.shaderEffectsManager.effectDefinitions) {
+      const definition = this.shaderEffectsManager.effectDefinitions.get(effectType);
+      if (definition) {
+        effectOptions = { ...effectOptions, ...definition };
+      }
+    }
+    
+    // Create the effect using our LOCAL implementations only - NEVER try to use ShaderEffectsManager methods
+    let effectData;
+    
+    // Use correct method based on effect type
+    switch (effectType) {
+      case 'glow':
+        effectData = this.createPropGlowEffect(object.mesh, effectOptions);
+        break;
+      case 'fire':
+        effectData = this.createSimpleFireEffect(object.mesh, effectOptions);
+        break;
+      case 'magic':
+        effectData = this.createSimpleMagicEffect(object.mesh, effectOptions);
+        break;
+      case 'lava':
+        // Use a special fire effect with lava colors
+        effectOptions.color = 0xff3300;
+        effectOptions.intensity = 1.3;
+        effectData = this.createSimpleFireEffect(object.mesh, effectOptions);
+        break;
+      case 'holy':
+        // Use a special glow effect with holy colors
+        effectOptions.color = 0xffe599;
+        effectOptions.intensity = 1.0;
+        effectData = this.createPropGlowEffect(object.mesh, effectOptions);
+        break;
+      case 'coldMagic':
+        // Use a special magic effect with cold colors
+        effectOptions.color = 0x88ccff;
+        effectOptions.intensity = 0.6;
+        effectData = this.createSimpleMagicEffect(object.mesh, effectOptions);
+        break;
+      default:
+        // Fallback to glow effect for any unknown types
+        console.log(`Using fallback glow effect for unknown type: ${effectType}`);
+        effectData = this.createPropGlowEffect(object.mesh, effectOptions);
+    }
+    
+    // Store effect data with object
+    if (effectData) {
+      object.effect = {
+        type: effectType,
+        data: effectData
+      };
+      
+      console.log(`Applied ${effectType} effect to ${object.name}`);
+    }
+  } catch (error) {
+    console.error(`Error applying ${effectType} effect:`, error);
+  }
+};
+
+/**
+ * Simple glow effect that doesn't depend on ShaderEffectsManager
+ */
+ShapeForge.prototype.createPropGlowEffect = function(prop, options) {
+  const defaults = {
+    color: options.color || 0x66ccff,
+    intensity: options.intensity || 0.5
+  };
+  
+  // Make prop material emit light
+  if (prop.material && prop.material.emissive !== undefined) {
+    // Store original emissive color
+    if (!prop.userData.originalEmissive) {
+      prop.userData.originalEmissive = prop.material.emissive.clone();
+      prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
+    }
+    
+    // Apply glow effect
+    prop.material.emissive = new THREE.Color(defaults.color);
+    prop.material.emissiveIntensity = defaults.intensity;
+  }
+  
+  // Create a point light
+  const light = new THREE.PointLight(defaults.color, defaults.intensity, 2);
+  light.position.copy(prop.position);
+  this.previewScene.add(light);
+  
+  return {
+    light: light,
+    container: null,
+    particles: null,
+    originalObject: prop
+  };
+};
+
+/**
+ * Simple fire effect that works without complex ShaderEffectsManager
+ */
+ShapeForge.prototype.createSimpleFireEffect = function(prop, options) {
+  const defaults = {
+    color: options.color || 0xff6600,
+    intensity: options.intensity || 1.2
+  };
+  
+  // Create container for fire effect
+  const container = new THREE.Group();
+  container.position.copy(prop.position);
+  this.previewScene.add(container);
+  
+  // Add fire light
+  const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+  light.position.y += 0.5; // Position above object
+  container.add(light);
+  
+  // Create simple particle system for fire
+  const particleCount = 15;
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  const particleColors = new Float32Array(particleCount * 3);
+  
+  // Fire color
+  const fireColor = new THREE.Color(defaults.color);
+  
+  // Create random particles in cone shape
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * 0.2;
+    
+    particlePositions[i3] = Math.cos(angle) * radius;
+    particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
+    particlePositions[i3 + 2] = Math.sin(angle) * radius;
+    
+    // Colors: start yellow-orange, fade to red
+    const mixFactor = Math.random();
+    particleColors[i3] = fireColor.r;
+    particleColors[i3 + 1] = fireColor.g * mixFactor;
+    particleColors[i3 + 2] = 0;
+  }
+  
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+  
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.1,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.7,
+    blending: THREE.AdditiveBlending
+  });
+  
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  container.add(particles);
+  
+  // Store original positions for animation
+  particles.userData = {
+    positions: [...particlePositions],
+    time: 0
+  };
+  
+  return {
+    container: container,
+    light: light,
+    particles: particles,
+    originalObject: prop,
+    animationData: {
+      time: 0,
+      speed: 1.0
+    },
+    update: function(deltaTime) {
+      // Animate particles
+      this.animationData.time += deltaTime;
+      const time = this.animationData.time;
+      
+      // Get position data
+      const positions = particles.geometry.attributes.position.array;
+      
+      // Animate each particle
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Move up slowly
+        positions[i3 + 1] += 0.01;
+        
+        // Reset if too high
+        if (positions[i3 + 1] > 0.8) {
+          positions[i3 + 1] = 0.2;
+        }
+        
+        // Add some "flickering"
+        positions[i3] += (Math.random() - 0.5) * 0.01;
+        positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
+      }
+      
+      // Update geometry
+      particles.geometry.attributes.position.needsUpdate = true;
+      
+      // Flicker the light
+      light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+    }
+  };
+};
+
+/**
+ * Simple magic effect that works without complex ShaderEffectsManager
+ */
+ShapeForge.prototype.createSimpleMagicEffect = function(prop, options) {
+  const defaults = {
+    color: options.color || 0x8800ff,
+    intensity: options.intensity || 0.8
+  };
+  
+  // Create container for magic effect
+  const container = new THREE.Group();
+  container.position.copy(prop.position);
+  this.previewScene.add(container);
+  
+  // Add magic light
+  const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+  light.position.y += 0.3; // Position above object
+  container.add(light);
+  
+  // Create simple particle system for magic
+  const particleCount = 20;
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  const particleColors = new Float32Array(particleCount * 3);
+  
+  // Magic color
+  const magicColor = new THREE.Color(defaults.color);
+  
+  // Create random particles in sphere shape
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const angle1 = Math.random() * Math.PI * 2;
+    const angle2 = Math.random() * Math.PI * 2;
+    const radius = Math.random() * 0.3 + 0.1;
+    
+    particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
+    particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+    particlePositions[i3 + 2] = Math.cos(angle2) * radius;
+    
+    // Colors
+    particleColors[i3] = magicColor.r;
+    particleColors[i3 + 1] = magicColor.g;
+    particleColors[i3 + 2] = magicColor.b;
+  }
+  
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+  
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.05,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.7,
+    blending: THREE.AdditiveBlending
+  });
+  
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  container.add(particles);
+  
+  // Store original positions for animation
+  particles.userData = {
+    positions: [...particlePositions],
+    time: 0
+  };
+  
+  return {
+    container: container,
+    light: light,
+    particles: particles,
+    originalObject: prop,
+    animationData: {
+      time: 0,
+      speed: 0.7
+    },
+    update: function(deltaTime) {
+      // Animate particles
+      this.animationData.time += deltaTime;
+      const time = this.animationData.time;
+      
+      // Get position data
+      const positions = particles.geometry.attributes.position.array;
+      const origPositions = particles.userData.positions;
+      
+      // Animate each particle in orbital pattern
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle = time + i * 0.2;
+        
+        positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
+        positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
+        positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
+      }
+      
+      // Update geometry
+      particles.geometry.attributes.position.needsUpdate = true;
+      
+      // Pulse the light
+      light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+    }
+  };
+};
+
+/**
+ * Update all effects in the scene
+ * @param {number} deltaTime - Time since last frame in seconds
+ */
+ShapeForge.prototype.updateEffects = function(deltaTime) {
+  if (!deltaTime) return; // Skip if no deltaTime provided
+  
+  // Update object effects
+  this.objects.forEach(object => {
+    if (object.effect && object.effect.data) {
+      // If the effect has its own update method, call it
+      if (typeof object.effect.data.update === 'function') {
+        try {
+          object.effect.data.update(deltaTime);
+        } catch (error) {
+          console.warn(`Error updating effect for ${object.name}:`, error);
+        }
+      } 
+      // Otherwise, provide basic updates for different effect types
+      else if (object.effect.type) {
+        switch (object.effect.type) {
+          case 'glow':
+            this.updateGlowEffect(object, deltaTime);
+            break;
+          case 'fire':
+          case 'lava':
+            this.updateFireEffect(object, deltaTime);
+            break;
+          case 'magic':
+          case 'coldMagic':
+            this.updateMagicEffect(object, deltaTime);
+            break;
+        }
+      }
+    }
+  });
+};
+
+/**
+ * Update glow effect animation
+ * @param {Object} object - Object with the effect
+ * @param {number} deltaTime - Time since last frame
+ */
+ShapeForge.prototype.updateGlowEffect = function(object, deltaTime) {
+  if (!object.effect || !object.effect.data || !object.effect.data.light) return;
+  
+  const light = object.effect.data.light;
+  const time = Date.now() * 0.001; // Current time in seconds
+  
+  // Simple pulsing animation
+  light.intensity = 0.5 + Math.sin(time * 2) * 0.2;
+};
+
+/**
+ * Update fire effect animation
+ * @param {Object} object - Object with the effect
+ * @param {number} deltaTime - Time since last frame
+ */
+ShapeForge.prototype.updateFireEffect = function(object, deltaTime) {
+  if (!object.effect || !object.effect.data) return;
+  
+  const data = object.effect.data;
+  const light = data.light;
+  const particles = data.particles;
+  
+  if (!light || !particles) return;
+  
+  const time = Date.now() * 0.001; // Current time in seconds
+  
+  // Flicker the light
+  light.intensity = 1.2 * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+  
+  // Animate particles if they have position attribute
+  if (particles.geometry && particles.geometry.attributes && particles.geometry.attributes.position) {
+    const positions = particles.geometry.attributes.position.array;
+    const count = positions.length / 3;
+    
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3;
+      
+      // Move up slowly
+      positions[i3 + 1] += 0.01;
+      
+      // Reset if too high
+      if (positions[i3 + 1] > 0.8) {
+        positions[i3 + 1] = 0.2;
+      }
+      
+      // Add some "flickering"
+      positions[i3] += (Math.random() - 0.5) * 0.01;
+      positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
+    }
+    
+    // Update geometry
+    particles.geometry.attributes.position.needsUpdate = true;
+  }
+};
+
+/**
+ * Update magic effect animation
+ * @param {Object} object - Object with the effect
+ * @param {number} deltaTime - Time since last frame
+ */
+ShapeForge.prototype.updateMagicEffect = function(object, deltaTime) {
+  if (!object.effect || !object.effect.data) return;
+  
+  const data = object.effect.data;
+  const light = data.light;
+  const particles = data.particles;
+  
+  if (!light || !particles) return;
+  
+  const time = Date.now() * 0.001; // Current time in seconds
+  
+  // Pulse the light
+  light.intensity = 0.8 * (0.7 + Math.sin(time * 2) * 0.3);
+  
+  // Animate particles if they have position attribute
+  if (particles.geometry && particles.geometry.attributes && particles.geometry.attributes.position) {
+    const positions = particles.geometry.attributes.position.array;
+    const count = positions.length / 3;
+    
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3;
+      
+      // Orbital motion around original position
+      const angle = time + i * 0.2;
+      const radius = 0.05;
+      
+      positions[i3] += Math.cos(angle) * radius * deltaTime;
+      positions[i3 + 1] += Math.sin(angle) * radius * deltaTime;
+      positions[i3 + 2] += Math.cos(angle * 0.7) * radius * deltaTime;
+      
+      // Keep particles from drifting too far
+      if (Math.abs(positions[i3]) > 0.4) positions[i3] *= 0.95;
+      if (Math.abs(positions[i3 + 1]) > 0.4) positions[i3 + 1] *= 0.95;
+      if (Math.abs(positions[i3 + 2]) > 0.4) positions[i3 + 2] *= 0.95;
+    }
+    
+    // Update geometry
+    particles.geometry.attributes.position.needsUpdate = true;
+  }
+};
+
+/**
+ * Update a shader effect property
+ * @param {string} property - Property name
+ * @param {any} value - New property value
+ */
+ShapeForge.prototype.updateEffectProperty = function(property, value) {
+  if (this.selectedObject === null || 
+      !this.objects[this.selectedObject].effect ||
+      !this.shaderEffectsManager) return;
+  
+  const obj = this.objects[this.selectedObject];
+  const effectType = obj.effect.type;
+  
+  // Update the effect data
+  const definition = this.shaderEffectsManager.effectDefinitions.get(effectType);
+  if (!definition) return;
+  
+  // Update definition property
+  definition[property] = value;
+  
+  // Re-apply the effect
+  this.applyShaderEffect(effectType);
+  
+  console.log(`Updated effect ${effectType} property ${property} to:`, value);
+};
+
+// 4. OBJECT MERGING CAPABILITIES
+// Add these methods to ShapeForge class
+
+/**
+ * Merge selected objects into a composite object
+ */
+ShapeForge.prototype.mergeSelectedObjects = function() {
+  if (this.selectedObjects?.length < 2 && this.selectedObject === null) {
+    alert('Please select at least 2 objects to merge');
+    return;
+  }
+  
+  // Get objects to merge (either multiple selection or single selected)
+  const objectsToMerge = this.selectedObjects?.length ? 
+    this.selectedObjects.map(idx => this.objects[idx]) : 
+    [this.objects[this.selectedObject]];
+  
+  if (objectsToMerge.length < 2) {
+    alert('Please select at least 2 objects to merge');
+    return;
+  }
+  
+  // Create merged geometry
+  const mergedGeometry = new THREE.BufferGeometry();
+  const geometries = objectsToMerge.map(obj => {
+    // Clone geometry and apply transforms
+    const geo = obj.geometry.clone();
+    geo.applyMatrix4(obj.mesh.matrix);
+    return geo;
+  });
+  
+  // Merge geometries
+  mergedGeometry.merge(geometries);
+  
+  // Create merged material (use first object's material for now)
+  const material = objectsToMerge[0].material.clone();
+  
+  // Create merged mesh
+  const mergedMesh = new THREE.Mesh(mergedGeometry, material);
+  
+  // Create merged object data
+  const mergedObject = {
+    type: 'merged',
+    name: `Merged Object ${this.objects.length + 1}`,
+    geometry: mergedGeometry,
+    material: material,
+    mesh: mergedMesh,
+    parameters: {
+      mergedFrom: objectsToMerge.map(obj => obj.id || obj.name),
+      preserveDetail: this.mergeDetailLevel || 0.5
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  };
+  
+  // Add to scene
+  this.previewScene.add(mergedMesh);
+  
+  // Add to objects array
+  this.objects.push(mergedObject);
+  
+  // Remove original objects
+  objectsToMerge.forEach(obj => {
+    const index = this.objects.indexOf(obj);
+    if (index !== -1) {
+      this.removeObject(index);
+    }
+  });
+  
+  // Select the new merged object
+  this.selectObject(this.objects.length - 1);
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  console.log(`Merged ${objectsToMerge.length} objects into a composite object`);
+};
+
+/**
+ * Enable multi-select mode
+ */
+ShapeForge.prototype.enableMultiSelect = function() {
+  this.multiSelectEnabled = true;
+  this.selectedObjects = this.selectedObject !== null ? [this.selectedObject] : [];
+  
+  // Update UI to show multi-select mode
+  const selectModeIndicator = document.createElement('div');
+  selectModeIndicator.id = 'select-mode-indicator';
+  selectModeIndicator.textContent = 'Multi-Select Mode';
+  selectModeIndicator.style.cssText = `
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #3388ff;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: sans-serif;
+    font-size: 12px;
+    z-index: 100;
+  `;
+  this.previewContainer.appendChild(selectModeIndicator);
+  
+  console.log('Multi-select mode enabled');
+};
+
+/**
+ * Disable multi-select mode
+ */
+ShapeForge.prototype.disableMultiSelect = function() {
+  this.multiSelectEnabled = false;
+  this.selectedObjects = [];
+  
+  // Remove UI indicator
+  const indicator = document.getElementById('select-mode-indicator');
+  if (indicator) indicator.remove();
+  
+  console.log('Multi-select mode disabled');
+};
+
+/**
+ * Toggle object selection in multi-select mode
+ * @param {number} index - Object index to toggle
+ */
+ShapeForge.prototype.toggleObjectSelection = function(index) {
+  if (!this.multiSelectEnabled) {
+    this.enableMultiSelect();
+  }
+  
+  const selectedIndex = this.selectedObjects.indexOf(index);
+  if (selectedIndex === -1) {
+    // Add to selection
+    this.selectedObjects.push(index);
+    this.objects[index].mesh.material.emissive = new THREE.Color(0x333333);
+  } else {
+    // Remove from selection
+    this.selectedObjects.splice(selectedIndex, 1);
+    this.objects[index].mesh.material.emissive = new THREE.Color(0x000000);
+  }
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  console.log(`Selection updated: ${this.selectedObjects.length} objects selected`);
+};
+
+// 5. INITIALIZE NEW FEATURES
+// Modify the initialize method to include new features
+
+
+/**
+ * Initialize new features with async shader effects handling
+ */
+ShapeForge.prototype.initializeNewFeatures = async function() {
+  try {
+    // Create objects list panel
+    this.createObjectsListPanel();
+    console.log('✓ Objects list panel created');
+  } catch (error) {
+    console.error('Error creating objects list panel:', error);
+  }
+  
+  try {
+    // Enable object picking
+    this.enableObjectPicking();
+    console.log('✓ Object picking enabled');
+  } catch (error) {
+    console.error('Error enabling object picking:', error);
+  }
+  
+  try {
+    // Add import/export buttons
+    this.addImportExportButtons();
+    console.log('✓ Import/Export buttons added');
+  } catch (error) {
+    console.error('Error adding import/export buttons:', error);
+  }
+  
+  try {
+    // Initialize shader effects - now properly waits for manager
+    await this.initializeShaderEffects();
+    console.log('✓ Shader effects initialized');
+  } catch (error) {
+    console.error('Error initializing shader effects:', error);
+  }
+  
+  try {
+    // Add merge button to UI
+    this.addMergeTools();
+    console.log('✓ Merge tools added');
+  } catch (error) {
+    console.error('Error adding merge tools:', error);
+  }
+  
+  // Apply any pending effects to imported objects
+  setTimeout(() => {
+    this.objects.forEach((obj, index) => {
+      if (obj.pendingEffect) {
+        this.selectObject(index);
+        this.applyShaderEffect(obj.pendingEffect);
+        delete obj.pendingEffect;
+      }
+    });
+  }, 500);
+  
+  console.log('✓ All new features initialized');
+};
+
+/**
+ * Add merge tools to the UI
+ */
+ShapeForge.prototype.addMergeTools = function() {
+  const toolPanel = this.drawer.querySelector('.tool-panel');
+  if (!toolPanel) {
+    console.warn('Tool panel not found, cannot add merge tools');
+    return;
+  }
+  
+  const mergeSection = document.createElement('div');
+  mergeSection.className = 'panel-section';
+  mergeSection.style.marginTop = '20px';
+  mergeSection.innerHTML = `
+    <h3>Advanced Tools</h3>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <sl-button id="enable-multi-select">Multi-Select</sl-button>
+      <sl-button id="merge-objects">Merge Objects</sl-button>
+    </div>
+    <div style="margin-top: 10px;">
+      <sl-range id="merge-detail" label="Merge Detail Level" min="0" max="1" step="0.1" value="0.5"></sl-range>
+    </div>
+  `;
+  toolPanel.appendChild(mergeSection);
+  
+  // Add event listeners
+  const multiSelectBtn = mergeSection.querySelector('#enable-multi-select');
+  if (multiSelectBtn) {
+    multiSelectBtn.addEventListener('click', () => {
+      if (this.multiSelectEnabled) {
+        this.disableMultiSelect();
+        multiSelectBtn.textContent = 'Multi-Select';
+      } else {
+        this.enableMultiSelect();
+        multiSelectBtn.textContent = 'Exit Multi-Select';
+      }
+    });
+  }
+  
+  const mergeBtn = mergeSection.querySelector('#merge-objects');
+  if (mergeBtn) {
+    mergeBtn.addEventListener('click', () => {
+      this.mergeSelectedObjects();
+    });
+  }
+  
+  const detailSlider = mergeSection.querySelector('#merge-detail');
+  if (detailSlider) {
+    detailSlider.addEventListener('sl-change', (e) => {
+      this.mergeDetailLevel = parseFloat(e.target.value);
+    });
+  }
+};
+
+/**
+ * Properly initialize and wait for ShaderEffectsManager to be ready
+ */
+ShapeForge.prototype.setupShaderEffectsManager = function() {
+  return new Promise((resolve, reject) => {
+    // If we already have a reference to ShaderEffectsManager
+    if (this.shaderEffectsManager && this.shaderEffectsManager.effectDefinitions) {
+      console.log('ShaderEffectsManager already available');
+      resolve(this.shaderEffectsManager);
+      return;
+    }
+    
+    // If the global instance exists
+    if (window.shaderEffectsManager) {
+      console.log('Using global ShaderEffectsManager');
+      this.shaderEffectsManager = window.shaderEffectsManager;
+      resolve(this.shaderEffectsManager);
+      return;
+    }
+    
+    // Look for ShaderEffectsManager in scene3D if available
+    if (this.scene3D && this.scene3D.shaderEffects) {
+      console.log('Using Scene3D ShaderEffectsManager');
+      this.shaderEffectsManager = this.scene3D.shaderEffects;
+      resolve(this.shaderEffectsManager);
+      return;
+    }
+    
+    // If ShaderEffectsManager class is available but not instantiated
+    if (typeof ShaderEffectsManager === 'function') {
+      console.log('Creating new ShaderEffectsManager instance');
+      try {
+        // Create a new instance - pass scene3D if available
+        const scene3D = this.scene3D || window.scene3D || null;
+        this.shaderEffectsManager = new ShaderEffectsManager(scene3D);
+        resolve(this.shaderEffectsManager);
+        return;
+      } catch (err) {
+        console.warn('Error creating ShaderEffectsManager:', err);
+      }
+    }
+    
+    // If we don't have ShaderEffectsManager yet, wait for it to load
+    console.log('Waiting for ShaderEffectsManager to be available...');
+    
+    // Check every 300ms for up to 5 seconds
+    let attempts = 0;
+    const maxAttempts = 16; // 16 * 300ms = ~5 seconds
+    
+    const checkInterval = setInterval(() => {
+      attempts++;
+      
+      // Check if it's available now
+      if (window.shaderEffectsManager) {
+        clearInterval(checkInterval);
+        console.log('ShaderEffectsManager found after waiting');
+        this.shaderEffectsManager = window.shaderEffectsManager;
+        resolve(this.shaderEffectsManager);
+        return;
+      }
+      
+      // Check if Scene3D has it now
+      if (this.scene3D && this.scene3D.shaderEffects) {
+        clearInterval(checkInterval);
+        console.log('ShaderEffectsManager found in Scene3D after waiting');
+        this.shaderEffectsManager = this.scene3D.shaderEffects;
+        resolve(this.shaderEffectsManager);
+        return;
+      }
+      
+      // Check if class is available now
+      if (typeof ShaderEffectsManager === 'function') {
+        clearInterval(checkInterval);
+        console.log('ShaderEffectsManager class found after waiting');
+        try {
+          const scene3D = this.scene3D || window.scene3D || null;
+          this.shaderEffectsManager = new ShaderEffectsManager(scene3D);
+          resolve(this.shaderEffectsManager);
+        } catch (err) {
+          console.warn('Error creating ShaderEffectsManager:', err);
+          reject(err);
+        }
+        return;
+      }
+      
+      // Give up after max attempts
+      if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        console.warn('ShaderEffectsManager not available after waiting');
+        resolve(null); // Resolve with null to indicate it's not available
+      }
+    }, 300);
+  });
+};
+
+/**
+ * Initialize shader effects with proper async handling
+ */
+ShapeForge.prototype.initializeShaderEffects = async function() {
+  try {
+    // Wait for ShaderEffectsManager to be ready
+    await this.setupShaderEffectsManager();
+    
+    // If we still don't have a valid ShaderEffectsManager, create mock definitions
+    if (!this.shaderEffectsManager || !this.shaderEffectsManager.effectDefinitions) {
+      console.warn('Creating mock effect definitions');
+      
+      // Create a minimal shaderEffectsManager if needed
+      if (!this.shaderEffectsManager) {
+        this.shaderEffectsManager = {
+          effectDefinitions: new Map(),
+          applyEffect: () => console.log('Mock effect applied')
+        };
+      }
+      
+      // Create effectDefinitions if it doesn't exist
+      if (!this.shaderEffectsManager.effectDefinitions) {
+        this.shaderEffectsManager.effectDefinitions = new Map();
+      }
+      
+      // Add some basic effects
+      if (this.shaderEffectsManager.effectDefinitions.size === 0) {
+        this.shaderEffectsManager.effectDefinitions.set('glow', {
+          keywords: ['glow', 'light'],
+          color: 0x66ccff,
+          intensity: 1.0,
+          particleCount: 15,
+          isAreaEffect: false
+        });
+        
+        this.shaderEffectsManager.effectDefinitions.set('fire', {
+          keywords: ['fire', 'flame'],
+          color: 0xff6600,
+          intensity: 1.2,
+          particleCount: 20,
+          isAreaEffect: false
+        });
+      }
+    }
+    
+    // Find effects container
+    const effectsContainer = this.drawer.querySelector('#effects-container');
+    if (!effectsContainer) {
+      console.warn('Effects container not found in UI');
+      return;
+    }
+    
+    // Get effect type selector
+    const effectTypeSelect = effectsContainer.querySelector('#effect-type');
+    if (!effectTypeSelect) return;
+    
+    // Clear existing options first
+    while (effectTypeSelect.firstChild) {
+      effectTypeSelect.removeChild(effectTypeSelect.firstChild);
+    }
+    
+    // Add none option
+    const noneOption = document.createElement('sl-option');
+    noneOption.value = 'none';
+    noneOption.textContent = 'None';
+    effectTypeSelect.appendChild(noneOption);
+    
+    // Get effect definitions safely
+    const effectDefinitions = Array.from(this.shaderEffectsManager.effectDefinitions.entries());
+    
+    // Add available effects
+    effectDefinitions.forEach(([type, definition]) => {
+      // Only add relevant effects for props
+      if (!definition.isAreaEffect) {
+        const option = document.createElement('sl-option');
+        option.value = type;
+        option.textContent = this.formatEffectName(type);
+        effectTypeSelect.appendChild(option);
+      }
+    });
+    
+    // Handle effect type changes
+    effectTypeSelect.addEventListener('sl-change', (e) => {
+      const selectedEffect = e.target.value;
+      this.applyShaderEffect(selectedEffect);
+      
+      // Show/hide effect properties
+      const effectProps = effectsContainer.querySelector('#effect-properties');
+      if (effectProps) {
+        effectProps.style.display = selectedEffect === 'none' ? 'none' : 'block';
+        
+        // Populate effect properties
+        if (selectedEffect !== 'none') {
+          this.populateEffectProperties(selectedEffect, effectProps);
+        }
+      }
+    });
+    
+    console.log('Shader effects initialized successfully');
+  } catch (error) {
+    console.error('Error initializing shader effects:', error);
+  }
+};
+
+/**
+ * Format effect type name for display
+ * @param {string} type - Effect type identifier
+ * @returns {string} Formatted name
+ */
+ShapeForge.prototype.formatEffectName = function(type) {
+  return type
+    .replace(/([A-Z])/g, ' $1') // Add spaces before capitals
+    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .replace(/Prop$/, '') // Remove 'Prop' suffix
+    .trim();
+};
+
+
+/**
+ * Import a ShapeForge JSON file
+ */
+ShapeForge.prototype.importJson = function() {
+  // Create file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.json';
+  
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const jsonData = JSON.parse(event.target.result);
+        this.loadProjectFromJson(jsonData);
+      } catch (error) {
+        console.error('Error loading JSON:', error);
+        alert('Failed to load JSON file: ' + error.message);
+      }
+    };
+    
+    reader.readAsText(file);
+  });
+  
+  fileInput.click();
+};
+
+/**
+ * Load a project from JSON data
+ * @param {Object} jsonData - The parsed JSON data
+ */
+ShapeForge.prototype.loadProjectFromJson = function(jsonData) {
+  // Validate JSON data
+  if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
+    alert('Invalid JSON format: Missing objects array');
+    return;
+  }
+  
+  // Confirm with user if objects already exist
+  if (this.objects.length > 0) {
+    if (!confirm('This will replace existing objects. Continue?')) {
+      return;
+    }
+    
+    // Clear existing objects
+    this.objects.forEach(obj => {
+      if (obj.mesh && this.previewScene) {
+        this.previewScene.remove(obj.mesh);
+      }
+    });
+    
+    this.objects = [];
+    this.selectedObject = null;
+  }
+  
+  // Set project name if provided
+  if (jsonData.name) {
+    const projectNameInput = this.drawer.querySelector('#project-name');
+    if (projectNameInput) {
+      projectNameInput.value = jsonData.name;
+    }
+  }
+  
+  // Load objects
+  jsonData.objects.forEach(objData => {
+    this.createObjectFromJson(objData);
+  });
+  
+  // Select first object if any were created
+  if (this.objects.length > 0) {
+    this.selectObject(0);
+  }
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  // Show success message
+  alert(`Project loaded with ${this.objects.length} objects`);
+};
+
+/**
+ * Create an object from JSON data
+ * @param {Object} objData - The object data from JSON
+ */
+ShapeForge.prototype.createObjectFromJson = function(objData) {
+  // Create geometry based on type
+  let geometry;
+  switch (objData.type) {
+    case 'cube':
+      geometry = new THREE.BoxGeometry(
+        objData.parameters.width || 1,
+        objData.parameters.height || 1,
+        objData.parameters.depth || 1,
+        objData.parameters.widthSegments || 1,
+        objData.parameters.heightSegments || 1,
+        objData.parameters.depthSegments || 1
+      );
+      break;
+    case 'sphere':
+      geometry = new THREE.SphereGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.widthSegments || 32,
+        objData.parameters.heightSegments || 16
+      );
+      break;
+    case 'cylinder':
+      geometry = new THREE.CylinderGeometry(
+        objData.parameters.radiusTop || 0.5,
+        objData.parameters.radiusBottom || 0.5,
+        objData.parameters.height || 1,
+        objData.parameters.radialSegments || 32
+      );
+      break;
+    case 'cone':
+      geometry = new THREE.ConeGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.height || 1,
+        objData.parameters.radialSegments || 32
+      );
+      break;
+    case 'torus':
+      geometry = new THREE.TorusGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.tube || 0.2,
+        objData.parameters.radialSegments || 16,
+        objData.parameters.tubularSegments || 48
+      );
+      break;
+    case 'plane':
+      geometry = new THREE.PlaneGeometry(
+        objData.parameters.width || 1,
+        objData.parameters.height || 1,
+        objData.parameters.widthSegments || 1,
+        objData.parameters.heightSegments || 1
+      );
+      break;
+    case 'tetrahedron':
+      geometry = new THREE.TetrahedronGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.detail || 0
+      );
+      break;
+    case 'octahedron':
+      geometry = new THREE.OctahedronGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.detail || 0
+      );
+      break;
+    case 'dodecahedron':
+      geometry = new THREE.DodecahedronGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.detail || 0
+      );
+      break;
+    case 'icosahedron':
+      geometry = new THREE.IcosahedronGeometry(
+        objData.parameters.radius || 0.5,
+        objData.parameters.detail || 0
+      );
+      break;
+    case 'd10':
+      geometry = new THREE.CylinderGeometry(
+        0,
+        objData.parameters.radius || 0.5,
+        objData.parameters.height || 1,
+        objData.parameters.segments || 5,
+        1
+      );
+      // Customize vertices for d10 shape
+      const vertices = geometry.attributes.position.array;
+      for (let i = 0; i < vertices.length; i += 3) {
+        if (vertices[i + 1] < 0) {
+          vertices[i] *= 0.6;
+          vertices[i + 2] *= 0.6;
+        }
+      }
+      geometry.attributes.position.needsUpdate = true;
+      break;
+    default:
+      console.warn(`Unknown geometry type: ${objData.type}`);
+      return null;
+  }
+  
+  // Create material
+  let material;
+  if (objData.material) {
+    const materialData = objData.material;
+    const color = materialData.color !== undefined ? materialData.color : 0x3388ff;
+    
+    // Create material based on type
+    switch (materialData.type) {
+      case 'MeshBasicMaterial':
+        material = new THREE.MeshBasicMaterial({ color });
+        break;
+      case 'MeshStandardMaterial':
+        material = new THREE.MeshStandardMaterial({
+          color,
+          roughness: materialData.roughness !== undefined ? materialData.roughness : 0.5,
+          metalness: materialData.metalness !== undefined ? materialData.metalness : 0
+        });
+        break;
+      case 'MeshPhongMaterial':
+        material = new THREE.MeshPhongMaterial({ color });
+        break;
+      case 'MeshLambertMaterial':
+        material = new THREE.MeshLambertMaterial({ color });
+        break;
+      default:
+        material = new THREE.MeshStandardMaterial({ color });
+    }
+    
+    // Set common properties
+    if (materialData.wireframe) material.wireframe = true;
+    if (materialData.transparent) material.transparent = true;
+    if (materialData.opacity !== undefined) material.opacity = materialData.opacity;
+  } else {
+    // Default material
+    material = new THREE.MeshStandardMaterial({
+      color: 0x3388ff,
+      roughness: 0.5,
+      metalness: 0
+    });
+  }
+  
+  // Create mesh
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Apply transforms
+  if (objData.position) {
+    mesh.position.set(
+      objData.position.x || 0,
+      objData.position.y || 0,
+      objData.position.z || 0
+    );
+  }
+  
+  if (objData.rotation) {
+    mesh.rotation.set(
+      objData.rotation.x || 0,
+      objData.rotation.y || 0,
+      objData.rotation.z || 0
+    );
+  }
+  
+  if (objData.scale) {
+    mesh.scale.set(
+      objData.scale.x || 1,
+      objData.scale.y || 1,
+      objData.scale.z || 1
+    );
+  }
+  
+  // Create object data
+  const objectData = {
+    type: objData.type,
+    name: objData.name || `${objData.type} ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: objData.parameters || {},
+    position: objData.position || { x: 0, y: 0, z: 0 },
+    rotation: objData.rotation || { x: 0, y: 0, z: 0 },
+    scale: objData.scale || { x: 1, y: 1, z: 1 }
+  };
+  
+  // Add to scene
+  this.previewScene.add(mesh);
+  
+  // Add to objects array
+  this.objects.push(objectData);
+  
+  // Apply effect if specified
+  if (objData.effect && objData.effect.type) {
+    // Store for later applying after all objects are loaded
+    objectData.pendingEffect = objData.effect.type;
+  }
+  
+  return objectData;
+};
+
+/**
+ * Add the import button to the UI
+ */
+ShapeForge.prototype.addImportExportButtons = function() {
+  // Find the project controls section
+  const projectButtons = this.drawer.querySelector('#project-name')?.closest('.panel-section');
+  if (!projectButtons) return;
+  
+  // Get the buttons container
+  const buttonContainer = projectButtons.querySelector('div');
+  if (!buttonContainer) return;
+  
+  // Add import JSON button
+  const importBtn = document.createElement('sl-button');
+  importBtn.id = 'import-json';
+  importBtn.size = 'small';
+  importBtn.textContent = 'Import';
+  importBtn.addEventListener('click', this.importJson.bind(this));
+  
+  // Add to container
+  buttonContainer.appendChild(importBtn);
+  
+  console.log('Import/Export buttons added');
+};
+
+
+// // Add this call to the end of your show() method
+// this.initializeNewFeatures();
 
 // Make it globally available
 window.ShapeForge = ShapeForge;
