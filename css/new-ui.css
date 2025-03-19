@@ -699,3 +699,24 @@ sl-alert {
 .material-icons.md-24 { font-size: 24px; }
 .material-icons.md-36 { font-size: 36px; }
 .material-icons.md-48 { font-size: 48px; }
+
+/* sl-drawer::part(header) {
+	background: #333;
+	border-bottom: 1px solid #444;
+	height: 32px;
+	padding: 0px;
+} */
+
+body.new-ui sl-drawer::part(header) {
+	background-color: var(--secondary-color);
+	height: 32px;
+}
+
+body.new-ui sl-drawer::part(title) {
+  background-color: var(--secondary-color);
+  padding:4px;
+}
+
+body.new-ui sl-input::part(form-control-label) {
+	color: white;
+}
