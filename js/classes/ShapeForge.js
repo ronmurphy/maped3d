@@ -5667,51 +5667,6 @@ ShapeForge.prototype.addImportExportButtons = function () {
   console.log('Import/Export buttons added');
 };
 
-// ShapeForge.prototype.removeObject = function(index) {
-//   if (index < 0 || index >= this.objects.length) return;
-
-//   const object = this.objects[index];
-
-//   // Remove object's mesh from scene
-//   if (object.mesh && this.previewScene) {
-//     this.previewScene.remove(object.mesh);
-//   }
-
-//   // NEW CODE: Clean up associated shader effects
-//   if (object.effect) {
-//     // Remove containers
-//     if (object.effect.data && object.effect.data.container) {
-//       this.previewScene.remove(object.effect.data.container);
-//     }
-
-//     // Remove lights
-//     if (object.effect.data && object.effect.data.light) {
-//       this.previewScene.remove(object.effect.data.light);
-//     }
-
-//     // Remove particles
-//     if (object.effect.data && object.effect.data.particles && 
-//         !object.effect.data.container?.contains(object.effect.data.particles)) {
-//       this.previewScene.remove(object.effect.data.particles);
-//     }
-
-//     // Dispose of any materials
-//     if (object.effect.data && object.effect.data.material) {
-//       object.effect.data.material.dispose();
-//     }
-//   }
-
-//   // Remove from objects array
-//   this.objects.splice(index, 1);
-
-//   // Update selected object
-//   if (this.selectedObject === index) {
-//     this.selectedObject = null;
-//     this.updatePropertyPanels(null);
-//   } else if (this.selectedObject > index) {
-//     this.selectedObject--;
-//   }
-// };
 
 ShapeForge.prototype.removeObject = function (index) {
   if (index < 0 || index >= this.objects.length) return;
@@ -5775,68 +5730,6 @@ ShapeForge.prototype.removeObject = function (index) {
   this.updateObjectsList();
 };
 
-// ShapeForge.prototype.cleanupAllShaderEffects = function() {
-//   if (!this.previewScene) return;
-
-//   // 1. Clean up known effects associated with objects
-//   this.objects.forEach(obj => {
-//     if (obj.effect && obj.effect.data) {
-//       if (obj.effect.data.container) {
-//         this.previewScene.remove(obj.effect.data.container);
-//       }
-
-//       if (obj.effect.data.light) {
-//         this.previewScene.remove(obj.effect.data.light);
-//       }
-
-//       if (obj.effect.data.particles && 
-//           !obj.effect.data.container?.contains(obj.effect.data.particles)) {
-//         this.previewScene.remove(obj.effect.data.particles);
-//       }
-//     }
-//   });
-
-//   // 2. Clean up "orphaned" effects by checking scene children
-//   const itemsToRemove = [];
-
-//   this.previewScene.traverse(object => {
-//     // Look for typical effect objects
-//     if (object.type === 'PointLight' || 
-//         object.type === 'Points' || 
-//         (object.type === 'Group' && object.name === '') || // Container groups are usually unnamed
-//         (object.userData && object.userData.isShaderEffect)) {
-
-//       // Check if this is an "orphaned" effect (not a child of a mesh in objects array)
-//       let isOrphaned = true;
-//       this.objects.forEach(obj => {
-//         if (obj.mesh === object || 
-//             (obj.effect && 
-//              (obj.effect.data.light === object || 
-//               obj.effect.data.particles === object || 
-//               obj.effect.data.container === object))) {
-//           isOrphaned = false;
-//         }
-//       });
-
-//       if (isOrphaned) {
-//         itemsToRemove.push(object);
-//       }
-//     }
-//   });
-
-//   // Remove all orphaned effects
-//   itemsToRemove.forEach(item => {
-//     this.previewScene.remove(item);
-
-//     // Dispose of any materials and geometries
-//     if (item.material) item.material.dispose();
-//     if (item.geometry) item.geometry.dispose();
-//   });
-
-//   if (itemsToRemove.length > 0) {
-//     console.log(`Cleaned up ${itemsToRemove.length} orphaned shader effects`);
-//   }
-// };
 
 ShapeForge.prototype.cleanupAllShaderEffects = function () {
   if (!this.previewScene) return;
