@@ -940,39 +940,109 @@ class ShapeForge {
    * Create a d10 dice shape (pentagonal trapezohedron) and add it to the scene
    * Note: THREE.js doesn't have this built-in, so we use a custom approach
    */
+  // createD10() {
+  //   // Since THREE.js doesn't have a built-in D10 shape, we'll use a more complex approach
+  //   // For now, we'll use a modified cylinder as a placeholder
+  //   const geometry = new THREE.CylinderGeometry(0, 0.5, 1, 5, 1);
+  //   // Adjust vertices to make it more like a D10
+  //   const vertices = geometry.attributes.position.array;
+  //   for (let i = 0; i < vertices.length; i += 3) {
+  //     if (vertices[i + 1] < 0) { // Bottom vertices
+  //       // Scale in slightly to create the pentagonal trapezohedron shape
+  //       vertices[i] *= 0.6;
+  //       vertices[i + 2] *= 0.6;
+  //     }
+  //   }
+  //   geometry.attributes.position.needsUpdate = true;
+
+  //   const material = this.createDefaultMaterial();
+  //   const mesh = new THREE.Mesh(geometry, material);
+
+  //   this.addObjectToScene({
+  //     type: 'd10',
+  //     name: `D10 ${this.objects.length + 1}`,
+  //     geometry: geometry,
+  //     material: material,
+  //     mesh: mesh,
+  //     parameters: {
+  //       radius: 0.5,
+  //       height: 1,
+  //       segments: 5
+  //     },
+  //     position: { x: 0, y: 0, z: 0 },
+  //     rotation: { x: 0, y: 0, z: 0 },
+  //     scale: { x: 1, y: 1, z: 1 }
+  //   });
+  // }
+
   createD10() {
-    // Since THREE.js doesn't have a built-in D10 shape, we'll use a more complex approach
-    // For now, we'll use a modified cylinder as a placeholder
-    const geometry = new THREE.CylinderGeometry(0, 0.5, 1, 5, 1);
-    // Adjust vertices to make it more like a D10
-    const vertices = geometry.attributes.position.array;
-    for (let i = 0; i < vertices.length; i += 3) {
-      if (vertices[i + 1] < 0) { // Bottom vertices
-        // Scale in slightly to create the pentagonal trapezohedron shape
-        vertices[i] *= 0.6;
-        vertices[i + 2] *= 0.6;
-      }
+      // Define the vertices for a pentagonal trapezohedron
+  const sides = 10;
+  const radius = 0.5; // Scale to match other shapes in ShapeForge
+  
+  // Start with top and bottom vertices
+  const vertices = [
+    [0, 0, 1],   // Top vertex
+    [0, 0, -1],  // Bottom vertex
+  ];
+  
+  // Add vertices around the "equator" with slight offsets
+  for (let i = 0; i < sides; ++i) {
+    const b = (i * Math.PI * 2) / sides;
+    vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
+  }
+  
+  // Define the faces as triangles
+  const faces = [
+    // Top faces (connecting top vertex to equator)
+    [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
+    [0, 7, 8], [0, 8, 9], [0, 9, 10], [0, 10, 11], [0, 11, 2],
+    
+    // Bottom faces (connecting bottom vertex to equator)
+    [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
+    [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
+  ];
+  
+  // Flatten the arrays to the format needed by THREE.PolyhedronGeometry
+  const flatVertices = [];
+  vertices.forEach(v => {
+    if (Array.isArray(v)) {
+      flatVertices.push(v[0], v[1], v[2]);
+    } else {
+      flatVertices.push(v);
     }
-    geometry.attributes.position.needsUpdate = true;
-
-    const material = this.createDefaultMaterial();
-    const mesh = new THREE.Mesh(geometry, material);
-
-    this.addObjectToScene({
-      type: 'd10',
-      name: `D10 ${this.objects.length + 1}`,
-      geometry: geometry,
-      material: material,
-      mesh: mesh,
-      parameters: {
-        radius: 0.5,
-        height: 1,
-        segments: 5
-      },
-      position: { x: 0, y: 0, z: 0 },
-      rotation: { x: 0, y: 0, z: 0 },
-      scale: { x: 1, y: 1, z: 1 }
-    });
+  });
+  
+  const flatFaces = [];
+  faces.forEach(f => flatFaces.push(...f));
+  
+  // Create the geometry
+  const geometry = new THREE.PolyhedronGeometry(
+    flatVertices,
+    flatFaces,
+    radius,
+    0 // No subdivision
+  );
+  
+  // Create material and mesh
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Add to scene
+  this.addObjectToScene({
+    type: 'd10',
+    name: `D10 ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      radius: radius,
+      sides: sides
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
   }
 
   /**
@@ -5373,23 +5443,70 @@ ShapeForge.prototype.createObjectFromJson = function (objData) {
         );
         break;
       case 'd10':
-        geometry = new THREE.CylinderGeometry(
-          0,
-          objData.parameters.radius || 0.5,
-          objData.parameters.height || 1,
-          objData.parameters.segments || 5,
-          1
-        );
-        // Customize vertices for d10 shape
-        const vertices = geometry.attributes.position.array;
-        for (let i = 0; i < vertices.length; i += 3) {
-          if (vertices[i + 1] < 0) {
-            vertices[i] *= 0.6;
-            vertices[i + 2] *= 0.6;
-          }
-        }
-        geometry.attributes.position.needsUpdate = true;
-        break;
+        // geometry = new THREE.CylinderGeometry(
+        //   0,
+        //   objData.parameters.radius || 0.5,
+        //   objData.parameters.height || 1,
+        //   objData.parameters.segments || 5,
+        //   1
+        // );
+        // // Customize vertices for d10 shape
+        // const vertices = geometry.attributes.position.array;
+        // for (let i = 0; i < vertices.length; i += 3) {
+        //   if (vertices[i + 1] < 0) {
+        //     vertices[i] *= 0.6;
+        //     vertices[i + 2] *= 0.6;
+        //   }
+        // }
+        // geometry.attributes.position.needsUpdate = true;
+        // break;
+
+        case 'd10':
+  // Use PolyhedronGeometry for D10
+  const sides = objData.parameters.sides || 10;
+  const d10Radius = objData.parameters.radius || 0.5;
+  
+  // Define vertices
+  const vertices = [
+    [0, 0, 1],   // Top vertex
+    [0, 0, -1],  // Bottom vertex
+  ];
+  
+  // Add vertices around the "equator"
+  for (let i = 0; i < sides; ++i) {
+    const b = (i * Math.PI * 2) / sides;
+    vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
+  }
+  
+  // Define faces
+  const faces = [
+    [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
+    [0, 7, 8], [0, 8, 9], [0, 9, 10], [0, 10, 11], [0, 11, 2],
+    [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
+    [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
+  ];
+  
+  // Flatten arrays
+  const flatVertices = [];
+  vertices.forEach(v => {
+    if (Array.isArray(v)) {
+      flatVertices.push(v[0], v[1], v[2]);
+    } else {
+      flatVertices.push(v);
+    }
+  });
+  
+  const flatFaces = [];
+  faces.forEach(f => flatFaces.push(...f));
+  
+  // Create geometry
+  geometry = new THREE.PolyhedronGeometry(
+    flatVertices,
+    flatFaces,
+    d10Radius,
+    0
+  );
+  break;
       default:
         console.warn(`Unknown geometry type: ${objData.type}`);
         return null;
