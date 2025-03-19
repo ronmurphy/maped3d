@@ -187,31 +187,33 @@ class ShapeForge {
         </div>
         
         
-        <!-- Basic Shapes -->
-        <div class="panel-section" style="margin-top: 20px;">
-          <h3>Basic Shapes</h3>
-          <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-            <sl-button id="shape-cube">Cube</sl-button>
-            <sl-button id="shape-sphere">Sphere</sl-button>
-            <sl-button id="shape-cylinder">Cylinder</sl-button>
-            <sl-button id="shape-cone">Cone</sl-button>
-            <sl-button id="shape-torus">Torus</sl-button>
-            <sl-button id="shape-plane">Plane</sl-button>
-          </div>
-        </div>
-        
-        <!-- RPG Dice Shapes -->
-        <div class="panel-section" style="margin-top: 20px;">
-          <h3>RPG Dice</h3>
-          <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-            <sl-button id="shape-d4">D4</sl-button>
-            <sl-button id="shape-d6">D6</sl-button>
-            <sl-button id="shape-d8">D8</sl-button>
-            <sl-button id="shape-d10">D10</sl-button>
-            <sl-button id="shape-d12">D12</sl-button>
-            <sl-button id="shape-d20">D20</sl-button>
-          </div>
-        </div>
+<div class="panel-section" style="margin-top: 20px;">
+  <h3>Shapes</h3>
+  <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+    <!-- Basic Shapes -->
+    <sl-icon-button  title="Cube" name="square" label="Cube" id="shape-cube"></sl-icon-button><sl-tooltip>
+    <sl-icon-button  title="Sphere" name="circle" label="Sphere" id="shape-sphere"></sl-icon-button>
+    <sl-icon-button  title="Cylinder"  name="plus-square" label="Cylinder" id="shape-cylinder"></sl-icon-button>
+    <sl-icon-button  title="Cone" name="triangle" label="Cone" id="shape-cone"></sl-icon-button>
+    <sl-icon-button  title="Torus"  name="life-preserver" label="Torus" id="shape-torus"></sl-icon-button>
+    <sl-icon-button  title="Plane"  name="window" label="Plane" id="shape-plane"></sl-icon-button>
+    
+    <!-- Dice Shapes -->
+    <sl-icon-button  title="D4"  name="diamond" label="D4 Tetrahedron" id="shape-d4"></sl-icon-button>
+    <sl-icon-button  title="D8" name="octagon" label="D8 Octahedron" id="shape-d8"></sl-icon-button>
+    <sl-icon-button  title="D10" name="pentagon" label="D10" id="shape-d10"></sl-icon-button>
+    <sl-icon-button  title="D12" name="hexagon" label="D12 Dodecahedron" id="shape-d12"></sl-icon-button>
+    <sl-icon-button  title="D20" name="record-circle" label="D20 Icosahedron" id="shape-d20"></sl-icon-button>
+    
+    <!-- Additional Shapes -->
+    <sl-icon-button  title="Torus Knot" name="intersect" label="Torus Knot" id="shape-torus-knot"></sl-icon-button>
+    <sl-icon-button  title="Pyramid" name="triangle-fill" label="Pyramid" id="shape-pyramid"></sl-icon-button>
+    <sl-icon-button  title="Capsule" name="capsule" label="Capsule" id="shape-capsule"></sl-icon-button>
+    <sl-icon-button  title="Tube" name="record" label="Tube/Ring" id="shape-tube"></sl-icon-button>
+    <sl-icon-button  title="Hemisphere" name="circle-half" label="Hemisphere" id="shape-hemisphere"></sl-icon-button>
+    <sl-icon-button  title="Star" name="asterisk" label="Star" id="shape-star"></sl-icon-button>
+  </div>
+</div>
         
         <!-- Transform Controls -->
         <div class="panel-section" style="margin-top: 20px;">
@@ -231,7 +233,7 @@ class ShapeForge {
             </div>
             
             <!-- Rotation -->
-            <div class="transform-group" style="margin-top: 10px;">
+            <!-- <div class="transform-group" style="margin-top: 10px;">
               <label>Rotation</label>
               <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
                 <label>X:</label>
@@ -241,7 +243,34 @@ class ShapeForge {
                 <label>Z:</label>
                 <sl-range id="rotation-z" min="0" max="6.28" step="0.1" value="0"></sl-range>
               </div>
-            </div>
+            </div> -->
+
+
+<div class="transform-group" style="margin-top: 10px;">
+  <label>Rotation (degrees)</label>
+  <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center;">
+    <label>X:</label>
+    <sl-range id="rotation-x" min="0" max="360" step="1" value="0"></sl-range>
+    <sl-button-group>
+      <sl-button size="small" id="rot-x-90">90°</sl-button>
+      <sl-button size="small" id="rot-x-180">180°</sl-button>
+    </sl-button-group>
+    
+    <label>Y:</label>
+    <sl-range id="rotation-y" min="0" max="360" step="1" value="0"></sl-range>
+    <sl-button-group>
+      <sl-button size="small" id="rot-y-90">90°</sl-button>
+      <sl-button size="small" id="rot-y-180">180°</sl-button>
+    </sl-button-group>
+    
+    <label>Z:</label>
+    <sl-range id="rotation-z" min="0" max="360" step="1" value="0"></sl-range>
+    <sl-button-group>
+      <sl-button size="small" id="rot-z-90">90°</sl-button>
+      <sl-button size="small" id="rot-z-180">180°</sl-button>
+    </sl-button-group>
+  </div>
+</div>
             
             <!-- Scale -->
             <div class="transform-group" style="margin-top: 10px;">
@@ -350,20 +379,30 @@ class ShapeForge {
     });
 
     // Shape creation buttons
-    const shapeButtons = {
-      'shape-cube': this.createCube.bind(this),
-      'shape-sphere': this.createSphere.bind(this),
-      'shape-cylinder': this.createCylinder.bind(this),
-      'shape-cone': this.createCone.bind(this),
-      'shape-torus': this.createTorus.bind(this),
-      'shape-plane': this.createPlane.bind(this),
-      'shape-d4': this.createTetrahedron.bind(this),
-      'shape-d6': this.createCube.bind(this),
-      'shape-d8': this.createOctahedron.bind(this),
-      'shape-d10': this.createD10.bind(this),
-      'shape-d12': this.createDodecahedron.bind(this),
-      'shape-d20': this.createIcosahedron.bind(this)
-    };
+// In setupEventListeners, update the shapeButtons object:
+const shapeButtons = {
+  'shape-cube': this.createCube.bind(this),
+  'shape-sphere': this.createSphere.bind(this),
+  'shape-cylinder': this.createCylinder.bind(this),
+  'shape-cone': this.createCone.bind(this),
+  'shape-torus': this.createTorus.bind(this),
+  'shape-plane': this.createPlane.bind(this),
+  'shape-d4': this.createTetrahedron.bind(this),
+  'shape-d6': this.createCube.bind(this),
+  'shape-d8': this.createOctahedron.bind(this),
+  'shape-d10': this.createD10.bind(this),
+  'shape-d12': this.createDodecahedron.bind(this),
+  'shape-d20': this.createIcosahedron.bind(this),
+  // New shapes
+  'shape-torus-knot': this.createTorusKnot.bind(this),
+  'shape-pyramid': this.createPyramid.bind(this),
+  'shape-prism': this.createPrism.bind(this),
+  'shape-capsule': this.createCapsule.bind(this),
+  'shape-tube': this.createTube.bind(this),
+  'shape-hemisphere': this.createHemisphere.bind(this),
+  'shape-rounded-cube': this.createRoundedCube.bind(this),
+  'shape-star': this.createStar.bind(this)
+};
 
     // Add event listeners for shape buttons
     Object.entries(shapeButtons).forEach(([id, handler]) => {
@@ -406,9 +445,38 @@ class ShapeForge {
     this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
     this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
 
-    // NEW: Object action buttons in header
-    // this.drawer.querySelector('#duplicate-selected')?.addEventListener('click', this.duplicateSelectedObject.bind(this));
-    // this.drawer.querySelector('#delete-selected')?.addEventListener('click', this.deleteSelectedObject.bind(this));
+    const rotationQuickButtons = [
+      { id: 'rot-x-90', axis: 'x', degrees: 90 },
+      { id: 'rot-x-180', axis: 'x', degrees: 180 },
+      { id: 'rot-y-90', axis: 'y', degrees: 90 },
+      { id: 'rot-y-180', axis: 'y', degrees: 180 },
+      { id: 'rot-z-90', axis: 'z', degrees: 90 },
+      { id: 'rot-z-180', axis: 'z', degrees: 180 }
+    ];
+    
+    rotationQuickButtons.forEach(btn => {
+      const button = this.drawer.querySelector(`#${btn.id}`);
+      if (button) {
+        button.addEventListener('click', () => {
+          if (this.selectedObject === null) return;
+          
+          const object = this.objects[this.selectedObject];
+          const currentDegrees = (object.rotation[btn.axis] * 180) / Math.PI;
+          
+          // Add the degrees, keeping within 0-360 range
+          let newDegrees = (currentDegrees + btn.degrees) % 360;
+          
+          // Update the slider
+          const slider = this.drawer.querySelector(`#rotation-${btn.axis}`);
+          if (slider) {
+            slider.value = newDegrees;
+            
+            // Trigger the change event
+            this.updateTransform('rotation', btn.axis, newDegrees);
+          }
+        });
+      }
+    });
 
     // Transform controls
     const transformControls = ['position', 'rotation', 'scale'];
@@ -940,41 +1008,6 @@ class ShapeForge {
    * Create a d10 dice shape (pentagonal trapezohedron) and add it to the scene
    * Note: THREE.js doesn't have this built-in, so we use a custom approach
    */
-  // createD10() {
-  //   // Since THREE.js doesn't have a built-in D10 shape, we'll use a more complex approach
-  //   // For now, we'll use a modified cylinder as a placeholder
-  //   const geometry = new THREE.CylinderGeometry(0, 0.5, 1, 5, 1);
-  //   // Adjust vertices to make it more like a D10
-  //   const vertices = geometry.attributes.position.array;
-  //   for (let i = 0; i < vertices.length; i += 3) {
-  //     if (vertices[i + 1] < 0) { // Bottom vertices
-  //       // Scale in slightly to create the pentagonal trapezohedron shape
-  //       vertices[i] *= 0.6;
-  //       vertices[i + 2] *= 0.6;
-  //     }
-  //   }
-  //   geometry.attributes.position.needsUpdate = true;
-
-  //   const material = this.createDefaultMaterial();
-  //   const mesh = new THREE.Mesh(geometry, material);
-
-  //   this.addObjectToScene({
-  //     type: 'd10',
-  //     name: `D10 ${this.objects.length + 1}`,
-  //     geometry: geometry,
-  //     material: material,
-  //     mesh: mesh,
-  //     parameters: {
-  //       radius: 0.5,
-  //       height: 1,
-  //       segments: 5
-  //     },
-  //     position: { x: 0, y: 0, z: 0 },
-  //     rotation: { x: 0, y: 0, z: 0 },
-  //     scale: { x: 1, y: 1, z: 1 }
-  //   });
-  // }
-
   createD10() {
       // Define the vertices for a pentagonal trapezohedron
   const sides = 10;
@@ -1443,8 +1476,9 @@ class ShapeForge {
    * @param {Object} object - Object data
    */
   updateTransformControls(object) {
-    if (!object) return;
 
+    if (!object) return;
+  
     // Update position sliders
     const axes = ['x', 'y', 'z'];
     axes.forEach(axis => {
@@ -1452,12 +1486,14 @@ class ShapeForge {
       if (positionSlider) {
         positionSlider.value = object.position[axis];
       }
-
+      
       const rotationSlider = this.drawer.querySelector(`#rotation-${axis}`);
       if (rotationSlider) {
-        rotationSlider.value = object.rotation[axis];
+        // Convert radians to degrees
+        const degrees = (object.rotation[axis] * 180) / Math.PI;
+        rotationSlider.value = degrees;
       }
-
+      
       const scaleSlider = this.drawer.querySelector(`#scale-${axis}`);
       if (scaleSlider) {
         scaleSlider.value = object.scale[axis];
@@ -2092,21 +2128,34 @@ class ShapeForge {
    * @param {number} value - Value to restore
    */
   restoreTransform(index, transformType, axis, value) {
+
     if (index < 0 || index >= this.objects.length) return;
-
+  
     const object = this.objects[index];
-
+    
+    // Convert degrees to radians for rotation if it's from the history
+    let transformValue = value;
+    if (transformType === 'rotation' && value > Math.PI * 2) {
+      // This appears to be degrees, convert to radians
+      transformValue = (value * Math.PI) / 180;
+    }
+    
     // Update object data
-    object[transformType][axis] = value;
-
+    object[transformType][axis] = transformValue;
+    
     // Update mesh
-    object.mesh[transformType][axis] = value;
-
+    object.mesh[transformType][axis] = transformValue;
+    
     // Update UI if this is the selected object
     if (this.selectedObject === index) {
       const slider = this.drawer.querySelector(`#${transformType}-${axis}`);
       if (slider) {
-        slider.value = value;
+        if (transformType === 'rotation') {
+          // Convert back to degrees for the UI
+          slider.value = (transformValue * 180) / Math.PI;
+        } else {
+          slider.value = transformValue;
+        }
       }
     }
   }
@@ -2391,15 +2440,51 @@ class ShapeForge {
    * @param {number} value - New value
    */
   updateTransform(transformType, axis, value) {
-    if (this.selectedObject === null) return;
+    // if (this.selectedObject === null) return;
 
+    // const object = this.objects[this.selectedObject];
+    // const oldValue = object[transformType][axis];
+    // const newValue = parseFloat(value);
+
+    // // Update object data
+    // object[transformType][axis] = newValue;
+
+    // // Update mesh
+    // switch (transformType) {
+    //   case 'position':
+    //     object.mesh.position[axis] = newValue;
+    //     break;
+    //   case 'rotation':
+    //     object.mesh.rotation[axis] = newValue;
+    //     break;
+    //   case 'scale':
+    //     object.mesh.scale[axis] = newValue;
+    //     break;
+    // }
+
+    // // Add to history
+    // this.addHistoryStep('transform', {
+    //   objectIndex: this.selectedObject,
+    //   transformType,
+    //   axis,
+    //   oldValue,
+    //   newValue
+    // });
+
+    if (this.selectedObject === null) return;
+  
     const object = this.objects[this.selectedObject];
     const oldValue = object[transformType][axis];
-    const newValue = parseFloat(value);
-
+    let newValue = parseFloat(value);
+    
+    // Convert degrees to radians for rotation
+    if (transformType === 'rotation') {
+      newValue = (newValue * Math.PI) / 180; // Convert to radians
+    }
+    
     // Update object data
     object[transformType][axis] = newValue;
-
+    
     // Update mesh
     switch (transformType) {
       case 'position':
@@ -2412,7 +2497,7 @@ class ShapeForge {
         object.mesh.scale[axis] = newValue;
         break;
     }
-
+    
     // Add to history
     this.addHistoryStep('transform', {
       objectIndex: this.selectedObject,
@@ -5442,25 +5527,6 @@ ShapeForge.prototype.createObjectFromJson = function (objData) {
           objData.parameters.detail || 0
         );
         break;
-      case 'd10':
-        // geometry = new THREE.CylinderGeometry(
-        //   0,
-        //   objData.parameters.radius || 0.5,
-        //   objData.parameters.height || 1,
-        //   objData.parameters.segments || 5,
-        //   1
-        // );
-        // // Customize vertices for d10 shape
-        // const vertices = geometry.attributes.position.array;
-        // for (let i = 0; i < vertices.length; i += 3) {
-        //   if (vertices[i + 1] < 0) {
-        //     vertices[i] *= 0.6;
-        //     vertices[i + 2] *= 0.6;
-        //   }
-        // }
-        // geometry.attributes.position.needsUpdate = true;
-        // break;
-
         case 'd10':
   // Use PolyhedronGeometry for D10
   const sides = objData.parameters.sides || 10;
@@ -5507,6 +5573,121 @@ ShapeForge.prototype.createObjectFromJson = function (objData) {
     0
   );
   break;
+
+// new shapes
+case 'torusKnot':
+  geometry = new THREE.TorusKnotGeometry(
+    objData.parameters.radius || 0.4,
+    objData.parameters.tube || 0.1,
+    objData.parameters.tubularSegments || 64,
+    objData.parameters.radialSegments || 8,
+    objData.parameters.p || 2,
+    objData.parameters.q || 3
+  );
+  break;
+
+case 'pyramid':
+  geometry = new THREE.ConeGeometry(
+    objData.parameters.radius || 0.5,
+    objData.parameters.height || 1,
+    objData.parameters.radialSegments || 3,
+    objData.parameters.heightSegments || 1
+  );
+  break;
+
+case 'capsule':
+  geometry = new THREE.CapsuleGeometry(
+    objData.parameters.radius || 0.3,
+    objData.parameters.length || 0.6,
+    objData.parameters.capSegments || 4,
+    objData.parameters.radialSegments || 8
+  );
+  break;
+
+case 'hemisphere':
+  geometry = new THREE.SphereGeometry(
+    objData.parameters.radius || 0.5,
+    objData.parameters.widthSegments || 32,
+    objData.parameters.heightSegments || 16,
+    objData.parameters.phiStart || 0,
+    objData.parameters.phiLength || Math.PI * 2,
+    objData.parameters.thetaStart || 0,
+    objData.parameters.thetaLength || Math.PI / 2
+  );
+  break;
+
+  case 'tube':
+  // Create a curved path for the tube to follow
+  let curve;
+  
+  if (objData.parameters.path === 'circle') {
+    curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.5, 0, 0),
+      new THREE.Vector3(0, 0.5, 0.5),
+      new THREE.Vector3(0.5, 0, 0),
+      new THREE.Vector3(0, -0.5, -0.5)
+    ]);
+    curve.closed = true;
+  } else {
+    // Create a default curve if path type not recognized
+    curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.5, 0, 0),
+      new THREE.Vector3(0, 0.5, 0),
+      new THREE.Vector3(0.5, 0, 0)
+    ]);
+  }
+  
+  geometry = new THREE.TubeGeometry(
+    curve,
+    objData.parameters.tubularSegments || 32,
+    objData.parameters.tube || 0.1,
+    objData.parameters.radialSegments || 8,
+    true
+  );
+  break;
+
+  case 'star':
+  // Get parameters
+  const points = objData.parameters.points || 5;
+  const outerRadius = objData.parameters.outerRadius || 0.5;
+  const innerRadius = objData.parameters.innerRadius || 0.2;
+  const depth = objData.parameters.depth || 0.2;
+  const bevelThickness = objData.parameters.bevelThickness || 0.05;
+  const bevelSize = objData.parameters.bevelSize || 0.05;
+  
+  // Create a star shape
+  const shape = new THREE.Shape();
+  
+  for (let i = 0; i < points * 2; i++) {
+    // Alternate between outer and inner radius
+    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (Math.PI / points) * i;
+    
+    const x = Math.sin(angle) * radius;
+    const y = Math.cos(angle) * radius;
+    
+    if (i === 0) {
+      shape.moveTo(x, y);
+    } else {
+      shape.lineTo(x, y);
+    }
+  }
+  
+  shape.closePath();
+  
+  // Extrude the shape to create a 3D star
+  const extrudeSettings = {
+    depth: depth,
+    bevelEnabled: true,
+    bevelThickness: bevelThickness,
+    bevelSize: bevelSize,
+    bevelSegments: 3
+  };
+  
+  geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  break;
+
+
       default:
         console.warn(`Unknown geometry type: ${objData.type}`);
         return null;
@@ -6009,6 +6190,392 @@ ShapeForge.prototype.clearAll = function () {
   // Update UI
   this.updatePropertyPanels(null);
   this.updateObjectsList();
+};
+
+/**
+ * Create a torus knot and add it to the scene
+ */
+ShapeForge.prototype.createTorusKnot = function() {
+  const geometry = new THREE.TorusKnotGeometry(0.4, 0.1, 64, 8, 2, 3);
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  this.addObjectToScene({
+    type: 'torusKnot',
+    name: `Torus Knot ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      radius: 0.4,
+      tube: 0.1,
+      tubularSegments: 64,
+      radialSegments: 8,
+      p: 2,
+      q: 3
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a triangular pyramid and add it to the scene
+ */
+ShapeForge.prototype.createPyramid = function() {
+  // Create geometry (triangular base pyramid)
+  const geometry = new THREE.ConeGeometry(0.5, 1, 3, 1);
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  this.addObjectToScene({
+    type: 'pyramid',
+    name: `Pyramid ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      radius: 0.5,
+      height: 1,
+      radialSegments: 3,
+      heightSegments: 1
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a triangular prism and add it to the scene
+ */
+ShapeForge.prototype.createPrism = function() {
+  // Create a triangular prism using custom geometry
+  const geometry = new THREE.BufferGeometry();
+  
+  // Vertices for a triangular prism
+  const vertices = new Float32Array([
+    // Top triangle
+     0.0,  0.5,  0.5,
+    -0.5, -0.5,  0.5,
+     0.5, -0.5,  0.5,
+    
+    // Bottom triangle 
+     0.0,  0.5, -0.5,
+    -0.5, -0.5, -0.5,
+     0.5, -0.5, -0.5
+  ]);
+  
+  // Indices for faces
+  const indices = [
+    // Triangular faces (2)
+    0, 1, 2,  // Front triangle
+    3, 5, 4,  // Back triangle
+    
+    // Rectangular faces (3)
+    0, 3, 4, 1,  // Left side
+    0, 2, 5, 3,  // Right side
+    1, 4, 5, 2   // Bottom side
+  ];
+  
+  // Convert rectangular face indices to triangles
+  const triangleIndices = [];
+  for (let i = 0; i < indices.length; i++) {
+    if (i >= 6) {
+      // For rectangular faces, split into triangles
+      if ((i - 6) % 4 === 0) {
+        const j = i;
+        triangleIndices.push(indices[j], indices[j+1], indices[j+2]);
+        triangleIndices.push(indices[j], indices[j+2], indices[j+3]);
+      }
+    } else {
+      // For existing triangular faces
+      triangleIndices.push(indices[i]);
+    }
+  }
+  
+  // Set attributes
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  geometry.setIndex(triangleIndices);
+  geometry.computeVertexNormals();
+  
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  this.addObjectToScene({
+    type: 'prism',
+    name: `Prism ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      width: 1,
+      height: 1,
+      depth: 1
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a capsule shape and add it to the scene
+ */
+ShapeForge.prototype.createCapsule = function() {
+  const geometry = new THREE.CapsuleGeometry(0.3, 0.6, 4, 8);
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  this.addObjectToScene({
+    type: 'capsule',
+    name: `Capsule ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      radius: 0.3,
+      length: 0.6,
+      capSegments: 4,
+      radialSegments: 8
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a tube/ring and add it to the scene
+ */
+ShapeForge.prototype.createTube = function() {
+  // Create a curved path for the tube to follow
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.5, 0, 0),
+    new THREE.Vector3(0, 0.5, 0.5),
+    new THREE.Vector3(0.5, 0, 0),
+    new THREE.Vector3(0, -0.5, -0.5)
+  ]);
+  curve.closed = true;
+  
+  const geometry = new THREE.TubeGeometry(curve, 32, 0.1, 8, true);
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  this.addObjectToScene({
+    type: 'tube',
+    name: `Tube ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      path: 'circle',
+      radius: 0.5,
+      tube: 0.1,
+      tubularSegments: 32,
+      radialSegments: 8
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a hemisphere and add it to the scene
+ */
+ShapeForge.prototype.createHemisphere = function() {
+  const geometry = new THREE.SphereGeometry(0.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  this.addObjectToScene({
+    type: 'hemisphere',
+    name: `Hemisphere ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      radius: 0.5,
+      widthSegments: 32,
+      heightSegments: 16,
+      phiStart: 0,
+      phiLength: Math.PI * 2,
+      thetaStart: 0,
+      thetaLength: Math.PI / 2
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a rounded cube and add it to the scene
+ */
+ShapeForge.prototype.createRoundedCube = function() {
+  // Create a rounded box (using BoxGeometry + SphereGeometry)
+  const boxSize = 0.8;
+  const radius = 0.1; // Corner radius
+  
+  // Create a group to hold all parts
+  const group = new THREE.Group();
+  
+  // Create the core box (slightly smaller than final size)
+  const boxGeometry = new THREE.BoxGeometry(
+    boxSize - radius * 2,
+    boxSize - radius * 2,
+    boxSize - radius * 2
+  );
+  const boxMesh = new THREE.Mesh(boxGeometry, this.createDefaultMaterial());
+  group.add(boxMesh);
+  
+  // Add spheres at corners
+  const cornerPositions = [
+    [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+    [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+  ];
+  
+  cornerPositions.forEach(pos => {
+    const cornerSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(radius, 8, 8),
+      boxMesh.material
+    );
+    cornerSphere.position.set(
+      pos[0] * (boxSize / 2 - radius),
+      pos[1] * (boxSize / 2 - radius),
+      pos[2] * (boxSize / 2 - radius)
+    );
+    group.add(cornerSphere);
+  });
+  
+  // Add cylinders for edges
+  const edgePositions = [
+    // X edges
+    [0, -1, -1], [0, 1, -1], [0, -1, 1], [0, 1, 1],
+    // Y edges
+    [-1, 0, -1], [1, 0, -1], [-1, 0, 1], [1, 0, 1],
+    // Z edges
+    [-1, -1, 0], [1, -1, 0], [-1, 1, 0], [1, 1, 0]
+  ];
+  
+  const edgeRotations = [
+    // X edges (rotate around X)
+    [1, 0, 0, Math.PI/2], [1, 0, 0, Math.PI/2], [1, 0, 0, Math.PI/2], [1, 0, 0, Math.PI/2],
+    // Y edges (rotate around Y)
+    [0, 1, 0, Math.PI/2], [0, 1, 0, Math.PI/2], [0, 1, 0, Math.PI/2], [0, 1, 0, Math.PI/2],
+    // Z edges (default orientation)
+    [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]
+  ];
+  
+  edgePositions.forEach((pos, i) => {
+    const edgeLength = boxSize - radius * 2;
+    const edgeCylinder = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, edgeLength, 8),
+      boxMesh.material
+    );
+    
+    // Position
+    edgeCylinder.position.set(
+      pos[0] * (boxSize / 2 - radius),
+      pos[1] * (boxSize / 2 - radius),
+      pos[2] * (boxSize / 2 - radius)
+    );
+    
+    // Rotation
+    const rot = edgeRotations[i];
+    edgeCylinder.rotateOnAxis(
+      new THREE.Vector3(rot[0], rot[1], rot[2]),
+      rot[3]
+    );
+    
+    group.add(edgeCylinder);
+  });
+  
+  // Create merged geometry from the group for better performance
+  const material = this.createDefaultMaterial();
+  
+  this.addObjectToScene({
+    type: 'roundedCube',
+    name: `Rounded Cube ${this.objects.length + 1}`,
+    geometry: boxGeometry, // Store only the main geometry
+    material: material,
+    mesh: group, // Store the whole group as the mesh
+    parameters: {
+      width: boxSize,
+      height: boxSize,
+      depth: boxSize,
+      radius: radius
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
+};
+
+/**
+ * Create a star shape and add it to the scene
+ */
+ShapeForge.prototype.createStar = function() {
+  // Create a star shape
+  const points = 5;
+  const outerRadius = 0.5;
+  const innerRadius = 0.2;
+  
+  const shape = new THREE.Shape();
+  
+  for (let i = 0; i < points * 2; i++) {
+    // Alternate between outer and inner radius
+    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (Math.PI / points) * i;
+    
+    const x = Math.sin(angle) * radius;
+    const y = Math.cos(angle) * radius;
+    
+    if (i === 0) {
+      shape.moveTo(x, y);
+    } else {
+      shape.lineTo(x, y);
+    }
+  }
+  
+  shape.closePath();
+  
+  // Extrude the shape to create a 3D star
+  const extrudeSettings = {
+    depth: 0.2,
+    bevelEnabled: true,
+    bevelThickness: 0.05,
+    bevelSize: 0.05,
+    bevelSegments: 3
+  };
+  
+  const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  const material = this.createDefaultMaterial();
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Rotate to a more natural orientation
+  mesh.rotation.x = -Math.PI / 2;
+  
+  this.addObjectToScene({
+    type: 'star',
+    name: `Star ${this.objects.length + 1}`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      points: points,
+      outerRadius: outerRadius,
+      innerRadius: innerRadius,
+      depth: 0.2,
+      bevelThickness: 0.05,
+      bevelSize: 0.05
+    },
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: -Math.PI / 2, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  });
 };
 
 // // Add this call to the end of your show() method
