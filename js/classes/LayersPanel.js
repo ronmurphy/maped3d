@@ -13,21 +13,6 @@ class LayersPanel {
                 this.setupDragAndDrop();
     }
 
-    // setupFolderControls() {
-    //     // Add "New Folder" button to the panel header
-    //     const header = document.querySelector('.layers-panel .tool-section-title');
-    //     header.style.display = 'flex';
-    //     header.style.justifyContent = 'space-between';
-    //     header.style.alignItems = 'center';
-
-    //     const newFolderBtn = document.createElement('sl-button');
-    //     newFolderBtn.size = 'small';
-    //     newFolderBtn.innerHTML = '<span class="material-icons">create_new_folder</span>';
-    //     newFolderBtn.style.marginLeft = 'auto';
-    //     newFolderBtn.addEventListener('click', () => this.createNewFolder());
-    //     header.appendChild(newFolderBtn);
-    // }
-
     async createNewFolder() {
         const dialog = document.createElement('sl-dialog');
         dialog.label = 'New Folder';

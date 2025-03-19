@@ -4,25 +4,67 @@
  * This tool allows for creating, editing, and exporting 3D geometries with
  * materials and shader effects for use in Three.js applications.
  */
-console.log("ShapeForge script loaded, THREE.js available:", !!window.THREE);
+// console.log("ShapeForge script loaded, THREE.js available:", !!window.THREE);
 class ShapeForge {
   /**
    * Create a new ShapeForge editor
    * @param {ResourceManager} resourceManager - Reference to the resource manager
    * @param {ShaderEffectsManager} shaderEffectsManager - Reference to the shader effects manager
    */
-  constructor(resourceManager = null, shaderEffectsManager = null) {
-    // Dependencies
-    this.resourceManager = resourceManager;
-    this.shaderEffectsManager = shaderEffectsManager;
+  // constructor(resourceManager = null, shaderEffectsManager = null) {
+  //   // Dependencies
+  //   this.resourceManager = resourceManager;
+  //   this.shaderEffectsManager = shaderEffectsManager;
 
+  //   // Core properties
+  //   this.objects = [];
+  //   this.selectedObject = null;
+  //   this.history = [];
+  //   this.historyIndex = -1;
+  //   this.maxHistorySteps = 30;
+
+  //   // Scene for preview
+  //   this.previewScene = null;
+  //   this.previewCamera = null;
+  //   this.previewRenderer = null;
+  //   this.previewControls = null;
+  //   this.previewContainer = null;
+  //   this.isPreviewActive = false;
+
+  //   // UI references
+  //   this.drawer = null;
+  //   this.propertyPanels = {};
+
+  //   // Bind methods to maintain proper 'this' context
+  //   this.animate = this.animate.bind(this);
+  //   this.handleResize = this.handleResize.bind(this);
+
+  //   // Auto-load dependencies if needed
+  //   this.checkDependencies();
+  // }
+
+  constructor(resourceManager = null, shaderEffectsManager = null, mapEditor = null) {
+    // Add mapEditor parameter
+    this.mapEditor = mapEditor;
+    
+    // Dependencies
+    // Try to get ResourceManager from mapEditor first if available
+    if (mapEditor && mapEditor.resourceManager) {
+        this.resourceManager = mapEditor.resourceManager;
+        console.log('ResourceManager connected from MapEditor');
+    } else {
+        this.resourceManager = resourceManager;
+    }
+    
+    this.shaderEffectsManager = shaderEffectsManager;
+    
     // Core properties
     this.objects = [];
     this.selectedObject = null;
     this.history = [];
     this.historyIndex = -1;
     this.maxHistorySteps = 30;
-
+    
     // Scene for preview
     this.previewScene = null;
     this.previewCamera = null;
@@ -30,18 +72,68 @@ class ShapeForge {
     this.previewControls = null;
     this.previewContainer = null;
     this.isPreviewActive = false;
-
+    
     // UI references
     this.drawer = null;
     this.propertyPanels = {};
-
+    
     // Bind methods to maintain proper 'this' context
     this.animate = this.animate.bind(this);
     this.handleResize = this.handleResize.bind(this);
-
+    
     // Auto-load dependencies if needed
     this.checkDependencies();
-  }
+}
+
+/**
+ * Check and load necessary dependencies
+ */
+checkDependencies() {
+    console.log("ShapeForge checking dependencies...");
+    
+    // Check if THREE.js is available
+    if (!window.THREE) {
+        console.error("THREE.js not available! ShapeForge requires THREE.js to function.");
+        return false;
+    }
+    
+    // Try to get ResourceManager from various sources
+    if (!this.resourceManager) {
+        // Try window global
+        if (window.resourceManager) {
+            this.resourceManager = window.resourceManager;
+            console.log("Using global ResourceManager");
+        } 
+        // Try through mapEditor if available
+        else if (window.mapEditor && window.mapEditor.resourceManager) {
+            this.resourceManager = window.mapEditor.resourceManager;
+            console.log("Using MapEditor's ResourceManager");
+        }
+        // Try to find it in the Scene3D if available
+        else if (window.scene3D && window.scene3D.resourceManager) {
+            this.resourceManager = window.scene3D.resourceManager;
+            console.log("Using Scene3D's ResourceManager");
+        }
+    }
+    
+    // If we have ResourceManager, log its state to help with debugging
+    if (this.resourceManager) {
+        console.log("ResourceManager connected:", {
+            hasTextures: !!this.resourceManager.resources?.textures,
+            textureCategories: Object.keys(this.resourceManager.resources?.textures || {})
+        });
+    } else {
+        console.warn("ResourceManager not found, texture features will be disabled");
+    }
+    
+    // Try to get ShaderEffectsManager from window if not provided
+    if (!this.shaderEffectsManager && window.shaderEffectsManager) {
+        this.shaderEffectsManager = window.shaderEffectsManager;
+        console.log("Using global ShaderEffectsManager");
+    }
+    
+    return true;
+}
 
   /**
    * Check and load necessary dependencies
@@ -69,6 +161,27 @@ class ShapeForge {
 
     return true;
   }
+
+  /**
+ * Manually connect to ResourceManager
+ * @param {ResourceManager} resourceManager - Instance of ResourceManager
+ */
+connectResourceManager(resourceManager) {
+  if (!resourceManager) {
+      console.error("Invalid ResourceManager provided");
+      return false;
+  }
+  
+  this.resourceManager = resourceManager;
+  console.log("Manually connected to ResourceManager:", {
+      hasTextures: !!this.resourceManager.resources?.textures,
+      textureCategories: Object.keys(this.resourceManager.resources?.textures || {})
+  });
+  
+  return true;
+}
+
+
 
   show() {
     console.log("ShapeForge show() called");
@@ -366,6 +479,30 @@ class ShapeForge {
 
     // Set up event listeners
     this.setupEventListeners();
+
+    const materialsContainer = this.drawer.querySelector('#materials-container');
+if (materialsContainer) {
+    // Add texture selection button
+    const textureBtn = document.createElement('sl-button');
+    textureBtn.style.marginTop = '16px';
+    textureBtn.style.width = '100%';
+    textureBtn.innerHTML = `
+        <span class="material-icons" slot="prefix">wallpaper</span>
+        Apply Texture from Resources
+    `;
+    
+    textureBtn.addEventListener('click', () => {
+        if (this.selectedObject !== null) {
+            this.showTextureSelectionDialog();
+        } else {
+            alert('Please select an object first');
+        }
+    });
+    
+    materialsContainer.appendChild(textureBtn);
+}
+
+
   }
 
   /**
@@ -1888,6 +2025,11 @@ const shapeButtons = {
           step.data.oldName
         );
         break;
+
+        case 'texture':
+          // Restore original material properties
+          this.restoreMaterialTexture(step.data.objectIndex, null, step.data.originalProps);
+          break;
     }
 
     // Decrement history index
@@ -1965,11 +2107,42 @@ const shapeButtons = {
           step.data.newName
         );
         break;
+
+        case 'texture':
+          // Reapply the texture
+          this.applyTextureToModel(step.data.textureId, step.data.category, step.data.objectIndex);
+          break;
+
     }
 
     // Update UI
     this.updateHistoryButtons();
   }
+
+  restoreMaterialTexture(index, textureMap, originalProps) {
+    if (index < 0 || index >= this.objects.length) return;
+    
+    const object = this.objects[index];
+    
+    // Apply original properties
+    if (originalProps) {
+        if (originalProps.color) object.material.color.copy(originalProps.color);
+        if (originalProps.wireframe !== undefined) object.material.wireframe = originalProps.wireframe;
+        if (originalProps.transparent !== undefined) object.material.transparent = originalProps.transparent;
+        if (originalProps.opacity !== undefined) object.material.opacity = originalProps.opacity;
+        if (originalProps.metalness !== undefined) object.material.metalness = originalProps.metalness;
+        if (originalProps.roughness !== undefined) object.material.roughness = originalProps.roughness;
+    }
+    
+    // Clear or set texture map
+    object.material.map = textureMap;
+    object.material.needsUpdate = true;
+    
+    // Update UI if this is the selected object
+    if (this.selectedObject === index) {
+        this.updateMaterialUI(object);
+    }
+}
 
   /**
    * Update history button states
@@ -3040,98 +3213,634 @@ const shapeButtons = {
   /**
    * Save object to resource manager
    */
+  // saveToResources() {
+  //   if (!this.resourceManager) {
+  //     alert("ResourceManager not available. Cannot save to resources.");
+  //     return;
+  //   }
+
+  //   // Get project name
+  //   const projectNameInput = this.drawer.querySelector('#project-name');
+  //   const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+
+  //   // Create dialog for saving
+  //   const dialog = document.createElement('sl-dialog');
+  //   dialog.label = 'Save to ResourceManager';
+
+  //   dialog.innerHTML = `
+  //     <div style="display: flex; flex-direction: column; gap: 16px;">
+  //       <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
+  //       <div style="display: flex; align-items: center; gap: 10px;">
+  //         <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
+  //           <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
+  //         </div>
+  //         <div>
+  //           <p>Preview thumbnail</p>
+  //           <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
+  //         </div>
+  //       </div>
+  //     </div>
+  //     <div slot="footer">
+  //       <sl-button id="save-btn" variant="primary">Save</sl-button>
+  //       <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
+  //     </div>
+  //   `;
+
+  //   document.body.appendChild(dialog);
+
+  //   // Generate and set thumbnail
+  //   const thumbnail = this.createThumbnail();
+  //   dialog.querySelector('#resource-thumbnail').src = thumbnail;
+
+  //   // Save handler
+  //   dialog.querySelector('#save-btn').addEventListener('click', () => {
+  //     const name = dialog.querySelector('#resource-name').value.trim();
+  //     if (!name) {
+  //       alert("Please enter a name for this resource");
+  //       return;
+  //     }
+
+  //     // Create JSON representation of the project
+  //     const projectData = this.createProjectData();
+
+  //     // Make sure shapeforge category exists in resources
+  //     if (!this.resourceManager.resources.shapeforge) {
+  //       this.resourceManager.resources.shapeforge = {};
+  //     }
+
+  //     // Create resource entry
+  //     const resourceId = `shapeforge_${Date.now()}`;
+  //     const resource = {
+  //       id: resourceId,
+  //       name: name,
+  //       data: JSON.stringify(projectData),
+  //       thumbnail: thumbnail,
+  //       dateAdded: new Date().toISOString()
+  //     };
+
+  //     // Add to ResourceManager
+  //     this.resourceManager.resources.shapeforge[resourceId] = resource;
+  //     this.resourceManager.saveResources();
+
+  //     dialog.hide();
+
+  //     // Show success message
+  //     const toast = document.createElement('sl-alert');
+  //     toast.variant = 'success';
+  //     toast.duration = 3000;
+  //     toast.closable = true;
+  //     toast.innerHTML = `Saved "${name}" to ResourceManager`;
+
+  //     document.body.appendChild(toast);
+  //     toast.toast();
+  //   });
+
+  //   dialog.querySelector('.close-dialog').addEventListener('click', () => {
+  //     dialog.hide();
+  //   });
+
+  //   dialog.addEventListener('sl-after-hide', () => {
+  //     dialog.remove();
+  //   });
+
+  //   dialog.show();
+  // }
+
   saveToResources() {
     if (!this.resourceManager) {
-      alert("ResourceManager not available. Cannot save to resources.");
-      return;
+        alert("ResourceManager not available. Cannot save to resources.");
+        return;
     }
-
+    
     // Get project name
     const projectNameInput = this.drawer.querySelector('#project-name');
     const projectName = (projectNameInput?.value || 'Untitled Project').trim();
-
+    
     // Create dialog for saving
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Save to ResourceManager';
-
+    
     dialog.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
-            <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
-          </div>
-          <div>
-            <p>Preview thumbnail</p>
-            <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
-          </div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
+                    <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+                <div>
+                    <p>Preview thumbnail</p>
+                    <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
+                </div>
+            </div>
         </div>
-      </div>
-      <div slot="footer">
-        <sl-button id="save-btn" variant="primary">Save</sl-button>
-        <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
-      </div>
+        <div slot="footer">
+            <sl-button id="save-btn" variant="primary">Save</sl-button>
+            <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
+        </div>
     `;
-
+    
     document.body.appendChild(dialog);
-
+    
     // Generate and set thumbnail
     const thumbnail = this.createThumbnail();
     dialog.querySelector('#resource-thumbnail').src = thumbnail;
-
+    
     // Save handler
     dialog.querySelector('#save-btn').addEventListener('click', () => {
-      const name = dialog.querySelector('#resource-name').value.trim();
-      if (!name) {
-        alert("Please enter a name for this resource");
-        return;
-      }
-
-      // Create JSON representation of the project
-      const projectData = this.createProjectData();
-
-      // Make sure shapeforge category exists in resources
-      if (!this.resourceManager.resources.shapeforge) {
-        this.resourceManager.resources.shapeforge = {};
-      }
-
-      // Create resource entry
-      const resourceId = `shapeforge_${Date.now()}`;
-      const resource = {
-        id: resourceId,
-        name: name,
-        data: JSON.stringify(projectData),
-        thumbnail: thumbnail,
-        dateAdded: new Date().toISOString()
-      };
-
-      // Add to ResourceManager
-      this.resourceManager.resources.shapeforge[resourceId] = resource;
-      this.resourceManager.saveResources();
-
-      dialog.hide();
-
-      // Show success message
-      const toast = document.createElement('sl-alert');
-      toast.variant = 'success';
-      toast.duration = 3000;
-      toast.closable = true;
-      toast.innerHTML = `Saved "${name}" to ResourceManager`;
-
-      document.body.appendChild(toast);
-      toast.toast();
+        const name = dialog.querySelector('#resource-name').value.trim();
+        if (!name) {
+            alert("Please enter a name for this resource");
+            return;
+        }
+        
+        // Create JSON representation of the project
+        const projectData = this.createProjectData();
+        
+        // Make sure shapeforge category exists in resources
+        if (!this.resourceManager.resources.shapeforge) {
+            this.resourceManager.resources.shapeforge = new Map();
+        }
+        
+        // Create resource entry
+        const resourceId = `model_${Date.now()}`;
+        const resource = {
+            id: resourceId,
+            name: name,
+            data: projectData,
+            thumbnail: thumbnail,
+            dateAdded: new Date().toISOString()
+        };
+        
+        // Add to ResourceManager
+        this.resourceManager.resources.shapeforge.set(resourceId, resource);
+        
+        dialog.hide();
+        
+        // Show success message
+        const toast = document.createElement('sl-alert');
+        toast.variant = 'success';
+        toast.duration = 3000;
+        toast.closable = true;
+        toast.innerHTML = `Saved "${name}" to ResourceManager`;
+        
+        document.body.appendChild(toast);
+        toast.toast();
     });
-
+    
     dialog.querySelector('.close-dialog').addEventListener('click', () => {
-      dialog.hide();
+        dialog.hide();
     });
-
+    
     dialog.addEventListener('sl-after-hide', () => {
-      dialog.remove();
+        dialog.remove();
     });
-
+    
     dialog.show();
+}
+
+// Method to list available textures from ResourceManager
+// Method to list available textures from ResourceManager
+// listAvailableTextures(category) {
+//   console.log(`Attempting to list textures for category: ${category}`);
+  
+//   if (!this.resourceManager) {
+//       console.warn("ResourceManager not available. Cannot list textures.");
+//       return [];
+//   }
+  
+//   // Check if textures object exists
+//   if (!this.resourceManager.resources || !this.resourceManager.resources.textures) {
+//       console.warn("ResourceManager.resources.textures not available:", this.resourceManager.resources);
+//       return [];
+//   }
+  
+//   // Get texture map for the requested category
+//   const textureMap = this.resourceManager.resources.textures[category];
+//   console.log(`Texture map for ${category}:`, textureMap);
+  
+//   if (!textureMap) {
+//       console.warn(`Texture category '${category}' not found in ResourceManager`);
+//       return [];
+//   }
+  
+//   // Check if it's a Map (expected) or potentially another structure
+//   let textureArray = [];
+  
+//   if (textureMap instanceof Map) {
+//       // It's a Map as expected, convert to array
+//       textureArray = Array.from(textureMap.values());
+//   } else if (typeof textureMap === 'object') {
+//       // It might be a plain object, try to convert
+//       textureArray = Object.values(textureMap);
+//   }
+  
+//   console.log(`Found ${textureArray.length} textures in category: ${category}`);
+//   return textureArray;
+// }
+
+// Alternative texture finding method for when resource manager integration fails
+findTexturesInWindow() {
+  // Look for window.resourceManager
+  if (window.resourceManager && window.resourceManager.resources && 
+      window.resourceManager.resources.textures) {
+      
+      return {
+          connected: true,
+          resourceManager: window.resourceManager
+      };
   }
+  
+  // Look for window.mapEditor.resourceManager
+  if (window.mapEditor && window.mapEditor.resourceManager && 
+      window.mapEditor.resourceManager.resources && 
+      window.mapEditor.resourceManager.resources.textures) {
+      
+      return {
+          connected: true,
+          resourceManager: window.mapEditor.resourceManager
+      };
+  }
+  
+  // Look in scene3D if available
+  if (window.scene3D && window.scene3D.resourceManager && 
+      window.scene3D.resourceManager.resources && 
+      window.scene3D.resourceManager.resources.textures) {
+      
+      return {
+          connected: true,
+          resourceManager: window.scene3D.resourceManager
+      };
+  }
+  
+  return { connected: false };
+}
+
+// Modified version of listAvailableTextures that uses findTexturesInWindow() if needed
+listAvailableTextures(category) {
+  // Try the normal route first
+  if (this.resourceManager &&
+      this.resourceManager.resources &&
+      this.resourceManager.resources.textures &&
+      this.resourceManager.resources.textures[category]) {
+      
+      const textureMap = this.resourceManager.resources.textures[category];
+      if (textureMap instanceof Map) {
+          return Array.from(textureMap.values());
+      } else if (typeof textureMap === 'object') {
+          return Object.values(textureMap);
+      }
+  }
+  
+  // If we get here, try the alternative method
+  console.warn("Using alternative texture finding method");
+  const result = this.findTexturesInWindow();
+  
+  if (result.connected) {
+      // Temporarily connect and return textures
+      const tempResourceManager = result.resourceManager;
+      
+      const textureMap = tempResourceManager.resources.textures[category];
+      if (!textureMap) {
+          console.warn(`Category ${category} not found in resourceManager`);
+          return [];
+      }
+      
+      if (textureMap instanceof Map) {
+          return Array.from(textureMap.values());
+      } else if (typeof textureMap === 'object') {
+          return Object.values(textureMap);
+      }
+  }
+  
+  // If all else fails
+  console.error(`Failed to find any textures for category: ${category}`);
+  return [];
+}
+
+// applyTextureToModel(textureId, category, objectIndex) {
+//   if (!this.resourceManager || this.selectedObject === null) {
+//       console.warn("Cannot apply texture: ResourceManager unavailable or no object selected");
+//       return false;
+//   }
+  
+//   // Get the texture
+//   const texture = this.resourceManager.resources.textures[category]?.get(textureId);
+//   if (!texture) {
+//       console.warn(`Texture not found: ${textureId} in category ${category}`);
+//       return false;
+//   }
+  
+//   // Get the object
+//   const object = this.objects[objectIndex];
+//   if (!object) {
+//       console.warn(`Object not found at index ${objectIndex}`);
+//       return false;
+//   }
+  
+//   // Create a Three.js texture from the texture data
+//   const loader = new THREE.TextureLoader();
+  
+//   // We need to create a data URL if it's not already one
+//   const textureUrl = texture.data;
+  
+//   // Load the texture
+//   const threeTexture = loader.load(textureUrl, (loadedTexture) => {
+//       // Once loaded, apply it to the material
+//       if (object.material) {
+//           // Store original material properties
+//           const originalProps = {
+//               color: object.material.color.clone(),
+//               wireframe: object.material.wireframe,
+//               transparent: object.material.transparent,
+//               opacity: object.material.opacity,
+//               metalness: object.material.metalness,
+//               roughness: object.material.roughness
+//           };
+          
+//           // Apply texture to material
+//           object.material.map = loadedTexture;
+//           object.material.needsUpdate = true;
+          
+//           // Add to history
+//           this.addHistoryStep('texture', {
+//               objectIndex: objectIndex,
+//               textureId: textureId,
+//               category: category,
+//               originalProps: originalProps
+//           });
+          
+//           // Update material UI
+//           this.updateMaterialUI(object);
+//       }
+//   });
+  
+//   return true;
+// }
+
+// Method to apply a texture to a model
+applyTextureToModel(textureId, category, objectIndex) {
+  if (!this.resourceManager || objectIndex === null) {
+      console.warn("Cannot apply texture: ResourceManager unavailable or no object selected");
+      return false;
+  }
+  
+  // Get the texture
+  const texture = this.resourceManager.resources.textures[category]?.get(textureId);
+  if (!texture) {
+      console.warn(`Texture not found: ${textureId} in category ${category}`);
+      return false;
+  }
+  
+  // Get the object
+  const object = this.objects[objectIndex];
+  if (!object) {
+      console.warn(`Object not found at index ${objectIndex}`);
+      return false;
+  }
+  
+  // Create a Three.js texture from the texture data
+  const loader = new THREE.TextureLoader();
+  
+  // We need to create a data URL if it's not already one
+  const textureUrl = texture.data;
+  
+  // Load the texture
+  const threeTexture = loader.load(textureUrl, (loadedTexture) => {
+      // Once loaded, apply it to the material
+      if (object.material) {
+          // Store original material properties
+          const originalProps = {
+              color: object.material.color.clone(),
+              wireframe: object.material.wireframe,
+              transparent: object.material.transparent,
+              opacity: object.material.opacity,
+              metalness: object.material.metalness,
+              roughness: object.material.roughness
+          };
+          
+          // Apply texture to material
+          object.material.map = loadedTexture;
+          
+          // Set color to white to avoid tinting the texture
+          object.material.color.set(0xffffff00);
+          
+          // Make sure the texture is displayed properly
+          object.material.needsUpdate = true;
+          
+          // Add to history
+          this.addHistoryStep('texture', {
+              objectIndex: objectIndex,
+              textureId: textureId,
+              category: category,
+              originalProps: originalProps
+          });
+          
+          // Update material UI
+          this.updateMaterialUI(object);
+      }
+  });
+  
+  return true;
+}
+
+// Show texture selection dialog for the selected object
+// Show texture selection dialog for the selected object
+showTextureSelectionDialog() {
+  if (!this.resourceManager || this.selectedObject === null) {
+      alert("Cannot apply texture: ResourceManager unavailable or no object selected");
+      return;
+  }
+  
+  // Create dialog
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'Apply Texture to Model';
+  dialog.style = "--width: 650px;"; // Make it a bit wider for the textures
+  
+  // Prepare dialog content with tabs instead of dropdown
+  dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- Texture Category Tabs -->
+          <sl-tab-group>
+              <sl-tab slot="nav" panel="walls-panel">Walls</sl-tab>
+              <sl-tab slot="nav" panel="doors-panel">Doors</sl-tab>
+              <sl-tab slot="nav" panel="environmental-panel">Environmental</sl-tab>
+              <sl-tab slot="nav" panel="props-panel">Props</sl-tab>
+              
+              <!-- Walls Panel -->
+              <sl-tab-panel name="walls-panel">
+                  <div class="texture-gallery" data-category="walls">
+                      <div class="loading-placeholder">Loading textures...</div>
+                  </div>
+              </sl-tab-panel>
+              
+              <!-- Doors Panel -->
+              <sl-tab-panel name="doors-panel">
+                  <div class="texture-gallery" data-category="doors">
+                      <div class="loading-placeholder">Loading textures...</div>
+                  </div>
+              </sl-tab-panel>
+              
+              <!-- Environmental Panel -->
+              <sl-tab-panel name="environmental-panel">
+                  <div class="texture-gallery" data-category="environmental">
+                      <div class="loading-placeholder">Loading textures...</div>
+                  </div>
+              </sl-tab-panel>
+              
+              <!-- Props Panel -->
+              <sl-tab-panel name="props-panel">
+                  <div class="texture-gallery" data-category="props">
+                      <div class="loading-placeholder">Loading textures...</div>
+                  </div>
+              </sl-tab-panel>
+          </sl-tab-group>
+          
+          <!-- Preview Area -->
+          <div id="texture-preview" style="display: none; text-align: center; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+              <img style="max-width: 200px; max-height: 200px; object-fit: contain;" />
+              <div class="preview-name" style="margin-top: 8px; font-weight: bold;"></div>
+          </div>
+      </div>
+      
+      <div slot="footer">
+          <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+          <sl-button variant="primary" class="apply-btn" disabled>Apply Texture</sl-button>
+      </div>
+  `;
+  
+  document.body.appendChild(dialog);
+  
+  // Get references to elements
+  const tabGroup = dialog.querySelector('sl-tab-group');
+  const textureGalleries = dialog.querySelectorAll('.texture-gallery');
+  const texturePreview = dialog.querySelector('#texture-preview');
+  const applyBtn = dialog.querySelector('.apply-btn');
+  
+  // Selected texture tracking
+  let selectedTextureId = null;
+  let selectedCategory = 'walls';
+  
+  // Load textures for a category
+  const loadTextures = (galleryEl) => {
+      const category = galleryEl.dataset.category;
+      galleryEl.innerHTML = '<div class="loading-placeholder">Loading textures...</div>';
+      
+      // Get textures for this category
+      const textures = this.listAvailableTextures(category);
+      
+      if (!textures || textures.length === 0) {
+          galleryEl.innerHTML = `
+              <div class="empty-message" style="text-align: center; padding: 20px; color: #666;">
+                  No textures found in ${category} category
+              </div>
+          `;
+          return;
+      }
+      
+      // Clear gallery
+      galleryEl.innerHTML = '';
+      
+      // Create container for grid layout
+      const gridContainer = document.createElement('div');
+      gridContainer.style.cssText = `
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 8px;
+          max-height: 300px;
+          overflow-y: auto;
+          padding: 10px;
+      `;
+      galleryEl.appendChild(gridContainer);
+      
+      // Add each texture to the gallery
+      textures.forEach(texture => {
+          const item = document.createElement('div');
+          item.className = 'texture-item';
+          item.dataset.textureId = texture.id;
+          item.dataset.category = category;
+          item.style.cssText = `
+              cursor: pointer;
+              border: 2px solid transparent;
+              border-radius: 4px;
+              overflow: hidden;
+              transition: all 0.2s ease;
+              background: white;
+          `;
+          
+          item.innerHTML = `
+              <img src="${texture.thumbnail}" alt="${texture.name}" 
+                   style="width: 100%; aspect-ratio: 1; object-fit: cover;" />
+              <div style="font-size: 0.8em; padding: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${texture.name}
+              </div>
+          `;
+          
+          // Handle selection
+          item.addEventListener('click', () => {
+              // Update selection visuals - clear all selected items first
+              dialog.querySelectorAll('.texture-item').forEach(el => {
+                  el.style.borderColor = 'transparent';
+                  el.style.transform = 'none';
+              });
+              
+              // Mark this item as selected
+              item.style.borderColor = '#3388ff';
+              item.style.transform = 'translateY(-2px)';
+              
+              // Store selected texture
+              selectedTextureId = texture.id;
+              selectedCategory = category;
+              
+              // Update preview
+              texturePreview.style.display = 'block';
+              texturePreview.querySelector('img').src = texture.data;
+              texturePreview.querySelector('.preview-name').textContent = texture.name;
+              
+              // Enable apply button
+              applyBtn.disabled = false;
+          });
+          
+          gridContainer.appendChild(item);
+      });
+  };
+  
+  // Load textures for all galleries when tabs are activated
+  tabGroup.addEventListener('sl-tab-show', (event) => {
+      const panelName = event.detail.name;
+      const category = panelName.split('-')[0]; // Extract category from panel name
+      
+      // Find the gallery for this panel
+      const gallery = dialog.querySelector(`.texture-gallery[data-category="${category}"]`);
+      
+      // Only load if not already loaded
+      if (gallery && gallery.querySelector('.texture-item') === null && 
+          !gallery.querySelector('.empty-message')) {
+          loadTextures(gallery);
+      }
+  });
+  
+  // Handle apply button
+  applyBtn.addEventListener('click', () => {
+      if (selectedTextureId && selectedCategory) {
+          this.applyTextureToModel(selectedTextureId, selectedCategory, this.selectedObject);
+          dialog.hide();
+      }
+  });
+  
+  // Handle cancel
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+      dialog.hide();
+  });
+  
+  // Clean up when dialog closes
+  dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+  });
+  
+  // Load initial textures for the first tab and show dialog
+  loadTextures(textureGalleries[0]); // Load the first category (walls)
+  dialog.show();
+}
 
   /**
    * Show export dialog
@@ -3407,6 +4116,15 @@ const shapeButtons = {
     console.log("ShapeForge resources disposed");
   }
 }
+
+
+
+
+
+
+
+
+
 
 ShapeForge.prototype.addObjectToScene = function (objectData) {
   if (!this.previewScene) return;
