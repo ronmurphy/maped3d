@@ -154,309 +154,592 @@ return this;
   /**
    * Create the main UI components
    */
-  createUI() {
-    console.log("Creating ShapeForge UI");
+//   createUI() {
+//     console.log("Creating ShapeForge UI");
     
-    // Create drawer
-    this.drawer = document.createElement('sl-drawer');
-    this.drawer.label = 'ShapeForge - 3D Geometry Editor';
-    this.drawer.placement = 'end';
-    // this.drawer.style.setProperty('--size', '70%');
-    this.drawer.style.setProperty ('--size','calc(100vw - 260px');
+//     // Create drawer
+//     this.drawer = document.createElement('sl-drawer');
+//     this.drawer.label = 'ShapeForge - 3D Geometry Editor';
+//     this.drawer.placement = 'end';
+//     // this.drawer.style.setProperty('--size', '70%');
+//     this.drawer.style.setProperty ('--size','calc(100vw - 260px');
     
-// removed as how the import handles effects also --  <sl-button id="load-project" size="small">Load</sl-button>
+// // removed as how the import handles effects also --  <sl-button id="load-project" size="small">Load</sl-button>
 
 
-    // Create drawer content
-    this.drawer.innerHTML = `
-      <div id="shape-forge-container" style="display: flex; height: 100%; overflow: hidden;">
-        <!-- Left panel for tools and properties -->
-        <div class="tool-panel" style="width: 250px; padding: 0 10px; overflow-y: auto; border-right: 1px solid #444;">
-          <!-- Project Info -->
-          <div class="panel-section">
-            <h3>Project</h3>
-            <sl-input id="project-name" label="Name" placeholder="Untitled Project"></sl-input>
-            <div style="display: flex; gap: 6px; margin-top: 10px;">
-              <sl-button id="new-project" size="small">New</sl-button>
-              <sl-button id="save-project" size="small">Save</sl-button>
-            </div>
-          </div>
+//     // Create drawer content
+//     this.drawer.innerHTML = `
+//       <div id="shape-forge-container" style="display: flex; height: 100%; overflow: hidden;">
+//         <!-- Left panel for tools and properties -->
+//         <div class="tool-panel" style="width: 250px; padding: 0 10px; overflow-y: auto; border-right: 1px solid #444;">
+//           <!-- Project Info -->
+//           <div class="panel-section">
+//             <h3>Project</h3>
+//             <sl-input id="project-name" label="Name" placeholder="Untitled Project"></sl-input>
+//             <div style="display: flex; gap: 6px; margin-top: 10px;">
+//               <sl-button id="new-project" size="small">New</sl-button>
+//               <sl-button id="save-project" size="small">Save</sl-button>
+//             </div>
+//           </div>
           
-          <!-- Basic Shapes -->
-          <div class="panel-section" style="margin-top: 20px;">
-            <h3>Basic Shapes</h3>
-            <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-              <sl-button id="shape-cube">Cube</sl-button>
-              <sl-button id="shape-sphere">Sphere</sl-button>
-              <sl-button id="shape-cylinder">Cylinder</sl-button>
-              <sl-button id="shape-cone">Cone</sl-button>
-              <sl-button id="shape-torus">Torus</sl-button>
-              <sl-button id="shape-plane">Plane</sl-button>
-            </div>
-          </div>
+//           <!-- Basic Shapes -->
+//           <div class="panel-section" style="margin-top: 20px;">
+//             <h3>Basic Shapes</h3>
+//             <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+//               <sl-button id="shape-cube">Cube</sl-button>
+//               <sl-button id="shape-sphere">Sphere</sl-button>
+//               <sl-button id="shape-cylinder">Cylinder</sl-button>
+//               <sl-button id="shape-cone">Cone</sl-button>
+//               <sl-button id="shape-torus">Torus</sl-button>
+//               <sl-button id="shape-plane">Plane</sl-button>
+//             </div>
+//           </div>
           
-          <!-- RPG Dice Shapes -->
-          <div class="panel-section" style="margin-top: 20px;">
-            <h3>RPG Dice</h3>
-            <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-              <sl-button id="shape-d4">D4</sl-button>
-              <sl-button id="shape-d6">D6</sl-button>
-              <sl-button id="shape-d8">D8</sl-button>
-              <sl-button id="shape-d10">D10</sl-button>
-              <sl-button id="shape-d12">D12</sl-button>
-              <sl-button id="shape-d20">D20</sl-button>
-            </div>
-          </div>
+//           <!-- RPG Dice Shapes -->
+//           <div class="panel-section" style="margin-top: 20px;">
+//             <h3>RPG Dice</h3>
+//             <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+//               <sl-button id="shape-d4">D4</sl-button>
+//               <sl-button id="shape-d6">D6</sl-button>
+//               <sl-button id="shape-d8">D8</sl-button>
+//               <sl-button id="shape-d10">D10</sl-button>
+//               <sl-button id="shape-d12">D12</sl-button>
+//               <sl-button id="shape-d20">D20</sl-button>
+//             </div>
+//           </div>
           
-          <!-- Transform Controls -->
-          <div class="panel-section" style="margin-top: 20px;">
-            <h3>Transform</h3>
-            <div id="transform-container">
-              <!-- Position -->
-              <div class="transform-group">
-                <label>Position</label>
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
-                  <label>X:</label>
-                  <sl-range id="position-x" min="-10" max="10" step="0.1" value="0"></sl-range>
-                  <label>Y:</label>
-                  <sl-range id="position-y" min="-10" max="10" step="0.1" value="0"></sl-range>
-                  <label>Z:</label>
-                  <sl-range id="position-z" min="-10" max="10" step="0.1" value="0"></sl-range>
-                </div>
+//           <!-- Transform Controls -->
+//           <div class="panel-section" style="margin-top: 20px;">
+//             <h3>Transform</h3>
+//             <div id="transform-container">
+//               <!-- Position -->
+//               <div class="transform-group">
+//                 <label>Position</label>
+//                 <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
+//                   <label>X:</label>
+//                   <sl-range id="position-x" min="-10" max="10" step="0.1" value="0"></sl-range>
+//                   <label>Y:</label>
+//                   <sl-range id="position-y" min="-10" max="10" step="0.1" value="0"></sl-range>
+//                   <label>Z:</label>
+//                   <sl-range id="position-z" min="-10" max="10" step="0.1" value="0"></sl-range>
+//                 </div>
+//               </div>
+              
+//               <!-- Rotation -->
+//               <div class="transform-group" style="margin-top: 10px;">
+//                 <label>Rotation</label>
+//                 <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
+//                   <label>X:</label>
+//                   <sl-range id="rotation-x" min="0" max="6.28" step="0.1" value="0"></sl-range>
+//                   <label>Y:</label>
+//                   <sl-range id="rotation-y" min="0" max="6.28" step="0.1" value="0"></sl-range>
+//                   <label>Z:</label>
+//                   <sl-range id="rotation-z" min="0" max="6.28" step="0.1" value="0"></sl-range>
+//                 </div>
+//               </div>
+              
+//               <!-- Scale -->
+//               <div class="transform-group" style="margin-top: 10px;">
+//                 <label>Scale</label>
+//                 <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
+//                   <label>X:</label>
+//                   <sl-range id="scale-x" min="0.1" max="5" step="0.1" value="1"></sl-range>
+//                   <label>Y:</label>
+//                   <sl-range id="scale-y" min="0.1" max="5" step="0.1" value="1"></sl-range>
+//                   <label>Z:</label>
+//                   <sl-range id="scale-z" min="0.1" max="5" step="0.1" value="1"></sl-range>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+          
+//           <!-- Shape Properties -->
+//           <div class="panel-section" style="margin-top: 20px;">
+//             <h3>Properties</h3>
+//             <div id="properties-container">
+//               <!-- Properties will be added dynamically based on selected object -->
+//               <div class="no-selection-message">
+//                 Select or create an object to edit properties
+//               </div>
+//             </div>
+//           </div>
+          
+//           <!-- Materials -->
+//           <div class="panel-section" style="margin-top: 20px;">
+//             <h3>Materials</h3>
+//             <div id="materials-container">
+//               <sl-select label="Material Type" id="material-type">
+//                 <sl-option value="basic">Basic</sl-option>
+//                 <sl-option value="standard">Standard</sl-option>
+//                 <sl-option value="phong">Phong</sl-option>
+//                 <sl-option value="lambert">Lambert</sl-option>
+//               </sl-select>
+              
+//               <sl-color-picker label="Color" id="material-color" value="#3388ff"></sl-color-picker>
+              
+//               <sl-checkbox id="material-wireframe">Wireframe</sl-checkbox>
+              
+//               <sl-range id="material-opacity" min="0" max="1" step="0.01" value="1" 
+//                       label="Opacity"></sl-range>
+              
+//               <sl-range id="material-metalness" min="0" max="1" step="0.01" value="0" 
+//                       label="Metalness"></sl-range>
+              
+//               <sl-range id="material-roughness" min="0" max="1" step="0.01" value="0.5" 
+//                       label="Roughness"></sl-range>
+//             </div>
+//           </div>
+          
+//           <!-- Shader Effects -->
+//           <div class="panel-section" style="margin-top: 20px;">
+//             <h3>Shader Effects</h3>
+//             <div id="effects-container">
+//               <sl-select label="Effect Type" id="effect-type">
+//                 <sl-option value="none">None</sl-option>
+//                 <sl-option value="glow">Glow Effect</sl-option>
+//                 <sl-option value="fire">Fire Effect</sl-option>
+//                 <sl-option value="magic">Magic Effect</sl-option>
+//               </sl-select>
+              
+//               <div id="effect-properties" style="display: none; margin-top: 10px;">
+//                 <!-- Effect properties will be added dynamically -->
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+        
+//         <!-- Right panel for preview -->
+//         <div class="preview-panel" style="flex: 1; display: flex; flex-direction: column;">
+//           <div class="preview-toolbar" style="padding: 10px; border-bottom: 1px solid #444;">
+//             <sl-button id="preview-reset-camera">Reset View</sl-button>
+//             <sl-button-group>
+//               <sl-button id="preview-wireframe">Wireframe</sl-button>
+//               <sl-button id="preview-solid">Solid</sl-button>
+//             </sl-button-group>
+//             <sl-button-group style="margin-left: auto;">
+//               <sl-button id="object-undo" disabled>Undo</sl-button>
+//               <sl-button id="object-redo" disabled>Redo</sl-button>
+//             </sl-button-group>
+//           </div>
+          
+//           <div id="preview-container" style="flex: 1; position: relative;">
+//             <!-- Three.js preview will be inserted here -->
+//           </div>
+          
+//           <div class="preview-footer" style="padding: 10px; border-top: 1px solid #444; display: flex; justify-content: space-between;">
+//             <sl-button-group>
+//               <sl-button id="object-duplicate">Duplicate</sl-button>
+//               <sl-button id="object-delete" variant="danger">Delete</sl-button>
+//             </sl-button-group>
+            
+//             <sl-button-group>
+//               <sl-button id="save-to-resources" variant="success">Save to Resources</sl-button>
+//               <sl-button id="export-code" variant="primary">Export Code</sl-button>
+//               <sl-button id="export-json" variant="primary">Export JSON</sl-button>
+//             </sl-button-group>
+//           </div>
+//         </div>
+//       </div>
+      
+//       <div slot="footer">
+//         <sl-button variant="neutral" class="close-button">Close</sl-button>
+//       </div>
+//     `;
+    
+//     // Add drawer to document
+//     document.body.appendChild(this.drawer);
+    
+//     // Get references to UI elements
+//     this.previewContainer = this.drawer.querySelector('#preview-container');
+    
+//     // Set up event listeners
+//     this.setupEventListeners();
+//   }
+
+createUI() {
+  console.log("Creating ShapeForge UI");
+  
+  // Create drawer
+  this.drawer = document.createElement('sl-drawer');
+  this.drawer.label = 'ShapeForge - 3D Geometry Editor';
+  this.drawer.placement = 'end';
+  this.drawer.style.setProperty ('--size','calc(100vw - 260px');
+  
+  // Create drawer content
+  this.drawer.innerHTML = `
+    <div id="shape-forge-container" style="display: flex; height: 100%; overflow: hidden;">
+      <!-- Left panel for tools and properties -->
+      <div class="tool-panel" style="width: 250px; padding: 0 10px; overflow-y: auto; border-right: 1px solid #444;">
+        <!-- Project Info -->
+        <div class="panel-section">
+          <h3>Project</h3>
+          <sl-input id="project-name" label="Name" placeholder="Untitled Project"></sl-input>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px;">
+            <sl-button id="new-project" size="small">New</sl-button>
+            <sl-button id="save-project" size="small">Save</sl-button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px;">
+  <sl-button id="import-additional" size="small">Add to Project</sl-button>
+  <sl-button id="export-code" size="small">Export Code</sl-button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px;">
+  <sl-button id="save-to-resources" size="small">Resources</sl-button>
+  <sl-button id="clear-all" size="small" variant="danger">Clear All</sl-button>
+</div>
+        </div>
+        
+        
+        <!-- Basic Shapes -->
+        <div class="panel-section" style="margin-top: 20px;">
+          <h3>Basic Shapes</h3>
+          <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+            <sl-button id="shape-cube">Cube</sl-button>
+            <sl-button id="shape-sphere">Sphere</sl-button>
+            <sl-button id="shape-cylinder">Cylinder</sl-button>
+            <sl-button id="shape-cone">Cone</sl-button>
+            <sl-button id="shape-torus">Torus</sl-button>
+            <sl-button id="shape-plane">Plane</sl-button>
+          </div>
+        </div>
+        
+        <!-- RPG Dice Shapes -->
+        <div class="panel-section" style="margin-top: 20px;">
+          <h3>RPG Dice</h3>
+          <div class="shape-buttons" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+            <sl-button id="shape-d4">D4</sl-button>
+            <sl-button id="shape-d6">D6</sl-button>
+            <sl-button id="shape-d8">D8</sl-button>
+            <sl-button id="shape-d10">D10</sl-button>
+            <sl-button id="shape-d12">D12</sl-button>
+            <sl-button id="shape-d20">D20</sl-button>
+          </div>
+        </div>
+        
+        <!-- Transform Controls -->
+        <div class="panel-section" style="margin-top: 20px;">
+          <h3>Transform</h3>
+          <div id="transform-container">
+            <!-- Position -->
+            <div class="transform-group">
+              <label>Position</label>
+              <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
+                <label>X:</label>
+                <sl-range id="position-x" min="-10" max="10" step="0.1" value="0"></sl-range>
+                <label>Y:</label>
+                <sl-range id="position-y" min="-10" max="10" step="0.1" value="0"></sl-range>
+                <label>Z:</label>
+                <sl-range id="position-z" min="-10" max="10" step="0.1" value="0"></sl-range>
               </div>
-              
-              <!-- Rotation -->
-              <div class="transform-group" style="margin-top: 10px;">
-                <label>Rotation</label>
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
-                  <label>X:</label>
-                  <sl-range id="rotation-x" min="0" max="6.28" step="0.1" value="0"></sl-range>
-                  <label>Y:</label>
-                  <sl-range id="rotation-y" min="0" max="6.28" step="0.1" value="0"></sl-range>
-                  <label>Z:</label>
-                  <sl-range id="rotation-z" min="0" max="6.28" step="0.1" value="0"></sl-range>
-                </div>
-              </div>
-              
-              <!-- Scale -->
-              <div class="transform-group" style="margin-top: 10px;">
-                <label>Scale</label>
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
-                  <label>X:</label>
-                  <sl-range id="scale-x" min="0.1" max="5" step="0.1" value="1"></sl-range>
-                  <label>Y:</label>
-                  <sl-range id="scale-y" min="0.1" max="5" step="0.1" value="1"></sl-range>
-                  <label>Z:</label>
-                  <sl-range id="scale-z" min="0.1" max="5" step="0.1" value="1"></sl-range>
-                </div>
+            </div>
+            
+            <!-- Rotation -->
+            <div class="transform-group" style="margin-top: 10px;">
+              <label>Rotation</label>
+              <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
+                <label>X:</label>
+                <sl-range id="rotation-x" min="0" max="6.28" step="0.1" value="0"></sl-range>
+                <label>Y:</label>
+                <sl-range id="rotation-y" min="0" max="6.28" step="0.1" value="0"></sl-range>
+                <label>Z:</label>
+                <sl-range id="rotation-z" min="0" max="6.28" step="0.1" value="0"></sl-range>
               </div>
             </div>
-          </div>
-          
-          <!-- Shape Properties -->
-          <div class="panel-section" style="margin-top: 20px;">
-            <h3>Properties</h3>
-            <div id="properties-container">
-              <!-- Properties will be added dynamically based on selected object -->
-              <div class="no-selection-message">
-                Select or create an object to edit properties
-              </div>
-            </div>
-          </div>
-          
-          <!-- Materials -->
-          <div class="panel-section" style="margin-top: 20px;">
-            <h3>Materials</h3>
-            <div id="materials-container">
-              <sl-select label="Material Type" id="material-type">
-                <sl-option value="basic">Basic</sl-option>
-                <sl-option value="standard">Standard</sl-option>
-                <sl-option value="phong">Phong</sl-option>
-                <sl-option value="lambert">Lambert</sl-option>
-              </sl-select>
-              
-              <sl-color-picker label="Color" id="material-color" value="#3388ff"></sl-color-picker>
-              
-              <sl-checkbox id="material-wireframe">Wireframe</sl-checkbox>
-              
-              <sl-range id="material-opacity" min="0" max="1" step="0.01" value="1" 
-                      label="Opacity"></sl-range>
-              
-              <sl-range id="material-metalness" min="0" max="1" step="0.01" value="0" 
-                      label="Metalness"></sl-range>
-              
-              <sl-range id="material-roughness" min="0" max="1" step="0.01" value="0.5" 
-                      label="Roughness"></sl-range>
-            </div>
-          </div>
-          
-          <!-- Shader Effects -->
-          <div class="panel-section" style="margin-top: 20px;">
-            <h3>Shader Effects</h3>
-            <div id="effects-container">
-              <sl-select label="Effect Type" id="effect-type">
-                <sl-option value="none">None</sl-option>
-                <sl-option value="glow">Glow Effect</sl-option>
-                <sl-option value="fire">Fire Effect</sl-option>
-                <sl-option value="magic">Magic Effect</sl-option>
-              </sl-select>
-              
-              <div id="effect-properties" style="display: none; margin-top: 10px;">
-                <!-- Effect properties will be added dynamically -->
+            
+            <!-- Scale -->
+            <div class="transform-group" style="margin-top: 10px;">
+              <label>Scale</label>
+              <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
+                <label>X:</label>
+                <sl-range id="scale-x" min="0.1" max="5" step="0.1" value="1"></sl-range>
+                <label>Y:</label>
+                <sl-range id="scale-y" min="0.1" max="5" step="0.1" value="1"></sl-range>
+                <label>Z:</label>
+                <sl-range id="scale-z" min="0.1" max="5" step="0.1" value="1"></sl-range>
               </div>
             </div>
           </div>
         </div>
         
-        <!-- Right panel for preview -->
-        <div class="preview-panel" style="flex: 1; display: flex; flex-direction: column;">
-          <div class="preview-toolbar" style="padding: 10px; border-bottom: 1px solid #444;">
-            <sl-button id="preview-reset-camera">Reset View</sl-button>
-            <sl-button-group>
-              <sl-button id="preview-wireframe">Wireframe</sl-button>
-              <sl-button id="preview-solid">Solid</sl-button>
-            </sl-button-group>
-            <sl-button-group style="margin-left: auto;">
-              <sl-button id="object-undo" disabled>Undo</sl-button>
-              <sl-button id="object-redo" disabled>Redo</sl-button>
-            </sl-button-group>
+        <!-- Shape Properties -->
+        <div class="panel-section" style="margin-top: 20px;">
+          <h3>Properties</h3>
+          <div id="properties-container">
+            <!-- Properties will be added dynamically based on selected object -->
+            <div class="no-selection-message">
+              Select or create an object to edit properties
+            </div>
           </div>
-          
-          <div id="preview-container" style="flex: 1; position: relative;">
-            <!-- Three.js preview will be inserted here -->
-          </div>
-          
-          <div class="preview-footer" style="padding: 10px; border-top: 1px solid #444; display: flex; justify-content: space-between;">
-            <sl-button-group>
-              <sl-button id="object-duplicate">Duplicate</sl-button>
-              <sl-button id="object-delete" variant="danger">Delete</sl-button>
-            </sl-button-group>
+        </div>
+        
+        <!-- Materials -->
+        <div class="panel-section" style="margin-top: 20px;">
+          <h3>Materials</h3>
+          <div id="materials-container">
+            <sl-select label="Material Type" id="material-type">
+              <sl-option value="basic">Basic</sl-option>
+              <sl-option value="standard">Standard</sl-option>
+              <sl-option value="phong">Phong</sl-option>
+              <sl-option value="lambert">Lambert</sl-option>
+            </sl-select>
             
-            <sl-button-group>
-              <sl-button id="save-to-resources" variant="success">Save to Resources</sl-button>
-              <sl-button id="export-code" variant="primary">Export Code</sl-button>
-              <sl-button id="export-json" variant="primary">Export JSON</sl-button>
-            </sl-button-group>
+            <sl-color-picker label="Color" id="material-color" value="#3388ff"></sl-color-picker>
+            
+            <sl-checkbox id="material-wireframe">Wireframe</sl-checkbox>
+            
+            <sl-range id="material-opacity" min="0" max="1" step="0.01" value="1" 
+                    label="Opacity"></sl-range>
+            
+            <sl-range id="material-metalness" min="0" max="1" step="0.01" value="0" 
+                    label="Metalness"></sl-range>
+            
+            <sl-range id="material-roughness" min="0" max="1" step="0.01" value="0.5" 
+                    label="Roughness"></sl-range>
+          </div>
+        </div>
+        
+        <!-- Shader Effects -->
+        <div class="panel-section" style="margin-top: 20px;">
+          <h3>Shader Effects</h3>
+          <div id="effects-container">
+            <sl-select label="Effect Type" id="effect-type">
+              <sl-option value="none">None</sl-option>
+              <sl-option value="glow">Glow Effect</sl-option>
+              <sl-option value="fire">Fire Effect</sl-option>
+              <sl-option value="magic">Magic Effect</sl-option>
+            </sl-select>
+            
+            <div id="effect-properties" style="display: none; margin-top: 10px;">
+              <!-- Effect properties will be added dynamically -->
+            </div>
           </div>
         </div>
       </div>
       
-      <div slot="footer">
-        <sl-button variant="neutral" class="close-button">Close</sl-button>
+      <!-- Right panel for preview -->
+      <div class="preview-panel" style="flex: 1; display: flex; flex-direction: column;">
+
+        
+        <div id="preview-container" style="flex: 1; position: relative;">
+          <!-- Three.js preview will be inserted here -->
+        </div>
       </div>
-    `;
+    </div>
     
-    // Add drawer to document
-    document.body.appendChild(this.drawer);
-    
-    // Get references to UI elements
-    this.previewContainer = this.drawer.querySelector('#preview-container');
-    
-    // Set up event listeners
-    this.setupEventListeners();
-  }
+    <div slot="footer">
+      <sl-button variant="neutral" class="close-button">Close</sl-button>
+    </div>
+  `;
+  
+  // Add drawer to document
+  document.body.appendChild(this.drawer);
+  
+  // Get references to UI elements
+  this.previewContainer = this.drawer.querySelector('#preview-container');
+  this.objectsListContainer = this.drawer.querySelector('#objects-list-container');
+  
+  // Set up event listeners
+  this.setupEventListeners();
+}
   
   /**
    * Set up event listeners for UI interactions
    */
+  // setupEventListeners() {
+  //   // Close button
+  //   this.drawer.querySelector('.close-button').addEventListener('click', () => {
+  //     this.hide();
+  //   });
+    
+  //   // Shape creation buttons
+  //   const shapeButtons = {
+  //     'shape-cube': this.createCube.bind(this),
+  //     'shape-sphere': this.createSphere.bind(this),
+  //     'shape-cylinder': this.createCylinder.bind(this),
+  //     'shape-cone': this.createCone.bind(this),
+  //     'shape-torus': this.createTorus.bind(this),
+  //     'shape-plane': this.createPlane.bind(this),
+  //     'shape-d4': this.createTetrahedron.bind(this),
+  //     'shape-d6': this.createCube.bind(this),
+  //     'shape-d8': this.createOctahedron.bind(this),
+  //     'shape-d10': this.createD10.bind(this),
+  //     'shape-d12': this.createDodecahedron.bind(this),
+  //     'shape-d20': this.createIcosahedron.bind(this)
+  //   };
+    
+  //   // Add event listeners for shape buttons
+  //   Object.entries(shapeButtons).forEach(([id, handler]) => {
+  //     const button = this.drawer.querySelector(`#${id}`);
+  //     if (button) {
+  //       button.addEventListener('click', handler);
+  //     }
+  //   });
+    
+  //   // Material type change
+  //   const materialTypeSelect = this.drawer.querySelector('#material-type');
+  //   if (materialTypeSelect) {
+  //     materialTypeSelect.addEventListener('sl-change', (e) => {
+  //       this.updateMaterialType(e.target.value);
+  //     });
+  //   }
+    
+  //   // Material color change
+  //   const colorPicker = this.drawer.querySelector('#material-color');
+  //   if (colorPicker) {
+  //     colorPicker.addEventListener('sl-change', (e) => {
+  //       this.updateMaterialColor(e.target.value);
+  //     });
+  //   }
+    
+  //   // Material property changes
+  //   ['wireframe', 'opacity', 'metalness', 'roughness'].forEach(prop => {
+  //     const control = this.drawer.querySelector(`#material-${prop}`);
+  //     if (control) {
+  //       control.addEventListener('sl-change', (e) => {
+  //         this.updateMaterialProperty(prop, e.target.type === 'checkbox' ? e.target.checked : e.target.value);
+  //       });
+  //     }
+  //   });
+    
+  //   // Project controls
+  //   this.drawer.querySelector('#new-project')?.addEventListener('click', this.newProject.bind(this));
+  //   this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
+  //   this.drawer.querySelector('#save-project')?.addEventListener('click', this.saveProject.bind(this));
+    
+  //   // Transform controls
+  //   const transformControls = ['position', 'rotation', 'scale'];
+  //   const axes = ['x', 'y', 'z'];
+    
+  //   transformControls.forEach(control => {
+  //     axes.forEach(axis => {
+  //       const slider = this.drawer.querySelector(`#${control}-${axis}`);
+  //       if (slider) {
+  //         slider.addEventListener('sl-change', (e) => {
+  //           this.updateTransform(control, axis, e.target.value);
+  //         });
+  //       }
+  //     });
+  //   });
+    
+  //   // Preview controls
+  //   this.drawer.querySelector('#preview-reset-camera')?.addEventListener('click', this.resetCamera.bind(this));
+  //   this.drawer.querySelector('#preview-wireframe')?.addEventListener('click', () => this.setPreviewMode('wireframe'));
+  //   this.drawer.querySelector('#preview-solid')?.addEventListener('click', () => this.setPreviewMode('solid'));
+    
+  //   // History controls
+  //   this.drawer.querySelector('#object-undo')?.addEventListener('click', this.undo.bind(this));
+  //   this.drawer.querySelector('#object-redo')?.addEventListener('click', this.redo.bind(this));
+    
+  //   // Object controls
+  //   this.drawer.querySelector('#object-duplicate')?.addEventListener('click', this.duplicateSelectedObject.bind(this));
+  //   this.drawer.querySelector('#object-delete')?.addEventListener('click', this.deleteSelectedObject.bind(this));
+    
+  //   // Export controls
+  //   this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
+  //   this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
+  //   this.drawer.querySelector('#export-json')?.addEventListener('click', this.exportProjectJson.bind(this));
+    
+  //   // Window resize
+  //   window.addEventListener('resize', this.handleResize);
+  // }
+  
   setupEventListeners() {
-    // Close button
-    this.drawer.querySelector('.close-button').addEventListener('click', () => {
-      this.hide();
+   // Close button
+   this.drawer.querySelector('.close-button').addEventListener('click', () => {
+    this.hide();
+  });
+  
+  // Shape creation buttons
+  const shapeButtons = {
+    'shape-cube': this.createCube.bind(this),
+    'shape-sphere': this.createSphere.bind(this),
+    'shape-cylinder': this.createCylinder.bind(this),
+    'shape-cone': this.createCone.bind(this),
+    'shape-torus': this.createTorus.bind(this),
+    'shape-plane': this.createPlane.bind(this),
+    'shape-d4': this.createTetrahedron.bind(this),
+    'shape-d6': this.createCube.bind(this),
+    'shape-d8': this.createOctahedron.bind(this),
+    'shape-d10': this.createD10.bind(this),
+    'shape-d12': this.createDodecahedron.bind(this),
+    'shape-d20': this.createIcosahedron.bind(this)
+  };
+  
+  // Add event listeners for shape buttons
+  Object.entries(shapeButtons).forEach(([id, handler]) => {
+    const button = this.drawer.querySelector(`#${id}`);
+    if (button) {
+      button.addEventListener('click', handler);
+    }
+  });
+  
+  // Material type change
+  const materialTypeSelect = this.drawer.querySelector('#material-type');
+  if (materialTypeSelect) {
+    materialTypeSelect.addEventListener('sl-change', (e) => {
+      this.updateMaterialType(e.target.value);
     });
-    
-    // Shape creation buttons
-    const shapeButtons = {
-      'shape-cube': this.createCube.bind(this),
-      'shape-sphere': this.createSphere.bind(this),
-      'shape-cylinder': this.createCylinder.bind(this),
-      'shape-cone': this.createCone.bind(this),
-      'shape-torus': this.createTorus.bind(this),
-      'shape-plane': this.createPlane.bind(this),
-      'shape-d4': this.createTetrahedron.bind(this),
-      'shape-d6': this.createCube.bind(this),
-      'shape-d8': this.createOctahedron.bind(this),
-      'shape-d10': this.createD10.bind(this),
-      'shape-d12': this.createDodecahedron.bind(this),
-      'shape-d20': this.createIcosahedron.bind(this)
-    };
-    
-    // Add event listeners for shape buttons
-    Object.entries(shapeButtons).forEach(([id, handler]) => {
-      const button = this.drawer.querySelector(`#${id}`);
-      if (button) {
-        button.addEventListener('click', handler);
-      }
+  }
+  
+  // Material color change
+  const colorPicker = this.drawer.querySelector('#material-color');
+  if (colorPicker) {
+    colorPicker.addEventListener('sl-change', (e) => {
+      this.updateMaterialColor(e.target.value);
     });
-    
-    // Material type change
-    const materialTypeSelect = this.drawer.querySelector('#material-type');
-    if (materialTypeSelect) {
-      materialTypeSelect.addEventListener('sl-change', (e) => {
-        this.updateMaterialType(e.target.value);
+  }
+  
+  // Material property changes
+  ['wireframe', 'opacity', 'metalness', 'roughness'].forEach(prop => {
+    const control = this.drawer.querySelector(`#material-${prop}`);
+    if (control) {
+      control.addEventListener('sl-change', (e) => {
+        this.updateMaterialProperty(prop, e.target.type === 'checkbox' ? e.target.checked : e.target.value);
       });
     }
-    
-    // Material color change
-    const colorPicker = this.drawer.querySelector('#material-color');
-    if (colorPicker) {
-      colorPicker.addEventListener('sl-change', (e) => {
-        this.updateMaterialColor(e.target.value);
-      });
-    }
-    
-    // Material property changes
-    ['wireframe', 'opacity', 'metalness', 'roughness'].forEach(prop => {
-      const control = this.drawer.querySelector(`#material-${prop}`);
-      if (control) {
-        control.addEventListener('sl-change', (e) => {
-          this.updateMaterialProperty(prop, e.target.type === 'checkbox' ? e.target.checked : e.target.value);
+  });
+  
+  // Project controls
+  this.drawer.querySelector('#new-project')?.addEventListener('click', this.newProject.bind(this));
+  this.drawer.querySelector('#save-project')?.addEventListener('click', this.saveProject.bind(this));
+  this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
+  this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
+  this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
+  
+  // NEW: Object action buttons in header
+  // this.drawer.querySelector('#duplicate-selected')?.addEventListener('click', this.duplicateSelectedObject.bind(this));
+  // this.drawer.querySelector('#delete-selected')?.addEventListener('click', this.deleteSelectedObject.bind(this));
+  
+  // Transform controls
+  const transformControls = ['position', 'rotation', 'scale'];
+  const axes = ['x', 'y', 'z'];
+  
+  transformControls.forEach(control => {
+    axes.forEach(axis => {
+      const slider = this.drawer.querySelector(`#${control}-${axis}`);
+      if (slider) {
+        slider.addEventListener('sl-change', (e) => {
+          this.updateTransform(control, axis, e.target.value);
         });
       }
     });
-    
-    // Project controls
-    this.drawer.querySelector('#new-project')?.addEventListener('click', this.newProject.bind(this));
-    this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
-    this.drawer.querySelector('#save-project')?.addEventListener('click', this.saveProject.bind(this));
-    
-    // Transform controls
-    const transformControls = ['position', 'rotation', 'scale'];
-    const axes = ['x', 'y', 'z'];
-    
-    transformControls.forEach(control => {
-      axes.forEach(axis => {
-        const slider = this.drawer.querySelector(`#${control}-${axis}`);
-        if (slider) {
-          slider.addEventListener('sl-change', (e) => {
-            this.updateTransform(control, axis, e.target.value);
-          });
-        }
-      });
-    });
-    
-    // Preview controls
-    this.drawer.querySelector('#preview-reset-camera')?.addEventListener('click', this.resetCamera.bind(this));
-    this.drawer.querySelector('#preview-wireframe')?.addEventListener('click', () => this.setPreviewMode('wireframe'));
-    this.drawer.querySelector('#preview-solid')?.addEventListener('click', () => this.setPreviewMode('solid'));
-    
-    // History controls
-    this.drawer.querySelector('#object-undo')?.addEventListener('click', this.undo.bind(this));
-    this.drawer.querySelector('#object-redo')?.addEventListener('click', this.redo.bind(this));
-    
-    // Object controls
-    this.drawer.querySelector('#object-duplicate')?.addEventListener('click', this.duplicateSelectedObject.bind(this));
-    this.drawer.querySelector('#object-delete')?.addEventListener('click', this.deleteSelectedObject.bind(this));
-    
-    // Export controls
-    this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
-    this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
-    this.drawer.querySelector('#export-json')?.addEventListener('click', this.exportProjectJson.bind(this));
-    
-    // Window resize
-    window.addEventListener('resize', this.handleResize);
-  }
+  });
+
+  this.drawer.querySelector('#import-additional')?.addEventListener('click', this.importAdditional.bind(this));
+  this.drawer.querySelector('#clear-all')?.addEventListener('click', this.clearAll.bind(this));
   
+  // Preview controls
+  this.drawer.querySelector('#preview-reset-camera')?.addEventListener('click', this.resetCamera.bind(this));
+  this.drawer.querySelector('#preview-wireframe')?.addEventListener('click', () => this.setPreviewMode('wireframe'));
+  this.drawer.querySelector('#preview-solid')?.addEventListener('click', () => this.setPreviewMode('solid'));
+  
+  // History controls
+  this.drawer.querySelector('#object-undo')?.addEventListener('click', this.undo.bind(this));
+  this.drawer.querySelector('#object-redo')?.addEventListener('click', this.redo.bind(this));
+  
+  // Window resize
+  window.addEventListener('resize', this.handleResize);
+  }
+
   /**
    * Initialize the preview scene
    */
@@ -2441,28 +2724,88 @@ setupBasicCameraControls() {
    * Save the current project
    */
   saveProject() {
-    // Get project name
+    // // Get project name
+    // const projectNameInput = this.drawer.querySelector('#project-name');
+    // const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+    
+    // // Create JSON representation of the project
+    // const projectData = this.createProjectData();
+    
+    // // Create file name
+    // const fileName = `${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.shapeforge.json`;
+    
+    // // Create a blob and download it
+    // const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    // const url = URL.createObjectURL(blob);
+    
+    // const a = document.createElement('a');
+    // a.href = url;
+    // a.download = fileName;
+    // a.click();
+    
+    // URL.revokeObjectURL(url);
+    
+    // console.log(`Project "${projectName}" saved`);
+
     const projectNameInput = this.drawer.querySelector('#project-name');
     const projectName = (projectNameInput?.value || 'Untitled Project').trim();
     
-    // Create JSON representation of the project
-    const projectData = this.createProjectData();
+    // Create file name dialog
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Save Project';
     
-    // Create file name
-    const fileName = `${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.shapeforge.json`;
+    dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <sl-input id="export-filename" label="File Name" value="${projectName}.shapeforge.json"></sl-input>
+        <p>This will save your project as a .shapeforge.json file that can be loaded back into ShapeForge.</p>
+      </div>
+      <div slot="footer">
+        <sl-button id="save-btn" variant="primary">Save</sl-button>
+        <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
+      </div>
+    `;
     
-    // Create a blob and download it
-    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    document.body.appendChild(dialog);
     
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.click();
+    dialog.querySelector('#save-btn').addEventListener('click', () => {
+      const filename = dialog.querySelector('#export-filename').value.trim();
+      if (!filename) return;
+      
+      // Create JSON representation of the project
+      const projectData = this.createProjectData();
+      
+      // Create a blob and download it
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      dialog.hide();
+      
+      // Show success message
+      const toast = document.createElement('sl-alert');
+      toast.variant = 'success';
+      toast.duration = 3000;
+      toast.closable = true;
+      toast.innerHTML = `Project saved as ${filename}`;
+      
+      document.body.appendChild(toast);
+      toast.toast();
+    });
     
-    URL.revokeObjectURL(url);
+    dialog.querySelector('.close-dialog').addEventListener('click', () => {
+      dialog.hide();
+    });
     
-    console.log(`Project "${projectName}" saved`);
+    dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+    });
+    
+    dialog.show();
   }
   
   /**
@@ -2501,96 +2844,233 @@ setupBasicCameraControls() {
    */
 
  createProjectData() {
-    // Get project name
-    const projectNameInput = this.drawer.querySelector('#project-name');
-    const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+    // // Get project name
+    // const projectNameInput = this.drawer.querySelector('#project-name');
+    // const projectName = (projectNameInput?.value || 'Untitled Project').trim();
     
-    // Create thumbnail
-    const thumbnail = this.createThumbnail();
+    // // Create thumbnail
+    // const thumbnail = this.createThumbnail();
     
-    // Create object data with detailed effect information
-    const objectsData = this.objects.map(obj => {
-      // Basic object info
-      const objData = {
-        type: obj.type,
-        name: obj.name,
-        parameters: obj.parameters,
-        position: { ...obj.position },
-        rotation: { ...obj.rotation },
-        scale: { ...obj.scale }
+    // // Create object data with detailed effect information
+    // const objectsData = this.objects.map(obj => {
+    //   // Basic object info
+    //   const objData = {
+    //     type: obj.type,
+    //     name: obj.name,
+    //     parameters: obj.parameters,
+    //     position: { ...obj.position },
+    //     rotation: { ...obj.rotation },
+    //     scale: { ...obj.scale }
+    //   };
+      
+    //   // Material info
+    //   if (obj.material) {
+    //     objData.material = {
+    //       type: this.getMaterialType(obj.material),
+    //       color: obj.material.color?.getHex() || 0x3388ff,
+    //       wireframe: obj.material.wireframe || false,
+    //       transparent: obj.material.transparent || false,
+    //       opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
+    //       metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
+    //       roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
+    //     };
+    //   }
+      
+    //   // Enhanced shader effect info
+    //   if (obj.effect) {
+    //     // Create effect data object
+    //     const effectData = {
+    //       type: obj.effect.type,
+    //       parameters: {} // Will hold effect parameters
+    //     };
+        
+    //     // Extract parameters from effect data
+    //     if (obj.effect.data) {
+    //       // Get light properties if available
+    //       if (obj.effect.data.light) {
+    //         effectData.parameters.color = obj.effect.data.light.color.getHex();
+    //         effectData.parameters.intensity = obj.effect.data.light.intensity;
+    //         effectData.parameters.distance = obj.effect.data.light.distance;
+    //       }
+          
+    //       // Get particle properties if available
+    //       if (obj.effect.data.particles) {
+    //         // Try to determine particle count
+    //         if (obj.effect.data.particles.geometry && 
+    //             obj.effect.data.particles.geometry.attributes && 
+    //             obj.effect.data.particles.geometry.attributes.position) {
+    //           effectData.parameters.particleCount = 
+    //             obj.effect.data.particles.geometry.attributes.position.count;
+    //         }
+            
+    //         // Get particle size
+    //         if (obj.effect.data.particles.material) {
+    //           effectData.parameters.particleSize = obj.effect.data.particles.material.size;
+    //         }
+    //       }
+          
+    //       // Get animation data if available
+    //       if (obj.effect.data.animationData) {
+    //         effectData.parameters.speed = obj.effect.data.animationData.speed;
+    //         if (obj.effect.data.animationData.pattern) {
+    //           effectData.parameters.pattern = obj.effect.data.animationData.pattern;
+    //         }
+    //       }
+    //     }
+        
+    //     objData.effect = effectData;
+    //   }
+      
+    //   return objData;
+    // });
+    
+    // // Create project data
+    // const projectData = {
+    //   name: projectName,
+    //   version: '1.1', // Bump version for enhanced effect support
+    //   created: new Date().toISOString(),
+    //   thumbnail: thumbnail,
+    //   objects: objectsData
+    // };
+    
+    // return projectData;
+
+      // Get project name
+  const projectNameInput = this.drawer.querySelector('#project-name');
+  const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+  
+  // Create thumbnail
+  const thumbnail = this.createThumbnail();
+  
+  // Create object data with detailed effect information
+  const objectsData = this.objects.map(obj => {
+    // Basic object info
+    const objData = {
+      type: obj.type,
+      name: obj.name,
+      parameters: obj.parameters,
+      position: { ...obj.position },
+      rotation: { ...obj.rotation },
+      scale: { ...obj.scale }
+    };
+    
+    // Material info
+    if (obj.material) {
+      objData.material = {
+        type: this.getMaterialType(obj.material),
+        color: obj.material.color?.getHex() || 0x3388ff,
+        wireframe: obj.material.wireframe || false,
+        transparent: obj.material.transparent || false,
+        opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
+        metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
+        roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
+      };
+    }
+    
+    // NEW: Save geometry data for merged objects
+    if (obj.type === 'merged' && obj.geometry) {
+      const geometry = obj.geometry;
+      const geometryData = {
+        vertices: [],
+        normals: [],
+        uvs: [],
+        indices: []
       };
       
-      // Material info
-      if (obj.material) {
-        objData.material = {
-          type: this.getMaterialType(obj.material),
-          color: obj.material.color?.getHex() || 0x3388ff,
-          wireframe: obj.material.wireframe || false,
-          transparent: obj.material.transparent || false,
-          opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
-          metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
-          roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
-        };
+      // Save position (vertex) data
+      if (geometry.attributes.position) {
+        const positions = geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i++) {
+          geometryData.vertices.push(positions[i]);
+        }
       }
       
-      // Enhanced shader effect info
-      if (obj.effect) {
-        // Create effect data object
-        const effectData = {
-          type: obj.effect.type,
-          parameters: {} // Will hold effect parameters
-        };
+      // Save normal data
+      if (geometry.attributes.normal) {
+        const normals = geometry.attributes.normal.array;
+        for (let i = 0; i < normals.length; i++) {
+          geometryData.normals.push(normals[i]);
+        }
+      }
+      
+      // Save UV data
+      if (geometry.attributes.uv) {
+        const uvs = geometry.attributes.uv.array;
+        for (let i = 0; i < uvs.length; i++) {
+          geometryData.uvs.push(uvs[i]);
+        }
+      }
+      
+      // Save index data
+      if (geometry.index) {
+        const indices = geometry.index.array;
+        for (let i = 0; i < indices.length; i++) {
+          geometryData.indices.push(indices[i]);
+        }
+      }
+      
+      // Add geometry data to object data
+      objData.geometryData = geometryData;
+    }
+    
+    // Enhanced shader effect info
+    if (obj.effect) {
+      // Create effect data object
+      const effectData = {
+        type: obj.effect.type,
+        parameters: {} // Will hold effect parameters
+      };
+      
+      // Extract parameters from effect data
+      if (obj.effect.data) {
+        // Get light properties if available
+        if (obj.effect.data.light) {
+          effectData.parameters.color = obj.effect.data.light.color.getHex();
+          effectData.parameters.intensity = obj.effect.data.light.intensity;
+          effectData.parameters.distance = obj.effect.data.light.distance;
+        }
         
-        // Extract parameters from effect data
-        if (obj.effect.data) {
-          // Get light properties if available
-          if (obj.effect.data.light) {
-            effectData.parameters.color = obj.effect.data.light.color.getHex();
-            effectData.parameters.intensity = obj.effect.data.light.intensity;
-            effectData.parameters.distance = obj.effect.data.light.distance;
+        // Get particle properties if available
+        if (obj.effect.data.particles) {
+          // Try to determine particle count
+          if (obj.effect.data.particles.geometry && 
+              obj.effect.data.particles.geometry.attributes && 
+              obj.effect.data.particles.geometry.attributes.position) {
+            effectData.parameters.particleCount = 
+              obj.effect.data.particles.geometry.attributes.position.count;
           }
           
-          // Get particle properties if available
-          if (obj.effect.data.particles) {
-            // Try to determine particle count
-            if (obj.effect.data.particles.geometry && 
-                obj.effect.data.particles.geometry.attributes && 
-                obj.effect.data.particles.geometry.attributes.position) {
-              effectData.parameters.particleCount = 
-                obj.effect.data.particles.geometry.attributes.position.count;
-            }
-            
-            // Get particle size
-            if (obj.effect.data.particles.material) {
-              effectData.parameters.particleSize = obj.effect.data.particles.material.size;
-            }
-          }
-          
-          // Get animation data if available
-          if (obj.effect.data.animationData) {
-            effectData.parameters.speed = obj.effect.data.animationData.speed;
-            if (obj.effect.data.animationData.pattern) {
-              effectData.parameters.pattern = obj.effect.data.animationData.pattern;
-            }
+          // Get particle size
+          if (obj.effect.data.particles.material) {
+            effectData.parameters.particleSize = obj.effect.data.particles.material.size;
           }
         }
         
-        objData.effect = effectData;
+        // Get animation data if available
+        if (obj.effect.data.animationData) {
+          effectData.parameters.speed = obj.effect.data.animationData.speed;
+          if (obj.effect.data.animationData.pattern) {
+            effectData.parameters.pattern = obj.effect.data.animationData.pattern;
+          }
+        }
       }
       
-      return objData;
-    });
+      objData.effect = effectData;
+    }
     
-    // Create project data
-    const projectData = {
-      name: projectName,
-      version: '1.1', // Bump version for enhanced effect support
-      created: new Date().toISOString(),
-      thumbnail: thumbnail,
-      objects: objectsData
-    };
-    
-    return projectData;
+    return objData;
+  });
+  
+  // Create project data
+  const projectData = {
+    name: projectName,
+    version: '1.2', // Bump version for merged geometry support
+    created: new Date().toISOString(),
+    thumbnail: thumbnail,
+    objects: objectsData
+  };
+  
+  return projectData;
   };
 
   
@@ -2842,68 +3322,68 @@ setupBasicCameraControls() {
   /**
    * Export the project to JSON file
    */
-  exportProjectJson() {
-    const projectNameInput = this.drawer.querySelector('#project-name');
-    const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+  // exportProjectJson() {
+  //   const projectNameInput = this.drawer.querySelector('#project-name');
+  //   const projectName = (projectNameInput?.value || 'Untitled Project').trim();
     
-    // Create file name dialog
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = 'Export Project as JSON';
+  //   // Create file name dialog
+  //   const dialog = document.createElement('sl-dialog');
+  //   dialog.label = 'Export Project as JSON';
     
-    dialog.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 16px;">
-        <sl-input id="export-filename" label="File Name" value="${projectName}.shapeforge.json"></sl-input>
-        <p>This will export your project as a .shapeforge.json file that can be loaded back into ShapeForge or saved to ResourceManager.</p>
-        <p>The export includes all objects, materials, transforms, and effects.</p>
-      </div>
-      <div slot="footer">
-        <sl-button id="export-btn" variant="primary">Export</sl-button>
-        <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
-      </div>
-    `;
+  //   dialog.innerHTML = `
+  //     <div style="display: flex; flex-direction: column; gap: 16px;">
+  //       <sl-input id="export-filename" label="File Name" value="${projectName}.shapeforge.json"></sl-input>
+  //       <p>This will export your project as a .shapeforge.json file that can be loaded back into ShapeForge or saved to ResourceManager.</p>
+  //       <p>The export includes all objects, materials, transforms, and effects.</p>
+  //     </div>
+  //     <div slot="footer">
+  //       <sl-button id="export-btn" variant="primary">Export</sl-button>
+  //       <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
+  //     </div>
+  //   `;
     
-    document.body.appendChild(dialog);
+  //   document.body.appendChild(dialog);
     
-    dialog.querySelector('#export-btn').addEventListener('click', () => {
-      const filename = dialog.querySelector('#export-filename').value.trim();
-      if (!filename) return;
+  //   dialog.querySelector('#export-btn').addEventListener('click', () => {
+  //     const filename = dialog.querySelector('#export-filename').value.trim();
+  //     if (!filename) return;
       
-      // Create JSON representation of the project
-      const projectData = this.createProjectData();
+  //     // Create JSON representation of the project
+  //     const projectData = this.createProjectData();
       
-      // Create a blob and download it
-      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+  //     // Create a blob and download it
+  //     const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+  //     const url = URL.createObjectURL(blob);
       
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
+  //     const a = document.createElement('a');
+  //     a.href = url;
+  //     a.download = filename;
+  //     a.click();
       
-      URL.revokeObjectURL(url);
-      dialog.hide();
+  //     URL.revokeObjectURL(url);
+  //     dialog.hide();
       
-      // Show success message
-      const toast = document.createElement('sl-alert');
-      toast.variant = 'success';
-      toast.duration = 3000;
-      toast.closable = true;
-      toast.innerHTML = `Project exported as ${filename}`;
+  //     // Show success message
+  //     const toast = document.createElement('sl-alert');
+  //     toast.variant = 'success';
+  //     toast.duration = 3000;
+  //     toast.closable = true;
+  //     toast.innerHTML = `Project exported as ${filename}`;
       
-      document.body.appendChild(toast);
-      toast.toast();
-    });
+  //     document.body.appendChild(toast);
+  //     toast.toast();
+  //   });
     
-    dialog.querySelector('.close-dialog').addEventListener('click', () => {
-      dialog.hide();
-    });
+  //   dialog.querySelector('.close-dialog').addEventListener('click', () => {
+  //     dialog.hide();
+  //   });
     
-    dialog.addEventListener('sl-after-hide', () => {
-      dialog.remove();
-    });
+  //   dialog.addEventListener('sl-after-hide', () => {
+  //     dialog.remove();
+  //   });
     
-    dialog.show();
-  };
+  //   dialog.show();
+  // };
   
   //-------------------------------------------------------
   // Export & Save
@@ -3380,76 +3860,659 @@ ShapeForge.prototype.selectObject = function(index) {
 /**
  * Create and show the objects list panel with better styling
  */
-ShapeForge.prototype.createObjectsListPanel = function() {
-  // Create panel container
-  const panel = document.createElement('div');
-  panel.className = 'objects-list-panel';
-  panel.style.cssText = `
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 200px;
-    max-height: calc(100% - 20px);
-    background: rgba(40, 40, 40, 0.9);
-    border-radius: 4px;
-    padding: 10px;
-    color: white;
-    font-family: sans-serif;
-    font-size: 12px;
-    overflow-y: auto;
-    z-index: 100;
-    border: 1px solid #555;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  `;
+// ShapeForge.prototype.createObjectsListPanel = function() {
+//   // Create panel container
+//   const panel = document.createElement('div');
+//   panel.className = 'objects-list-panel';
+//   panel.style.cssText = `
+//     position: absolute;
+//     top: 10px;
+//     left: 10px;
+//     width: 200px;
+//     max-height: calc(100% - 20px);
+//     background: rgba(40, 40, 40, 0.9);
+//     border-radius: 4px;
+//     padding: 10px;
+//     color: white;
+//     font-family: sans-serif;
+//     font-size: 12px;
+//     overflow-y: auto;
+//     z-index: 100;
+//     border: 1px solid #555;
+//     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+//   `;
   
-  // Add title
-  const title = document.createElement('div');
-  title.textContent = 'Objects';
-  title.style.cssText = `
-    font-weight: bold;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #555;
-    font-size: 14px;
-  `;
-  panel.appendChild(title);
+//   // Add title
+//   const title = document.createElement('div');
+//   title.textContent = 'Objects';
+//   title.style.cssText = `
+//     font-weight: bold;
+//     margin-bottom: 8px;
+//     padding-bottom: 8px;
+//     border-bottom: 1px solid #555;
+//     font-size: 14px;
+//   `;
+//   panel.appendChild(title);
   
-  // Add list container
-  const listContainer = document.createElement('div');
-  listContainer.className = 'objects-list';
-  listContainer.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  `;
-  panel.appendChild(listContainer);
+//   // Add list container
+//   const listContainer = document.createElement('div');
+//   listContainer.className = 'objects-list';
+//   listContainer.style.cssText = `
+//     display: flex;
+//     flex-direction: column;
+//     gap: 4px;
+//   `;
+//   panel.appendChild(listContainer);
   
-  // Add to preview container
-  if (this.previewContainer) {
-    this.previewContainer.appendChild(panel);
-    this.objectsListPanel = panel;
-    this.objectsListContainer = listContainer;
+//   // Add to preview container
+//   if (this.previewContainer) {
+//     this.previewContainer.appendChild(panel);
+//     this.objectsListPanel = panel;
+//     this.objectsListContainer = listContainer;
     
-    // Initial update of the list
-    this.updateObjectsList();
-    console.log('Objects list panel created and added to preview container');
-  } else {
-    console.warn('Preview container not available, objects list not added');
-  }
+//     // Initial update of the list
+//     this.updateObjectsList();
+//     console.log('Objects list panel created and added to preview container');
+//   } else {
+//     console.warn('Preview container not available, objects list not added');
+//   }
   
-  return panel;
+//   return panel;
+// };
+
+ShapeForge.prototype.createObjectsListPanel = function() {
+  // // Create panel container
+  // const panel = document.createElement('div');
+  // panel.className = 'objects-list-panel';
+  // panel.style.cssText = `
+  //   position: absolute;
+  //   top: 10px;
+  //   left: 10px;
+  //   width: 200px;
+  //   max-height: calc(100% - 20px);
+  //   background: rgba(40, 40, 40, 0.9);
+  //   border-radius: 4px;
+  //   padding: 10px;
+  //   color: white;
+  //   font-family: sans-serif;
+  //   font-size: 12px;
+  //   overflow-y: auto;
+  //   z-index: 100;
+  //   border: 1px solid #555;
+  //   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  // `;
+  
+  // // Add header with title and buttons
+  // const headerRow = document.createElement('div');
+  // headerRow.style.cssText = `
+  //   display: flex;
+  //   justify-content: space-between;
+  //   align-items: center;
+  //   margin-bottom: 8px;
+  //   padding-bottom: 8px;
+  //   border-bottom: 1px solid #555;
+  // `;
+  
+  // // Title
+  // const title = document.createElement('div');
+  // title.textContent = 'Objects';
+  // title.style.cssText = `
+  //   font-weight: bold;
+  //   font-size: 14px;
+  // `;
+  // headerRow.appendChild(title);
+  
+  // // Action buttons
+  // const buttonsContainer = document.createElement('div');
+  // buttonsContainer.style.cssText = `
+  //   display: flex;
+  //   gap: 4px;
+  // `;
+  
+  // // Duplicate button
+  // const duplicateBtn = document.createElement('sl-button');
+  // duplicateBtn.id = 'duplicate-object-btn';
+  // duplicateBtn.setAttribute('size', 'small');
+  // duplicateBtn.setAttribute('circle', '');
+  // duplicateBtn.innerHTML = '<sl-icon name="copy"></sl-icon>';
+  // duplicateBtn.addEventListener('click', () => this.duplicateSelectedObject());
+  // buttonsContainer.appendChild(duplicateBtn);
+  
+  // // Delete button
+  // const deleteBtn = document.createElement('sl-button');
+  // deleteBtn.id = 'delete-object-btn';
+  // deleteBtn.setAttribute('size', 'small');
+  // deleteBtn.setAttribute('circle', '');
+  // deleteBtn.setAttribute('variant', 'danger');
+  // deleteBtn.innerHTML = '<sl-icon name="trash"></sl-icon>';
+  // deleteBtn.addEventListener('click', () => this.deleteSelectedObject());
+  // buttonsContainer.appendChild(deleteBtn);
+  
+  // headerRow.appendChild(buttonsContainer);
+  // panel.appendChild(headerRow);
+  
+  // // Add list container
+  // const listContainer = document.createElement('div');
+  // listContainer.className = 'objects-list';
+  // listContainer.style.cssText = `
+  //   display: flex;
+  //   flex-direction: column;
+  //   gap: 4px;
+  // `;
+  // panel.appendChild(listContainer);
+  
+  // // Add to preview container
+  // if (this.previewContainer) {
+  //   this.previewContainer.appendChild(panel);
+  //   this.objectsListPanel = panel;
+  //   this.objectsListContainer = listContainer;
+    
+  //   // Initial update of the list
+  //   this.updateObjectsList();
+  //   console.log('Objects list panel created and added to preview container');
+  // } else {
+  //   console.warn('Preview container not available, objects list not added');
+  // }
+  
+  // return panel;
+
+    // Create panel container
+    const panel = document.createElement('div');
+    panel.className = 'objects-list-panel';
+    panel.style.cssText = `
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 240px;
+      max-height: calc(100% - 20px);
+      background: rgba(40, 40, 40, 0.9);
+      border-radius: 4px;
+      padding: 10px;
+      color: white;
+      font-family: sans-serif;
+      font-size: 12px;
+      overflow-y: auto;
+      z-index: 100;
+      border: 1px solid #555;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    `;
+    
+    // Add header with title
+    const headerRow = document.createElement('div');
+    headerRow.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #555;
+    `;
+    
+    // Title
+    const title = document.createElement('div');
+    title.textContent = 'Objects';
+    title.style.cssText = `
+      font-weight: bold;
+      font-size: 14px;
+    `;
+    headerRow.appendChild(title);
+    
+    panel.appendChild(headerRow);
+    
+    // Add toolbar with all controls
+    const toolbarRow = document.createElement('div');
+    toolbarRow.style.cssText = `
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    `;
+    
+    // Object actions group
+    const objectActions = document.createElement('div');
+    objectActions.style.cssText = `
+      display: flex;
+      gap: 4px;
+      margin-right: 2px;
+    `;
+    
+    // Duplicate button
+    const duplicateBtn = document.createElement('sl-button');
+    duplicateBtn.id = 'duplicate-object-btn';
+    duplicateBtn.setAttribute('size', 'small');
+    duplicateBtn.setAttribute('circle', '');
+    duplicateBtn.setAttribute('variant', 'warning');
+    duplicateBtn.setAttribute('title', 'Duplicate Object');
+    duplicateBtn.innerHTML = '<sl-icon name="copy"></sl-icon>';
+    duplicateBtn.addEventListener('click', () => this.duplicateSelectedObject());
+    objectActions.appendChild(duplicateBtn);
+    
+    // Delete button
+    const deleteBtn = document.createElement('sl-button');
+    deleteBtn.id = 'delete-object-btn';
+    deleteBtn.setAttribute('size', 'small');
+    deleteBtn.setAttribute('circle', '');
+    deleteBtn.setAttribute('variant', 'danger');
+    deleteBtn.setAttribute('title', 'Delete Object');
+    deleteBtn.innerHTML = '<sl-icon name="trash"></sl-icon>';
+    deleteBtn.addEventListener('click', () => this.deleteSelectedObject());
+    objectActions.appendChild(deleteBtn);
+    
+    toolbarRow.appendChild(objectActions);
+    
+    // View controls group
+    const viewControls = document.createElement('div');
+    viewControls.style.cssText = `
+      display: flex;
+      gap: 4px;
+      margin-right: 2px;
+            border-bottom: 1px solid #555;
+    `;
+    
+    // Reset view button
+    const resetViewBtn = document.createElement('sl-button');
+    resetViewBtn.id = 'reset-view-btn';
+    resetViewBtn.setAttribute('size', 'small');
+    resetViewBtn.setAttribute('circle', '');
+    resetViewBtn.setAttribute('title', 'Reset View');
+    resetViewBtn.setAttribute('variant', 'success');
+    resetViewBtn.innerHTML = '<sl-icon name="arrows-fullscreen"></sl-icon>';
+    resetViewBtn.addEventListener('click', () => this.resetCamera());
+    viewControls.appendChild(resetViewBtn);
+    
+    // Wireframe button
+    const wireframeBtn = document.createElement('sl-button');
+    wireframeBtn.id = 'wireframe-btn';
+    wireframeBtn.setAttribute('size', 'small');
+    wireframeBtn.setAttribute('circle', '');
+    wireframeBtn.setAttribute('variant', 'success');
+    wireframeBtn.setAttribute('title', 'Wireframe Mode');
+    wireframeBtn.innerHTML = '<sl-icon name="bounding-box"></sl-icon>';
+    wireframeBtn.addEventListener('click', () => this.setPreviewMode('wireframe'));
+    viewControls.appendChild(wireframeBtn);
+    
+    // Solid button
+    const solidBtn = document.createElement('sl-button');
+    solidBtn.id = 'solid-btn';
+    solidBtn.setAttribute('size', 'small');
+    solidBtn.setAttribute('circle', '');
+    solidBtn.setAttribute('variant', 'success');
+    solidBtn.setAttribute('title', 'Solid Mode');
+    solidBtn.innerHTML = '<sl-icon name="square"></sl-icon>';
+    solidBtn.addEventListener('click', () => this.setPreviewMode('solid'));
+    viewControls.appendChild(solidBtn);
+    
+    toolbarRow.appendChild(viewControls);
+    
+    // History controls group
+    const historyControls = document.createElement('div');
+    historyControls.style.cssText = `
+      display: flex;
+      gap: 4px;
+    `;
+    
+    // Undo button
+    const undoBtn = document.createElement('sl-button');
+    undoBtn.id = 'undo-btn';
+    undoBtn.setAttribute('size', 'small');
+    undoBtn.setAttribute('circle', '');
+    undoBtn.setAttribute('title', 'Undo');
+    undoBtn.innerHTML = '<sl-icon name="arrow-counterclockwise"></sl-icon>';
+    undoBtn.addEventListener('click', () => this.undo());
+    historyControls.appendChild(undoBtn);
+    
+    // Redo button
+    const redoBtn = document.createElement('sl-button');
+    redoBtn.id = 'redo-btn';
+    redoBtn.setAttribute('size', 'small');
+    redoBtn.setAttribute('circle', '');
+    redoBtn.setAttribute('title', 'Redo');
+    redoBtn.innerHTML = '<sl-icon name="arrow-clockwise"></sl-icon>';
+    redoBtn.addEventListener('click', () => this.redo());
+    historyControls.appendChild(redoBtn);
+    
+    toolbarRow.appendChild(historyControls);
+    
+    panel.appendChild(toolbarRow);
+    
+    // Add list container
+    const listContainer = document.createElement('div');
+    listContainer.className = 'objects-list';
+    listContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    `;
+    panel.appendChild(listContainer);
+    
+    // Add to preview container
+    if (this.previewContainer) {
+      this.previewContainer.appendChild(panel);
+      this.objectsListPanel = panel;
+      this.objectsListContainer = listContainer;
+      
+      // Store button references for state updates
+      this.undoButton = undoBtn;
+      this.redoButton = redoBtn;
+      
+      // Initial update of the list
+      this.updateObjectsList();
+      console.log('Objects list panel created and added to preview container');
+    } else {
+      console.warn('Preview container not available, objects list not added');
+    }
+    
+    return panel;
 };
 
+// ShapeForge.prototype.updateObjectsList = function() {
+//   if (!this.objectsListContainer) {
+//     console.warn('Objects list container not available');
+//     return;
+//   }
+  
+//   console.log('Updating objects list with', this.objects.length, 'objects');
+  
+//   // Clear current list
+//   this.objectsListContainer.innerHTML = '';
+  
+//   // Add entry for each object
+//   this.objects.forEach((obj, index) => {
+//     const entry = document.createElement('div');
+//     entry.className = 'object-entry';
+//     entry.dataset.index = index;
+    
+//     // Determine if this object is selected
+//     const isSelected = this.multiSelectEnabled 
+//       ? this.selectedObjects.includes(index)
+//       : this.selectedObject === index;
+    
+//     entry.style.cssText = `
+//       padding: 5px;
+//       margin-bottom: 4px;
+//       border-radius: 3px;
+//       cursor: pointer;
+//       display: flex;
+//       align-items: center;
+//       ${isSelected ? 'background: #3388ff; color: white;' : 'background: #444;'}
+//       transition: background-color 0.2s;
+//     `;
+    
+//     // Add hover effect
+//     entry.onmouseover = () => {
+//       if (!isSelected) {
+//         entry.style.backgroundColor = '#555';
+//       }
+//     };
+    
+//     entry.onmouseout = () => {
+//       if (!isSelected) {
+//         entry.style.backgroundColor = '#444';
+//       }
+//     };
+    
+//     // Add multi-select checkbox if in multi-select mode
+//     if (this.multiSelectEnabled) {
+//       const checkbox = document.createElement('input');
+//       checkbox.type = 'checkbox';
+//       checkbox.checked = isSelected;
+//       checkbox.style.marginRight = '8px';
+//       checkbox.addEventListener('change', (e) => {
+//         e.stopPropagation(); // Don't trigger the entry click
+//         if (e.target.checked) {
+//           // Add to selection if not already in it
+//           if (!this.selectedObjects.includes(index)) {
+//             this.selectedObjects.push(index);
+            
+//             // Highlight the object
+//             if (this.objects[index].mesh.material && 
+//                 this.objects[index].mesh.material.emissive !== undefined) {
+//               this.objects[index].mesh.material.emissive = new THREE.Color(0x333333);
+//             }
+//           }
+//         } else {
+//           // Remove from selection
+//           const selIndex = this.selectedObjects.indexOf(index);
+//           if (selIndex !== -1) {
+//             this.selectedObjects.splice(selIndex, 1);
+            
+//             // Remove highlight
+//             if (this.objects[index].mesh.material && 
+//                 this.objects[index].mesh.material.emissive !== undefined) {
+//               this.objects[index].mesh.material.emissive = new THREE.Color(0x000000);
+//             }
+//           }
+//         }
+        
+//         // Update visual appearance
+//         entry.style.backgroundColor = e.target.checked ? '#3388ff' : '#444';
+//         entry.style.color = e.target.checked ? 'white' : 'inherit';
+//       });
+//       entry.appendChild(checkbox);
+//     }
+    
+//     // Add icon based on shape type
+//     const icon = document.createElement('span');
+//     icon.style.cssText = `
+//       font-size: 16px;
+//       margin-right: 8px;
+//       width: 20px;
+//       text-align: center;
+//     `;
+    
+//     // Choose icon based on shape type
+//     let iconText = '★'; // Default
+//     switch (obj.type) {
+//       case 'cube': iconText = '□'; break;
+//       case 'sphere': iconText = '○'; break;
+//       case 'cylinder': iconText = '⌭'; break;
+//       case 'cone': iconText = '▲'; break;
+//       case 'torus': iconText = '⊗'; break;
+//       case 'plane': iconText = '▬'; break;
+//       case 'tetrahedron': iconText = '△'; break;
+//       case 'octahedron': iconText = '◇'; break;
+//       case 'dodecahedron': iconText = '⬠'; break;
+//       case 'icosahedron': iconText = '⬢'; break;
+//       case 'd10': iconText = '⯁'; break;
+//     }
+//     icon.textContent = iconText;
+//     entry.appendChild(icon);
+    
+//     // Add object name
+//     const name = document.createElement('span');
+//     name.className = 'object-name';
+//     name.textContent = obj.name;
+//     name.style.cssText = 'flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+//     entry.appendChild(name);
+
+
+
+//         // Add visibility toggle
+//     const visToggle = document.createElement('span');
+//     visToggle.className = 'visibility-toggle';
+//     visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
+//     visToggle.style.cssText = 'margin-left: 8px; cursor: pointer;';
+//     visToggle.onclick = (e) => {
+//       e.stopPropagation();
+//       obj.mesh.visible = !obj.mesh.visible;
+//       visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
+//     };
+//     entry.appendChild(visToggle);
+    
+    
+//     // Add click handler for selection
+//     entry.addEventListener('click', () => {
+//       console.log(`Clicked on object ${index}: ${obj.name} (multi-select: ${this.multiSelectEnabled})`);
+//       this.selectObject(index);
+//     });
+    
+//     // Add to list
+//     this.objectsListContainer.appendChild(entry);
+//   });
+  
+//   // Add empty state message if no objects
+//   if (this.objects.length === 0) {
+//     const emptyMsg = document.createElement('div');
+//     emptyMsg.textContent = 'No objects created yet.';
+//     emptyMsg.style.cssText = 'color: #aaa; font-style: italic; text-align: center; padding: 10px;';
+//     this.objectsListContainer.appendChild(emptyMsg);
+//   }
+  
+//   // Add selection count if in multi-select mode
+//   if (this.multiSelectEnabled && this.selectedObjects && this.selectedObjects.length > 0) {
+//     const selectionInfo = document.createElement('div');
+//     selectionInfo.style.cssText = `
+//       margin-top: 10px;
+//       padding: 5px;
+//       background: #333;
+//       border-radius: 3px;
+//       text-align: center;
+//     `;
+//     selectionInfo.textContent = `${this.selectedObjects.length} objects selected`;
+//     this.objectsListContainer.appendChild(selectionInfo);
+//   }
+// };
+
 ShapeForge.prototype.updateObjectsList = function() {
+  // if (!this.objectsListContainer) {
+  //   console.warn('Objects list container not available');
+  //   return;
+  // }
+  
+  // // Clear current list
+  // while (this.objectsListContainer.firstChild) {
+  //   if (this.objectsListContainer.firstChild.tagName && 
+  //       this.objectsListContainer.firstChild.tagName.startsWith('SL-')) {
+  //     this.objectsListContainer.firstChild.remove();
+  //   } else {
+  //     this.objectsListContainer.removeChild(this.objectsListContainer.firstChild);
+  //   }
+  // }
+  
+  // // Show message if no objects
+  // if (this.objects.length === 0) {
+  //   const emptyMsg = document.createElement('div');
+  //   emptyMsg.className = 'no-objects-message';
+  //   emptyMsg.textContent = 'No objects created yet';
+  //   emptyMsg.style.cssText = 'padding: 8px; color: #aaa; font-style: italic;';
+  //   this.objectsListContainer.appendChild(emptyMsg);
+  //   return;
+  // }
+  
+  // // Add entry for each object
+  // this.objects.forEach((obj, index) => {
+  //   const entry = document.createElement('div');
+  //   entry.className = 'object-entry';
+  //   entry.dataset.index = index;
+    
+  //   // Determine if this object is selected
+  //   const isSelected = this.multiSelectEnabled 
+  //     ? this.selectedObjects?.includes(index)
+  //     : this.selectedObject === index;
+    
+  //   entry.style.cssText = `
+  //     padding: 5px;
+  //     margin-bottom: 4px;
+  //     border-radius: 3px;
+  //     cursor: pointer;
+  //     display: flex;
+  //     align-items: center;
+  //     ${isSelected ? 'background: #3388ff; color: white;' : 'background: #444;'}
+  //     transition: background-color 0.2s;
+  //   `;
+    
+  //   // Add hover effect
+  //   entry.onmouseover = () => {
+  //     if (!isSelected) {
+  //       entry.style.backgroundColor = '#555';
+  //     }
+  //   };
+    
+  //   entry.onmouseout = () => {
+  //     if (!isSelected) {
+  //       entry.style.backgroundColor = '#444';
+  //     }
+  //   };
+    
+  //   // Add icon based on shape type
+  //   const icon = document.createElement('span');
+  //   icon.style.cssText = `
+  //     font-size: 16px;
+  //     margin-right: 8px;
+  //     width: 20px;
+  //     text-align: center;
+  //   `;
+    
+  //   // Choose icon based on shape type
+  //   let iconText = '★'; // Default
+  //   switch (obj.type) {
+  //     case 'cube': iconText = '□'; break;
+  //     case 'sphere': iconText = '○'; break;
+  //     case 'cylinder': iconText = '⌭'; break;
+  //     case 'cone': iconText = '▲'; break;
+  //     case 'torus': iconText = '⊗'; break;
+  //     case 'plane': iconText = '▬'; break;
+  //     case 'tetrahedron': iconText = '△'; break;
+  //     case 'octahedron': iconText = '◇'; break;
+  //     case 'dodecahedron': iconText = '⬠'; break;
+  //     case 'icosahedron': iconText = '⬢'; break;
+  //     case 'd10': iconText = '⯁'; break;
+  //   }
+  //   icon.textContent = iconText;
+  //   entry.appendChild(icon);
+    
+  //   // Add object name
+  //   const name = document.createElement('span');
+  //   name.className = 'object-name';
+  //   name.textContent = obj.name;
+  //   name.style.cssText = 'flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+  //   entry.appendChild(name);
+    
+  //   // Add visibility toggle
+  //   const visToggle = document.createElement('span');
+  //   visToggle.className = 'visibility-toggle';
+  //   visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
+  //   visToggle.style.cssText = 'margin-left: 4px; cursor: pointer;';
+  //   visToggle.onclick = (e) => {
+  //     e.stopPropagation();
+  //     obj.mesh.visible = !obj.mesh.visible;
+  //     visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
+  //   };
+  //   entry.appendChild(visToggle);
+    
+  //   // Click handler for selection
+  //   entry.addEventListener('click', () => {
+  //     this.selectObject(index);
+  //   });
+    
+  //   // Add to list
+  //   this.objectsListContainer.appendChild(entry);
+  // });
+
   if (!this.objectsListContainer) {
     console.warn('Objects list container not available');
     return;
   }
   
-  console.log('Updating objects list with', this.objects.length, 'objects');
+  // Clear current list properly
+  while (this.objectsListContainer.firstChild) {
+    if (this.objectsListContainer.firstChild.tagName && 
+        this.objectsListContainer.firstChild.tagName.startsWith('SL-')) {
+      this.objectsListContainer.firstChild.remove();
+    } else {
+      this.objectsListContainer.removeChild(this.objectsListContainer.firstChild);
+    }
+  }
   
-  // Clear current list
-  this.objectsListContainer.innerHTML = '';
+  // Show message if no objects
+  if (this.objects.length === 0) {
+    const emptyMsg = document.createElement('div');
+    emptyMsg.className = 'no-objects-message';
+    emptyMsg.textContent = 'No objects created yet';
+    emptyMsg.style.cssText = 'padding: 8px; color: #aaa; font-style: italic;';
+    this.objectsListContainer.appendChild(emptyMsg);
+    return;
+  }
   
   // Add entry for each object
   this.objects.forEach((obj, index) => {
@@ -3459,7 +4522,7 @@ ShapeForge.prototype.updateObjectsList = function() {
     
     // Determine if this object is selected
     const isSelected = this.multiSelectEnabled 
-      ? this.selectedObjects.includes(index)
+      ? this.selectedObjects?.includes(index)
       : this.selectedObject === index;
     
     entry.style.cssText = `
@@ -3485,46 +4548,6 @@ ShapeForge.prototype.updateObjectsList = function() {
         entry.style.backgroundColor = '#444';
       }
     };
-    
-    // Add multi-select checkbox if in multi-select mode
-    if (this.multiSelectEnabled) {
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = isSelected;
-      checkbox.style.marginRight = '8px';
-      checkbox.addEventListener('change', (e) => {
-        e.stopPropagation(); // Don't trigger the entry click
-        if (e.target.checked) {
-          // Add to selection if not already in it
-          if (!this.selectedObjects.includes(index)) {
-            this.selectedObjects.push(index);
-            
-            // Highlight the object
-            if (this.objects[index].mesh.material && 
-                this.objects[index].mesh.material.emissive !== undefined) {
-              this.objects[index].mesh.material.emissive = new THREE.Color(0x333333);
-            }
-          }
-        } else {
-          // Remove from selection
-          const selIndex = this.selectedObjects.indexOf(index);
-          if (selIndex !== -1) {
-            this.selectedObjects.splice(selIndex, 1);
-            
-            // Remove highlight
-            if (this.objects[index].mesh.material && 
-                this.objects[index].mesh.material.emissive !== undefined) {
-              this.objects[index].mesh.material.emissive = new THREE.Color(0x000000);
-            }
-          }
-        }
-        
-        // Update visual appearance
-        entry.style.backgroundColor = e.target.checked ? '#3388ff' : '#444';
-        entry.style.color = e.target.checked ? 'white' : 'inherit';
-      });
-      entry.appendChild(checkbox);
-    }
     
     // Add icon based on shape type
     const icon = document.createElement('span');
@@ -3559,25 +4582,34 @@ ShapeForge.prototype.updateObjectsList = function() {
     name.textContent = obj.name;
     name.style.cssText = 'flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
     entry.appendChild(name);
-
-
-
-        // Add visibility toggle
-    const visToggle = document.createElement('span');
+    
+    // Edit button
+    const editBtn = document.createElement('sl-icon-button');
+    editBtn.setAttribute('name', 'pencil');
+    editBtn.setAttribute('label', 'Edit Name');
+    editBtn.style.cssText = 'font-size: 14px; color: inherit;';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.showRenameDialog(obj, index);
+    });
+    entry.appendChild(editBtn);
+    
+    // Add visibility toggle with icon
+    const visToggle = document.createElement('sl-icon-button');
     visToggle.className = 'visibility-toggle';
-    visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
-    visToggle.style.cssText = 'margin-left: 8px; cursor: pointer;';
-    visToggle.onclick = (e) => {
+    visToggle.setAttribute('name', obj.mesh.visible ? 'eye' : 'eye-slash');
+    visToggle.setAttribute('label', obj.mesh.visible ? 'Hide Object' : 'Show Object');
+    visToggle.style.cssText = 'font-size: 14px; color: inherit;';
+    visToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       obj.mesh.visible = !obj.mesh.visible;
-      visToggle.textContent = obj.mesh.visible ? '👁️' : '👁️‍🗨️';
-    };
+      visToggle.setAttribute('name', obj.mesh.visible ? 'eye' : 'eye-slash');
+      visToggle.setAttribute('label', obj.mesh.visible ? 'Hide Object' : 'Show Object');
+    });
     entry.appendChild(visToggle);
     
-    
-    // Add click handler for selection
+    // Click handler for selection
     entry.addEventListener('click', () => {
-      console.log(`Clicked on object ${index}: ${obj.name} (multi-select: ${this.multiSelectEnabled})`);
       this.selectObject(index);
     });
     
@@ -3585,27 +4617,82 @@ ShapeForge.prototype.updateObjectsList = function() {
     this.objectsListContainer.appendChild(entry);
   });
   
-  // Add empty state message if no objects
-  if (this.objects.length === 0) {
-    const emptyMsg = document.createElement('div');
-    emptyMsg.textContent = 'No objects created yet.';
-    emptyMsg.style.cssText = 'color: #aaa; font-style: italic; text-align: center; padding: 10px;';
-    this.objectsListContainer.appendChild(emptyMsg);
-  }
+  // Update history buttons state
+  this.updateHistoryButtons();
+};
+
+ShapeForge.prototype.showRenameDialog = function(obj, index) {
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'Rename Object';
   
-  // Add selection count if in multi-select mode
-  if (this.multiSelectEnabled && this.selectedObjects && this.selectedObjects.length > 0) {
-    const selectionInfo = document.createElement('div');
-    selectionInfo.style.cssText = `
-      margin-top: 10px;
-      padding: 5px;
-      background: #333;
-      border-radius: 3px;
-      text-align: center;
-    `;
-    selectionInfo.textContent = `${this.selectedObjects.length} objects selected`;
-    this.objectsListContainer.appendChild(selectionInfo);
-  }
+  dialog.innerHTML = `
+    <sl-input id="new-name" label="Object Name" value="${obj.name}"></sl-input>
+    
+    <div slot="footer">
+      <sl-button id="rename-btn" variant="primary">Rename</sl-button>
+      <sl-button id="cancel-btn" variant="default">Cancel</sl-button>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+  
+  // Get input and set focus when dialog opens
+  const input = dialog.querySelector('#new-name');
+  dialog.addEventListener('sl-initial-focus', (e) => {
+    // Prevent default focus and set it to our input
+    e.preventDefault();
+    input.focus();
+    // Select all text for easy replacement
+    input.setSelectionRange(0, input.value.length);
+  });
+  
+  // Handle enter key in input
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      dialog.querySelector('#rename-btn').click();
+    }
+  });
+  
+  // Rename button handler
+  dialog.querySelector('#rename-btn').addEventListener('click', () => {
+    const newName = input.value.trim();
+    if (newName && newName !== obj.name) {
+      const oldName = obj.name;
+      obj.name = newName;
+      
+      // Add history step
+      this.addHistoryStep('rename', {
+        objectIndex: index,
+        oldName,
+        newName
+      });
+      
+      // Update UI
+      this.updateObjectsList();
+      
+      // Update name in properties panel if this object is selected
+      if (this.selectedObject === index) {
+        const nameInput = this.drawer.querySelector('#object-name');
+        if (nameInput) {
+          nameInput.value = newName;
+        }
+      }
+    }
+    dialog.hide();
+  });
+  
+  // Cancel button handler
+  dialog.querySelector('#cancel-btn').addEventListener('click', () => {
+    dialog.hide();
+  });
+  
+  // Remove dialog when closed
+  dialog.addEventListener('sl-after-hide', () => {
+    dialog.remove();
+  });
+  
+  dialog.show();
 };
 
 
@@ -4487,6 +5574,136 @@ ShapeForge.prototype.updateEffectProperty = function(property, value) {
   console.log(`Updated effect ${effectType} property ${property} to:`, value);
 };
 
+// ShapeForge.prototype.mergeSelectedObjects = function() {
+//   if (!this.multiSelectEnabled || !this.selectedObjects || this.selectedObjects.length < 2) {
+//     alert('Please select at least 2 objects in multi-select mode');
+//     return;
+//   }
+  
+//   console.log(`Attempting to merge ${this.selectedObjects.length} objects`);
+  
+//   // Get objects to merge
+//   const objectsToMerge = this.selectedObjects.map(idx => this.objects[idx]);
+  
+//   try {
+//     // Create a new Three.js Geometry to hold all merged geometries
+//     const mergedGeometry = new THREE.BufferGeometry();
+    
+//     // Arrays to hold all of the merged geometry attributes
+//     let positions = [];
+//     let normals = [];
+//     let uvs = [];
+    
+//     // Clone and transform each geometry before merging
+//     objectsToMerge.forEach(obj => {
+//       // Clone geometry
+//       const geometry = obj.geometry.clone();
+      
+//       // Apply object transforms to geometry
+//       const tempMesh = new THREE.Mesh(geometry);
+//       tempMesh.position.set(obj.position.x, obj.position.y, obj.position.z);
+//       tempMesh.rotation.set(obj.rotation.x, obj.rotation.y, obj.rotation.z);
+//       tempMesh.scale.set(obj.scale.x, obj.scale.y, obj.scale.z);
+//       tempMesh.updateMatrix();
+      
+//       // Apply the transforms to the geometry
+//       geometry.applyMatrix4(tempMesh.matrix);
+      
+//       // Get geometry attributes
+//       const positionArray = geometry.attributes.position.array;
+//       for (let i = 0; i < positionArray.length; i++) {
+//         positions.push(positionArray[i]);
+//       }
+      
+//       // Get normals if available
+//       if (geometry.attributes.normal) {
+//         const normalArray = geometry.attributes.normal.array;
+//         for (let i = 0; i < normalArray.length; i++) {
+//           normals.push(normalArray[i]);
+//         }
+//       }
+      
+//       // Get UVs if available
+//       if (geometry.attributes.uv) {
+//         const uvArray = geometry.attributes.uv.array;
+//         for (let i = 0; i < uvArray.length; i++) {
+//           uvs.push(uvArray[i]);
+//         }
+//       }
+//     });
+    
+//     // Create the merged geometry
+//     mergedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    
+//     if (normals.length > 0) {
+//       mergedGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+//     }
+    
+//     if (uvs.length > 0) {
+//       mergedGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+//     }
+    
+//     // Compute vertex normals if not provided
+//     if (normals.length === 0) {
+//       mergedGeometry.computeVertexNormals();
+//     }
+    
+//     // Use material from first object (could be improved)
+//     const material = objectsToMerge[0].material.clone();
+    
+//     // Create the merged mesh
+//     const mergedMesh = new THREE.Mesh(mergedGeometry, material);
+    
+//     // Create a name for the merged object
+//     const mergedName = `Merged ${objectsToMerge.map(o => o.name).join('+')}`;
+    
+//     // Create merged object data
+//     const mergedObject = {
+//       type: 'merged',
+//       name: mergedName,
+//       geometry: mergedGeometry,
+//       material: material,
+//       mesh: mergedMesh,
+//       parameters: {
+//         mergedFrom: objectsToMerge.map(obj => obj.name),
+//         isComposite: true
+//       },
+//       position: { x: 0, y: 0, z: 0 },
+//       rotation: { x: 0, y: 0, z: 0 },
+//       scale: { x: 1, y: 1, z: 1 }
+//     };
+    
+//     // Add to scene
+//     this.previewScene.add(mergedMesh);
+    
+//     // Add to objects array
+//     this.objects.push(mergedObject);
+    
+//     // Get indices of objects to remove (in reverse order to avoid indexing issues)
+//     const indicesToRemove = this.selectedObjects.slice().sort((a, b) => b - a);
+    
+//     // Remove original objects
+//     indicesToRemove.forEach(idx => {
+//       this.removeObject(idx);
+//     });
+    
+//     // Exit multi-select mode
+//     this.disableMultiSelect();
+    
+//     // Select the new merged object
+//     this.selectObject(this.objects.length - 1);
+    
+//     // Show success message
+//     alert(`Successfully merged ${objectsToMerge.length} objects into "${mergedName}"`);
+    
+//     return true;
+//   } catch (error) {
+//     console.error('Error merging objects:', error);
+//     alert(`Failed to merge objects: ${error.message}`);
+//     return false;
+//   }
+// };
+
 ShapeForge.prototype.mergeSelectedObjects = function() {
   if (!this.multiSelectEnabled || !this.selectedObjects || this.selectedObjects.length < 2) {
     alert('Please select at least 2 objects in multi-select mode');
@@ -4499,7 +5716,7 @@ ShapeForge.prototype.mergeSelectedObjects = function() {
   const objectsToMerge = this.selectedObjects.map(idx => this.objects[idx]);
   
   try {
-    // Create a new Three.js Geometry to hold all merged geometries
+    // Create a new BufferGeometry for the merged result
     const mergedGeometry = new THREE.BufferGeometry();
     
     // Arrays to hold all of the merged geometry attributes
@@ -4507,20 +5724,38 @@ ShapeForge.prototype.mergeSelectedObjects = function() {
     let normals = [];
     let uvs = [];
     
-    // Clone and transform each geometry before merging
+    // Track index offsets for faces
+    let currentIndex = 0;
+    let indices = [];
+    
+    // Process each geometry
     objectsToMerge.forEach(obj => {
       // Clone geometry
       const geometry = obj.geometry.clone();
       
       // Apply object transforms to geometry
       const tempMesh = new THREE.Mesh(geometry);
-      tempMesh.position.set(obj.position.x, obj.position.y, obj.position.z);
-      tempMesh.rotation.set(obj.rotation.x, obj.rotation.y, obj.rotation.z);
-      tempMesh.scale.set(obj.scale.x, obj.scale.y, obj.scale.z);
+      tempMesh.position.copy(obj.mesh.position);
+      tempMesh.rotation.copy(obj.mesh.rotation);
+      tempMesh.scale.copy(obj.mesh.scale);
       tempMesh.updateMatrix();
       
       // Apply the transforms to the geometry
       geometry.applyMatrix4(tempMesh.matrix);
+      
+      // If the geometry has an index buffer, use it
+      if (geometry.index) {
+        const indexArray = geometry.index.array;
+        for (let i = 0; i < indexArray.length; i++) {
+          indices.push(indexArray[i] + currentIndex);
+        }
+      } else {
+        // If no index buffer, create one based on positions
+        const posCount = geometry.attributes.position.count;
+        for (let i = 0; i < posCount; i += 3) {
+          indices.push(i + currentIndex, i + 1 + currentIndex, i + 2 + currentIndex);
+        }
+      }
       
       // Get geometry attributes
       const positionArray = geometry.attributes.position.array;
@@ -4543,26 +5778,36 @@ ShapeForge.prototype.mergeSelectedObjects = function() {
           uvs.push(uvArray[i]);
         }
       }
+      
+      // Update the offset for the next geometry
+      currentIndex += geometry.attributes.position.count;
     });
     
-    // Create the merged geometry
+    // Set attributes on the merged geometry
     mergedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     
-    if (normals.length > 0) {
+    if (normals.length > 0 && normals.length === positions.length) {
       mergedGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
     }
     
-    if (uvs.length > 0) {
+    if (uvs.length > 0 && uvs.length * 3/2 === positions.length) {
       mergedGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     }
     
-    // Compute vertex normals if not provided
-    if (normals.length === 0) {
-      mergedGeometry.computeVertexNormals();
+    // Add the index buffer if we have indices
+    if (indices.length > 0) {
+      mergedGeometry.setIndex(indices);
     }
     
-    // Use material from first object (could be improved)
+    // Compute vertex normals if not provided or if calculation needed
+    mergedGeometry.computeVertexNormals();
+    
+    // Create a merged material (clone the first object's material)
     const material = objectsToMerge[0].material.clone();
+    
+    // Set side to double to prevent culling issues
+    material.side = THREE.DoubleSide;
+    material.needsUpdate = true;
     
     // Create the merged mesh
     const mergedMesh = new THREE.Mesh(mergedGeometry, material);
@@ -5143,103 +6388,335 @@ ShapeForge.prototype.importJson = function() {
  * Create an object from JSON data with improved effect handling
  * @param {Object} objData - The object data from JSON
  */
+// ShapeForge.prototype.createObjectFromJson = function(objData) {
+//   // Create geometry based on type
+//   let geometry;
+//   switch (objData.type) {
+//     case 'cube':
+//       geometry = new THREE.BoxGeometry(
+//         objData.parameters.width || 1,
+//         objData.parameters.height || 1,
+//         objData.parameters.depth || 1,
+//         objData.parameters.widthSegments || 1,
+//         objData.parameters.heightSegments || 1,
+//         objData.parameters.depthSegments || 1
+//       );
+//       break;
+//     case 'sphere':
+//       geometry = new THREE.SphereGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.widthSegments || 32,
+//         objData.parameters.heightSegments || 16
+//       );
+//       break;
+//     case 'cylinder':
+//       geometry = new THREE.CylinderGeometry(
+//         objData.parameters.radiusTop || 0.5,
+//         objData.parameters.radiusBottom || 0.5,
+//         objData.parameters.height || 1,
+//         objData.parameters.radialSegments || 32
+//       );
+//       break;
+//     case 'cone':
+//       geometry = new THREE.ConeGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.height || 1,
+//         objData.parameters.radialSegments || 32
+//       );
+//       break;
+//     case 'torus':
+//       geometry = new THREE.TorusGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.tube || 0.2,
+//         objData.parameters.radialSegments || 16,
+//         objData.parameters.tubularSegments || 48
+//       );
+//       break;
+//     case 'plane':
+//       geometry = new THREE.PlaneGeometry(
+//         objData.parameters.width || 1,
+//         objData.parameters.height || 1,
+//         objData.parameters.widthSegments || 1,
+//         objData.parameters.heightSegments || 1
+//       );
+//       break;
+//     case 'tetrahedron':
+//       geometry = new THREE.TetrahedronGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.detail || 0
+//       );
+//       break;
+//     case 'octahedron':
+//       geometry = new THREE.OctahedronGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.detail || 0
+//       );
+//       break;
+//     case 'dodecahedron':
+//       geometry = new THREE.DodecahedronGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.detail || 0
+//       );
+//       break;
+//     case 'icosahedron':
+//       geometry = new THREE.IcosahedronGeometry(
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.detail || 0
+//       );
+//       break;
+//     case 'd10':
+//       geometry = new THREE.CylinderGeometry(
+//         0,
+//         objData.parameters.radius || 0.5,
+//         objData.parameters.height || 1,
+//         objData.parameters.segments || 5,
+//         1
+//       );
+//       // Customize vertices for d10 shape
+//       const vertices = geometry.attributes.position.array;
+//       for (let i = 0; i < vertices.length; i += 3) {
+//         if (vertices[i + 1] < 0) {
+//           vertices[i] *= 0.6;
+//           vertices[i + 2] *= 0.6;
+//         }
+//       }
+//       geometry.attributes.position.needsUpdate = true;
+//       break;
+//     default:
+//       console.warn(`Unknown geometry type: ${objData.type}`);
+//       return null;
+//   }
+  
+//   // Create material
+//   let material;
+//   if (objData.material) {
+//     const materialData = objData.material;
+//     const color = materialData.color !== undefined ? materialData.color : 0x3388ff;
+    
+//     // Create material based on type
+//     switch (materialData.type) {
+//       case 'MeshBasicMaterial':
+//         material = new THREE.MeshBasicMaterial({ color });
+//         break;
+//       case 'MeshStandardMaterial':
+//         material = new THREE.MeshStandardMaterial({
+//           color,
+//           roughness: materialData.roughness !== undefined ? materialData.roughness : 0.5,
+//           metalness: materialData.metalness !== undefined ? materialData.metalness : 0
+//         });
+//         break;
+//       case 'MeshPhongMaterial':
+//         material = new THREE.MeshPhongMaterial({ color });
+//         break;
+//       case 'MeshLambertMaterial':
+//         material = new THREE.MeshLambertMaterial({ color });
+//         break;
+//       default:
+//         material = new THREE.MeshStandardMaterial({ color });
+//     }
+    
+//     // Set common properties
+//     if (materialData.wireframe) material.wireframe = true;
+//     if (materialData.transparent) material.transparent = true;
+//     if (materialData.opacity !== undefined) material.opacity = materialData.opacity;
+//   } else {
+//     // Default material
+//     material = new THREE.MeshStandardMaterial({
+//       color: 0x3388ff,
+//       roughness: 0.5,
+//       metalness: 0
+//     });
+//   }
+  
+//   // Create mesh
+//   const mesh = new THREE.Mesh(geometry, material);
+  
+//   // Apply transforms
+//   if (objData.position) {
+//     mesh.position.set(
+//       objData.position.x || 0,
+//       objData.position.y || 0,
+//       objData.position.z || 0
+//     );
+//   }
+  
+//   if (objData.rotation) {
+//     mesh.rotation.set(
+//       objData.rotation.x || 0,
+//       objData.rotation.y || 0,
+//       objData.rotation.z || 0
+//     );
+//   }
+  
+//   if (objData.scale) {
+//     mesh.scale.set(
+//       objData.scale.x || 1,
+//       objData.scale.y || 1,
+//       objData.scale.z || 1
+//     );
+//   }
+  
+//   // Create object data
+//   const objectData = {
+//     type: objData.type,
+//     name: objData.name || `${objData.type} ${this.objects.length + 1}`,
+//     geometry: geometry,
+//     material: material,
+//     mesh: mesh,
+//     parameters: objData.parameters || {},
+//     position: objData.position || { x: 0, y: 0, z: 0 },
+//     rotation: objData.rotation || { x: 0, y: 0, z: 0 },
+//     scale: objData.scale || { x: 1, y: 1, z: 1 }
+//   };
+  
+//   // Add to scene
+//   this.previewScene.add(mesh);
+  
+//   // Add to objects array
+//   this.objects.push(objectData);
+  
+//   // Store effect data for later application
+//   if (objData.effect) {
+//     objectData.pendingEffect = objData.effect;
+//   }
+  
+//   return objectData;
+// };
+
 ShapeForge.prototype.createObjectFromJson = function(objData) {
-  // Create geometry based on type
   let geometry;
-  switch (objData.type) {
-    case 'cube':
-      geometry = new THREE.BoxGeometry(
-        objData.parameters.width || 1,
-        objData.parameters.height || 1,
-        objData.parameters.depth || 1,
-        objData.parameters.widthSegments || 1,
-        objData.parameters.heightSegments || 1,
-        objData.parameters.depthSegments || 1
-      );
-      break;
-    case 'sphere':
-      geometry = new THREE.SphereGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.widthSegments || 32,
-        objData.parameters.heightSegments || 16
-      );
-      break;
-    case 'cylinder':
-      geometry = new THREE.CylinderGeometry(
-        objData.parameters.radiusTop || 0.5,
-        objData.parameters.radiusBottom || 0.5,
-        objData.parameters.height || 1,
-        objData.parameters.radialSegments || 32
-      );
-      break;
-    case 'cone':
-      geometry = new THREE.ConeGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.height || 1,
-        objData.parameters.radialSegments || 32
-      );
-      break;
-    case 'torus':
-      geometry = new THREE.TorusGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.tube || 0.2,
-        objData.parameters.radialSegments || 16,
-        objData.parameters.tubularSegments || 48
-      );
-      break;
-    case 'plane':
-      geometry = new THREE.PlaneGeometry(
-        objData.parameters.width || 1,
-        objData.parameters.height || 1,
-        objData.parameters.widthSegments || 1,
-        objData.parameters.heightSegments || 1
-      );
-      break;
-    case 'tetrahedron':
-      geometry = new THREE.TetrahedronGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.detail || 0
-      );
-      break;
-    case 'octahedron':
-      geometry = new THREE.OctahedronGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.detail || 0
-      );
-      break;
-    case 'dodecahedron':
-      geometry = new THREE.DodecahedronGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.detail || 0
-      );
-      break;
-    case 'icosahedron':
-      geometry = new THREE.IcosahedronGeometry(
-        objData.parameters.radius || 0.5,
-        objData.parameters.detail || 0
-      );
-      break;
-    case 'd10':
-      geometry = new THREE.CylinderGeometry(
-        0,
-        objData.parameters.radius || 0.5,
-        objData.parameters.height || 1,
-        objData.parameters.segments || 5,
-        1
-      );
-      // Customize vertices for d10 shape
-      const vertices = geometry.attributes.position.array;
-      for (let i = 0; i < vertices.length; i += 3) {
-        if (vertices[i + 1] < 0) {
-          vertices[i] *= 0.6;
-          vertices[i + 2] *= 0.6;
+  
+  // Handle merged objects specially
+  if (objData.type === 'merged' && objData.geometryData) {
+    // Create a new BufferGeometry
+    geometry = new THREE.BufferGeometry();
+    
+    const geometryData = objData.geometryData;
+    
+    // Add vertex positions
+    if (geometryData.vertices && geometryData.vertices.length > 0) {
+      geometry.setAttribute('position', 
+        new THREE.Float32BufferAttribute(geometryData.vertices, 3));
+    }
+    
+    // Add normals
+    if (geometryData.normals && geometryData.normals.length > 0) {
+      geometry.setAttribute('normal', 
+        new THREE.Float32BufferAttribute(geometryData.normals, 3));
+    }
+    
+    // Add UVs
+    if (geometryData.uvs && geometryData.uvs.length > 0) {
+      geometry.setAttribute('uv', 
+        new THREE.Float32BufferAttribute(geometryData.uvs, 2));
+    }
+    
+    // Add indices
+    if (geometryData.indices && geometryData.indices.length > 0) {
+      geometry.setIndex(geometryData.indices);
+    }
+    
+    // Compute normals if missing
+    if (!geometryData.normals || geometryData.normals.length === 0) {
+      geometry.computeVertexNormals();
+    }
+  } else {
+    // Create geometry based on type (existing code for primitives)
+    switch (objData.type) {
+      case 'cube':
+        geometry = new THREE.BoxGeometry(
+          objData.parameters.width || 1,
+          objData.parameters.height || 1,
+          objData.parameters.depth || 1,
+          objData.parameters.widthSegments || 1,
+          objData.parameters.heightSegments || 1,
+          objData.parameters.depthSegments || 1
+        );
+        break;
+      case 'sphere':
+        geometry = new THREE.SphereGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.widthSegments || 32,
+          objData.parameters.heightSegments || 16
+        );
+        break;
+      case 'cylinder':
+        geometry = new THREE.CylinderGeometry(
+          objData.parameters.radiusTop || 0.5,
+          objData.parameters.radiusBottom || 0.5,
+          objData.parameters.height || 1,
+          objData.parameters.radialSegments || 32
+        );
+        break;
+      case 'cone':
+        geometry = new THREE.ConeGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.height || 1,
+          objData.parameters.radialSegments || 32
+        );
+        break;
+      case 'torus':
+        geometry = new THREE.TorusGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.tube || 0.2,
+          objData.parameters.radialSegments || 16,
+          objData.parameters.tubularSegments || 48
+        );
+        break;
+      case 'plane':
+        geometry = new THREE.PlaneGeometry(
+          objData.parameters.width || 1,
+          objData.parameters.height || 1,
+          objData.parameters.widthSegments || 1,
+          objData.parameters.heightSegments || 1
+        );
+        break;
+      case 'tetrahedron':
+        geometry = new THREE.TetrahedronGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.detail || 0
+        );
+        break;
+      case 'octahedron':
+        geometry = new THREE.OctahedronGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.detail || 0
+        );
+        break;
+      case 'dodecahedron':
+        geometry = new THREE.DodecahedronGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.detail || 0
+        );
+        break;
+      case 'icosahedron':
+        geometry = new THREE.IcosahedronGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.detail || 0
+        );
+        break;
+      case 'd10':
+        geometry = new THREE.CylinderGeometry(
+          0,
+          objData.parameters.radius || 0.5,
+          objData.parameters.height || 1,
+          objData.parameters.segments || 5,
+          1
+        );
+        // Customize vertices for d10 shape
+        const vertices = geometry.attributes.position.array;
+        for (let i = 0; i < vertices.length; i += 3) {
+          if (vertices[i + 1] < 0) {
+            vertices[i] *= 0.6;
+            vertices[i + 2] *= 0.6;
+          }
         }
-      }
-      geometry.attributes.position.needsUpdate = true;
-      break;
-    default:
-      console.warn(`Unknown geometry type: ${objData.type}`);
-      return null;
+        geometry.attributes.position.needsUpdate = true;
+        break;
+      default:
+        console.warn(`Unknown geometry type: ${objData.type}`);
+        return null;
+    }
   }
   
   // Create material
@@ -5274,6 +6751,11 @@ ShapeForge.prototype.createObjectFromJson = function(objData) {
     if (materialData.wireframe) material.wireframe = true;
     if (materialData.transparent) material.transparent = true;
     if (materialData.opacity !== undefined) material.opacity = materialData.opacity;
+    
+    // For merged objects, use DoubleSide to prevent culling issues
+    if (objData.type === 'merged') {
+      material.side = THREE.DoubleSide;
+    }
   } else {
     // Default material
     material = new THREE.MeshStandardMaterial({
@@ -5499,7 +6981,7 @@ ShapeForge.prototype.addImportExportButtons = function() {
   const importBtn = document.createElement('sl-button');
   importBtn.id = 'import-json';
   importBtn.size = 'small';
-  importBtn.textContent = 'Import';
+  importBtn.textContent = 'Load File';
   importBtn.addEventListener('click', this.importJson.bind(this));
   
   // Add to container
@@ -5742,6 +7224,104 @@ ShapeForge.prototype.cleanupAllShaderEffects = function() {
   if (itemsToRemove.length > 0) {
     console.log(`Cleaned up ${itemsToRemove.length} orphaned shader effects`);
   }
+};
+
+ShapeForge.prototype.importAdditional = function() {
+  // Create file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.json,.shapeforge.json';
+  
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const jsonData = JSON.parse(event.target.result);
+        const objectsAdded = this.importAdditionalFromJson(jsonData);
+        alert(`Added ${objectsAdded} objects from ${file.name}`);
+      } catch (error) {
+        console.error('Error importing additional content:', error);
+        alert('Failed to import file: ' + error.message);
+      }
+    };
+    
+    reader.readAsText(file);
+  });
+  
+  fileInput.click();
+};
+
+ShapeForge.prototype.importAdditionalFromJson = function(jsonData) {
+  // Validate JSON data
+  if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
+    alert('Invalid JSON format: Missing objects array');
+    return 0;
+  }
+  
+  // Get existing object count for selection purposes
+  const existingObjectCount = this.objects.length;
+  
+  // Load objects (add to existing)
+  const newObjects = [];
+  jsonData.objects.forEach(objData => {
+    // Create a copy with a new name to avoid conflicts
+    const modifiedData = {...objData};
+    modifiedData.name = objData.name + " (imported)";
+    
+    // Offset position slightly to avoid exact overlaps
+    if (!modifiedData.position) modifiedData.position = {x: 0, y: 0, z: 0};
+    modifiedData.position.x += 0.5;
+    modifiedData.position.z += 0.5;
+    
+    // Create the object
+    const newObj = this.createObjectFromJson(modifiedData);
+    if (newObj) {
+      newObjects.push(newObj);
+    }
+  });
+  
+  // Select the first new object if any were added
+  if (newObjects.length > 0) {
+    this.selectObject(existingObjectCount);
+  }
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  // Apply any effects after a short delay
+  setTimeout(() => {
+    this.applyPendingEffects();
+  }, 800);
+  
+  return newObjects.length;
+};
+
+ShapeForge.prototype.clearAll = function() {
+  if (this.objects.length === 0) return;
+  
+  const confirmMessage = `Remove all ${this.objects.length} objects from the project?`;
+  if (!confirm(confirmMessage)) return;
+  
+  // Clean up all effects first
+  this.cleanupAllShaderEffects();
+  
+  // Remove all objects from the scene
+  this.objects.forEach(obj => {
+    if (obj.mesh && this.previewScene) {
+      this.previewScene.remove(obj.mesh);
+    }
+  });
+  
+  // Clear the objects array
+  this.objects = [];
+  this.selectedObject = null;
+  
+  // Update UI
+  this.updatePropertyPanels(null);
+  this.updateObjectsList();
 };
 
 // // Add this call to the end of your show() method
