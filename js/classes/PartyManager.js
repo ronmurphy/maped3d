@@ -1278,62 +1278,6 @@ async getStarterMonsters(count = 3) {
   return selectedMonsters;
 }
 
-
-// async getStarterMonsters(count = 3) {
-//   console.log(`Getting ${count} starter monsters from database...`);
-  
-//   // IMPORTANT: Always access the global ResourceManager instance
-//   // This ensures we're always using the most up-to-date data
-//   this.resourceManager = window.resourceManager;
-  
-//   // If we have a resourceManager with bestiary data, use it
-//   if (this.resourceManager?.resources?.bestiary && this.resourceManager.resources.bestiary.size > 0) {
-//     // Convert Map to array
-//     const allMonsters = Array.from(this.resourceManager.resources.bestiary.values());
-//     console.log(`Found ${allMonsters.length} monsters in bestiary`);
-    
-//     // Filter for starter monsters (low CR)
-//     const starterCandidates = allMonsters.filter(monster => {
-//       const cr = this.parseCR(monster.cr);
-//       return cr <= 1; // Only use CR 1 or lower for starters
-//     });
-    
-//     console.log(`Found ${starterCandidates.length} eligible starter monsters`);
-    
-//     // Select random monsters
-//     const selectedMonsters = [];
-//     const availableMonsters = [...starterCandidates];
-    
-//     for (let i = 0; i < Math.min(count, availableMonsters.length); i++) {
-//       const randomIndex = Math.floor(Math.random() * availableMonsters.length);
-//       selectedMonsters.push(availableMonsters[randomIndex]);
-//       availableMonsters.splice(randomIndex, 1);
-//     }
-    
-//     return selectedMonsters;
-//   } else {
-//     console.warn("No monsters found in bestiary - ResourceManager may not be initialized yet");
-    
-//     // IMPORTANT: Try direct access to the global variable as a fallback
-//     if (window.resourceManager?.resources?.bestiary?.size > 0) {
-//       console.log("Found bestiary in global resourceManager, using that instead");
-//       return this.getStarterMonsters(count); // Try again with the global reference
-//     }
-    
-//     // Still no luck - display helpful debug info
-//     console.log("ResourceManager debugging info:", {
-//       resourceManagerExists: !!this.resourceManager,
-//       resourcesExist: !!this.resourceManager?.resources,
-//       bestiaryExists: !!this.resourceManager?.resources?.bestiary,
-//       bestiarySize: this.resourceManager?.resources?.bestiary?.size || 0,
-//       globalResourceManagerExists: !!window.resourceManager,
-//       globalBestiarySize: window.resourceManager?.resources?.bestiary?.size || 0
-//     });
-    
-//     return [];
-//   }
-// }
-
   /**
    * Party Management Methods
    */
@@ -2150,75 +2094,289 @@ unequipItem(monsterId, slot) {
   }
 
   // Generate a new ability based on monster's type and level
-  generateNewAbility(monster) {
-    const type = monster.type?.toLowerCase();
-    const level = monster.level;
+  // generateNewAbility(monster) {
+  //   const type = monster.type?.toLowerCase();
+  //   const level = monster.level;
 
-    // Pool of possible abilities based on type
-    const abilityPool = [];
+  //   // Pool of possible abilities based on type
+  //   const abilityPool = [];
 
-    // Add generic abilities available to all types
-    abilityPool.push(
+  //   // Add generic abilities available to all types
+  //   abilityPool.push(
+  //     {
+  //       name: 'Defensive Stance',
+  //       description: 'Take a defensive posture, gaining +2 AC until next turn.',
+  //       type: 'defense',
+  //       duration: 1
+  //     },
+  //     {
+  //       name: 'Focus Attack',
+  //       description: 'Focus your next attack for increased accuracy and damage.',
+  //       type: 'buff',
+  //       duration: 1
+  //     }
+  //   );
+
+  //   // Add type-specific advanced abilities
+  //   switch (type) {
+  //     case 'dragon':
+  //       abilityPool.push(
+  //         {
+  //           name: 'Wing Buffet',
+  //           description: 'Strike all nearby enemies with powerful wings.',
+  //           type: 'area',
+  //           damage: '1d8+' + this.getDamageModifier(monster)
+  //         },
+  //         {
+  //           name: 'Draconic Resistance',
+  //           description: 'Gain temporary resistance to damage.',
+  //           type: 'buff',
+  //           duration: 3
+  //         }
+  //       );
+  //       break;
+  //     case 'undead':
+  //       abilityPool.push(
+  //         {
+  //           name: 'Terrifying Presence',
+  //           description: 'Frighten nearby enemies, reducing their attack accuracy.',
+  //           type: 'debuff',
+  //           duration: 2
+  //         },
+  //         {
+  //           name: 'Drain Vitality',
+  //           description: 'Drain life from all nearby enemies, healing yourself.',
+  //           type: 'area',
+  //           damage: '1d6',
+  //           healing: true
+  //         }
+  //       );
+  //       break;
+  //     // Add more types as needed
+  //   }
+
+  //   // Select a random ability from the pool
+  //   if (abilityPool.length > 0) {
+  //     const randomIndex = Math.floor(Math.random() * abilityPool.length);
+  //     return abilityPool[randomIndex];
+  //   }
+
+  //   return null;
+  // }
+
+  // Generate a new ability based on monster's type and level
+generateNewAbility(monster) {
+  const type = monster.type?.toLowerCase();
+  const level = monster.level;
+
+  // Pool of possible abilities based on type
+  const abilityPool = [];
+
+  // Generic Abilities (Available to all types)
+  abilityPool.push(
       {
-        name: 'Defensive Stance',
-        description: 'Take a defensive posture, gaining +2 AC until next turn.',
-        type: 'defense',
-        duration: 1
+          name: 'Defensive Stance',
+          description: 'Take a defensive posture, gaining +2 AC until next turn.',
+          type: 'defense',
+          duration: 1
       },
       {
-        name: 'Focus Attack',
-        description: 'Focus your next attack for increased accuracy and damage.',
-        type: 'buff',
-        duration: 1
+          name: 'Focus Attack',
+          description: 'Focus your next attack for increased accuracy and damage.',
+          type: 'buff',
+          duration: 1
+      },
+      {
+          name: 'Reckless Strike',
+          description: 'Swing wildly for increased damage but suffer -2 AC until next turn.',
+          type: 'attack',
+          damage: `1d6+${this.getDamageModifier(monster)}`,
+          penalty: { ac: -2 },
+          duration: 1
+      },
+      {
+          name: 'Adrenaline Surge',
+          description: 'Gain an extra action this turn.',
+          type: 'buff',
+          duration: 1
+      },
+      {
+          name: 'Battle Cry',
+          description: 'Inspire allies, granting +1 attack bonus for 2 turns.',
+          type: 'buff',
+          duration: 2
       }
-    );
+  );
 
-    // Add type-specific advanced abilities
-    switch (type) {
+  // Type-Specific Abilities
+  switch (type) {
+      case 'aberration':
+          abilityPool.push(
+              {
+                  name: 'Mind Warp',
+                  description: 'Inflict psychic damage and disorient an enemy.',
+                  type: 'debuff',
+                  damage: `1d8+${this.getDamageModifier(monster)}`,
+                  effect: 'confusion',
+                  duration: 2
+              },
+              {
+                  name: 'Eldritch Regeneration',
+                  description: 'Recover health at the start of each turn for 3 turns.',
+                  type: 'buff',
+                  healing: `1d4+${Math.floor(level / 2)}`,
+                  duration: 3
+              }
+          );
+          break;
+      case 'beast':
+          abilityPool.push(
+              {
+                  name: 'Pounce',
+                  description: 'Leap at an enemy and knock them prone.',
+                  type: 'attack',
+                  damage: `1d6+${this.getDamageModifier(monster)}`,
+                  effect: 'prone',
+                  duration: 1
+              },
+              {
+                  name: 'Ferocious Bite',
+                  description: 'A powerful bite that deals extra damage if the target is bleeding.',
+                  type: 'attack',
+                  damage: `1d8+${this.getDamageModifier(monster)}`,
+                  bonusDamageCondition: { condition: 'bleeding', bonus: '1d4' }
+              }
+          );
+          break;
+      case 'celestial':
+          abilityPool.push(
+              {
+                  name: 'Divine Light',
+                  description: 'Heal allies in a small radius.',
+                  type: 'heal',
+                  healing: `1d6+${this.getDamageModifier(monster)}`,
+                  areaEffect: true
+              },
+              {
+                  name: 'Smite Evil',
+                  description: 'Deal extra radiant damage to fiends and undead.',
+                  type: 'attack',
+                  damage: `1d8+${this.getDamageModifier(monster)}`,
+                  bonusDamageCondition: { targetType: ['fiend', 'undead'], bonus: '1d6 radiant' }
+              }
+          );
+          break;
+      case 'construct':
+          abilityPool.push(
+              {
+                  name: 'Fortified Armor',
+                  description: 'Reduce all damage taken by 3 for the next 3 turns.',
+                  type: 'defense',
+                  duration: 3
+              },
+              {
+                  name: 'Overclock',
+                  description: 'Gain an extra action, but take 1d4 damage.',
+                  type: 'buff',
+                  selfDamage: '1d4',
+                  duration: 1
+              }
+          );
+          break;
       case 'dragon':
-        abilityPool.push(
-          {
-            name: 'Wing Buffet',
-            description: 'Strike all nearby enemies with powerful wings.',
-            type: 'area',
-            damage: '1d8+' + this.getDamageModifier(monster)
-          },
-          {
-            name: 'Draconic Resistance',
-            description: 'Gain temporary resistance to damage.',
-            type: 'buff',
-            duration: 3
-          }
-        );
-        break;
+          abilityPool.push(
+              {
+                  name: 'Wing Buffet',
+                  description: 'Strike all nearby enemies with powerful wings.',
+                  type: 'area',
+                  damage: `1d8+${this.getDamageModifier(monster)}`
+              },
+              {
+                  name: 'Draconic Resistance',
+                  description: 'Gain temporary resistance to damage.',
+                  type: 'buff',
+                  duration: 3
+              },
+              {
+                  name: 'Breath Weapon',
+                  description: 'Unleash elemental breath in a cone.',
+                  type: 'area',
+                  damage: `2d6+${this.getDamageModifier(monster)}`,
+                  duration: 1
+              }
+          );
+          break;
+      case 'fiend':
+          abilityPool.push(
+              {
+                  name: 'Hellfire Slash',
+                  description: 'Strike an enemy with infernal energy, dealing fire damage over time.',
+                  type: 'attack',
+                  damage: `1d8+${this.getDamageModifier(monster)}`,
+                  effect: 'burning',
+                  duration: 3
+              },
+              {
+                  name: 'Demonic Howl',
+                  description: 'Frighten all nearby enemies for 2 turns.',
+                  type: 'debuff',
+                  duration: 2
+              }
+          );
+          break;
       case 'undead':
-        abilityPool.push(
-          {
-            name: 'Terrifying Presence',
-            description: 'Frighten nearby enemies, reducing their attack accuracy.',
-            type: 'debuff',
-            duration: 2
-          },
-          {
-            name: 'Drain Vitality',
-            description: 'Drain life from all nearby enemies, healing yourself.',
-            type: 'area',
-            damage: '1d6',
-            healing: true
-          }
-        );
-        break;
-      // Add more types as needed
-    }
+          abilityPool.push(
+              {
+                  name: 'Terrifying Presence',
+                  description: 'Frighten nearby enemies, reducing their attack accuracy.',
+                  type: 'debuff',
+                  duration: 2
+              },
+              {
+                  name: 'Drain Vitality',
+                  description: 'Drain life from all nearby enemies, healing yourself.',
+                  type: 'area',
+                  damage: '1d6',
+                  healing: true
+              },
+              {
+                  name: 'Necrotic Touch',
+                  description: 'A chilling touch that weakens an enemy’s strength.',
+                  type: 'debuff',
+                  damage: `1d6+${this.getDamageModifier(monster)}`,
+                  effect: '-2 Strength',
+                  duration: 2
+              }
+          );
+          break;
+      case 'giant':
+          abilityPool.push(
+              {
+                  name: 'Earthshaker Stomp',
+                  description: 'Cause a shockwave, knocking enemies prone.',
+                  type: 'area',
+                  effect: 'prone',
+                  duration: 1
+              },
+              {
+                  name: 'Titanic Strike',
+                  description: 'A devastating blow that deals massive damage.',
+                  type: 'attack',
+                  damage: `2d8+${this.getDamageModifier(monster)}`
+              }
+          );
+          break;
+  }
 
-    // Select a random ability from the pool
-    if (abilityPool.length > 0) {
+  // Select a random ability from the pool
+  if (abilityPool.length > 0) {
       const randomIndex = Math.floor(Math.random() * abilityPool.length);
       return abilityPool[randomIndex];
-    }
-
-    return null;
   }
+
+  return null;
+}
+
 
   /**
    * UI Methods
@@ -5429,37 +5587,7 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
     }
   }
 
-  // async checkForStarterMonster() {
-  //   console.log("Checking for starter monsters");
-    
-  //   // IMPORTANT: Make sure we have access to the global ResourceManager
-  //   // This is the key fix - get the latest reference to ResourceManager
-  //   if (!this.resourceManager && window.resourceManager) {
-  //     console.log("Connecting to global ResourceManager");
-  //     this.resourceManager = window.resourceManager;
-  //   }
-    
-  //   // Debug check for resource manager
-  //   if (!this.resourceManager) {
-  //     console.warn("No ResourceManager available, attempting fallback connection");
-  //     // Try to get it from MapEditor if available
-  //     if (this.mapEditor?.resourceManager) {
-  //       console.log("Found ResourceManager via mapEditor");
-  //       this.resourceManager = this.mapEditor.resourceManager;
-  //     }
-  //   }
-    
-  //   // Get diverse starter monsters (3 by default)
-  //   const starterChoices = await this.getStarterMonsters();
-    
-  //   if (starterChoices.length > 0) {
-  //     console.log(`Found ${starterChoices.length} starter monsters to offer`);
-  //     // Show starter selection UI
-  //     this.showStarterSelection(starterChoices);
-  //   } else {
-  //     console.warn("No starter monsters available");
-  //   }
-  // }
+
 
     async checkForStarterMonster() {
     console.log("Checking for starter monsters");
@@ -5499,116 +5627,7 @@ console.log(`Attempt: 1/'${this.recruitmentAttempts.maxAttempts}`);
     this.showStarterSelection(starterChoices);
   }
 
-  /**
- * Get a diverse selection of starter monsters
- * @param {Number} count - Number of starter monsters to select (default: 3)
- * @returns {Array} - Array of diverse starter monsters
- */
-// async getStarterMonsters(count = 3) {
-//   console.log(`Getting ${count} diverse starter monsters...`);
-  
-//   try {
-//     // Step 1: Get eligible low-CR monsters
-//     console.log("Finding eligible low-CR monsters...");
-//     let eligibleMonsters = [];
-    
-//     // Get direct access to database if possible
-//     const monsterDatabase = this.monsterDatabase ||
-//       (this.monsterManager ? this.monsterManager.loadDatabase() : null);
-      
-//     if (monsterDatabase && monsterDatabase.monsters) {
-//       console.log(`Found ${Object.keys(monsterDatabase.monsters).length} monsters in database`);
-      
-//       // Process all monsters in the database
-//       Object.values(monsterDatabase.monsters).forEach(monster => {
-//         try {
-//           // Check CR value for eligibility (CR <= 1/2)
-//           const cr = monster.basic?.cr || '0';
-//           const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
-          
-//           if (isEligible) {
-//             eligibleMonsters.push(this.formatMonsterForParty(monster));
-//           }
-//         } catch (error) {
-//           console.error("Error processing monster:", error);
-//         }
-//       });
-//     } else if (this.resourceManager?.resources?.bestiary?.size > 0) {
-//       // Try ResourceManager's bestiary
-//       console.log(`Checking ${this.resourceManager.resources.bestiary.size} monsters in ResourceManager`);
-      
-//       this.resourceManager.resources.bestiary.forEach(monster => {
-//         try {
-//           // Calculate XP from CR if needed
-//           const cr = monster.basic?.cr || monster.cr || '0';
-//           const isEligible = cr === '0' || cr === '1/8' || cr === '1/4' || cr === '1/2';
-          
-//           if (isEligible) {
-//             eligibleMonsters.push(this.formatMonsterForParty(monster));
-//           }
-//         } catch (error) {
-//           console.error("Error processing monster:", error);
-//         }
-//       });
-//     }
-    
-//     console.log(`Found ${eligibleMonsters.length} eligible low-CR monsters`);
-    
-//     // Step 2: Group monsters by type for diversity
-//     if (eligibleMonsters.length < count) {
-//       console.warn(`Not enough eligible monsters (only ${eligibleMonsters.length})`);
-//       return eligibleMonsters; // Return all we have if fewer than requested
-//     }
-    
-//     // Group by type
-//     const monstersByType = {};
-//     eligibleMonsters.forEach(monster => {
-//       const type = monster.type || monster.basic?.type || 
-//                  (monster.data?.basic?.type) || "Unknown";
-      
-//       if (!monstersByType[type]) {
-//         monstersByType[type] = [];
-//       }
-//       monstersByType[type].push(monster);
-//     });
-    
-//     const availableTypes = Object.keys(monstersByType);
-//     console.log(`Found ${availableTypes.length} different monster types: ${availableTypes.join(', ')}`);
-    
-//     // Step 3: Select diverse monsters if possible
-//     if (availableTypes.length >= count) {
-//       // Shuffle types
-//       const shuffledTypes = [...availableTypes].sort(() => 0.5 - Math.random());
-//       const selectedTypes = shuffledTypes.slice(0, count);
-      
-//       // Get one random monster from each selected type
-//       const result = selectedTypes.map(type => {
-//         const monstersOfType = monstersByType[type];
-//         const randomIndex = Math.floor(Math.random() * monstersOfType.length);
-//         return monstersOfType[randomIndex];
-//       });
-      
-//       console.log(`Selected ${result.length} monsters of different types: ${selectedTypes.join(', ')}`);
-//       return result;
-//     }
-    
-//     // Step 4: Fall back to random selection if not enough types
-//     console.log(`Not enough different types, using random selection`);
-//     const shuffled = [...eligibleMonsters].sort(() => 0.5 - Math.random());
-//     return shuffled.slice(0, Math.min(count, shuffled.length));
-    
-//   } catch (error) {
-//     console.error("Error getting starter monsters:", error);
-//     // Return empty array if everything fails
-//     return [];
-//   }
-// }
 
-// Update the getStarterMonsters method to use the database
-// Add this method to PartyManager to get starters from ResourceManager's bestiary
-
-
-// Add helper method to parse CR values (same as in CombatSystem)
 parseCR(crValue) {
   if (typeof crValue === 'number') return crValue;
   
@@ -5929,164 +5948,6 @@ parseCR(crValue) {
     const shuffled = [...monsters].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }
-
-//   showStarterSelection(starterMonsters) {
-//     // Create overlay
-//     const overlay = document.createElement('div');
-//     overlay.className = 'party-overlay';
-//     overlay.style.opacity = '0';
-  
-//     // Create container
-//     const container = document.createElement('div');
-//     container.className = 'party-container';
-//     container.style.maxWidth = '900px';
-//     container.style.transform = 'scale(0.95)';
-//     container.style.zIndex = '3000';
-    
-//     // Create header
-//     const header = document.createElement('div');
-//     header.className = 'party-header';
-//     header.innerHTML = `
-//       <div style="display: flex; align-items: center;">
-//         <img src="images/pawns.png" alt="Monster Party" style="width: 24px; height: 24px; margin-right: 8px; ">
-//         <h1 style="margin: 0; font-size: 1.25rem;">Choose Your Starter Monster</h1>
-//       </div>
-//     `;
-
-//     // Create content
-//     const content = document.createElement('div');
-//     content.style.padding = '24px';
-//     content.style.color = 'white';
-//     content.innerHTML = `
-//       <p style="margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
-//       <p>Welcome to your adventure! Choose one monster to be your starting companion.</p>
-//       <p style="opacity: 0.8;">Your starter will join your active party and help you recruit more monsters.</p>
-//        </p>
-//       <div class="starter-monsters-grid" style="
-//         display: grid;
-//         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-//         gap: 24px;
-//         justify-content: center;
-//       "></div>
-//     `;
-  
-//     // Assemble
-//     container.appendChild(header);
-//     container.appendChild(content);
-//     overlay.appendChild(container);
-//     document.body.appendChild(overlay);
-  
-//     // Add monsters to grid using createMonsterCard method
-//     const grid = content.querySelector('.starter-monsters-grid');
-    
-//     starterMonsters.forEach((monster, index) => {
-//       // Use the existing createMonsterCard method to ensure consistency
-//       const card = this.createMonsterCard(monster, 'starter', index % 2 !== 0);
-      
-//       // Wrap the card in a container for better selection styling
-//       const cardContainer = document.createElement('div');
-//       cardContainer.className = 'starter-card-container';
-//       cardContainer.style.cssText = `
-//         position: relative;
-//         cursor: pointer;
-//         transition: all 0.3s ease;
-//       `;
-      
-//       // Add selection indicator that's initially hidden
-//       const selectionIndicator = document.createElement('div');
-//       selectionIndicator.className = 'selection-indicator';
-//       selectionIndicator.innerHTML = `
-//         <span class="material-icons" style="font-size: 36px; color: #4ade80;">check_circle</span>
-//       `;
-//       selectionIndicator.style.cssText = `
-//         position: absolute;
-//         top: -10px;
-//         right: -10px;
-//         background: white;
-//         border-radius: 50%;
-//         // box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-//         opacity: 0;
-//         transform: scale(0.8);
-//         transition: all 0.3s ease;
-//         z-index: 10;
-//       `;
-      
-//       // Add click handler
-//       cardContainer.addEventListener('click', () => {
-//         // Reset all cards
-//         document.querySelectorAll('.starter-card-container').forEach(c => {
-//           c.style.transform = '';
-//           c.style.boxShadow = '';
-//           c.querySelector('.selection-indicator').style.opacity = '0';
-//           c.querySelector('.selection-indicator').style.transform = 'scale(0.8)';
-//         });
-        
-//         // Highlight selected
-//         cardContainer.style.transform = 'translateY(-8px)';
-//         // cardContainer.style.boxShadow = '0 12px 20px rgba(0, 0, 0, 0.3)';
-//         selectionIndicator.style.opacity = '1';
-//         selectionIndicator.style.transform = 'scale(1)';
-        
-//         // Store selection
-//         this.selectedStarterMonster = monster;
-        
-//         // Enable confirm button
-//         const confirmBtn = document.querySelector('.confirm-starter-btn');
-//         if (confirmBtn) {
-//           confirmBtn.removeAttribute('disabled');
-//         }
-//       });
-      
-//       // Add elements to DOM
-//       cardContainer.appendChild(card);
-//       cardContainer.appendChild(selectionIndicator);
-//       grid.appendChild(cardContainer);
-//     });
-  
-//     // Add confirm button
-//     const buttonContainer = document.createElement('div');
-//     buttonContainer.style.cssText = `
-//       display: flex;
-//       justify-content: center;
-//       margin-top: 32px;
-//     `;
-    
-//     const confirmButton = document.createElement('sl-button');
-//     confirmButton.className = 'confirm-starter-btn';
-//     confirmButton.setAttribute('variant', 'primary');
-//     confirmButton.setAttribute('size', 'large');
-//     confirmButton.setAttribute('disabled', '');
-//     confirmButton.innerHTML = `
-//       <span class="material-icons" style="margin-right: 8px;">pets</span>
-//       Choose This Monster
-//     `;
-    
-//     confirmButton.addEventListener('click', () => {
-//       if (this.selectedStarterMonster) {
-//         // this.addMonster(this.selectedStarterMonster);
-// this.addNamedMonster(this.selectedStarterMonster);
-
-//         // Save party
-//         this.saveParty();
-//     this.refreshPartyDialog();
-//         // Animate out and close
-//         overlay.style.opacity = '0';
-//         container.style.transform = 'scale(0.95)';
-//         setTimeout(() => {
-//           overlay.remove();
-//         }, 300);
-//       }
-//     });
-    
-//     buttonContainer.appendChild(confirmButton);
-//     content.appendChild(buttonContainer);
-  
-//     // Animate in
-//     setTimeout(() => {
-//       overlay.style.opacity = '1';
-//       container.style.transform = 'scale(1)';
-//     }, 10);
-//   }
 
 showStarterSelection(starterMonsters) {
   console.log("Showing starter monster selection with original overlay UI");
