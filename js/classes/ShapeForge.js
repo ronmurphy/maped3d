@@ -768,6 +768,63 @@ const shapeButtons = {
     this.animate();
 
     console.log("Preview started");
+
+
+// Create zoom slider if it doesn't exist
+if (!this.zoomSlider) {
+  const sliderContainer = document.createElement('div');
+  sliderContainer.style.cssText = `
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    background: rgba(40, 40, 40, 0.7);
+    border-radius: 8px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+  `;
+  
+  // Add zoom icons
+  const zoomOutIcon = document.createElement('sl-icon');
+  zoomOutIcon.name = 'zoom-in';
+  zoomOutIcon.style.color = 'white';
+  zoomOutIcon.style.marginRight = '8px';
+  sliderContainer.appendChild(zoomOutIcon);
+  
+  // Create the slider
+  const zoomSlider = document.createElement('sl-range');
+  zoomSlider.min = 20;  // Wide FOV (zoomed out)
+  zoomSlider.max = 100; // Narrow FOV (zoomed in)
+  zoomSlider.step = 1;
+  zoomSlider.value = 60; // Default FOV
+  zoomSlider.style.flex = '1';
+  zoomSlider.style.margin = '0 10px';
+  zoomSlider.addEventListener('sl-input', (e) => {
+    this.setZoom(parseFloat(e.target.value));
+  });
+  sliderContainer.appendChild(zoomSlider);
+  
+  // Add zoom-in icon
+  const zoomInIcon = document.createElement('sl-icon');
+  zoomInIcon.name = 'zoom-out';
+  zoomInIcon.style.color = 'white';
+  zoomInIcon.style.marginLeft = '8px';
+  sliderContainer.appendChild(zoomInIcon);
+  
+  // Add to preview container
+  this.previewContainer.appendChild(sliderContainer);
+  
+  // Store reference
+  this.zoomSlider = zoomSlider;
+  
+  // Set initial zoom - match camera's current FOV
+  if (this.previewCamera) {
+    zoomSlider.value = this.previewCamera.fov;
+  }
+}
   }
 
   /**
@@ -778,27 +835,109 @@ const shapeButtons = {
     console.log("Preview stopped");
   }
 
+  setZoomLevel(level) {
+    if (!this.previewCamera) return;
+    
+    // Normalize level between min and max
+    const normalizedLevel = Math.max(1, Math.min(10, level));
+    
+    // For perspective camera, adjust distance from origin
+    if (this.previewCamera) {
+      // Get camera direction (from center to current position)
+      const direction = new THREE.Vector3();
+      direction.copy(this.previewCamera.position).normalize();
+      
+      // Calculate new position based on zoom level
+      // Lower zoom level = closer to origin (smaller orbit)
+      const distance = 3 + normalizedLevel * 2; // Scale from 5 to 23 units
+      
+      // Update camera position
+      this.previewCamera.position.copy(direction.multiplyScalar(distance));
+      
+      // Update controls (if they exist)
+      if (this.previewControls) {
+        if (this.previewControls.target) {
+          // Make sure camera is still looking at center
+          this.previewCamera.lookAt(this.previewControls.target);
+        } else {
+          this.previewCamera.lookAt(0, 0, 0);
+        }
+        
+        // Update orbit controls to match new position
+        if (typeof this.previewControls.update === 'function') {
+          this.previewControls.update();
+        }
+      }
+    }
+    
+    return this;
+  };
+
+  setZoom(fov) {
+    if (!this.previewCamera) return;
+    
+    // Ensure FOV is within reasonable limits
+    const newFov = Math.max(10, Math.min(120, fov));
+    
+    // Change the camera FOV (lower FOV = more zoom)
+    this.previewCamera.fov = newFov;
+    this.previewCamera.updateProjectionMatrix(); // Important after changing FOV
+    
+    return this;
+  };
+
   /**
    * Animation loop for preview
    */
+  // animate() {
+  //   if (!this.isPreviewActive) return;
+
+  //   requestAnimationFrame(this.animate);
+
+  //   // Calculate delta time for smooth animations
+  //   const now = Date.now();
+  //   const deltaTime = (now - (this.lastFrameTime || now)) / 1000; // in seconds
+  //   this.lastFrameTime = now;
+
+  //   // Update orbit controls
+  //   if (this.previewControls) {
+  //     this.previewControls.update();
+  //   }
+
+  //   // Update shader effects
+  //   this.updateEffects(deltaTime);
+
+  //   // Render the scene
+  //   if (this.previewRenderer && this.previewScene && this.previewCamera) {
+  //     this.previewRenderer.render(this.previewScene, this.previewCamera);
+  //   }
+  // }
+
   animate() {
     if (!this.isPreviewActive) return;
-
+  
     requestAnimationFrame(this.animate);
-
+  
     // Calculate delta time for smooth animations
     const now = Date.now();
     const deltaTime = (now - (this.lastFrameTime || now)) / 1000; // in seconds
     this.lastFrameTime = now;
-
-    // Update orbit controls
-    if (this.previewControls) {
+  
+    // Update controls based on rotation setting
+    // if (this.previewControls) {
+    //   // Only call update if rotation is enabled or if it's a special update that doesn't include rotation
+    //   if (this.autoRotationEnabled !== false) {
+    //     this.previewControls.update();
+    //   }
+    // }
+  
+    if (this.previewControls && this.autoRotationEnabled !== false) {
       this.previewControls.update();
     }
 
     // Update shader effects
     this.updateEffects(deltaTime);
-
+  
     // Render the scene
     if (this.previewRenderer && this.previewScene && this.previewCamera) {
       this.previewRenderer.render(this.previewScene, this.previewCamera);
@@ -1927,6 +2066,43 @@ const shapeButtons = {
     // Update UI
     this.updateHistoryButtons();
   }
+
+  deselectAllObjects() {
+    // If there's a selected object, deselect it
+    if (this.selectedObject !== null) {
+      const oldObject = this.objects[this.selectedObject];
+      if (oldObject && oldObject.mesh) {
+        // Remove selection indicator
+        if (oldObject.mesh.material && oldObject.mesh.material.emissive !== undefined) {
+          oldObject.mesh.material.emissive = new THREE.Color(0x000000);
+        }
+      }
+      
+      // Clear selection
+      this.selectedObject = null;
+      
+      // Update property panels to show empty state
+      this.updatePropertyPanels(null);
+      
+      // Update objects list UI
+      this.updateObjectsList();
+    }
+    
+    return this;
+  };
+
+  toggleAutoRotation(enabled) {
+    // Store the rotation state
+    if (typeof enabled === 'boolean') {
+      this.autoRotationEnabled = enabled;
+    } else {
+      this.autoRotationEnabled = !this.autoRotationEnabled;
+    }
+    
+    console.log(`Auto rotation ${this.autoRotationEnabled ? 'enabled' : 'disabled'}`);
+    
+    return this.autoRotationEnabled;
+  };
 
   /**
    * Undo the last action
@@ -4231,6 +4407,34 @@ ShapeForge.prototype.createObjectsListPanel = function () {
       font-size: 14px;
     `;
   headerRow.appendChild(title);
+
+// Rotation toggle
+const rotationToggle = document.createElement('sl-switch');
+rotationToggle.size = 'small';
+rotationToggle.title = 'Toggle Auto-Rotation';
+rotationToggle.checked = true; // Default to on
+rotationToggle.style.marginLeft = '115px'; //'10px';
+rotationToggle.setAttribute('title', 'Toggle Auto-Rotation');
+rotationToggle.innerHTML = '<sl-icon name="arrow-repeat" slot="prefix"></sl-icon>';
+rotationToggle.addEventListener('sl-change', (e) => {
+  this.toggleAutoRotation(e.target.checked);
+});
+headerRow.appendChild(rotationToggle);
+
+    // Deselect button
+const deselectBtn = document.createElement('sl-button');
+deselectBtn.setAttribute('size', 'small');
+deselectBtn.setAttribute('circle', '');
+deselectBtn.setAttribute('title', 'Deselect All');
+deselectBtn.innerHTML = '<sl-icon name="x-circle"></sl-icon>';
+deselectBtn.style.marginLeft = 'auto'; // Push to right side
+deselectBtn.addEventListener('click', () => this.deselectAllObjects());
+headerRow.appendChild(deselectBtn);
+
+
+
+
+
 
   panel.appendChild(headerRow);
 
