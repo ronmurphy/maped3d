@@ -3667,16 +3667,10 @@ setupEventHandlers(drawer) {
                     <sl-button class="load-resource-btn" size="large" style="justify-content: flex-start;">
                         <span class="material-icons" slot="prefix">folder_open</span>
                         Load Resource Pack
-                        <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                            Load textures, sounds, and other resources
-                        </div>
                     </sl-button>
                     <sl-button class="load-bestiary-btn" size="large" style="justify-content: flex-start;">
                         <span class="material-icons" slot="prefix">pets</span>
                         Load Bestiary File
-                        <div style="font-size: 0.8em; color: #666; margin-top: 4px;">
-                            Import monster data from a bestiary.json file
-                        </div>
                     </sl-button>
                 </div>
             `;
