@@ -11,38 +11,6 @@ class ShapeForge {
    * @param {ResourceManager} resourceManager - Reference to the resource manager
    * @param {ShaderEffectsManager} shaderEffectsManager - Reference to the shader effects manager
    */
-  // constructor(resourceManager = null, shaderEffectsManager = null) {
-  //   // Dependencies
-  //   this.resourceManager = resourceManager;
-  //   this.shaderEffectsManager = shaderEffectsManager;
-
-  //   // Core properties
-  //   this.objects = [];
-  //   this.selectedObject = null;
-  //   this.history = [];
-  //   this.historyIndex = -1;
-  //   this.maxHistorySteps = 30;
-
-  //   // Scene for preview
-  //   this.previewScene = null;
-  //   this.previewCamera = null;
-  //   this.previewRenderer = null;
-  //   this.previewControls = null;
-  //   this.previewContainer = null;
-  //   this.isPreviewActive = false;
-
-  //   // UI references
-  //   this.drawer = null;
-  //   this.propertyPanels = {};
-
-  //   // Bind methods to maintain proper 'this' context
-  //   this.animate = this.animate.bind(this);
-  //   this.handleResize = this.handleResize.bind(this);
-
-  //   // Auto-load dependencies if needed
-  //   this.checkDependencies();
-  // }
-
   constructor(resourceManager = null, shaderEffectsManager = null, mapEditor = null) {
     // Add mapEditor parameter
     this.mapEditor = mapEditor;
@@ -2613,37 +2581,6 @@ const shapeButtons = {
    * @param {number} value - New value
    */
   updateTransform(transformType, axis, value) {
-    // if (this.selectedObject === null) return;
-
-    // const object = this.objects[this.selectedObject];
-    // const oldValue = object[transformType][axis];
-    // const newValue = parseFloat(value);
-
-    // // Update object data
-    // object[transformType][axis] = newValue;
-
-    // // Update mesh
-    // switch (transformType) {
-    //   case 'position':
-    //     object.mesh.position[axis] = newValue;
-    //     break;
-    //   case 'rotation':
-    //     object.mesh.rotation[axis] = newValue;
-    //     break;
-    //   case 'scale':
-    //     object.mesh.scale[axis] = newValue;
-    //     break;
-    // }
-
-    // // Add to history
-    // this.addHistoryStep('transform', {
-    //   objectIndex: this.selectedObject,
-    //   transformType,
-    //   axis,
-    //   oldValue,
-    //   newValue
-    // });
-
     if (this.selectedObject === null) return;
   
     const object = this.objects[this.selectedObject];
@@ -2825,84 +2762,49 @@ const shapeButtons = {
    */
 
   createProjectData() {
-
     // Get project name
     const projectNameInput = this.drawer.querySelector('#project-name');
     const projectName = (projectNameInput?.value || 'Untitled Project').trim();
-
+    
     // Create thumbnail
     const thumbnail = this.createThumbnail();
-
-    // Create object data with detailed effect information
+    
+    // Create object data with detailed texture information
     const objectsData = this.objects.map(obj => {
-      // Basic object info
-      const objData = {
-        type: obj.type,
-        name: obj.name,
-        parameters: obj.parameters,
-        position: { ...obj.position },
-        rotation: { ...obj.rotation },
-        scale: { ...obj.scale }
-      };
-
-      // Material info
-      if (obj.material) {
-        objData.material = {
-          type: this.getMaterialType(obj.material),
-          color: obj.material.color?.getHex() || 0x3388ff,
-          wireframe: obj.material.wireframe || false,
-          transparent: obj.material.transparent || false,
-          opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
-          metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
-          roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
+        // Basic object info
+        const objData = {
+            type: obj.type,
+            name: obj.name,
+            parameters: obj.parameters,
+            position: { ...obj.position },
+            rotation: { ...obj.rotation },
+            scale: { ...obj.scale }
         };
-      }
+        
+        // Material info
+        if (obj.material) {
+            objData.material = {
+                type: this.getMaterialType(obj.material),
+                color: obj.material.color?.getHex() || 0x3388ff,
+                wireframe: obj.material.wireframe || false,
+                transparent: obj.material.transparent || false,
+                opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
+                metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
+                roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
+            };
+            
+            // Handle textures - encode the texture map as base64 if it exists
+            if (obj.material.map) {
+                // We need to capture the texture data
+                objData.material.texture = this.captureTextureData(obj.material.map);
+            }
+        }
 
-      // NEW: Save geometry data for merged objects
+
+
       if (obj.type === 'merged' && obj.geometry) {
-        const geometry = obj.geometry;
-        const geometryData = {
-          vertices: [],
-          normals: [],
-          uvs: [],
-          indices: []
-        };
-
-        // Save position (vertex) data
-        if (geometry.attributes.position) {
-          const positions = geometry.attributes.position.array;
-          for (let i = 0; i < positions.length; i++) {
-            geometryData.vertices.push(positions[i]);
-          }
-        }
-
-        // Save normal data
-        if (geometry.attributes.normal) {
-          const normals = geometry.attributes.normal.array;
-          for (let i = 0; i < normals.length; i++) {
-            geometryData.normals.push(normals[i]);
-          }
-        }
-
-        // Save UV data
-        if (geometry.attributes.uv) {
-          const uvs = geometry.attributes.uv.array;
-          for (let i = 0; i < uvs.length; i++) {
-            geometryData.uvs.push(uvs[i]);
-          }
-        }
-
-        // Save index data
-        if (geometry.index) {
-          const indices = geometry.index.array;
-          for (let i = 0; i < indices.length; i++) {
-            geometryData.indices.push(indices[i]);
-          }
-        }
-
-        // Add geometry data to object data
-        objData.geometryData = geometryData;
-      }
+        objData.geometryData = this.captureGeometryData(obj.geometry);
+    }
 
       // Enhanced shader effect info
       if (obj.effect) {
@@ -2964,42 +2866,167 @@ const shapeButtons = {
     return projectData;
   };
 
-
-  /**
-   * Load a project from data
-   * @param {Object} projectData - Project data
-   */
-  loadProjectData(projectData) {
-    // Validate project data
-    if (!projectData || !projectData.objects || !Array.isArray(projectData.objects)) {
-      throw new Error('Invalid project data');
+  captureGeometryData(geometry) {
+    if (!geometry) return null;
+    
+    const geometryData = {};
+    
+    // Capture position vertices
+    if (geometry.getAttribute('position')) {
+        geometryData.vertices = Array.from(geometry.getAttribute('position').array);
     }
-
-    // Clear current project
-    this.newProject();
-
-    // Set project name
-    const projectNameInput = this.drawer.querySelector('#project-name');
-    if (projectNameInput && projectData.name) {
-      projectNameInput.value = projectData.name;
+    
+    // Capture normals
+    if (geometry.getAttribute('normal')) {
+        geometryData.normals = Array.from(geometry.getAttribute('normal').array);
     }
+    
+    // Capture UVs
+    if (geometry.getAttribute('uv')) {
+        geometryData.uvs = Array.from(geometry.getAttribute('uv').array);
+    }
+    
+    // Capture indices
+    if (geometry.index) {
+        geometryData.indices = Array.from(geometry.index.array);
+    }
+    
+    return geometryData;
+}
 
-    // Load objects
-    projectData.objects.forEach(objData => {
-      this.createObjectFromData(objData);
-    });
+  captureTextureData(texture) {
+    // Return early if no texture
+    if (!texture) return null;
 
-    this.updateObjectsList();
-    console.log(`Loaded project "${projectData.name}" with ${projectData.objects.length} objects`);
+    // Check for image data
+    if (!texture.image) {
+        console.warn("Texture has no image data, cannot capture");
+        return null;
+    }
+    
+    try {
+        // Create a canvas to capture the texture
+        const canvas = document.createElement('canvas');
+        canvas.width = texture.image.width || 256;
+        canvas.height = texture.image.height || 256;
+        
+        // Draw the texture image to the canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(texture.image, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to base64 (preferably WebP for better compression)
+        const textureData = canvas.toDataURL('image/webp', 0.8);
+        
+        return {
+            data: textureData,
+            repeat: [texture.repeat.x, texture.repeat.y],
+            offset: [texture.offset.x, texture.offset.y],
+            rotation: texture.rotation,
+            wrapS: texture.wrapS,
+            wrapT: texture.wrapT
+        };
+    } catch (error) {
+        console.error("Error capturing texture data:", error);
+        return null;
+    }
+}
+
+
+
+  // Helper method to capture texture data from a THREE.js texture
+captureTextureData(texture) {
+  // Return early if no texture
+  if (!texture) return null;
+
+  // Check for image data
+  if (!texture.image) {
+      console.warn("Texture has no image data, cannot capture");
+      return null;
   }
+  
+  try {
+      // Create a canvas to capture the texture
+      const canvas = document.createElement('canvas');
+      const maxSize = 1024; // Limit texture size to avoid huge files
+      
+      // Determine appropriate size while maintaining aspect ratio
+      let width = texture.image.width;
+      let height = texture.image.height;
+      
+      // Scale down if necessary
+      if (width > maxSize || height > maxSize) {
+          if (width > height) {
+              height = Math.round(height * (maxSize / width));
+              width = maxSize;
+          } else {
+              width = Math.round(width * (maxSize / height));
+              height = maxSize;
+          }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw the texture image to the canvas
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(texture.image, 0, 0, width, height);
+      
+      // Convert to base64 (preferably WebP for better compression)
+      const textureData = canvas.toDataURL('image/webp', 0.85);
+      
+      console.log(`Captured texture: ${width}x${height}, data length: ${textureData.length}`);
+      
+      return {
+          data: textureData,
+          repeat: [texture.repeat.x, texture.repeat.y],
+          offset: [texture.offset.x, texture.offset.y],
+          rotation: texture.rotation,
+          wrapS: texture.wrapS,
+          wrapT: texture.wrapT
+      };
+  } catch (error) {
+      console.error("Error capturing texture data:", error);
+      return null;
+  }
+}
 
   /**
    * Create an object from saved data
    * @param {Object} objData - Object data
    */
   createObjectFromData(objData) {
+    console.log("Creating object from data:", objData.name, objData.type);
+    
     // Create geometry based on type
     let geometry;
+    
+    // Special handling for merged objects with geometryData
+    if (objData.type === 'merged' && objData.geometryData) {
+        console.log("Creating merged geometry from geometryData");
+        
+        // Create a BufferGeometry from the saved vertex data
+        geometry = new THREE.BufferGeometry();
+        
+        // Add attributes from geometryData
+        if (objData.geometryData.vertices && objData.geometryData.vertices.length > 0) {
+            const vertices = new Float32Array(objData.geometryData.vertices);
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        }
+        
+        if (objData.geometryData.normals && objData.geometryData.normals.length > 0) {
+            const normals = new Float32Array(objData.geometryData.normals);
+            geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        }
+        
+        if (objData.geometryData.uvs && objData.geometryData.uvs.length > 0) {
+            const uvs = new Float32Array(objData.geometryData.uvs);
+            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+        }
+        
+        if (objData.geometryData.indices && objData.geometryData.indices.length > 0) {
+            geometry.setIndex(objData.geometryData.indices);
+        }
+    } else {
     switch (objData.type) {
       case 'cube':
         geometry = new THREE.BoxGeometry(
@@ -3089,47 +3116,49 @@ const shapeButtons = {
         console.warn(`Unknown geometry type: ${objData.type}`);
         return;
     }
-
-    // Create material
-    let material;
-    if (objData.material) {
+  }
+  let material;
+  if (objData.material) {
+      console.log("Creating material of type:", objData.material.type);
+      
       const materialParams = {
-        color: objData.material.color !== undefined ? objData.material.color : 0x3388ff,
-        wireframe: objData.material.wireframe || false
+          color: objData.material.color !== undefined ? objData.material.color : 0x3388ff,
+          wireframe: objData.material.wireframe || false
       };
-
+      
       if (objData.material.transparent) {
-        materialParams.transparent = true;
-        materialParams.opacity = objData.material.opacity !== undefined ? objData.material.opacity : 1;
+          materialParams.transparent = true;
+          materialParams.opacity = objData.material.opacity !== undefined ? objData.material.opacity : 1;
       }
-
+      
       switch (objData.material.type) {
-        case 'MeshBasicMaterial':
-          material = new THREE.MeshBasicMaterial(materialParams);
-          break;
-        case 'MeshStandardMaterial':
-          materialParams.roughness = objData.material.roughness !== undefined ? objData.material.roughness : 0.5;
-          materialParams.metalness = objData.material.metalness !== undefined ? objData.material.metalness : 0;
-          material = new THREE.MeshStandardMaterial(materialParams);
-          break;
-        case 'MeshPhongMaterial':
-          material = new THREE.MeshPhongMaterial(materialParams);
-          break;
-        case 'MeshLambertMaterial':
-          material = new THREE.MeshLambertMaterial(materialParams);
-          break;
-        default:
-          material = new THREE.MeshStandardMaterial(materialParams);
+          case 'MeshBasicMaterial':
+              material = new THREE.MeshBasicMaterial(materialParams);
+              break;
+          case 'MeshStandardMaterial':
+              materialParams.roughness = objData.material.roughness !== undefined ? objData.material.roughness : 0.5;
+              materialParams.metalness = objData.material.metalness !== undefined ? objData.material.metalness : 0;
+              material = new THREE.MeshStandardMaterial(materialParams);
+              break;
+          case 'MeshPhongMaterial':
+              material = new THREE.MeshPhongMaterial(materialParams);
+              break;
+          case 'MeshLambertMaterial':
+              material = new THREE.MeshLambertMaterial(materialParams);
+              break;
+          default:
+              material = new THREE.MeshStandardMaterial(materialParams);
       }
-    } else {
+  } else {
+      console.log("No material data, creating default material");
       material = this.createDefaultMaterial();
-    }
-
-    // Create mesh
-    const mesh = new THREE.Mesh(geometry, material);
-
-    // Create object data
-    const objectData = {
+  }
+  
+  // Create mesh
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Create object data
+  const objectData = {
       type: objData.type,
       name: objData.name || `${objData.type} ${this.objects.length + 1}`,
       geometry: geometry,
@@ -3139,35 +3168,163 @@ const shapeButtons = {
       position: objData.position || { x: 0, y: 0, z: 0 },
       rotation: objData.rotation || { x: 0, y: 0, z: 0 },
       scale: objData.scale || { x: 1, y: 1, z: 1 }
-    };
-
-    // Add to scene (without history step)
-    this.previewScene.add(mesh);
-
-    // Apply transforms
-    mesh.position.set(
+  };
+  
+  // Add to scene
+  this.previewScene.add(mesh);
+  
+  // Apply transforms
+  mesh.position.set(
       objectData.position.x,
       objectData.position.y,
       objectData.position.z
-    );
-
-    mesh.rotation.set(
+  );
+  
+  mesh.rotation.set(
       objectData.rotation.x,
       objectData.rotation.y,
       objectData.rotation.z
-    );
-
-    mesh.scale.set(
+  );
+  
+  mesh.scale.set(
       objectData.scale.x,
       objectData.scale.y,
       objectData.scale.z
-    );
-
-    // Add to objects array
-    this.objects.push(objectData);
-
-    return objectData;
+  );
+  
+  // Add to objects array
+  this.objects.push(objectData);
+  
+  // Check for texture data - do this AFTER the object is added to the scene
+  console.log("Checking for texture data:", 
+      !!objData.material, 
+      !!objData.material?.texture, 
+      !!objData.material?.texture?.data?.substring(0, 30)
+  );
+  
+  if (objData.material && objData.material.texture && objData.material.texture.data) {
+      console.log("Found texture data for", objData.name, "- attempting to load...");
+      this.loadAndApplyTextureToObject(objectData, objData.material.texture);
+  } else {
+      console.log("No texture data for", objData.name);
   }
+  
+  return objectData;
+  }
+
+  /**
+ * Load and apply a texture to an object
+ * @param {Object} objectData - The object data to apply the texture to
+ * @param {Object} textureData - The texture data
+ */
+loadAndApplyTextureToObject(objectData, textureData) {
+  console.log("loadAndApplyTextureToObject called for:", objectData.name);
+    
+  if (!objectData || !textureData || !textureData.data) {
+      console.warn("Cannot apply texture: Invalid data");
+      return;
+  }
+  
+  console.log("Texture data exists, starting loader...");
+  
+  // Create a texture loader
+  const loader = new THREE.TextureLoader();
+  
+  // Set the color to white first to avoid tinting during loading
+  if (objectData.material) {
+      objectData.material.color.set(0xffffff);
+  }
+  
+  // Load the texture from the data URL
+  loader.load(
+      textureData.data, 
+      // Success callback
+      (texture) => {
+          console.log("Texture loaded successfully for", objectData.name);
+          
+          // Configure texture parameters
+          if (textureData.repeat && textureData.repeat.length === 2) {
+              texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
+          }
+          
+          if (textureData.offset && textureData.offset.length === 2) {
+              texture.offset.set(textureData.offset[0], textureData.offset[1]);
+          }
+          
+          if (textureData.rotation !== undefined) {
+              texture.rotation = textureData.rotation;
+          }
+          
+          // Set wrapping modes
+          texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
+          texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
+          
+          // Apply the texture to the object's material
+          if (objectData.material) {
+              objectData.material.map = texture;
+              objectData.material.needsUpdate = true;
+              
+              console.log("Applied texture to", objectData.name);
+          }
+      },
+      // Progress callback
+      undefined,
+      // Error callback
+      (error) => {
+          console.error("Error loading texture for", objectData.name, error);
+      }
+  );
+}
+
+  applyTextureFromData(object, textureData) {
+    if (!object || !textureData || !textureData.data) {
+        console.warn("Cannot apply texture from data: invalid inputs");
+        return false;
+    }
+    
+    try {
+        // Create a texture loader
+        const loader = new THREE.TextureLoader();
+        
+        // Load the texture from the data URL
+        loader.load(textureData.data, (texture) => {
+            // Apply texture parameters if available
+            if (textureData.repeat && textureData.repeat.length === 2) {
+                texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
+            }
+            
+            if (textureData.offset && textureData.offset.length === 2) {
+                texture.offset.set(textureData.offset[0], textureData.offset[1]);
+            }
+            
+            if (textureData.rotation !== undefined) {
+                texture.rotation = textureData.rotation;
+            }
+            
+            if (textureData.wrapS !== undefined) {
+                texture.wrapS = textureData.wrapS;
+            }
+            
+            if (textureData.wrapT !== undefined) {
+                texture.wrapT = textureData.wrapT;
+            }
+            
+            // Apply the texture to the object's material
+            if (object.material) {
+                object.material.map = texture;
+                object.material.needsUpdate = true;
+                
+                // Set material color to white to prevent tinting the texture
+                object.material.color.set(0xffffff);
+            }
+        });
+        
+        return true;
+    } catch (error) {
+        console.error("Error applying texture from data:", error);
+        return false;
+    }
+}
 
   /**
    * Create a thumbnail of the current scene
@@ -3213,98 +3370,7 @@ const shapeButtons = {
   /**
    * Save object to resource manager
    */
-  // saveToResources() {
-  //   if (!this.resourceManager) {
-  //     alert("ResourceManager not available. Cannot save to resources.");
-  //     return;
-  //   }
 
-  //   // Get project name
-  //   const projectNameInput = this.drawer.querySelector('#project-name');
-  //   const projectName = (projectNameInput?.value || 'Untitled Project').trim();
-
-  //   // Create dialog for saving
-  //   const dialog = document.createElement('sl-dialog');
-  //   dialog.label = 'Save to ResourceManager';
-
-  //   dialog.innerHTML = `
-  //     <div style="display: flex; flex-direction: column; gap: 16px;">
-  //       <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
-  //       <div style="display: flex; align-items: center; gap: 10px;">
-  //         <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
-  //           <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
-  //         </div>
-  //         <div>
-  //           <p>Preview thumbnail</p>
-  //           <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
-  //         </div>
-  //       </div>
-  //     </div>
-  //     <div slot="footer">
-  //       <sl-button id="save-btn" variant="primary">Save</sl-button>
-  //       <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
-  //     </div>
-  //   `;
-
-  //   document.body.appendChild(dialog);
-
-  //   // Generate and set thumbnail
-  //   const thumbnail = this.createThumbnail();
-  //   dialog.querySelector('#resource-thumbnail').src = thumbnail;
-
-  //   // Save handler
-  //   dialog.querySelector('#save-btn').addEventListener('click', () => {
-  //     const name = dialog.querySelector('#resource-name').value.trim();
-  //     if (!name) {
-  //       alert("Please enter a name for this resource");
-  //       return;
-  //     }
-
-  //     // Create JSON representation of the project
-  //     const projectData = this.createProjectData();
-
-  //     // Make sure shapeforge category exists in resources
-  //     if (!this.resourceManager.resources.shapeforge) {
-  //       this.resourceManager.resources.shapeforge = {};
-  //     }
-
-  //     // Create resource entry
-  //     const resourceId = `shapeforge_${Date.now()}`;
-  //     const resource = {
-  //       id: resourceId,
-  //       name: name,
-  //       data: JSON.stringify(projectData),
-  //       thumbnail: thumbnail,
-  //       dateAdded: new Date().toISOString()
-  //     };
-
-  //     // Add to ResourceManager
-  //     this.resourceManager.resources.shapeforge[resourceId] = resource;
-  //     this.resourceManager.saveResources();
-
-  //     dialog.hide();
-
-  //     // Show success message
-  //     const toast = document.createElement('sl-alert');
-  //     toast.variant = 'success';
-  //     toast.duration = 3000;
-  //     toast.closable = true;
-  //     toast.innerHTML = `Saved "${name}" to ResourceManager`;
-
-  //     document.body.appendChild(toast);
-  //     toast.toast();
-  //   });
-
-  //   dialog.querySelector('.close-dialog').addEventListener('click', () => {
-  //     dialog.hide();
-  //   });
-
-  //   dialog.addEventListener('sl-after-hide', () => {
-  //     dialog.remove();
-  //   });
-
-  //   dialog.show();
-  // }
 
   saveToResources() {
     if (!this.resourceManager) {
@@ -3398,47 +3464,6 @@ const shapeButtons = {
     dialog.show();
 }
 
-// Method to list available textures from ResourceManager
-// Method to list available textures from ResourceManager
-// listAvailableTextures(category) {
-//   console.log(`Attempting to list textures for category: ${category}`);
-  
-//   if (!this.resourceManager) {
-//       console.warn("ResourceManager not available. Cannot list textures.");
-//       return [];
-//   }
-  
-//   // Check if textures object exists
-//   if (!this.resourceManager.resources || !this.resourceManager.resources.textures) {
-//       console.warn("ResourceManager.resources.textures not available:", this.resourceManager.resources);
-//       return [];
-//   }
-  
-//   // Get texture map for the requested category
-//   const textureMap = this.resourceManager.resources.textures[category];
-//   console.log(`Texture map for ${category}:`, textureMap);
-  
-//   if (!textureMap) {
-//       console.warn(`Texture category '${category}' not found in ResourceManager`);
-//       return [];
-//   }
-  
-//   // Check if it's a Map (expected) or potentially another structure
-//   let textureArray = [];
-  
-//   if (textureMap instanceof Map) {
-//       // It's a Map as expected, convert to array
-//       textureArray = Array.from(textureMap.values());
-//   } else if (typeof textureMap === 'object') {
-//       // It might be a plain object, try to convert
-//       textureArray = Object.values(textureMap);
-//   }
-  
-//   console.log(`Found ${textureArray.length} textures in category: ${category}`);
-//   return textureArray;
-// }
-
-// Alternative texture finding method for when resource manager integration fails
 findTexturesInWindow() {
   // Look for window.resourceManager
   if (window.resourceManager && window.resourceManager.resources && 
@@ -3517,67 +3542,6 @@ listAvailableTextures(category) {
   return [];
 }
 
-// applyTextureToModel(textureId, category, objectIndex) {
-//   if (!this.resourceManager || this.selectedObject === null) {
-//       console.warn("Cannot apply texture: ResourceManager unavailable or no object selected");
-//       return false;
-//   }
-  
-//   // Get the texture
-//   const texture = this.resourceManager.resources.textures[category]?.get(textureId);
-//   if (!texture) {
-//       console.warn(`Texture not found: ${textureId} in category ${category}`);
-//       return false;
-//   }
-  
-//   // Get the object
-//   const object = this.objects[objectIndex];
-//   if (!object) {
-//       console.warn(`Object not found at index ${objectIndex}`);
-//       return false;
-//   }
-  
-//   // Create a Three.js texture from the texture data
-//   const loader = new THREE.TextureLoader();
-  
-//   // We need to create a data URL if it's not already one
-//   const textureUrl = texture.data;
-  
-//   // Load the texture
-//   const threeTexture = loader.load(textureUrl, (loadedTexture) => {
-//       // Once loaded, apply it to the material
-//       if (object.material) {
-//           // Store original material properties
-//           const originalProps = {
-//               color: object.material.color.clone(),
-//               wireframe: object.material.wireframe,
-//               transparent: object.material.transparent,
-//               opacity: object.material.opacity,
-//               metalness: object.material.metalness,
-//               roughness: object.material.roughness
-//           };
-          
-//           // Apply texture to material
-//           object.material.map = loadedTexture;
-//           object.material.needsUpdate = true;
-          
-//           // Add to history
-//           this.addHistoryStep('texture', {
-//               objectIndex: objectIndex,
-//               textureId: textureId,
-//               category: category,
-//               originalProps: originalProps
-//           });
-          
-//           // Update material UI
-//           this.updateMaterialUI(object);
-//       }
-//   });
-  
-//   return true;
-// }
-
-// Method to apply a texture to a model
 applyTextureToModel(textureId, category, objectIndex) {
   if (!this.resourceManager || objectIndex === null) {
       console.warn("Cannot apply texture: ResourceManager unavailable or no object selected");
@@ -3643,7 +3607,6 @@ applyTextureToModel(textureId, category, objectIndex) {
   return true;
 }
 
-// Show texture selection dialog for the selected object
 // Show texture selection dialog for the selected object
 showTextureSelectionDialog() {
   if (!this.resourceManager || this.selectedObject === null) {
@@ -6599,63 +6562,110 @@ ShapeForge.prototype.applyEffectParameters = function (obj, parameters) {
  * @param {Object} jsonData - The parsed JSON data
  */
 ShapeForge.prototype.loadProjectFromJson = function (jsonData) {
-
-  // Cleanup any existing effects
-  this.cleanupAllShaderEffects();
-
-  // Validate JSON data
+  // Validate project data
   if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
-    alert('Invalid JSON format: Missing objects array');
-    return;
+      throw new Error('Invalid project data');
   }
-
-  // Confirm with user if objects already exist
-  if (this.objects.length > 0) {
-    if (!confirm('This will replace existing objects. Continue?')) {
-      return;
-    }
-
-    // Clear existing objects
-    this.objects.forEach(obj => {
-      if (obj.mesh && this.previewScene) {
-        this.previewScene.remove(obj.mesh);
-      }
-    });
-
-    this.objects = [];
-    this.selectedObject = null;
-  }
-
-  // Set project name if provided
-  if (jsonData.name) {
-    const projectNameInput = this.drawer.querySelector('#project-name');
-    if (projectNameInput) {
+  
+  console.log("Loading project using loadProjectFromJson method w/ texture support");
+  
+  this.cleanupAllShaderEffects();
+  // Clear current project
+  this.newProject();
+  
+  // Set project name
+  const projectNameInput = this.drawer.querySelector('#project-name');
+  if (projectNameInput && jsonData.name) {
       projectNameInput.value = jsonData.name;
-    }
   }
-
+  
+  // Keep track of created objects that need textures
+  const objectsNeedingTextures = [];
+  
   // Load objects
+  console.log(`Loading ${jsonData.objects.length} objects from JSON`);
   jsonData.objects.forEach(objData => {
-    this.createObjectFromJson(objData);
+      // Create the object
+      const createdObject = this.createObjectFromData(objData);
+      
+      // If object has texture data, queue it for texture loading
+      if (objData.material && objData.material.texture && objData.material.texture.data) {
+          objectsNeedingTextures.push({
+              object: createdObject,
+              textureData: objData.material.texture
+          });
+      }
   });
-
+  
+  // Load textures for objects that need them
+  console.log(`Applying textures to ${objectsNeedingTextures.length} objects`);
+  objectsNeedingTextures.forEach(item => {
+      // Create a texture loader
+      const loader = new THREE.TextureLoader();
+      
+      // Make sure the material color is white to avoid tinting
+      if (item.object && item.object.material) {
+          item.object.material.color.set(0xffffff);
+      }
+      
+      // Load the texture
+      loader.load(
+          item.textureData.data,
+          // Success callback
+          (texture) => {
+              console.log(`Texture loaded for ${item.object.name}`);
+              
+              // Configure texture settings
+              if (item.textureData.repeat && item.textureData.repeat.length === 2) {
+                  texture.repeat.set(
+                      item.textureData.repeat[0],
+                      item.textureData.repeat[1]
+                  );
+              }
+              
+              if (item.textureData.offset && item.textureData.offset.length === 2) {
+                  texture.offset.set(
+                      item.textureData.offset[0],
+                      item.textureData.offset[1]
+                  );
+              }
+              
+              if (item.textureData.rotation !== undefined) {
+                  texture.rotation = item.textureData.rotation;
+              }
+              
+              // Set wrapping modes
+              texture.wrapS = item.textureData.wrapS || THREE.RepeatWrapping;
+              texture.wrapT = item.textureData.wrapT || THREE.RepeatWrapping;
+              
+              // Apply texture to material
+              if (item.object.material) {
+                  item.object.material.map = texture;
+                  item.object.material.needsUpdate = true;
+                  console.log(`Applied texture to ${item.object.name}`);
+              }
+          },
+          // Progress callback
+          undefined,
+          // Error callback
+          (error) => {
+              console.error(`Error loading texture for ${item.object.name}:`, error);
+          }
+      );
+  });
+  
   // Select first object if any were created
   if (this.objects.length > 0) {
-    this.selectObject(0);
+      this.selectObject(0);
   }
-
+  
   // Update UI
   this.updateObjectsList();
-
-  // Apply any effects after a short delay to ensure UI is ready
-  setTimeout(() => {
-    this.applyPendingEffects();
-  }, 800);
-
-  // Show success message
-  const message = `Project loaded with ${this.objects.length} objects. 
-                   ${jsonData.objects.filter(o => o.effect).length} have effects.`;
-  alert(message);
+  
+  console.log(`Project loaded with ${this.objects.length} objects and ${objectsNeedingTextures.length} textures`);
+  
+  // Return success
+  return true;
 };
 
 /**
