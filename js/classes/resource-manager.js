@@ -49,6 +49,14 @@ this.lastSelectedCategory = null;
 if (!this.resources.metadata) {
     this.resources.metadata = {};
 }
+
+if (!this.resources.shapeforge) {
+    this.resources.shapeforge = new Map();
+  }
+
+this.loadShapeForgeModels().then(count => {
+    console.log(`Initialized ResourceManager with ${count} ShapeForge models`);
+  });
     }
 
     initStoryboard() {
@@ -163,6 +171,23 @@ if (!this.resources.metadata) {
                     }
                 }
             }
+
+                // Load ShapeForge models if present
+    if (packData.shapeforge && Array.isArray(packData.shapeforge)) {
+        console.log(`Found ${packData.shapeforge.length} ShapeForge models in resource pack`);
+        
+        // Ask user if they want to load models
+        if (confirm(`This resource pack contains ${packData.shapeforge.length} 3D models. Load them?`)) {
+          packData.shapeforge.forEach(model => {
+            if (model.id && model.data) {
+              this.resources.shapeforge.set(model.id, model);
+              
+              // Also save to IndexedDB
+              this.saveModelToIndexedDB(model);
+            }
+          });
+        }
+      }
             
             // Continue with the rest of the deserialization (sounds, splashArt, effects)
             this.updateLoadProgress(overlay, 85, 'Loading other resources...');
@@ -233,6 +258,20 @@ if (!this.resources.metadata) {
             return false;
         }
     }
+
+    // Helper method for saving models
+async saveModelToIndexedDB(model) {
+    try {
+      const db = await this.openModelDatabase();
+      const tx = db.transaction(['models'], 'readwrite');
+      const store = tx.objectStore('models');
+      await store.put(model);
+      return true;
+    } catch (e) {
+      console.warn(`Failed to save model ${model.id} to IndexedDB:`, e);
+      return false;
+    }
+  }
     
     // Create loading progress overlay (similar to save progress but with different title)
     createLoadProgressOverlay() {
@@ -307,7 +346,9 @@ if (!this.resources.metadata) {
                 name: this.activeResourcePack?.name || 'New Resource Pack',
                 version: '1.0',
                 metadata: this.resources.metadata || {},
-                chunks: []  // We'll track chunks here
+                chunks: [],  // We'll track chunks here
+                      // Add ShapeForge models (optional - make togglable in UI)
+      shapeforge: Array.from(this.resources.shapeforge.values())
             };
     
             // Create filename
@@ -1099,7 +1140,6 @@ if (!this.resources.metadata) {
         return firstTexture;
     }
 
-    // Add this method to the ResourceManager class
 
 /**
  * Get a specific texture by ID, name, or other criteria
@@ -1739,6 +1779,29 @@ updateGallery(drawer, category, view = 'grid') {
                 this.updateGallery(drawer, category, view);
             }
         });
+
+        let eyeColor = "#999999"; // Default gray
+
+// Update with the eye color
+card.innerHTML = card.innerHTML.replace(
+  '<span class="material-icons">visibility</span>',
+  `<span class="material-icons" style="color: ${eyeColor};">visibility</span>`
+);
+
+// We'll update the real colors asynchronously
+const viewBtn = card.querySelector('.preview-btn');
+if (viewBtn) {
+  viewBtn.dataset.resourceType = category;
+  viewBtn.dataset.resourceId = id;
+  
+  // Update the eye color asynchronously
+  this.checkResourceStorageLocation(category, id).then(location => {
+    const eye = viewBtn.querySelector('.material-icons');
+    if (eye) {
+      eye.style.color = this.getStorageIndicatorColor(location);
+    }
+  });
+}
 
         container.appendChild(card);
     });
@@ -2856,6 +2919,10 @@ initStyles() {
               <span class="material-icons">pets</span>
               <span class="rm-tab-label">Bestiary</span>
             </sl-tab>
+            <sl-tab slot="nav" panel="shapeforge" class="rm-tab">
+  <span class="material-icons">view_in_ar</span>
+  <span class="rm-tab-label">3D Models</span>
+</sl-tab>
             
             <!-- Textures Panel -->
             <sl-tab-panel name="textures">
@@ -3083,6 +3150,52 @@ initStyles() {
                 </div>
               </div>
             </sl-tab-panel>
+
+            <!-- 3D Models Panel -->
+            <sl-tab-panel name="shapeforge">
+  <div class="rm-panel-container">
+    <!-- ShapeForge Panel Header -->
+    <div class="rm-categories-bar">
+      <div class="rm-categories">
+        <h3 style="margin: 0;">3D Models</h3>
+      </div>
+      <div class="rm-actions">
+        <sl-button size="small" class="model-upload-btn" variant="primary">
+          <span class="material-icons">add_circle</span>
+          <span>Import Model</span>
+        </sl-button>
+        <input type="file" hidden accept=".json" class="model-file-input">
+      </div>
+    </div>
+    
+    <!-- View Controls -->
+    <div class="rm-view-controls">
+      <div class="rm-search">
+        <sl-input placeholder="Search models..." size="small" clearable id="modelSearch">
+          <span slot="prefix" class="material-icons">search</span>
+        </sl-input>
+      </div>
+      <div class="rm-view-toggles">
+        <sl-button-group>
+          <sl-button size="small" class="view-toggle" data-view="grid" variant="primary">
+            <span class="material-icons">grid_view</span>
+          </sl-button>
+          <sl-button size="small" class="view-toggle" data-view="list">
+            <span class="material-icons">view_list</span>
+          </sl-button>
+        </sl-button-group>
+      </div>
+    </div>
+    
+    <!-- Content Area -->
+    <div class="rm-scrollable-content">
+      <div class="rm-gallery-wrapper">
+        <div id="shapeforgeGallery" class="gallery-container gallery-grid"></div>
+      </div>
+    </div>
+  </div>
+</sl-tab-panel>
+
           </sl-tab-group>
         </div>
       </div>
@@ -3093,18 +3206,43 @@ initStyles() {
     footerDiv.setAttribute('slot', 'footer');
     footerDiv.className = 'rm-footer';
     footerDiv.innerHTML = `
-      <sl-button variant="primary" id="saveResourcePack">
-        <span class="material-icons" slot="prefix">save</span>
-        Save
-      </sl-button>
-      <sl-button variant="neutral" id="loadResourcePack" style="margin-left: 8px;">
-        <span class="material-icons" slot="prefix">folder_open</span>
-        Load
-      </sl-button>
-      <sl-button variant="warning" id="exitResourceManager" style="margin-left: 8px;">
-        <span class="material-icons" slot="prefix">close</span>
-        Close
-      </sl-button>
+      <div class="footer-left" style="display: flex; gap: 8px;">
+        <sl-button variant="success" id="optimizeStorageBtn" size="small">
+          <span class="material-icons" slot="prefix">settings_suggest</span>
+          Manage Storage
+        </sl-button>
+        
+        <!-- Storage Legend (compact version) -->
+        <div class="storage-legend-compact" style="display: flex; align-items: center; gap: 8px; background: rgba(20, 20, 20, 0.3); padding: 4px 8px; border-radius: 4px;">
+          <div style="display: flex; align-items: center; gap: 2px;">
+            <span class="material-icons" style="color: #4CAF50; font-size: 16px;">visibility</span>
+            <span style="font-size: 0.8em;">DB</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 2px;">
+            <span class="material-icons" style="color: #FFC107; font-size: 16px;">visibility</span>
+            <span style="font-size: 0.8em;">LS</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 2px;">
+            <span class="material-icons" style="color: #FFFFFF; font-size: 16px;">visibility</span>
+            <span style="font-size: 0.8em;">Both</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-right" style="display: flex; gap: 8px; margin-left: auto;">
+        <sl-button variant="primary" id="saveResourcePack">
+          <span class="material-icons" slot="prefix">save</span>
+          Save
+        </sl-button>
+        <sl-button variant="neutral" id="loadResourcePack">
+          <span class="material-icons" slot="prefix">folder_open</span>
+          Load
+        </sl-button>
+        <sl-button variant="warning" id="exitResourceManager">
+          <span class="material-icons" slot="prefix">close</span>
+          Close
+        </sl-button>
+      </div>
     `;
     drawer.appendChild(footerDiv);
     
@@ -3620,10 +3758,453 @@ initStyles() {
     });
   }
 
+// Update ShapeForge gallery
+updateShapeForgeGallery(drawer, view = 'grid') {
 
+        console.log("Updating ShapeForge gallery");
+        const container = drawer.querySelector('#shapeforgeGallery');
+        if (!container) {
+          console.error("ShapeForge gallery container not found!");
+          return;
+        }
+        
+        // Check if we have models
+        if (!this.resources.shapeforge) {
+          this.resources.shapeforge = new Map();
+          console.warn("ShapeForge resources not initialized, creating empty map");
+        }
+        
+        console.log(`Found ${this.resources.shapeforge.size} models to display`);
+
+
+    // const container = drawer.querySelector('#shapeforgeGallery');
+    if (!container) return;
+    
+    // Update container class based on view
+    container.className = `gallery-container ${view === 'grid' ? 'gallery-grid' : 'gallery-list'}`;
+    
+    // Get ShapeForge models
+    if (!this.resources.shapeforge) {
+      this.resources.shapeforge = new Map();
+    }
+    
+    const models = this.resources.shapeforge;
+    
+    // Check if empty
+    if (models.size === 0) {
+      container.innerHTML = `
+        <sl-card class="empty-gallery">
+          <div style="text-align: center; padding: 2rem;">
+            <span class="material-icons" style="font-size: 3rem; opacity: 0.5;">view_in_ar</span>
+            <p>No 3D models available</p>
+          </div>
+        </sl-card>
+      `;
+      return;
+    }
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Create cards for each model
+    models.forEach((model, id) => {
+      const card = document.createElement('sl-card');
+      card.className = 'resource-item';
+      
+      // Determine storage location
+      const storageLocation = this.checkResourceStorageLocation('shapeforge', id);
+      const eyeColor = this.getStorageIndicatorColor(storageLocation);
+      
+      card.innerHTML = `
+        ${view === 'grid' ? `
+          <img 
+            src="${model.thumbnail}" 
+            alt="${model.name}"
+            class="resource-thumbnail"
+          />
+          <div class="resource-info">
+            <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${model.name}</div>
+            <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(model.dateAdded)}</div>
+          </div>
+        ` : `
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img 
+              src="${model.thumbnail}" 
+              alt="${model.name}"
+              class="resource-thumbnail"
+              style="width: 50px; height: 50px;"
+            />
+            <div class="resource-info">
+              <div class="resource-name" style="color: #666; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; max-width: 90%">${model.name}</div>
+              <div class="resource-meta" style="color: #777; font-size: 0.85em;">${this.formatDate(model.dateAdded)}</div>
+            </div>
+          </div>
+        `}
+        <div slot="footer" class="resource-actions">
+          <sl-button-group>
+            <sl-button size="small" class="view-btn" data-resource-id="${id}">
+              <span class="material-icons" style="color: ${eyeColor};">visibility</span>
+            </sl-button>
+            <sl-button size="small" class="export-btn">
+              <span class="material-icons">file_download</span>
+            </sl-button>
+            <sl-button size="small" class="delete-btn" variant="danger">
+              <span class="material-icons">delete</span>
+            </sl-button>
+          </sl-button-group>
+        </div>
+      `;
+      
+      // Add event listeners
+      card.querySelector('.view-btn').addEventListener('click', () => {
+        this.showModelPreview(model);
+      });
+      
+      card.querySelector('.export-btn').addEventListener('click', () => {
+        this.exportShapeForgeModel(id, model);
+      });
+      
+      card.querySelector('.delete-btn').addEventListener('click', () => {
+        if (confirm(`Delete model "${model.name}"?`)) {
+          models.delete(id);
+          this.updateShapeForgeGallery(drawer, view);
+        }
+      });
+      
+      container.appendChild(card);
+    });
+  }
+  
+  // Import ShapeForge model
+  async importShapeForgeModel(file) {
+    try {
+      const text = await file.text();
+      const modelData = JSON.parse(text);
+      
+      if (!modelData || !modelData.objects) {
+        throw new Error('Invalid ShapeForge model format');
+      }
+      
+      // Generate ID and create entry
+      const id = `model_${Date.now()}`;
+      const model = {
+        id: id,
+        name: modelData.name || file.name.replace(/\.json$/, ''),
+        data: modelData,
+        thumbnail: modelData.thumbnail || this.generateDefaultModelThumbnail(),
+        dateAdded: new Date().toISOString()
+      };
+      
+      // Add to ShapeForge collection
+      if (!this.resources.shapeforge) {
+        this.resources.shapeforge = new Map();
+      }
+      
+      this.resources.shapeforge.set(id, model);
+      
+      // Try to save to indexedDB if available
+      if (window.indexedDB) {
+        try {
+          const db = await this.openModelDatabase();
+          const tx = db.transaction(['models'], 'readwrite');
+          const store = tx.objectStore('models');
+          await store.put(model);
+        } catch (e) {
+          console.warn('Could not save model to IndexedDB:', e);
+        }
+      }
+      
+      this.showSuccessNotification(`Imported model: ${model.name}`);
+      return id;
+    } catch (error) {
+      console.error('Error importing ShapeForge model:', error);
+      this.showErrorNotification('Error importing model: ' + error.message);
+      return null;
+    }
+  }
+  
+  // Show model preview
+//   showModelPreview(model) {
+//     const dialog = document.createElement('sl-dialog');
+//     dialog.label = model.name;
+    
+//     dialog.innerHTML = `
+//       <div style="text-align: center; padding: 20px;">
+//         <img src="${model.thumbnail}" alt="${model.name}" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+//         <h3 style="margin-top: 20px;">${model.name}</h3>
+//         <div style="color: #666; margin-top: 8px;">
+//           <p>Created: ${this.formatDate(model.dateAdded)}</p>
+//           <p>Objects: ${model.data.objects ? model.data.objects.length : 'Unknown'}</p>
+//         </div>
+//       </div>
+//       <div slot="footer">
+//         <sl-button variant="neutral" class="close-btn">Close</sl-button>
+//         <sl-button variant="primary" class="export-btn">
+//           <span class="material-icons" slot="prefix">file_download</span>
+//           Export
+//         </sl-button>
+//       </div>
+//     `;
+    
+//     document.body.appendChild(dialog);
+    
+//     dialog.querySelector('.close-btn').addEventListener('click', () => {
+//       dialog.hide();
+//     });
+    
+//     dialog.querySelector('.export-btn').addEventListener('click', () => {
+//       this.exportShapeForgeModel(model.id, model);
+//     });
+    
+//     dialog.addEventListener('sl-after-hide', () => {
+//       dialog.remove();
+//     });
+    
+//     dialog.show();
+//   }
+
+showModelPreview(model) {
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = model.name;
+    dialog.style.cssText = "--width: 800px; --max-width: 90vw;";
+    
+    // Create a nicely formatted JSON string of the model data
+    // Only show objects array or full data depending on size
+    const modelData = model.data;
+    const jsonString = JSON.stringify(modelData, null, 2);
+    
+    dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 20px; padding: 20px;">
+        <!-- Model info section -->
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+          <img src="${model.thumbnail}" alt="${model.name}" 
+               style="max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #eee;">
+          
+          <div>
+            <h3 style="margin-top: 0; margin-bottom: 10px;">${model.name}</h3>
+            <div style="color: #666;">
+              <p style="margin: 5px 0;">Created: ${this.formatDate(model.dateAdded)}</p>
+              <p style="margin: 5px 0;">Objects: ${modelData.objects ? modelData.objects.length : 'Unknown'}</p>
+              ${modelData.version ? `<p style="margin: 5px 0;">Version: ${modelData.version}</p>` : ''}
+              ${modelData.author ? `<p style="margin: 5px 0;">Author: ${modelData.author}</p>` : ''}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Code viewer section -->
+        <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+          <div style="background: #f5f5f5; padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 500;">Model Data</span>
+            <sl-button size="small" class="copy-btn">
+              <span class="material-icons" style="font-size: 16px; margin-right: 4px;">content_copy</span>
+              Copy
+            </sl-button>
+          </div>
+          <div style="max-height: 300px; overflow: auto; position: relative;">
+            <textarea id="model-json" style="width: 100%; height: 300px; padding: 12px; border: none; font-family: monospace; font-size: 13px; white-space: pre; overflow: auto; resize: none;">${jsonString}</textarea>
+          </div>
+        </div>
+      </div>
+      
+      <div slot="footer">
+        <sl-button variant="neutral" class="close-btn">Close</sl-button>
+        <sl-button variant="primary" class="export-btn">
+          <span class="material-icons" slot="prefix">file_download</span>
+          Export
+        </sl-button>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Copy button functionality
+    dialog.querySelector('.copy-btn').addEventListener('click', () => {
+      const textArea = dialog.querySelector('#model-json');
+      textArea.select();
+      document.execCommand('copy');
+      
+      // Show feedback
+      const copyBtn = dialog.querySelector('.copy-btn');
+      const originalText = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<span class="material-icons" style="font-size: 16px; margin-right: 4px;">check</span> Copied!';
+      copyBtn.variant = 'success';
+      
+      setTimeout(() => {
+        copyBtn.innerHTML = originalText;
+        copyBtn.variant = 'default';
+      }, 2000);
+    });
+    
+    dialog.querySelector('.close-btn').addEventListener('click', () => {
+      dialog.hide();
+    });
+    
+    dialog.querySelector('.export-btn').addEventListener('click', () => {
+      this.exportShapeForgeModel(model.id, model);
+    });
+    
+    dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+    });
+    
+    dialog.show();
+    
+    // Select all text in textarea when clicked
+    const jsonTextarea = dialog.querySelector('#model-json');
+    jsonTextarea.addEventListener('click', function() {
+      this.select();
+    });
+  }
+  
+  // Export ShapeForge model
+  exportShapeForgeModel(id, model) {
+    const data = JSON.stringify(model.data, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${model.name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    this.showSuccessNotification(`Exported model: ${model.name}`);
+  }
+  
+  // Generate default thumbnail for models without one
+  generateDefaultModelThumbnail() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw background
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(0, 0, 200, 200);
+    
+    // Draw cube wireframe
+    ctx.strokeStyle = '#3F51B5';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    // Front face
+    ctx.moveTo(50, 50);
+    ctx.lineTo(150, 50);
+    ctx.lineTo(150, 150);
+    ctx.lineTo(50, 150);
+    ctx.lineTo(50, 50);
+    
+    // Back face
+    ctx.moveTo(70, 70);
+    ctx.lineTo(170, 70);
+    ctx.lineTo(170, 170);
+    ctx.lineTo(70, 170);
+    ctx.lineTo(70, 70);
+    
+    // Connect faces
+    ctx.moveTo(50, 50);
+    ctx.lineTo(70, 70);
+    ctx.moveTo(150, 50);
+    ctx.lineTo(170, 70);
+    ctx.moveTo(150, 150);
+    ctx.lineTo(170, 170);
+    ctx.moveTo(50, 150);
+    ctx.lineTo(70, 170);
+    
+    ctx.stroke();
+    
+    return canvas.toDataURL('image/png');
+  }
+  
+  // Database operations for ShapeForge models
+  async openModelDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('ShapeForgeModels', 1);
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('models')) {
+          db.createObjectStore('models', { keyPath: 'id' });
+        }
+      };
+      
+      request.onsuccess = (event) => {
+        resolve(event.target.result);
+      };
+      
+      request.onerror = (event) => {
+        reject(event.target.error);
+      };
+    });
+  }
 
 
 setupEventHandlers(drawer) {
+
+    const shapeforgeTab = drawer.querySelector('sl-tab[panel="shapeforge"]');
+  
+    if (shapeforgeTab) {
+        console.log("Found ShapeForge tab, setting up events");
+        
+        // Use the tab group instead of the individual tab for more reliable event handling
+        const tabGroup = drawer.querySelector('sl-tab-group');
+        if (tabGroup) {
+            tabGroup.addEventListener('sl-tab-show', (e) => {
+                console.log("Tab changed to:", e.detail.name);
+                if (e.detail.name === 'shapeforge') {
+                    console.log("ShapeForge tab selected!");
+                    
+                    // Use setTimeout to ensure the DOM is ready
+                    setTimeout(() => {
+                        this.loadShapeForgeModels().then(count => {
+                            console.log(`Loaded ${count} models from storage`);
+                            this.updateShapeForgeGallery(drawer);
+                        });
+                    }, 100);
+                }
+            });
+        }
+        
+        // Keep your existing button click handler
+        const importBtn = drawer.querySelector('.model-upload-btn');
+        const fileInput = drawer.querySelector('.model-file-input');
+        
+        if (importBtn && fileInput) {
+            importBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.importShapeForgeModel(file).then(() => {
+                        this.updateShapeForgeGallery(drawer);
+                    });
+                }
+                fileInput.value = '';
+            });
+        }
+        
+        // // Add a manual refresh button for debugging
+        // const headerSection = drawer.querySelector('sl-tab-panel[name="shapeforge"] .rm-categories-bar');
+        // if (headerSection) {
+        //     const refreshBtn = document.createElement('sl-button');
+        //     refreshBtn.size = 'small';
+        //     refreshBtn.innerHTML = '<span class="material-icons">refresh</span> Refresh';
+        //     refreshBtn.style.marginLeft = '8px';
+            
+        //     refreshBtn.addEventListener('click', async () => {
+        //         console.log("Manual refresh triggered");
+        //         await this.loadShapeForgeModels();
+        //         this.updateShapeForgeGallery(drawer);
+        //     });
+            
+        //     headerSection.appendChild(refreshBtn);
+        // }
+    }
+
     const saveBtn = drawer.querySelector('#saveResourcePack');
     const loadBtn = drawer.querySelector('#loadResourcePack');
     const exitBtn = drawer.querySelector('#exitResourceManager');
@@ -3762,121 +4343,11 @@ setupEventHandlers(drawer) {
         };
     }
 
-        const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
-        if (bestiaryPanel) {
-            // Check if button already exists
-            if (!bestiaryPanel.querySelector('.clear-bestiary-btn')) {
-                // Create a storage management section at the bottom of the bestiary panel
-                const storageSection = document.createElement('div');
-                storageSection.className = 'bestiary-storage-section';
-                storageSection.style.cssText = `
-                    margin-top: 24px;
-                    padding: 16px;
-                    background: rgba(0, 0, 0, 0.05);
-                    border-radius: 8px;
-                `;
-                
-                // Find this code in setupEventHandlers where you create the storage section
-        storageSection.innerHTML = `
-            <div style="display: flex; align-items: center; margin-bottom: 12px; justify-content: space-between;">
-                <h3 style="margin: 0; font-size: 16px; font-weight: 500;">Storage Management</h3>
-                
-                <!-- Compact Storage Legend -->
-                <div class="storage-legend" style="display: flex; align-items: center; gap: 12px; background: #333; padding: 6px 10px; border-radius: 4px;">
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <span class="material-icons" style="color: #4CAF50; font-size: 16px;">visibility</span>
-                        <span style="color: #e0e0e0; font-size: 0.8em;">IndexedDB</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <span class="material-icons" style="color: #FFC107; font-size: 16px;">visibility</span>
-                        <span style="color: #e0e0e0; font-size: 0.8em;">localStorage</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <span class="material-icons" style="color: #FFFFFF; font-size: 16px;">visibility</span>
-                        <span style="color: #e0e0e0; font-size: 0.8em;">Both</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-                <sl-button class="export-bestiary-btn" size="small">
-                    <span class="material-icons" slot="prefix">download</span>
-                    Export Bestiary
-                </sl-button>
-                <sl-button class="import-bestiary-btn" size="small">
-                    <span class="material-icons" slot="prefix">upload</span>
-                    Import File
-                </sl-button>
-                <sl-button class="optimize-bestiary-btn" size="small" variant="success">
-                    <span class="material-icons" slot="prefix">settings_suggest</span>
-                    Optimize Storage
-                </sl-button>
-                <sl-button class="clear-bestiary-btn" size="small" variant="danger">
-                    <span class="material-icons" slot="prefix">delete_forever</span>
-                    Clear All Monsters
-                </sl-button>
-            </div>
-            <div class="storage-info" style="font-size: 14px; color: #666;">
-                <div>Monsters: <span class="monster-count">${this.resources.bestiary.size}</span></div>
-            </div>
-        `;
-        
-        // Add event listener for the new optimize button
-        storageSection.querySelector('.optimize-bestiary-btn').addEventListener('click', () => {
-            this.showStorageManagementDialog();
-        });
-                
-                // Add to panel
-                bestiaryPanel.appendChild(storageSection);
-                
-                // Add event listeners
-                storageSection.querySelector('.export-bestiary-btn').addEventListener('click', () => {
-                    this.saveBestiaryToFile();
-                });
-                
-                storageSection.querySelector('.import-bestiary-btn').addEventListener('click', () => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    input.style.display = 'none';
-                    document.body.appendChild(input);
-                    
-                    input.onchange = async (e) => {
-                        if (e.target.files.length > 0) {
-                            const success = await this.loadBestiaryFromFile(e.target.files[0]);
-                            if (success) {
-                                this.updateBestiaryGallery(drawer, 'grid');
-                                this.showSuccessNotification("Bestiary imported successfully");
-                                
-                                // Update monster count
-                                const countElement = bestiaryPanel.querySelector('.monster-count');
-                                if (countElement) {
-                                    countElement.textContent = this.resources.bestiary.size;
-                                }
-                            } else {
-                                this.showErrorNotification("Failed to import bestiary");
-                            }
-                        }
-                        document.body.removeChild(input);
-                    };
-                    
-                    input.click();
-                });
-                
-                storageSection.querySelector('.clear-bestiary-btn').addEventListener('click', async () => {
-                    const success = await this.clearBestiary();
-                    if (success) {
-                        this.updateBestiaryGallery(drawer, 'grid');
-                        
-                        // Update monster count
-                        const countElement = bestiaryPanel.querySelector('.monster-count');
-                        if (countElement) {
-                            countElement.textContent = "0";
-                        }
-                    }
-                });
-            }
-        }
+const bestiaryPanel = drawer.querySelector('sl-tab-panel[name="bestiary"]');
+
+  
+
+
 
     // Update the view toggle handler
     drawer.querySelectorAll('.view-toggle').forEach(toggle => {
@@ -3941,6 +4412,7 @@ setupEventHandlers(drawer) {
     this.setupSplashArtHandlers(drawer);
 
 
+
     const tabGroup = drawer.querySelector('sl-tab-group');
     if (tabGroup) {
         tabGroup.addEventListener('sl-tab-show', (e) => {
@@ -3991,6 +4463,8 @@ setupEventHandlers(drawer) {
                 fileInput.click();
             }
         });
+
+
 
         fileInput.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files || []);
@@ -4060,6 +4534,13 @@ setupEventHandlers(drawer) {
         });
     });
 
+    const optimizeStorageBtn = drawer.querySelector('#optimizeStorageBtn');
+    if (optimizeStorageBtn) {
+      optimizeStorageBtn.addEventListener('click', () => {
+        this.showStorageManagementDialog();
+      });
+    }
+
     // Setup Bestiary tab handlers
     const addMonsterBtn = drawer.querySelector('.add-monster-btn');
     if (addMonsterBtn) {
@@ -4098,6 +4579,14 @@ splashArtButtons.forEach(btn => {
     this.updateGallery(drawer, category, isGridView ? 'grid' : 'list');
   });
 });
+
+// const shapeforgeTab = drawer.querySelector('sl-tab[panel="shapeforge"]');
+// if (shapeforgeTab) {
+//   shapeforgeTab.addEventListener('sl-tab-show', () => {
+//     console.log("ShapeForge tab selected, updating gallery");
+//     this.updateShapeForgeGallery(drawer);
+//   });
+// }
 
 // Additional fix for initial display - call this at the end of createResourceManagerUI
 setTimeout(() => {
@@ -4178,103 +4667,336 @@ async getStorageUsage() {
   return stats;
 }
 
-// Simple dialog for storage management
+getStorageIndicatorColor(location) {
+    switch (location) {
+      case 'indexeddb':
+        return "#4CAF50"; // Green
+      case 'localstorage':
+        return "#FFC107"; // Yellow
+      case 'both':
+        return "#FFFFFF"; // White
+      default:
+        return "#999999"; // Gray
+    }
+  }
+  
+  // Check storage location for any resource type
+  async checkResourceStorageLocation(resourceType, resourceId) {
+    // Default to "unknown"
+    let storageLocation = "unknown";
+    
+    try {
+      // Check IndexedDB
+      let inIndexedDB = false;
+      
+      // Use appropriate database based on resource type
+      if (resourceType === 'bestiary') {
+        if (this.monsterManager && this.monsterManager.db) {
+          const tx = this.monsterManager.db.transaction(['monsters'], 'readonly');
+          const store = tx.objectStore('monsters');
+          const request = store.get(resourceId);
+          
+          inIndexedDB = await new Promise((resolve) => {
+            request.onsuccess = (event) => resolve(!!event.target.result);
+            request.onerror = () => resolve(false);
+          });
+        }
+      } 
+      else if (resourceType === 'shapeforge') {
+        try {
+          const db = await this.openModelDatabase();
+          const tx = db.transaction(['models'], 'readonly');
+          const store = tx.objectStore('models');
+          const request = store.get(resourceId);
+          
+          inIndexedDB = await new Promise((resolve) => {
+            request.onsuccess = (event) => resolve(!!event.target.result);
+            request.onerror = () => resolve(false);
+          });
+        } catch (e) {
+          inIndexedDB = false;
+        }
+      }
+      // Add other resource types here as needed
+      
+      // Check localStorage - all resources go into the same object
+      let inLocalStorage = false;
+      const storageKey = resourceType === 'bestiary' ? 'monsterDatabase' :
+                          resourceType === 'shapeforge' ? 'modelDatabase' :
+                          `${resourceType}Database`;
+      
+      const storageData = localStorage.getItem(storageKey);
+      if (storageData) {
+        try {
+          const data = JSON.parse(storageData);
+          if (data && typeof data === 'object') {
+            // Check if the resource exists
+            if (resourceType === 'bestiary') {
+              inLocalStorage = !!(data.monsters && data.monsters[resourceId]);
+            } else {
+              inLocalStorage = !!(data[resourceId]);
+            }
+          }
+        } catch (e) {
+          console.error(`Error parsing localStorage for ${resourceType}:`, e);
+        }
+      }
+      
+      // Determine storage location
+      if (inIndexedDB && inLocalStorage) {
+        storageLocation = "both";
+      } else if (inIndexedDB) {
+        storageLocation = "indexeddb";
+      } else if (inLocalStorage) {
+        storageLocation = "localstorage";
+      }
+    } catch (error) {
+      console.error(`Error checking ${resourceType} storage location:`, error);
+    }
+    
+    return storageLocation;
+  }
+
+// Update showStorageManagementDialog to handle all resource types
+// Revised showStorageManagementDialog with buttons instead of dropdown
 async showStorageManagementDialog() {
-  // Create dialog component
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = "Monster Storage Management";
-  
-  // Simple dialog that doesn't require storage stats
-  dialog.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-      <!-- Storage Legend -->
-      <div class="storage-legend" style="background:#333; border-radius: 8px; padding: 12px;">
-        <h3 style="margin-top: 0;">Monster Storage Legend</h3>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="material-icons" style="color: #4CAF50;">visibility</span>
-            <span>Stored in IndexedDB (preferred, large storage capacity)</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="material-icons" style="color: #FFC107;">visibility</span>
-            <span>Stored in localStorage only (limited storage, ~5MB total)</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="material-icons" style="color: #FFFFFF;">visibility</span>
-            <span>Stored in both IndexedDB and localStorage (backup)</span>
+    // Create dialog component
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = "Storage Management";
+    
+    // Create dialog content
+    dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Storage Legend -->
+        <div class="storage-legend" style="background:#333; border-radius: 8px; padding: 12px;">
+          <h3 style="margin-top: 0;">Resource Storage Legend</h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons" style="color: #4CAF50;">visibility</span>
+              <span>Stored in IndexedDB (preferred, large storage capacity)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons" style="color: #FFC107;">visibility</span>
+              <span>Stored in localStorage only (limited storage, ~5MB total)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="material-icons" style="color: #FFFFFF;">visibility</span>
+              <span>Stored in both IndexedDB and localStorage (backup)</span>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="actions">
-        <p>Choose a storage management action:</p>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-          <sl-button class="export-btn" variant="primary">
-            <span class="material-icons" slot="prefix">download</span>
-            Export All Monsters
-          </sl-button>
-          <sl-button class="optimize-btn" variant="success">
-            <span class="material-icons" slot="prefix">settings_suggest</span>
-            Optimize Storage
-          </sl-button>
-          <sl-button class="clear-btn" variant="danger">
-            <span class="material-icons" slot="prefix">delete_forever</span>
-            Clear All Monsters
-          </sl-button>
+        
+        <!-- Actions Section -->
+        <div class="resource-actions">
+          <h3 style="margin-top: 0;">Optimize Storage</h3>
+          <p>Choose what resources to move to IndexedDB for better performance:</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 16px;">
+            <sl-button class="optimize-bestiary-btn" variant="primary" style="justify-content: flex-start;">
+              <span class="material-icons" slot="prefix">pets</span>
+              Bestiary
+            </sl-button>
+            
+            <sl-button class="optimize-models-btn" variant="primary" style="justify-content: flex-start;">
+              <span class="material-icons" slot="prefix">view_in_ar</span>
+              3D Models
+            </sl-button>
+            
+            <sl-button class="optimize-all-btn" variant="success" style="grid-column: 1 / -1; justify-content: center;">
+              <span class="material-icons" slot="prefix">settings_suggest</span>
+              Optimize All Resources
+            </sl-button>
+          </div>
+        </div>
+        
+        <!-- Export/Clear Section -->
+        <div class="resource-management" style="border-top: 1px solid #444; padding-top: 16px; margin-top: 8px;">
+          <h3 style="margin-top: 0;">Advanced Management</h3>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 16px;">
+            <sl-button class="export-bestiary-btn" style="justify-content: flex-start;">
+              <span class="material-icons" slot="prefix">download</span>
+              Export Bestiary
+            </sl-button>
+            
+            <sl-button class="export-models-btn" style="justify-content: flex-start;">
+              <span class="material-icons" slot="prefix">download</span>
+              Export 3D Models
+            </sl-button>
+            
+            <sl-button class="clear-bestiary-btn" variant="danger" style="justify-content: flex-start;">
+              <span class="material-icons" slot="prefix">delete_forever</span>
+              Clear Bestiary
+            </sl-button>
+            
+            <sl-button class="clear-models-btn" variant="danger" style="justify-content: flex-start;">
+              <span class="material-icons" slot="prefix">delete_forever</span>
+              Clear 3D Models
+            </sl-button>
+          </div>
+        </div>
+        
+        <div class="warning" style="color: #f44336; font-size: 0.9em;">
+          <strong>Note:</strong> "Clear" actions will permanently remove resources from all storage. 
+          Export your data first if you want to keep a backup!
         </div>
       </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    dialog.show();
+    
+    // Add event listeners
+    // Optimize buttons
+    dialog.querySelector('.optimize-bestiary-btn').addEventListener('click', async () => {
+      dialog.hide();
+      await this.optimizeBestiaryStorage();
+    });
+    
+    dialog.querySelector('.optimize-models-btn').addEventListener('click', async () => {
+      dialog.hide();
+      await this.optimizeShapeForgeStorage();
+    });
+    
+    dialog.querySelector('.optimize-all-btn').addEventListener('click', async () => {
+      dialog.hide();
+      this.showSuccessNotification("Optimizing all resources...");
+      await this.optimizeBestiaryStorage();
+      await this.optimizeShapeForgeStorage();
+      // Add other resource types as needed
+      this.showSuccessNotification("Storage optimization complete!");
+    });
+    
+    // Export buttons
+    dialog.querySelector('.export-bestiary-btn').addEventListener('click', () => {
+      dialog.hide();
+      this.saveBestiaryToFile();
+    });
+    
+    dialog.querySelector('.export-models-btn').addEventListener('click', () => {
+      dialog.hide();
+      this.exportAllShapeForgeModels();
+    });
+    
+    // Clear buttons
+    dialog.querySelector('.clear-bestiary-btn').addEventListener('click', () => {
+      if (confirm('WARNING: This will permanently delete ALL monsters from both IndexedDB and localStorage.\n\nDo you want to continue?')) {
+        dialog.hide();
+        this.clearBestiary();
+      }
+    });
+    
+    dialog.querySelector('.clear-models-btn').addEventListener('click', () => {
+      if (confirm('WARNING: This will permanently delete ALL 3D models from both IndexedDB and localStorage.\n\nDo you want to continue?')) {
+        dialog.hide();
+        this.clearShapeForgeModels();
+      }
+    });
+    
+    // Clean up when dialog is closed
+    dialog.addEventListener('sl-after-hide', () => {
+      document.body.removeChild(dialog);
+    });
+  }
+
+  // Add this to the constructor or initialization method
+  async loadShapeForgeModels() {
+    console.log("Loading ShapeForge models from storage...");
+    
+    if (!this.resources.shapeforge) {
+      this.resources.shapeforge = new Map();
+    }
+    
+    let modelsLoaded = 0;
+    
+    // Try to load from IndexedDB first
+    try {
+      const db = await this.openModelDatabase();
+      const tx = db.transaction(['models'], 'readonly');
+      const store = tx.objectStore('models');
+      const request = store.getAll();
       
-      <div class="warning" style="color: #f44336; font-size: 0.9em;">
-        <strong>Note:</strong> "Clear All Monsters" removes monsters from BOTH IndexedDB and localStorage. 
-        Export your bestiary first if you want to keep your monsters!
-      </div>
-    </div>
-  `;
+      const models = await new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = (e) => {
+          console.error("IndexedDB error:", e);
+          reject(e);
+        }
+      });
+      
+      // Add models to memory
+      models.forEach(model => {
+        this.resources.shapeforge.set(model.id, model);
+        modelsLoaded++;
+      });
+      
+      console.log(`Loaded ${modelsLoaded} ShapeForge models from IndexedDB`);
+    } catch (e) {
+      console.warn("Failed to load ShapeForge models from IndexedDB:", e);
+    }
+    
+    // If none loaded, try localStorage as fallback
+    if (modelsLoaded === 0) {
+      try {
+        const storageData = localStorage.getItem('modelDatabase');
+        if (storageData) {
+          const data = JSON.parse(storageData);
+          if (data && typeof data === 'object') {
+            Object.entries(data).forEach(([id, model]) => {
+              this.resources.shapeforge.set(id, model);
+              modelsLoaded++;
+            });
+          }
+        }
+        console.log(`Loaded ${modelsLoaded} ShapeForge models from localStorage`);
+      } catch (e) {
+        console.warn("Failed to load ShapeForge models from localStorage:", e);
+      }
+    }
+    
+    return modelsLoaded;
+  }
   
-  document.body.appendChild(dialog);
-  dialog.show();
-  
-  // Add event listeners
-  dialog.querySelector('.export-btn').addEventListener('click', () => {
-    dialog.hide();
-    this.saveBestiaryToFile();
-  });
-  
-  dialog.querySelector('.optimize-btn').addEventListener('click', async () => {
-    // Show optimization in progress
-    // const notification = this.showInfoNotification("Optimizing storage...");
-    this.showSuccessNotification("Optimizing Storage ... ");
-    // Move localStorage-only monsters to IndexedDB where possible
+  // Add new methods for ShapeForge models optimization
+  async optimizeShapeForgeStorage() {
     let optimized = 0;
     let total = 0;
     
     try {
-      // Get all monsters from localStorage
-      const storageData = localStorage.getItem('monsterDatabase');
+      // Get models from localStorage
+      const storageData = localStorage.getItem('modelDatabase');
       if (storageData) {
         const data = JSON.parse(storageData);
-        if (data?.monsters) {
-          const monsters = Object.values(data.monsters);
-          total = monsters.length;
+        if (data) {
+          const models = Object.values(data);
+          total = models.length;
           
-          // For each monster, check if it's in IndexedDB and add if not
-          for (const monster of monsters) {
-            if (monster.id) {
-              const inIndexedDB = await this.monsterManager.isMonsterInIndexedDB(monster.id);
-              if (!inIndexedDB) {
+          // For each model, check if it's in IndexedDB and add if not
+          const db = await this.openModelDatabase();
+          
+          for (const model of models) {
+            if (model.id) {
+              const tx = db.transaction(['models'], 'readwrite');
+              const store = tx.objectStore('models');
+              
+              // Check if already in IndexedDB
+              const existsRequest = store.get(model.id);
+              const exists = await new Promise(resolve => {
+                existsRequest.onsuccess = () => resolve(!!existsRequest.result);
+                existsRequest.onerror = () => resolve(false);
+              });
+              
+              if (!exists) {
                 try {
                   // Try to add to IndexedDB
-                  const tx = this.monsterManager.db.transaction(['monsters'], 'readwrite');
-                  const store = tx.objectStore('monsters');
                   await new Promise((resolve, reject) => {
-                    const request = store.put(monster);
-                    request.onsuccess = () => resolve();
-                    request.onerror = (e) => reject(e);
+                    const addRequest = store.put(model);
+                    addRequest.onsuccess = () => resolve();
+                    addRequest.onerror = (e) => reject(e);
                   });
                   optimized++;
                 } catch (e) {
-                    this.showErrorNotification(`Failed to optimize storage for monster ${monster.id}: ${e.message}`);
-                  console.warn(`Failed to optimize storage for monster ${monster.id}:`, e);
+                  console.warn(`Failed to optimize storage for model ${model.id}:`, e);
                 }
               }
             }
@@ -4282,42 +5004,84 @@ async showStorageManagementDialog() {
         }
       }
       
-      // Update or close notification
-    //   if (notification) {
-    //     notification.innerHTML = `Storage optimization complete: ${optimized} of ${total} monsters optimized.`;
-    //     setTimeout(() => notification.hide(), 3000);
-    //   }
-
-      this.showSuccessNotification(`Storage optimization complete: ${optimized} of ${total} monsters optimized.`);
-      
-      dialog.hide();
-      
-      // Refresh bestiary cards to show updated storage locations
-      this.updateBestiaryGallery(document.querySelector('.resource-drawer'));
-      
+      this.showSuccessNotification(`Storage optimization complete: ${optimized} of ${total} models optimized.`);
     } catch (e) {
-
-        console.error("Error during storage optimization:", e);
-this.showErrorNotification(`Error optimizing storage: ${e.message}`);
-        //   if (notification) {
-    //     notification.variant = 'danger';
-    //     notification.innerHTML = `Error optimizing storage: ${e.message}`;
-    //   }
+      console.error("Error during ShapeForge storage optimization:", e);
+      this.showErrorNotification(`Error optimizing storage: ${e.message}`);
     }
-  });
+  }
   
-  dialog.querySelector('.clear-btn').addEventListener('click', () => {
-    if (confirm('WARNING: This will permanently delete ALL monsters from both IndexedDB and localStorage.\n\nDo you want to continue?')) {
-      this.clearBestiary();
-      dialog.hide();
+  // Clear all ShapeForge models
+  async clearShapeForgeModels() {
+    try {
+      // Clear from IndexedDB
+      const db = await this.openModelDatabase();
+      const tx = db.transaction(['models'], 'readwrite');
+      const store = tx.objectStore('models');
+      await store.clear();
+      
+      // Clear from localStorage
+      localStorage.removeItem('modelDatabase');
+      
+      // Clear from memory
+      if (this.resources.shapeforge) {
+        this.resources.shapeforge.clear();
+      }
+      
+      this.showSuccessNotification("All 3D models have been removed");
+      
+      // Update the gallery if visible
+      const drawer = document.querySelector('.resource-manager-drawer');
+      if (drawer) {
+        this.updateShapeForgeGallery(drawer);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error clearing ShapeForge models:', error);
+      this.showErrorNotification(`Error clearing models: ${error.message}`);
+      return false;
     }
-  });
+  }
   
-  // Clean up when dialog is closed
-  dialog.addEventListener('sl-after-hide', () => {
-    document.body.removeChild(dialog);
-  });
-}
+  // Export all ShapeForge models as a single JSON file
+  exportAllShapeForgeModels() {
+    if (!this.resources.shapeforge || this.resources.shapeforge.size === 0) {
+      this.showInfoNotification("No 3D models to export");
+      return false;
+    }
+    
+    try {
+      const modelsData = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        models: {}
+      };
+      
+      this.resources.shapeforge.forEach((model, key) => {
+        modelsData.models[key] = model;
+      });
+      
+      const blob = new Blob([JSON.stringify(modelsData, null, 2)], {
+        type: 'application/json'
+      });
+      
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'shapeforge_models.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      
+      this.showSuccessNotification(`Exported ${this.resources.shapeforge.size} 3D models`);
+      return true;
+    } catch (error) {
+      console.error('Error exporting ShapeForge models:', error);
+      this.showErrorNotification(`Error exporting models: ${error.message}`);
+      return false;
+    }
+  }
 
 // Add this method to clear monsters from both storage systems
 async clearAllMonsters() {
@@ -4430,19 +5194,6 @@ showPropsImportOptions(drawer) {
     dialog.show();
 }
 
-// getSplashArtUrl(imageData) {
-//     if (!imageData || !this.resourceManager) return '';
-
-//     try {
-//       const { id, category } = imageData;
-//       const art = this.resourceManager.resources.splashArt[category]?.get(id);
-
-//       return art?.base64Data || '';
-//     } catch (error) {
-//       console.error('Error getting splash art URL:', error);
-//       return '';
-//     }
-//   }
 
 getSplashArtUrl(imageData) {
     if (!imageData) return '';
@@ -4588,87 +5339,6 @@ async initializeMonsterManager(mapEditor) {
     }
     return this.monsterManager;
 }
-
-// async loadBestiaryFromDatabase() {
-//     try {
-//         console.log('Loading bestiary from database...');
-        
-//         // Wait for database initialization to complete first
-//         if (this.monsterManager?.dbInitPromise) {
-//             await this.monsterManager.dbInitPromise;
-//             console.log('Database initialization complete');
-//         } else {
-//             console.warn('MonsterManager database initialization promise not found');
-//         }
-        
-//         // Now try to load monsters from IndexedDB
-//         if (this.monsterManager && this.monsterManager.db) {
-//             try {
-//                 // Create a promise-based wrapper for the transaction
-//                 const monsters = await new Promise((resolve, reject) => {
-//                     const tx = this.monsterManager.db.transaction(['monsters'], 'readonly');
-//                     const store = tx.objectStore('monsters');
-//                     const request = store.getAll();
-                    
-//                     request.onsuccess = (event) => resolve(event.target.result);
-//                     request.onerror = (event) => reject(event.target.error);
-                    
-//                     // Also handle transaction errors
-//                     tx.oncomplete = () => {
-//                         if (!request.result) resolve([]);
-//                     };
-//                     tx.onerror = (event) => reject(event.target.error);
-//                 });
-                
-//                 console.log(`Found ${monsters.length} monsters in IndexedDB`);
-                
-//                 // Add monsters to the resource manager (now monsters is definitely an array)
-//                 monsters.forEach(monster => {
-//                     if (monster.id && monster.basic?.name) {
-//                         const key = monster.id;
-//                         this.resources.bestiary.set(key, {
-//                             id: key,
-//                             name: monster.basic.name,
-//                             data: monster,
-//                             thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
-//                             cr: monster.basic.cr,
-//                             type: monster.basic.type,
-//                             size: monster.basic.size,
-//                             dateAdded: monster.dateAdded || new Date().toISOString()
-//                         });
-//                     }
-//                 });
-                
-//                 console.log(`Successfully loaded ${this.resources.bestiary.size} monsters into resource manager`);
-//                 return;
-//             } catch (dbError) {
-//                 console.error('Error loading from IndexedDB:', dbError);
-//                 console.log('Falling back to localStorage');
-//             }
-//         }
-        
-//         // Fallback to localStorage if IndexedDB is not available or failed
-//         console.log('Using localStorage for bestiary');
-//         const monsterDatabase = this.monsterManager?.loadDatabase() || { monsters: {} };
-        
-//         Object.entries(monsterDatabase.monsters).forEach(([key, monster]) => {
-//             this.resources.bestiary.set(key, {
-//                 id: key,
-//                 name: monster.basic.name,
-//                 data: monster,
-//                 thumbnail: monster.token?.data || this.generateMonsterThumbnail(monster),
-//                 cr: monster.basic.cr,
-//                 type: monster.basic.type,
-//                 size: monster.basic.size,
-//                 dateAdded: monster.dateAdded || new Date().toISOString()
-//             });
-//         });
-        
-//         console.log(`Loaded ${this.resources.bestiary.size} monsters from localStorage`);
-//     } catch (error) {
-//         console.error('Error loading bestiary from database:', error);
-//     }
-// }
 
 async loadBestiaryFromDatabase() {
     console.log("ResourceManager: Loading bestiary from database...");
