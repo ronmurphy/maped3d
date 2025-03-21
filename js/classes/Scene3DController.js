@@ -519,9 +519,21 @@ this.activeStoryTrigger = null;
       const script = document.createElement('script');
       script.src = 'js/classes/ShapeForgeImporter.js';
       
+      // script.onload = () => {
+      //   try {
+      //     this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+      //     console.log('ShapeForgeImporter initialized from dynamic load');
+      //     resolve(this.shapeForgeImporter);
+      //   } catch (error) {
+      //     console.error('Error initializing ShapeForgeImporter:', error);
+      //     reject(error);
+      //   }
+      // };
+
+      
       script.onload = () => {
         try {
-          this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+          this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager, this.shaderEffects );
           console.log('ShapeForgeImporter initialized from dynamic load');
           resolve(this.shapeForgeImporter);
         } catch (error) {
@@ -529,6 +541,25 @@ this.activeStoryTrigger = null;
           reject(error);
         }
       };
+
+      // const script = document.createElement('script');
+      // script.src = 'js/classes/ShapeForgeImporter.js';
+      
+      // script.onload = () => {
+      //   try {
+      //     // Pass the correct shaderEffects instance
+      //     this.shapeForgeImporter = new ShapeForgeImporter(
+      //       this.scene, 
+      //       window.resourceManager,
+      //       this.shaderEffects  // This is key - pass the instance that animate() is using
+      //     );
+      //     console.log('ShapeForgeImporter initialized');
+      //     resolve(this.shapeForgeImporter);
+      //   } catch (error) {
+      //     console.error('Error initializing ShapeForgeImporter:', error);
+      //     reject(error);
+      //   }
+      // };
       
       script.onerror = (e) => {
         console.error('ShapeForgeImporter script load failed:', e);
@@ -554,12 +585,18 @@ this.activeStoryTrigger = null;
     
     for (const marker of markers) {
       try {
+        // Debug the marker data
+        console.log("ShapeForge marker data:", marker.data);
+        
+        // Get model data
+        const modelData = await importer.loadModel(marker.data.modelId);
+        console.log("Loaded model data:", modelData);
         // Convert marker position to 3D coordinates
         const x = marker.x / 50 - this.boxWidth / 2;
         const z = marker.y / 50 - this.boxDepth / 2;
         
         // Get model data
-        const modelData = await importer.loadModel(marker.data.modelId);
+        // const modelData = await importer.loadModel(marker.data.modelId);
         if (!modelData) {
           console.warn(`Model not found for marker: ${marker.id}`);
           continue;
@@ -3302,6 +3339,10 @@ break;
               this.scene.add(dungeonEntrance);
               console.log(`Added dungeon entrance to scene: ${marker.id}`);
               break;
+
+              case 'shapeforge':
+                // Don't process here since we'll handle it separately
+                break;  
 
         default:
           console.log(`Skipping unknown marker type: ${marker.type}`);

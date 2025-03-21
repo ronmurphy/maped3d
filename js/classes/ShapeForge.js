@@ -3498,6 +3498,16 @@ captureTextureData(texture) {
       console.log("No texture data for", objData.name);
   }
   
+  // mesh.userData.shapeforgeObjectData = {
+  //   id: objData.id,
+  //   type: objData.type
+  // };
+  
+  // ADD THIS CODE HERE - Store effect data for later application
+  if (objData.effect) {
+    objectData.pendingEffect = objData.effect;
+  }
+  
   return objectData;
   }
 
@@ -6176,6 +6186,7 @@ ShapeForge.prototype.toggleObjectSelection = function (index) {
  * Initialize new features with async shader effects handling
  */
 ShapeForge.prototype.initializeNewFeatures = async function () {
+
   try {
     // Create objects list panel
     this.createObjectsListPanel();
@@ -7098,12 +7109,55 @@ ShapeForge.prototype.loadProjectFromJson = function (jsonData) {
   if (this.objects.length > 0) {
       this.selectObject(0);
   }
+
   
   // Update UI
   this.updateObjectsList();
   
   console.log(`Project loaded with ${this.objects.length} objects and ${objectsNeedingTextures.length} textures`);
   
+  setTimeout(() => {
+    this.objects.forEach((obj, index) => {
+      if (obj.pendingEffect) {
+        this.selectObject(index);
+        this.applyShaderEffect(obj.pendingEffect);
+        delete obj.pendingEffect;
+      }
+    });
+  }, 500);
+
+  // setTimeout(() => {
+  //   // Only process effects if drawer is still open
+  //   if (!this.drawer || !this.drawer.open) {
+  //     console.log("Drawer closed, skipping effect application");
+  //     return;
+  //   }
+    
+  //   // Find objects that need effects
+  //   const objectsWithEffects = this.objects.filter(obj => obj && obj.pendingEffect);
+  //   console.log(`Applying effects to ${objectsWithEffects.length} objects`);
+    
+  //   // Apply effects with error handling
+  //   objectsWithEffects.forEach((obj, index) => {
+  //     try {
+  //       // Save current selection to restore later
+  //       const previousSelection = this.selectedObject;
+        
+  //       // Apply the effect
+  //       this.selectObject(this.objects.indexOf(obj));
+  //       this.applyShaderEffect(obj.pendingEffect);
+  //       delete obj.pendingEffect;
+        
+  //       // Restore previous selection
+  //       if (previousSelection !== null && previousSelection !== this.selectedObject) {
+  //         this.selectObject(previousSelection);
+  //       }
+  //     } catch (error) {
+  //       console.warn(`Error applying effect to object:`, error);
+  //     }
+  //   });
+  // }, 500);
+
   // Return success
   return true;
 };
