@@ -253,16 +253,18 @@ connectResourceManager(resourceManager) {
         <!-- Project Info -->
         <div class="panel-section">
           <sl-input id="project-name" label="Project Name" placeholder="Untitled Project"></sl-input>
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px;">
-            <sl-button id="new-project" size="small">New</sl-button>
-            <sl-button id="save-project" size="small">Save</sl-button>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 10px;">
+            <sl-button id="new-project" size="small">New File</sl-button>
+            <sl-button id="loadModelBtn" size="small">Open File</sl-button>
+            <sl-button id="save-project" size="small">Export File</sl-button>
+
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px;">
   <sl-button id="import-additional" size="small">Add to Project</sl-button>
-  <sl-button id="export-code" size="small">Export Code</sl-button>
+  <sl-button id="export-code" size="small">View JS Code</sl-button>
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px;">
-  <sl-button id="save-to-resources" size="small">Resources</sl-button>
+  <sl-button id="save-to-resources" size="small">Save to Resources</sl-button>
   <sl-button id="clear-all" size="small" variant="danger">Clear All</sl-button>
 </div>
         </div>
@@ -549,6 +551,9 @@ const shapeButtons = {
     this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
     this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
     this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
+    this.drawer.querySelector('#loadModelBtn')?.addEventListener('click',this.showModelBrowser.bind(this));
+
+
 
     const rotationQuickButtons = [
       { id: 'rot-x-90', axis: 'x', degrees: 90 },
@@ -2932,6 +2937,114 @@ if (!this.zoomSlider) {
     fileInput.click();
   }
 
+  showModelBrowser() {
+    if (!this.resourceManager) {
+        alert("ResourceManager not available");
+        return;
+    }
+    
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Load Model from Library';
+    
+    // Get all models from ResourceManager
+    const models = this.resourceManager.resources.shapeforge || new Map();
+    
+    if (models.size === 0) {
+      dialog.innerHTML = `
+          <div style="text-align: center; padding: 32px;">
+            <span class="material-icons" style="font-size: 48px; color: #ccc;">folder_off</span>
+            <p>No models found in the resource library.</p>
+          </div>
+          <div slot="footer">
+            <sl-button variant="neutral" class="close-btn">Close</sl-button>
+          </div>
+        `;
+    } else {
+      dialog.innerHTML = `
+          <div style="max-height: 70vh; overflow-y: auto; padding: 16px;">
+            <div class="model-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;">
+              ${Array.from(models.values()).map(model => `
+                <div class="model-card" data-id="${model.id}" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; background: #242424;">
+                  <div style="height: 120px; overflow: hidden; position: relative;">
+                    <img src="${model.thumbnail}" alt="${model.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; bottom: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 2px 6px; font-size: 0.8em;">
+                      ${new Date(model.dateAdded).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div style="padding: 8px;">
+                    <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${model.name}">${model.name}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div slot="footer">
+            <sl-button variant="neutral" class="close-btn">Cancel</sl-button>
+          </div>
+        `;
+    }
+    
+    document.body.appendChild(dialog);
+    
+    // Add event listeners for model cards
+    dialog.querySelectorAll('.model-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const modelId = card.dataset.id;
+        const model = models.get(modelId);
+        
+        if (model) {
+          // Load the model
+          console.log('Loading model:', model); 
+          console.log('Model ID:', modelId);
+          console.log('Model Data:', model.data);
+          console.log('Model Name:', model.name);
+          console.log('Models:', models);
+          
+          try {
+            // If model.data is already a JS object (not a string)
+            if (typeof model.data === 'object' && model.data !== null) {
+              console.log('Using model.data as object directly');
+              this.loadProjectFromJson(model.data);
+            } 
+            // If model.data might be a JSON string
+            else if (typeof model.data === 'string') {
+              console.log('Parsing model.data from string');
+              const jsonData = JSON.parse(model.data);
+              console.log('JSON Data:', jsonData);
+              this.loadProjectFromJson(jsonData);
+            }
+            dialog.hide();
+          } catch (error) {
+            console.error('Error loading JSON:', error);
+            alert('Failed to load JSON file: ' + error.message);
+          }
+        }
+      });
+      
+      // Add hover effect
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-4px)';
+        card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'none';
+        card.style.boxShadow = 'none';
+      });
+    });
+    
+    // Close button handler
+    dialog.querySelector('.close-btn').addEventListener('click', () => {
+      dialog.hide();
+    });
+    
+    dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+    });
+    
+    dialog.show();
+  }
+
   /**
    * Create JSON data for the current project
    * @returns {Object} Project data
@@ -3548,96 +3661,217 @@ loadAndApplyTextureToObject(objectData, textureData) {
    */
 
 
-  saveToResources() {
-    if (!this.resourceManager) {
-        alert("ResourceManager not available. Cannot save to resources.");
-        return;
-    }
+//   saveToResources() {
+//     if (!this.resourceManager) {
+//         alert("ResourceManager not available. Cannot save to resources.");
+//         return;
+//     }
     
-    // Get project name
-    const projectNameInput = this.drawer.querySelector('#project-name');
-    const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+//     // Get project name
+//     const projectNameInput = this.drawer.querySelector('#project-name');
+//     const projectName = (projectNameInput?.value || 'Untitled Project').trim();
     
-    // Create dialog for saving
-    const dialog = document.createElement('sl-dialog');
-    dialog.label = 'Save to ResourceManager';
+//     // Create dialog for saving
+//     const dialog = document.createElement('sl-dialog');
+//     dialog.label = 'Save to ResourceManager';
     
-    dialog.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
-                    <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
-                </div>
-                <div>
-                    <p>Preview thumbnail</p>
-                    <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
-                </div>
-            </div>
-        </div>
-        <div slot="footer">
-            <sl-button id="save-btn" variant="primary">Save</sl-button>
-            <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
-        </div>
-    `;
+//     dialog.innerHTML = `
+//         <div style="display: flex; flex-direction: column; gap: 16px;">
+//             <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
+//             <div style="display: flex; align-items: center; gap: 10px;">
+//                 <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
+//                     <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
+//                 </div>
+//                 <div>
+//                     <p>Preview thumbnail</p>
+//                     <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
+//                 </div>
+//             </div>
+//         </div>
+//         <div slot="footer">
+//             <sl-button id="save-btn" variant="primary">Save</sl-button>
+//             <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
+//         </div>
+//     `;
     
-    document.body.appendChild(dialog);
+//     document.body.appendChild(dialog);
     
-    // Generate and set thumbnail
-    const thumbnail = this.createThumbnail();
-    dialog.querySelector('#resource-thumbnail').src = thumbnail;
+//     // Generate and set thumbnail
+//     const thumbnail = this.createThumbnail();
+//     dialog.querySelector('#resource-thumbnail').src = thumbnail;
     
-    // Save handler
-    dialog.querySelector('#save-btn').addEventListener('click', () => {
-        const name = dialog.querySelector('#resource-name').value.trim();
-        if (!name) {
-            alert("Please enter a name for this resource");
-            return;
-        }
+//     // Save handler
+//     dialog.querySelector('#save-btn').addEventListener('click', () => {
+//         const name = dialog.querySelector('#resource-name').value.trim();
+//         if (!name) {
+//             alert("Please enter a name for this resource");
+//             return;
+//         }
         
-        // Create JSON representation of the project
-        const projectData = this.createProjectData();
+//         // Create JSON representation of the project
+//         const projectData = this.createProjectData();
         
-        // Make sure shapeforge category exists in resources
-        if (!this.resourceManager.resources.shapeforge) {
-            this.resourceManager.resources.shapeforge = new Map();
-        }
+//         // Make sure shapeforge category exists in resources
+//         if (!this.resourceManager.resources.shapeforge) {
+//             this.resourceManager.resources.shapeforge = new Map();
+//         }
         
-        // Create resource entry
-        const resourceId = `model_${Date.now()}`;
-        const resource = {
-            id: resourceId,
-            name: name,
-            data: projectData,
-            thumbnail: thumbnail,
-            dateAdded: new Date().toISOString()
-        };
+//         // Create resource entry
+//         const resourceId = `model_${Date.now()}`;
+//         const resource = {
+//             id: resourceId,
+//             name: name,
+//             data: projectData,
+//             thumbnail: thumbnail,
+//             dateAdded: new Date().toISOString()
+//         };
         
-        // Add to ResourceManager
-        this.resourceManager.resources.shapeforge.set(resourceId, resource);
+//         // Add to ResourceManager
+//         this.resourceManager.resources.shapeforge.set(resourceId, resource);
         
-        dialog.hide();
+//         dialog.hide();
         
-        // Show success message
-        const toast = document.createElement('sl-alert');
-        toast.variant = 'success';
-        toast.duration = 3000;
-        toast.closable = true;
-        toast.innerHTML = `Saved "${name}" to ResourceManager`;
+//         // Show success message
+//         const toast = document.createElement('sl-alert');
+//         toast.variant = 'success';
+//         toast.duration = 3000;
+//         toast.closable = true;
+//         toast.innerHTML = `Saved "${name}" to ResourceManager`;
         
-        document.body.appendChild(toast);
-        toast.toast();
-    });
+//         document.body.appendChild(toast);
+//         toast.toast();
+//     });
     
-    dialog.querySelector('.close-dialog').addEventListener('click', () => {
-        dialog.hide();
-    });
+//     dialog.querySelector('.close-dialog').addEventListener('click', () => {
+//         dialog.hide();
+//     });
     
-    dialog.addEventListener('sl-after-hide', () => {
-        dialog.remove();
-    });
+//     dialog.addEventListener('sl-after-hide', () => {
+//         dialog.remove();
+//     });
     
-    dialog.show();
+//     dialog.show();
+// }
+
+saveToResources() {
+  if (!this.resourceManager) {
+      alert("ResourceManager not available. Cannot save to resources.");
+      return;
+  }
+ 
+  // Get project name
+  const projectNameInput = this.drawer.querySelector('#project-name');
+  const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+ 
+  // Create dialog for saving
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'Save to ResourceManager';
+ 
+  dialog.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+          <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
+          <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
+                  <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
+              </div>
+              <div>
+                  <p>Preview thumbnail</p>
+                  <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
+              </div>
+          </div>
+      </div>
+      <div slot="footer">
+          <sl-button id="save-btn" variant="primary">Save</sl-button>
+          <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
+      </div>
+  `;
+ 
+  document.body.appendChild(dialog);
+ 
+  // Generate and set thumbnail
+  const thumbnail = this.createThumbnail();
+  dialog.querySelector('#resource-thumbnail').src = thumbnail;
+ 
+  // Save handler
+  dialog.querySelector('#save-btn').addEventListener('click', async () => {
+      const name = dialog.querySelector('#resource-name').value.trim();
+      if (!name) {
+          alert("Please enter a name for this resource");
+          return;
+      }
+     
+      // Create JSON representation of the project
+      const projectData = this.createProjectData();
+     
+      // Make sure shapeforge category exists in resources
+      if (!this.resourceManager.resources.shapeforge) {
+          this.resourceManager.resources.shapeforge = new Map();
+      }
+     
+      // Create resource entry
+      const resourceId = `model_${Date.now()}`;
+      const resource = {
+          id: resourceId,
+          name: name,
+          data: projectData,
+          thumbnail: thumbnail,
+          dateAdded: new Date().toISOString()
+      };
+     
+      // Add to ResourceManager's in-memory storage
+      this.resourceManager.resources.shapeforge.set(resourceId, resource);
+     
+      // IMPORTANT: Save to IndexedDB for persistence
+      try {
+          if (window.indexedDB) {
+              // We can reuse the ResourceManager's method to save to IndexedDB
+              if (typeof this.resourceManager.saveModelToIndexedDB === 'function') {
+                  // Use the existing method if available
+                  await this.resourceManager.saveModelToIndexedDB(resource);
+                  console.log(`Model "${name}" saved to IndexedDB successfully`);
+              } else {
+                  // Fallback if the method doesn't exist
+                  const db = await this.resourceManager.openModelDatabase();
+                  const tx = db.transaction(['models'], 'readwrite');
+                  const store = tx.objectStore('models');
+                  await store.put(resource);
+                  console.log(`Model "${name}" saved to IndexedDB using direct access`);
+              }
+          }
+      } catch (e) {
+          console.warn('Error saving model to IndexedDB:', e);
+          // Show warning to user that model might not persist
+          const warningToast = document.createElement('sl-alert');
+          warningToast.variant = 'warning';
+          warningToast.duration = 5000;
+          warningToast.closable = true;
+          warningToast.innerHTML = `Warning: Model saved in memory but might not persist after refresh`;
+          document.body.appendChild(warningToast);
+          warningToast.toast();
+      }
+     
+      dialog.hide();
+     
+      // Show success message
+      const toast = document.createElement('sl-alert');
+      toast.variant = 'success';
+      toast.duration = 3000;
+      toast.closable = true;
+      toast.innerHTML = `Saved "${name}" to ResourceManager`;
+     
+      document.body.appendChild(toast);
+      toast.toast();
+  });
+ 
+  dialog.querySelector('.close-dialog').addEventListener('click', () => {
+      dialog.hide();
+  });
+ 
+  dialog.addEventListener('sl-after-hide', () => {
+      dialog.remove();
+  });
+ 
+  dialog.show();
 }
 
 findTexturesInWindow() {
@@ -6771,6 +7005,8 @@ ShapeForge.prototype.loadProjectFromJson = function (jsonData) {
       throw new Error('Invalid project data');
   }
   
+  console.log('JsonData:', jsonData);
+
   console.log("Loading project using loadProjectFromJson method w/ texture support");
   
   this.cleanupAllShaderEffects();
@@ -6888,7 +7124,7 @@ ShapeForge.prototype.addImportExportButtons = function () {
   const importBtn = document.createElement('sl-button');
   importBtn.id = 'import-json';
   importBtn.size = 'small';
-  importBtn.textContent = 'Load File';
+  importBtn.textContent = 'Import File';
   importBtn.addEventListener('click', this.importJson.bind(this));
 
   // Add to container

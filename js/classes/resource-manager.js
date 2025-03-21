@@ -3753,6 +3753,55 @@ initStyles() {
           this.updateGallery(drawer, category, view);
         }
       });
+
+      if (category === 'ambient' || category === 'effects') {
+        // Add this after the card HTML is generated but before appending it to the container
+        
+        // Add a play button to the card
+        const cardFooter = card.querySelector('.resource-actions');
+        
+        // Create play button before other actions
+        const playBtn = document.createElement('sl-button');
+        playBtn.size = 'small';
+        playBtn.classList.add('play-btn');
+        playBtn.innerHTML = '<span class="material-icons">play_arrow</span>';
+        
+        // Add duration display if available
+        // if (resource.duration) {
+        //   const formattedDuration = this.formatDuration(resource.duration);
+        //   const durationSpan = document.createElement('span');
+        //   durationSpan.className = 'sound-duration';
+        //   durationSpan.style.cssText = 'margin-left: auto; font-size: 0.8em; color: #999;';
+        //   durationSpan.textContent = formattedDuration;
+        //   cardFooter.prepend(durationSpan);
+        // }
+        
+        // Insert play button at the beginning of the actions
+        cardFooter.prepend(playBtn);
+        
+        // Set up playback functionality
+        let isPlaying = false;
+        playBtn.addEventListener('click', () => {
+          if (isPlaying) {
+            this.stopSound(id);
+            playBtn.innerHTML = '<span class="material-icons">play_arrow</span>';
+            isPlaying = false;
+          } else {
+            const audio = this.playSound(id, category);
+            if (audio) {
+              playBtn.innerHTML = '<span class="material-icons">stop</span>';
+              isPlaying = true;
+              
+              // Reset button when audio finishes
+              audio.addEventListener('ended', () => {
+                playBtn.innerHTML = '<span class="material-icons">play_arrow</span>';
+                isPlaying = false;
+              });
+            }
+          }
+        });
+      }
+
   
       container.appendChild(card);
     });
@@ -3851,9 +3900,14 @@ updateShapeForgeGallery(drawer, view = 'grid') {
             <sl-button size="small" class="delete-btn" variant="danger">
               <span class="material-icons">delete</span>
             </sl-button>
+
           </sl-button-group>
         </div>
       `;
+    // removed idea
+    //   <sl-button size="small" class="edit-in-shapeforge-btn" title="Edit in ShapeForge">
+    //   <span class="material-icons">edit</span>
+    // </sl-button>
       
       // Add event listeners
       card.querySelector('.view-btn').addEventListener('click', () => {
@@ -3863,16 +3917,107 @@ updateShapeForgeGallery(drawer, view = 'grid') {
       card.querySelector('.export-btn').addEventListener('click', () => {
         this.exportShapeForgeModel(id, model);
       });
+
+    //   card.querySelector('.edit-in-shapeforge-btn').addEventListener('click', (e) => {
+    //     e.stopPropagation(); // Prevent card click event from triggering
+        
+    //     // Get the model
+    //     const model = this.resources.shapeforge.get(id);
+    //     if (!model) {
+    //       console.error(`Model with ID ${id} not found`);
+    //       return;
+    //     }
+        
+    //     // First check if ShapeForge is already available
+    //     if (window.shapeForge) {
+    //       // Close the drawer
+    //       drawer.hide();
+          
+    //       // Show ShapeForge and load the model
+    //       window.shapeForge.show();
+          
+    //       // Give a small delay for ShapeForge UI to initialize
+    //       setTimeout(() => {
+    //         if (typeof window.shapeForge.loadProjectFromJson === 'function') {
+    //           console.log("Loading model into ShapeForge:", model.name);
+    //           window.shapeForge.loadProjectFromJson(model.data);
+    //         } else {
+    //           console.error("ShapeForge loadProjectFromJson method not found");
+    //           alert("Unable to load model in ShapeForge");
+    //         }
+    //       }, 300);
+    //     } else {
+    //       // If ShapeForge isn't initialized yet
+    //       console.error("ShapeForge not found. Make sure it's loaded first.");
+    //       alert("ShapeForge editor is not available. Please load ShapeForge first.");
+    //     }
+    //   });
+
       
-      card.querySelector('.delete-btn').addEventListener('click', () => {
+    //   card.querySelector('.delete-btn').addEventListener('click', () => {
+    //     if (confirm(`Delete model "${model.name}"?`)) {
+    //       models.delete(id);
+    //       this.updateShapeForgeGallery(drawer, view);
+    //     }
+    //   });
+
+    card.querySelector('.delete-btn').addEventListener('click', async () => {
         if (confirm(`Delete model "${model.name}"?`)) {
-          models.delete(id);
-          this.updateShapeForgeGallery(drawer, view);
+          try {
+            // Show loading state
+            const deleteBtn = card.querySelector('.delete-btn');
+            const originalContent = deleteBtn.innerHTML;
+            deleteBtn.innerHTML = '<span class="material-icons">hourglass_top</span>';
+            deleteBtn.disabled = true;
+            
+            // Delete from both memory and IndexedDB
+            await this.deleteShapeForgeModel(id);
+            
+            // Success notification
+            this.showSuccessNotification(`Deleted model: ${model.name}`);
+            
+            // Refresh gallery
+            this.updateShapeForgeGallery(drawer, view);
+          } catch (error) {
+            console.error("Error during model deletion:", error);
+            this.showErrorNotification("Failed to delete model");
+            
+            // Reset button
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.innerHTML = '<span class="material-icons">delete</span>';
+            deleteBtn.disabled = false;
+          }
         }
       });
       
       container.appendChild(card);
     });
+  }
+
+  // Add this method to ResourceManager
+async deleteShapeForgeModel(id) {
+    console.log(`Attempting to delete model with ID: ${id}`);
+    
+    // Remove from memory
+    if (this.resources.shapeforge) {
+      this.resources.shapeforge.delete(id);
+      console.log("Removed model from memory");
+    }
+    
+    // Delete from IndexedDB
+    try {
+      const db = await this.openModelDatabase();
+      const tx = db.transaction(['models'], 'readwrite');
+      const store = tx.objectStore('models');
+      await store.delete(id);
+      console.log("Deleted model from IndexedDB");
+      return true;
+    } catch (e) {
+      console.error("Error deleting model from IndexedDB:", e);
+      // Show error notification
+      this.showErrorNotification("Unable to completely delete model from storage");
+      return false;
+    }
   }
   
   // Import ShapeForge model
@@ -3923,45 +4068,7 @@ updateShapeForgeGallery(drawer, view = 'grid') {
     }
   }
   
-  // Show model preview
-//   showModelPreview(model) {
-//     const dialog = document.createElement('sl-dialog');
-//     dialog.label = model.name;
-    
-//     dialog.innerHTML = `
-//       <div style="text-align: center; padding: 20px;">
-//         <img src="${model.thumbnail}" alt="${model.name}" style="max-width: 100%; max-height: 300px; object-fit: contain;">
-//         <h3 style="margin-top: 20px;">${model.name}</h3>
-//         <div style="color: #666; margin-top: 8px;">
-//           <p>Created: ${this.formatDate(model.dateAdded)}</p>
-//           <p>Objects: ${model.data.objects ? model.data.objects.length : 'Unknown'}</p>
-//         </div>
-//       </div>
-//       <div slot="footer">
-//         <sl-button variant="neutral" class="close-btn">Close</sl-button>
-//         <sl-button variant="primary" class="export-btn">
-//           <span class="material-icons" slot="prefix">file_download</span>
-//           Export
-//         </sl-button>
-//       </div>
-//     `;
-    
-//     document.body.appendChild(dialog);
-    
-//     dialog.querySelector('.close-btn').addEventListener('click', () => {
-//       dialog.hide();
-//     });
-    
-//     dialog.querySelector('.export-btn').addEventListener('click', () => {
-//       this.exportShapeForgeModel(model.id, model);
-//     });
-    
-//     dialog.addEventListener('sl-after-hide', () => {
-//       dialog.remove();
-//     });
-    
-//     dialog.show();
-//   }
+
 
 showModelPreview(model) {
     const dialog = document.createElement('sl-dialog');
@@ -3993,7 +4100,7 @@ showModelPreview(model) {
         
         <!-- Code viewer section -->
         <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-          <div style="background: #f5f5f5; padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+          <div style="padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 500;">Model Data</span>
             <sl-button size="small" class="copy-btn">
               <span class="material-icons" style="font-size: 16px; margin-right: 4px;">content_copy</span>
@@ -7199,6 +7306,13 @@ showMonsterDetails(monsterData) {
             audio.src = URL.createObjectURL(file);
         });
     }
+
+     formatDuration(seconds) {
+        if (!seconds || isNaN(seconds)) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
     
     playSound(soundId, category) {
         const sound = this.resources.sounds[category]?.get(soundId);
