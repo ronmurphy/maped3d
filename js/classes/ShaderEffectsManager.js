@@ -312,14 +312,53 @@ this.registerEffectType('waterProp', {
    * @param {string} effectType - Type of effect to apply
    * @returns {boolean} - Whether the effect was successfully applied
    */
+  // applyEffect(object, effectType) {
+
+
+  //   if (this.effects.has(object.id)) {
+  //     // Effect already applied
+  //     return false;
+  //   }
+
+  //   console.log(`Applying effect ${effectType} to object:`, object.userData);
+    
+  //   const definition = this.effectDefinitions.get(effectType);
+  //   if (!definition || !definition.create) {
+  //     console.warn(`No definition or creator for effect type: ${effectType}`);
+  //     return false;
+  //   }
+    
+  //   try {
+  //     // Call the create function from the definition
+  //     const effectData = definition.create(object, definition, this.qualityLevel);
+      
+  //     if (!effectData) return false;
+      
+  //     // Store the effect data
+  //     this.effects.set(object.id, {
+  //       object,
+  //       type: effectType,
+  //       ...effectData
+  //     });
+      
+  //     if (this.debug) {
+  //       console.log(`Applied ${effectType} effect to object:`, object.userData.name);
+  //     }
+      
+  //     return true;
+  //   } catch (error) {
+  //     console.error(`Error applying ${effectType} effect:`, error);
+  //     return false;
+  //   }
+  // }
   applyEffect(object, effectType) {
-
-
+    if (!this.enabled || !object) return false;
+  
     if (this.effects.has(object.id)) {
       // Effect already applied
       return false;
     }
-
+  
     console.log(`Applying effect ${effectType} to object:`, object.userData);
     
     const definition = this.effectDefinitions.get(effectType);
@@ -333,6 +372,11 @@ this.registerEffectType('waterProp', {
       const effectData = definition.create(object, definition, this.qualityLevel);
       
       if (!effectData) return false;
+      
+      // ADDED SAFETY CHECKS:
+      if (!effectData.definition) {
+        effectData.definition = definition; // Ensure definition is included
+      }
       
       // Store the effect data
       this.effects.set(object.id, {
@@ -3014,14 +3058,157 @@ if (this.emissiveObjects && this.emissiveObjects.length > 0) {
  * @param {Object} effectData - Effect data
  * @param {number} deltaTime - Time since last frame
  */
-updateEffect(effectData, deltaTime) {
+// updateEffect(effectData, deltaTime) {
 
+//   if (this.qualityLevel === 'low' && 
+//     !effectData.definition?.forceShowOnLow && 
+//     effectData.type !== 'waterProp') {
+//   // Skip complex effects on low quality
+//   return;
+// }
+
+//   if (!effectData.animationData) return;
+  
+//   // Update animation time
+//   effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
+//   const time = effectData.animationData.time;
+
+
+// if (effectData.type === 'waterProp') {
+//   // Update animation time
+//   effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
+//   const time = effectData.animationData.time;
+
+//   // Update shader time uniform
+//   if (effectData.material && effectData.material.uniforms && effectData.material.uniforms.time) {
+//     effectData.material.uniforms.time.value = time;
+    
+//     // Force a render update
+//     if (this.scene3D && this.scene3D.renderer) {
+//       this.scene3D.needsRender = true;
+//     }
+//   }
+  
+//   // Update particles if present
+//   if (effectData.container && effectData.container.children.length > 1) {
+//     const particles = effectData.container.children[1];
+    
+//     if (particles && particles.isPoints) {
+//       // Animate particles based on water type
+//       const isHorizontal = effectData.material.uniforms.isHorizontal.value > 0.5;
+//       this.animateWaterParticles(particles, isHorizontal, time, effectData.animationData.speed);
+//     }
+//   }
+// }
+  
+//   // Animate particles if present
+//   if (effectData.particles) {
+//     // Check if using advanced shader material
+//     if (effectData.particles.material.isShaderMaterial && 
+//         effectData.particles.material.uniforms && 
+//         effectData.particles.material.uniforms.time) {
+      
+//       // Update time uniform for shader animation
+//       effectData.particles.material.uniforms.time.value = time;
+      
+//       // No need to update positions manually, shader handles it
+//     } 
+//     // Standard particle animation (original code)
+//     else {
+//       const positions = effectData.particles.geometry.attributes.position.array;
+//       const originalPositions = effectData.particles.userData.positions;
+//       const count = positions.length / 3;
+//       const pattern = effectData.animationData.pattern || 'default';
+      
+//       for (let i = 0; i < count; i++) {
+//         const i3 = i * 3;
+        
+//         // Apply different animation patterns
+//         switch (pattern) {
+//           case 'orbit':
+//             // Orbital pattern around center
+//             const angle = time + i * 0.1;
+//             const radius = 0.2 + Math.sin(time * 0.5 + i) * 0.1;
+//             positions[i3] = Math.cos(angle) * radius;
+//             positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time * 0.7 + i * 0.3) * 0.1;
+//             positions[i3 + 2] = Math.sin(angle) * radius;
+//             break;
+            
+//           case 'pulse':
+//             // Pulsing pattern
+//             const pulseRadius = (0.2 + Math.sin(time * 0.8) * 0.15) * (1 + i % 3 * 0.1);
+//             const pulseAngle = originalPositions[i3 + 2] * 10 + time;
+//             positions[i3] = Math.cos(pulseAngle) * pulseRadius;
+//             positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time + i) * 0.05;
+//             positions[i3 + 2] = Math.sin(pulseAngle) * pulseRadius;
+//             break;
+            
+//           default:
+//             // Default fire-like movement
+//             positions[i3] = originalPositions[i3] + Math.sin(time * 2 + i) * 0.03;
+//             positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time * 3 + i * 2) * 0.05;
+//             positions[i3 + 2] = originalPositions[i3 + 2] + Math.cos(time * 2 + i) * 0.03;
+//             break;
+//         }
+//       }
+      
+//       // Update geometry
+//       effectData.particles.geometry.attributes.position.needsUpdate = true;
+//     }
+//   }
+  
+//   // Animate light flickering if applicable
+//   if (effectData.light) {
+//     // Apply subtle flicker to light intensity
+//     const originalIntensity = effectData.definition.intensity || 1.0;
+//     const flickerAmount = 0.1; // Amount of intensity variation
+    
+//     // More complex flicker calculation for realism
+//     const flicker = 
+//       Math.sin(time * 5) * 0.05 +
+//       Math.sin(time * 10) * 0.025 +
+//       Math.sin(time * 20) * 0.0125;
+    
+//     effectData.light.intensity = originalIntensity * (1.0 - flickerAmount + flicker);
+    
+//     // Option: also animate light color for more realism
+//     if (effectData.definition.animateColor && effectData.light.color) {
+//       // Shift color slightly toward yellow/red for fire
+//       const baseColor = new THREE.Color(effectData.definition.color);
+//       const warmthShift = Math.sin(time * 3) * 0.05; // Small color variation
+      
+//       effectData.light.color.copy(baseColor);
+//       effectData.light.color.r += warmthShift;
+//       effectData.light.color.g += warmthShift * 0.4;
+//     }
+//   }
+  
+//   // Update emissive material effects if present
+//   if (effectData.emissiveMesh && effectData.emissiveMesh.material) {
+//     const material = effectData.emissiveMesh.material;
+//     if (material.emissiveIntensity !== undefined) {
+//       // Add subtle pulsing to emissive intensity
+//       const originalIntensity = effectData.definition.emissiveIntensity || 1.0;
+//       material.emissiveIntensity = originalIntensity * (0.8 + Math.sin(time * 2) * 0.2);
+//     }
+//   }
+// }
+/**
+ * Update a specific effect
+ * @param {Object} effectData - Effect data
+ * @param {number} deltaTime - Time since last frame
+ */
+updateEffect(effectData, deltaTime) {
+  // Skip if missing required data
+  if (!effectData) return;
+
+  // Skip low quality effects based on settings
   if (this.qualityLevel === 'low' && 
-    !effectData.definition?.forceShowOnLow && 
-    effectData.type !== 'waterProp') {
-  // Skip complex effects on low quality
-  return;
-}
+      !((effectData.definition && effectData.definition.forceShowOnLow) || 
+        effectData.type === 'waterProp')) {
+    // Skip complex effects on low quality
+    return;
+  }
 
   if (!effectData.animationData) return;
   
@@ -3029,33 +3216,29 @@ updateEffect(effectData, deltaTime) {
   effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
   const time = effectData.animationData.time;
 
-
-if (effectData.type === 'waterProp') {
-  // Update animation time
-  effectData.animationData.time += deltaTime * (effectData.animationData.speed || 1.0);
-  const time = effectData.animationData.time;
-
-  // Update shader time uniform
-  if (effectData.material && effectData.material.uniforms && effectData.material.uniforms.time) {
-    effectData.material.uniforms.time.value = time;
+  // Handle water prop effects
+  if (effectData.type === 'waterProp') {
+    // Update shader time uniform
+    if (effectData.material && effectData.material.uniforms && effectData.material.uniforms.time) {
+      effectData.material.uniforms.time.value = time;
+      
+      // Force a render update
+      if (this.scene3D && this.scene3D.renderer) {
+        this.scene3D.needsRender = true;
+      }
+    }
     
-    // Force a render update
-    if (this.scene3D && this.scene3D.renderer) {
-      this.scene3D.needsRender = true;
+    // Update particles if present
+    if (effectData.container && effectData.container.children.length > 1) {
+      const particles = effectData.container.children[1];
+      
+      if (particles && particles.isPoints) {
+        // Animate particles based on water type
+        const isHorizontal = effectData.material.uniforms.isHorizontal.value > 0.5;
+        this.animateWaterParticles(particles, isHorizontal, time, effectData.animationData.speed);
+      }
     }
   }
-  
-  // Update particles if present
-  if (effectData.container && effectData.container.children.length > 1) {
-    const particles = effectData.container.children[1];
-    
-    if (particles && particles.isPoints) {
-      // Animate particles based on water type
-      const isHorizontal = effectData.material.uniforms.isHorizontal.value > 0.5;
-      this.animateWaterParticles(particles, isHorizontal, time, effectData.animationData.speed);
-    }
-  }
-}
   
   // Animate particles if present
   if (effectData.particles) {
@@ -3073,50 +3256,53 @@ if (effectData.type === 'waterProp') {
     else {
       const positions = effectData.particles.geometry.attributes.position.array;
       const originalPositions = effectData.particles.userData.positions;
-      const count = positions.length / 3;
-      const pattern = effectData.animationData.pattern || 'default';
       
-      for (let i = 0; i < count; i++) {
-        const i3 = i * 3;
+      if (positions && originalPositions) {
+        const count = positions.length / 3;
+        const pattern = effectData.animationData.pattern || 'default';
         
-        // Apply different animation patterns
-        switch (pattern) {
-          case 'orbit':
-            // Orbital pattern around center
-            const angle = time + i * 0.1;
-            const radius = 0.2 + Math.sin(time * 0.5 + i) * 0.1;
-            positions[i3] = Math.cos(angle) * radius;
-            positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time * 0.7 + i * 0.3) * 0.1;
-            positions[i3 + 2] = Math.sin(angle) * radius;
-            break;
-            
-          case 'pulse':
-            // Pulsing pattern
-            const pulseRadius = (0.2 + Math.sin(time * 0.8) * 0.15) * (1 + i % 3 * 0.1);
-            const pulseAngle = originalPositions[i3 + 2] * 10 + time;
-            positions[i3] = Math.cos(pulseAngle) * pulseRadius;
-            positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time + i) * 0.05;
-            positions[i3 + 2] = Math.sin(pulseAngle) * pulseRadius;
-            break;
-            
-          default:
-            // Default fire-like movement
-            positions[i3] = originalPositions[i3] + Math.sin(time * 2 + i) * 0.03;
-            positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time * 3 + i * 2) * 0.05;
-            positions[i3 + 2] = originalPositions[i3 + 2] + Math.cos(time * 2 + i) * 0.03;
-            break;
+        for (let i = 0; i < count; i++) {
+          const i3 = i * 3;
+          
+          // Apply different animation patterns
+          switch (pattern) {
+            case 'orbit':
+              // Orbital pattern around center
+              const angle = time + i * 0.1;
+              const radius = 0.2 + Math.sin(time * 0.5 + i) * 0.1;
+              positions[i3] = Math.cos(angle) * radius;
+              positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time * 0.7 + i * 0.3) * 0.1;
+              positions[i3 + 2] = Math.sin(angle) * radius;
+              break;
+              
+            case 'pulse':
+              // Pulsing pattern
+              const pulseRadius = (0.2 + Math.sin(time * 0.8) * 0.15) * (1 + i % 3 * 0.1);
+              const pulseAngle = originalPositions[i3 + 2] * 10 + time;
+              positions[i3] = Math.cos(pulseAngle) * pulseRadius;
+              positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time + i) * 0.05;
+              positions[i3 + 2] = Math.sin(pulseAngle) * pulseRadius;
+              break;
+              
+            default:
+              // Default fire-like movement
+              positions[i3] = originalPositions[i3] + Math.sin(time * 2 + i) * 0.03;
+              positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(time * 3 + i * 2) * 0.05;
+              positions[i3 + 2] = originalPositions[i3 + 2] + Math.cos(time * 2 + i) * 0.03;
+              break;
+          }
         }
+        
+        // Update geometry
+        effectData.particles.geometry.attributes.position.needsUpdate = true;
       }
-      
-      // Update geometry
-      effectData.particles.geometry.attributes.position.needsUpdate = true;
     }
   }
   
   // Animate light flickering if applicable
   if (effectData.light) {
     // Apply subtle flicker to light intensity
-    const originalIntensity = effectData.definition.intensity || 1.0;
+    const originalIntensity = effectData.definition ? (effectData.definition.intensity || 1.0) : 1.0;
     const flickerAmount = 0.1; // Amount of intensity variation
     
     // More complex flicker calculation for realism
@@ -3128,7 +3314,7 @@ if (effectData.type === 'waterProp') {
     effectData.light.intensity = originalIntensity * (1.0 - flickerAmount + flicker);
     
     // Option: also animate light color for more realism
-    if (effectData.definition.animateColor && effectData.light.color) {
+    if (effectData.definition && effectData.definition.animateColor && effectData.light.color) {
       // Shift color slightly toward yellow/red for fire
       const baseColor = new THREE.Color(effectData.definition.color);
       const warmthShift = Math.sin(time * 3) * 0.05; // Small color variation
@@ -3144,8 +3330,32 @@ if (effectData.type === 'waterProp') {
     const material = effectData.emissiveMesh.material;
     if (material.emissiveIntensity !== undefined) {
       // Add subtle pulsing to emissive intensity
-      const originalIntensity = effectData.definition.emissiveIntensity || 1.0;
+      const originalIntensity = effectData.definition ? 
+        (effectData.definition.emissiveIntensity || 1.0) : 1.0;
+      
       material.emissiveIntensity = originalIntensity * (0.8 + Math.sin(time * 2) * 0.2);
+    }
+  }
+  
+  // Update portal effects if this is a portal
+  if (effectData.portalRing || effectData.vortex) {
+    // Update using the effect's custom update method if available
+    if (typeof effectData.update === 'function') {
+      effectData.update(deltaTime);
+    }
+    // Otherwise update standard portal components
+    else {
+      // Update the ring rotation
+      if (effectData.portalRing) {
+        effectData.portalRing.rotation.z = time * 0.1;
+      }
+      
+      // Update the vortex
+      if (effectData.vortex && effectData.vortex.material && 
+          effectData.vortex.material.uniforms && 
+          effectData.vortex.material.uniforms.time) {
+        effectData.vortex.material.uniforms.time.value = time;
+      }
     }
   }
 }
