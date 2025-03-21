@@ -500,6 +500,109 @@ this.activeStoryTrigger = null;
     return false;
   }
 
+  async loadShapeForgeImporter() {
+    // Return existing instance if already loaded
+    if (this.shapeForgeImporter) {
+      return this.shapeForgeImporter;
+    }
+    
+    return new Promise((resolve, reject) => {
+      // Check if script is already loaded
+      if (window.ShapeForgeImporter) {
+        this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+        console.log('ShapeForgeImporter initialized from existing class');
+        resolve(this.shapeForgeImporter);
+        return;
+      }
+      
+      // Load script dynamically
+      const script = document.createElement('script');
+      script.src = 'js/classes/ShapeForgeImporter.js';
+      
+      script.onload = () => {
+        try {
+          this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+          console.log('ShapeForgeImporter initialized from dynamic load');
+          resolve(this.shapeForgeImporter);
+        } catch (error) {
+          console.error('Error initializing ShapeForgeImporter:', error);
+          reject(error);
+        }
+      };
+      
+      script.onerror = (e) => {
+        console.error('ShapeForgeImporter script load failed:', e);
+        reject(new Error('Failed to load ShapeForgeImporter script'));
+      };
+      
+      document.head.appendChild(script);
+    });
+  }
+  
+  // Add a method to process ShapeForge markers
+  async processShapeForgeMarkers() {
+  try {
+    const importer = await this.loadShapeForgeImporter();
+    if (!importer) {
+      console.warn('ShapeForgeImporter not available, skipping 3D models');
+      return;
+    }
+    
+    // Find all ShapeForge markers
+    const markers = this.markers.filter(m => m.type === 'shapeforge' && m.data.modelId);
+    console.log(`Processing ${markers.length} ShapeForge model markers`);
+    
+    for (const marker of markers) {
+      try {
+        // Convert marker position to 3D coordinates
+        const x = marker.x / 50 - this.boxWidth / 2;
+        const z = marker.y / 50 - this.boxDepth / 2;
+        
+        // Get model data
+        const modelData = await importer.loadModel(marker.data.modelId);
+        if (!modelData) {
+          console.warn(`Model not found for marker: ${marker.id}`);
+          continue;
+        }
+        
+        // Calculate height offset
+        const heightOffset = marker.data.height || 0;
+        
+        // Create 3D model
+        const model = importer.createThreeJsModel(modelData, {
+          position: new THREE.Vector3(x, heightOffset, z),
+          scale: marker.data.scale || 1.0
+        });
+        
+        if (!model) continue;
+        
+        // Apply rotation around Y axis (convert from degrees to radians)
+        if (marker.data.rotation) {
+          model.rotation.y = (marker.data.rotation * Math.PI) / 180;
+        }
+        
+        // Add to scene
+        this.scene.add(model);
+        
+        // Store for later reference
+        this.shapeforgeModels = this.shapeforgeModels || [];
+        this.shapeforgeModels.push({
+          model,
+          marker
+        });
+        
+        console.log(`Added model "${modelData.name}" at position ${x},${heightOffset},${z}`);
+        
+      } catch (e) {
+        console.error(`Error processing ShapeForge marker ${marker.id}:`, e);
+      }
+    }
+        // Rest of the code remains the same...
+  } catch (error) {
+    console.error('Error loading ShapeForgeImporter:', error);
+  }
+  }
+
   setDefaultStoryboard(storyId) {
     if (!window.storyboard) {
       console.error('Storyboard system not available');
@@ -1301,6 +1404,8 @@ updateFloorMaterial(floorMesh, backgroundColor) {
       console.log('Applying FPS limit from preferences:', prefs.fpsLimit);
       this.setFPSLimit(prefs.fpsLimit);
     }
+
+    this.processShapeForgeMarkers();
 
     return true;
   }

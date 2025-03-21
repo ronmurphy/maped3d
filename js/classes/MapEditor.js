@@ -2589,7 +2589,8 @@ if (preferencesBtn) {
       splashArtTool: "splash-art",       
       propTool: "prop",
       storyboardTriggerTool: "storyboard",
-      dungeonTool: "dungeon"
+      dungeonTool: "dungeon",
+      shapeforgeModelTool: "shapeforge"
     };
 
     Object.entries(markerTools).forEach(([toolId, markerType]) => {
@@ -2652,6 +2653,21 @@ if (preferencesBtn) {
 
     window.addEventListener("resize", () => this.handleResize());
   }
+
+formatDate(dateString) {
+  if (!dateString) return 'Unknown date';
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (e) {
+    return dateString; // Return original if parsing fails
+  }
+}
 
   takeScreenshot() {
     // Show a loading indicator
@@ -4926,11 +4942,175 @@ finalizeFreehandDrawing() {
       return marker;
     }
 
+    if (type === "shapeforge") {
+      const marker = this.createMarker(type, x, y, {
+        modelId: data.modelId || null,
+        scale: data.scale || 1.0,
+        rotation: data.rotation || 0,
+        height: data.height || 0.0
+      });
+      
+      // Show model browser immediately if no model is assigned
+      if (!data.modelId) {
+        setTimeout(() => {
+          this.showShapeForgeModelBrowser(marker);
+        }, 100);
+      }
+      
+      this.markers.push(marker);
+      return marker;
+    }
+
     // Regular markers
     const marker = this.createMarker(type, x, y, data);
     this.markers.push(marker);
     return marker;
   }
+
+  // Add the model browser UI
+async showShapeForgeModelBrowser(marker) {
+  // Create dialog
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'Select 3D Model';
+  dialog.style.setProperty('--width', '800px');
+  
+  // Show loading state first
+  dialog.innerHTML = `
+    <div style="display: flex; justify-content: center; padding: 40px;">
+      <sl-spinner></sl-spinner>
+      <div style="margin-left: 16px;">Loading models...</div>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+  dialog.show();
+  
+  // Load models
+  let models = [];
+  try {
+    // Try ResourceManager first
+    if (window.resourceManager?.resources?.shapeforge) {
+      models = Array.from(window.resourceManager.resources.shapeforge.values());
+    } else {
+      // Try direct IndexedDB access as fallback
+      const db = await this.openModelDatabase();
+      const tx = db.transaction(['models'], 'readonly');
+      const store = tx.objectStore('models');
+      models = await store.getAll();
+    }
+    
+    // Update dialog content with grid of models
+    dialog.innerHTML = `
+      <div style="padding: 16px;">
+        <div style="margin-bottom: 16px;">
+          <sl-input type="search" placeholder="Search models..." style="width: 100%;" id="model-search"></sl-input>
+        </div>
+        
+        <div class="model-grid" style="
+          display: grid; 
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+          gap: 16px; 
+          max-height: 60vh; 
+          overflow-y: auto;
+          padding: 8px;
+        ">
+          ${models.map(model => `
+            <div class="model-card" data-id="${model.id}" style="
+              border: 1px solid #ccc;
+              border-radius: 8px;
+              overflow: hidden;
+              cursor: pointer;
+              transition: all 0.2s;
+            ">
+              <div style="height: 120px; overflow: hidden;">
+                <img src="${model.thumbnail}" alt="${model.name}" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+              <div style="padding: 8px;">
+                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${model.name}
+                </div>
+                <div style="font-size: 0.8em; color: #666; margin-top: 2px;">
+                  ${this.formatDate(model.dateAdded)}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div slot="footer">
+        <sl-button variant="neutral" class="cancel-btn">Cancel</sl-button>
+      </div>
+    `;
+    
+    // Implement search functionality
+    const searchInput = dialog.querySelector('#model-search');
+    if (searchInput) {
+      searchInput.addEventListener('sl-input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        dialog.querySelectorAll('.model-card').forEach(card => {
+          const modelName = card.textContent.toLowerCase();
+          card.style.display = modelName.includes(searchTerm) ? 'block' : 'none';
+        });
+      });
+    }
+    
+    // Add click handlers for model selection
+    dialog.querySelectorAll('.model-card').forEach(card => {
+      // Hover effect
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-4px)';
+        card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'none';
+        card.style.boxShadow = 'none';
+      });
+      
+      // Click to select
+      card.addEventListener('click', () => {
+        const modelId = card.dataset.id;
+        
+        // Update marker data
+        marker.data.modelId = modelId;
+        
+        // Get model name for display
+        const modelName = models.find(m => m.id === modelId)?.name || 'Unknown Model';
+        
+        // Update marker appearance if needed
+        this.updateMarkerAppearance(marker);
+        
+        // Show success notification
+        this.showCustomToast(`Selected 3D model: ${modelName}`, 'success', 2000);
+        
+        dialog.hide();
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error loading models:', error);
+    dialog.innerHTML = `
+      <div style="text-align: center; padding: 40px;">
+        <span class="material-icons" style="font-size: 48px; color: #f44336;">error</span>
+        <div style="margin-top: 16px;">Failed to load models</div>
+        <div style="color: #666; margin-top: 8px;">${error.message}</div>
+      </div>
+      <div slot="footer">
+        <sl-button variant="neutral" class="cancel-btn">Close</sl-button>
+      </div>
+    `;
+  }
+  
+  // Add cancel button handler
+  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    dialog.hide();
+  });
+  
+  dialog.addEventListener('sl-after-hide', () => {
+    dialog.remove();
+  });
+}
 
   // Add this new method to MapEditor class
   startMarkerDragging(marker, e) {
@@ -5220,6 +5400,53 @@ finalizeFreehandDrawing() {
         }
       }
     }
+
+    if (marker.type === "shapeforge" && marker.element) {
+      // Get model data based on ID
+      const modelId = marker.data.modelId;
+      let modelName = "3D Model";
+      
+      // Try to find the model to get its name
+      if (window.resourceManager?.resources?.shapeforge) {
+        const model = window.resourceManager.resources.shapeforge.get(modelId);
+        if (model) {
+          modelName = model.name;
+        }
+      }
+      
+      // Update marker appearance
+      marker.element.innerHTML = `
+        <div class="shapeforge-model-marker" style="
+          position: relative;
+          width: 32px;
+          height: 32px;
+          background: rgba(103, 58, 183, 0.2);
+          border: 2px solid #673AB7;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform-origin: center;
+        ">
+          <span class="material-icons" style="color: #673AB7;">view_in_ar</span>
+          
+          <div class="marker-label" style="
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            white-space: nowrap;
+            margin-top: 4px;
+          ">${modelName}</div>
+        </div>
+      `;
+    }
+
     // this.fixZoomIssues();
   }
 
@@ -5328,6 +5555,7 @@ finalizeFreehandDrawing() {
         "splash-art": "add_photo_alternate",
         storyboard: "auto_stories",
         dungeon: "fort",
+        shapeforge: "view_in_ar"
       }[type] || "location_on";
 
       markerElement.innerHTML = `<span class="material-icons">${icon}</span>`;
@@ -5779,6 +6007,9 @@ if (type === "door") {
       case 'dungeon':  // Add this case
             this.setupDungeonEventHandlers(dialog, marker);
             break;
+            case 'shapeforge':
+              this.setupShapeForgeEventHandlers(dialog, marker);
+              break;
       default:
           this.setupDefaultEventHandlers(dialog, marker);
   }
@@ -5816,8 +6047,102 @@ if (type === "door") {
         return this.generateStoryboardMarkerHTML(marker);
       case 'dungeon':
         return this.generateDungeonMarkerHTML(marker);
+        case 'shapeforge':
+          return this.generateShapeForgeMarkerHTML(marker);
       default:
         return this.generateDefaultMarkerHTML(marker);
+    }
+  }
+
+  generateShapeForgeMarkerHTML(marker) {
+    // Get model data
+    const modelId = marker.data.modelId;
+    let modelName = "Unknown Model";
+    let modelThumbnail = "";
+    
+    // Try to find the model details
+    if (window.resourceManager?.resources?.shapeforge) {
+      const model = window.resourceManager.resources.shapeforge.get(modelId);
+      if (model) {
+        modelName = model.name;
+        modelThumbnail = model.thumbnail;
+      }
+    }
+    
+    return `
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="text-align: center; padding: 12px;">
+          ${modelThumbnail ? `
+            <img src="${modelThumbnail}" style="max-width: 200px; max-height: 150px; object-fit: contain;">
+          ` : `
+            <span class="material-icons" style="font-size: 48px; color: #673AB7;">view_in_ar</span>
+          `}
+          <div style="margin-top: 8px; font-weight: bold;">${modelName}</div>
+          <div style="font-size: 0.9em; color: #888; margin-top: 4px;">
+            3D Model
+          </div>
+        </div>
+        
+        <div style="border: 1px solid #444; padding: 12px; border-radius: 4px;">
+          <sl-button id="change-model-btn" style="width: 100%;">
+            <span class="material-icons" slot="prefix">collections</span>
+            Change Model
+          </sl-button>
+          
+          <div style="margin-top: 16px;">
+            <label>Scale:</label>
+            <sl-range id="model-scale" min="0.1" max="3" step="0.1" value="${marker.data.scale || 1.0}" 
+                     style="width: 100%;"></sl-range>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <label>Rotation:</label>
+            <sl-range id="model-rotation" min="0" max="359" step="15" value="${marker.data.rotation || 0}" 
+                     style="width: 100%;"></sl-range>
+          </div>
+          
+          <div style="margin-top: 16px;">
+            <label>Height Offset:</label>
+            <sl-range id="model-height" min="0" max="3" step="0.1" value="${marker.data.height || 0}" 
+                     style="width: 100%;"></sl-range>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  setupShapeForgeEventHandlers(dialog, marker) {
+    // Change model button
+    const changeModelBtn = dialog.querySelector('#change-model-btn');
+    if (changeModelBtn) {
+      changeModelBtn.addEventListener('click', () => {
+        dialog.hide();
+        this.showShapeForgeModelBrowser(marker);
+      });
+    }
+    
+    // Scale slider
+    const scaleSlider = dialog.querySelector('#model-scale');
+    if (scaleSlider) {
+      scaleSlider.addEventListener('sl-change', (e) => {
+        marker.data.scale = parseFloat(e.target.value);
+      });
+    }
+    
+    // Rotation slider
+    const rotationSlider = dialog.querySelector('#model-rotation');
+    if (rotationSlider) {
+      rotationSlider.addEventListener('sl-change', (e) => {
+        marker.data.rotation = parseInt(e.target.value);
+      });
+    }
+    
+    // Height slider
+    const heightSlider = dialog.querySelector('#model-height');
+    if (heightSlider) {
+      heightSlider.addEventListener('sl-change', (e) => {
+        marker.data.height = parseFloat(e.target.value);
+      });
     }
   }
 

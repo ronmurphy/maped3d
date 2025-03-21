@@ -14,7 +14,7 @@
   <!-- Original CSS - keep this -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/rpg-awesome.min.css">
-  
+
   <!-- New UI CSS - add this -->
   <link rel="stylesheet" href="css/new-ui.css">
   <link rel="stylesheet" href="css/new-rm-ui.css">
@@ -75,15 +75,19 @@
 
   <script type="module"
     src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/cdn/components/alert/alert.js"></script>
-  
-  <script type="module" 
-    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/color-picker/color-picker.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/divider/divider.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/dropdown/dropdown.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/menu/menu.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/menu-item/menu-item.js"></script>
 
-    <!-- html2canvas-->
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/color-picker/color-picker.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/divider/divider.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/dropdown/dropdown.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/menu/menu.js"></script>
+  <script type="module"
+    src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/menu-item/menu-item.js"></script>
+
+  <!-- html2canvas-->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Three.js -->
@@ -138,44 +142,44 @@
         <span class="material-icons">map</span>
         <span>D&D Map Editor</span>
       </div>
-      
+
       <!-- Map Title (keep original ID for JS compatibility) -->
       <div class="map-title" id="mapTitle">
         <span class="material-icons">edit</span>
         <span id="mapTitleText">Untitled Map</span>
       </div>
-      
+
       <!-- File Operations Group (keep original IDs) -->
       <div class="header-actions">
         <sl-button size="small" variant="neutral" id="openMapBtn">
           <span slot="prefix" class="material-icons">map</span>
           Open
         </sl-button>
-        
+
         <sl-button size="small" variant="neutral" id="saveProjectBtn">
           <span slot="prefix" class="material-icons">save</span>
           Save
         </sl-button>
       </div>
-      
+
       <div class="spacer"></div>
-      
+
       <!-- Special Tools (keep original IDs) -->
       <sl-button size="small" variant="neutral" id="resourceManagerBtn">
         <span slot="prefix" class="material-icons">palette</span>
         Resources
       </sl-button>
-      
+
       <sl-button size="small" variant="neutral" id="storyboardTool">
         <span slot="prefix" class="material-icons">auto_stories</span>
         Storyboard
       </sl-button>
-      
+
       <sl-button size="small" variant="neutral" id="shapeForgeBtn">
         <span slot="prefix" class="material-icons">3d_rotation</span>
         ShapeForge
       </sl-button>
-      
+
       <sl-button size="small" variant="neutral" id="preferencesBtn">
         <span slot="prefix" class="material-icons">settings</span>
         Graphics
@@ -185,12 +189,12 @@
         <span slot="prefix" class="material-icons">tune</span>
         Editor
       </sl-button>
-      
+
       <sl-button size="small" variant="neutral" id="helpBtn">
         <span slot="prefix" class="material-icons">help_outline</span>
         Help
       </sl-button>
-      
+
       <!-- 3D View button (keep original ID) -->
       <button class="view-3d-toggle" id="create3d">
         <span class="material-icons">view_in_ar</span>
@@ -218,7 +222,7 @@
           <span class="material-icons">gesture</span>
         </div>
       </div>
-      
+
       <!-- Marker Tools -->
       <div class="tool-group marker-tools">
         <div class="tool-button" id="playerStartTool" data-tooltip="Player Start">
@@ -254,6 +258,9 @@
         <div class="tool-button" id="editMarkerTool" data-tooltip="Edit Markers">
           <span class="material-icons">edit_location</span>
         </div>
+        <div class="tool-button" id="shapeforgeModelTool" data-tooltip="3D Model">
+          <span class="material-icons">view_in_ar</span>
+        </div>
       </div>
     </aside>
 
@@ -270,12 +277,12 @@
           <span slot="icon" class="material-icons">create_new_folder</span>
         </sl-button>
       </div>
-      
+
       <!-- <div class="sidebar-tabs">
         <div class="sidebar-tab active" id="layersTab">Walls</div>
         <div class="sidebar-tab" id="markersTab">Markers</div>
       </div> -->
-      
+
       <div class="sidebar-content">
         <!-- Layers Panel - Keep original structure and IDs for JS -->
         <div class="layers-panel">
@@ -284,7 +291,7 @@
             <!-- Room layers will be added here dynamically -->
           </div>
         </div>
-        
+
         <!-- Markers Panel (hidden by default) -->
         <div id="markersPanel" style="display: none;"></div>
       </div>
