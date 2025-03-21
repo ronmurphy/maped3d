@@ -500,6 +500,76 @@ this.activeStoryTrigger = null;
     return false;
   }
 
+  // async loadShapeForgeImporter() {
+  //   // Return existing instance if already loaded
+  //   if (this.shapeForgeImporter) {
+  //     return this.shapeForgeImporter;
+  //   }
+    
+  //   return new Promise((resolve, reject) => {
+  //     // Check if script is already loaded
+  //     if (window.ShapeForgeImporter) {
+  //       this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+  //       console.log('ShapeForgeImporter initialized from existing class');
+  //       resolve(this.shapeForgeImporter);
+  //       return;
+  //     }
+      
+  //     // Load script dynamically
+  //     const script = document.createElement('script');
+  //     script.src = 'js/classes/ShapeForgeImporter.js';
+      
+  //     // script.onload = () => {
+  //     //   try {
+  //     //     this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+  //     //     console.log('ShapeForgeImporter initialized from dynamic load');
+  //     //     resolve(this.shapeForgeImporter);
+  //     //   } catch (error) {
+  //     //     console.error('Error initializing ShapeForgeImporter:', error);
+  //     //     reject(error);
+  //     //   }
+  //     // };
+
+      
+  //     script.onload = () => {
+  //       try {
+  //         this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager, this.shaderEffects );
+  //         console.log('ShapeForgeImporter initialized from dynamic load');
+  //         resolve(this.shapeForgeImporter);
+  //       } catch (error) {
+  //         console.error('Error initializing ShapeForgeImporter:', error);
+  //         reject(error);
+  //       }
+  //     };
+
+  //     // const script = document.createElement('script');
+  //     // script.src = 'js/classes/ShapeForgeImporter.js';
+      
+  //     // script.onload = () => {
+  //     //   try {
+  //     //     // Pass the correct shaderEffects instance
+  //     //     this.shapeForgeImporter = new ShapeForgeImporter(
+  //     //       this.scene, 
+  //     //       window.resourceManager,
+  //     //       this.shaderEffects  // This is key - pass the instance that animate() is using
+  //     //     );
+  //     //     console.log('ShapeForgeImporter initialized');
+  //     //     resolve(this.shapeForgeImporter);
+  //     //   } catch (error) {
+  //     //     console.error('Error initializing ShapeForgeImporter:', error);
+  //     //     reject(error);
+  //     //   }
+  //     // };
+      
+  //     script.onerror = (e) => {
+  //       console.error('ShapeForgeImporter script load failed:', e);
+  //       reject(new Error('Failed to load ShapeForgeImporter script'));
+  //     };
+      
+  //     document.head.appendChild(script);
+  //   });
+  // }
+
   async loadShapeForgeImporter() {
     // Return existing instance if already loaded
     if (this.shapeForgeImporter) {
@@ -509,7 +579,11 @@ this.activeStoryTrigger = null;
     return new Promise((resolve, reject) => {
       // Check if script is already loaded
       if (window.ShapeForgeImporter) {
-        this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
+        this.shapeForgeImporter = new ShapeForgeImporter(
+          this.scene, 
+          window.resourceManager,
+          this.shaderEffects  // Make sure to always pass shaderEffects
+        );
         console.log('ShapeForgeImporter initialized from existing class');
         resolve(this.shapeForgeImporter);
         return;
@@ -519,47 +593,25 @@ this.activeStoryTrigger = null;
       const script = document.createElement('script');
       script.src = 'js/classes/ShapeForgeImporter.js';
       
-      // script.onload = () => {
-      //   try {
-      //     this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
-      //     console.log('ShapeForgeImporter initialized from dynamic load');
-      //     resolve(this.shapeForgeImporter);
-      //   } catch (error) {
-      //     console.error('Error initializing ShapeForgeImporter:', error);
-      //     reject(error);
-      //   }
-      // };
-
-      
       script.onload = () => {
         try {
-          this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager, this.shaderEffects );
-          console.log('ShapeForgeImporter initialized from dynamic load');
+          // Make sure we're passing the shader effects
+          this.shapeForgeImporter = new ShapeForgeImporter(
+            this.scene, 
+            window.resourceManager,
+            this.shaderEffects
+          );
+          
+          // Also make it globally accessible for fallbacks
+          window.shapeForgeImporter = this.shapeForgeImporter;
+          
+          console.log('ShapeForgeImporter initialized with shader effects');
           resolve(this.shapeForgeImporter);
         } catch (error) {
           console.error('Error initializing ShapeForgeImporter:', error);
           reject(error);
         }
       };
-
-      // const script = document.createElement('script');
-      // script.src = 'js/classes/ShapeForgeImporter.js';
-      
-      // script.onload = () => {
-      //   try {
-      //     // Pass the correct shaderEffects instance
-      //     this.shapeForgeImporter = new ShapeForgeImporter(
-      //       this.scene, 
-      //       window.resourceManager,
-      //       this.shaderEffects  // This is key - pass the instance that animate() is using
-      //     );
-      //     console.log('ShapeForgeImporter initialized');
-      //     resolve(this.shapeForgeImporter);
-      //   } catch (error) {
-      //     console.error('Error initializing ShapeForgeImporter:', error);
-      //     reject(error);
-      //   }
-      // };
       
       script.onerror = (e) => {
         console.error('ShapeForgeImporter script load failed:', e);

@@ -4,6 +4,11 @@ class ShapeForgeImporter {
     this.resourceManager = resourceManager;
     this.shaderEffectsManager = shaderEffectsManager;
     this.modelsCache = new Map(); // Optional cache for already loaded models
+
+      // Make shader effects globally available as a fallback
+  if (shaderEffects && !window.shaderEffectsManager) {
+    window.shaderEffectsManager = shaderEffects;
+  }
   }
 
   /**
@@ -682,6 +687,123 @@ applyTextureToMaterial(material, textureData) {
     });
 }
 
+/** - normal, working version
+ * Convert ShapeForge model data into a Three.js Group with effects
+ * @param {Object} modelData - ShapeForge model data
+ * @param {Object} options - Additional options (scale, position, etc)
+ * @returns {THREE.Group} - The Three.js group containing the model
+ */
+// createThreeJsModel(modelData, options = {}) {
+//   if (!modelData || !modelData.data || !modelData.data.objects) {
+//     console.error('Invalid model data:', modelData);
+//     return null;
+//   }
+  
+//   // Create a group to hold all objects
+//   const group = new THREE.Group();
+  
+//   // Apply name
+//   group.name = modelData.name || 'ShapeForge Model';
+  
+//   // Track meshes and objects with effects
+//   const meshes = [];
+//   const objectsWithEffects = [];
+  
+//   // Process each object in the model
+//   modelData.data.objects.forEach(obj => {
+//     try {
+//       // Skip null or undefined objects
+//       if (!obj) return;
+      
+//       // Create mesh from object data
+//       const mesh = this.createMeshFromObject(obj);
+//       if (!mesh) return;
+      
+//       // Store mesh and object data for later reference
+//       meshes.push({mesh, objData: obj});
+      
+//       // Track effects for later application if present
+//       if (obj.effect) {
+//         objectsWithEffects.push({
+//           mesh: mesh, 
+//           effect: obj.effect
+//         });
+//       }
+      
+//       // Add to the group
+//       group.add(mesh);
+      
+//     } catch (e) {
+//       console.warn(`Error creating object ${obj?.name || 'unnamed'}:`, e);
+//     }
+//   });
+  
+//   // Apply transforms
+//   if (options.position) group.position.copy(options.position);
+//   if (options.rotation) group.rotation.copy(options.rotation);
+//   if (options.scale) {
+//     if (typeof options.scale === 'number') {
+//       group.scale.set(options.scale, options.scale, options.scale);
+//     } else {
+//       group.scale.copy(options.scale);
+//     }
+//   }
+  
+//   // Store reference to original data
+//   group.userData.shapeforgeData = {
+//     id: modelData.id,
+//     name: modelData.name
+//   };
+  
+//   // Apply effects after a delay to ensure everything is initialized
+//   if (objectsWithEffects.length > 0) {
+//     console.log(`Will apply ${objectsWithEffects.length} effects after delay`);
+    
+//     setTimeout(() => {
+//       objectsWithEffects.forEach(({mesh, effect}) => {
+//         try {
+//           const effectType = typeof effect === 'string' ? effect : effect.type;
+          
+//           console.log(`Applying ${effectType} effect to mesh`);
+          
+//           // Apply effect via ShaderEffectsManager
+//           if (window.shaderEffectsManager && window.shaderEffectsManager.applyEffect) {
+//             window.shaderEffectsManager.applyEffect(mesh, effectType);
+            
+//             // Apply parameters if available
+//             if (typeof effect === 'object' && effect.parameters) {
+//               const effectData = window.shaderEffectsManager.effects.get(mesh.id);
+//               if (effectData && effectData.light) {
+//                 // Apply intensity
+//                 if (effect.parameters.intensity !== undefined) {
+//                   effectData.light.intensity = effect.parameters.intensity;
+//                 }
+                
+//                 // Apply color
+//                 if (effect.parameters.color !== undefined) {
+//                   effectData.light.color.set(effect.parameters.color);
+//                 }
+//               }
+//             }
+//           } else if (this.shaderEffects && this.shaderEffects.applyEffect) {
+//             // Alternative shader effects manager (from Scene3DController)
+//             this.shaderEffects.applyEffect(mesh, effectType);
+            
+//             // Apply parameters if available
+//             if (typeof effect === 'object' && effect.parameters) {
+//               this.applyEffectParameters(mesh, effect.parameters);
+//             }
+//           }
+//         } catch (error) {
+//           console.error("Error applying effect:", error);
+//         }
+//       });
+//     }, 500);
+//   }
+  
+//   return group;
+// }
+
 /**
  * Convert ShapeForge model data into a Three.js Group with effects
  * @param {Object} modelData - ShapeForge model data
@@ -699,6 +821,14 @@ createThreeJsModel(modelData, options = {}) {
   
   // Apply name
   group.name = modelData.name || 'ShapeForge Model';
+  
+  // Debug ShaderEffects availability
+  console.log('ShaderEffects debug info:');
+  console.log('- window.shaderEffectsManager available:', !!window.shaderEffectsManager);
+  console.log('- this.shaderEffects available:', !!this.shaderEffects);
+  
+  // Keep a reference to 'this' that we can use in callbacks
+  const self = this; 
   
   // Track meshes and objects with effects
   const meshes = [];
@@ -719,6 +849,7 @@ createThreeJsModel(modelData, options = {}) {
       
       // Track effects for later application if present
       if (obj.effect) {
+        console.log(`Object ${obj.name || 'unnamed'} has effect:`, obj.effect);
         objectsWithEffects.push({
           mesh: mesh, 
           effect: obj.effect
@@ -754,49 +885,117 @@ createThreeJsModel(modelData, options = {}) {
   if (objectsWithEffects.length > 0) {
     console.log(`Will apply ${objectsWithEffects.length} effects after delay`);
     
+    // First try immediate application - sometimes waiting causes issues
+    self.applyShaderEffectsToObjects(objectsWithEffects);
+    
+    // Also try delayed application for safety
     setTimeout(() => {
-      objectsWithEffects.forEach(({mesh, effect}) => {
-        try {
-          const effectType = typeof effect === 'string' ? effect : effect.type;
-          
-          console.log(`Applying ${effectType} effect to mesh`);
-          
-          // Apply effect via ShaderEffectsManager
-          if (window.shaderEffectsManager && window.shaderEffectsManager.applyEffect) {
-            window.shaderEffectsManager.applyEffect(mesh, effectType);
-            
-            // Apply parameters if available
-            if (typeof effect === 'object' && effect.parameters) {
-              const effectData = window.shaderEffectsManager.effects.get(mesh.id);
-              if (effectData && effectData.light) {
-                // Apply intensity
-                if (effect.parameters.intensity !== undefined) {
-                  effectData.light.intensity = effect.parameters.intensity;
-                }
-                
-                // Apply color
-                if (effect.parameters.color !== undefined) {
-                  effectData.light.color.set(effect.parameters.color);
-                }
-              }
-            }
-          } else if (this.shaderEffects && this.shaderEffects.applyEffect) {
-            // Alternative shader effects manager (from Scene3DController)
-            this.shaderEffects.applyEffect(mesh, effectType);
-            
-            // Apply parameters if available
-            if (typeof effect === 'object' && effect.parameters) {
-              this.applyEffectParameters(mesh, effect.parameters);
-            }
-          }
-        } catch (error) {
-          console.error("Error applying effect:", error);
-        }
-      });
+      console.log('Delayed shader effects application starting...');
+      self.applyShaderEffectsToObjects(objectsWithEffects);
     }, 500);
+  } else {
+    console.log('No effects to apply for this model');
   }
   
   return group;
+}
+
+/**
+ * Helper method to apply shader effects to a list of objects
+ * @param {Array} objectsWithEffects - Array of {mesh, effect} objects
+ */
+applyShaderEffectsToObjects(objectsWithEffects) {
+  if (!objectsWithEffects || objectsWithEffects.length === 0) return;
+  
+  console.log(`Attempting to apply ${objectsWithEffects.length} shader effects`);
+  
+  // Check for global shader effects manager
+  const hasGlobalManager = window.shaderEffectsManager && 
+                          typeof window.shaderEffectsManager.applyEffect === 'function';
+  
+  // Check for instance shader effects
+  const hasInstanceManager = this.shaderEffects && 
+                           typeof this.shaderEffects.applyEffect === 'function';
+  
+  console.log('Shader managers available:', {
+    global: hasGlobalManager, 
+    instance: hasInstanceManager
+  });
+  
+  if (!hasGlobalManager && !hasInstanceManager) {
+    console.warn('No shader effects manager available to apply effects');
+    
+    // As a fallback, try to get the shader effects from Scene3DController
+    if (window.scene3D && window.scene3D.shaderEffects) {
+      console.log('Found shader effects manager on window.scene3D');
+      this.shaderEffects = window.scene3D.shaderEffects;
+    }
+  }
+  
+  objectsWithEffects.forEach(({mesh, effect}) => {
+    try {
+      const effectType = typeof effect === 'string' ? effect : effect.type;
+      
+      console.log(`Applying ${effectType} effect to mesh:`, mesh.name || 'unnamed');
+      
+      let effectApplied = false;
+      
+      // First try window.shaderEffectsManager (global)
+      if (hasGlobalManager) {
+        console.log('Using global shader manager');
+        window.shaderEffectsManager.applyEffect(mesh, effectType);
+        
+        // Apply parameters if available
+        if (typeof effect === 'object' && effect.parameters) {
+          const effectData = window.shaderEffectsManager.effects.get(mesh.id);
+          if (effectData && effectData.light) {
+            // Apply intensity
+            if (effect.parameters.intensity !== undefined) {
+              effectData.light.intensity = effect.parameters.intensity;
+            }
+            
+            // Apply color
+            if (effect.parameters.color !== undefined) {
+              effectData.light.color.set(effect.parameters.color);
+            }
+          }
+        }
+        
+        effectApplied = true;
+      }
+      // Then try this.shaderEffects (instance)
+      else if (hasInstanceManager) {
+        console.log('Using instance shader manager');
+        this.shaderEffects.applyEffect(mesh, effectType);
+        
+        // Apply parameters if available
+        if (typeof effect === 'object' && effect.parameters) {
+          this.applyEffectParameters(mesh, effect.parameters);
+        }
+        
+        effectApplied = true;
+      }
+      // Try scene3D fallback if we found it
+      else if (window.scene3D && window.scene3D.shaderEffects) {
+        console.log('Using scene3D shader manager fallback');
+        window.scene3D.shaderEffects.applyEffect(mesh, effectType);
+        effectApplied = true;
+      }
+      
+      // Log success or failure
+      if (effectApplied) {
+        console.log(`Successfully applied ${effectType} effect to mesh`);
+        
+        // Add a small visual indicator to confirm effect was applied
+        mesh.userData.hasShaderEffect = true;
+      } else {
+        console.warn(`No suitable shader manager found to apply ${effectType} effect`);
+      }
+      
+    } catch (error) {
+      console.error("Error applying effect:", error);
+    }
+  });
 }
 
 /**
