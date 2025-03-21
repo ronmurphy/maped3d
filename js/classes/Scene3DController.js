@@ -579,13 +579,35 @@ this.activeStoryTrigger = null;
     return new Promise((resolve, reject) => {
       // Check if script is already loaded
       if (window.ShapeForgeImporter) {
-        this.shapeForgeImporter = new ShapeForgeImporter(
-          this.scene, 
-          window.resourceManager,
-          this.shaderEffects  // Make sure to always pass shaderEffects
-        );
-        console.log('ShapeForgeImporter initialized from existing class');
-        resolve(this.shapeForgeImporter);
+        // Get shader effects if available - with fallbacks
+        const effectsManager = this.shaderEffects || 
+                              (window.shaderEffectsManager) || 
+                              null;
+        
+        console.log('Initializing ShapeForgeImporter with effects manager:', !!effectsManager);
+        
+        try {
+          this.shapeForgeImporter = new ShapeForgeImporter(
+            this.scene, 
+            window.resourceManager,
+            effectsManager
+          );
+          console.log('ShapeForgeImporter initialized from existing class');
+          resolve(this.shapeForgeImporter);
+        } catch (error) {
+          console.error('Error initializing ShapeForgeImporter:', error);
+          // Try without effects manager as a fallback
+          try {
+            this.shapeForgeImporter = new ShapeForgeImporter(
+              this.scene, 
+              window.resourceManager
+            );
+            console.log('ShapeForgeImporter initialized without effects manager');
+            resolve(this.shapeForgeImporter);
+          } catch (fallbackError) {
+            reject(fallbackError);
+          }
+        }
         return;
       }
       
@@ -595,17 +617,20 @@ this.activeStoryTrigger = null;
       
       script.onload = () => {
         try {
-          // Make sure we're passing the shader effects
+          // Get shader effects if available
+          const effectsManager = this.shaderEffects || 
+                                (window.shaderEffectsManager) || 
+                                null;
+          
+          console.log('Dynamic loading: initializing ShapeForgeImporter with effects:', !!effectsManager);
+          
           this.shapeForgeImporter = new ShapeForgeImporter(
             this.scene, 
             window.resourceManager,
-            this.shaderEffects
+            effectsManager
           );
           
-          // Also make it globally accessible for fallbacks
-          window.shapeForgeImporter = this.shapeForgeImporter;
-          
-          console.log('ShapeForgeImporter initialized with shader effects');
+          console.log('ShapeForgeImporter dynamically initialized');
           resolve(this.shapeForgeImporter);
         } catch (error) {
           console.error('Error initializing ShapeForgeImporter:', error);
