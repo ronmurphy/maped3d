@@ -548,7 +548,7 @@ const shapeButtons = {
     // Project controls
     this.drawer.querySelector('#new-project')?.addEventListener('click', this.newProject.bind(this));
     this.drawer.querySelector('#save-project')?.addEventListener('click', this.saveProject.bind(this));
-    this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
+    // this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
     this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
     this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
     this.drawer.querySelector('#loadModelBtn')?.addEventListener('click',this.showModelBrowser.bind(this));
@@ -2907,35 +2907,35 @@ if (!this.zoomSlider) {
     dialog.show();
   }
 
-  /**
-   * Load a project from a file
-   */
-  loadProject() {
-    // Create file input
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json,.shapeforge.json';
+  // /**
+  //  * Load a project from a file
+  //  */
+  // loadProject() {
+  //   // Create file input
+  //   const fileInput = document.createElement('input');
+  //   fileInput.type = 'file';
+  //   fileInput.accept = '.json,.shapeforge.json';
 
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+  //   fileInput.addEventListener('change', (e) => {
+  //     const file = e.target.files[0];
+  //     if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const projectData = JSON.parse(event.target.result);
-          this.loadProjectData(projectData);
-        } catch (error) {
-          console.error('Error loading project:', error);
-          alert('Failed to load project: ' + error.message);
-        }
-      };
+  //     const reader = new FileReader();
+  //     reader.onload = (event) => {
+  //       try {
+  //         const projectData = JSON.parse(event.target.result);
+  //         this.loadProjectData(projectData);
+  //       } catch (error) {
+  //         console.error('Error loading project:', error);
+  //         alert('Failed to load project: ' + error.message);
+  //       }
+  //     };
 
-      reader.readAsText(file);
-    });
+  //     reader.readAsText(file);
+  //   });
 
-    fileInput.click();
-  }
+  //   fileInput.click();
+  // }
 
   showModelBrowser() {
     if (!this.resourceManager) {

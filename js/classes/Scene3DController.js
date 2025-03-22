@@ -54,6 +54,13 @@ class Scene3DController {
 
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
+
+    // this.shapeForgeImporter = new ShapeForgeImporter(
+    //   this.scene, 
+    //   window.resourceManager, 
+    //   window.shapeForge // Pass your ShapeForge instance
+    // );
+
     this.setupInventorySystem();
     // this.initializePartyAndCombatSystems();
     this.clear();
@@ -500,6 +507,8 @@ this.activeStoryTrigger = null;
     return false;
   }
 
+
+
   // async loadShapeForgeImporter() {
   //   // Return existing instance if already loaded
   //   if (this.shapeForgeImporter) {
@@ -509,9 +518,35 @@ this.activeStoryTrigger = null;
   //   return new Promise((resolve, reject) => {
   //     // Check if script is already loaded
   //     if (window.ShapeForgeImporter) {
-  //       this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
-  //       console.log('ShapeForgeImporter initialized from existing class');
-  //       resolve(this.shapeForgeImporter);
+  //       // Get shader effects if available - with fallbacks
+  //       const effectsManager = this.shaderEffects || 
+  //                             (window.shaderEffectsManager) || 
+  //                             null;
+        
+  //       console.log('Initializing ShapeForgeImporter with effects manager:', !!effectsManager);
+        
+  //       try {
+  //         this.shapeForgeImporter = new ShapeForgeImporter(
+  //           this.scene, 
+  //           window.resourceManager,
+  //           effectsManager
+  //         );
+  //         console.log('ShapeForgeImporter initialized from existing class');
+  //         resolve(this.shapeForgeImporter);
+  //       } catch (error) {
+  //         console.error('Error initializing ShapeForgeImporter:', error);
+  //         // Try without effects manager as a fallback
+  //         try {
+  //           this.shapeForgeImporter = new ShapeForgeImporter(
+  //             this.scene, 
+  //             window.resourceManager
+  //           );
+  //           console.log('ShapeForgeImporter initialized without effects manager');
+  //           resolve(this.shapeForgeImporter);
+  //         } catch (fallbackError) {
+  //           reject(fallbackError);
+  //         }
+  //       }
   //       return;
   //     }
       
@@ -519,47 +554,28 @@ this.activeStoryTrigger = null;
   //     const script = document.createElement('script');
   //     script.src = 'js/classes/ShapeForgeImporter.js';
       
-  //     // script.onload = () => {
-  //     //   try {
-  //     //     this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager);
-  //     //     console.log('ShapeForgeImporter initialized from dynamic load');
-  //     //     resolve(this.shapeForgeImporter);
-  //     //   } catch (error) {
-  //     //     console.error('Error initializing ShapeForgeImporter:', error);
-  //     //     reject(error);
-  //     //   }
-  //     // };
-
-      
   //     script.onload = () => {
   //       try {
-  //         this.shapeForgeImporter = new ShapeForgeImporter(this.scene, window.resourceManager, this.shaderEffects );
-  //         console.log('ShapeForgeImporter initialized from dynamic load');
+  //         // Get shader effects if available
+  //         const effectsManager = this.shaderEffects || 
+  //                               (window.shaderEffectsManager) || 
+  //                               null;
+          
+  //         console.log('Dynamic loading: initializing ShapeForgeImporter with effects:', !!effectsManager);
+          
+  //         this.shapeForgeImporter = new ShapeForgeImporter(
+  //           this.scene, 
+  //           window.resourceManager,
+  //           effectsManager
+  //         );
+          
+  //         console.log('ShapeForgeImporter dynamically initialized');
   //         resolve(this.shapeForgeImporter);
   //       } catch (error) {
   //         console.error('Error initializing ShapeForgeImporter:', error);
   //         reject(error);
   //       }
   //     };
-
-  //     // const script = document.createElement('script');
-  //     // script.src = 'js/classes/ShapeForgeImporter.js';
-      
-  //     // script.onload = () => {
-  //     //   try {
-  //     //     // Pass the correct shaderEffects instance
-  //     //     this.shapeForgeImporter = new ShapeForgeImporter(
-  //     //       this.scene, 
-  //     //       window.resourceManager,
-  //     //       this.shaderEffects  // This is key - pass the instance that animate() is using
-  //     //     );
-  //     //     console.log('ShapeForgeImporter initialized');
-  //     //     resolve(this.shapeForgeImporter);
-  //     //   } catch (error) {
-  //     //     console.error('Error initializing ShapeForgeImporter:', error);
-  //     //     reject(error);
-  //     //   }
-  //     // };
       
   //     script.onerror = (e) => {
   //       console.error('ShapeForgeImporter script load failed:', e);
@@ -570,152 +586,287 @@ this.activeStoryTrigger = null;
   //   });
   // }
 
-  async loadShapeForgeImporter() {
-    // Return existing instance if already loaded
-    if (this.shapeForgeImporter) {
-      return this.shapeForgeImporter;
-    }
-    
-    return new Promise((resolve, reject) => {
-      // Check if script is already loaded
-      if (window.ShapeForgeImporter) {
-        // Get shader effects if available - with fallbacks
-        const effectsManager = this.shaderEffects || 
-                              (window.shaderEffectsManager) || 
-                              null;
-        
-        console.log('Initializing ShapeForgeImporter with effects manager:', !!effectsManager);
-        
-        try {
-          this.shapeForgeImporter = new ShapeForgeImporter(
-            this.scene, 
-            window.resourceManager,
-            effectsManager
-          );
-          console.log('ShapeForgeImporter initialized from existing class');
-          resolve(this.shapeForgeImporter);
-        } catch (error) {
-          console.error('Error initializing ShapeForgeImporter:', error);
-          // Try without effects manager as a fallback
-          try {
-            this.shapeForgeImporter = new ShapeForgeImporter(
-              this.scene, 
-              window.resourceManager
-            );
-            console.log('ShapeForgeImporter initialized without effects manager');
-            resolve(this.shapeForgeImporter);
-          } catch (fallbackError) {
-            reject(fallbackError);
-          }
-        }
-        return;
-      }
-      
-      // Load script dynamically
-      const script = document.createElement('script');
-      script.src = 'js/classes/ShapeForgeImporter.js';
-      
-      script.onload = () => {
-        try {
-          // Get shader effects if available
-          const effectsManager = this.shaderEffects || 
-                                (window.shaderEffectsManager) || 
-                                null;
-          
-          console.log('Dynamic loading: initializing ShapeForgeImporter with effects:', !!effectsManager);
-          
-          this.shapeForgeImporter = new ShapeForgeImporter(
-            this.scene, 
-            window.resourceManager,
-            effectsManager
-          );
-          
-          console.log('ShapeForgeImporter dynamically initialized');
-          resolve(this.shapeForgeImporter);
-        } catch (error) {
-          console.error('Error initializing ShapeForgeImporter:', error);
-          reject(error);
-        }
-      };
-      
-      script.onerror = (e) => {
-        console.error('ShapeForgeImporter script load failed:', e);
-        reject(new Error('Failed to load ShapeForgeImporter script'));
-      };
-      
-      document.head.appendChild(script);
-    });
+  /**
+ * Load the ShapeForgeImporter class
+ * @returns {Promise<ShapeForgeImporter>} - The ShapeForgeImporter instance
+ */
+async loadShapeForgeImporter() {
+  // Return existing instance if already loaded
+  if (this.shapeForgeImporter) {
+    return this.shapeForgeImporter;
   }
   
-  // Add a method to process ShapeForge markers
-  async processShapeForgeMarkers() {
-  try {
-    const importer = await this.loadShapeForgeImporter();
-    if (!importer) {
-      console.warn('ShapeForgeImporter not available, skipping 3D models');
+  return new Promise((resolve, reject) => {
+    // Check if script is already loaded
+    if (window.ShapeForgeImporter) {
+      try {
+        // Find ShapeForge instance (this is the key change)
+        const shapeForgeInstance = window.shapeForge || null;
+        
+        console.log('Initializing ShapeForgeImporter with:', {
+          hasScene: !!this.scene,
+          hasResourceManager: !!window.resourceManager,
+          hasShapeForge: !!shapeForgeInstance
+        });
+        
+        // Create importer with ShapeForge instance
+        this.shapeForgeImporter = new ShapeForgeImporter(
+          this.scene,
+          window.resourceManager,
+          shapeForgeInstance // Pass ShapeForge instead of effectsManager
+        );
+        
+        console.log('ShapeForgeImporter initialized from existing class');
+        resolve(this.shapeForgeImporter);
+      } catch (error) {
+        console.error('Error initializing ShapeForgeImporter:', error);
+        
+        // Try without ShapeForge as a fallback
+        try {
+          this.shapeForgeImporter = new ShapeForgeImporter(
+            this.scene,
+            window.resourceManager
+          );
+          console.log('ShapeForgeImporter initialized without ShapeForge');
+          resolve(this.shapeForgeImporter);
+        } catch (fallbackError) {
+          reject(fallbackError);
+        }
+      }
       return;
     }
     
-    // Find all ShapeForge markers
-    const markers = this.markers.filter(m => m.type === 'shapeforge' && m.data.modelId);
-    console.log(`Processing ${markers.length} ShapeForge model markers`);
+    // Load script dynamically
+    const script = document.createElement('script');
+    script.src = 'js/classes/ShapeForgeImporter.js';
     
-    for (const marker of markers) {
+    script.onload = () => {
       try {
-        // Debug the marker data
-        console.log("ShapeForge marker data:", marker.data);
+        // Find ShapeForge instance
+        const shapeForgeInstance = window.shapeForge || null;
         
-        // Get model data
-        const modelData = await importer.loadModel(marker.data.modelId);
-        console.log("Loaded model data:", modelData);
-        // Convert marker position to 3D coordinates
-        const x = marker.x / 50 - this.boxWidth / 2;
-        const z = marker.y / 50 - this.boxDepth / 2;
-        
-        // Get model data
-        // const modelData = await importer.loadModel(marker.data.modelId);
-        if (!modelData) {
-          console.warn(`Model not found for marker: ${marker.id}`);
-          continue;
-        }
-        
-        // Calculate height offset
-        const heightOffset = marker.data.height || 0;
-        
-        // Create 3D model
-        const model = importer.createThreeJsModel(modelData, {
-          position: new THREE.Vector3(x, heightOffset, z),
-          scale: marker.data.scale || 1.0
+        console.log('Dynamic loading: initializing ShapeForgeImporter with:', {
+          hasScene: !!this.scene,
+          hasResourceManager: !!window.resourceManager,
+          hasShapeForge: !!shapeForgeInstance
         });
         
-        if (!model) continue;
+        // Create importer with ShapeForge instance
+        this.shapeForgeImporter = new ShapeForgeImporter(
+          this.scene,
+          window.resourceManager,
+          shapeForgeInstance // Pass ShapeForge instead of effectsManager
+        );
         
-        // Apply rotation around Y axis (convert from degrees to radians)
-        if (marker.data.rotation) {
-          model.rotation.y = (marker.data.rotation * Math.PI) / 180;
-        }
+        // For cross-reference from other components
+        window.shapeForgeImporter = this.shapeForgeImporter;
         
-        // Add to scene
-        this.scene.add(model);
+        console.log('ShapeForgeImporter dynamically initialized');
+        resolve(this.shapeForgeImporter);
+      } catch (error) {
+        console.error('Error initializing ShapeForgeImporter:', error);
+        reject(error);
+      }
+    };
+    
+    script.onerror = (e) => {
+      console.error('ShapeForgeImporter script load failed:', e);
+      reject(new Error('Failed to load ShapeForgeImporter script'));
+    };
+    
+    document.head.appendChild(script);
+  });
+}
+  
+  // Add a method to process ShapeForge markers
+  // async processShapeForgeMarkers() {
+  // try {
+  //   const importer = await this.loadShapeForgeImporter();
+  //   if (!importer) {
+  //     console.warn('ShapeForgeImporter not available, skipping 3D models');
+  //     return;
+  //   }
+    
+  //   // Find all ShapeForge markers
+  //   const markers = this.markers.filter(m => m.type === 'shapeforge' && m.data.modelId);
+  //   console.log(`Processing ${markers.length} ShapeForge model markers`);
+    
+  //   for (const marker of markers) {
+  //     try {
+  //       // Debug the marker data
+  //       console.log("ShapeForge marker data:", marker.data);
         
-        // Store for later reference
-        this.shapeforgeModels = this.shapeforgeModels || [];
-        this.shapeforgeModels.push({
-          model,
-          marker
-        });
+  //       // Get model data
+  //       const modelData = await importer.loadModel(marker.data.modelId);
+  //       console.log("Loaded model data:", modelData);
+  //       // Convert marker position to 3D coordinates
+  //       const x = marker.x / 50 - this.boxWidth / 2;
+  //       const z = marker.y / 50 - this.boxDepth / 2;
         
-        console.log(`Added model "${modelData.name}" at position ${x},${heightOffset},${z}`);
+  //       // Get model data
+  //       // const modelData = await importer.loadModel(marker.data.modelId);
+  //       if (!modelData) {
+  //         console.warn(`Model not found for marker: ${marker.id}`);
+  //         continue;
+  //       }
         
-      } catch (e) {
-        console.error(`Error processing ShapeForge marker ${marker.id}:`, e);
+  //       // Calculate height offset
+  //       const heightOffset = marker.data.height || 0;
+        
+  //       // Create 3D model
+  //       const model = importer.createThreeJsModel(modelData, {
+  //         position: new THREE.Vector3(x, heightOffset, z),
+  //         scale: marker.data.scale || 1.0
+  //       });
+        
+  //       if (!model) continue;
+        
+  //       // Apply rotation around Y axis (convert from degrees to radians)
+  //       if (marker.data.rotation) {
+  //         model.rotation.y = (marker.data.rotation * Math.PI) / 180;
+  //       }
+        
+  //       // Add to scene
+  //       this.scene.add(model);
+        
+  //       // Store for later reference
+  //       this.shapeforgeModels = this.shapeforgeModels || [];
+  //       this.shapeforgeModels.push({
+  //         model,
+  //         marker
+  //       });
+        
+  //       console.log(`Added model "${modelData.name}" at position ${x},${heightOffset},${z}`);
+        
+  //     } catch (e) {
+  //       console.error(`Error processing ShapeForge marker ${marker.id}:`, e);
+  //     }
+  //   }
+  //       // Rest of the code remains the same...
+  // } catch (error) {
+  //   console.error('Error loading ShapeForgeImporter:', error);
+  // }
+  // }
+
+  /**
+ * Process ShapeForge markers in the scene
+ * @param {Array} markers - Array of ShapeForge markers
+ */
+/**
+ * Process ShapeForge markers in the scene
+ * @param {Array} markers - Array of ShapeForge markers
+ */
+async processShapeForgeMarkers(markers) {
+  if (!markers || markers.length === 0) return;
+  
+  try {
+    // Load ShapeForgeBridge if needed
+    await this.loadShapeForgeBridge();
+    
+    // Process each marker
+    for (const marker of markers) {
+      const modelId = marker.data?.modelId;
+      
+      if (!modelId) {
+        console.warn('Marker missing modelId:', marker);
+        continue;
+      }
+      
+      // Get position from marker
+      const x = marker.x / 50 - this.boxWidth / 2;
+      const z = marker.y / 50 - this.boxDepth / 2;
+      
+      // Get elevation at marker position
+      const { elevation } = this.getElevationAtPoint(x, z);
+      
+      // Create position vector
+      const position = new THREE.Vector3(x, elevation, z);
+      
+      // Create rotation - ShapeForge models usually face forward (negative Z)
+      const rotation = new THREE.Euler(0, marker.data.rotation?.y || 0, 0);
+      
+      // Get scale
+      const scale = marker.data.scale || 1;
+      
+      console.log(`Creating ShapeForge model ${modelId} at position:`, position);
+      
+      // Create the model using ShapeForgeBridge
+      const model = await this.shapeForgeBridge.createModel(modelId, {
+        position,
+        rotation,
+        scale
+      });
+      
+      if (model) {
+        console.log(`ShapeForge model ${modelId} created and added to scene`);
+        
+        // Add marker ID to model for reference
+        model.userData.markerId = marker.id;
+        
+        // Add to tracked models if we want to handle it specially later
+        if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
+        this.shapeForgeModels.set(marker.id, model);
+      } else {
+        console.error(`Failed to create ShapeForge model ${modelId}`);
       }
     }
-        // Rest of the code remains the same...
   } catch (error) {
-    console.error('Error loading ShapeForgeImporter:', error);
+    console.error('Error processing ShapeForge markers:', error);
   }
+}
+
+/**
+ * Load ShapeForgeBridge
+ * @returns {Promise<ShapeForgeBridge>} - The ShapeForgeBridge instance
+ */
+async loadShapeForgeBridge() {
+  // Return existing instance if already loaded
+  if (this.shapeForgeBridge) {
+    return this.shapeForgeBridge;
   }
+  
+  return new Promise((resolve, reject) => {
+    // Check if script is already loaded
+    if (window.ShapeForgeBridge) {
+      this.shapeForgeBridge = new ShapeForgeBridge(
+        this.scene, 
+        window.resourceManager
+      );
+      console.log('ShapeForgeBridge initialized from existing class');
+      resolve(this.shapeForgeBridge);
+      return;
+    }
+    
+    // Load script dynamically
+    const script = document.createElement('script');
+    script.src = 'js/classes/ShapeForgeBridge.js';
+    
+    script.onload = () => {
+      try {
+        this.shapeForgeBridge = new ShapeForgeBridge(
+          this.scene,
+          window.resourceManager
+        );
+        
+        // Make globally accessible for fallbacks
+        window.shapeForgeBridge = this.shapeForgeBridge;
+        
+        console.log('ShapeForgeBridge dynamically initialized');
+        resolve(this.shapeForgeBridge);
+      } catch (error) {
+        console.error('Error initializing ShapeForgeBridge:', error);
+        reject(error);
+      }
+    };
+    
+    script.onerror = (e) => {
+      console.error('ShapeForgeBridge script load failed:', e);
+      reject(new Error('Failed to load ShapeForgeBridge script'));
+    };
+    
+    document.head.appendChild(script);
+  });
+}
 
   setDefaultStoryboard(storyId) {
     if (!window.storyboard) {
@@ -1519,7 +1670,16 @@ updateFloorMaterial(floorMesh, backgroundColor) {
       this.setFPSLimit(prefs.fpsLimit);
     }
 
-    this.processShapeForgeMarkers();
+     this.loadShapeForgeBridge();
+
+    // Find ShapeForge markers
+    const shapeForgeMarkers = this.markers.filter(m => m.type === 'shapeforge' && m.data?.modelId);
+    
+    // Process them if any exist
+    if (shapeForgeMarkers.length > 0) {
+      console.log(`Found ${shapeForgeMarkers.length} ShapeForge markers`);
+       this.processShapeForgeMarkers(shapeForgeMarkers);
+    }
 
     return true;
   }
