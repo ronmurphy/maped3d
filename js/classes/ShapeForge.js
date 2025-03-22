@@ -56,52 +56,52 @@ class ShapeForge {
 /**
  * Check and load necessary dependencies
  */
-checkDependencies() {
-    console.log("ShapeForge checking dependencies...");
+// checkDependencies() {
+//     console.log("ShapeForge checking dependencies...");
     
-    // Check if THREE.js is available
-    if (!window.THREE) {
-        console.error("THREE.js not available! ShapeForge requires THREE.js to function.");
-        return false;
-    }
+//     // Check if THREE.js is available
+//     if (!window.THREE) {
+//         console.error("THREE.js not available! ShapeForge requires THREE.js to function.");
+//         return false;
+//     }
     
-    // Try to get ResourceManager from various sources
-    if (!this.resourceManager) {
-        // Try window global
-        if (window.resourceManager) {
-            this.resourceManager = window.resourceManager;
-            console.log("Using global ResourceManager");
-        } 
-        // Try through mapEditor if available
-        else if (window.mapEditor && window.mapEditor.resourceManager) {
-            this.resourceManager = window.mapEditor.resourceManager;
-            console.log("Using MapEditor's ResourceManager");
-        }
-        // Try to find it in the Scene3D if available
-        else if (window.scene3D && window.scene3D.resourceManager) {
-            this.resourceManager = window.scene3D.resourceManager;
-            console.log("Using Scene3D's ResourceManager");
-        }
-    }
+//     // Try to get ResourceManager from various sources
+//     if (!this.resourceManager) {
+//         // Try window global
+//         if (window.resourceManager) {
+//             this.resourceManager = window.resourceManager;
+//             console.log("Using global ResourceManager");
+//         } 
+//         // Try through mapEditor if available
+//         else if (window.mapEditor && window.mapEditor.resourceManager) {
+//             this.resourceManager = window.mapEditor.resourceManager;
+//             console.log("Using MapEditor's ResourceManager");
+//         }
+//         // Try to find it in the Scene3D if available
+//         else if (window.scene3D && window.scene3D.resourceManager) {
+//             this.resourceManager = window.scene3D.resourceManager;
+//             console.log("Using Scene3D's ResourceManager");
+//         }
+//     }
     
-    // If we have ResourceManager, log its state to help with debugging
-    if (this.resourceManager) {
-        console.log("ResourceManager connected:", {
-            hasTextures: !!this.resourceManager.resources?.textures,
-            textureCategories: Object.keys(this.resourceManager.resources?.textures || {})
-        });
-    } else {
-        console.warn("ResourceManager not found, texture features will be disabled");
-    }
+//     // If we have ResourceManager, log its state to help with debugging
+//     if (this.resourceManager) {
+//         console.log("ResourceManager connected:", {
+//             hasTextures: !!this.resourceManager.resources?.textures,
+//             textureCategories: Object.keys(this.resourceManager.resources?.textures || {})
+//         });
+//     } else {
+//         console.warn("ResourceManager not found, texture features will be disabled");
+//     }
     
-    // Try to get ShaderEffectsManager from window if not provided
-    if (!this.shaderEffectsManager && window.shaderEffectsManager) {
-        this.shaderEffectsManager = window.shaderEffectsManager;
-        console.log("Using global ShaderEffectsManager");
-    }
+//     // Try to get ShaderEffectsManager from window if not provided
+//     if (!this.shaderEffectsManager && window.shaderEffectsManager) {
+//         this.shaderEffectsManager = window.shaderEffectsManager;
+//         console.log("Using global ShaderEffectsManager");
+//     }
     
-    return true;
-}
+//     return true;
+// }
 
   /**
    * Check and load necessary dependencies
@@ -5360,9 +5360,7 @@ ShapeForge.prototype.populateEffectProperties = function (effectType, container)
   }
 };
 
-/**
- * Safe wrapper for applyShaderEffect to prevent errors
- */
+
 /**
  * Apply shader effect (completely self-contained version)
  * @param {string} effectType - Type of effect to apply
