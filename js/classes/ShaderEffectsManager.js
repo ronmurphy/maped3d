@@ -2999,15 +2999,15 @@ getPortalParticleTexture() {
   
 
       // Update standard effects
-  this.effects.forEach((effectData, objectId) => {
-    if (effectData.type === 'waterProp') {
-      waterEffectsCount++;
-      console.log(`Updating waterProp effect, quality: ${this.qualityLevel}`);
-      console.log('Container visible:', effectData.container?.visible);
-      console.log('Mesh visible:', effectData.mesh?.visible);
-    }
-    this.updateEffect(effectData, deltaTime);
-  });
+  // this.effects.forEach((effectData, objectId) => {
+  //   if (effectData.type === 'waterProp') {
+  //     waterEffectsCount++;
+  //     console.log(`Updating waterProp effect, quality: ${this.qualityLevel}`);
+  //     console.log('Container visible:', effectData.container?.visible);
+  //     console.log('Mesh visible:', effectData.mesh?.visible);
+  //   }
+  //   this.updateEffect(effectData, deltaTime);
+  // });
   
   if (waterEffectsCount > 0) {
     console.log(`Updated ${waterEffectsCount} water prop effects`);
