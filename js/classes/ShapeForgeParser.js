@@ -1120,110 +1120,218 @@ createSimplePortalEffect(prop, options) {
     /**
      * Simple fire effect that works without complex ShaderEffectsManager
      */
-    createSimpleFireEffect(prop, options) {
-        const defaults = {
-            color: options.color || 0xff6600,
-            intensity: options.intensity || 1.2
-        };
+    // createSimpleFireEffect(prop, options) {
+    //     const defaults = {
+    //         color: options.color || 0xff6600,
+    //         intensity: options.intensity || 1.2
+    //     };
 
-        // Create container for fire effect
-        const container = new THREE.Group();
-        container.position.copy(prop.position);
-        this.scene.add(container);
+    //     // Create container for fire effect
+    //     const container = new THREE.Group();
+    //     container.position.copy(prop.position);
+    //     this.scene.add(container);
 
-        // Add fire light
-        const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-        light.position.y += 0.5; // Position above object
-        container.add(light);
+    //     // Add fire light
+    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+    //     light.position.y += 0.5; // Position above object
+    //     container.add(light);
 
-        // Create simple particle system for fire
-        const particleCount = 15;
-        const particleGeometry = new THREE.BufferGeometry();
-        const particlePositions = new Float32Array(particleCount * 3);
-        const particleColors = new Float32Array(particleCount * 3);
+    //     // Create simple particle system for fire
+    //     const particleCount = 15;
+    //     const particleGeometry = new THREE.BufferGeometry();
+    //     const particlePositions = new Float32Array(particleCount * 3);
+    //     const particleColors = new Float32Array(particleCount * 3);
 
-        // Fire color
-        const fireColor = new THREE.Color(defaults.color);
+    //     // Fire color
+    //     const fireColor = new THREE.Color(defaults.color);
 
-        // Create random particles in cone shape
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
-            const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * 0.2;
+    //     // Create random particles in cone shape
+    //     for (let i = 0; i < particleCount; i++) {
+    //         const i3 = i * 3;
+    //         const angle = Math.random() * Math.PI * 2;
+    //         const radius = Math.random() * 0.2;
 
-            particlePositions[i3] = Math.cos(angle) * radius;
-            particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
-            particlePositions[i3 + 2] = Math.sin(angle) * radius;
+    //         particlePositions[i3] = Math.cos(angle) * radius;
+    //         particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
+    //         particlePositions[i3 + 2] = Math.sin(angle) * radius;
 
-            // Colors: start yellow-orange, fade to red
-            const mixFactor = Math.random();
-            particleColors[i3] = fireColor.r;
-            particleColors[i3 + 1] = fireColor.g * mixFactor;
-            particleColors[i3 + 2] = 0;
-        }
+    //         // Colors: start yellow-orange, fade to red
+    //         const mixFactor = Math.random();
+    //         particleColors[i3] = fireColor.r;
+    //         particleColors[i3 + 1] = fireColor.g * mixFactor;
+    //         particleColors[i3 + 2] = 0;
+    //     }
 
-        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    //     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    //     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-        const particleMaterial = new THREE.PointsMaterial({
-            size: 0.1,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.7,
-            blending: THREE.AdditiveBlending
-        });
+    //     const particleMaterial = new THREE.PointsMaterial({
+    //         size: 0.1,
+    //         vertexColors: true,
+    //         transparent: true,
+    //         opacity: 0.7,
+    //         blending: THREE.AdditiveBlending
+    //     });
 
-        const particles = new THREE.Points(particleGeometry, particleMaterial);
-        container.add(particles);
+    //     const particles = new THREE.Points(particleGeometry, particleMaterial);
+    //     container.add(particles);
 
-        // Store original positions for animation
-        particles.userData = {
-            positions: [...particlePositions],
-            time: 0
-        };
+    //     // Store original positions for animation
+    //     particles.userData = {
+    //         positions: [...particlePositions],
+    //         time: 0
+    //     };
 
-        return {
-            container: container,
-            light: light,
-            particles: particles,
-            originalObject: prop,
-            animationData: {
-                time: 0,
-                speed: 1.0
-            },
-            update: function (deltaTime) {
-                // Animate particles
-                this.animationData.time += deltaTime;
-                const time = this.animationData.time;
+    //     return {
+    //         container: container,
+    //         light: light,
+    //         particles: particles,
+    //         originalObject: prop,
+    //         animationData: {
+    //             time: 0,
+    //             speed: 1.0
+    //         },
+    //         update: function (deltaTime) {
+    //             // Animate particles
+    //             this.animationData.time += deltaTime;
+    //             const time = this.animationData.time;
 
-                // Get position data
-                const positions = particles.geometry.attributes.position.array;
+    //             // Get position data
+    //             const positions = particles.geometry.attributes.position.array;
 
-                // Animate each particle
-                for (let i = 0; i < particleCount; i++) {
-                    const i3 = i * 3;
+    //             // Animate each particle
+    //             for (let i = 0; i < particleCount; i++) {
+    //                 const i3 = i * 3;
 
-                    // Move up slowly
-                    positions[i3 + 1] += 0.01;
+    //                 // Move up slowly
+    //                 positions[i3 + 1] += 0.01;
 
-                    // Reset if too high
-                    if (positions[i3 + 1] > 0.8) {
-                        positions[i3 + 1] = 0.2;
-                    }
+    //                 // Reset if too high
+    //                 if (positions[i3 + 1] > 0.8) {
+    //                     positions[i3 + 1] = 0.2;
+    //                 }
 
-                    // Add some "flickering"
-                    positions[i3] += (Math.random() - 0.5) * 0.01;
-                    positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
+    //                 // Add some "flickering"
+    //                 positions[i3] += (Math.random() - 0.5) * 0.01;
+    //                 positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
+    //             }
+
+    //             // Update geometry
+    //             particles.geometry.attributes.position.needsUpdate = true;
+
+    //             // Flicker the light
+    //             light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+    //         }
+    //     };
+    // }
+
+    /**
+ * Simple fire effect that works without complex ShaderEffectsManager
+ */
+createSimpleFireEffect(prop, options) {
+    const defaults = {
+        color: options.color || 0xff6600,
+        intensity: options.intensity || 1.2
+    };
+
+    // Create container for fire effect
+    const container = new THREE.Group();
+    container.position.copy(prop.position);
+    this.scene.add(container);
+
+    // Add fire light
+    const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+    light.position.y += 0.5; // Position above object
+    container.add(light);
+
+    // Create simple particle system for fire
+    const particleCount = 15;
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+
+    // Fire color
+    const fireColor = new THREE.Color(defaults.color);
+
+    // Create random particles in cone shape
+    for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * 0.2;
+
+        particlePositions[i3] = Math.cos(angle) * radius;
+        particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
+        particlePositions[i3 + 2] = Math.sin(angle) * radius;
+
+        // Colors: start yellow-orange, fade to red
+        const mixFactor = Math.random();
+        particleColors[i3] = fireColor.r;
+        particleColors[i3 + 1] = fireColor.g * mixFactor;
+        particleColors[i3 + 2] = 0;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 0.1,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    container.add(particles);
+
+    // Store original positions for animation
+    particles.userData = {
+        positions: [...particlePositions],
+        time: 0
+    };
+
+    return {
+        container: container,
+        light: light,
+        particles: particles,
+        originalObject: prop,
+        animationData: {
+            time: 0,
+            speed: 1.0
+        },
+        update: function (deltaTime) {
+            // Animate particles
+            this.animationData.time += deltaTime;
+            const time = this.animationData.time;
+
+            // Get position data
+            const positions = particles.geometry.attributes.position.array;
+
+            // Animate each particle
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+
+                // Move up slowly
+                positions[i3 + 1] += 0.01;
+
+                // Reset if too high
+                if (positions[i3 + 1] > 0.8) {
+                    positions[i3 + 1] = 0.2;
                 }
 
-                // Update geometry
-                particles.geometry.attributes.position.needsUpdate = true;
-
-                // Flicker the light
-                light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+                // Add some "flickering"
+                positions[i3] += (Math.random() - 0.5) * 0.01;
+                positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
             }
-        };
-    }
+
+            // Update geometry
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Flicker the light
+            light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+        }
+    };
+}
 
     /**
      * Simple magic effect that works without complex ShaderEffectsManager
