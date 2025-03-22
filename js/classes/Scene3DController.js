@@ -574,10 +574,9 @@ async loadShapeForgeParser() {
   });
 }
 
-/**
- * Process ShapeForge markers in the scene
- * @param {Array} markers - Array of ShapeForge markers
- */
+
+
+
 // async processShapeForgeMarkers(markers) {
 //   if (!markers || markers.length === 0) return;
   
@@ -585,15 +584,13 @@ async loadShapeForgeParser() {
 //     // Load ShapeForgeParser if needed
 //     const parser = await this.loadShapeForgeParser();
     
-//     console.log(`Processing ${markers.length} ShapeForge markers`);
-    
-//     // Process each marker
-//     for (const marker of markers) {
+//     // Create an array of loading promises to handle all markers in parallel
+//     const loadingPromises = markers.map(async (marker) => {
 //       const modelId = marker.data?.modelId;
       
 //       if (!modelId) {
 //         console.warn('Marker missing modelId:', marker);
-//         continue;
+//         return null;
 //       }
       
 //       // Get position from marker
@@ -603,63 +600,67 @@ async loadShapeForgeParser() {
 //       // Get elevation at marker position
 //       const { elevation } = this.getElevationAtPoint(x, z);
       
-//       console.log(`Loading ShapeForge model ${modelId} for position (${x}, ${elevation}, ${z})`);
+//       // Create a group specifically for this model
+//       const modelGroup = new THREE.Group();
+//       modelGroup.position.set(x, elevation, z); // + 0.5, z); // Add 0.5 height offset
+//       this.scene.add(modelGroup);
       
 //       try {
-//         // Load the model from IndexedDB
-//         const objects = await parser.loadModelFromIndexedDB(modelId);
+//         // Create a new parser instance for each model to avoid state conflicts
+//         const modelParser = new ShapeForgeParser(
+//           modelGroup, // Use the group as the "scene" for this model
+//           window.resourceManager,
+//           this.shaderEffects
+//         );
+        
+//         // Load the model
+//         const objects = await modelParser.loadModelFromIndexedDB(modelId);
         
 //         if (!objects || objects.length === 0) {
 //           console.warn(`No objects created for model ${modelId}`);
-//           continue;
+//           return null;
 //         }
         
 //         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
-
-//         const modelHeightOffset = 0.5; // Add this offset to elevate objects
         
-//         // Position all objects at the marker position with elevation
-//         objects.forEach(objectData => {
-//           if (objectData.mesh) {
-//             // Apply position to the entire model
-//             objectData.mesh.position.set(x, elevation, z);
-//             objectData.mesh.position.set(x, elevation + modelHeightOffset, z);
-
-//             // Apply any specified rotation from marker data
-//             if (marker.data.rotation) {
-//               objectData.mesh.rotation.y = (marker.data.rotation.y || 0);
-//             }
-            
-//             // Apply scale if specified
-//             if (marker.data.scale) {
-//               const scale = marker.data.scale;
-//               objectData.mesh.scale.set(scale, scale, scale);
-//             }
-            
-//             // Add marker ID to mesh for reference
-//             objectData.mesh.userData.markerId = marker.id;
-//             objectData.mesh.userData.shapeForgeModel = true;
-//           }
-//         });
-        
-//         // Store reference to loaded objects for later management
+//         // Store model data reference
 //         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
 //         this.shapeForgeModels.set(marker.id, {
+//           group: modelGroup,
 //           objects,
-//           position: new THREE.Vector3(x, elevation, z)
+//           parser: modelParser
 //         });
         
-//         console.log(`ShapeForge model ${modelId} added to scene at (${x}, ${elevation}, ${z})`);
+//         // Apply rotation if specified
+//         if (marker.data.rotation) {
+//           modelGroup.rotation.y = (marker.data.rotation.y || 0);
+//         }
+        
+//         // Apply scale if specified
+//         if (marker.data.scale) {
+//           const scale = marker.data.scale;
+//           modelGroup.scale.set(scale, scale, scale);
+//         }
+        
+//         return { marker, model: modelGroup };
 //       } catch (error) {
 //         console.error(`Error loading ShapeForge model ${modelId}:`, error);
+//         return null;
 //       }
-//     }
+//     });
+    
+//     // Wait for all models to load
+//     await Promise.all(loadingPromises);
+    
 //   } catch (error) {
 //     console.error('Error processing ShapeForge markers:', error);
 //   }
 // }
 
-
+/**
+ * Process ShapeForge markers in the scene
+ * @param {Array} markers - Array of ShapeForge markers
+ */
 async processShapeForgeMarkers(markers) {
   if (!markers || markers.length === 0) return;
   
@@ -683,10 +684,30 @@ async processShapeForgeMarkers(markers) {
       // Get elevation at marker position
       const { elevation } = this.getElevationAtPoint(x, z);
       
+      // Get user configuration values with defaults
+      const scale = marker.data.scale || 1.0;
+      const heightOffset = marker.data.height || 0; // User-defined height offset
+      const rotationDegrees = marker.data.rotation || 0;
+      
       // Create a group specifically for this model
       const modelGroup = new THREE.Group();
-      modelGroup.position.set(x, elevation, z); // + 0.5, z); // Add 0.5 height offset
+      
+      // Position at marker location with proper elevation + height offset
+      modelGroup.position.set(x, elevation + heightOffset, z);
+      
+      // Apply rotation (convert from degrees to radians)
+      modelGroup.rotation.y = (rotationDegrees * Math.PI / 180);
+      
+      // Apply scale
+      modelGroup.scale.set(scale, scale, scale);
+      
       this.scene.add(modelGroup);
+      
+      console.log(`Creating ShapeForge model ${modelId} at: `, {
+        position: [x, elevation + heightOffset, z],
+        rotation: rotationDegrees,
+        scale: scale
+      });
       
       try {
         // Create a new parser instance for each model to avoid state conflicts
@@ -696,7 +717,7 @@ async processShapeForgeMarkers(markers) {
           this.shaderEffects
         );
         
-        // Load the model
+        // Load the model - position at origin (0,0,0) since the group handles positioning
         const objects = await modelParser.loadModelFromIndexedDB(modelId);
         
         if (!objects || objects.length === 0) {
@@ -706,28 +727,26 @@ async processShapeForgeMarkers(markers) {
         
         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
         
-        // Store model data reference
+        // Store model data reference for later use
         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
         this.shapeForgeModels.set(marker.id, {
           group: modelGroup,
           objects,
-          parser: modelParser
+          parser: modelParser,
+          markerId: marker.id
         });
         
-        // Apply rotation if specified
-        if (marker.data.rotation) {
-          modelGroup.rotation.y = (marker.data.rotation.y || 0);
-        }
-        
-        // Apply scale if specified
-        if (marker.data.scale) {
-          const scale = marker.data.scale;
-          modelGroup.scale.set(scale, scale, scale);
-        }
+        // Set userData on the group for identification
+        modelGroup.userData = {
+          isShapeForgeModel: true,
+          markerId: marker.id,
+          modelId: modelId
+        };
         
         return { marker, model: modelGroup };
       } catch (error) {
         console.error(`Error loading ShapeForge model ${modelId}:`, error);
+        this.scene.remove(modelGroup); // Clean up on error
         return null;
       }
     });
