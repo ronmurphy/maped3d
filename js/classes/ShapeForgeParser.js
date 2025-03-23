@@ -75,10 +75,10 @@ class ShapeForgeParser {
                 throw error;
             }
         }
-        
+
         // Load the project
         this.loadProjectFromJson(jsonData);
-        
+
         // Return objects for placement
         return this.objects;
     }
@@ -154,27 +154,27 @@ class ShapeForgeParser {
         if (!this.resourceManager) {
             throw new Error("ResourceManager not available");
         }
-        
+
         try {
             // Get the model data from resourceManager
             let model;
-            
+
             // Check if the model exists in memory first
             if (this.resourceManager.resources.shapeforge) {
                 model = this.resourceManager.resources.shapeforge.get(modelId);
             }
-            
+
             // If not in memory, try loading from IndexedDB
             if (!model && typeof this.resourceManager.loadModelFromIndexedDB === 'function') {
                 model = await this.resourceManager.loadModelFromIndexedDB(modelId);
             }
-            
+
             if (!model) {
                 throw new Error(`Model with ID ${modelId} not found`);
             }
-            
+
             console.log('Loading model:', model.name);
-            
+
             // Parse the model data
             let jsonData;
             if (typeof model.data === 'object' && model.data !== null) {
@@ -184,10 +184,10 @@ class ShapeForgeParser {
             } else {
                 throw new Error('Invalid model data format');
             }
-            
+
             // Load the project data
             this.loadProjectFromJson(jsonData);
-            
+
             // Return the loaded objects for further processing
             return this.objects;
         } catch (error) {
@@ -203,33 +203,33 @@ class ShapeForgeParser {
      */
     createObjectFromData(objData) {
         console.log("Creating object from data:", objData.name, objData.type);
-        
+
         // Create geometry based on type
         let geometry;
-        
+
         // Special handling for merged objects with geometryData
         if (objData.type === 'merged' && objData.geometryData) {
             console.log("Creating merged geometry from geometryData");
-            
+
             // Create a BufferGeometry from the saved vertex data
             geometry = new THREE.BufferGeometry();
-            
+
             // Add attributes from geometryData
             if (objData.geometryData.vertices && objData.geometryData.vertices.length > 0) {
                 const vertices = new Float32Array(objData.geometryData.vertices);
                 geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
             }
-            
+
             if (objData.geometryData.normals && objData.geometryData.normals.length > 0) {
                 const normals = new Float32Array(objData.geometryData.normals);
                 geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
             }
-            
+
             if (objData.geometryData.uvs && objData.geometryData.uvs.length > 0) {
                 const uvs = new Float32Array(objData.geometryData.uvs);
                 geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
             }
-            
+
             if (objData.geometryData.indices && objData.geometryData.indices.length > 0) {
                 geometry.setIndex(objData.geometryData.indices);
             }
@@ -311,19 +311,19 @@ class ShapeForgeParser {
                     // Since THREE.js doesn't have a built-in D10 shape, recreate it as in createD10
                     const sides = objData.parameters.sides || 10;
                     const d10Radius = objData.parameters.radius || 0.5;
-                    
+
                     // Define vertices
                     const vertices = [
                         [0, 0, 1],   // Top vertex
                         [0, 0, -1],  // Bottom vertex
                     ];
-                    
+
                     // Add vertices around the "equator"
                     for (let i = 0; i < sides; ++i) {
                         const b = (i * Math.PI * 2) / sides;
                         vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
                     }
-                    
+
                     // Define faces
                     const faces = [
                         [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
@@ -331,7 +331,7 @@ class ShapeForgeParser {
                         [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
                         [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
                     ];
-                    
+
                     // Flatten arrays
                     const flatVertices = [];
                     vertices.forEach(v => {
@@ -341,10 +341,10 @@ class ShapeForgeParser {
                             flatVertices.push(v);
                         }
                     });
-                    
+
                     const flatFaces = [];
                     faces.forEach(f => flatFaces.push(...f));
-                    
+
                     // Create geometry
                     geometry = new THREE.PolyhedronGeometry(
                         flatVertices,
@@ -353,7 +353,7 @@ class ShapeForgeParser {
                         0
                     );
                     break;
-                    
+
                 // New shapes
                 case 'torusKnot':
                     geometry = new THREE.TorusKnotGeometry(
@@ -365,7 +365,7 @@ class ShapeForgeParser {
                         objData.parameters.q || 3
                     );
                     break;
-                
+
                 case 'pyramid':
                     geometry = new THREE.ConeGeometry(
                         objData.parameters.radius || 0.5,
@@ -374,7 +374,7 @@ class ShapeForgeParser {
                         objData.parameters.heightSegments || 1
                     );
                     break;
-                
+
                 case 'capsule':
                     geometry = new THREE.CapsuleGeometry(
                         objData.parameters.radius || 0.3,
@@ -383,7 +383,7 @@ class ShapeForgeParser {
                         objData.parameters.radialSegments || 8
                     );
                     break;
-                
+
                 case 'hemisphere':
                     geometry = new THREE.SphereGeometry(
                         objData.parameters.radius || 0.5,
@@ -395,11 +395,11 @@ class ShapeForgeParser {
                         objData.parameters.thetaLength || Math.PI / 2
                     );
                     break;
-                
+
                 case 'tube':
                     // Create a curved path for the tube to follow
                     let curve;
-                    
+
                     if (objData.parameters.path === 'circle') {
                         curve = new THREE.CatmullRomCurve3([
                             new THREE.Vector3(-0.5, 0, 0),
@@ -416,7 +416,7 @@ class ShapeForgeParser {
                             new THREE.Vector3(0.5, 0, 0)
                         ]);
                     }
-                    
+
                     geometry = new THREE.TubeGeometry(
                         curve,
                         objData.parameters.tubularSegments || 32,
@@ -425,7 +425,7 @@ class ShapeForgeParser {
                         true
                     );
                     break;
-                
+
                 case 'star':
                     // Get parameters
                     const points = objData.parameters.points || 5;
@@ -434,27 +434,27 @@ class ShapeForgeParser {
                     const depth = objData.parameters.depth || 0.2;
                     const bevelThickness = objData.parameters.bevelThickness || 0.05;
                     const bevelSize = objData.parameters.bevelSize || 0.05;
-                    
+
                     // Create a star shape
                     const shape = new THREE.Shape();
-                    
+
                     for (let i = 0; i < points * 2; i++) {
                         // Alternate between outer and inner radius
                         const radius = i % 2 === 0 ? outerRadius : innerRadius;
                         const angle = (Math.PI / points) * i;
-                        
+
                         const x = Math.sin(angle) * radius;
                         const y = Math.cos(angle) * radius;
-                        
+
                         if (i === 0) {
                             shape.moveTo(x, y);
                         } else {
                             shape.lineTo(x, y);
                         }
                     }
-                    
+
                     shape.closePath();
-                    
+
                     // Extrude the shape to create a 3D star
                     const extrudeSettings = {
                         depth: depth,
@@ -463,30 +463,30 @@ class ShapeForgeParser {
                         bevelSize: bevelSize,
                         bevelSegments: 3
                     };
-                    
+
                     geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                     break;
-                
+
                 default:
                     console.warn(`Unknown geometry type: ${objData.type}`);
                     return null;
             }
         }
-    
+
         let material;
         if (objData.material) {
             console.log("Creating material of type:", objData.material.type);
-            
+
             const materialParams = {
                 color: objData.material.color !== undefined ? objData.material.color : 0x3388ff,
                 wireframe: objData.material.wireframe || false
             };
-            
+
             if (objData.material.transparent) {
                 materialParams.transparent = true;
                 materialParams.opacity = objData.material.opacity !== undefined ? objData.material.opacity : 1;
             }
-            
+
             switch (objData.material.type) {
                 case 'MeshBasicMaterial':
                     material = new THREE.MeshBasicMaterial(materialParams);
@@ -505,14 +505,20 @@ class ShapeForgeParser {
                 default:
                     material = new THREE.MeshStandardMaterial(materialParams);
             }
+
+            //  Store the original color information
+            if (objData.material.color !== undefined) {
+                if (!material.userData) material.userData = {};
+                material.userData.specifiedColor = new THREE.Color(objData.material.color);
+            }
         } else {
             console.log("No material data, creating default material");
             material = this.createDefaultMaterial();
         }
-        
+
         // Create mesh
         const mesh = new THREE.Mesh(geometry, material);
-        
+
         // Create object data
         const objectData = {
             type: objData.type,
@@ -525,39 +531,40 @@ class ShapeForgeParser {
             rotation: objData.rotation || { x: 0, y: 0, z: 0 },
             scale: objData.scale || { x: 1, y: 1, z: 1 }
         };
-        
+
         // Add to scene
         this.scene.add(mesh);
-        
+
         // Apply transforms
         mesh.position.set(
             objectData.position.x,
             objectData.position.y,
             objectData.position.z
         );
-        
+
         mesh.rotation.set(
             objectData.rotation.x,
             objectData.rotation.y,
             objectData.rotation.z
         );
-        
+
         mesh.scale.set(
             objectData.scale.x,
             objectData.scale.y,
             objectData.scale.z
         );
-        
+
         // Add to objects array
         this.objects.push(objectData);
-        
+
         // Store effect data for later application
         if (objData.effect) {
             objectData.pendingEffect = objData.effect;
         }
-        
+
         return objectData;
     }
+
 
     /**
      * Load and apply a texture to an object
@@ -566,7 +573,7 @@ class ShapeForgeParser {
      */
     loadAndApplyTextureToObject(objectData, textureData) {
         console.log("loadAndApplyTextureToObject called for:", objectData.name);
-            
+                
         if (!objectData || !textureData || !textureData.data) {
             console.warn("Cannot apply texture: Invalid data");
             return;
@@ -574,13 +581,20 @@ class ShapeForgeParser {
         
         console.log("Texture data exists, starting loader...");
         
+        // Store whether a specific color was set in the original data
+        const hasSpecifiedColor = objectData.material.userData && 
+                                 objectData.material.userData.specifiedColor !== undefined;
+        
+        const specifiedColor = hasSpecifiedColor ? 
+            objectData.material.userData.specifiedColor.clone() : 
+            new THREE.Color(0xffffff);
+        
+        // Log the original color
+        console.log(`Original color for ${objectData.name}:`, 
+            hasSpecifiedColor ? specifiedColor.getHexString() : "none specified (using white)");
+        
         // Create a texture loader
         const loader = new THREE.TextureLoader();
-        
-        // Set the color to white first to avoid tinting during loading
-        if (objectData.material) {
-            objectData.material.color.set(0xffffff);
-        }
         
         // Load the texture from the data URL
         loader.load(
@@ -606,12 +620,43 @@ class ShapeForgeParser {
                 texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
                 texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
                 
+                // IMPORTANT: Try these texture settings
+                texture.colorSpace = THREE.SRGBColorSpace; // Ensure proper color space
+                
                 // Apply the texture to the object's material
                 if (objectData.material) {
-                    objectData.material.map = texture;
-                    objectData.material.needsUpdate = true;
+                    // Set material to white FIRST (important for correct texture display)
+                    objectData.material.color.set(0xffffff);
                     
+                    // Apply texture
+                    objectData.material.map = texture;
+                    
+                    // Apply tinted color if specified (with REDUCED strength)
+                    if (hasSpecifiedColor && specifiedColor.getHex() !== 0xffffff) {
+                        // Create a blend between white and the specified color
+                        const blendedColor = new THREE.Color(0xffffff);
+                        const tintStrength = 0.3; // REDUCED to 30% influence
+                        
+                        // Lerp between white and specified color
+                        blendedColor.lerp(specifiedColor, tintStrength);
+                        objectData.material.color.copy(blendedColor);
+                        
+                        console.log(`Applied tinted color to ${objectData.name} with strength ${tintStrength}`, 
+                                   "Final color:", blendedColor.getHexString());
+                    }
+                    
+                    // Try additional material properties to improve texture visibility
+                    objectData.material.combine = THREE.MixOperation;
+                    
+                    // Make sure updates are applied
+                    objectData.material.needsUpdate = true;
                     console.log("Applied texture to", objectData.name);
+                    
+                    // Log the final state for debugging
+                    console.log(`Final material for ${objectData.name}:`, {
+                        hasTexture: !!objectData.material.map,
+                        color: objectData.material.color.getHexString()
+                    });
                 }
             },
             // Progress callback
@@ -643,7 +688,7 @@ class ShapeForgeParser {
 
         this.objects.forEach((obj, index) => {
             if (obj.pendingEffect) {
-                console.log(`Applying ${typeof obj.pendingEffect === 'string' ? 
+                console.log(`Applying ${typeof obj.pendingEffect === 'string' ?
                     obj.pendingEffect : obj.pendingEffect.type} effect to ${obj.name}`);
 
                 // Select the object first
@@ -712,6 +757,7 @@ class ShapeForgeParser {
                 break;
 
             case 'magic':
+                break;
             case 'coldMagic':
                 // Apply magic-specific parameters
                 break;
@@ -729,245 +775,245 @@ class ShapeForgeParser {
         return this.objects[index];
     }
 
-/**
- * Apply shader effect to the selected object
- * @param {string} effectType - Type of effect to apply
- */
-applyShaderEffect(effectType) {
-    if (this.selectedObject === null) {
-        console.warn('No object selected, cannot apply shader effect');
-        return;
-    }
+    /**
+     * Apply shader effect to the selected object
+     * @param {string} effectType - Type of effect to apply
+     */
+    applyShaderEffect(effectType) {
+        if (this.selectedObject === null) {
+            console.warn('No object selected, cannot apply shader effect');
+            return;
+        }
 
-    // Handle 'none' case - remove current effect
-    if (effectType === 'none') {
+        // Handle 'none' case - remove current effect
+        if (effectType === 'none') {
+            const object = this.objects[this.selectedObject];
+            if (object.effect) {
+                console.log('Removing shader effect from object');
+                // Remove existing effect if any
+                if (object.effect.data.container && object.effect.data.container.parent) {
+                    this.scene.remove(object.effect.data.container);
+                }
+
+                if (object.effect.data.light && object.effect.data.light.parent) {
+                    this.scene.remove(object.effect.data.light);
+                }
+
+                if (object.effect.data.particles && object.effect.data.particles.parent) {
+                    this.scene.remove(object.effect.data.particles);
+                }
+
+                // Reset emissive if it was changed
+                if (object.mesh.material && object.mesh.material.emissive !== undefined &&
+                    object.mesh.userData.originalEmissive) {
+                    object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+                    if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+                        object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+                    }
+                }
+
+                // Clear effect data
+                delete object.effect;
+            }
+            return;
+        }
+
         const object = this.objects[this.selectedObject];
-        if (object.effect) {
-            console.log('Removing shader effect from object');
+
+        try {
             // Remove existing effect if any
-            if (object.effect.data.container && object.effect.data.container.parent) {
-                this.scene.remove(object.effect.data.container);
-            }
-
-            if (object.effect.data.light && object.effect.data.light.parent) {
-                this.scene.remove(object.effect.data.light);
-            }
-
-            if (object.effect.data.particles && object.effect.data.particles.parent) {
-                this.scene.remove(object.effect.data.particles);
-            }
-
-            // Reset emissive if it was changed
-            if (object.mesh.material && object.mesh.material.emissive !== undefined &&
-                object.mesh.userData.originalEmissive) {
-                object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
-                if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
-                    object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+            if (object.effect) {
+                // Remove from scene first
+                if (object.effect.data.container && object.effect.data.container.parent) {
+                    this.scene.remove(object.effect.data.container);
                 }
-            }
 
-            // Clear effect data
-            delete object.effect;
-        }
-        return;
-    }
-
-    const object = this.objects[this.selectedObject];
-
-    try {
-        // Remove existing effect if any
-        if (object.effect) {
-            // Remove from scene first
-            if (object.effect.data.container && object.effect.data.container.parent) {
-                this.scene.remove(object.effect.data.container);
-            }
-
-            if (object.effect.data.light && object.effect.data.light.parent) {
-                this.scene.remove(object.effect.data.light);
-            }
-
-            if (object.effect.data.particles && object.effect.data.particles.parent) {
-                this.scene.remove(object.effect.data.particles);
-            }
-
-            // Reset emissive if it was changed
-            if (object.mesh.material && object.mesh.material.emissive !== undefined &&
-                object.mesh.userData.originalEmissive) {
-                object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
-                if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
-                    object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+                if (object.effect.data.light && object.effect.data.light.parent) {
+                    this.scene.remove(object.effect.data.light);
                 }
+
+                if (object.effect.data.particles && object.effect.data.particles.parent) {
+                    this.scene.remove(object.effect.data.particles);
+                }
+
+                // Reset emissive if it was changed
+                if (object.mesh.material && object.mesh.material.emissive !== undefined &&
+                    object.mesh.userData.originalEmissive) {
+                    object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+                    if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+                        object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+                    }
+                }
+
+                delete object.effect;
             }
 
-            delete object.effect;
-        }
+            let effectData;
 
-        let effectData;
-        
-        // Try to get the effect from ShaderEffectsManager
-        if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
-            const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
-            
-            if (effectDefinition && typeof effectDefinition.create === 'function') {
-                console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
-                
-                // Use ShaderEffectsManager's create method
-                effectData = effectDefinition.create(object.mesh, effectDefinition, this.shaderEffects.qualityLevel || 'medium');
+            // Try to get the effect from ShaderEffectsManager
+            if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
+                const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
+
+                if (effectDefinition && typeof effectDefinition.create === 'function') {
+                    console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
+
+                    // Use ShaderEffectsManager's create method
+                    effectData = effectDefinition.create(object.mesh, effectDefinition, this.shaderEffects.qualityLevel || 'medium');
+                } else {
+                    console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
+                }
             } else {
-                console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
+                console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
             }
-        } else {
-            console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
-        }
-        
-        // If no effect data yet, use fallbacks
-        if (!effectData) {
-            console.log(`Using fallback for effect type: ${effectType}`);
-            // Use appropriate fallback based on effect type
-            switch (effectType) {
-                case 'glow':
-                    effectData = this.createPropGlowEffect(object.mesh, {color: 0x66ccff, intensity: 0.5});
-                    break;
-                case 'fire':
-                    effectData = this.createSimpleFireEffect(object.mesh, {color: 0xff6600, intensity: 1.2});
-                    break;
-                case 'burning':
-                    // Non-colorizing version
-                    effectData = this.createSimpleBurningEffect(object.mesh, {color: 0xff6600, intensity: 1.2});
-                    break;
-                case 'magic':
-                    effectData = this.createSimpleMagicEffect(object.mesh, {color: 0x8800ff, intensity: 0.8});
-                    break;
-                case 'lava':
-                    effectData = this.createSimpleFireEffect(object.mesh, {color: 0xff3300, intensity: 1.3});
-                    break;
-                case 'holy':
-                    effectData = this.createPropGlowEffect(object.mesh, {color: 0xffe599, intensity: 1.0});
-                    break;
-                case 'coldMagic':
-                    effectData = this.createSimpleMagicEffect(object.mesh, {color: 0x88ccff, intensity: 0.6});
-                    break;
-                case 'portalEffect':
-                    effectData = this.createSimplePortalEffect(object.mesh, {color: 0x66ccff, intensity: 1.2});
-                    break;
-                default:
-                    // Default fallback for unknown types
-                    console.log(`Using fallback glow effect for unknown type: ${effectType}`);
-                    effectData = this.createPropGlowEffect(object.mesh, {color: 0x66ccff, intensity: 0.5});
+
+            // If no effect data yet, use fallbacks
+            if (!effectData) {
+                console.log(`Using fallback for effect type: ${effectType}`);
+                // Use appropriate fallback based on effect type
+                switch (effectType) {
+                    case 'glow':
+                        effectData = this.createPropGlowEffect(object.mesh, { color: 0x66ccff, intensity: 0.5 });
+                        break;
+                    case 'fire':
+                        effectData = this.createSimpleFireEffect(object.mesh, { color: 0xff6600, intensity: 1.2 });
+                        break;
+                    case 'burning':
+                        // Non-colorizing version
+                        effectData = this.createSimpleBurningEffect(object.mesh, { color: 0xff6600, intensity: 1.2 });
+                        break;
+                    case 'magic':
+                        effectData = this.createSimpleMagicEffect(object.mesh, { color: 0x8800ff, intensity: 0.8 });
+                        break;
+                    case 'lava':
+                        effectData = this.createSimpleFireEffect(object.mesh, { color: 0xff3300, intensity: 1.3 });
+                        break;
+                    case 'holy':
+                        effectData = this.createPropGlowEffect(object.mesh, { color: 0xffe599, intensity: 1.0 });
+                        break;
+                    case 'coldMagic':
+                        effectData = this.createSimpleMagicEffect(object.mesh, { color: 0x88ccff, intensity: 0.6 });
+                        break;
+                    case 'portalEffect':
+                        effectData = this.createSimplePortalEffect(object.mesh, { color: 0x66ccff, intensity: 1.2 });
+                        break;
+                    default:
+                        // Default fallback for unknown types
+                        console.log(`Using fallback glow effect for unknown type: ${effectType}`);
+                        effectData = this.createPropGlowEffect(object.mesh, { color: 0x66ccff, intensity: 0.5 });
+                }
             }
-        }
 
-        // IMPORTANT: Make sure all containers respect the original object's orientation
-        // if (effectData && effectData.container) {
-        //     // Copy rotation from the object to the effect container
-        //     effectData.container.rotation.copy(object.mesh.rotation);
-        // }
+            // IMPORTANT: Make sure all containers respect the original object's orientation
+            // if (effectData && effectData.container) {
+            //     // Copy rotation from the object to the effect container
+            //     effectData.container.rotation.copy(object.mesh.rotation);
+            // }
 
-        if (effectData && effectData.container) {
-            // Remove container from scene if it was added there
-            if (effectData.container.parent === this.scene) {
-                this.scene.remove(effectData.container);
+            if (effectData && effectData.container) {
+                // Remove container from scene if it was added there
+                if (effectData.container.parent === this.scene) {
+                    this.scene.remove(effectData.container);
+                }
+
+                // Reset container position to origin relative to parent
+                effectData.container.position.set(0, 0, 0);
+
+                // Copy rotation from the object to the effect container
+                effectData.container.rotation.copy(object.mesh.rotation);
+
+                // Add container as a child of the object mesh
+                object.mesh.add(effectData.container);
+
+                console.log(`Attached effect container to object ${object.name}`);
             }
-            
-            // Reset container position to origin relative to parent
-            effectData.container.position.set(0, 0, 0);
-            
-            // Copy rotation from the object to the effect container
-            effectData.container.rotation.copy(object.mesh.rotation);
-            
-            // Add container as a child of the object mesh
-            object.mesh.add(effectData.container);
-            
-            console.log(`Attached effect container to object ${object.name}`);
-        } 
 
-        // Store effect data with object
-        if (effectData) {
-            object.effect = {
-                type: effectType,
-                data: effectData
-            };
+            // Store effect data with object
+            if (effectData) {
+                object.effect = {
+                    type: effectType,
+                    data: effectData
+                };
 
-            console.log(`Applied ${effectType} effect to ${object.name}`);
+                console.log(`Applied ${effectType} effect to ${object.name}`);
+            }
+        } catch (error) {
+            console.error(`Error applying ${effectType} effect:`, error);
         }
-    } catch (error) {
-        console.error(`Error applying ${effectType} effect:`, error);
     }
-}
 
 
 
-/**
- * Simple fallback portal effect implementation if ShaderEffectsManager isn't available
- */
-createSimplePortalEffect(prop, options) {
-    const defaults = {
-        color: options.color || 0x66ccff,
-        intensity: options.intensity || 1.2
-    };
+    /**
+     * Simple fallback portal effect implementation if ShaderEffectsManager isn't available
+     */
+    createSimplePortalEffect(prop, options) {
+        const defaults = {
+            color: options.color || 0x66ccff,
+            intensity: options.intensity || 1.2
+        };
 
-    // Create container for portal effect
-    const container = new THREE.Group();
-    container.position.copy(prop.position);
-    // this.scene.add(container);
+        // Create container for portal effect
+        const container = new THREE.Group();
+        container.position.copy(prop.position);
+        // this.scene.add(container);
 
-    // Add portal light
-    const light = new THREE.PointLight(defaults.color, defaults.intensity, 4);
-    light.position.y = 0.1; // Slightly above center
-    container.add(light);
+        // Add portal light
+        const light = new THREE.PointLight(defaults.color, defaults.intensity, 4);
+        light.position.y = 0.1; // Slightly above center
+        container.add(light);
 
-    // Create simple portal ring effect
-    const portalGeometry = new THREE.TorusGeometry(0.7, 0.1, 16, 32);
-    const portalMaterial = new THREE.MeshStandardMaterial({
-        color: defaults.color,
-        emissive: defaults.color,
-        emissiveIntensity: 0.8,
-        transparent: true,
-        opacity: 0.8
-    });
-    
-    const portalRing = new THREE.Mesh(portalGeometry, portalMaterial);
-    portalRing.rotation.x = Math.PI / 2; // Lay flat
-    container.add(portalRing);
+        // Create simple portal ring effect
+        const portalGeometry = new THREE.TorusGeometry(0.7, 0.1, 16, 32);
+        const portalMaterial = new THREE.MeshStandardMaterial({
+            color: defaults.color,
+            emissive: defaults.color,
+            emissiveIntensity: 0.8,
+            transparent: true,
+            opacity: 0.8
+        });
 
-    // Create center disk
-    const centerGeometry = new THREE.CircleGeometry(0.6, 32);
-    const centerMaterial = new THREE.MeshBasicMaterial({
-        color: defaults.color,
-        transparent: true,
-        opacity: 0.5
-    });
-    
-    const centerDisk = new THREE.Mesh(centerGeometry, centerMaterial);
-    centerDisk.rotation.x = Math.PI / 2; // Lay flat
-    centerDisk.position.y = 0.01; // Slightly above ring
-    container.add(centerDisk);
+        const portalRing = new THREE.Mesh(portalGeometry, portalMaterial);
+        portalRing.rotation.x = Math.PI / 2; // Lay flat
+        container.add(portalRing);
 
-    return {
-        container,
-        light,
-        originalObject: prop,
-        portalRing,
-        animationData: {
-            time: 0,
-            speed: 1.0
-        },
-        update: function(deltaTime) {
-            this.animationData.time += deltaTime;
-            const time = this.animationData.time;
-            
-            // Pulse the light
-            if (light) {
-                light.intensity = defaults.intensity * (0.8 + Math.sin(time * 2) * 0.2);
+        // Create center disk
+        const centerGeometry = new THREE.CircleGeometry(0.6, 32);
+        const centerMaterial = new THREE.MeshBasicMaterial({
+            color: defaults.color,
+            transparent: true,
+            opacity: 0.5
+        });
+
+        const centerDisk = new THREE.Mesh(centerGeometry, centerMaterial);
+        centerDisk.rotation.x = Math.PI / 2; // Lay flat
+        centerDisk.position.y = 0.01; // Slightly above ring
+        container.add(centerDisk);
+
+        return {
+            container,
+            light,
+            originalObject: prop,
+            portalRing,
+            animationData: {
+                time: 0,
+                speed: 1.0
+            },
+            update: function (deltaTime) {
+                this.animationData.time += deltaTime;
+                const time = this.animationData.time;
+
+                // Pulse the light
+                if (light) {
+                    light.intensity = defaults.intensity * (0.8 + Math.sin(time * 2) * 0.2);
+                }
+
+                // Rotate the portal ring slowly
+                if (portalRing) {
+                    portalRing.rotation.z = time * 0.2;
+                }
             }
-            
-            // Rotate the portal ring slowly
-            if (portalRing) {
-                portalRing.rotation.z = time * 0.2;
-            }
-        }
-    };
-}
+        };
+    }
 
     /**
      * Simple glow effect that doesn't depend on ShaderEffectsManager
@@ -1009,110 +1055,110 @@ createSimplePortalEffect(prop, options) {
     /**
  * Simple fire effect that works without complex ShaderEffectsManager
  */
-createSimpleFireEffect(prop, options) {
-    const defaults = {
-        color: options.color || 0xff6600,
-        intensity: options.intensity || 1.2
-    };
+    createSimpleFireEffect(prop, options) {
+        const defaults = {
+            color: options.color || 0xff6600,
+            intensity: options.intensity || 1.2
+        };
 
-    // Create container for fire effect
-    const container = new THREE.Group();
-    container.position.copy(prop.position);
-    // this.scene.add(container);
+        // Create container for fire effect
+        const container = new THREE.Group();
+        container.position.copy(prop.position);
+        // this.scene.add(container);
 
-    // Add fire light
-    const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-    light.position.y += 0.5; // Position above object
-    container.add(light);
+        // Add fire light
+        const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+        light.position.y += 0.5; // Position above object
+        container.add(light);
 
-    // Create simple particle system for fire
-    const particleCount = 15;
-    const particleGeometry = new THREE.BufferGeometry();
-    const particlePositions = new Float32Array(particleCount * 3);
-    const particleColors = new Float32Array(particleCount * 3);
+        // Create simple particle system for fire
+        const particleCount = 15;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleColors = new Float32Array(particleCount * 3);
 
-    // Fire color
-    const fireColor = new THREE.Color(defaults.color);
+        // Fire color
+        const fireColor = new THREE.Color(defaults.color);
 
-    // Create random particles in cone shape
-    for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * 0.2;
+        // Create random particles in cone shape
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 0.2;
 
-        particlePositions[i3] = Math.cos(angle) * radius;
-        particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
-        particlePositions[i3 + 2] = Math.sin(angle) * radius;
+            particlePositions[i3] = Math.cos(angle) * radius;
+            particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
+            particlePositions[i3 + 2] = Math.sin(angle) * radius;
 
-        // Colors: start yellow-orange, fade to red
-        const mixFactor = Math.random();
-        particleColors[i3] = fireColor.r;
-        particleColors[i3 + 1] = fireColor.g * mixFactor;
-        particleColors[i3 + 2] = 0;
-    }
+            // Colors: start yellow-orange, fade to red
+            const mixFactor = Math.random();
+            particleColors[i3] = fireColor.r;
+            particleColors[i3 + 1] = fireColor.g * mixFactor;
+            particleColors[i3 + 2] = 0;
+        }
 
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-    const particleMaterial = new THREE.PointsMaterial({
-        size: 0.1,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending
-    });
+        const particleMaterial = new THREE.PointsMaterial({
+            size: 0.1,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending
+        });
 
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
-    container.add(particles);
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        container.add(particles);
 
-    // Store original positions for animation
-    particles.userData = {
-        positions: [...particlePositions],
-        time: 0
-    };
+        // Store original positions for animation
+        particles.userData = {
+            positions: [...particlePositions],
+            time: 0
+        };
 
-    return {
-        container: container,
-        light: light,
-        particles: particles,
-        originalObject: prop,
-        animationData: {
-            time: 0,
-            speed: 1.0
-        },
-        update: function (deltaTime) {
-            // Animate particles
-            this.animationData.time += deltaTime;
-            const time = this.animationData.time;
+        return {
+            container: container,
+            light: light,
+            particles: particles,
+            originalObject: prop,
+            animationData: {
+                time: 0,
+                speed: 1.0
+            },
+            update: function (deltaTime) {
+                // Animate particles
+                this.animationData.time += deltaTime;
+                const time = this.animationData.time;
 
-            // Get position data
-            const positions = particles.geometry.attributes.position.array;
+                // Get position data
+                const positions = particles.geometry.attributes.position.array;
 
-            // Animate each particle
-            for (let i = 0; i < particleCount; i++) {
-                const i3 = i * 3;
+                // Animate each particle
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
 
-                // Move up slowly
-                positions[i3 + 1] += 0.01;
+                    // Move up slowly
+                    positions[i3 + 1] += 0.01;
 
-                // Reset if too high
-                if (positions[i3 + 1] > 0.8) {
-                    positions[i3 + 1] = 0.2;
+                    // Reset if too high
+                    if (positions[i3 + 1] > 0.8) {
+                        positions[i3 + 1] = 0.2;
+                    }
+
+                    // Add some "flickering"
+                    positions[i3] += (Math.random() - 0.5) * 0.01;
+                    positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
                 }
 
-                // Add some "flickering"
-                positions[i3] += (Math.random() - 0.5) * 0.01;
-                positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
+                // Update geometry
+                particles.geometry.attributes.position.needsUpdate = true;
+
+                // Flicker the light
+                light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
             }
-
-            // Update geometry
-            particles.geometry.attributes.position.needsUpdate = true;
-
-            // Flicker the light
-            light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
-        }
-    };
-}
+        };
+    }
 
     /**
      * Simple magic effect that works without complex ShaderEffectsManager
@@ -1220,51 +1266,65 @@ createSimpleFireEffect(prop, options) {
      * Update all effects in the scene
      * @param {number} deltaTime - Time since last frame in seconds
      */
-/**
- * Update all effects in the scene
- * @param {number} deltaTime - Time since last frame in seconds
- */
-updateEffects(deltaTime) {
-    if (!deltaTime) return; // Skip if no deltaTime provided
+    /**
+     * Update all effects in the scene
+     * @param {number} deltaTime - Time since last frame in seconds
+     */
+    updateEffects(deltaTime) {
+        if (!deltaTime) return; // Skip if no deltaTime provided
 
-    // Update object effects with a single loop
-    this.objects.forEach(object => {
-        if (object.effect && object.effect.data) {
-            // Ensure container stays attached to parent
-            if (object.effect.data.container && object.mesh && 
-                !object.mesh.children.includes(object.effect.data.container)) {
-                console.log(`Re-attaching effect container to ${object.name}`);
-                object.mesh.add(object.effect.data.container);
-            }
-            
-            // If the effect has its own update method, call it
-            if (typeof object.effect.data.update === 'function') {
-                try {
-                    object.effect.data.update(deltaTime);
-                } catch (error) {
-                    console.warn(`Error updating effect for ${object.name}:`, error);
+        // Update object effects with a single loop
+        this.objects.forEach(object => {
+            if (object.effect && object.effect.data) {
+                // Ensure container stays attached to parent
+                if (object.effect.data.container && object.mesh &&
+                    !object.mesh.children.includes(object.effect.data.container)) {
+                    console.log(`Re-attaching effect container to ${object.name}`);
+                    object.mesh.add(object.effect.data.container);
+                }
+
+                // If the effect has its own update method, call it
+                if (typeof object.effect.data.update === 'function') {
+                    try {
+                        object.effect.data.update(deltaTime);
+                    } catch (error) {
+                        console.warn(`Error updating effect for ${object.name}:`, error);
+                    }
+                }
+                // Otherwise, provide basic updates for different effect types
+                else if (object.effect.type) {
+
+                    switch (object.effect.type) {
+                        case 'glow':
+                            this.updateGlowEffect(object, deltaTime);
+                            break;
+                        case 'fire':
+                        case 'burning':
+                        case 'lava':
+                            this.updateFireEffect(object, deltaTime);
+                            break;
+                        case 'magic':
+                            this.updateEnhancedMagicEffect(object, deltaTime);
+                            break;
+                        case 'coldMagic':
+                            this.updateMagicEffect(object, deltaTime);
+                            break;
+                        case 'holy':
+                            this.updateHolyEffect(object, deltaTime);
+                            break;
+                        case 'waterProp':
+                        case 'water':
+                            this.updateWaterEffect(object, deltaTime);
+                            break;
+                        case 'portalEffect':
+                            // Portal effects should have their own update method
+                            // they're typically handled by the effect's update method
+                            break;
+                    }
                 }
             }
-            // Otherwise, provide basic updates for different effect types
-            else if (object.effect.type) {
-                switch (object.effect.type) {
-                    case 'glow':
-                        this.updateGlowEffect(object, deltaTime);
-                        break;
-                    case 'fire':
-                    case 'burning':
-                    case 'lava':
-                        this.updateFireEffect(object, deltaTime);
-                        break;
-                    case 'magic':
-                    case 'coldMagic':
-                        this.updateMagicEffect(object, deltaTime);
-                        break;
-                }
-            }
-        }
-    });
-}
+        });
+    }
 
     /**
      * Update glow effect animation
@@ -1279,6 +1339,110 @@ updateEffects(deltaTime) {
 
         // Simple pulsing animation
         light.intensity = 0.5 + Math.sin(time * 2) * 0.2;
+    }
+
+    /**
+ * Update holy effect animation
+ * @param {Object} object - Object with the effect
+ * @param {number} deltaTime - Time since last frame
+ */
+    updateHolyEffect(object, deltaTime) {
+        if (!object.effect || !object.effect.data) return;
+
+        const data = object.effect.data;
+        const light = data.light;
+        const particles = data.particles;
+
+        if (!light) return;
+
+        const time = Date.now() * 0.001; // Current time in seconds
+
+        // Gentle pulsing light
+        light.intensity = 1.0 * (0.9 + Math.sin(time * 1.5) * 0.1);
+
+        // Animate particles if available
+        if (particles && particles.geometry && particles.geometry.attributes && particles.geometry.attributes.position) {
+            const positions = particles.geometry.attributes.position.array;
+            const count = positions.length / 3;
+            const originalPositions = particles.userData && particles.userData.positions
+                ? particles.userData.positions
+                : [...positions];
+
+            // Store original positions
+            if (!particles.userData) particles.userData = {};
+            if (!particles.userData.positions) particles.userData.positions = originalPositions;
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+
+                // Gentle rising motion with spiral
+                const phase = time + i * 0.05;
+                positions[i3] = originalPositions[i3] + Math.sin(phase * 2) * 0.02;
+                positions[i3 + 1] = originalPositions[i3 + 1] + Math.sin(phase) * 0.01;
+                positions[i3 + 2] = originalPositions[i3 + 2] + Math.cos(phase * 2) * 0.02;
+            }
+
+            // Update geometry
+            particles.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+
+    /**
+     * Update water effect animation
+     * @param {Object} object - Object with the effect
+     * @param {number} deltaTime - Time since last frame
+     */
+    updateWaterEffect(object, deltaTime) {
+        if (!object.effect || !object.effect.data) return;
+
+        const data = object.effect.data;
+        const mesh = data.mesh;
+        const particles = data.particles;
+
+        const time = Date.now() * 0.001; // Current time in seconds
+
+        // Update water shader if available
+        if (mesh && mesh.material && mesh.material.uniforms && mesh.material.uniforms.time) {
+            mesh.material.uniforms.time.value = time;
+        }
+
+        // Animate particles if available
+        if (particles && particles.geometry && particles.geometry.attributes && particles.geometry.attributes.position) {
+            const positions = particles.geometry.attributes.position.array;
+            const count = positions.length / 3;
+            const originalPositions = particles.userData && particles.userData.positions
+                ? particles.userData.positions
+                : [...positions];
+
+            // Store original positions
+            if (!particles.userData) particles.userData = {};
+            if (!particles.userData.positions) particles.userData.positions = originalPositions;
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+
+                // Flowing water motion
+                positions[i3] = originalPositions[i3] + Math.sin(time * 2 + i) * 0.03;
+                positions[i3 + 1] = originalPositions[i3 + 1] + Math.cos(time + i * 0.3) * 0.02;
+                positions[i3 + 2] = originalPositions[i3 + 2] + Math.sin(time * 1.5 + i) * 0.03;
+
+                // Reset if too far from original position
+                const distance = Math.sqrt(
+                    Math.pow(positions[i3] - originalPositions[i3], 2) +
+                    Math.pow(positions[i3 + 1] - originalPositions[i3 + 1], 2) +
+                    Math.pow(positions[i3 + 2] - originalPositions[i3 + 2], 2)
+                );
+
+                if (distance > 0.2) {
+                    positions[i3] = originalPositions[i3];
+                    positions[i3 + 1] = originalPositions[i3 + 1];
+                    positions[i3 + 2] = originalPositions[i3 + 2];
+                }
+            }
+
+            // Update geometry
+            particles.geometry.attributes.position.needsUpdate = true;
+        }
     }
 
     /**
@@ -1327,7 +1491,7 @@ updateEffects(deltaTime) {
     }
 
     /**
-     * Update magic effect animation
+     * Update cold effect animation
      * @param {Object} object - Object with the effect
      * @param {number} deltaTime - Time since last frame
      */
@@ -1349,26 +1513,90 @@ updateEffects(deltaTime) {
         if (particles.geometry && particles.geometry.attributes && particles.geometry.attributes.position) {
             const positions = particles.geometry.attributes.position.array;
             const count = positions.length / 3;
+            const originalPositions = particles.userData && particles.userData.positions
+                ? particles.userData.positions
+                : [...positions]; // Backup original positions
+
+            // Store original positions if not already stored
+            if (!particles.userData) particles.userData = {};
+            if (!particles.userData.positions) particles.userData.positions = originalPositions;
 
             for (let i = 0; i < count; i++) {
                 const i3 = i * 3;
-
-                // Orbital motion around original position
                 const angle = time + i * 0.2;
                 const radius = 0.05;
 
-                positions[i3] += Math.cos(angle) * radius * deltaTime;
-                positions[i3 + 1] += Math.sin(angle) * radius * deltaTime;
-                positions[i3 + 2] += Math.cos(angle * 0.7) * radius * deltaTime;
-
-                // Keep particles from drifting too far
-                if (Math.abs(positions[i3]) > 0.4) positions[i3] *= 0.95;
-                if (Math.abs(positions[i3 + 1]) > 0.4) positions[i3 + 1] *= 0.95;
-                if (Math.abs(positions[i3 + 2]) > 0.4) positions[i3 + 2] *= 0.95;
+                // Orbital pattern for magic particles
+                positions[i3] = originalPositions[i3] * Math.cos(angle * 0.5);
+                positions[i3 + 1] = originalPositions[i3 + 1] * Math.sin(angle * 0.5);
+                positions[i3 + 2] = originalPositions[i3 + 2] * Math.cos(angle * 0.3);
             }
 
             // Update geometry
             particles.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+
+    /**
+     * Update enhanced magic effect - the pulsating magic effect
+     */
+    updateEnhancedMagicEffect(object, deltaTime) {
+        if (!object.effect || !object.effect.data) return;
+
+        const data = object.effect.data;
+
+        // If the effect has proper magicPlane properties, update them
+        if (data.magicPlane && data.magicPlane.material) {
+            // Update time
+            data.magicPlane.material.uniforms.time.value += deltaTime;
+
+            if (data.backPlane && data.backPlane.material) {
+                data.backPlane.material.uniforms.time.value += deltaTime;
+            }
+
+            // Make planes face the camera if possible
+            if (window.scene3D && window.scene3D.camera) {
+                data.magicPlane.lookAt(window.scene3D.camera.position);
+                if (data.backPlane) data.backPlane.lookAt(window.scene3D.camera.position);
+            }
+        }
+
+        // Update light pulsing
+        if (data.light) {
+            const time = Date.now() * 0.001;
+            data.light.intensity = 1.0 * (0.7 + Math.sin(time * 2) * 0.3);
+        }
+
+        // Update particles
+        if (data.particles && data.particles.geometry &&
+            data.particles.geometry.attributes &&
+            data.particles.geometry.attributes.position) {
+
+            const positions = data.particles.geometry.attributes.position.array;
+            const count = positions.length / 3;
+            const time = Date.now() * 0.001;
+
+            // Get original positions if available
+            const originalPositions = data.particles.userData && data.particles.userData.positions
+                ? data.particles.userData.positions
+                : [...positions];
+
+            // Store original positions if needed
+            if (!data.particles.userData) data.particles.userData = {};
+            if (!data.particles.userData.positions) data.particles.userData.positions = originalPositions;
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                const angle = time + i * 0.2;
+
+                // Animate particles
+                positions[i3] = originalPositions[i3] * Math.cos(angle * 0.5);
+                positions[i3 + 1] = originalPositions[i3 + 1] * Math.sin(angle * 0.5);
+                positions[i3 + 2] = originalPositions[i3 + 2] * Math.cos(angle * 0.3);
+            }
+
+            // Update geometry
+            data.particles.geometry.attributes.position.needsUpdate = true;
         }
     }
 
