@@ -30,7 +30,7 @@ class ShaderEffectsManager {
   registerEffectDefinitions() {
     // Light sources with particles
     this.registerEffectType('fire', {
-      keywords: ['fire', 'torch', 'flame', 'candle', 'lantern', 'campfire'],
+      keywords: ['fire', 'candle', 'lantern'],
       color: 0xff6600,
       intensity: 1.5, 
       distance: 8,
@@ -50,6 +50,24 @@ class ShaderEffectsManager {
         }
       }
     });
+
+    // Add this to the registerEffectDefinitions method in ShaderEffectsManager
+this.registerEffectType('burning', {
+  keywords: ['burning', 'campfire', 'torch', 'flame', 'ember'],
+  color: 0xff6600,
+  intensity: 1.4, 
+  distance: 8,
+  decay: 2,
+  particleCount: 20,
+  particleSize: 0.05,
+  particleColor: 0xff8844,
+  animationSpeed: 1.0,
+  preserveMaterial: true, // Important: flag to not modify original material
+  // Use enhanced effects for medium and high quality
+  create: (object, definition, qualityLevel) => {
+    return this.createBurningEffect(object, definition, qualityLevel);
+  }
+});
     
     this.registerEffectType('magic', {
       keywords: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
@@ -146,18 +164,18 @@ this.registerEffectType('waterProp', {
     });
     
       // Add dungeon portal effect
-  this.registerEffectType('portalEffect', {
-    keywords: ['portal', 'dungeon', 'entrance', 'gate', 'doorway', 'vortex'],
-    color: 0x66ccff, // Default blue portal
-    intensity: 1.2,
-    distance: 6,
-    decay: 1.5,
-    particleCount: 50,
-    particleSize: 0.05,
-    animationSpeed: 1.0,
-    forceShowOnLow: true, // Important effect, show even on low quality
-    create: this.createPortalEffect.bind(this)
-  });
+  // this.registerEffectType('portalEffect', {
+  //   keywords: ['portal', 'dungeon', 'entrance', 'gate', 'doorway', 'vortex'],
+  //   color: 0x66ccff, // Default blue portal
+  //   intensity: 1.2,
+  //   distance: 6,
+  //   decay: 1.5,
+  //   particleCount: 50,
+  //   particleSize: 0.05,
+  //   animationSpeed: 1.0,
+  //   forceShowOnLow: true, // Important effect, show even on low quality
+  //   create: this.createPortalEffect.bind(this)
+  // });
 
     // Add more effect types as needed
   }
@@ -395,6 +413,52 @@ this.registerEffectType('waterProp', {
       return false;
     }
   }
+
+  /**
+ * Create a burning effect - like fire but preserves object's original material
+ */
+createBurningEffect(object, definition, qualityLevel = 'medium') {
+  // Similar to createFireEffect but doesn't modify the object's material
+  const container = new THREE.Group();
+  container.position.copy(object.position);
+  
+  this.scene3D.scene.add(container);
+  
+  // Create light
+  const particleCount = this.getQualityAdjustedValue(definition.particleCount, qualityLevel);
+  const light = new THREE.PointLight(
+    definition.color,
+    definition.intensity,
+    definition.distance,
+    definition.decay
+  );
+  
+  // Position light slightly above object
+  light.position.y += 0.5;
+  container.add(light);
+  
+  // Create fire particles
+  const particles = this.createParticles(
+    particleCount, 
+    definition.particleSize,
+    definition.particleColor
+  );
+  
+  container.add(particles);
+  
+  // Return data for tracking
+  return {
+    container,
+    light,
+    particles,
+    originalObject: object,
+    definition,
+    animationData: {
+      time: 0,
+      speed: definition.animationSpeed
+    }
+  };
+}
   
   /**
    * Create a water effect for a surface area

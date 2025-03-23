@@ -117,6 +117,18 @@ class ShapeForgeParser {
             }
         });
 
+        this.objects.forEach(objData => {
+            // Make sure scale is applied to the mesh directly
+            if (objData.mesh && objData.scale) {
+                objData.mesh.scale.set(
+                    objData.scale.x || 1,
+                    objData.scale.y || 1,
+                    objData.scale.z || 1
+                );
+                console.log(`Applied scale ${JSON.stringify(objData.scale)} to ${objData.name}`);
+            }
+        });
+
         // Load textures for objects that need them
         console.log(`Applying textures to ${objectsNeedingTextures.length} objects`);
         objectsNeedingTextures.forEach(item => {
@@ -717,145 +729,7 @@ class ShapeForgeParser {
         return this.objects[index];
     }
 
-    /**
-     * Apply shader effect to the selected object
-     * @param {string} effectType - Type of effect to apply
-     */
-    // applyShaderEffect(effectType) {
-    //     if (this.selectedObject === null) {
-    //         console.warn('No object selected, cannot apply shader effect');
-    //         return;
-    //     }
-
-    //     // Handle 'none' case - remove current effect
-    //     if (effectType === 'none') {
-    //         const object = this.objects[this.selectedObject];
-    //         if (object.effect) {
-    //             console.log('Removing shader effect from object');
-    //             // Remove existing effect if any
-    //             if (object.effect.container && object.effect.container.parent) {
-    //                 this.scene.remove(object.effect.container);
-    //             }
-
-    //             if (object.effect.light && object.effect.light.parent) {
-    //                 this.scene.remove(object.effect.light);
-    //             }
-
-    //             if (object.effect.particles && object.effect.particles.parent) {
-    //                 this.scene.remove(object.effect.particles);
-    //             }
-
-    //             // Reset emissive if it was changed
-    //             if (object.mesh.material && object.mesh.material.emissive !== undefined &&
-    //                 object.mesh.userData.originalEmissive) {
-    //                 object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
-    //                 if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
-    //                     object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
-    //                 }
-    //             }
-
-    //             // Clear effect data
-    //             delete object.effect;
-    //         }
-    //         return;
-    //     }
-
-    //     const object = this.objects[this.selectedObject];
-
-    //     try {
-    //         // Remove existing effect if any
-    //         if (object.effect) {
-    //             // Remove from scene first
-    //             if (object.effect.container && object.effect.container.parent) {
-    //                 this.scene.remove(object.effect.container);
-    //             }
-
-    //             if (object.effect.light && object.effect.light.parent) {
-    //                 this.scene.remove(object.effect.light);
-    //             }
-
-    //             if (object.effect.particles && object.effect.particles.parent) {
-    //                 this.scene.remove(object.effect.particles);
-    //             }
-
-    //             // Reset emissive if it was changed
-    //             if (object.mesh.material && object.mesh.material.emissive !== undefined &&
-    //                 object.mesh.userData.originalEmissive) {
-    //                 object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
-    //                 if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
-    //                     object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
-    //                 }
-    //             }
-
-    //             delete object.effect;
-    //         }
-
-    //         // Get effect options from ShaderEffectsManager if available
-    //         let effectOptions = {
-    //             color: 0x66ccff,
-    //             intensity: 1.0
-    //         };
-
-    //         if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
-    //             const definition = this.shaderEffects.effectDefinitions.get(effectType);
-    //             if (definition) {
-    //                 effectOptions = { ...effectOptions, ...definition };
-    //             }
-    //         }
-
-    //         // Create the effect using our LOCAL implementations only
-    //         let effectData;
-
-    //         // Use correct method based on effect type
-    //         switch (effectType) {
-    //             case 'glow':
-    //                 effectData = this.createPropGlowEffect(object.mesh, effectOptions);
-    //                 break;
-    //             case 'fire':
-    //                 effectData = this.createSimpleFireEffect(object.mesh, effectOptions);
-    //                 break;
-    //             case 'magic':
-    //                 effectData = this.createSimpleMagicEffect(object.mesh, effectOptions);
-    //                 break;
-    //             case 'lava':
-    //                 // Use a special fire effect with lava colors
-    //                 effectOptions.color = 0xff3300;
-    //                 effectOptions.intensity = 1.3;
-    //                 effectData = this.createSimpleFireEffect(object.mesh, effectOptions);
-    //                 break;
-    //             case 'holy':
-    //                 // Use a special glow effect with holy colors
-    //                 effectOptions.color = 0xffe599;
-    //                 effectOptions.intensity = 1.0;
-    //                 effectData = this.createPropGlowEffect(object.mesh, effectOptions);
-    //                 break;
-    //             case 'coldMagic':
-    //                 // Use a special magic effect with cold colors
-    //                 effectOptions.color = 0x88ccff;
-    //                 effectOptions.intensity = 0.6;
-    //                 effectData = this.createSimpleMagicEffect(object.mesh, effectOptions);
-    //                 break;
-    //             default:
-    //                 // Fallback to glow effect for any unknown types
-    //                 console.log(`Using fallback glow effect for unknown type: ${effectType}`);
-    //                 effectData = this.createPropGlowEffect(object.mesh, effectOptions);
-    //         }
-
-    //         // Store effect data with object
-    //         if (effectData) {
-    //             object.effect = {
-    //                 type: effectType,
-    //                 data: effectData
-    //             };
-
-    //             console.log(`Applied ${effectType} effect to ${object.name}`);
-    //         }
-    //     } catch (error) {
-    //         console.error(`Error applying ${effectType} effect:`, error);
-    //     }
-    // }
-
-    /**
+/**
  * Apply shader effect to the selected object
  * @param {string} effectType - Type of effect to apply
  */
@@ -871,16 +745,16 @@ applyShaderEffect(effectType) {
         if (object.effect) {
             console.log('Removing shader effect from object');
             // Remove existing effect if any
-            if (object.effect.container && object.effect.container.parent) {
-                this.scene.remove(object.effect.container);
+            if (object.effect.data.container && object.effect.data.container.parent) {
+                this.scene.remove(object.effect.data.container);
             }
 
-            if (object.effect.light && object.effect.light.parent) {
-                this.scene.remove(object.effect.light);
+            if (object.effect.data.light && object.effect.data.light.parent) {
+                this.scene.remove(object.effect.data.light);
             }
 
-            if (object.effect.particles && object.effect.particles.parent) {
-                this.scene.remove(object.effect.particles);
+            if (object.effect.data.particles && object.effect.data.particles.parent) {
+                this.scene.remove(object.effect.data.particles);
             }
 
             // Reset emissive if it was changed
@@ -904,16 +778,16 @@ applyShaderEffect(effectType) {
         // Remove existing effect if any
         if (object.effect) {
             // Remove from scene first
-            if (object.effect.container && object.effect.container.parent) {
-                this.scene.remove(object.effect.container);
+            if (object.effect.data.container && object.effect.data.container.parent) {
+                this.scene.remove(object.effect.data.container);
             }
 
-            if (object.effect.light && object.effect.light.parent) {
-                this.scene.remove(object.effect.light);
+            if (object.effect.data.light && object.effect.data.light.parent) {
+                this.scene.remove(object.effect.data.light);
             }
 
-            if (object.effect.particles && object.effect.particles.parent) {
-                this.scene.remove(object.effect.particles);
+            if (object.effect.data.particles && object.effect.data.particles.parent) {
+                this.scene.remove(object.effect.data.particles);
             }
 
             // Reset emissive if it was changed
@@ -928,73 +802,84 @@ applyShaderEffect(effectType) {
             delete object.effect;
         }
 
-        // Get effect options from ShaderEffectsManager if available
-        let effectOptions = {
-            color: 0x66ccff,
-            intensity: 1.0
-        };
-
-        if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
-            const definition = this.shaderEffects.effectDefinitions.get(effectType);
-            if (definition) {
-                effectOptions = { ...effectOptions, ...definition };
-            }
-        }
-
-        // Create the effect using our LOCAL implementations or ShaderEffectsManager
         let effectData;
-
-        // First try to use ShaderEffectsManager if available
-        if (this.shaderEffects && typeof this.shaderEffects.createPortalEffect === 'function' && 
-            effectType === 'portalEffect') {
-            effectData = this.shaderEffects.createPortalEffect(object.mesh, effectOptions);
+        
+        // Try to get the effect from ShaderEffectsManager
+        if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
+            const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
+            
+            if (effectDefinition && typeof effectDefinition.create === 'function') {
+                console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
+                
+                // Use ShaderEffectsManager's create method
+                effectData = effectDefinition.create(object.mesh, effectDefinition, this.shaderEffects.qualityLevel || 'medium');
+            } else {
+                console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
+            }
         } else {
-            // Otherwise use our own implementations
+            console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
+        }
+        
+        // If no effect data yet, use fallbacks
+        if (!effectData) {
+            console.log(`Using fallback for effect type: ${effectType}`);
+            // Use appropriate fallback based on effect type
             switch (effectType) {
                 case 'glow':
-                    effectData = this.createPropGlowEffect(object.mesh, effectOptions);
+                    effectData = this.createPropGlowEffect(object.mesh, {color: 0x66ccff, intensity: 0.5});
                     break;
                 case 'fire':
-                    effectData = this.createSimpleFireEffect(object.mesh, effectOptions);
+                    effectData = this.createSimpleFireEffect(object.mesh, {color: 0xff6600, intensity: 1.2});
+                    break;
+                case 'burning':
+                    // Non-colorizing version
+                    effectData = this.createSimpleBurningEffect(object.mesh, {color: 0xff6600, intensity: 1.2});
                     break;
                 case 'magic':
-                    effectData = this.createSimpleMagicEffect(object.mesh, effectOptions);
+                    effectData = this.createSimpleMagicEffect(object.mesh, {color: 0x8800ff, intensity: 0.8});
                     break;
                 case 'lava':
-                    // Use a special fire effect with lava colors
-                    effectOptions.color = 0xff3300;
-                    effectOptions.intensity = 1.3;
-                    effectData = this.createSimpleFireEffect(object.mesh, effectOptions);
+                    effectData = this.createSimpleFireEffect(object.mesh, {color: 0xff3300, intensity: 1.3});
                     break;
                 case 'holy':
-                    // Use a special glow effect with holy colors
-                    effectOptions.color = 0xffe599;
-                    effectOptions.intensity = 1.0;
-                    effectData = this.createPropGlowEffect(object.mesh, effectOptions);
+                    effectData = this.createPropGlowEffect(object.mesh, {color: 0xffe599, intensity: 1.0});
                     break;
                 case 'coldMagic':
-                    // Use a special magic effect with cold colors
-                    effectOptions.color = 0x88ccff;
-                    effectOptions.intensity = 0.6;
-                    effectData = this.createSimpleMagicEffect(object.mesh, effectOptions);
+                    effectData = this.createSimpleMagicEffect(object.mesh, {color: 0x88ccff, intensity: 0.6});
                     break;
                 case 'portalEffect':
-                    // Fallback implementation if ShaderEffectsManager isn't available
-                    console.log('Using fallback portal effect implementation');
-                    effectData = this.createSimplePortalEffect(object.mesh, effectOptions);
+                    effectData = this.createSimplePortalEffect(object.mesh, {color: 0x66ccff, intensity: 1.2});
                     break;
                 default:
-                    // Fallback to glow effect for any unknown types
+                    // Default fallback for unknown types
                     console.log(`Using fallback glow effect for unknown type: ${effectType}`);
-                    effectData = this.createPropGlowEffect(object.mesh, effectOptions);
+                    effectData = this.createPropGlowEffect(object.mesh, {color: 0x66ccff, intensity: 0.5});
             }
         }
 
         // IMPORTANT: Make sure all containers respect the original object's orientation
+        // if (effectData && effectData.container) {
+        //     // Copy rotation from the object to the effect container
+        //     effectData.container.rotation.copy(object.mesh.rotation);
+        // }
+
         if (effectData && effectData.container) {
+            // Remove container from scene if it was added there
+            if (effectData.container.parent === this.scene) {
+                this.scene.remove(effectData.container);
+            }
+            
+            // Reset container position to origin relative to parent
+            effectData.container.position.set(0, 0, 0);
+            
             // Copy rotation from the object to the effect container
             effectData.container.rotation.copy(object.mesh.rotation);
-        }
+            
+            // Add container as a child of the object mesh
+            object.mesh.add(effectData.container);
+            
+            console.log(`Attached effect container to object ${object.name}`);
+        } 
 
         // Store effect data with object
         if (effectData) {
@@ -1010,6 +895,8 @@ applyShaderEffect(effectType) {
     }
 }
 
+
+
 /**
  * Simple fallback portal effect implementation if ShaderEffectsManager isn't available
  */
@@ -1022,7 +909,7 @@ createSimplePortalEffect(prop, options) {
     // Create container for portal effect
     const container = new THREE.Group();
     container.position.copy(prop.position);
-    this.scene.add(container);
+    // this.scene.add(container);
 
     // Add portal light
     const light = new THREE.PointLight(defaults.color, defaults.intensity, 4);
@@ -1117,113 +1004,7 @@ createSimplePortalEffect(prop, options) {
         };
     }
 
-    /**
-     * Simple fire effect that works without complex ShaderEffectsManager
-     */
-    // createSimpleFireEffect(prop, options) {
-    //     const defaults = {
-    //         color: options.color || 0xff6600,
-    //         intensity: options.intensity || 1.2
-    //     };
 
-    //     // Create container for fire effect
-    //     const container = new THREE.Group();
-    //     container.position.copy(prop.position);
-    //     this.scene.add(container);
-
-    //     // Add fire light
-    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-    //     light.position.y += 0.5; // Position above object
-    //     container.add(light);
-
-    //     // Create simple particle system for fire
-    //     const particleCount = 15;
-    //     const particleGeometry = new THREE.BufferGeometry();
-    //     const particlePositions = new Float32Array(particleCount * 3);
-    //     const particleColors = new Float32Array(particleCount * 3);
-
-    //     // Fire color
-    //     const fireColor = new THREE.Color(defaults.color);
-
-    //     // Create random particles in cone shape
-    //     for (let i = 0; i < particleCount; i++) {
-    //         const i3 = i * 3;
-    //         const angle = Math.random() * Math.PI * 2;
-    //         const radius = Math.random() * 0.2;
-
-    //         particlePositions[i3] = Math.cos(angle) * radius;
-    //         particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
-    //         particlePositions[i3 + 2] = Math.sin(angle) * radius;
-
-    //         // Colors: start yellow-orange, fade to red
-    //         const mixFactor = Math.random();
-    //         particleColors[i3] = fireColor.r;
-    //         particleColors[i3 + 1] = fireColor.g * mixFactor;
-    //         particleColors[i3 + 2] = 0;
-    //     }
-
-    //     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    //     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-
-    //     const particleMaterial = new THREE.PointsMaterial({
-    //         size: 0.1,
-    //         vertexColors: true,
-    //         transparent: true,
-    //         opacity: 0.7,
-    //         blending: THREE.AdditiveBlending
-    //     });
-
-    //     const particles = new THREE.Points(particleGeometry, particleMaterial);
-    //     container.add(particles);
-
-    //     // Store original positions for animation
-    //     particles.userData = {
-    //         positions: [...particlePositions],
-    //         time: 0
-    //     };
-
-    //     return {
-    //         container: container,
-    //         light: light,
-    //         particles: particles,
-    //         originalObject: prop,
-    //         animationData: {
-    //             time: 0,
-    //             speed: 1.0
-    //         },
-    //         update: function (deltaTime) {
-    //             // Animate particles
-    //             this.animationData.time += deltaTime;
-    //             const time = this.animationData.time;
-
-    //             // Get position data
-    //             const positions = particles.geometry.attributes.position.array;
-
-    //             // Animate each particle
-    //             for (let i = 0; i < particleCount; i++) {
-    //                 const i3 = i * 3;
-
-    //                 // Move up slowly
-    //                 positions[i3 + 1] += 0.01;
-
-    //                 // Reset if too high
-    //                 if (positions[i3 + 1] > 0.8) {
-    //                     positions[i3 + 1] = 0.2;
-    //                 }
-
-    //                 // Add some "flickering"
-    //                 positions[i3] += (Math.random() - 0.5) * 0.01;
-    //                 positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
-    //             }
-
-    //             // Update geometry
-    //             particles.geometry.attributes.position.needsUpdate = true;
-
-    //             // Flicker the light
-    //             light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
-    //         }
-    //     };
-    // }
 
     /**
  * Simple fire effect that works without complex ShaderEffectsManager
@@ -1237,7 +1018,7 @@ createSimpleFireEffect(prop, options) {
     // Create container for fire effect
     const container = new THREE.Group();
     container.position.copy(prop.position);
-    this.scene.add(container);
+    // this.scene.add(container);
 
     // Add fire light
     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
@@ -1345,7 +1126,7 @@ createSimpleFireEffect(prop, options) {
         // Create container for magic effect
         const container = new THREE.Group();
         container.position.copy(prop.position);
-        this.scene.add(container);
+        // this.scene.add(container);
 
         // Add magic light
         const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
@@ -1439,39 +1220,51 @@ createSimpleFireEffect(prop, options) {
      * Update all effects in the scene
      * @param {number} deltaTime - Time since last frame in seconds
      */
-    updateEffects(deltaTime) {
-        if (!deltaTime) return; // Skip if no deltaTime provided
+/**
+ * Update all effects in the scene
+ * @param {number} deltaTime - Time since last frame in seconds
+ */
+updateEffects(deltaTime) {
+    if (!deltaTime) return; // Skip if no deltaTime provided
 
-        // Update object effects
-        this.objects.forEach(object => {
-            if (object.effect && object.effect.data) {
-                // If the effect has its own update method, call it
-                if (typeof object.effect.data.update === 'function') {
-                    try {
-                        object.effect.data.update(deltaTime);
-                    } catch (error) {
-                        console.warn(`Error updating effect for ${object.name}:`, error);
-                    }
-                }
-                // Otherwise, provide basic updates for different effect types
-                else if (object.effect.type) {
-                    switch (object.effect.type) {
-                        case 'glow':
-                            this.updateGlowEffect(object, deltaTime);
-                            break;
-                        case 'fire':
-                        case 'lava':
-                            this.updateFireEffect(object, deltaTime);
-                            break;
-                        case 'magic':
-                        case 'coldMagic':
-                            this.updateMagicEffect(object, deltaTime);
-                            break;
-                    }
+    // Update object effects with a single loop
+    this.objects.forEach(object => {
+        if (object.effect && object.effect.data) {
+            // Ensure container stays attached to parent
+            if (object.effect.data.container && object.mesh && 
+                !object.mesh.children.includes(object.effect.data.container)) {
+                console.log(`Re-attaching effect container to ${object.name}`);
+                object.mesh.add(object.effect.data.container);
+            }
+            
+            // If the effect has its own update method, call it
+            if (typeof object.effect.data.update === 'function') {
+                try {
+                    object.effect.data.update(deltaTime);
+                } catch (error) {
+                    console.warn(`Error updating effect for ${object.name}:`, error);
                 }
             }
-        });
-    }
+            // Otherwise, provide basic updates for different effect types
+            else if (object.effect.type) {
+                switch (object.effect.type) {
+                    case 'glow':
+                        this.updateGlowEffect(object, deltaTime);
+                        break;
+                    case 'fire':
+                    case 'burning':
+                    case 'lava':
+                        this.updateFireEffect(object, deltaTime);
+                        break;
+                    case 'magic':
+                    case 'coldMagic':
+                        this.updateMagicEffect(object, deltaTime);
+                        break;
+                }
+            }
+        }
+    });
+}
 
     /**
      * Update glow effect animation
