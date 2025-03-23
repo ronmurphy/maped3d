@@ -571,27 +571,110 @@ class ShapeForgeParser {
      * @param {Object} objectData - The object data to apply the texture to
      * @param {Object} textureData - The texture data
      */
-    loadAndApplyTextureToObject(objectData, textureData) {
-        console.log("loadAndApplyTextureToObject called for:", objectData.name);
+    // loadAndApplyTextureToObject(objectData, textureData) {
+    //     console.log("loadAndApplyTextureToObject called for:", objectData.name);
                 
+    //     if (!objectData || !textureData || !textureData.data) {
+    //         console.warn("Cannot apply texture: Invalid data");
+    //         return;
+    //     }
+        
+    //     console.log("Texture data exists, starting loader...");
+        
+    //     // Store whether a specific color was set in the original data
+    //     const hasSpecifiedColor = objectData.material.userData && 
+    //                              objectData.material.userData.specifiedColor !== undefined;
+        
+    //     const specifiedColor = hasSpecifiedColor ? 
+    //         objectData.material.userData.specifiedColor.clone() : 
+    //         new THREE.Color(0xffffff);
+        
+    //     // Log the original color
+    //     console.log(`Original color for ${objectData.name}:`, 
+    //         hasSpecifiedColor ? specifiedColor.getHexString() : "none specified (using white)");
+        
+    //     // Create a texture loader
+    //     const loader = new THREE.TextureLoader();
+        
+    //     // Load the texture from the data URL
+    //     loader.load(
+    //         textureData.data, 
+    //         // Success callback
+    //         (texture) => {
+    //             console.log("Texture loaded successfully for", objectData.name);
+                
+    //             // Configure texture parameters
+    //             if (textureData.repeat && textureData.repeat.length === 2) {
+    //                 texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
+    //             }
+                
+    //             if (textureData.offset && textureData.offset.length === 2) {
+    //                 texture.offset.set(textureData.offset[0], textureData.offset[1]);
+    //             }
+                
+    //             if (textureData.rotation !== undefined) {
+    //                 texture.rotation = textureData.rotation;
+    //             }
+                
+    //             // Set wrapping modes
+    //             texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
+    //             texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
+                
+    //             // IMPORTANT: Try these texture settings
+    //             texture.colorSpace = THREE.SRGBColorSpace; // Ensure proper color space
+                
+    //             // Apply the texture to the object's material
+    //             if (objectData.material) {
+    //                 // Set material to white FIRST (important for correct texture display)
+    //                 objectData.material.color.set(0xffffff);
+                    
+    //                 // Apply texture
+    //                 objectData.material.map = texture;
+                    
+    //                 // Apply tinted color if specified (with REDUCED strength)
+    //                 if (hasSpecifiedColor && specifiedColor.getHex() !== 0xffffff) {
+    //                     // Create a blend between white and the specified color
+    //                     const blendedColor = new THREE.Color(0xffffff);
+    //                     const tintStrength = 0.3; // REDUCED to 30% influence
+                        
+    //                     // Lerp between white and specified color
+    //                     blendedColor.lerp(specifiedColor, tintStrength);
+    //                     objectData.material.color.copy(blendedColor);
+                        
+    //                     console.log(`Applied tinted color to ${objectData.name} with strength ${tintStrength}`, 
+    //                                "Final color:", blendedColor.getHexString());
+    //                 }
+                    
+    //                 // Try additional material properties to improve texture visibility
+    //                 objectData.material.combine = THREE.MixOperation;
+                    
+    //                 // Make sure updates are applied
+    //                 objectData.material.needsUpdate = true;
+    //                 console.log("Applied texture to", objectData.name);
+                    
+    //                 // Log the final state for debugging
+    //                 console.log(`Final material for ${objectData.name}:`, {
+    //                     hasTexture: !!objectData.material.map,
+    //                     color: objectData.material.color.getHexString()
+    //                 });
+    //             }
+    //         },
+    //         // Progress callback
+    //         undefined,
+    //         // Error callback
+    //         (error) => {
+    //             console.error("Error loading texture for", objectData.name, error);
+    //         }
+    //     );
+    // }
+
+    loadAndApplyTextureToObject(objectData, textureData) {
         if (!objectData || !textureData || !textureData.data) {
             console.warn("Cannot apply texture: Invalid data");
             return;
         }
         
-        console.log("Texture data exists, starting loader...");
-        
-        // Store whether a specific color was set in the original data
-        const hasSpecifiedColor = objectData.material.userData && 
-                                 objectData.material.userData.specifiedColor !== undefined;
-        
-        const specifiedColor = hasSpecifiedColor ? 
-            objectData.material.userData.specifiedColor.clone() : 
-            new THREE.Color(0xffffff);
-        
-        // Log the original color
-        console.log(`Original color for ${objectData.name}:`, 
-            hasSpecifiedColor ? specifiedColor.getHexString() : "none specified (using white)");
+        console.log("Applying texture to", objectData.name);
         
         // Create a texture loader
         const loader = new THREE.TextureLoader();
@@ -599,7 +682,6 @@ class ShapeForgeParser {
         // Load the texture from the data URL
         loader.load(
             textureData.data, 
-            // Success callback
             (texture) => {
                 console.log("Texture loaded successfully for", objectData.name);
                 
@@ -620,48 +702,26 @@ class ShapeForgeParser {
                 texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
                 texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
                 
-                // IMPORTANT: Try these texture settings
-                texture.colorSpace = THREE.SRGBColorSpace; // Ensure proper color space
-                
                 // Apply the texture to the object's material
                 if (objectData.material) {
-                    // Set material to white FIRST (important for correct texture display)
-                    objectData.material.color.set(0xffffff);
-                    
-                    // Apply texture
+                    // Simply apply the texture without changing color
                     objectData.material.map = texture;
                     
-                    // Apply tinted color if specified (with REDUCED strength)
-                    if (hasSpecifiedColor && specifiedColor.getHex() !== 0xffffff) {
-                        // Create a blend between white and the specified color
-                        const blendedColor = new THREE.Color(0xffffff);
-                        const tintStrength = 0.3; // REDUCED to 30% influence
-                        
-                        // Lerp between white and specified color
-                        blendedColor.lerp(specifiedColor, tintStrength);
-                        objectData.material.color.copy(blendedColor);
-                        
-                        console.log(`Applied tinted color to ${objectData.name} with strength ${tintStrength}`, 
-                                   "Final color:", blendedColor.getHexString());
+                    // Store information that this material has a texture
+                    objectData.material.userData = objectData.material.userData || {};
+                    objectData.material.userData.hasTexture = true;
+                    
+                    // If no effect is currently applied, reset to white for proper texture display
+                    const hasEffect = objectData.effect && objectData.effect.data;
+                    if (!hasEffect) {
+                        objectData.material.color.set(0xffffff);
                     }
                     
-                    // Try additional material properties to improve texture visibility
-                    objectData.material.combine = THREE.MixOperation;
-                    
-                    // Make sure updates are applied
                     objectData.material.needsUpdate = true;
                     console.log("Applied texture to", objectData.name);
-                    
-                    // Log the final state for debugging
-                    console.log(`Final material for ${objectData.name}:`, {
-                        hasTexture: !!objectData.material.map,
-                        color: objectData.material.color.getHexString()
-                    });
                 }
             },
-            // Progress callback
             undefined,
-            // Error callback
             (error) => {
                 console.error("Error loading texture for", objectData.name, error);
             }
@@ -903,11 +963,21 @@ class ShapeForgeParser {
                 }
             }
 
-            // IMPORTANT: Make sure all containers respect the original object's orientation
-            // if (effectData && effectData.container) {
-            //     // Copy rotation from the object to the effect container
-            //     effectData.container.rotation.copy(object.mesh.rotation);
-            // }
+        // Check if object has a texture - if so, we need special handling
+        if (object.mesh.material && object.mesh.material.userData && object.mesh.material.userData.hasTexture) {
+            // Store the texture reference
+            const textureMap = object.mesh.material.map;
+            
+            // If we're about to apply an effect that manipulates the material,
+            // create a special note for the update method
+            object.mesh.material.userData.preserveTexture = true;
+            
+            // If we're creating a new material for the effect, make sure 
+            // we transfer the texture to it
+            if (effectData && effectData.transferTexture) {
+                effectData.transferTexture(textureMap);
+            }
+        }
 
             if (effectData && effectData.container) {
                 // Remove container from scene if it was added there
