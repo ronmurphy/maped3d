@@ -14,25 +14,25 @@ class ShapeForge {
   constructor(resourceManager = null, shaderEffectsManager = null, mapEditor = null) {
     // Add mapEditor parameter
     this.mapEditor = mapEditor;
-    
+
     // Dependencies
     // Try to get ResourceManager from mapEditor first if available
     if (mapEditor && mapEditor.resourceManager) {
-        this.resourceManager = mapEditor.resourceManager;
-        console.log('ResourceManager connected from MapEditor');
+      this.resourceManager = mapEditor.resourceManager;
+      console.log('ResourceManager connected from MapEditor');
     } else {
-        this.resourceManager = resourceManager;
+      this.resourceManager = resourceManager;
     }
-    
+
     this.shaderEffectsManager = shaderEffectsManager;
-    
+
     // Core properties
     this.objects = [];
     this.selectedObject = null;
     this.history = [];
     this.historyIndex = -1;
     this.maxHistorySteps = 30;
-    
+
     // Scene for preview
     this.previewScene = null;
     this.previewCamera = null;
@@ -40,68 +40,18 @@ class ShapeForge {
     this.previewControls = null;
     this.previewContainer = null;
     this.isPreviewActive = false;
-    
+
     // UI references
     this.drawer = null;
     this.propertyPanels = {};
-    
+
     // Bind methods to maintain proper 'this' context
     this.animate = this.animate.bind(this);
     this.handleResize = this.handleResize.bind(this);
-    
+
     // Auto-load dependencies if needed
     this.checkDependencies();
-}
-
-/**
- * Check and load necessary dependencies
- */
-// checkDependencies() {
-//     console.log("ShapeForge checking dependencies...");
-    
-//     // Check if THREE.js is available
-//     if (!window.THREE) {
-//         console.error("THREE.js not available! ShapeForge requires THREE.js to function.");
-//         return false;
-//     }
-    
-//     // Try to get ResourceManager from various sources
-//     if (!this.resourceManager) {
-//         // Try window global
-//         if (window.resourceManager) {
-//             this.resourceManager = window.resourceManager;
-//             console.log("Using global ResourceManager");
-//         } 
-//         // Try through mapEditor if available
-//         else if (window.mapEditor && window.mapEditor.resourceManager) {
-//             this.resourceManager = window.mapEditor.resourceManager;
-//             console.log("Using MapEditor's ResourceManager");
-//         }
-//         // Try to find it in the Scene3D if available
-//         else if (window.scene3D && window.scene3D.resourceManager) {
-//             this.resourceManager = window.scene3D.resourceManager;
-//             console.log("Using Scene3D's ResourceManager");
-//         }
-//     }
-    
-//     // If we have ResourceManager, log its state to help with debugging
-//     if (this.resourceManager) {
-//         console.log("ResourceManager connected:", {
-//             hasTextures: !!this.resourceManager.resources?.textures,
-//             textureCategories: Object.keys(this.resourceManager.resources?.textures || {})
-//         });
-//     } else {
-//         console.warn("ResourceManager not found, texture features will be disabled");
-//     }
-    
-//     // Try to get ShaderEffectsManager from window if not provided
-//     if (!this.shaderEffectsManager && window.shaderEffectsManager) {
-//         this.shaderEffectsManager = window.shaderEffectsManager;
-//         console.log("Using global ShaderEffectsManager");
-//     }
-    
-//     return true;
-// }
+  }
 
   /**
    * Check and load necessary dependencies
@@ -134,20 +84,20 @@ class ShapeForge {
  * Manually connect to ResourceManager
  * @param {ResourceManager} resourceManager - Instance of ResourceManager
  */
-connectResourceManager(resourceManager) {
-  if (!resourceManager) {
+  connectResourceManager(resourceManager) {
+    if (!resourceManager) {
       console.error("Invalid ResourceManager provided");
       return false;
-  }
-  
-  this.resourceManager = resourceManager;
-  console.log("Manually connected to ResourceManager:", {
+    }
+
+    this.resourceManager = resourceManager;
+    console.log("Manually connected to ResourceManager:", {
       hasTextures: !!this.resourceManager.resources?.textures,
       textureCategories: Object.keys(this.resourceManager.resources?.textures || {})
-  });
-  
-  return true;
-}
+    });
+
+    return true;
+  }
 
 
 
@@ -199,7 +149,20 @@ connectResourceManager(resourceManager) {
       }
     }, 500); // Wait 500ms for the drawer to render
 
-    // Initialize new features if they haven't been already
+    // // Initialize new features if they haven't been already
+    // if (!this.featuresInitialized) {
+    //   // Wait a moment for UI to be ready, then initialize features
+    //   setTimeout(async () => {
+    //     try {
+    //       await this.initializeNewFeatures();
+    //       this.featuresInitialized = true;
+    //       console.log('All ShapeForge features initialized');
+    //     } catch (error) {
+    //       console.error('Error during ShapeForge feature initialization:', error);
+    //     }
+    //   }, 1000);
+    // }
+
     if (!this.featuresInitialized) {
       // Wait a moment for UI to be ready, then initialize features
       setTimeout(async () => {
@@ -212,6 +175,8 @@ connectResourceManager(resourceManager) {
         }
       }, 1000);
     }
+
+
 
     return this;
   }
@@ -257,16 +222,12 @@ connectResourceManager(resourceManager) {
             <sl-button id="new-project" size="small">New File</sl-button>
             <sl-button id="loadModelBtn" size="small">Open File</sl-button>
             <sl-button id="save-project" size="small">Export File</sl-button>
+  <sl-button id="import-additional" size="small">Add to Project</sl-button>
+    <sl-button id="save-to-resources" size="small">Save to Resources</sl-button>
+  <sl-button id="clear-all" size="small" variant="danger">Clear All</sl-button>
+    <sl-button id="importDXF" size="small" >Import DXF</sl-button>
 
           </div>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px;">
-  <sl-button id="import-additional" size="small">Add to Project</sl-button>
-  <sl-button id="export-code" size="small">View JS Code</sl-button>
-</div>
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px;">
-  <sl-button id="save-to-resources" size="small">Save to Resources</sl-button>
-  <sl-button id="clear-all" size="small" variant="danger">Clear All</sl-button>
-</div>
         </div>
         
         
@@ -305,14 +266,28 @@ connectResourceManager(resourceManager) {
             <!-- Position -->
             <div class="transform-group">
               <label>Position</label>
-              <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
-                <label>X:</label>
-                <sl-range id="position-x" min="-10" max="10" step="0.1" value="0"></sl-range>
-                <label>Y:</label>
-                <sl-range id="position-y" min="-10" max="10" step="0.1" value="0"></sl-range>
-                <label>Z:</label>
-                <sl-range id="position-z" min="-10" max="10" step="0.1" value="0"></sl-range>
-              </div>
+<div style="display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center;">
+  <label>X:</label>
+  <sl-range id="position-x" min="-10" max="10" step="0.1" value="0"></sl-range>
+  <sl-button-group>
+    <sl-button size="small" id="pos-x-minus" title="Move -0.5 on X axis">-0.5</sl-button>
+    <sl-button size="small" id="pos-x-plus" title="Move +0.5 on X axis">+0.5</sl-button>
+  </sl-button-group>
+  
+  <label>Y:</label>
+  <sl-range id="position-y" min="-10" max="10" step="0.1" value="0"></sl-range>
+  <sl-button-group>
+    <sl-button size="small" id="pos-y-minus" title="Move -0.5 on Y axis">-0.5</sl-button>
+    <sl-button size="small" id="pos-y-plus" title="Move +0.5 on Y axis">+0.5</sl-button>
+  </sl-button-group>
+  
+  <label>Z:</label>
+  <sl-range id="position-z" min="-10" max="10" step="0.1" value="0"></sl-range>
+  <sl-button-group>
+    <sl-button size="small" id="pos-z-minus" title="Move -0.5 on Z axis">-0.5</sl-button>
+    <sl-button size="small" id="pos-z-plus" title="Move +0.5 on Z axis">+0.5</sl-button>
+  </sl-button-group>
+</div>
             </div>
             
             <!-- Rotation -->
@@ -360,11 +335,11 @@ connectResourceManager(resourceManager) {
               <label>Scale</label>
               <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px; align-items: center;">
                 <label>X:</label>
-                <sl-range id="scale-x" min="0.1" max="5" step="0.1" value="1"></sl-range>
+                <sl-range id="scale-x" min="0.1" max="10" step="0.1" value="1"></sl-range>
                 <label>Y:</label>
-                <sl-range id="scale-y" min="0.1" max="5" step="0.1" value="1"></sl-range>
+                <sl-range id="scale-y" min="0.1" max="10" step="0.1" value="1"></sl-range>
                 <label>Z:</label>
-                <sl-range id="scale-z" min="0.1" max="5" step="0.1" value="1"></sl-range>
+                <sl-range id="scale-z" min="0.1" max="10" step="0.1" value="1"></sl-range>
               </div>
             </div>
           </div>
@@ -451,26 +426,26 @@ connectResourceManager(resourceManager) {
     this.setupEventListeners();
 
     const materialsContainer = this.drawer.querySelector('#materials-container');
-if (materialsContainer) {
-    // Add texture selection button
-    const textureBtn = document.createElement('sl-button');
-    textureBtn.style.marginTop = '16px';
-    textureBtn.style.width = '100%';
-    textureBtn.innerHTML = `
+    if (materialsContainer) {
+      // Add texture selection button
+      const textureBtn = document.createElement('sl-button');
+      textureBtn.style.marginTop = '16px';
+      textureBtn.style.width = '100%';
+      textureBtn.innerHTML = `
         <span class="material-icons" slot="prefix">wallpaper</span>
         Apply Texture from Resources
     `;
-    
-    textureBtn.addEventListener('click', () => {
+
+      textureBtn.addEventListener('click', () => {
         if (this.selectedObject !== null) {
-            this.showTextureSelectionDialog();
+          this.showTextureSelectionDialog();
         } else {
-            alert('Please select an object first');
+          alert('Please select an object first');
         }
-    });
-    
-    materialsContainer.appendChild(textureBtn);
-}
+      });
+
+      materialsContainer.appendChild(textureBtn);
+    }
 
 
   }
@@ -486,30 +461,30 @@ if (materialsContainer) {
     });
 
     // Shape creation buttons
-// In setupEventListeners, update the shapeButtons object:
-const shapeButtons = {
-  'shape-cube': this.createCube.bind(this),
-  'shape-sphere': this.createSphere.bind(this),
-  'shape-cylinder': this.createCylinder.bind(this),
-  'shape-cone': this.createCone.bind(this),
-  'shape-torus': this.createTorus.bind(this),
-  'shape-plane': this.createPlane.bind(this),
-  'shape-d4': this.createTetrahedron.bind(this),
-  'shape-d6': this.createCube.bind(this),
-  'shape-d8': this.createOctahedron.bind(this),
-  'shape-d10': this.createD10.bind(this),
-  'shape-d12': this.createDodecahedron.bind(this),
-  'shape-d20': this.createIcosahedron.bind(this),
-  // New shapes
-  'shape-torus-knot': this.createTorusKnot.bind(this),
-  'shape-pyramid': this.createPyramid.bind(this),
-  'shape-prism': this.createPrism.bind(this),
-  'shape-capsule': this.createCapsule.bind(this),
-  'shape-tube': this.createTube.bind(this),
-  'shape-hemisphere': this.createHemisphere.bind(this),
-  'shape-rounded-cube': this.createRoundedCube.bind(this),
-  'shape-star': this.createStar.bind(this)
-};
+    // In setupEventListeners, update the shapeButtons object:
+    const shapeButtons = {
+      'shape-cube': this.createCube.bind(this),
+      'shape-sphere': this.createSphere.bind(this),
+      'shape-cylinder': this.createCylinder.bind(this),
+      'shape-cone': this.createCone.bind(this),
+      'shape-torus': this.createTorus.bind(this),
+      'shape-plane': this.createPlane.bind(this),
+      'shape-d4': this.createTetrahedron.bind(this),
+      'shape-d6': this.createCube.bind(this),
+      'shape-d8': this.createOctahedron.bind(this),
+      'shape-d10': this.createD10.bind(this),
+      'shape-d12': this.createDodecahedron.bind(this),
+      'shape-d20': this.createIcosahedron.bind(this),
+      // New shapes
+      'shape-torus-knot': this.createTorusKnot.bind(this),
+      'shape-pyramid': this.createPyramid.bind(this),
+      'shape-prism': this.createPrism.bind(this),
+      'shape-capsule': this.createCapsule.bind(this),
+      'shape-tube': this.createTube.bind(this),
+      'shape-hemisphere': this.createHemisphere.bind(this),
+      'shape-rounded-cube': this.createRoundedCube.bind(this),
+      'shape-star': this.createStar.bind(this)
+    };
 
     // Add event listeners for shape buttons
     Object.entries(shapeButtons).forEach(([id, handler]) => {
@@ -551,7 +526,7 @@ const shapeButtons = {
     // this.drawer.querySelector('#load-project')?.addEventListener('click', this.loadProject.bind(this));
     this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
     this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
-    this.drawer.querySelector('#loadModelBtn')?.addEventListener('click',this.showModelBrowser.bind(this));
+    this.drawer.querySelector('#loadModelBtn')?.addEventListener('click', this.showModelBrowser.bind(this));
 
 
 
@@ -563,26 +538,61 @@ const shapeButtons = {
       { id: 'rot-z-90', axis: 'z', degrees: 90 },
       { id: 'rot-z-180', axis: 'z', degrees: 180 }
     ];
-    
+
     rotationQuickButtons.forEach(btn => {
       const button = this.drawer.querySelector(`#${btn.id}`);
       if (button) {
         button.addEventListener('click', () => {
           if (this.selectedObject === null) return;
-          
+
           const object = this.objects[this.selectedObject];
           const currentDegrees = (object.rotation[btn.axis] * 180) / Math.PI;
-          
+
           // Add the degrees, keeping within 0-360 range
           let newDegrees = (currentDegrees + btn.degrees) % 360;
-          
+
           // Update the slider
           const slider = this.drawer.querySelector(`#rotation-${btn.axis}`);
           if (slider) {
             slider.value = newDegrees;
-            
+
             // Trigger the change event
             this.updateTransform('rotation', btn.axis, newDegrees);
+          }
+        });
+      }
+    });
+
+    // Position quick adjustment buttons
+    const positionQuickButtons = [
+      { id: 'pos-x-minus', axis: 'x', value: -0.5 },
+      { id: 'pos-x-plus', axis: 'x', value: 0.5 },
+      { id: 'pos-y-minus', axis: 'y', value: -0.5 },
+      { id: 'pos-y-plus', axis: 'y', value: 0.5 },
+      { id: 'pos-z-minus', axis: 'z', value: -0.5 },
+      { id: 'pos-z-plus', axis: 'z', value: 0.5 }
+    ];
+
+    positionQuickButtons.forEach(btn => {
+      const button = this.drawer.querySelector(`#${btn.id}`);
+      if (button) {
+        button.addEventListener('click', () => {
+          if (this.selectedObject === null) return;
+
+          const object = this.objects[this.selectedObject];
+          const currentValue = object.position[btn.axis];
+
+          // Calculate new position value
+          const newValue = currentValue + btn.value;
+
+          // Update the slider
+          const slider = this.drawer.querySelector(`#position-${btn.axis}`);
+          if (slider) {
+            // Ensure we stay within the slider's range
+            slider.value = Math.max(slider.min, Math.min(slider.max, newValue));
+
+            // Trigger the update
+            this.updateTransform('position', btn.axis, slider.value);
           }
         });
       }
@@ -603,6 +613,9 @@ const shapeButtons = {
       });
     });
 
+
+
+
     this.drawer.querySelector('#import-additional')?.addEventListener('click', this.importAdditional.bind(this));
     this.drawer.querySelector('#clear-all')?.addEventListener('click', this.clearAll.bind(this));
 
@@ -617,6 +630,117 @@ const shapeButtons = {
 
     // Window resize
     window.addEventListener('resize', this.handleResize);
+
+
+    const scaleContainer = this.drawer.querySelector('.transform-group:has(#scale-x)');
+    if (scaleContainer) {
+      // Create a new div for our scale percentage controls
+      const scalePercentDiv = document.createElement('div');
+      scalePercentDiv.style.cssText = 'margin-top: 12px; border-top: 1px solid #555; padding-top: 8px;';
+      scalePercentDiv.innerHTML = `
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <sl-input id="scale-percentage" type="number" size="small" placeholder="50%" style="width: 80px;">
+            <span slot="suffix">%</span>
+          </sl-input>
+          <sl-button size="small" id="scale-increase">+ Resize</sl-button>
+          <sl-button size="small" id="scale-decrease">- Resize</sl-button>
+        </div>
+      `;
+      
+      // Add the percentage controls after all existing content
+      scaleContainer.appendChild(scalePercentDiv);
+      
+      // Scale percentage controls
+      const scaleInput = this.drawer.querySelector('#scale-percentage');
+      const scaleIncreaseBtn = this.drawer.querySelector('#scale-increase');
+      const scaleDecreaseBtn = this.drawer.querySelector('#scale-decrease');
+    
+      const applyScalePercentage = (percentageStr) => {
+        if (this.selectedObject === null) return;
+        
+        // Parse the input value
+        let percentage = parseFloat(percentageStr);
+        if (isNaN(percentage)) return;
+        
+        // Convert to multiplier (50% becomes 0.5, -25% becomes -0.25)
+        const multiplier = percentage / 100;
+        
+        const object = this.objects[this.selectedObject];
+        const axes = ['x', 'y', 'z'];
+        
+        // Store original values for history
+        const oldScales = {
+          x: object.scale.x,
+          y: object.scale.y,
+          z: object.scale.z
+        };
+        
+        // Calculate new scale values
+        const newScales = {};
+        axes.forEach(axis => {
+          const currentScale = object.scale[axis];
+          
+          // If positive percentage, increase by that amount
+          // If negative percentage, decrease by that amount
+          newScales[axis] = multiplier >= 0 ? 
+            currentScale * (1 + multiplier) : 
+            currentScale * (1 - Math.abs(multiplier));
+          
+          // Ensure scale doesn't go below minimum
+          newScales[axis] = Math.max(0.1, newScales[axis]);
+          
+          // Update slider with new value
+          const slider = this.drawer.querySelector(`#scale-${axis}`);
+          if (slider) {
+            slider.value = Math.min(slider.max, newScales[axis]);
+            this.updateTransform('scale', axis, slider.value);
+          }
+        });
+        
+        // Add a single grouped history step for all axes
+        this.addHistoryStep('scaleMultiple', {
+          objectIndex: this.selectedObject,
+          oldScales: oldScales,
+          newScales: newScales
+        });
+      };
+    
+      // Set up event listeners - no Apply button, apply directly on + and -
+      if (scaleIncreaseBtn) {
+        scaleIncreaseBtn.addEventListener('click', () => {
+          if (scaleInput && scaleInput.value) {
+            applyScalePercentage(Math.abs(parseFloat(scaleInput.value)));
+          } else {
+            // Default to 25% if no value is entered
+            applyScalePercentage(25);
+          }
+        });
+      }
+    
+      if (scaleDecreaseBtn) {
+        scaleDecreaseBtn.addEventListener('click', () => {
+          if (scaleInput && scaleInput.value) {
+            applyScalePercentage(-Math.abs(parseFloat(scaleInput.value)));
+          } else {
+            // Default to -25% if no value is entered
+            applyScalePercentage(-25);
+          }
+        });
+      }
+    
+      // Handle enter key in the input to apply immediately
+      if (scaleInput) {
+        scaleInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            applyScalePercentage(scaleInput.value);
+          }
+        });
+      }
+    }
+
+    this.drawer.querySelector('#importDXF')?.addEventListener('click', () => this.importDXF());
+
   }
 
   /**
@@ -775,10 +899,10 @@ const shapeButtons = {
     console.log("Preview started");
 
 
-// Create zoom slider if it doesn't exist
-if (!this.zoomSlider) {
-  const sliderContainer = document.createElement('div');
-  sliderContainer.style.cssText = `
+    // Create zoom slider if it doesn't exist
+    if (!this.zoomSlider) {
+      const sliderContainer = document.createElement('div');
+      sliderContainer.style.cssText = `
     position: absolute;
     bottom: 20px;
     left: 50%;
@@ -791,45 +915,45 @@ if (!this.zoomSlider) {
     align-items: center;
     z-index: 100;
   `;
-  
-  // Add zoom icons
-  const zoomOutIcon = document.createElement('sl-icon');
-  zoomOutIcon.name = 'zoom-in';
-  zoomOutIcon.style.color = 'white';
-  zoomOutIcon.style.marginRight = '8px';
-  sliderContainer.appendChild(zoomOutIcon);
-  
-  // Create the slider
-  const zoomSlider = document.createElement('sl-range');
-  zoomSlider.min = 20;  // Wide FOV (zoomed out)
-  zoomSlider.max = 100; // Narrow FOV (zoomed in)
-  zoomSlider.step = 1;
-  zoomSlider.value = 60; // Default FOV
-  zoomSlider.style.flex = '1';
-  zoomSlider.style.margin = '0 10px';
-  zoomSlider.addEventListener('sl-input', (e) => {
-    this.setZoom(parseFloat(e.target.value));
-  });
-  sliderContainer.appendChild(zoomSlider);
-  
-  // Add zoom-in icon
-  const zoomInIcon = document.createElement('sl-icon');
-  zoomInIcon.name = 'zoom-out';
-  zoomInIcon.style.color = 'white';
-  zoomInIcon.style.marginLeft = '8px';
-  sliderContainer.appendChild(zoomInIcon);
-  
-  // Add to preview container
-  this.previewContainer.appendChild(sliderContainer);
-  
-  // Store reference
-  this.zoomSlider = zoomSlider;
-  
-  // Set initial zoom - match camera's current FOV
-  if (this.previewCamera) {
-    zoomSlider.value = this.previewCamera.fov;
-  }
-}
+
+      // Add zoom icons
+      const zoomOutIcon = document.createElement('sl-icon');
+      zoomOutIcon.name = 'zoom-in';
+      zoomOutIcon.style.color = 'white';
+      zoomOutIcon.style.marginRight = '8px';
+      sliderContainer.appendChild(zoomOutIcon);
+
+      // Create the slider
+      const zoomSlider = document.createElement('sl-range');
+      zoomSlider.min = 20;  // Wide FOV (zoomed out)
+      zoomSlider.max = 100; // Narrow FOV (zoomed in)
+      zoomSlider.step = 1;
+      zoomSlider.value = 60; // Default FOV
+      zoomSlider.style.flex = '1';
+      zoomSlider.style.margin = '0 10px';
+      zoomSlider.addEventListener('sl-input', (e) => {
+        this.setZoom(parseFloat(e.target.value));
+      });
+      sliderContainer.appendChild(zoomSlider);
+
+      // Add zoom-in icon
+      const zoomInIcon = document.createElement('sl-icon');
+      zoomInIcon.name = 'zoom-out';
+      zoomInIcon.style.color = 'white';
+      zoomInIcon.style.marginLeft = '8px';
+      sliderContainer.appendChild(zoomInIcon);
+
+      // Add to preview container
+      this.previewContainer.appendChild(sliderContainer);
+
+      // Store reference
+      this.zoomSlider = zoomSlider;
+
+      // Set initial zoom - match camera's current FOV
+      if (this.previewCamera) {
+        zoomSlider.value = this.previewCamera.fov;
+      }
+    }
   }
 
   /**
@@ -842,23 +966,23 @@ if (!this.zoomSlider) {
 
   setZoomLevel(level) {
     if (!this.previewCamera) return;
-    
+
     // Normalize level between min and max
     const normalizedLevel = Math.max(1, Math.min(10, level));
-    
+
     // For perspective camera, adjust distance from origin
     if (this.previewCamera) {
       // Get camera direction (from center to current position)
       const direction = new THREE.Vector3();
       direction.copy(this.previewCamera.position).normalize();
-      
+
       // Calculate new position based on zoom level
       // Lower zoom level = closer to origin (smaller orbit)
       const distance = 3 + normalizedLevel * 2; // Scale from 5 to 23 units
-      
+
       // Update camera position
       this.previewCamera.position.copy(direction.multiplyScalar(distance));
-      
+
       // Update controls (if they exist)
       if (this.previewControls) {
         if (this.previewControls.target) {
@@ -867,82 +991,50 @@ if (!this.zoomSlider) {
         } else {
           this.previewCamera.lookAt(0, 0, 0);
         }
-        
+
         // Update orbit controls to match new position
         if (typeof this.previewControls.update === 'function') {
           this.previewControls.update();
         }
       }
     }
-    
+
     return this;
   };
 
   setZoom(fov) {
     if (!this.previewCamera) return;
-    
+
     // Ensure FOV is within reasonable limits
     const newFov = Math.max(10, Math.min(120, fov));
-    
+
     // Change the camera FOV (lower FOV = more zoom)
     this.previewCamera.fov = newFov;
     this.previewCamera.updateProjectionMatrix(); // Important after changing FOV
-    
+
     return this;
   };
 
   /**
    * Animation loop for preview
    */
-  // animate() {
-  //   if (!this.isPreviewActive) return;
-
-  //   requestAnimationFrame(this.animate);
-
-  //   // Calculate delta time for smooth animations
-  //   const now = Date.now();
-  //   const deltaTime = (now - (this.lastFrameTime || now)) / 1000; // in seconds
-  //   this.lastFrameTime = now;
-
-  //   // Update orbit controls
-  //   if (this.previewControls) {
-  //     this.previewControls.update();
-  //   }
-
-  //   // Update shader effects
-  //   this.updateEffects(deltaTime);
-
-  //   // Render the scene
-  //   if (this.previewRenderer && this.previewScene && this.previewCamera) {
-  //     this.previewRenderer.render(this.previewScene, this.previewCamera);
-  //   }
-  // }
-
   animate() {
     if (!this.isPreviewActive) return;
-  
+
     requestAnimationFrame(this.animate);
-  
+
     // Calculate delta time for smooth animations
     const now = Date.now();
     const deltaTime = (now - (this.lastFrameTime || now)) / 1000; // in seconds
     this.lastFrameTime = now;
-  
-    // Update controls based on rotation setting
-    // if (this.previewControls) {
-    //   // Only call update if rotation is enabled or if it's a special update that doesn't include rotation
-    //   if (this.autoRotationEnabled !== false) {
-    //     this.previewControls.update();
-    //   }
-    // }
-  
+
     if (this.previewControls && this.autoRotationEnabled !== false) {
       this.previewControls.update();
     }
 
     // Update shader effects
     this.updateEffects(deltaTime);
-  
+
     // Render the scene
     if (this.previewRenderer && this.previewScene && this.previewCamera) {
       this.previewRenderer.render(this.previewScene, this.previewCamera);
@@ -1258,73 +1350,73 @@ if (!this.zoomSlider) {
    * Note: THREE.js doesn't have this built-in, so we use a custom approach
    */
   createD10() {
-      // Define the vertices for a pentagonal trapezohedron
-  const sides = 10;
-  const radius = 0.5; // Scale to match other shapes in ShapeForge
-  
-  // Start with top and bottom vertices
-  const vertices = [
-    [0, 0, 1],   // Top vertex
-    [0, 0, -1],  // Bottom vertex
-  ];
-  
-  // Add vertices around the "equator" with slight offsets
-  for (let i = 0; i < sides; ++i) {
-    const b = (i * Math.PI * 2) / sides;
-    vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
-  }
-  
-  // Define the faces as triangles
-  const faces = [
-    // Top faces (connecting top vertex to equator)
-    [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
-    [0, 7, 8], [0, 8, 9], [0, 9, 10], [0, 10, 11], [0, 11, 2],
-    
-    // Bottom faces (connecting bottom vertex to equator)
-    [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
-    [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
-  ];
-  
-  // Flatten the arrays to the format needed by THREE.PolyhedronGeometry
-  const flatVertices = [];
-  vertices.forEach(v => {
-    if (Array.isArray(v)) {
-      flatVertices.push(v[0], v[1], v[2]);
-    } else {
-      flatVertices.push(v);
+    // Define the vertices for a pentagonal trapezohedron
+    const sides = 10;
+    const radius = 0.5; // Scale to match other shapes in ShapeForge
+
+    // Start with top and bottom vertices
+    const vertices = [
+      [0, 0, 1],   // Top vertex
+      [0, 0, -1],  // Bottom vertex
+    ];
+
+    // Add vertices around the "equator" with slight offsets
+    for (let i = 0; i < sides; ++i) {
+      const b = (i * Math.PI * 2) / sides;
+      vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
     }
-  });
-  
-  const flatFaces = [];
-  faces.forEach(f => flatFaces.push(...f));
-  
-  // Create the geometry
-  const geometry = new THREE.PolyhedronGeometry(
-    flatVertices,
-    flatFaces,
-    radius,
-    0 // No subdivision
-  );
-  
-  // Create material and mesh
-  const material = this.createDefaultMaterial();
-  const mesh = new THREE.Mesh(geometry, material);
-  
-  // Add to scene
-  this.addObjectToScene({
-    type: 'd10',
-    name: `D10 ${this.objects.length + 1}`,
-    geometry: geometry,
-    material: material,
-    mesh: mesh,
-    parameters: {
-      radius: radius,
-      sides: sides
-    },
-    position: { x: 0, y: 0, z: 0 },
-    rotation: { x: 0, y: 0, z: 0 },
-    scale: { x: 1, y: 1, z: 1 }
-  });
+
+    // Define the faces as triangles
+    const faces = [
+      // Top faces (connecting top vertex to equator)
+      [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
+      [0, 7, 8], [0, 8, 9], [0, 9, 10], [0, 10, 11], [0, 11, 2],
+
+      // Bottom faces (connecting bottom vertex to equator)
+      [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
+      [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
+    ];
+
+    // Flatten the arrays to the format needed by THREE.PolyhedronGeometry
+    const flatVertices = [];
+    vertices.forEach(v => {
+      if (Array.isArray(v)) {
+        flatVertices.push(v[0], v[1], v[2]);
+      } else {
+        flatVertices.push(v);
+      }
+    });
+
+    const flatFaces = [];
+    faces.forEach(f => flatFaces.push(...f));
+
+    // Create the geometry
+    const geometry = new THREE.PolyhedronGeometry(
+      flatVertices,
+      flatFaces,
+      radius,
+      0 // No subdivision
+    );
+
+    // Create material and mesh
+    const material = this.createDefaultMaterial();
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Add to scene
+    this.addObjectToScene({
+      type: 'd10',
+      name: `D10 ${this.objects.length + 1}`,
+      geometry: geometry,
+      material: material,
+      mesh: mesh,
+      parameters: {
+        radius: radius,
+        sides: sides
+      },
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 }
+    });
   }
 
   /**
@@ -1482,6 +1574,82 @@ if (!this.zoomSlider) {
           (value) => this.updateGeometryParameter('widthSegments', value));
         this.addRangeSlider(parametersDiv, 'Height Segments', 'heightSegments', object.parameters.heightSegments, 1, 32, 1,
           (value) => this.updateGeometryParameter('heightSegments', value));
+        break;
+
+      case 'torusKnot':
+        this.addRangeSlider(parametersDiv, 'Radius', 'radius', object.parameters.radius, 0.1, 5, 0.1,
+          (value) => this.updateGeometryParameter('radius', value));
+        this.addRangeSlider(parametersDiv, 'Tube', 'tube', object.parameters.tube, 0.01, 1, 0.01,
+          (value) => this.updateGeometryParameter('tube', value));
+        this.addRangeSlider(parametersDiv, 'Tubular Segments', 'tubularSegments', object.parameters.tubularSegments, 8, 128, 1,
+          (value) => this.updateGeometryParameter('tubularSegments', value));
+        this.addRangeSlider(parametersDiv, 'Radial Segments', 'radialSegments', object.parameters.radialSegments, 3, 32, 1,
+          (value) => this.updateGeometryParameter('radialSegments', value));
+        this.addRangeSlider(parametersDiv, 'P Value', 'p', object.parameters.p, 1, 10, 1,
+          (value) => this.updateGeometryParameter('p', value));
+        this.addRangeSlider(parametersDiv, 'Q Value', 'q', object.parameters.q, 1, 10, 1,
+          (value) => this.updateGeometryParameter('q', value));
+        break;
+
+      case 'pyramid':
+        this.addRangeSlider(parametersDiv, 'Radius', 'radius', object.parameters.radius, 0.1, 5, 0.1,
+          (value) => this.updateGeometryParameter('radius', value));
+        this.addRangeSlider(parametersDiv, 'Height', 'height', object.parameters.height, 0.1, 10, 0.1,
+          (value) => this.updateGeometryParameter('height', value));
+        this.addRangeSlider(parametersDiv, 'Radial Segments', 'radialSegments', object.parameters.radialSegments, 3, 32, 1,
+          (value) => this.updateGeometryParameter('radialSegments', value));
+        this.addRangeSlider(parametersDiv, 'Height Segments', 'heightSegments', object.parameters.heightSegments, 1, 10, 1,
+          (value) => this.updateGeometryParameter('heightSegments', value));
+        break;
+
+      case 'capsule':
+        this.addRangeSlider(parametersDiv, 'Radius', 'radius', object.parameters.radius, 0.1, 5, 0.1,
+          (value) => this.updateGeometryParameter('radius', value));
+        this.addRangeSlider(parametersDiv, 'Length', 'length', object.parameters.length, 0.1, 10, 0.1,
+          (value) => this.updateGeometryParameter('length', value));
+        this.addRangeSlider(parametersDiv, 'Cap Segments', 'capSegments', object.parameters.capSegments, 1, 20, 1,
+          (value) => this.updateGeometryParameter('capSegments', value));
+        this.addRangeSlider(parametersDiv, 'Radial Segments', 'radialSegments', object.parameters.radialSegments, 3, 32, 1,
+          (value) => this.updateGeometryParameter('radialSegments', value));
+        break;
+
+      case 'tube':
+        this.addRangeSlider(parametersDiv, 'Tube Radius', 'tube', object.parameters.tube, 0.01, 1, 0.01,
+          (value) => this.updateGeometryParameter('tube', value));
+        this.addRangeSlider(parametersDiv, 'Path Radius', 'radius', object.parameters.radius, 0.1, 5, 0.1,
+          (value) => this.updateGeometryParameter('radius', value));
+        this.addRangeSlider(parametersDiv, 'Tubular Segments', 'tubularSegments', object.parameters.tubularSegments, 8, 128, 1,
+          (value) => this.updateGeometryParameter('tubularSegments', value));
+        this.addRangeSlider(parametersDiv, 'Radial Segments', 'radialSegments', object.parameters.radialSegments, 3, 32, 1,
+          (value) => this.updateGeometryParameter('radialSegments', value));
+        break;
+
+      case 'hemisphere':
+        this.addRangeSlider(parametersDiv, 'Radius', 'radius', object.parameters.radius, 0.1, 5, 0.1,
+          (value) => this.updateGeometryParameter('radius', value));
+        this.addRangeSlider(parametersDiv, 'Width Segments', 'widthSegments', object.parameters.widthSegments, 4, 64, 1,
+          (value) => this.updateGeometryParameter('widthSegments', value));
+        this.addRangeSlider(parametersDiv, 'Height Segments', 'heightSegments', object.parameters.heightSegments, 2, 32, 1,
+          (value) => this.updateGeometryParameter('heightSegments', value));
+        this.addRangeSlider(parametersDiv, 'Phi Length', 'phiLength', object.parameters.phiLength, Math.PI / 2, Math.PI * 2, 0.1,
+          (value) => this.updateGeometryParameter('phiLength', value));
+        this.addRangeSlider(parametersDiv, 'Theta Length', 'thetaLength', object.parameters.thetaLength, Math.PI / 4, Math.PI / 2, 0.05,
+          (value) => this.updateGeometryParameter('thetaLength', value));
+        break;
+
+      case 'star':
+        this.addRangeSlider(parametersDiv, 'Points', 'points', object.parameters.points, 3, 12, 1,
+          (value) => this.updateGeometryParameter('points', value));
+        this.addRangeSlider(parametersDiv, 'Outer Radius', 'outerRadius', object.parameters.outerRadius, 0.1, 5, 0.1,
+          (value) => this.updateGeometryParameter('outerRadius', value));
+        this.addRangeSlider(parametersDiv, 'Inner Radius', 'innerRadius', object.parameters.innerRadius, 0.05, 4, 0.05,
+          (value) => this.updateGeometryParameter('innerRadius', value));
+        this.addRangeSlider(parametersDiv, 'Depth', 'depth', object.parameters.depth, 0.05, 2, 0.05,
+          (value) => this.updateGeometryParameter('depth', value));
+        this.addRangeSlider(parametersDiv, 'Bevel Thickness', 'bevelThickness', object.parameters.bevelThickness, 0, 0.5, 0.01,
+          (value) => this.updateGeometryParameter('bevelThickness', value));
+        this.addRangeSlider(parametersDiv, 'Bevel Size', 'bevelSize', object.parameters.bevelSize, 0, 0.5, 0.01,
+          (value) => this.updateGeometryParameter('bevelSize', value));
         break;
     }
 
@@ -1658,6 +1826,113 @@ if (!this.zoomSlider) {
         );
         break;
 
+      case 'torusKnot':
+        newGeometry = new THREE.TorusKnotGeometry(
+          object.parameters.radius || 0.4,
+          object.parameters.tube || 0.1,
+          object.parameters.tubularSegments || 64,
+          object.parameters.radialSegments || 8,
+          object.parameters.p || 2,
+          object.parameters.q || 3
+        );
+        break;
+
+      case 'pyramid':
+        newGeometry = new THREE.ConeGeometry(
+          object.parameters.radius || 0.5,
+          object.parameters.height || 1,
+          object.parameters.radialSegments || 3,
+          object.parameters.heightSegments || 1
+        );
+        break;
+
+      case 'capsule':
+        newGeometry = new THREE.CapsuleGeometry(
+          object.parameters.radius || 0.3,
+          object.parameters.length || 0.6,
+          object.parameters.capSegments || 4,
+          object.parameters.radialSegments || 8
+        );
+        break;
+
+      case 'tube':
+        // Create a curved path for the tube to follow
+        let curve;
+
+        if (object.parameters.path === 'circle') {
+          curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-object.parameters.radius || -0.5, 0, 0),
+            new THREE.Vector3(0, object.parameters.radius || 0.5, object.parameters.radius || 0.5),
+            new THREE.Vector3(object.parameters.radius || 0.5, 0, 0),
+            new THREE.Vector3(0, -object.parameters.radius || -0.5, -object.parameters.radius || -0.5)
+          ]);
+          curve.closed = true;
+        } else {
+          // Create a default curve if path type not recognized
+          curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-object.parameters.radius || -0.5, 0, 0),
+            new THREE.Vector3(0, object.parameters.radius || 0.5, 0),
+            new THREE.Vector3(object.parameters.radius || 0.5, 0, 0)
+          ]);
+        }
+
+        newGeometry = new THREE.TubeGeometry(
+          curve,
+          object.parameters.tubularSegments || 32,
+          object.parameters.tube || 0.1,
+          object.parameters.radialSegments || 8,
+          true
+        );
+        break;
+
+      case 'hemisphere':
+        newGeometry = new THREE.SphereGeometry(
+          object.parameters.radius || 0.5,
+          object.parameters.widthSegments || 32,
+          object.parameters.heightSegments || 16,
+          object.parameters.phiStart || 0,
+          object.parameters.phiLength || Math.PI * 2,
+          object.parameters.thetaStart || 0,
+          object.parameters.thetaLength || Math.PI / 2
+        );
+        break;
+
+      case 'star':
+        // Create a star shape
+        const shape = new THREE.Shape();
+        const points = object.parameters.points || 5;
+        const outerRadius = object.parameters.outerRadius || 0.5;
+        const innerRadius = object.parameters.innerRadius || 0.2;
+
+        for (let i = 0; i < points * 2; i++) {
+          // Alternate between outer and inner radius
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (Math.PI / points) * i;
+
+          const x = Math.sin(angle) * radius;
+          const y = Math.cos(angle) * radius;
+
+          if (i === 0) {
+            shape.moveTo(x, y);
+          } else {
+            shape.lineTo(x, y);
+          }
+        }
+
+        shape.closePath();
+
+        // Extrude the shape to create a 3D star
+        const extrudeSettings = {
+          depth: object.parameters.depth || 0.2,
+          bevelEnabled: true,
+          bevelThickness: object.parameters.bevelThickness || 0.05,
+          bevelSize: object.parameters.bevelSize || 0.05,
+          bevelSegments: 3
+        };
+
+        newGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        break;
+
       default:
         console.warn(`Unknown geometry type: ${object.type}`);
         return;
@@ -1727,7 +2002,7 @@ if (!this.zoomSlider) {
   updateTransformControls(object) {
 
     if (!object) return;
-  
+
     // Update position sliders
     const axes = ['x', 'y', 'z'];
     axes.forEach(axis => {
@@ -1735,14 +2010,14 @@ if (!this.zoomSlider) {
       if (positionSlider) {
         positionSlider.value = object.position[axis];
       }
-      
+
       const rotationSlider = this.drawer.querySelector(`#rotation-${axis}`);
       if (rotationSlider) {
         // Convert radians to degrees
         const degrees = (object.rotation[axis] * 180) / Math.PI;
         rotationSlider.value = degrees;
       }
-      
+
       const scaleSlider = this.drawer.querySelector(`#scale-${axis}`);
       if (scaleSlider) {
         scaleSlider.value = object.scale[axis];
@@ -2082,17 +2357,17 @@ if (!this.zoomSlider) {
           oldObject.mesh.material.emissive = new THREE.Color(0x000000);
         }
       }
-      
+
       // Clear selection
       this.selectedObject = null;
-      
+
       // Update property panels to show empty state
       this.updatePropertyPanels(null);
-      
+
       // Update objects list UI
       this.updateObjectsList();
     }
-    
+
     return this;
   };
 
@@ -2103,9 +2378,9 @@ if (!this.zoomSlider) {
     } else {
       this.autoRotationEnabled = !this.autoRotationEnabled;
     }
-    
+
     console.log(`Auto rotation ${this.autoRotationEnabled ? 'enabled' : 'disabled'}`);
-    
+
     return this.autoRotationEnabled;
   };
 
@@ -2175,10 +2450,56 @@ if (!this.zoomSlider) {
         );
         break;
 
-        case 'texture':
-          // Restore original material properties
-          this.restoreMaterialTexture(step.data.objectIndex, null, step.data.originalProps);
-          break;
+      case 'texture':
+        // Restore original material properties
+        this.restoreMaterialTexture(step.data.objectIndex, null, step.data.originalProps);
+        break;
+
+      case 'scaleMultiple':
+        // Restore old scale values for all axes
+        this.restoreTransform(
+          step.data.objectIndex,
+          'scale',
+          'x',
+          step.data.oldScales.x
+        );
+        this.restoreTransform(
+          step.data.objectIndex,
+          'scale',
+          'y',
+          step.data.oldScales.y
+        );
+        this.restoreTransform(
+          step.data.objectIndex,
+          'scale',
+          'z',
+          step.data.oldScales.z
+        );
+        break;
+
+        case 'multiAlign':
+case 'multiDistribute':
+  // Restore all object positions
+  Object.entries(step.data.oldPositions).forEach(([index, position]) => {
+    const objIndex = parseInt(index);
+    if (objIndex >= 0 && objIndex < this.objects.length) {
+      const object = this.objects[objIndex];
+      
+      // Restore position
+      object.position.x = position.x;
+      object.position.y = position.y;
+      object.position.z = position.z;
+      
+      // Update mesh
+      object.mesh.position.set(position.x, position.y, position.z);
+    }
+  });
+  
+  // Update UI for selected object
+  if (this.selectedObject !== null && this.objects[this.selectedObject]) {
+    this.updateTransformControls(this.objects[this.selectedObject]);
+  }
+  break;
     }
 
     // Decrement history index
@@ -2257,10 +2578,34 @@ if (!this.zoomSlider) {
         );
         break;
 
-        case 'texture':
-          // Reapply the texture
-          this.applyTextureToModel(step.data.textureId, step.data.category, step.data.objectIndex);
-          break;
+      case 'texture':
+        // Reapply the texture
+        this.applyTextureToModel(step.data.textureId, step.data.category, step.data.objectIndex);
+        break;
+
+        case 'multiAlign':
+          case 'multiDistribute':
+            // Apply all object positions
+            Object.entries(step.data.newPositions).forEach(([index, position]) => {
+              const objIndex = parseInt(index);
+              if (objIndex >= 0 && objIndex < this.objects.length) {
+                const object = this.objects[objIndex];
+                
+                // Apply position
+                object.position.x = position.x;
+                object.position.y = position.y;
+                object.position.z = position.z;
+                
+                // Update mesh
+                object.mesh.position.set(position.x, position.y, position.z);
+              }
+            });
+            
+            // Update UI for selected object
+            if (this.selectedObject !== null && this.objects[this.selectedObject]) {
+              this.updateTransformControls(this.objects[this.selectedObject]);
+            }
+            break;
 
     }
 
@@ -2270,28 +2615,28 @@ if (!this.zoomSlider) {
 
   restoreMaterialTexture(index, textureMap, originalProps) {
     if (index < 0 || index >= this.objects.length) return;
-    
+
     const object = this.objects[index];
-    
+
     // Apply original properties
     if (originalProps) {
-        if (originalProps.color) object.material.color.copy(originalProps.color);
-        if (originalProps.wireframe !== undefined) object.material.wireframe = originalProps.wireframe;
-        if (originalProps.transparent !== undefined) object.material.transparent = originalProps.transparent;
-        if (originalProps.opacity !== undefined) object.material.opacity = originalProps.opacity;
-        if (originalProps.metalness !== undefined) object.material.metalness = originalProps.metalness;
-        if (originalProps.roughness !== undefined) object.material.roughness = originalProps.roughness;
+      if (originalProps.color) object.material.color.copy(originalProps.color);
+      if (originalProps.wireframe !== undefined) object.material.wireframe = originalProps.wireframe;
+      if (originalProps.transparent !== undefined) object.material.transparent = originalProps.transparent;
+      if (originalProps.opacity !== undefined) object.material.opacity = originalProps.opacity;
+      if (originalProps.metalness !== undefined) object.material.metalness = originalProps.metalness;
+      if (originalProps.roughness !== undefined) object.material.roughness = originalProps.roughness;
     }
-    
+
     // Clear or set texture map
     object.material.map = textureMap;
     object.material.needsUpdate = true;
-    
+
     // Update UI if this is the selected object
     if (this.selectedObject === index) {
-        this.updateMaterialUI(object);
+      this.updateMaterialUI(object);
     }
-}
+  }
 
   /**
    * Update history button states
@@ -2452,22 +2797,22 @@ if (!this.zoomSlider) {
   restoreTransform(index, transformType, axis, value) {
 
     if (index < 0 || index >= this.objects.length) return;
-  
+
     const object = this.objects[index];
-    
+
     // Convert degrees to radians for rotation if it's from the history
     let transformValue = value;
     if (transformType === 'rotation' && value > Math.PI * 2) {
       // This appears to be degrees, convert to radians
       transformValue = (value * Math.PI) / 180;
     }
-    
+
     // Update object data
     object[transformType][axis] = transformValue;
-    
+
     // Update mesh
     object.mesh[transformType][axis] = transformValue;
-    
+
     // Update UI if this is the selected object
     if (this.selectedObject === index) {
       const slider = this.drawer.querySelector(`#${transformType}-${axis}`);
@@ -2763,19 +3108,19 @@ if (!this.zoomSlider) {
    */
   updateTransform(transformType, axis, value) {
     if (this.selectedObject === null) return;
-  
+
     const object = this.objects[this.selectedObject];
     const oldValue = object[transformType][axis];
     let newValue = parseFloat(value);
-    
+
     // Convert degrees to radians for rotation
     if (transformType === 'rotation') {
       newValue = (newValue * Math.PI) / 180; // Convert to radians
     }
-    
+
     // Update object data
     object[transformType][axis] = newValue;
-    
+
     // Update mesh
     switch (transformType) {
       case 'position':
@@ -2788,7 +3133,7 @@ if (!this.zoomSlider) {
         object.mesh.scale[axis] = newValue;
         break;
     }
-    
+
     // Add to history
     this.addHistoryStep('transform', {
       objectIndex: this.selectedObject,
@@ -2907,48 +3252,18 @@ if (!this.zoomSlider) {
     dialog.show();
   }
 
-  // /**
-  //  * Load a project from a file
-  //  */
-  // loadProject() {
-  //   // Create file input
-  //   const fileInput = document.createElement('input');
-  //   fileInput.type = 'file';
-  //   fileInput.accept = '.json,.shapeforge.json';
-
-  //   fileInput.addEventListener('change', (e) => {
-  //     const file = e.target.files[0];
-  //     if (!file) return;
-
-  //     const reader = new FileReader();
-  //     reader.onload = (event) => {
-  //       try {
-  //         const projectData = JSON.parse(event.target.result);
-  //         this.loadProjectData(projectData);
-  //       } catch (error) {
-  //         console.error('Error loading project:', error);
-  //         alert('Failed to load project: ' + error.message);
-  //       }
-  //     };
-
-  //     reader.readAsText(file);
-  //   });
-
-  //   fileInput.click();
-  // }
-
   showModelBrowser() {
     if (!this.resourceManager) {
-        alert("ResourceManager not available");
-        return;
+      alert("ResourceManager not available");
+      return;
     }
-    
+
     const dialog = document.createElement('sl-dialog');
     dialog.label = 'Load Model from Library';
-    
+
     // Get all models from ResourceManager
     const models = this.resourceManager.resources.shapeforge || new Map();
-    
+
     if (models.size === 0) {
       dialog.innerHTML = `
           <div style="text-align: center; padding: 32px;">
@@ -2983,29 +3298,29 @@ if (!this.zoomSlider) {
           </div>
         `;
     }
-    
+
     document.body.appendChild(dialog);
-    
+
     // Add event listeners for model cards
     dialog.querySelectorAll('.model-card').forEach(card => {
       card.addEventListener('click', () => {
         const modelId = card.dataset.id;
         const model = models.get(modelId);
-        
+
         if (model) {
           // Load the model
-          console.log('Loading model:', model); 
+          console.log('Loading model:', model);
           console.log('Model ID:', modelId);
           console.log('Model Data:', model.data);
           console.log('Model Name:', model.name);
           console.log('Models:', models);
-          
+
           try {
             // If model.data is already a JS object (not a string)
             if (typeof model.data === 'object' && model.data !== null) {
               console.log('Using model.data as object directly');
               this.loadProjectFromJson(model.data);
-            } 
+            }
             // If model.data might be a JSON string
             else if (typeof model.data === 'string') {
               console.log('Parsing model.data from string');
@@ -3020,28 +3335,28 @@ if (!this.zoomSlider) {
           }
         }
       });
-      
+
       // Add hover effect
       card.addEventListener('mouseenter', () => {
         card.style.transform = 'translateY(-4px)';
         card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
       });
-      
+
       card.addEventListener('mouseleave', () => {
         card.style.transform = 'none';
         card.style.boxShadow = 'none';
       });
     });
-    
+
     // Close button handler
     dialog.querySelector('.close-btn').addEventListener('click', () => {
       dialog.hide();
     });
-    
+
     dialog.addEventListener('sl-after-hide', () => {
       dialog.remove();
     });
-    
+
     dialog.show();
   }
 
@@ -3054,46 +3369,46 @@ if (!this.zoomSlider) {
     // Get project name
     const projectNameInput = this.drawer.querySelector('#project-name');
     const projectName = (projectNameInput?.value || 'Untitled Project').trim();
-    
+
     // Create thumbnail
     const thumbnail = this.createThumbnail();
-    
+
     // Create object data with detailed texture information
     const objectsData = this.objects.map(obj => {
-        // Basic object info
-        const objData = {
-            type: obj.type,
-            name: obj.name,
-            parameters: obj.parameters,
-            position: { ...obj.position },
-            rotation: { ...obj.rotation },
-            scale: { ...obj.scale }
+      // Basic object info
+      const objData = {
+        type: obj.type,
+        name: obj.name,
+        parameters: obj.parameters,
+        position: { ...obj.position },
+        rotation: { ...obj.rotation },
+        scale: { ...obj.scale }
+      };
+
+      // Material info
+      if (obj.material) {
+        objData.material = {
+          type: this.getMaterialType(obj.material),
+          color: obj.material.color?.getHex() || 0x3388ff,
+          wireframe: obj.material.wireframe || false,
+          transparent: obj.material.transparent || false,
+          opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
+          metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
+          roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
         };
-        
-        // Material info
-        if (obj.material) {
-            objData.material = {
-                type: this.getMaterialType(obj.material),
-                color: obj.material.color?.getHex() || 0x3388ff,
-                wireframe: obj.material.wireframe || false,
-                transparent: obj.material.transparent || false,
-                opacity: obj.material.opacity !== undefined ? obj.material.opacity : 1,
-                metalness: obj.material.metalness !== undefined ? obj.material.metalness : 0,
-                roughness: obj.material.roughness !== undefined ? obj.material.roughness : 0.5
-            };
-            
-            // Handle textures - encode the texture map as base64 if it exists
-            if (obj.material.map) {
-                // We need to capture the texture data
-                objData.material.texture = this.captureTextureData(obj.material.map);
-            }
+
+        // Handle textures - encode the texture map as base64 if it exists
+        if (obj.material.map) {
+          // We need to capture the texture data
+          objData.material.texture = this.captureTextureData(obj.material.map);
         }
+      }
 
 
 
       if (obj.type === 'merged' && obj.geometry) {
         objData.geometryData = this.captureGeometryData(obj.geometry);
-    }
+      }
 
       // Enhanced shader effect info
       if (obj.effect) {
@@ -3157,31 +3472,31 @@ if (!this.zoomSlider) {
 
   captureGeometryData(geometry) {
     if (!geometry) return null;
-    
+
     const geometryData = {};
-    
+
     // Capture position vertices
     if (geometry.getAttribute('position')) {
-        geometryData.vertices = Array.from(geometry.getAttribute('position').array);
+      geometryData.vertices = Array.from(geometry.getAttribute('position').array);
     }
-    
+
     // Capture normals
     if (geometry.getAttribute('normal')) {
-        geometryData.normals = Array.from(geometry.getAttribute('normal').array);
+      geometryData.normals = Array.from(geometry.getAttribute('normal').array);
     }
-    
+
     // Capture UVs
     if (geometry.getAttribute('uv')) {
-        geometryData.uvs = Array.from(geometry.getAttribute('uv').array);
+      geometryData.uvs = Array.from(geometry.getAttribute('uv').array);
     }
-    
+
     // Capture indices
     if (geometry.index) {
-        geometryData.indices = Array.from(geometry.index.array);
+      geometryData.indices = Array.from(geometry.index.array);
     }
-    
+
     return geometryData;
-}
+  }
 
   captureTextureData(texture) {
     // Return early if no texture
@@ -3189,95 +3504,95 @@ if (!this.zoomSlider) {
 
     // Check for image data
     if (!texture.image) {
-        console.warn("Texture has no image data, cannot capture");
-        return null;
+      console.warn("Texture has no image data, cannot capture");
+      return null;
     }
-    
+
     try {
-        // Create a canvas to capture the texture
-        const canvas = document.createElement('canvas');
-        canvas.width = texture.image.width || 256;
-        canvas.height = texture.image.height || 256;
-        
-        // Draw the texture image to the canvas
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(texture.image, 0, 0, canvas.width, canvas.height);
-        
-        // Convert to base64 (preferably WebP for better compression)
-        const textureData = canvas.toDataURL('image/webp', 0.8);
-        
-        return {
-            data: textureData,
-            repeat: [texture.repeat.x, texture.repeat.y],
-            offset: [texture.offset.x, texture.offset.y],
-            rotation: texture.rotation,
-            wrapS: texture.wrapS,
-            wrapT: texture.wrapT
-        };
+      // Create a canvas to capture the texture
+      const canvas = document.createElement('canvas');
+      canvas.width = texture.image.width || 256;
+      canvas.height = texture.image.height || 256;
+
+      // Draw the texture image to the canvas
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(texture.image, 0, 0, canvas.width, canvas.height);
+
+      // Convert to base64 (preferably WebP for better compression)
+      const textureData = canvas.toDataURL('image/webp', 0.8);
+
+      return {
+        data: textureData,
+        repeat: [texture.repeat.x, texture.repeat.y],
+        offset: [texture.offset.x, texture.offset.y],
+        rotation: texture.rotation,
+        wrapS: texture.wrapS,
+        wrapT: texture.wrapT
+      };
     } catch (error) {
-        console.error("Error capturing texture data:", error);
-        return null;
+      console.error("Error capturing texture data:", error);
+      return null;
     }
-}
+  }
 
 
 
   // Helper method to capture texture data from a THREE.js texture
-captureTextureData(texture) {
-  // Return early if no texture
-  if (!texture) return null;
+  captureTextureData(texture) {
+    // Return early if no texture
+    if (!texture) return null;
 
-  // Check for image data
-  if (!texture.image) {
+    // Check for image data
+    if (!texture.image) {
       console.warn("Texture has no image data, cannot capture");
       return null;
-  }
-  
-  try {
+    }
+
+    try {
       // Create a canvas to capture the texture
       const canvas = document.createElement('canvas');
       const maxSize = 1024; // Limit texture size to avoid huge files
-      
+
       // Determine appropriate size while maintaining aspect ratio
       let width = texture.image.width;
       let height = texture.image.height;
-      
+
       // Scale down if necessary
       if (width > maxSize || height > maxSize) {
-          if (width > height) {
-              height = Math.round(height * (maxSize / width));
-              width = maxSize;
-          } else {
-              width = Math.round(width * (maxSize / height));
-              height = maxSize;
-          }
+        if (width > height) {
+          height = Math.round(height * (maxSize / width));
+          width = maxSize;
+        } else {
+          width = Math.round(width * (maxSize / height));
+          height = maxSize;
+        }
       }
-      
+
       canvas.width = width;
       canvas.height = height;
-      
+
       // Draw the texture image to the canvas
       const ctx = canvas.getContext('2d');
       ctx.drawImage(texture.image, 0, 0, width, height);
-      
+
       // Convert to base64 (preferably WebP for better compression)
       const textureData = canvas.toDataURL('image/webp', 0.85);
-      
+
       console.log(`Captured texture: ${width}x${height}, data length: ${textureData.length}`);
-      
+
       return {
-          data: textureData,
-          repeat: [texture.repeat.x, texture.repeat.y],
-          offset: [texture.offset.x, texture.offset.y],
-          rotation: texture.rotation,
-          wrapS: texture.wrapS,
-          wrapT: texture.wrapT
+        data: textureData,
+        repeat: [texture.repeat.x, texture.repeat.y],
+        offset: [texture.offset.x, texture.offset.y],
+        rotation: texture.rotation,
+        wrapS: texture.wrapS,
+        wrapT: texture.wrapT
       };
-  } catch (error) {
+    } catch (error) {
       console.error("Error capturing texture data:", error);
       return null;
+    }
   }
-}
 
   /**
    * Create an object from saved data
@@ -3285,169 +3600,169 @@ captureTextureData(texture) {
    */
   createObjectFromData(objData) {
     console.log("Creating object from data:", objData.name, objData.type);
-    
+
     // Create geometry based on type
     let geometry;
-    
+
     // Special handling for merged objects with geometryData
     if (objData.type === 'merged' && objData.geometryData) {
-        console.log("Creating merged geometry from geometryData");
-        
-        // Create a BufferGeometry from the saved vertex data
-        geometry = new THREE.BufferGeometry();
-        
-        // Add attributes from geometryData
-        if (objData.geometryData.vertices && objData.geometryData.vertices.length > 0) {
-            const vertices = new Float32Array(objData.geometryData.vertices);
-            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        }
-        
-        if (objData.geometryData.normals && objData.geometryData.normals.length > 0) {
-            const normals = new Float32Array(objData.geometryData.normals);
-            geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-        }
-        
-        if (objData.geometryData.uvs && objData.geometryData.uvs.length > 0) {
-            const uvs = new Float32Array(objData.geometryData.uvs);
-            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-        }
-        
-        if (objData.geometryData.indices && objData.geometryData.indices.length > 0) {
-            geometry.setIndex(objData.geometryData.indices);
-        }
+      console.log("Creating merged geometry from geometryData");
+
+      // Create a BufferGeometry from the saved vertex data
+      geometry = new THREE.BufferGeometry();
+
+      // Add attributes from geometryData
+      if (objData.geometryData.vertices && objData.geometryData.vertices.length > 0) {
+        const vertices = new Float32Array(objData.geometryData.vertices);
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      }
+
+      if (objData.geometryData.normals && objData.geometryData.normals.length > 0) {
+        const normals = new Float32Array(objData.geometryData.normals);
+        geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      }
+
+      if (objData.geometryData.uvs && objData.geometryData.uvs.length > 0) {
+        const uvs = new Float32Array(objData.geometryData.uvs);
+        geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      }
+
+      if (objData.geometryData.indices && objData.geometryData.indices.length > 0) {
+        geometry.setIndex(objData.geometryData.indices);
+      }
     } else {
-    switch (objData.type) {
-      case 'cube':
-        geometry = new THREE.BoxGeometry(
-          objData.parameters.width,
-          objData.parameters.height,
-          objData.parameters.depth,
-          objData.parameters.widthSegments,
-          objData.parameters.heightSegments,
-          objData.parameters.depthSegments
-        );
-        break;
-      case 'sphere':
-        geometry = new THREE.SphereGeometry(
-          objData.parameters.radius,
-          objData.parameters.widthSegments,
-          objData.parameters.heightSegments
-        );
-        break;
-      case 'cylinder':
-        geometry = new THREE.CylinderGeometry(
-          objData.parameters.radiusTop,
-          objData.parameters.radiusBottom,
-          objData.parameters.height,
-          objData.parameters.radialSegments
-        );
-        break;
-      case 'cone':
-        geometry = new THREE.ConeGeometry(
-          objData.parameters.radius,
-          objData.parameters.height,
-          objData.parameters.radialSegments
-        );
-        break;
-      case 'torus':
-        geometry = new THREE.TorusGeometry(
-          objData.parameters.radius,
-          objData.parameters.tube,
-          objData.parameters.radialSegments,
-          objData.parameters.tubularSegments
-        );
-        break;
-      case 'plane':
-        geometry = new THREE.PlaneGeometry(
-          objData.parameters.width,
-          objData.parameters.height,
-          objData.parameters.widthSegments,
-          objData.parameters.heightSegments
-        );
-        break;
-      case 'tetrahedron':
-        geometry = new THREE.TetrahedronGeometry(
-          objData.parameters.radius,
-          objData.parameters.detail
-        );
-        break;
-      case 'octahedron':
-        geometry = new THREE.OctahedronGeometry(
-          objData.parameters.radius,
-          objData.parameters.detail
-        );
-        break;
-      case 'dodecahedron':
-        geometry = new THREE.DodecahedronGeometry(
-          objData.parameters.radius,
-          objData.parameters.detail
-        );
-        break;
-      case 'icosahedron':
-        geometry = new THREE.IcosahedronGeometry(
-          objData.parameters.radius,
-          objData.parameters.detail
-        );
-        break;
-      case 'd10':
-        // Since THREE.js doesn't have a built-in D10 shape, recreate it as in createD10
-        geometry = new THREE.CylinderGeometry(0, 0.5, 1, 5, 1);
-        const vertices = geometry.attributes.position.array;
-        for (let i = 0; i < vertices.length; i += 3) {
-          if (vertices[i + 1] < 0) {
-            vertices[i] *= 0.6;
-            vertices[i + 2] *= 0.6;
+      switch (objData.type) {
+        case 'cube':
+          geometry = new THREE.BoxGeometry(
+            objData.parameters.width,
+            objData.parameters.height,
+            objData.parameters.depth,
+            objData.parameters.widthSegments,
+            objData.parameters.heightSegments,
+            objData.parameters.depthSegments
+          );
+          break;
+        case 'sphere':
+          geometry = new THREE.SphereGeometry(
+            objData.parameters.radius,
+            objData.parameters.widthSegments,
+            objData.parameters.heightSegments
+          );
+          break;
+        case 'cylinder':
+          geometry = new THREE.CylinderGeometry(
+            objData.parameters.radiusTop,
+            objData.parameters.radiusBottom,
+            objData.parameters.height,
+            objData.parameters.radialSegments
+          );
+          break;
+        case 'cone':
+          geometry = new THREE.ConeGeometry(
+            objData.parameters.radius,
+            objData.parameters.height,
+            objData.parameters.radialSegments
+          );
+          break;
+        case 'torus':
+          geometry = new THREE.TorusGeometry(
+            objData.parameters.radius,
+            objData.parameters.tube,
+            objData.parameters.radialSegments,
+            objData.parameters.tubularSegments
+          );
+          break;
+        case 'plane':
+          geometry = new THREE.PlaneGeometry(
+            objData.parameters.width,
+            objData.parameters.height,
+            objData.parameters.widthSegments,
+            objData.parameters.heightSegments
+          );
+          break;
+        case 'tetrahedron':
+          geometry = new THREE.TetrahedronGeometry(
+            objData.parameters.radius,
+            objData.parameters.detail
+          );
+          break;
+        case 'octahedron':
+          geometry = new THREE.OctahedronGeometry(
+            objData.parameters.radius,
+            objData.parameters.detail
+          );
+          break;
+        case 'dodecahedron':
+          geometry = new THREE.DodecahedronGeometry(
+            objData.parameters.radius,
+            objData.parameters.detail
+          );
+          break;
+        case 'icosahedron':
+          geometry = new THREE.IcosahedronGeometry(
+            objData.parameters.radius,
+            objData.parameters.detail
+          );
+          break;
+        case 'd10':
+          // Since THREE.js doesn't have a built-in D10 shape, recreate it as in createD10
+          geometry = new THREE.CylinderGeometry(0, 0.5, 1, 5, 1);
+          const vertices = geometry.attributes.position.array;
+          for (let i = 0; i < vertices.length; i += 3) {
+            if (vertices[i + 1] < 0) {
+              vertices[i] *= 0.6;
+              vertices[i + 2] *= 0.6;
+            }
           }
-        }
-        geometry.attributes.position.needsUpdate = true;
-        break;
-      default:
-        console.warn(`Unknown geometry type: ${objData.type}`);
-        return;
+          geometry.attributes.position.needsUpdate = true;
+          break;
+        default:
+          console.warn(`Unknown geometry type: ${objData.type}`);
+          return;
+      }
     }
-  }
-  let material;
-  if (objData.material) {
+    let material;
+    if (objData.material) {
       console.log("Creating material of type:", objData.material.type);
-      
+
       const materialParams = {
-          color: objData.material.color !== undefined ? objData.material.color : 0x3388ff,
-          wireframe: objData.material.wireframe || false
+        color: objData.material.color !== undefined ? objData.material.color : 0x3388ff,
+        wireframe: objData.material.wireframe || false
       };
-      
+
       if (objData.material.transparent) {
-          materialParams.transparent = true;
-          materialParams.opacity = objData.material.opacity !== undefined ? objData.material.opacity : 1;
+        materialParams.transparent = true;
+        materialParams.opacity = objData.material.opacity !== undefined ? objData.material.opacity : 1;
       }
-      
+
       switch (objData.material.type) {
-          case 'MeshBasicMaterial':
-              material = new THREE.MeshBasicMaterial(materialParams);
-              break;
-          case 'MeshStandardMaterial':
-              materialParams.roughness = objData.material.roughness !== undefined ? objData.material.roughness : 0.5;
-              materialParams.metalness = objData.material.metalness !== undefined ? objData.material.metalness : 0;
-              material = new THREE.MeshStandardMaterial(materialParams);
-              break;
-          case 'MeshPhongMaterial':
-              material = new THREE.MeshPhongMaterial(materialParams);
-              break;
-          case 'MeshLambertMaterial':
-              material = new THREE.MeshLambertMaterial(materialParams);
-              break;
-          default:
-              material = new THREE.MeshStandardMaterial(materialParams);
+        case 'MeshBasicMaterial':
+          material = new THREE.MeshBasicMaterial(materialParams);
+          break;
+        case 'MeshStandardMaterial':
+          materialParams.roughness = objData.material.roughness !== undefined ? objData.material.roughness : 0.5;
+          materialParams.metalness = objData.material.metalness !== undefined ? objData.material.metalness : 0;
+          material = new THREE.MeshStandardMaterial(materialParams);
+          break;
+        case 'MeshPhongMaterial':
+          material = new THREE.MeshPhongMaterial(materialParams);
+          break;
+        case 'MeshLambertMaterial':
+          material = new THREE.MeshLambertMaterial(materialParams);
+          break;
+        default:
+          material = new THREE.MeshStandardMaterial(materialParams);
       }
-  } else {
+    } else {
       console.log("No material data, creating default material");
       material = this.createDefaultMaterial();
-  }
-  
-  // Create mesh
-  const mesh = new THREE.Mesh(geometry, material);
-  
-  // Create object data
-  const objectData = {
+    }
+
+    // Create mesh
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Create object data
+    const objectData = {
       type: objData.type,
       name: objData.name || `${objData.type} ${this.objects.length + 1}`,
       geometry: geometry,
@@ -3457,58 +3772,58 @@ captureTextureData(texture) {
       position: objData.position || { x: 0, y: 0, z: 0 },
       rotation: objData.rotation || { x: 0, y: 0, z: 0 },
       scale: objData.scale || { x: 1, y: 1, z: 1 }
-  };
-  
-  // Add to scene
-  this.previewScene.add(mesh);
-  
-  // Apply transforms
-  mesh.position.set(
+    };
+
+    // Add to scene
+    this.previewScene.add(mesh);
+
+    // Apply transforms
+    mesh.position.set(
       objectData.position.x,
       objectData.position.y,
       objectData.position.z
-  );
-  
-  mesh.rotation.set(
+    );
+
+    mesh.rotation.set(
       objectData.rotation.x,
       objectData.rotation.y,
       objectData.rotation.z
-  );
-  
-  mesh.scale.set(
+    );
+
+    mesh.scale.set(
       objectData.scale.x,
       objectData.scale.y,
       objectData.scale.z
-  );
-  
-  // Add to objects array
-  this.objects.push(objectData);
-  
-  // Check for texture data - do this AFTER the object is added to the scene
-  console.log("Checking for texture data:", 
-      !!objData.material, 
-      !!objData.material?.texture, 
+    );
+
+    // Add to objects array
+    this.objects.push(objectData);
+
+    // Check for texture data - do this AFTER the object is added to the scene
+    console.log("Checking for texture data:",
+      !!objData.material,
+      !!objData.material?.texture,
       !!objData.material?.texture?.data?.substring(0, 30)
-  );
-  
-  if (objData.material && objData.material.texture && objData.material.texture.data) {
+    );
+
+    if (objData.material && objData.material.texture && objData.material.texture.data) {
       console.log("Found texture data for", objData.name, "- attempting to load...");
       this.loadAndApplyTextureToObject(objectData, objData.material.texture);
-  } else {
+    } else {
       console.log("No texture data for", objData.name);
-  }
-  
-  // mesh.userData.shapeforgeObjectData = {
-  //   id: objData.id,
-  //   type: objData.type
-  // };
-  
-  // ADD THIS CODE HERE - Store effect data for later application
-  if (objData.effect) {
-    objectData.pendingEffect = objData.effect;
-  }
-  
-  return objectData;
+    }
+
+    // mesh.userData.shapeforgeObjectData = {
+    //   id: objData.id,
+    //   type: objData.type
+    // };
+
+    // ADD THIS CODE HERE - Store effect data for later application
+    if (objData.effect) {
+      objectData.pendingEffect = objData.effect;
+    }
+
+    return objectData;
   }
 
   /**
@@ -3516,114 +3831,114 @@ captureTextureData(texture) {
  * @param {Object} objectData - The object data to apply the texture to
  * @param {Object} textureData - The texture data
  */
-loadAndApplyTextureToObject(objectData, textureData) {
-  console.log("loadAndApplyTextureToObject called for:", objectData.name);
-    
-  if (!objectData || !textureData || !textureData.data) {
+  loadAndApplyTextureToObject(objectData, textureData) {
+    console.log("loadAndApplyTextureToObject called for:", objectData.name);
+
+    if (!objectData || !textureData || !textureData.data) {
       console.warn("Cannot apply texture: Invalid data");
       return;
-  }
-  
-  console.log("Texture data exists, starting loader...");
-  
-  // Create a texture loader
-  const loader = new THREE.TextureLoader();
-  
-  // Set the color to white first to avoid tinting during loading
-  if (objectData.material) {
+    }
+
+    console.log("Texture data exists, starting loader...");
+
+    // Create a texture loader
+    const loader = new THREE.TextureLoader();
+
+    // Set the color to white first to avoid tinting during loading
+    if (objectData.material) {
       objectData.material.color.set(0xffffff);
-  }
-  
-  // Load the texture from the data URL
-  loader.load(
-      textureData.data, 
+    }
+
+    // Load the texture from the data URL
+    loader.load(
+      textureData.data,
       // Success callback
       (texture) => {
-          console.log("Texture loaded successfully for", objectData.name);
-          
-          // Configure texture parameters
-          if (textureData.repeat && textureData.repeat.length === 2) {
-              texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
-          }
-          
-          if (textureData.offset && textureData.offset.length === 2) {
-              texture.offset.set(textureData.offset[0], textureData.offset[1]);
-          }
-          
-          if (textureData.rotation !== undefined) {
-              texture.rotation = textureData.rotation;
-          }
-          
-          // Set wrapping modes
-          texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
-          texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
-          
-          // Apply the texture to the object's material
-          if (objectData.material) {
-              objectData.material.map = texture;
-              objectData.material.needsUpdate = true;
-              
-              console.log("Applied texture to", objectData.name);
-          }
+        console.log("Texture loaded successfully for", objectData.name);
+
+        // Configure texture parameters
+        if (textureData.repeat && textureData.repeat.length === 2) {
+          texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
+        }
+
+        if (textureData.offset && textureData.offset.length === 2) {
+          texture.offset.set(textureData.offset[0], textureData.offset[1]);
+        }
+
+        if (textureData.rotation !== undefined) {
+          texture.rotation = textureData.rotation;
+        }
+
+        // Set wrapping modes
+        texture.wrapS = textureData.wrapS || THREE.RepeatWrapping;
+        texture.wrapT = textureData.wrapT || THREE.RepeatWrapping;
+
+        // Apply the texture to the object's material
+        if (objectData.material) {
+          objectData.material.map = texture;
+          objectData.material.needsUpdate = true;
+
+          console.log("Applied texture to", objectData.name);
+        }
       },
       // Progress callback
       undefined,
       // Error callback
       (error) => {
-          console.error("Error loading texture for", objectData.name, error);
+        console.error("Error loading texture for", objectData.name, error);
       }
-  );
-}
+    );
+  }
 
   applyTextureFromData(object, textureData) {
     if (!object || !textureData || !textureData.data) {
-        console.warn("Cannot apply texture from data: invalid inputs");
-        return false;
+      console.warn("Cannot apply texture from data: invalid inputs");
+      return false;
     }
-    
+
     try {
-        // Create a texture loader
-        const loader = new THREE.TextureLoader();
-        
-        // Load the texture from the data URL
-        loader.load(textureData.data, (texture) => {
-            // Apply texture parameters if available
-            if (textureData.repeat && textureData.repeat.length === 2) {
-                texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
-            }
-            
-            if (textureData.offset && textureData.offset.length === 2) {
-                texture.offset.set(textureData.offset[0], textureData.offset[1]);
-            }
-            
-            if (textureData.rotation !== undefined) {
-                texture.rotation = textureData.rotation;
-            }
-            
-            if (textureData.wrapS !== undefined) {
-                texture.wrapS = textureData.wrapS;
-            }
-            
-            if (textureData.wrapT !== undefined) {
-                texture.wrapT = textureData.wrapT;
-            }
-            
-            // Apply the texture to the object's material
-            if (object.material) {
-                object.material.map = texture;
-                object.material.needsUpdate = true;
-                
-                // Set material color to white to prevent tinting the texture
-                object.material.color.set(0xffffff);
-            }
-        });
-        
-        return true;
+      // Create a texture loader
+      const loader = new THREE.TextureLoader();
+
+      // Load the texture from the data URL
+      loader.load(textureData.data, (texture) => {
+        // Apply texture parameters if available
+        if (textureData.repeat && textureData.repeat.length === 2) {
+          texture.repeat.set(textureData.repeat[0], textureData.repeat[1]);
+        }
+
+        if (textureData.offset && textureData.offset.length === 2) {
+          texture.offset.set(textureData.offset[0], textureData.offset[1]);
+        }
+
+        if (textureData.rotation !== undefined) {
+          texture.rotation = textureData.rotation;
+        }
+
+        if (textureData.wrapS !== undefined) {
+          texture.wrapS = textureData.wrapS;
+        }
+
+        if (textureData.wrapT !== undefined) {
+          texture.wrapT = textureData.wrapT;
+        }
+
+        // Apply the texture to the object's material
+        if (object.material) {
+          object.material.map = texture;
+          object.material.needsUpdate = true;
+
+          // Set material color to white to prevent tinting the texture
+          object.material.color.set(0xffffff);
+        }
+      });
+
+      return true;
     } catch (error) {
-        console.error("Error applying texture from data:", error);
-        return false;
+      console.error("Error applying texture from data:", error);
+      return false;
     }
-}
+  }
 
   /**
    * Create a thumbnail of the current scene
@@ -3669,115 +3984,21 @@ loadAndApplyTextureToObject(objectData, textureData) {
   /**
    * Save object to resource manager
    */
-
-
-//   saveToResources() {
-//     if (!this.resourceManager) {
-//         alert("ResourceManager not available. Cannot save to resources.");
-//         return;
-//     }
-    
-//     // Get project name
-//     const projectNameInput = this.drawer.querySelector('#project-name');
-//     const projectName = (projectNameInput?.value || 'Untitled Project').trim();
-    
-//     // Create dialog for saving
-//     const dialog = document.createElement('sl-dialog');
-//     dialog.label = 'Save to ResourceManager';
-    
-//     dialog.innerHTML = `
-//         <div style="display: flex; flex-direction: column; gap: 16px;">
-//             <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
-//             <div style="display: flex; align-items: center; gap: 10px;">
-//                 <div style="width: 150px; height: 100px; border: 1px solid #444; overflow: hidden;">
-//                     <img id="resource-thumbnail" style="width: 100%; height: 100%; object-fit: contain;" />
-//                 </div>
-//                 <div>
-//                     <p>Preview thumbnail</p>
-//                     <p style="font-size: 0.8em; color: #aaa;">This will be shown in ResourceManager</p>
-//                 </div>
-//             </div>
-//         </div>
-//         <div slot="footer">
-//             <sl-button id="save-btn" variant="primary">Save</sl-button>
-//             <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
-//         </div>
-//     `;
-    
-//     document.body.appendChild(dialog);
-    
-//     // Generate and set thumbnail
-//     const thumbnail = this.createThumbnail();
-//     dialog.querySelector('#resource-thumbnail').src = thumbnail;
-    
-//     // Save handler
-//     dialog.querySelector('#save-btn').addEventListener('click', () => {
-//         const name = dialog.querySelector('#resource-name').value.trim();
-//         if (!name) {
-//             alert("Please enter a name for this resource");
-//             return;
-//         }
-        
-//         // Create JSON representation of the project
-//         const projectData = this.createProjectData();
-        
-//         // Make sure shapeforge category exists in resources
-//         if (!this.resourceManager.resources.shapeforge) {
-//             this.resourceManager.resources.shapeforge = new Map();
-//         }
-        
-//         // Create resource entry
-//         const resourceId = `model_${Date.now()}`;
-//         const resource = {
-//             id: resourceId,
-//             name: name,
-//             data: projectData,
-//             thumbnail: thumbnail,
-//             dateAdded: new Date().toISOString()
-//         };
-        
-//         // Add to ResourceManager
-//         this.resourceManager.resources.shapeforge.set(resourceId, resource);
-        
-//         dialog.hide();
-        
-//         // Show success message
-//         const toast = document.createElement('sl-alert');
-//         toast.variant = 'success';
-//         toast.duration = 3000;
-//         toast.closable = true;
-//         toast.innerHTML = `Saved "${name}" to ResourceManager`;
-        
-//         document.body.appendChild(toast);
-//         toast.toast();
-//     });
-    
-//     dialog.querySelector('.close-dialog').addEventListener('click', () => {
-//         dialog.hide();
-//     });
-    
-//     dialog.addEventListener('sl-after-hide', () => {
-//         dialog.remove();
-//     });
-    
-//     dialog.show();
-// }
-
-saveToResources() {
-  if (!this.resourceManager) {
+  saveToResources() {
+    if (!this.resourceManager) {
       alert("ResourceManager not available. Cannot save to resources.");
       return;
-  }
- 
-  // Get project name
-  const projectNameInput = this.drawer.querySelector('#project-name');
-  const projectName = (projectNameInput?.value || 'Untitled Project').trim();
- 
-  // Create dialog for saving
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = 'Save to ResourceManager';
- 
-  dialog.innerHTML = `
+    }
+
+    // Get project name
+    const projectNameInput = this.drawer.querySelector('#project-name');
+    const projectName = (projectNameInput?.value || 'Untitled Project').trim();
+
+    // Create dialog for saving
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Save to ResourceManager';
+
+    dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
           <sl-input id="resource-name" label="Name" value="${projectName}"></sl-input>
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -3795,252 +4016,252 @@ saveToResources() {
           <sl-button variant="neutral" class="close-dialog">Cancel</sl-button>
       </div>
   `;
- 
-  document.body.appendChild(dialog);
- 
-  // Generate and set thumbnail
-  const thumbnail = this.createThumbnail();
-  dialog.querySelector('#resource-thumbnail').src = thumbnail;
- 
-  // Save handler
-  dialog.querySelector('#save-btn').addEventListener('click', async () => {
+
+    document.body.appendChild(dialog);
+
+    // Generate and set thumbnail
+    const thumbnail = this.createThumbnail();
+    dialog.querySelector('#resource-thumbnail').src = thumbnail;
+
+    // Save handler
+    dialog.querySelector('#save-btn').addEventListener('click', async () => {
       const name = dialog.querySelector('#resource-name').value.trim();
       if (!name) {
-          alert("Please enter a name for this resource");
-          return;
+        alert("Please enter a name for this resource");
+        return;
       }
-     
+
       // Create JSON representation of the project
       const projectData = this.createProjectData();
-     
+
       // Make sure shapeforge category exists in resources
       if (!this.resourceManager.resources.shapeforge) {
-          this.resourceManager.resources.shapeforge = new Map();
+        this.resourceManager.resources.shapeforge = new Map();
       }
-     
+
       // Create resource entry
       const resourceId = `model_${Date.now()}`;
       const resource = {
-          id: resourceId,
-          name: name,
-          data: projectData,
-          thumbnail: thumbnail,
-          dateAdded: new Date().toISOString()
+        id: resourceId,
+        name: name,
+        data: projectData,
+        thumbnail: thumbnail,
+        dateAdded: new Date().toISOString()
       };
-     
+
       // Add to ResourceManager's in-memory storage
       this.resourceManager.resources.shapeforge.set(resourceId, resource);
-     
+
       // IMPORTANT: Save to IndexedDB for persistence
       try {
-          if (window.indexedDB) {
-              // We can reuse the ResourceManager's method to save to IndexedDB
-              if (typeof this.resourceManager.saveModelToIndexedDB === 'function') {
-                  // Use the existing method if available
-                  await this.resourceManager.saveModelToIndexedDB(resource);
-                  console.log(`Model "${name}" saved to IndexedDB successfully`);
-              } else {
-                  // Fallback if the method doesn't exist
-                  const db = await this.resourceManager.openModelDatabase();
-                  const tx = db.transaction(['models'], 'readwrite');
-                  const store = tx.objectStore('models');
-                  await store.put(resource);
-                  console.log(`Model "${name}" saved to IndexedDB using direct access`);
-              }
+        if (window.indexedDB) {
+          // We can reuse the ResourceManager's method to save to IndexedDB
+          if (typeof this.resourceManager.saveModelToIndexedDB === 'function') {
+            // Use the existing method if available
+            await this.resourceManager.saveModelToIndexedDB(resource);
+            console.log(`Model "${name}" saved to IndexedDB successfully`);
+          } else {
+            // Fallback if the method doesn't exist
+            const db = await this.resourceManager.openModelDatabase();
+            const tx = db.transaction(['models'], 'readwrite');
+            const store = tx.objectStore('models');
+            await store.put(resource);
+            console.log(`Model "${name}" saved to IndexedDB using direct access`);
           }
+        }
       } catch (e) {
-          console.warn('Error saving model to IndexedDB:', e);
-          // Show warning to user that model might not persist
-          const warningToast = document.createElement('sl-alert');
-          warningToast.variant = 'warning';
-          warningToast.duration = 5000;
-          warningToast.closable = true;
-          warningToast.innerHTML = `Warning: Model saved in memory but might not persist after refresh`;
-          document.body.appendChild(warningToast);
-          warningToast.toast();
+        console.warn('Error saving model to IndexedDB:', e);
+        // Show warning to user that model might not persist
+        const warningToast = document.createElement('sl-alert');
+        warningToast.variant = 'warning';
+        warningToast.duration = 5000;
+        warningToast.closable = true;
+        warningToast.innerHTML = `Warning: Model saved in memory but might not persist after refresh`;
+        document.body.appendChild(warningToast);
+        warningToast.toast();
       }
-     
+
       dialog.hide();
-     
+
       // Show success message
       const toast = document.createElement('sl-alert');
       toast.variant = 'success';
       toast.duration = 3000;
       toast.closable = true;
       toast.innerHTML = `Saved "${name}" to ResourceManager`;
-     
+
       document.body.appendChild(toast);
       toast.toast();
-  });
- 
-  dialog.querySelector('.close-dialog').addEventListener('click', () => {
+    });
+
+    dialog.querySelector('.close-dialog').addEventListener('click', () => {
       dialog.hide();
-  });
- 
-  dialog.addEventListener('sl-after-hide', () => {
+    });
+
+    dialog.addEventListener('sl-after-hide', () => {
       dialog.remove();
-  });
- 
-  dialog.show();
-}
+    });
 
-findTexturesInWindow() {
-  // Look for window.resourceManager
-  if (window.resourceManager && window.resourceManager.resources && 
+    dialog.show();
+  }
+
+  findTexturesInWindow() {
+    // Look for window.resourceManager
+    if (window.resourceManager && window.resourceManager.resources &&
       window.resourceManager.resources.textures) {
-      
-      return {
-          connected: true,
-          resourceManager: window.resourceManager
-      };
-  }
-  
-  // Look for window.mapEditor.resourceManager
-  if (window.mapEditor && window.mapEditor.resourceManager && 
-      window.mapEditor.resourceManager.resources && 
-      window.mapEditor.resourceManager.resources.textures) {
-      
-      return {
-          connected: true,
-          resourceManager: window.mapEditor.resourceManager
-      };
-  }
-  
-  // Look in scene3D if available
-  if (window.scene3D && window.scene3D.resourceManager && 
-      window.scene3D.resourceManager.resources && 
-      window.scene3D.resourceManager.resources.textures) {
-      
-      return {
-          connected: true,
-          resourceManager: window.scene3D.resourceManager
-      };
-  }
-  
-  return { connected: false };
-}
 
-// Modified version of listAvailableTextures that uses findTexturesInWindow() if needed
-listAvailableTextures(category) {
-  // Try the normal route first
-  if (this.resourceManager &&
+      return {
+        connected: true,
+        resourceManager: window.resourceManager
+      };
+    }
+
+    // Look for window.mapEditor.resourceManager
+    if (window.mapEditor && window.mapEditor.resourceManager &&
+      window.mapEditor.resourceManager.resources &&
+      window.mapEditor.resourceManager.resources.textures) {
+
+      return {
+        connected: true,
+        resourceManager: window.mapEditor.resourceManager
+      };
+    }
+
+    // Look in scene3D if available
+    if (window.scene3D && window.scene3D.resourceManager &&
+      window.scene3D.resourceManager.resources &&
+      window.scene3D.resourceManager.resources.textures) {
+
+      return {
+        connected: true,
+        resourceManager: window.scene3D.resourceManager
+      };
+    }
+
+    return { connected: false };
+  }
+
+  // Modified version of listAvailableTextures that uses findTexturesInWindow() if needed
+  listAvailableTextures(category) {
+    // Try the normal route first
+    if (this.resourceManager &&
       this.resourceManager.resources &&
       this.resourceManager.resources.textures &&
       this.resourceManager.resources.textures[category]) {
-      
+
       const textureMap = this.resourceManager.resources.textures[category];
       if (textureMap instanceof Map) {
-          return Array.from(textureMap.values());
+        return Array.from(textureMap.values());
       } else if (typeof textureMap === 'object') {
-          return Object.values(textureMap);
+        return Object.values(textureMap);
       }
-  }
-  
-  // If we get here, try the alternative method
-  console.warn("Using alternative texture finding method");
-  const result = this.findTexturesInWindow();
-  
-  if (result.connected) {
+    }
+
+    // If we get here, try the alternative method
+    console.warn("Using alternative texture finding method");
+    const result = this.findTexturesInWindow();
+
+    if (result.connected) {
       // Temporarily connect and return textures
       const tempResourceManager = result.resourceManager;
-      
+
       const textureMap = tempResourceManager.resources.textures[category];
       if (!textureMap) {
-          console.warn(`Category ${category} not found in resourceManager`);
-          return [];
+        console.warn(`Category ${category} not found in resourceManager`);
+        return [];
       }
-      
-      if (textureMap instanceof Map) {
-          return Array.from(textureMap.values());
-      } else if (typeof textureMap === 'object') {
-          return Object.values(textureMap);
-      }
-  }
-  
-  // If all else fails
-  console.error(`Failed to find any textures for category: ${category}`);
-  return [];
-}
 
-applyTextureToModel(textureId, category, objectIndex) {
-  if (!this.resourceManager || objectIndex === null) {
+      if (textureMap instanceof Map) {
+        return Array.from(textureMap.values());
+      } else if (typeof textureMap === 'object') {
+        return Object.values(textureMap);
+      }
+    }
+
+    // If all else fails
+    console.error(`Failed to find any textures for category: ${category}`);
+    return [];
+  }
+
+  applyTextureToModel(textureId, category, objectIndex) {
+    if (!this.resourceManager || objectIndex === null) {
       console.warn("Cannot apply texture: ResourceManager unavailable or no object selected");
       return false;
-  }
-  
-  // Get the texture
-  const texture = this.resourceManager.resources.textures[category]?.get(textureId);
-  if (!texture) {
+    }
+
+    // Get the texture
+    const texture = this.resourceManager.resources.textures[category]?.get(textureId);
+    if (!texture) {
       console.warn(`Texture not found: ${textureId} in category ${category}`);
       return false;
-  }
-  
-  // Get the object
-  const object = this.objects[objectIndex];
-  if (!object) {
+    }
+
+    // Get the object
+    const object = this.objects[objectIndex];
+    if (!object) {
       console.warn(`Object not found at index ${objectIndex}`);
       return false;
-  }
-  
-  // Create a Three.js texture from the texture data
-  const loader = new THREE.TextureLoader();
-  
-  // We need to create a data URL if it's not already one
-  const textureUrl = texture.data;
-  
-  // Load the texture
-  const threeTexture = loader.load(textureUrl, (loadedTexture) => {
+    }
+
+    // Create a Three.js texture from the texture data
+    const loader = new THREE.TextureLoader();
+
+    // We need to create a data URL if it's not already one
+    const textureUrl = texture.data;
+
+    // Load the texture
+    const threeTexture = loader.load(textureUrl, (loadedTexture) => {
       // Once loaded, apply it to the material
       if (object.material) {
-          // Store original material properties
-          const originalProps = {
-              color: object.material.color.clone(),
-              wireframe: object.material.wireframe,
-              transparent: object.material.transparent,
-              opacity: object.material.opacity,
-              metalness: object.material.metalness,
-              roughness: object.material.roughness
-          };
-          
-          // Apply texture to material
-          object.material.map = loadedTexture;
-          
-          // Set color to white to avoid tinting the texture
-          object.material.color.set(0xffffff00);
-          
-          // Make sure the texture is displayed properly
-          object.material.needsUpdate = true;
-          
-          // Add to history
-          this.addHistoryStep('texture', {
-              objectIndex: objectIndex,
-              textureId: textureId,
-              category: category,
-              originalProps: originalProps
-          });
-          
-          // Update material UI
-          this.updateMaterialUI(object);
-      }
-  });
-  
-  return true;
-}
+        // Store original material properties
+        const originalProps = {
+          color: object.material.color.clone(),
+          wireframe: object.material.wireframe,
+          transparent: object.material.transparent,
+          opacity: object.material.opacity,
+          metalness: object.material.metalness,
+          roughness: object.material.roughness
+        };
 
-// Show texture selection dialog for the selected object
-showTextureSelectionDialog() {
-  if (!this.resourceManager || this.selectedObject === null) {
+        // Apply texture to material
+        object.material.map = loadedTexture;
+
+        // Set color to white to avoid tinting the texture
+        object.material.color.set(0xffffff00);
+
+        // Make sure the texture is displayed properly
+        object.material.needsUpdate = true;
+
+        // Add to history
+        this.addHistoryStep('texture', {
+          objectIndex: objectIndex,
+          textureId: textureId,
+          category: category,
+          originalProps: originalProps
+        });
+
+        // Update material UI
+        this.updateMaterialUI(object);
+      }
+    });
+
+    return true;
+  }
+
+  // Show texture selection dialog for the selected object
+  showTextureSelectionDialog() {
+    if (!this.resourceManager || this.selectedObject === null) {
       alert("Cannot apply texture: ResourceManager unavailable or no object selected");
       return;
-  }
-  
-  // Create dialog
-  const dialog = document.createElement('sl-dialog');
-  dialog.label = 'Apply Texture to Model';
-  dialog.style = "--width: 650px;"; // Make it a bit wider for the textures
-  
-  // Prepare dialog content with tabs instead of dropdown
-  dialog.innerHTML = `
+    }
+
+    // Create dialog
+    const dialog = document.createElement('sl-dialog');
+    dialog.label = 'Apply Texture to Model';
+    dialog.style = "--width: 650px;"; // Make it a bit wider for the textures
+
+    // Prepare dialog content with tabs instead of dropdown
+    dialog.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
           <!-- Texture Category Tabs -->
           <sl-tab-group>
@@ -4090,39 +4311,39 @@ showTextureSelectionDialog() {
           <sl-button variant="primary" class="apply-btn" disabled>Apply Texture</sl-button>
       </div>
   `;
-  
-  document.body.appendChild(dialog);
-  
-  // Get references to elements
-  const tabGroup = dialog.querySelector('sl-tab-group');
-  const textureGalleries = dialog.querySelectorAll('.texture-gallery');
-  const texturePreview = dialog.querySelector('#texture-preview');
-  const applyBtn = dialog.querySelector('.apply-btn');
-  
-  // Selected texture tracking
-  let selectedTextureId = null;
-  let selectedCategory = 'walls';
-  
-  // Load textures for a category
-  const loadTextures = (galleryEl) => {
+
+    document.body.appendChild(dialog);
+
+    // Get references to elements
+    const tabGroup = dialog.querySelector('sl-tab-group');
+    const textureGalleries = dialog.querySelectorAll('.texture-gallery');
+    const texturePreview = dialog.querySelector('#texture-preview');
+    const applyBtn = dialog.querySelector('.apply-btn');
+
+    // Selected texture tracking
+    let selectedTextureId = null;
+    let selectedCategory = 'walls';
+
+    // Load textures for a category
+    const loadTextures = (galleryEl) => {
       const category = galleryEl.dataset.category;
       galleryEl.innerHTML = '<div class="loading-placeholder">Loading textures...</div>';
-      
+
       // Get textures for this category
       const textures = this.listAvailableTextures(category);
-      
+
       if (!textures || textures.length === 0) {
-          galleryEl.innerHTML = `
+        galleryEl.innerHTML = `
               <div class="empty-message" style="text-align: center; padding: 20px; color: #666;">
                   No textures found in ${category} category
               </div>
           `;
-          return;
+        return;
       }
-      
+
       // Clear gallery
       galleryEl.innerHTML = '';
-      
+
       // Create container for grid layout
       const gridContainer = document.createElement('div');
       gridContainer.style.cssText = `
@@ -4134,14 +4355,14 @@ showTextureSelectionDialog() {
           padding: 10px;
       `;
       galleryEl.appendChild(gridContainer);
-      
+
       // Add each texture to the gallery
       textures.forEach(texture => {
-          const item = document.createElement('div');
-          item.className = 'texture-item';
-          item.dataset.textureId = texture.id;
-          item.dataset.category = category;
-          item.style.cssText = `
+        const item = document.createElement('div');
+        item.className = 'texture-item';
+        item.dataset.textureId = texture.id;
+        item.dataset.category = category;
+        item.style.cssText = `
               cursor: pointer;
               border: 2px solid transparent;
               border-radius: 4px;
@@ -4149,81 +4370,81 @@ showTextureSelectionDialog() {
               transition: all 0.2s ease;
               background: white;
           `;
-          
-          item.innerHTML = `
+
+        item.innerHTML = `
               <img src="${texture.thumbnail}" alt="${texture.name}" 
                    style="width: 100%; aspect-ratio: 1; object-fit: cover;" />
               <div style="font-size: 0.8em; padding: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                   ${texture.name}
               </div>
           `;
-          
-          // Handle selection
-          item.addEventListener('click', () => {
-              // Update selection visuals - clear all selected items first
-              dialog.querySelectorAll('.texture-item').forEach(el => {
-                  el.style.borderColor = 'transparent';
-                  el.style.transform = 'none';
-              });
-              
-              // Mark this item as selected
-              item.style.borderColor = '#3388ff';
-              item.style.transform = 'translateY(-2px)';
-              
-              // Store selected texture
-              selectedTextureId = texture.id;
-              selectedCategory = category;
-              
-              // Update preview
-              texturePreview.style.display = 'block';
-              texturePreview.querySelector('img').src = texture.data;
-              texturePreview.querySelector('.preview-name').textContent = texture.name;
-              
-              // Enable apply button
-              applyBtn.disabled = false;
+
+        // Handle selection
+        item.addEventListener('click', () => {
+          // Update selection visuals - clear all selected items first
+          dialog.querySelectorAll('.texture-item').forEach(el => {
+            el.style.borderColor = 'transparent';
+            el.style.transform = 'none';
           });
-          
-          gridContainer.appendChild(item);
+
+          // Mark this item as selected
+          item.style.borderColor = '#3388ff';
+          item.style.transform = 'translateY(-2px)';
+
+          // Store selected texture
+          selectedTextureId = texture.id;
+          selectedCategory = category;
+
+          // Update preview
+          texturePreview.style.display = 'block';
+          texturePreview.querySelector('img').src = texture.data;
+          texturePreview.querySelector('.preview-name').textContent = texture.name;
+
+          // Enable apply button
+          applyBtn.disabled = false;
+        });
+
+        gridContainer.appendChild(item);
       });
-  };
-  
-  // Load textures for all galleries when tabs are activated
-  tabGroup.addEventListener('sl-tab-show', (event) => {
+    };
+
+    // Load textures for all galleries when tabs are activated
+    tabGroup.addEventListener('sl-tab-show', (event) => {
       const panelName = event.detail.name;
       const category = panelName.split('-')[0]; // Extract category from panel name
-      
+
       // Find the gallery for this panel
       const gallery = dialog.querySelector(`.texture-gallery[data-category="${category}"]`);
-      
+
       // Only load if not already loaded
-      if (gallery && gallery.querySelector('.texture-item') === null && 
-          !gallery.querySelector('.empty-message')) {
-          loadTextures(gallery);
+      if (gallery && gallery.querySelector('.texture-item') === null &&
+        !gallery.querySelector('.empty-message')) {
+        loadTextures(gallery);
       }
-  });
-  
-  // Handle apply button
-  applyBtn.addEventListener('click', () => {
+    });
+
+    // Handle apply button
+    applyBtn.addEventListener('click', () => {
       if (selectedTextureId && selectedCategory) {
-          this.applyTextureToModel(selectedTextureId, selectedCategory, this.selectedObject);
-          dialog.hide();
+        this.applyTextureToModel(selectedTextureId, selectedCategory, this.selectedObject);
+        dialog.hide();
       }
-  });
-  
-  // Handle cancel
-  dialog.querySelector('.cancel-btn').addEventListener('click', () => {
+    });
+
+    // Handle cancel
+    dialog.querySelector('.cancel-btn').addEventListener('click', () => {
       dialog.hide();
-  });
-  
-  // Clean up when dialog closes
-  dialog.addEventListener('sl-after-hide', () => {
+    });
+
+    // Clean up when dialog closes
+    dialog.addEventListener('sl-after-hide', () => {
       dialog.remove();
-  });
-  
-  // Load initial textures for the first tab and show dialog
-  loadTextures(textureGalleries[0]); // Load the first category (walls)
-  dialog.show();
-}
+    });
+
+    // Load initial textures for the first tab and show dialog
+    loadTextures(textureGalleries[0]); // Load the first category (walls)
+    dialog.show();
+  }
 
   /**
    * Show export dialog
@@ -4498,6 +4719,794 @@ showTextureSelectionDialog() {
 
     console.log("ShapeForge resources disposed");
   }
+
+  /**
+ * Import a DXF file
+ * @param {number} extrudeHeight - Height to extrude 2D shapes (default: 0.2)
+ */
+importDXF(extrudeHeight = 0.2) {
+  // Create file input
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.dxf';
+  
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      // Show loading indicator
+      this.showLoadingIndicator('Parsing DXF file...');
+      
+      // Load DXF parser if needed
+      if (!window.DxfParser) {
+        await this.loadDxfParserLibrary();
+      }
+      
+      // Read the file
+      const text = await this.readFileAsText(file);
+      
+      // Parse the DXF
+      const parser = new window.DxfParser();
+      const dxf = parser.parseSync(text);
+      
+      // Show extrusion dialog
+      this.hideLoadingIndicator();
+      this.showDxfExtrusionDialog(dxf, file.name);
+    } catch (error) {
+      console.error('Error importing DXF:', error);
+      this.hideLoadingIndicator();
+      alert(`Error importing DXF: ${error.message}`);
+    }
+  });
+  
+  fileInput.click();
+}
+
+/**
+ * Load the DXF parser library
+ * @returns {Promise} Promise that resolves when the library is loaded
+ */
+loadDxfParserLibrary() {
+  return new Promise((resolve, reject) => {
+    // Check if already loaded
+    if (window.DxfParser) {
+      resolve();
+      return;
+    }
+    
+    // Try to load from CDN
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/dxf-parser@1.1.1/dist/dxf-parser.min.js';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load DXF parser library'));
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Show dialog for DXF extrusion options
+ * @param {Object} dxf - Parsed DXF data
+ * @param {string} filename - Original filename
+ */
+showDxfExtrusionDialog(dxf, filename) {
+  // Create dialog
+  const dialog = document.createElement('sl-dialog');
+  dialog.label = 'DXF Import Options';
+  
+  dialog.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <p>Importing DXF file: ${filename}</p>
+      
+      <sl-input id="extrude-height" type="number" label="Extrusion Height" value="0.2" step="0.1" min="0.01"></sl-input>
+      
+      <sl-checkbox id="center-model" checked>Center model after import</sl-checkbox>
+      
+      <sl-select id="dxf-entity-type" label="Entity Type to Import" value="all">
+        <sl-option value="all">All Entities</sl-option>
+        <sl-option value="lines">Lines Only</sl-option>
+        <sl-option value="polylines">Polylines Only</sl-option>
+        <sl-option value="circles">Circles & Arcs Only</sl-option>
+      </sl-select>
+    </div>
+    
+    <div slot="footer">
+      <sl-button id="dxf-import-btn" variant="primary">Import</sl-button>
+      <sl-button id="dxf-cancel-btn" variant="default">Cancel</sl-button>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+  
+  // Set up event listeners
+  dialog.querySelector('#dxf-import-btn').addEventListener('click', () => {
+    const extrudeHeight = parseFloat(dialog.querySelector('#extrude-height').value) || 0.2;
+    const centerModel = dialog.querySelector('#center-model').checked;
+    const entityType = dialog.querySelector('#dxf-entity-type').value;
+    
+    dialog.hide();
+    
+    // Process the DXF
+    this.processDxfData(dxf, filename, extrudeHeight, centerModel, entityType);
+  });
+  
+  dialog.querySelector('#dxf-cancel-btn').addEventListener('click', () => {
+    dialog.hide();
+  });
+  
+  // Auto-remove when hidden
+  dialog.addEventListener('sl-after-hide', () => {
+    dialog.remove();
+  });
+  
+  dialog.show();
+}
+
+/**
+ * Process DXF data and create objects
+ * @param {Object} dxf - Parsed DXF data
+ * @param {string} filename - Original filename
+ * @param {number} extrudeHeight - Height to extrude shapes
+ * @param {boolean} centerModel - Whether to center the model after import
+ * @param {string} entityType - Type of entities to import
+ */
+processDxfData(dxf, filename, extrudeHeight, centerModel, entityType) {
+  this.showLoadingIndicator('Converting DXF to 3D...');
+  
+  // Create empty shape
+  const shape = new THREE.Shape();
+  let isFirstPath = true;
+  let hasEntities = false;
+  
+  // Process DXF entities
+  if (dxf.entities && dxf.entities.length > 0) {
+    // Filter entities based on type if needed
+    const entities = dxf.entities.filter(entity => {
+      if (entityType === 'all') return true;
+      if (entityType === 'lines' && entity.type === 'LINE') return true;
+      if (entityType === 'polylines' && (entity.type === 'POLYLINE' || entity.type === 'LWPOLYLINE')) return true;
+      if (entityType === 'circles' && (entity.type === 'CIRCLE' || entity.type === 'ARC')) return true;
+      return false;
+    });
+    
+    // Process each entity
+    entities.forEach(entity => {
+      switch (entity.type) {
+        case 'LINE':
+          if (isFirstPath) {
+            shape.moveTo(entity.start.x, entity.start.y);
+            isFirstPath = false;
+          }
+          shape.lineTo(entity.end.x, entity.end.y);
+          hasEntities = true;
+          break;
+          
+        case 'POLYLINE':
+        case 'LWPOLYLINE':
+          if (entity.vertices && entity.vertices.length > 0) {
+            if (isFirstPath) {
+              shape.moveTo(entity.vertices[0].x, entity.vertices[0].y);
+              isFirstPath = false;
+            }
+            
+            for (let i = 1; i < entity.vertices.length; i++) {
+              shape.lineTo(entity.vertices[i].x, entity.vertices[i].y);
+            }
+            
+            if (entity.closed) {
+              shape.closePath();
+            }
+            
+            hasEntities = true;
+          }
+          break;
+          
+        case 'CIRCLE':
+          // Create a circle shape
+          const circleShape = new THREE.Shape();
+          circleShape.absarc(entity.center.x, entity.center.y, entity.radius, 0, Math.PI * 2, false);
+          
+          // Create separate geometry for circle
+          this.createExtrudedShapeObject(circleShape, extrudeHeight, `Circle ${entities.indexOf(entity)}`, centerModel);
+          hasEntities = true;
+          break;
+          
+        case 'ARC':
+          // Convert DXF angles (degrees, counter-clockwise from positive X-axis) to THREE.js angles
+          const startAngle = THREE.MathUtils.degToRad(entity.startAngle);
+          const endAngle = THREE.MathUtils.degToRad(entity.endAngle);
+          
+          // Create an arc shape
+          const arcShape = new THREE.Shape();
+          arcShape.absarc(entity.center.x, entity.center.y, entity.radius, startAngle, endAngle, !entity.counterclockwise);
+          
+          // Create separate geometry for arc
+          this.createExtrudedShapeObject(arcShape, extrudeHeight, `Arc ${entities.indexOf(entity)}`, centerModel);
+          hasEntities = true;
+          break;
+      }
+    });
+    
+    // Create extruded shape for main geometry if we have entities
+    if (hasEntities) {
+      this.createExtrudedShapeObject(shape, extrudeHeight, filename.replace('.dxf', ''), centerModel);
+    }
+  }
+  
+  this.hideLoadingIndicator();
+  
+  if (!hasEntities) {
+    alert('No compatible entities found in the DXF file');
+  }
+}
+
+/**
+ * Create an extruded shape object from a THREE.Shape
+ * @param {THREE.Shape} shape - Shape to extrude
+ * @param {number} extrudeHeight - Height to extrude
+ * @param {string} name - Object name
+ * @param {boolean} centerModel - Whether to center the object
+ */
+createExtrudedShapeObject(shape, extrudeHeight, name, centerModel) {
+  // Extrusion settings
+  const extrudeSettings = {
+    depth: extrudeHeight,
+    bevelEnabled: false
+  };
+  
+  // Create geometry
+  const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  
+  // Create material
+  const material = this.createDefaultMaterial();
+  
+  // Create mesh
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  // Add to scene
+  this.previewScene.add(mesh);
+  
+  // Rotate to lay flat
+  mesh.rotation.x = -Math.PI / 2;
+  
+  // Create object data
+  const objectData = {
+    type: 'extruded',
+    name: `${name} (DXF)`,
+    geometry: geometry,
+    material: material,
+    mesh: mesh,
+    parameters: {
+      source: 'DXF',
+      depth: extrudeHeight,
+      bevelEnabled: false
+    },
+    position: { x: 0, y: extrudeHeight / 2, z: 0 },
+    rotation: { x: -Math.PI / 2, y: 0, z: 0 },
+    scale: { x: 1, y: 1, z: 1 }
+  };
+  
+  // Center the model if requested
+  if (centerModel) {
+    this.centerAndScaleImportedObject(objectData);
+  }
+  
+  // Set position and rotation
+  mesh.position.set(objectData.position.x, objectData.position.y, objectData.position.z);
+  
+  // Add to objects array
+  this.objects.push(objectData);
+  
+  // Select the new object
+  this.selectObject(this.objects.length - 1);
+  
+  // Add to history
+  this.addHistoryStep('import', {
+    objectIndex: this.objects.length - 1,
+    type: 'DXF',
+    name: name
+  });
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  return objectData;
+}
+
+/**
+ * Read a file as text
+ * @param {File} file - File to read
+ * @returns {Promise<string>} Promise that resolves with the file contents
+ */
+readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      resolve(event.target.result);
+    };
+    
+    reader.onerror = (event) => {
+      reject(new Error('Failed to read file'));
+    };
+    
+    reader.readAsText(file);
+  });
+}
+
+/**
+ * Show loading indicator
+ * @param {string} message - Message to display
+ */
+showLoadingIndicator(message) {
+  // Create loading overlay if it doesn't exist
+  if (!this.loadingOverlay) {
+    this.loadingOverlay = document.createElement('div');
+    this.loadingOverlay.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      color: white;
+      font-family: sans-serif;
+    `;
+    
+    // Create loading spinner
+    const spinner = document.createElement('div');
+    spinner.style.cssText = `
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3388ff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 2s linear infinite;
+      margin-bottom: 20px;
+    `;
+    
+    // Add spinner animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Create message display
+    this.loadingMessage = document.createElement('div');
+    this.loadingMessage.style.cssText = `
+      margin-bottom: 20px;
+      font-size: 16px;
+    `;
+    
+    // Create progress bar
+    this.loadingProgress = document.createElement('progress');
+    this.loadingProgress.style.width = '80%';
+    this.loadingProgress.max = 100;
+    this.loadingProgress.value = 0;
+    
+    // Add elements to overlay
+    this.loadingOverlay.appendChild(spinner);
+    this.loadingOverlay.appendChild(this.loadingMessage);
+    this.loadingOverlay.appendChild(this.loadingProgress);
+  }
+  
+  // Set message
+  this.loadingMessage.textContent = message || 'Loading...';
+  
+  // Reset progress
+  this.loadingProgress.value = 0;
+  
+  // Add to preview container
+  this.previewContainer.appendChild(this.loadingOverlay);
+}
+
+/**
+ * Update loading progress
+ * @param {number} percent - Percentage complete (0-100)
+ */
+updateLoadingProgress(percent) {
+  if (this.loadingProgress) {
+    this.loadingProgress.value = percent;
+  }
+}
+
+/**
+ * Hide loading indicator
+ */
+hideLoadingIndicator() {
+  if (this.loadingOverlay && this.loadingOverlay.parentNode) {
+    this.loadingOverlay.parentNode.removeChild(this.loadingOverlay);
+  }
+}
+
+/**
+ * Center and scale an imported object to fit in view
+ * @param {Object} objectData - Object data to center and scale
+ */
+centerAndScaleImportedObject(objectData) {
+  if (!objectData || !objectData.geometry || !objectData.mesh) return;
+  
+  // Calculate bounding box
+  objectData.geometry.computeBoundingBox();
+  const boundingBox = objectData.geometry.boundingBox;
+  
+  // Calculate center
+  const center = new THREE.Vector3();
+  boundingBox.getCenter(center);
+  
+  // Move geometry to center
+  objectData.geometry.translate(-center.x, -center.y, -center.z);
+  
+  // Calculate size
+  const size = new THREE.Vector3();
+  boundingBox.getSize(size);
+  const maxDimension = Math.max(size.x, size.y, size.z);
+  
+  // Scale to reasonable size if too large or too small
+  let scaleFactor = 1;
+  if (maxDimension > 10) {
+    scaleFactor = 10 / maxDimension;
+  } else if (maxDimension < 0.1) {
+    scaleFactor = 0.1 / maxDimension;
+  }
+  
+  if (scaleFactor !== 1) {
+    objectData.geometry.scale(scaleFactor, scaleFactor, scaleFactor);
+  }
+  
+  // Update object parameters
+  objectData.position = { x: 0, y: 0, z: 0 };
+  objectData.scale = { x: 1, y: 1, z: 1 };
+  
+  // Update mesh
+  objectData.mesh.position.set(0, 0, 0);
+}
+
+/**
+ * Add alignment tools to the UI
+ */
+/**
+ * Add alignment tools to the UI
+ */
+addAlignmentTools() {
+  // Find transform container - more reliable method
+  const transformContainer = this.drawer.querySelector('.transform-group');
+  if (!transformContainer) {
+    console.warn('Transform container not found for alignment tools');
+    return;
+  }
+  
+  // Check if we already have alignment tools to prevent duplicates
+  if (this.drawer.querySelector('.panel-section:has(#align-left)')) {
+    console.log('Alignment tools already exist, skipping');
+    return;
+  }
+  
+  console.log('Adding alignment tools to UI');
+  
+  // Create alignment tools section
+  const alignmentSection = document.createElement('div');
+  alignmentSection.className = 'panel-section';
+  alignmentSection.style.marginTop = '20px';
+  alignmentSection.innerHTML = `
+    <h3>Alignment Tools</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px;">
+      <!-- Horizontal alignment -->
+      <sl-button size="small" id="align-left">
+        <sl-icon name="align-start"></sl-icon>
+      </sl-button>
+      <sl-button size="small" id="align-center-h">
+        <sl-icon name="align-center"></sl-icon>
+      </sl-button>
+      <sl-button size="small" id="align-right">
+        <sl-icon name="align-end"></sl-icon>
+      </sl-button>
+      
+      <!-- Vertical alignment -->
+      <sl-button size="small" id="align-bottom">
+        <sl-icon name="align-bottom"></sl-icon>
+      </sl-button>
+      <sl-button size="small" id="align-center-v">
+        <sl-icon name="align-middle"></sl-icon>
+      </sl-button>
+      <sl-button size="small" id="align-top">
+        <sl-icon name="align-top"></sl-icon>
+      </sl-button>
+      
+      <!-- Depth alignment -->
+      <sl-button size="small" id="align-back">Back</sl-button>
+      <sl-button size="small" id="align-center-d">Center Z</sl-button>
+      <sl-button size="small" id="align-front">Front</sl-button>
+      
+      <!-- Distribution -->
+      <sl-button size="small" id="distribute-x">Distribute X</sl-button>
+      <sl-button size="small" id="distribute-y">Distribute Y</sl-button>
+      <sl-button size="small" id="distribute-z">Distribute Z</sl-button>
+    </div>
+  `;
+  
+  // Insert after transform container - find a good place
+  const propertiesContainer = this.drawer.querySelector('#properties-container');
+  if (propertiesContainer) {
+    // Insert before properties
+    propertiesContainer.parentNode.insertBefore(alignmentSection, propertiesContainer);
+  } else {
+    // Fallback - append to transform container's parent
+    transformContainer.parentNode.appendChild(alignmentSection);
+  }
+  
+  console.log('Alignment tools added to DOM');
+  
+  // Set up event listeners for alignment buttons
+  
+  // Horizontal alignment (X axis)
+  this.drawer.querySelector('#align-left')?.addEventListener('click', () => {
+    this.alignObjects('x', 'min');
+  });
+  
+  this.drawer.querySelector('#align-center-h')?.addEventListener('click', () => {
+    this.alignObjects('x', 'center');
+  });
+  
+  this.drawer.querySelector('#align-right')?.addEventListener('click', () => {
+    this.alignObjects('x', 'max');
+  });
+  
+  // Vertical alignment (Y axis)
+  this.drawer.querySelector('#align-bottom')?.addEventListener('click', () => {
+    this.alignObjects('y', 'min');
+  });
+  
+  this.drawer.querySelector('#align-center-v')?.addEventListener('click', () => {
+    this.alignObjects('y', 'center');
+  });
+  
+  this.drawer.querySelector('#align-top')?.addEventListener('click', () => {
+    this.alignObjects('y', 'max');
+  });
+  
+  // Depth alignment (Z axis)
+  this.drawer.querySelector('#align-back')?.addEventListener('click', () => {
+    this.alignObjects('z', 'min');
+  });
+  
+  this.drawer.querySelector('#align-center-d')?.addEventListener('click', () => {
+    this.alignObjects('z', 'center');
+  });
+  
+  this.drawer.querySelector('#align-front')?.addEventListener('click', () => {
+    this.alignObjects('z', 'max');
+  });
+  
+  // Distribution
+  this.drawer.querySelector('#distribute-x')?.addEventListener('click', () => {
+    this.distributeObjects('x');
+  });
+  
+  this.drawer.querySelector('#distribute-y')?.addEventListener('click', () => {
+    this.distributeObjects('y');
+  });
+  
+  this.drawer.querySelector('#distribute-z')?.addEventListener('click', () => {
+    this.distributeObjects('z');
+  });
+  
+  console.log('Alignment tools event listeners attached');
+}
+
+/**
+ * Align selected objects along an axis
+ * @param {string} axis - Axis to align along ('x', 'y', or 'z')
+ * @param {string} alignment - Type of alignment ('min', 'center', or 'max')
+ */
+alignObjects(axis, alignment) {
+  // Need multiple selection to align
+  if (!this.multiSelectEnabled || !this.selectedObjects || this.selectedObjects.length < 2) {
+    alert('Please select at least 2 objects in multi-select mode to align them');
+    return;
+  }
+  
+  // Calculate min, max, and center values along the axis for all selected objects
+  let min = Infinity;
+  let max = -Infinity;
+  let center = 0;
+  let sum = 0;
+  
+  // Find the bounds
+  this.selectedObjects.forEach(index => {
+    const object = this.objects[index];
+    const position = object.position[axis];
+    
+    // Calculate min/max
+    min = Math.min(min, position);
+    max = Math.max(max, position);
+    sum += position;
+  });
+  
+  // Calculate center
+  center = sum / this.selectedObjects.length;
+  
+  // Determine target position based on alignment type
+  let targetPosition;
+  
+  switch (alignment) {
+    case 'min':
+      targetPosition = min;
+      break;
+    case 'max':
+      targetPosition = max;
+      break;
+    case 'center':
+    default:
+      targetPosition = center;
+      break;
+  }
+  
+  // Store old positions for history
+  const oldPositions = {};
+  const newPositions = {};
+  
+  // Apply alignment
+  this.selectedObjects.forEach(index => {
+    const object = this.objects[index];
+    
+    // Store old position
+    oldPositions[index] = { ...object.position };
+    
+    // Set new position
+    object.position[axis] = targetPosition;
+    object.mesh.position[axis] = targetPosition;
+    
+    // Store new position
+    newPositions[index] = { ...object.position };
+  });
+  
+  // Add to history
+  this.addHistoryStep('multiAlign', {
+    objectIndices: [...this.selectedObjects],
+    axis,
+    alignment,
+    oldPositions,
+    newPositions
+  });
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  // Update transform controls if a single object is also selected
+  if (this.selectedObject !== null) {
+    this.updateTransformControls(this.objects[this.selectedObject]);
+  }
+}
+
+/**
+ * Distribute selected objects evenly along an axis
+ * @param {string} axis - Axis to distribute along ('x', 'y', or 'z')
+ */
+distributeObjects(axis) {
+  // Need at least 3 objects to distribute
+  if (!this.multiSelectEnabled || !this.selectedObjects || this.selectedObjects.length < 3) {
+    alert('Please select at least 3 objects in multi-select mode to distribute them');
+    return;
+  }
+  
+  // Find min and max positions
+  let min = Infinity;
+  let max = -Infinity;
+  let minIndex = -1;
+  let maxIndex = -1;
+  
+  // Find objects at extremes
+  this.selectedObjects.forEach(index => {
+    const object = this.objects[index];
+    const position = object.position[axis];
+    
+    if (position < min) {
+      min = position;
+      minIndex = index;
+    }
+    
+    if (position > max) {
+      max = position;
+      maxIndex = index;
+    }
+  });
+  
+  // Calculate total distance and step size
+  const totalDistance = max - min;
+  const stepSize = totalDistance / (this.selectedObjects.length - 1);
+  
+  // Sort objects by current position
+  const sortedIndices = [...this.selectedObjects].sort((a, b) => {
+    return this.objects[a].position[axis] - this.objects[b].position[axis];
+  });
+  
+  // Store old positions for history
+  const oldPositions = {};
+  const newPositions = {};
+  
+  // Distribute objects evenly
+  sortedIndices.forEach((index, i) => {
+    const object = this.objects[index];
+    
+    // Store old position
+    oldPositions[index] = { ...object.position };
+    
+    // Set new position - objects at extremes stay in place
+    if (index !== minIndex && index !== maxIndex) {
+      object.position[axis] = min + stepSize * i;
+      object.mesh.position[axis] = min + stepSize * i;
+    }
+    
+    // Store new position
+    newPositions[index] = { ...object.position };
+  });
+  
+  // Add to history
+  this.addHistoryStep('multiDistribute', {
+    objectIndices: [...this.selectedObjects],
+    axis,
+    oldPositions,
+    newPositions
+  });
+  
+  // Update UI
+  this.updateObjectsList();
+  
+  // Update transform controls if a single object is also selected
+  if (this.selectedObject !== null) {
+    this.updateTransformControls(this.objects[this.selectedObject]);
+  }
+}
+
+initializeNewFeatures() {
+  try {
+    // Add alignment tools
+    this.addAlignmentTools();
+    console.log('✓ Alignment tools initialized');
+    
+    // Connect "Import DXF" button
+    const importDXFBtn = this.drawer.querySelector('#importDXF');
+    if (importDXFBtn) {
+      importDXFBtn.addEventListener('click', () => this.importDXF());
+      console.log('✓ Import DXF button connected');
+    } else {
+      console.warn('Import DXF button not found, looking for alternative...');
+      
+      // Try to find by other means
+      const allButtons = this.drawer.querySelectorAll('sl-button');
+      for (const btn of allButtons) {
+        if (btn.textContent.includes('DXF')) {
+          btn.addEventListener('click', () => this.importDXF());
+          console.log('✓ Import DXF button found and connected by text content');
+          break;
+        }
+      }
+    }
+    
+    // Mark as initialized
+    this.featuresInitialized = true;
+    
+    console.log('All new features initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('Error initializing new features:', error);
+    return false;
+  }
+}
+
+
+
+
 }
 
 
@@ -4652,28 +5661,28 @@ ShapeForge.prototype.createObjectsListPanel = function () {
     `;
   headerRow.appendChild(title);
 
-// Rotation toggle
-const rotationToggle = document.createElement('sl-switch');
-rotationToggle.size = 'small';
-rotationToggle.title = 'Toggle Auto-Rotation';
-rotationToggle.checked = true; // Default to on
-rotationToggle.style.marginLeft = '115px'; //'10px';
-rotationToggle.setAttribute('title', 'Toggle Auto-Rotation');
-rotationToggle.innerHTML = '<sl-icon name="arrow-repeat" slot="prefix"></sl-icon>';
-rotationToggle.addEventListener('sl-change', (e) => {
-  this.toggleAutoRotation(e.target.checked);
-});
-headerRow.appendChild(rotationToggle);
+  // Rotation toggle
+  const rotationToggle = document.createElement('sl-switch');
+  rotationToggle.size = 'small';
+  rotationToggle.title = 'Toggle Auto-Rotation';
+  rotationToggle.checked = true; // Default to on
+  rotationToggle.style.marginLeft = '115px'; //'10px';
+  rotationToggle.setAttribute('title', 'Toggle Auto-Rotation');
+  rotationToggle.innerHTML = '<sl-icon name="arrow-repeat" slot="prefix"></sl-icon>';
+  rotationToggle.addEventListener('sl-change', (e) => {
+    this.toggleAutoRotation(e.target.checked);
+  });
+  headerRow.appendChild(rotationToggle);
 
-    // Deselect button
-const deselectBtn = document.createElement('sl-button');
-deselectBtn.setAttribute('size', 'small');
-deselectBtn.setAttribute('circle', '');
-deselectBtn.setAttribute('title', 'Deselect All');
-deselectBtn.innerHTML = '<sl-icon name="x-circle"></sl-icon>';
-deselectBtn.style.marginLeft = 'auto'; // Push to right side
-deselectBtn.addEventListener('click', () => this.deselectAllObjects());
-headerRow.appendChild(deselectBtn);
+  // Deselect button
+  const deselectBtn = document.createElement('sl-button');
+  deselectBtn.setAttribute('size', 'small');
+  deselectBtn.setAttribute('circle', '');
+  deselectBtn.setAttribute('title', 'Deselect All');
+  deselectBtn.innerHTML = '<sl-icon name="x-circle"></sl-icon>';
+  deselectBtn.style.marginLeft = 'auto'; // Push to right side
+  deselectBtn.addEventListener('click', () => this.deselectAllObjects());
+  headerRow.appendChild(deselectBtn);
 
 
 
@@ -6655,165 +7664,165 @@ ShapeForge.prototype.createObjectFromJson = function (objData) {
           objData.parameters.detail || 0
         );
         break;
-        case 'd10':
-  // Use PolyhedronGeometry for D10
-  const sides = objData.parameters.sides || 10;
-  const d10Radius = objData.parameters.radius || 0.5;
-  
-  // Define vertices
-  const vertices = [
-    [0, 0, 1],   // Top vertex
-    [0, 0, -1],  // Bottom vertex
-  ];
-  
-  // Add vertices around the "equator"
-  for (let i = 0; i < sides; ++i) {
-    const b = (i * Math.PI * 2) / sides;
-    vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
-  }
-  
-  // Define faces
-  const faces = [
-    [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
-    [0, 7, 8], [0, 8, 9], [0, 9, 10], [0, 10, 11], [0, 11, 2],
-    [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
-    [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
-  ];
-  
-  // Flatten arrays
-  const flatVertices = [];
-  vertices.forEach(v => {
-    if (Array.isArray(v)) {
-      flatVertices.push(v[0], v[1], v[2]);
-    } else {
-      flatVertices.push(v);
-    }
-  });
-  
-  const flatFaces = [];
-  faces.forEach(f => flatFaces.push(...f));
-  
-  // Create geometry
-  geometry = new THREE.PolyhedronGeometry(
-    flatVertices,
-    flatFaces,
-    d10Radius,
-    0
-  );
-  break;
+      case 'd10':
+        // Use PolyhedronGeometry for D10
+        const sides = objData.parameters.sides || 10;
+        const d10Radius = objData.parameters.radius || 0.5;
 
-// new shapes
-case 'torusKnot':
-  geometry = new THREE.TorusKnotGeometry(
-    objData.parameters.radius || 0.4,
-    objData.parameters.tube || 0.1,
-    objData.parameters.tubularSegments || 64,
-    objData.parameters.radialSegments || 8,
-    objData.parameters.p || 2,
-    objData.parameters.q || 3
-  );
-  break;
+        // Define vertices
+        const vertices = [
+          [0, 0, 1],   // Top vertex
+          [0, 0, -1],  // Bottom vertex
+        ];
 
-case 'pyramid':
-  geometry = new THREE.ConeGeometry(
-    objData.parameters.radius || 0.5,
-    objData.parameters.height || 1,
-    objData.parameters.radialSegments || 3,
-    objData.parameters.heightSegments || 1
-  );
-  break;
+        // Add vertices around the "equator"
+        for (let i = 0; i < sides; ++i) {
+          const b = (i * Math.PI * 2) / sides;
+          vertices.push([-Math.cos(b), -Math.sin(b), 0.105 * (i % 2 ? 1 : -1)]);
+        }
 
-case 'capsule':
-  geometry = new THREE.CapsuleGeometry(
-    objData.parameters.radius || 0.3,
-    objData.parameters.length || 0.6,
-    objData.parameters.capSegments || 4,
-    objData.parameters.radialSegments || 8
-  );
-  break;
+        // Define faces
+        const faces = [
+          [0, 2, 3], [0, 3, 4], [0, 4, 5], [0, 5, 6], [0, 6, 7],
+          [0, 7, 8], [0, 8, 9], [0, 9, 10], [0, 10, 11], [0, 11, 2],
+          [1, 3, 2], [1, 4, 3], [1, 5, 4], [1, 6, 5], [1, 7, 6],
+          [1, 8, 7], [1, 9, 8], [1, 10, 9], [1, 11, 10], [1, 2, 11]
+        ];
 
-case 'hemisphere':
-  geometry = new THREE.SphereGeometry(
-    objData.parameters.radius || 0.5,
-    objData.parameters.widthSegments || 32,
-    objData.parameters.heightSegments || 16,
-    objData.parameters.phiStart || 0,
-    objData.parameters.phiLength || Math.PI * 2,
-    objData.parameters.thetaStart || 0,
-    objData.parameters.thetaLength || Math.PI / 2
-  );
-  break;
+        // Flatten arrays
+        const flatVertices = [];
+        vertices.forEach(v => {
+          if (Array.isArray(v)) {
+            flatVertices.push(v[0], v[1], v[2]);
+          } else {
+            flatVertices.push(v);
+          }
+        });
 
-  case 'tube':
-  // Create a curved path for the tube to follow
-  let curve;
-  
-  if (objData.parameters.path === 'circle') {
-    curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.5, 0, 0),
-      new THREE.Vector3(0, 0.5, 0.5),
-      new THREE.Vector3(0.5, 0, 0),
-      new THREE.Vector3(0, -0.5, -0.5)
-    ]);
-    curve.closed = true;
-  } else {
-    // Create a default curve if path type not recognized
-    curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.5, 0, 0),
-      new THREE.Vector3(0, 0.5, 0),
-      new THREE.Vector3(0.5, 0, 0)
-    ]);
-  }
-  
-  geometry = new THREE.TubeGeometry(
-    curve,
-    objData.parameters.tubularSegments || 32,
-    objData.parameters.tube || 0.1,
-    objData.parameters.radialSegments || 8,
-    true
-  );
-  break;
+        const flatFaces = [];
+        faces.forEach(f => flatFaces.push(...f));
 
-  case 'star':
-  // Get parameters
-  const points = objData.parameters.points || 5;
-  const outerRadius = objData.parameters.outerRadius || 0.5;
-  const innerRadius = objData.parameters.innerRadius || 0.2;
-  const depth = objData.parameters.depth || 0.2;
-  const bevelThickness = objData.parameters.bevelThickness || 0.05;
-  const bevelSize = objData.parameters.bevelSize || 0.05;
-  
-  // Create a star shape
-  const shape = new THREE.Shape();
-  
-  for (let i = 0; i < points * 2; i++) {
-    // Alternate between outer and inner radius
-    const radius = i % 2 === 0 ? outerRadius : innerRadius;
-    const angle = (Math.PI / points) * i;
-    
-    const x = Math.sin(angle) * radius;
-    const y = Math.cos(angle) * radius;
-    
-    if (i === 0) {
-      shape.moveTo(x, y);
-    } else {
-      shape.lineTo(x, y);
-    }
-  }
-  
-  shape.closePath();
-  
-  // Extrude the shape to create a 3D star
-  const extrudeSettings = {
-    depth: depth,
-    bevelEnabled: true,
-    bevelThickness: bevelThickness,
-    bevelSize: bevelSize,
-    bevelSegments: 3
-  };
-  
-  geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-  break;
+        // Create geometry
+        geometry = new THREE.PolyhedronGeometry(
+          flatVertices,
+          flatFaces,
+          d10Radius,
+          0
+        );
+        break;
+
+      // new shapes
+      case 'torusKnot':
+        geometry = new THREE.TorusKnotGeometry(
+          objData.parameters.radius || 0.4,
+          objData.parameters.tube || 0.1,
+          objData.parameters.tubularSegments || 64,
+          objData.parameters.radialSegments || 8,
+          objData.parameters.p || 2,
+          objData.parameters.q || 3
+        );
+        break;
+
+      case 'pyramid':
+        geometry = new THREE.ConeGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.height || 1,
+          objData.parameters.radialSegments || 3,
+          objData.parameters.heightSegments || 1
+        );
+        break;
+
+      case 'capsule':
+        geometry = new THREE.CapsuleGeometry(
+          objData.parameters.radius || 0.3,
+          objData.parameters.length || 0.6,
+          objData.parameters.capSegments || 4,
+          objData.parameters.radialSegments || 8
+        );
+        break;
+
+      case 'hemisphere':
+        geometry = new THREE.SphereGeometry(
+          objData.parameters.radius || 0.5,
+          objData.parameters.widthSegments || 32,
+          objData.parameters.heightSegments || 16,
+          objData.parameters.phiStart || 0,
+          objData.parameters.phiLength || Math.PI * 2,
+          objData.parameters.thetaStart || 0,
+          objData.parameters.thetaLength || Math.PI / 2
+        );
+        break;
+
+      case 'tube':
+        // Create a curved path for the tube to follow
+        let curve;
+
+        if (objData.parameters.path === 'circle') {
+          curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-0.5, 0, 0),
+            new THREE.Vector3(0, 0.5, 0.5),
+            new THREE.Vector3(0.5, 0, 0),
+            new THREE.Vector3(0, -0.5, -0.5)
+          ]);
+          curve.closed = true;
+        } else {
+          // Create a default curve if path type not recognized
+          curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-0.5, 0, 0),
+            new THREE.Vector3(0, 0.5, 0),
+            new THREE.Vector3(0.5, 0, 0)
+          ]);
+        }
+
+        geometry = new THREE.TubeGeometry(
+          curve,
+          objData.parameters.tubularSegments || 32,
+          objData.parameters.tube || 0.1,
+          objData.parameters.radialSegments || 8,
+          true
+        );
+        break;
+
+      case 'star':
+        // Get parameters
+        const points = objData.parameters.points || 5;
+        const outerRadius = objData.parameters.outerRadius || 0.5;
+        const innerRadius = objData.parameters.innerRadius || 0.2;
+        const depth = objData.parameters.depth || 0.2;
+        const bevelThickness = objData.parameters.bevelThickness || 0.05;
+        const bevelSize = objData.parameters.bevelSize || 0.05;
+
+        // Create a star shape
+        const shape = new THREE.Shape();
+
+        for (let i = 0; i < points * 2; i++) {
+          // Alternate between outer and inner radius
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (Math.PI / points) * i;
+
+          const x = Math.sin(angle) * radius;
+          const y = Math.cos(angle) * radius;
+
+          if (i === 0) {
+            shape.moveTo(x, y);
+          } else {
+            shape.lineTo(x, y);
+          }
+        }
+
+        shape.closePath();
+
+        // Extrude the shape to create a 3D star
+        const extrudeSettings = {
+          depth: depth,
+          bevelEnabled: true,
+          bevelThickness: bevelThickness,
+          bevelSize: bevelSize,
+          bevelSegments: 3
+        };
+
+        geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        break;
 
 
       default:
@@ -7011,109 +8020,109 @@ ShapeForge.prototype.applyEffectParameters = function (obj, parameters) {
 ShapeForge.prototype.loadProjectFromJson = function (jsonData) {
   // Validate project data
   if (!jsonData || !jsonData.objects || !Array.isArray(jsonData.objects)) {
-      throw new Error('Invalid project data');
+    throw new Error('Invalid project data');
   }
-  
+
   console.log('JsonData:', jsonData);
 
   console.log("Loading project using loadProjectFromJson method w/ texture support");
-  
+
   this.cleanupAllShaderEffects();
   // Clear current project
   this.newProject();
-  
+
   // Set project name
   const projectNameInput = this.drawer.querySelector('#project-name');
   if (projectNameInput && jsonData.name) {
-      projectNameInput.value = jsonData.name;
+    projectNameInput.value = jsonData.name;
   }
-  
+
   // Keep track of created objects that need textures
   const objectsNeedingTextures = [];
-  
+
   // Load objects
   console.log(`Loading ${jsonData.objects.length} objects from JSON`);
   jsonData.objects.forEach(objData => {
-      // Create the object
-      const createdObject = this.createObjectFromData(objData);
-      
-      // If object has texture data, queue it for texture loading
-      if (objData.material && objData.material.texture && objData.material.texture.data) {
-          objectsNeedingTextures.push({
-              object: createdObject,
-              textureData: objData.material.texture
-          });
-      }
+    // Create the object
+    const createdObject = this.createObjectFromData(objData);
+
+    // If object has texture data, queue it for texture loading
+    if (objData.material && objData.material.texture && objData.material.texture.data) {
+      objectsNeedingTextures.push({
+        object: createdObject,
+        textureData: objData.material.texture
+      });
+    }
   });
-  
+
   // Load textures for objects that need them
   console.log(`Applying textures to ${objectsNeedingTextures.length} objects`);
   objectsNeedingTextures.forEach(item => {
-      // Create a texture loader
-      const loader = new THREE.TextureLoader();
-      
-      // Make sure the material color is white to avoid tinting
-      if (item.object && item.object.material) {
-          item.object.material.color.set(0xffffff);
+    // Create a texture loader
+    const loader = new THREE.TextureLoader();
+
+    // Make sure the material color is white to avoid tinting
+    if (item.object && item.object.material) {
+      item.object.material.color.set(0xffffff);
+    }
+
+    // Load the texture
+    loader.load(
+      item.textureData.data,
+      // Success callback
+      (texture) => {
+        console.log(`Texture loaded for ${item.object.name}`);
+
+        // Configure texture settings
+        if (item.textureData.repeat && item.textureData.repeat.length === 2) {
+          texture.repeat.set(
+            item.textureData.repeat[0],
+            item.textureData.repeat[1]
+          );
+        }
+
+        if (item.textureData.offset && item.textureData.offset.length === 2) {
+          texture.offset.set(
+            item.textureData.offset[0],
+            item.textureData.offset[1]
+          );
+        }
+
+        if (item.textureData.rotation !== undefined) {
+          texture.rotation = item.textureData.rotation;
+        }
+
+        // Set wrapping modes
+        texture.wrapS = item.textureData.wrapS || THREE.RepeatWrapping;
+        texture.wrapT = item.textureData.wrapT || THREE.RepeatWrapping;
+
+        // Apply texture to material
+        if (item.object.material) {
+          item.object.material.map = texture;
+          item.object.material.needsUpdate = true;
+          console.log(`Applied texture to ${item.object.name}`);
+        }
+      },
+      // Progress callback
+      undefined,
+      // Error callback
+      (error) => {
+        console.error(`Error loading texture for ${item.object.name}:`, error);
       }
-      
-      // Load the texture
-      loader.load(
-          item.textureData.data,
-          // Success callback
-          (texture) => {
-              console.log(`Texture loaded for ${item.object.name}`);
-              
-              // Configure texture settings
-              if (item.textureData.repeat && item.textureData.repeat.length === 2) {
-                  texture.repeat.set(
-                      item.textureData.repeat[0],
-                      item.textureData.repeat[1]
-                  );
-              }
-              
-              if (item.textureData.offset && item.textureData.offset.length === 2) {
-                  texture.offset.set(
-                      item.textureData.offset[0],
-                      item.textureData.offset[1]
-                  );
-              }
-              
-              if (item.textureData.rotation !== undefined) {
-                  texture.rotation = item.textureData.rotation;
-              }
-              
-              // Set wrapping modes
-              texture.wrapS = item.textureData.wrapS || THREE.RepeatWrapping;
-              texture.wrapT = item.textureData.wrapT || THREE.RepeatWrapping;
-              
-              // Apply texture to material
-              if (item.object.material) {
-                  item.object.material.map = texture;
-                  item.object.material.needsUpdate = true;
-                  console.log(`Applied texture to ${item.object.name}`);
-              }
-          },
-          // Progress callback
-          undefined,
-          // Error callback
-          (error) => {
-              console.error(`Error loading texture for ${item.object.name}:`, error);
-          }
-      );
+    );
   });
-  
+
   // Select first object if any were created
   if (this.objects.length > 0) {
-      this.selectObject(0);
+    this.selectObject(0);
   }
 
-  
+
   // Update UI
   this.updateObjectsList();
-  
+
   console.log(`Project loaded with ${this.objects.length} objects and ${objectsNeedingTextures.length} textures`);
-  
+
   setTimeout(() => {
     this.objects.forEach((obj, index) => {
       if (obj.pendingEffect) {
@@ -7130,22 +8139,22 @@ ShapeForge.prototype.loadProjectFromJson = function (jsonData) {
   //     console.log("Drawer closed, skipping effect application");
   //     return;
   //   }
-    
+
   //   // Find objects that need effects
   //   const objectsWithEffects = this.objects.filter(obj => obj && obj.pendingEffect);
   //   console.log(`Applying effects to ${objectsWithEffects.length} objects`);
-    
+
   //   // Apply effects with error handling
   //   objectsWithEffects.forEach((obj, index) => {
   //     try {
   //       // Save current selection to restore later
   //       const previousSelection = this.selectedObject;
-        
+
   //       // Apply the effect
   //       this.selectObject(this.objects.indexOf(obj));
   //       this.applyShaderEffect(obj.pendingEffect);
   //       delete obj.pendingEffect;
-        
+
   //       // Restore previous selection
   //       if (previousSelection !== null && previousSelection !== this.selectedObject) {
   //         this.selectObject(previousSelection);
@@ -7176,7 +8185,7 @@ ShapeForge.prototype.addImportExportButtons = function () {
   const importBtn = document.createElement('sl-button');
   importBtn.id = 'import-json';
   importBtn.size = 'small';
-  importBtn.textContent = 'Import File';
+  importBtn.textContent = 'Import JSON';
   importBtn.addEventListener('click', this.importJson.bind(this));
 
   // Add to container
@@ -7415,11 +8424,11 @@ ShapeForge.prototype.clearAll = function () {
 /**
  * Create a torus knot and add it to the scene
  */
-ShapeForge.prototype.createTorusKnot = function() {
+ShapeForge.prototype.createTorusKnot = function () {
   const geometry = new THREE.TorusKnotGeometry(0.4, 0.1, 64, 8, 2, 3);
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   this.addObjectToScene({
     type: 'torusKnot',
     name: `Torus Knot ${this.objects.length + 1}`,
@@ -7443,12 +8452,12 @@ ShapeForge.prototype.createTorusKnot = function() {
 /**
  * Create a triangular pyramid and add it to the scene
  */
-ShapeForge.prototype.createPyramid = function() {
+ShapeForge.prototype.createPyramid = function () {
   // Create geometry (triangular base pyramid)
   const geometry = new THREE.ConeGeometry(0.5, 1, 3, 1);
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   this.addObjectToScene({
     type: 'pyramid',
     name: `Pyramid ${this.objects.length + 1}`,
@@ -7470,35 +8479,35 @@ ShapeForge.prototype.createPyramid = function() {
 /**
  * Create a triangular prism and add it to the scene
  */
-ShapeForge.prototype.createPrism = function() {
+ShapeForge.prototype.createPrism = function () {
   // Create a triangular prism using custom geometry
   const geometry = new THREE.BufferGeometry();
-  
+
   // Vertices for a triangular prism
   const vertices = new Float32Array([
     // Top triangle
-     0.0,  0.5,  0.5,
-    -0.5, -0.5,  0.5,
-     0.5, -0.5,  0.5,
-    
+    0.0, 0.5, 0.5,
+    -0.5, -0.5, 0.5,
+    0.5, -0.5, 0.5,
+
     // Bottom triangle 
-     0.0,  0.5, -0.5,
+    0.0, 0.5, -0.5,
     -0.5, -0.5, -0.5,
-     0.5, -0.5, -0.5
+    0.5, -0.5, -0.5
   ]);
-  
+
   // Indices for faces
   const indices = [
     // Triangular faces (2)
     0, 1, 2,  // Front triangle
     3, 5, 4,  // Back triangle
-    
+
     // Rectangular faces (3)
     0, 3, 4, 1,  // Left side
     0, 2, 5, 3,  // Right side
     1, 4, 5, 2   // Bottom side
   ];
-  
+
   // Convert rectangular face indices to triangles
   const triangleIndices = [];
   for (let i = 0; i < indices.length; i++) {
@@ -7506,23 +8515,23 @@ ShapeForge.prototype.createPrism = function() {
       // For rectangular faces, split into triangles
       if ((i - 6) % 4 === 0) {
         const j = i;
-        triangleIndices.push(indices[j], indices[j+1], indices[j+2]);
-        triangleIndices.push(indices[j], indices[j+2], indices[j+3]);
+        triangleIndices.push(indices[j], indices[j + 1], indices[j + 2]);
+        triangleIndices.push(indices[j], indices[j + 2], indices[j + 3]);
       }
     } else {
       // For existing triangular faces
       triangleIndices.push(indices[i]);
     }
   }
-  
+
   // Set attributes
   geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
   geometry.setIndex(triangleIndices);
   geometry.computeVertexNormals();
-  
+
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   this.addObjectToScene({
     type: 'prism',
     name: `Prism ${this.objects.length + 1}`,
@@ -7543,11 +8552,11 @@ ShapeForge.prototype.createPrism = function() {
 /**
  * Create a capsule shape and add it to the scene
  */
-ShapeForge.prototype.createCapsule = function() {
+ShapeForge.prototype.createCapsule = function () {
   const geometry = new THREE.CapsuleGeometry(0.3, 0.6, 4, 8);
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   this.addObjectToScene({
     type: 'capsule',
     name: `Capsule ${this.objects.length + 1}`,
@@ -7569,7 +8578,7 @@ ShapeForge.prototype.createCapsule = function() {
 /**
  * Create a tube/ring and add it to the scene
  */
-ShapeForge.prototype.createTube = function() {
+ShapeForge.prototype.createTube = function () {
   // Create a curved path for the tube to follow
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(-0.5, 0, 0),
@@ -7578,11 +8587,11 @@ ShapeForge.prototype.createTube = function() {
     new THREE.Vector3(0, -0.5, -0.5)
   ]);
   curve.closed = true;
-  
+
   const geometry = new THREE.TubeGeometry(curve, 32, 0.1, 8, true);
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   this.addObjectToScene({
     type: 'tube',
     name: `Tube ${this.objects.length + 1}`,
@@ -7605,11 +8614,11 @@ ShapeForge.prototype.createTube = function() {
 /**
  * Create a hemisphere and add it to the scene
  */
-ShapeForge.prototype.createHemisphere = function() {
+ShapeForge.prototype.createHemisphere = function () {
   const geometry = new THREE.SphereGeometry(0.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   this.addObjectToScene({
     type: 'hemisphere',
     name: `Hemisphere ${this.objects.length + 1}`,
@@ -7634,14 +8643,14 @@ ShapeForge.prototype.createHemisphere = function() {
 /**
  * Create a rounded cube and add it to the scene
  */
-ShapeForge.prototype.createRoundedCube = function() {
+ShapeForge.prototype.createRoundedCube = function () {
   // Create a rounded box (using BoxGeometry + SphereGeometry)
   const boxSize = 0.8;
   const radius = 0.1; // Corner radius
-  
+
   // Create a group to hold all parts
   const group = new THREE.Group();
-  
+
   // Create the core box (slightly smaller than final size)
   const boxGeometry = new THREE.BoxGeometry(
     boxSize - radius * 2,
@@ -7650,13 +8659,13 @@ ShapeForge.prototype.createRoundedCube = function() {
   );
   const boxMesh = new THREE.Mesh(boxGeometry, this.createDefaultMaterial());
   group.add(boxMesh);
-  
+
   // Add spheres at corners
   const cornerPositions = [
     [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
     [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
   ];
-  
+
   cornerPositions.forEach(pos => {
     const cornerSphere = new THREE.Mesh(
       new THREE.SphereGeometry(radius, 8, 8),
@@ -7669,7 +8678,7 @@ ShapeForge.prototype.createRoundedCube = function() {
     );
     group.add(cornerSphere);
   });
-  
+
   // Add cylinders for edges
   const edgePositions = [
     // X edges
@@ -7679,43 +8688,43 @@ ShapeForge.prototype.createRoundedCube = function() {
     // Z edges
     [-1, -1, 0], [1, -1, 0], [-1, 1, 0], [1, 1, 0]
   ];
-  
+
   const edgeRotations = [
     // X edges (rotate around X)
-    [1, 0, 0, Math.PI/2], [1, 0, 0, Math.PI/2], [1, 0, 0, Math.PI/2], [1, 0, 0, Math.PI/2],
+    [1, 0, 0, Math.PI / 2], [1, 0, 0, Math.PI / 2], [1, 0, 0, Math.PI / 2], [1, 0, 0, Math.PI / 2],
     // Y edges (rotate around Y)
-    [0, 1, 0, Math.PI/2], [0, 1, 0, Math.PI/2], [0, 1, 0, Math.PI/2], [0, 1, 0, Math.PI/2],
+    [0, 1, 0, Math.PI / 2], [0, 1, 0, Math.PI / 2], [0, 1, 0, Math.PI / 2], [0, 1, 0, Math.PI / 2],
     // Z edges (default orientation)
     [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]
   ];
-  
+
   edgePositions.forEach((pos, i) => {
     const edgeLength = boxSize - radius * 2;
     const edgeCylinder = new THREE.Mesh(
       new THREE.CylinderGeometry(radius, radius, edgeLength, 8),
       boxMesh.material
     );
-    
+
     // Position
     edgeCylinder.position.set(
       pos[0] * (boxSize / 2 - radius),
       pos[1] * (boxSize / 2 - radius),
       pos[2] * (boxSize / 2 - radius)
     );
-    
+
     // Rotation
     const rot = edgeRotations[i];
     edgeCylinder.rotateOnAxis(
       new THREE.Vector3(rot[0], rot[1], rot[2]),
       rot[3]
     );
-    
+
     group.add(edgeCylinder);
   });
-  
+
   // Create merged geometry from the group for better performance
   const material = this.createDefaultMaterial();
-  
+
   this.addObjectToScene({
     type: 'roundedCube',
     name: `Rounded Cube ${this.objects.length + 1}`,
@@ -7737,31 +8746,31 @@ ShapeForge.prototype.createRoundedCube = function() {
 /**
  * Create a star shape and add it to the scene
  */
-ShapeForge.prototype.createStar = function() {
+ShapeForge.prototype.createStar = function () {
   // Create a star shape
   const points = 5;
   const outerRadius = 0.5;
   const innerRadius = 0.2;
-  
+
   const shape = new THREE.Shape();
-  
+
   for (let i = 0; i < points * 2; i++) {
     // Alternate between outer and inner radius
     const radius = i % 2 === 0 ? outerRadius : innerRadius;
     const angle = (Math.PI / points) * i;
-    
+
     const x = Math.sin(angle) * radius;
     const y = Math.cos(angle) * radius;
-    
+
     if (i === 0) {
       shape.moveTo(x, y);
     } else {
       shape.lineTo(x, y);
     }
   }
-  
+
   shape.closePath();
-  
+
   // Extrude the shape to create a 3D star
   const extrudeSettings = {
     depth: 0.2,
@@ -7770,14 +8779,14 @@ ShapeForge.prototype.createStar = function() {
     bevelSize: 0.05,
     bevelSegments: 3
   };
-  
+
   const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
   const material = this.createDefaultMaterial();
   const mesh = new THREE.Mesh(geometry, material);
-  
+
   // Rotate to a more natural orientation
   mesh.rotation.x = -Math.PI / 2;
-  
+
   this.addObjectToScene({
     type: 'star',
     name: `Star ${this.objects.length + 1}`,
@@ -7796,7 +8805,15 @@ ShapeForge.prototype.createStar = function() {
     rotation: { x: -Math.PI / 2, y: 0, z: 0 },
     scale: { x: 1, y: 1, z: 1 }
   });
+
+// new features
+
+
+
 };
+
+
+
 
 // // Add this call to the end of your show() method
 // this.initializeNewFeatures();
