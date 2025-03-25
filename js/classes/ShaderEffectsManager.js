@@ -3105,7 +3105,7 @@ createPropGlowEffect(prop, options = {}) {
      * @returns {Object} Effect data for tracking and updates
      */
     createSimpleDustEffect(position, options = {}) {
-      console.log("Creating simple dust effect at:", position);
+      // console.log("Creating simple dust effect at:", position);
 
       // Skip if disabled
       if (!this.enabled) return null;

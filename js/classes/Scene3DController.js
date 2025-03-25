@@ -51,6 +51,7 @@ class Scene3DController {
     this._ignoreNextUnlock = false;  // Flag to prevent event cascades
     this.gameStarted = false;
     this.firstRunOfferComplete = false;
+    this.hasProcessedMarkers = false;
 
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
@@ -575,6 +576,108 @@ async loadShapeForgeParser() {
 }
 
 
+// /**
+//  * Process ShapeForge markers in the scene
+//  * @param {Array} markers - Array of ShapeForge markers
+//  */
+// async processShapeForgeMarkers(markers) {
+//   if (!markers || markers.length === 0) return;
+  
+//   try {
+//     // Load ShapeForgeParser if needed
+//     const parser = await this.loadShapeForgeParser();
+    
+//     // Create an array of loading promises to handle all markers in parallel
+//     const loadingPromises = markers.map(async (marker) => {
+//       const modelId = marker.data?.modelId;
+      
+//       if (!modelId) {
+//         console.warn('Marker missing modelId:', marker);
+//         return null;
+//       }
+      
+//       // Get position from marker
+//       const x = marker.x / 50 - this.boxWidth / 2;
+//       const z = marker.y / 50 - this.boxDepth / 2;
+      
+//       // Get elevation at marker position
+//       const { elevation } = this.getElevationAtPoint(x, z);
+      
+//       // Get user configuration values with defaults
+//       const scale = marker.data.scale || 1.0;
+//       const heightOffset = marker.data.height || 0; // User-defined height offset
+//       const rotationDegrees = marker.data.rotation || 0;
+      
+//       // Create a group specifically for this model
+//       const modelGroup = new THREE.Group();
+      
+//       // Position at marker location with proper elevation + height offset
+//       modelGroup.position.set(x, elevation + heightOffset, z);
+      
+//       // Apply rotation (convert from degrees to radians)
+//       modelGroup.rotation.y = (rotationDegrees * Math.PI / 180);
+      
+//       // Apply scale
+//       modelGroup.scale.set(scale, scale, scale);
+      
+//       this.scene.add(modelGroup);
+      
+//       console.log(`Creating ShapeForge model ${modelId} at: `, {
+//         position: [x, elevation + heightOffset, z],
+//         rotation: rotationDegrees,
+//         scale: scale
+//       });
+      
+//       try {
+//         // Create a new parser instance for each model to avoid state conflicts
+//         const modelParser = new ShapeForgeParser(
+//           modelGroup, // Use the group as the "scene" for this model
+//           window.resourceManager,
+//           this.shaderEffects
+//         );
+        
+//         // Load the model - position at origin (0,0,0) since the group handles positioning
+//         const objects = await modelParser.loadModelFromIndexedDB(modelId);
+        
+//         if (!objects || objects.length === 0) {
+//           console.warn(`No objects created for model ${modelId}`);
+//           return null;
+//         }
+        
+//         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
+        
+//         // Store model data reference for later use
+//         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
+//         this.shapeForgeModels.set(marker.id, {
+//           group: modelGroup,
+//           objects,
+//           parser: modelParser,
+//           markerId: marker.id
+//         });
+        
+//         // Set userData on the group for identification
+//         modelGroup.userData = {
+//           isShapeForgeModel: true,
+//           markerId: marker.id,
+//           modelId: modelId
+//         };
+        
+//         return { marker, model: modelGroup };
+//       } catch (error) {
+//         console.error(`Error loading ShapeForge model ${modelId}:`, error);
+//         this.scene.remove(modelGroup); // Clean up on error
+//         return null;
+//       }
+//     });
+    
+//     // Wait for all models to load
+//     await Promise.all(loadingPromises);
+    
+//   } catch (error) {
+//     console.error('Error processing ShapeForge markers:', error);
+//   }
+// }
+
 /**
  * Process ShapeForge markers in the scene
  * @param {Array} markers - Array of ShapeForge markers
@@ -644,6 +747,116 @@ async processShapeForgeMarkers(markers) {
         }
         
         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
+
+// Extract physics properties from the loaded objects
+let hasPhysicsProperties = false;
+let isRegularWall = false;
+let isRaisedBlock = false;
+let blockHeight = 0;
+
+// Check each object for physics properties
+objects.forEach(obj => {
+  if (obj.physics || (obj.mesh && obj.mesh.userData)) {
+    // Get physics data from either the object or mesh userData
+    const physics = obj.physics || {};
+    const userData = obj.mesh ? obj.mesh.userData : {};
+    
+    // If any object has these properties, apply to the whole model
+    if (physics.isRegularWall || userData.isRegularWall) {
+      isRegularWall = true;
+      hasPhysicsProperties = true;
+    }
+    
+    if (physics.isRaisedBlock || userData.isRaisedBlock) {
+      isRaisedBlock = true;
+      hasPhysicsProperties = true;
+    }
+    
+    // Only set blockHeight if not already set or if higher
+    const objBlockHeight = physics.blockHeight !== undefined ? physics.blockHeight : 
+                           (userData.blockHeight !== undefined ? userData.blockHeight : 0);
+    
+    if (objBlockHeight > blockHeight) {
+      blockHeight = objBlockHeight;
+    }
+  }
+});
+
+// Enforce mutual exclusivity of properties based on Scene3DController's logic
+if (isRegularWall && isRaisedBlock) {
+  // If both are true, prioritize regular wall
+  console.log(`Model has both wall and block properties - prioritizing regular wall`);
+  isRegularWall = true;
+  isRaisedBlock = false;
+  blockHeight = 0;
+} else if (isRegularWall) {
+  // Regular walls have blockHeight = 0
+  blockHeight = 0;
+} else if (isRaisedBlock && blockHeight <= 0) {
+  // Raised blocks must have positive height
+  blockHeight = 1.0; // Default to 1.0 if no valid height
+}
+
+// Store the physics properties in the modelGroup userData
+modelGroup.userData = {
+  isShapeForgeModel: true,
+  markerId: marker.id,
+  modelId: modelId,
+  isRegularWall: isRegularWall,
+  // isRaisedBlock: isRaisedBlock,
+  blockHeight: blockHeight
+};
+
+// Add the model to collision system if it has physics properties
+if (hasPhysicsProperties) {
+  // Calculate bounds for collision
+  const box = new THREE.Box3().setFromObject(modelGroup);
+  const size = box.getSize(new THREE.Vector3());
+  const min = box.min;
+
+  // Convert from THREE.js world coordinates to bounds coordinates
+  const boundsX = (min.x + this.boxWidth/2) * 50;
+  const boundsY = (min.z + this.boxDepth/2) * 50;
+  const boundsWidth = size.x * 50;
+  const boundsHeight = size.z * 50;
+  
+  // Create a room-like object for collision detection
+  const wallRoom = {
+    type: 'shapeforge-wall',
+    position: box.getCenter(new THREE.Vector3()),
+    width: size.x,
+    length: size.z,
+    height: isRegularWall ? this.boxHeight : blockHeight,
+    isRegularWall: isRegularWall,
+    isRaisedBlock: isRaisedBlock,
+    blockHeight: blockHeight,
+    markerId: marker.id,
+    threeObject: modelGroup,
+    bounds: {
+      x: boundsX,
+      y: boundsY,
+      width: boundsWidth,
+      height: boundsHeight
+    },
+    isShapeForgeRoom: true,
+    // This new flag tells getElevationAtPoint not to add blockHeight again
+    isPrePositioned: true  
+  };
+
+  // Check if we need to add this marker to be skipped in later processing
+  marker.processedByShapeForge = true;
+  
+  // Check if this marker ID already exists in rooms array
+  const existingRoomIndex = this.rooms.findIndex(r => r.markerId === marker.id);
+  if (existingRoomIndex >= 0) {
+    console.log(`Replacing existing ShapeForge model in rooms array at index ${existingRoomIndex}`);
+    this.rooms[existingRoomIndex] = wallRoom;
+  } else {
+    this.rooms.push(wallRoom);
+    console.log(`Added ShapeForge model ${marker.id} as wall/block to rooms collection`, wallRoom);
+  }
+}
+
         
         // Store model data reference for later use
         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
@@ -3061,10 +3274,38 @@ break;
         roomX + roomWidth, roomZ + roomDepth
       );
 
+      // if (isPointInside) {
+      //   if (room.isRaisedBlock) {
+
+
+      //     // For raised blocks, we increase elevation
+      //     elevation = Math.max(elevation, room.blockHeight || 0);
+      //   } else if (room.isRegularWall) {
+      //     // For regular walls, consider top surface at boxHeight
+      //     // but only if the current elevation is near the top
+      //     const wallHeight = this.boxHeight || 4;
+      //     if (Math.abs(elevation - wallHeight) < 0.3) {
+      //       elevation = wallHeight;
+      //     } else {
+      //       // Inside wall but not on top
+      //       isInside = true;
+      //     }
+      //   } else if (room.type === 'wall' && !room.isRaisedBlock) {
+      //     // For regular walls (backward compatibility), mark as inside
+      //     isInside = true;
+      //   }
+      // }
+
       if (isPointInside) {
         if (room.isRaisedBlock) {
-          // For raised blocks, we increase elevation
-          elevation = Math.max(elevation, room.blockHeight || 0);
+          // Skip adding blockHeight for pre-positioned ShapeForge models
+          if (!room.isPrePositioned) {
+            // For raised blocks, we increase elevation
+            elevation = Math.max(elevation, room.blockHeight || 0);
+          } else {
+            // Just log that we're skipping elevation for pre-positioned models
+            console.log(`Skipping elevation adjustment for pre-positioned model: ${room.markerId || 'unknown'}`);
+          }
         } else if (room.isRegularWall) {
           // For regular walls, consider top surface at boxHeight
           // but only if the current elevation is near the top
@@ -3108,6 +3349,12 @@ break;
 
 
   async processAllMarkers() {
+
+    if (this.hasProcessedMarkers) {
+      console.log("Skipping repeated processAllMarkers call - markers already processed");
+      return;
+    }
+
     if (!this.markers || this.markers.length === 0) {
       console.log("No markers to process");
       return;
@@ -3121,6 +3368,12 @@ break;
     for (const marker of this.markers) {
       // Skip invalid markers
       if (!marker || !marker.type) continue;
+
+      // Add this check in any code that processes markers into rooms
+if (marker.type === 'shapeforge' && marker.processedByShapeForge) {
+  console.log(`pAM: Skipping already processed ShapeForge marker: ${marker.id}`);
+  continue; // Skip this marker as it was already processed by processShapeForgeMarkers
+}
 
       // Process based on marker type
       switch (marker.type) {
@@ -3419,6 +3672,9 @@ break;
 
     // 4. Final check for duplicates
     this.checkForDuplicateProps();
+
+    this.hasProcessedMarkers = true;
+    console.log("Completed processAllMarkers - marked as processed");
   }
 
     createDungeonEntrance(x, y, z, name = "Dungeon", difficulty = "normal") {
@@ -5808,12 +6064,35 @@ this.gameState = 'initializing';
     }
   }
 
+  // async processRooms(scene, mainBox, updateStatus) {
+  //   let result = mainBox;
+  //   const totalRooms = this.rooms.length;
+
+  //   for (let i = 0; i < totalRooms; i++) {
+
+
+  //     const room = this.rooms[i];
+
+  //     if (marker.type === 'shapeforge' && marker.processedByShapeForge) {
+  //       console.log(`Skipping already processed ShapeForge marker: ${marker.id}`);
+  //       continue; // Skip this marker as it was already processed by processShapeForgeMarkers
+  //     }
+
+  //     const roomMesh = this.createRoomShape(room);
+
   async processRooms(scene, mainBox, updateStatus) {
     let result = mainBox;
     const totalRooms = this.rooms.length;
-
+  
     for (let i = 0; i < totalRooms; i++) {
       const room = this.rooms[i];
+      
+      // Skip ShapeForge-created rooms that were already processed
+      if (room.isShapeForgeRoom) {
+        console.log(`pR: Skipping ShapeForge-created room: ${room.markerId || 'unknown'}`);
+        continue; // Skip this room as it was already handled by processShapeForgeMarkers
+      }
+      
       const roomMesh = this.createRoomShape(room);
 
       if (roomMesh) {

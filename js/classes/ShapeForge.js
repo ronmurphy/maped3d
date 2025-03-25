@@ -155,6 +155,7 @@ class ShapeForge {
       setTimeout(async () => {
         try {
           await this.initializeNewFeatures();
+          this.addPhysicsPanel();
           // this.addAlignmentTools();
           this.featuresInitialized = true;
           console.log('All ShapeForge features initialized');
@@ -343,6 +344,7 @@ class ShapeForge {
             </div>
           </div>
         </div>
+
         
         <!-- Materials -->
         <div class="panel-section" style="margin-top: 20px;">
@@ -515,8 +517,6 @@ class ShapeForge {
     this.drawer.querySelector('#export-code')?.addEventListener('click', this.showExportDialog.bind(this));
     this.drawer.querySelector('#save-to-resources')?.addEventListener('click', this.saveToResources.bind(this));
     this.drawer.querySelector('#loadModelBtn')?.addEventListener('click', this.showModelBrowser.bind(this));
-
-
 
     const rotationQuickButtons = [
       { id: 'rot-x-90', axis: 'x', degrees: 90 },
@@ -1643,6 +1643,25 @@ class ShapeForge {
 
     // Also update material UI components
     this.updateMaterialUI(object);
+
+    // Update physics properties if they exist
+const isRegularWallCheckbox = this.drawer.querySelector('#is-regular-wall');
+const isRaisedBlockCheckbox = this.drawer.querySelector('#is-raised-block');
+const blockHeightSlider = this.drawer.querySelector('#block-height');
+
+if (isRegularWallCheckbox && isRaisedBlockCheckbox && blockHeightSlider) {
+  // Initialize or retrieve physics properties
+  object.physics = object.physics || {};
+  
+  // Set checkbox states
+  isRegularWallCheckbox.checked = !!object.physics.isRegularWall;
+  isRaisedBlockCheckbox.checked = !!object.physics.isRaisedBlock;
+  
+  // Set block height and enable/disable based on isRaisedBlock
+  blockHeightSlider.value = object.physics.blockHeight !== undefined ? 
+    object.physics.blockHeight : 1.0;
+  blockHeightSlider.disabled = !object.physics.isRaisedBlock;
+}
   }
 
   /**
@@ -3372,6 +3391,15 @@ case 'multiDistribute':
         rotation: { ...obj.rotation },
         scale: { ...obj.scale }
       };
+
+      // Add the physics properties to this object:
+if (obj.physics) {
+  objData.physics = {
+    isRegularWall: obj.physics.isRegularWall || false,
+    isRaisedBlock: obj.physics.isRaisedBlock || false,
+    blockHeight: obj.physics.blockHeight !== undefined ? obj.physics.blockHeight : 1.0
+  };
+}
 
       // Material info
       if (obj.material) {
@@ -5140,6 +5168,7 @@ initializeNewFeatures() {
         }
       }
     }
+ 
     
     // Mark as initialized
     this.featuresInitialized = true;
@@ -5563,7 +5592,104 @@ getObjectSize(object) {
 
 
 
+ShapeForge.prototype.addPhysicsPanel = function() {
+  // Find the parent container to add the physics panel to
+  const propertyPanelSection = this.drawer.querySelector('.panel-section:has(#properties-container)');
+  
+  if (!propertyPanelSection) {
+    console.warn("Could not find properties panel to add physics panel after");
+    return;
+  }
+  
+  // Create the physics panel
+  const physicsPanel = document.createElement('div');
+  physicsPanel.className = 'panel-section';
+  physicsPanel.style.marginTop = '20px';
+  physicsPanel.innerHTML = `
+    <h3>Physics Properties</h3>
+    <div id="physics-container">
+      <sl-checkbox id="is-regular-wall">Is Regular Wall</sl-checkbox>
+      <div style="font-size: 0.8em; color: #aaa; margin-top: -8px; margin-bottom: 10px;">
+        Blocks movement at standard wall height (4.5 units)
+      </div>
+      
+      <sl-checkbox id="is-raised-block">Is Raised Block</sl-checkbox>
+      <div style="font-size: 0.8em; color: #aaa; margin-top: -8px; margin-bottom: 10px;">
+        Player can stand on this at specified height
+      </div>
+      
+      <sl-range id="block-height" 
+               label="Block Height" 
+               min="0" 
+               max="10" 
+               step="0.1" 
+               value="1.0"
+               disabled></sl-range>
+    </div>
+  `;
+  
+  // Insert the panel after the properties panel
+  propertyPanelSection.after(physicsPanel);
+  
+  // Set up event listeners for the physics controls
+  const isRegularWallCheckbox = this.drawer.querySelector('#is-regular-wall');
+  if (isRegularWallCheckbox) {
+    isRegularWallCheckbox.addEventListener('sl-change', (e) => {
+      if (this.selectedObject !== null) {
+        const object = this.objects[this.selectedObject];
+        
+        // Initialize physics properties if they don't exist
+        if (!object.physics) {
+          object.physics = {};
+        }
+        
+        object.physics.isRegularWall = e.target.checked;
+        
+        console.log(`Set isRegularWall to ${e.target.checked} for ${object.name}`);
+      }
+    });
+  }
 
+  const isRaisedBlockCheckbox = this.drawer.querySelector('#is-raised-block');
+  const blockHeightSlider = this.drawer.querySelector('#block-height');
+
+  if (isRaisedBlockCheckbox && blockHeightSlider) {
+    isRaisedBlockCheckbox.addEventListener('sl-change', (e) => {
+      if (this.selectedObject !== null) {
+        const object = this.objects[this.selectedObject];
+        
+        // Initialize physics properties if they don't exist
+        if (!object.physics) {
+          object.physics = {};
+        }
+        
+        object.physics.isRaisedBlock = e.target.checked;
+        
+        // Enable/disable height slider based on checkbox
+        blockHeightSlider.disabled = !e.target.checked;
+        
+        console.log(`Set isRaisedBlock to ${e.target.checked} for ${object.name}`);
+      }
+    });
+    
+    blockHeightSlider.addEventListener('sl-change', (e) => {
+      if (this.selectedObject !== null && this.objects[this.selectedObject].physics?.isRaisedBlock) {
+        const object = this.objects[this.selectedObject];
+        
+        // Initialize physics properties if they don't exist
+        if (!object.physics) {
+          object.physics = {};
+        }
+        
+        object.physics.blockHeight = parseFloat(e.target.value);
+        
+        console.log(`Set blockHeight to ${e.target.value} for ${object.name}`);
+      }
+    });
+  }
+  
+  console.log('Physics panel added to ShapeForge UI');
+};
 
 ShapeForge.prototype.addObjectToScene = function (objectData) {
   if (!this.previewScene) return;

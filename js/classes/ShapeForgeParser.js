@@ -537,6 +537,22 @@ class ShapeForgeParser {
             scale: objData.scale || { x: 1, y: 1, z: 1 }
         };
 
+        // Add physics properties to this object:
+if (objData.physics) {
+    objectData.physics = {
+      isRegularWall: objData.physics.isRegularWall || false,
+      isRaisedBlock: objData.physics.isRaisedBlock || false,
+      blockHeight: objData.physics.blockHeight !== undefined ? objData.physics.blockHeight : 1.0
+    };
+    
+    // Also add these to mesh.userData for easy access by the game engine
+    mesh.userData.isRegularWall = objData.physics.isRegularWall || false;
+    mesh.userData.isRaisedBlock = objData.physics.isRaisedBlock || false;
+    mesh.userData.blockHeight = objData.physics.blockHeight !== undefined ? objData.physics.blockHeight : 1.0;
+    
+    console.log(`Applied physics properties to ${objectData.name}: `, objectData.physics);
+  }
+
         // Add to scene
         this.scene.add(mesh);
 
@@ -1513,263 +1529,9 @@ applyShaderEffect(effectType, effectParams) {
         };
     }
 
-    /**
-     * Simple glow effect that doesn't depend on ShaderEffectsManager
-     */
-
-    // createPropGlowEffect(prop, options) {
-    //     const defaults = {
-    //         color: options.color || 0x66ccff,
-    //         intensity: options.intensity || 0.5
-    //     };
-
-    //     // Create container for glow effect
-    //     const container = new THREE.Group();
-    //     container.position.copy(prop.position);
-    //     this.scene.add(container);
-
-    //     // Create a point light for the glow
-    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 2);
-    //     container.add(light);
-
-    //     // Store original material properties
-    //     if (prop.material && prop.material.emissive !== undefined && !prop.userData.originalEmissive) {
-    //         prop.userData.originalEmissive = prop.material.emissive.clone();
-    //         prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
-
-    //         // IMPORTANT: We no longer modify the emissive property here
-    //         // prop.material.emissive.set(defaults.color);
-    //     }
-
-    //     return {
-    //         container: container,
-    //         light: light,
-    //         particles: null,
-    //         originalObject: prop
-    //     };
-    // }
-
-    /**
- * Simple fire effect that works without complex ShaderEffectsManager
- * Modified to not override the object's material emissive property
- */
-    // createSimpleFireEffect(prop, options) {
-    //     const defaults = {
-    //         color: options.color || 0xff6600,
-    //         intensity: options.intensity || 1.2
-    //     };
-
-    //     // Create container for fire effect
-    //     const container = new THREE.Group();
-    //     container.position.copy(prop.position);
-    //     this.scene.add(container);
-
-    //     // Add fire light
-    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-    //     light.position.y += 0.5; // Position above object
-    //     container.add(light);
-
-    //     // Create simple particle system for fire
-    //     const particleCount = 30; // Increased from 15 for better effect
-    //     const particleGeometry = new THREE.BufferGeometry();
-    //     const particlePositions = new Float32Array(particleCount * 3);
-    //     const particleColors = new Float32Array(particleCount * 3);
-
-    //     // Fire color
-    //     const fireColor = new THREE.Color(defaults.color);
-
-    //     // Create random particles in cone shape
-    //     for (let i = 0; i < particleCount; i++) {
-    //         const i3 = i * 3;
-    //         const angle = Math.random() * Math.PI * 2;
-    //         const radius = Math.random() * 0.3; // Increased radius for better visibility
-    //         const height = Math.random() * 0.8; // More varied height
-
-    //         particlePositions[i3] = Math.cos(angle) * radius * (1 - height / 0.8);
-    //         particlePositions[i3 + 1] = height;
-    //         particlePositions[i3 + 2] = Math.sin(angle) * radius * (1 - height / 0.8);
-
-    //         // Colors: start yellow-orange, fade to red
-    //         const mixFactor = Math.random();
-    //         particleColors[i3] = fireColor.r;
-    //         particleColors[i3 + 1] = fireColor.g * mixFactor;
-    //         particleColors[i3 + 2] = 0;
-    //     }
-
-    //     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    //     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-
-    //     const particleMaterial = new THREE.PointsMaterial({
-    //         size: 0.1,
-    //         vertexColors: true,
-    //         transparent: true,
-    //         opacity: 0.8,
-    //         blending: THREE.AdditiveBlending
-    //     });
-
-    //     const particles = new THREE.Points(particleGeometry, particleMaterial);
-    //     container.add(particles);
-
-    //     // Store original positions for animation
-    //     particles.userData = {
-    //         positions: [...particlePositions],
-    //         time: 0
-    //     };
-
-    //     return {
-    //         container: container,
-    //         light: light,
-    //         particles: particles,
-    //         originalObject: prop,
-    //         animationData: {
-    //             time: 0,
-    //             speed: 1.0
-    //         },
-    //         update: function (deltaTime) {
-    //             // Animate particles
-    //             this.animationData.time += deltaTime;
-    //             const time = this.animationData.time;
-
-    //             // Get position data
-    //             const positions = particles.geometry.attributes.position.array;
-
-    //             // Animate each particle
-    //             for (let i = 0; i < particleCount; i++) {
-    //                 const i3 = i * 3;
-
-    //                 // Move up with varying speed
-    //                 positions[i3 + 1] += 0.01 + Math.random() * 0.01;
-
-    //                 // Reset if too high
-    //                 if (positions[i3 + 1] > 0.8) {
-    //                     const angle = Math.random() * Math.PI * 2;
-    //                     const radius = Math.random() * 0.3;
-
-    //                     positions[i3] = Math.cos(angle) * radius;
-    //                     positions[i3 + 1] = 0;
-    //                     positions[i3 + 2] = Math.sin(angle) * radius;
-    //                 }
-
-    //                 // Add some "flickering"
-    //                 positions[i3] += (Math.random() - 0.5) * 0.02;
-    //                 positions[i3 + 2] += (Math.random() - 0.5) * 0.02;
-    //             }
-
-    //             // Update geometry
-    //             particles.geometry.attributes.position.needsUpdate = true;
-
-    //             // Flicker the light
-    //             light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
-    //         }
-    //     };
-    // }
 
 
-    /**
- * Simple magic effect that works without complex ShaderEffectsManager
- * Modified to not alter the object's original texture
- */
-    // createSimpleMagicEffect(prop, options) {
-    //     const defaults = {
-    //         color: options.color || 0x8800ff,
-    //         intensity: options.intensity || 0.8
-    //     };
-
-    //     // Create container for magic effect
-    //     const container = new THREE.Group();
-    //     container.position.copy(prop.position);
-    //     this.scene.add(container);
-
-    //     // Add magic light
-    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-    //     light.position.y += 0.3; // Position above object
-    //     container.add(light);
-
-    //     // Create simple particle system for magic
-    //     const particleCount = 20;
-    //     const particleGeometry = new THREE.BufferGeometry();
-    //     const particlePositions = new Float32Array(particleCount * 3);
-    //     const particleColors = new Float32Array(particleCount * 3);
-
-    //     // Magic color
-    //     const magicColor = new THREE.Color(defaults.color);
-
-    //     // Create random particles in sphere shape
-    //     for (let i = 0; i < particleCount; i++) {
-    //         const i3 = i * 3;
-    //         const angle1 = Math.random() * Math.PI * 2;
-    //         const angle2 = Math.random() * Math.PI * 2;
-    //         const radius = Math.random() * 0.3 + 0.1;
-
-    //         particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
-    //         particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
-    //         particlePositions[i3 + 2] = Math.cos(angle2) * radius;
-
-    //         // Colors
-    //         particleColors[i3] = magicColor.r;
-    //         particleColors[i3 + 1] = magicColor.g;
-    //         particleColors[i3 + 2] = magicColor.b;
-    //     }
-
-    //     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    //     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-
-    //     const particleMaterial = new THREE.PointsMaterial({
-    //         size: 0.05,
-    //         vertexColors: true,
-    //         transparent: true,
-    //         opacity: 0.7,
-    //         blending: THREE.AdditiveBlending
-    //     });
-
-    //     const particles = new THREE.Points(particleGeometry, particleMaterial);
-    //     container.add(particles);
-
-    //     // Store original positions for animation
-    //     particles.userData = {
-    //         positions: [...particlePositions],
-    //         time: 0
-    //     };
-
-    //     return {
-    //         container: container,
-    //         light: light,
-    //         particles: particles,
-    //         originalObject: prop,
-    //         animationData: {
-    //             time: 0,
-    //             speed: 0.7
-    //         },
-    //         update: function (deltaTime) {
-    //             // Animate particles
-    //             this.animationData.time += deltaTime;
-    //             const time = this.animationData.time;
-
-    //             // Get position data
-    //             const positions = particles.geometry.attributes.position.array;
-    //             const origPositions = particles.userData.positions;
-
-    //             // Animate each particle in orbital pattern
-    //             for (let i = 0; i < particleCount; i++) {
-    //                 const i3 = i * 3;
-    //                 const angle = time + i * 0.2;
-
-    //                 positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
-    //                 positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
-    //                 positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
-    //             }
-
-    //             // Update geometry
-    //             particles.geometry.attributes.position.needsUpdate = true;
-
-    //             // Pulse the light
-    //             light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
-    //         }
-    //     };
-    // }
-
-    // Update the createPropGlowEffect method to use scale:
-createPropGlowEffect(prop, options) {
+    createPropGlowEffect(prop, options) {
     const defaults = {
         color: options.color || 0x66ccff,
         intensity: options.intensity || 0.5,
