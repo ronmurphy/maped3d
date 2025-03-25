@@ -656,24 +656,48 @@ class ShapeForgeParser {
         console.log(`Applying effects to ${this.objects.length} objects`);
 
         this.objects.forEach((obj, index) => {
+            // if (obj.pendingEffect) {
+            //     console.log(`Applying ${typeof obj.pendingEffect === 'string' ?
+            //         obj.pendingEffect : obj.pendingEffect.type} effect to ${obj.name}`);
+
+            //     // Select the object first
+            //     this.selectObject(index);
+
+            //     // Handle both string-only and object format
+            //     const effectType = typeof obj.pendingEffect === 'string' ?
+            //         obj.pendingEffect : obj.pendingEffect.type;
+
+            //     // Apply the effect
+            //     this.applyShaderEffect(effectType);
+
             if (obj.pendingEffect) {
                 console.log(`Applying ${typeof obj.pendingEffect === 'string' ?
                     obj.pendingEffect : obj.pendingEffect.type} effect to ${obj.name}`);
-
+            
                 // Select the object first
                 this.selectObject(index);
-
+            
                 // Handle both string-only and object format
                 const effectType = typeof obj.pendingEffect === 'string' ?
                     obj.pendingEffect : obj.pendingEffect.type;
-
-                // Apply the effect
-                this.applyShaderEffect(effectType);
-
-                // Apply any specific effect parameters if available
-                if (typeof obj.pendingEffect === 'object' && obj.pendingEffect.parameters) {
-                    this.applyEffectParameters(obj, obj.pendingEffect.parameters);
+                
+                // Create parameters object including scale
+                const effectParams = typeof obj.pendingEffect === 'object' ? 
+                    obj.pendingEffect.parameters || {} : {};
+                    
+                // Ensure scale parameter exists
+                if (effectParams.scale === undefined) {
+                    effectParams.scale = 1.0;
                 }
+            
+                // Apply the effect with parameters including scale
+                this.applyShaderEffect(effectType, effectParams);
+
+
+                // // Apply any specific effect parameters if available
+                // if (typeof obj.pendingEffect === 'object' && obj.pendingEffect.parameters) {
+                //     this.applyEffectParameters(obj, obj.pendingEffect.parameters);
+                // }
 
                 // Clear pending effect
                 delete obj.pendingEffect;
@@ -713,6 +737,36 @@ class ShapeForgeParser {
             }
         }
 
+        // Handle scale parameter
+if (parameters.scale !== undefined) {
+    // Store scale value in effect data
+    if (obj.effect.data) {
+        obj.effect.data.scale = parameters.scale;
+    }
+    
+    // If the effect has light and particles, try to scale them
+    if (obj.effect.data.light) {
+        const objectSize = this.getObjectSize(obj.mesh);
+        const effectRadius = objectSize * parameters.scale;
+        
+        // Adjust light range
+        if (typeof obj.effect.data.light.distance === 'number') {
+            obj.effect.data.light.distance = effectRadius * 2;
+        }
+    }
+    
+    // Scale particle size if available
+    if (obj.effect.data.particles && 
+        obj.effect.data.particles.material &&
+        typeof obj.effect.data.particles.material.size === 'number') {
+        const baseSize = 0.05;  // Default base size
+        obj.effect.data.particles.material.size = baseSize * parameters.scale;
+    }
+    
+    // For large scale changes, might be better to recreate the entire effect
+    // But we'll skip that complexity for now
+}
+
         // Apply effect-specific parameters
         switch (obj.effect.type) {
             case 'fire':
@@ -745,190 +799,645 @@ class ShapeForgeParser {
     }
 
     /**
+ * Get the approximate size of an object for scaling effects
+ * @param {Object} object - The object to measure
+ * @returns {number} Approximate size of the object
+ */
+getObjectSize(object) {
+    // Default size if we can't determine
+    const defaultSize = 1;
+    
+    if (!object) return defaultSize;
+    
+    try {
+        // Use geometry bounding box/sphere if available
+        if (object.geometry) {
+            // Compute bounding box if not already computed
+            if (!object.geometry.boundingBox) {
+                object.geometry.computeBoundingBox();
+            }
+            
+            // Get size from bounding box
+            if (object.geometry.boundingBox) {
+                const boundingBox = object.geometry.boundingBox;
+                const size = new THREE.Vector3();
+                boundingBox.getSize(size);
+                
+                // Factor in the object's scale
+                if (object.scale) {
+                    size.x *= object.scale.x;
+                    size.y *= object.scale.y;
+                    size.z *= object.scale.z;
+                }
+                
+                // Return average dimension as an approximation of size
+                return (size.x + size.y + size.z) / 3;
+            }
+            
+            // Alternative: Use bounding sphere
+            if (!object.geometry.boundingSphere) {
+                object.geometry.computeBoundingSphere();
+            }
+            
+            if (object.geometry.boundingSphere) {
+                // Factor in the object's scale (using max scale as approximation)
+                const maxScale = object.scale ? 
+                    Math.max(object.scale.x, object.scale.y, object.scale.z) : 1.0;
+                return object.geometry.boundingSphere.radius * maxScale;
+            }
+        }
+        
+        // If we couldn't determine from geometry, try to approximate from object scale
+        if (object.scale) {
+            return Math.max(
+                Math.abs(object.scale.x), 
+                Math.abs(object.scale.y), 
+                Math.abs(object.scale.z)
+            );
+        }
+    } catch (error) {
+        console.warn("Error determining object size:", error);
+    }
+    
+    // Default fallback
+    return defaultSize;
+}
+
+    /**
      * Apply shader effect to the selected object
      * @param {string} effectType - Type of effect to apply
      */
-    applyShaderEffect(effectType) {
-        if (this.selectedObject === null) {
-            console.warn('No object selected, cannot apply shader effect');
-            return;
-        }
+//     applyShaderEffect(effectType) {
+//         if (this.selectedObject === null) {
+//             console.warn('No object selected, cannot apply shader effect');
+//             return;
+//         }
 
-        // Handle 'none' case - remove current effect
-        if (effectType === 'none') {
-            const object = this.objects[this.selectedObject];
-            if (object.effect) {
-                console.log('Removing shader effect from object');
-                // Remove existing effect if any
-                if (object.effect.data.container && object.effect.data.container.parent) {
-                    this.scene.remove(object.effect.data.container);
-                }
+//         // Handle 'none' case - remove current effect
+//         if (effectType === 'none') {
+//             const object = this.objects[this.selectedObject];
+//             if (object.effect) {
+//                 console.log('Removing shader effect from object');
+//                 // Remove existing effect if any
+//                 if (object.effect.data.container && object.effect.data.container.parent) {
+//                     this.scene.remove(object.effect.data.container);
+//                 }
 
-                if (object.effect.data.light && object.effect.data.light.parent) {
-                    this.scene.remove(object.effect.data.light);
-                }
+//                 if (object.effect.data.light && object.effect.data.light.parent) {
+//                     this.scene.remove(object.effect.data.light);
+//                 }
 
-                if (object.effect.data.particles && object.effect.data.particles.parent) {
-                    this.scene.remove(object.effect.data.particles);
-                }
+//                 if (object.effect.data.particles && object.effect.data.particles.parent) {
+//                     this.scene.remove(object.effect.data.particles);
+//                 }
 
-                // Reset emissive if it was changed
-                if (object.mesh.material && object.mesh.material.emissive !== undefined &&
-                    object.mesh.userData.originalEmissive) {
-                    object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
-                    if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
-                        object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
-                    }
-                }
+//                 // Reset emissive if it was changed
+//                 if (object.mesh.material && object.mesh.material.emissive !== undefined &&
+//                     object.mesh.userData.originalEmissive) {
+//                     object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+//                     if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+//                         object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+//                     }
+//                 }
 
-                // Clear effect data
-                delete object.effect;
-            }
-            return;
-        }
+//                 // Clear effect data
+//                 delete object.effect;
+//             }
+//             return;
+//         }
 
-        const object = this.objects[this.selectedObject];
+//         const object = this.objects[this.selectedObject];
 
-        try {
-            // Remove existing effect if any
-            if (object.effect) {
-                // Remove from scene first
-                if (object.effect.data.container && object.effect.data.container.parent) {
-                    this.scene.remove(object.effect.data.container);
-                }
+//         try {
+//             // Remove existing effect if any
+//             if (object.effect) {
+//                 // Remove from scene first
+//                 if (object.effect.data.container && object.effect.data.container.parent) {
+//                     this.scene.remove(object.effect.data.container);
+//                 }
 
-                if (object.effect.data.light && object.effect.data.light.parent) {
-                    this.scene.remove(object.effect.data.light);
-                }
+//                 if (object.effect.data.light && object.effect.data.light.parent) {
+//                     this.scene.remove(object.effect.data.light);
+//                 }
 
-                if (object.effect.data.particles && object.effect.data.particles.parent) {
-                    this.scene.remove(object.effect.data.particles);
-                }
+//                 if (object.effect.data.particles && object.effect.data.particles.parent) {
+//                     this.scene.remove(object.effect.data.particles);
+//                 }
 
-                // Reset emissive if it was changed
-                if (object.mesh.material && object.mesh.material.emissive !== undefined &&
-                    object.mesh.userData.originalEmissive) {
-                    object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
-                    if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
-                        object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
-                    }
-                }
+//                 // Reset emissive if it was changed
+//                 if (object.mesh.material && object.mesh.material.emissive !== undefined &&
+//                     object.mesh.userData.originalEmissive) {
+//                     object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+//                     if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+//                         object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+//                     }
+//                 }
 
-                delete object.effect;
-            }
+//                 delete object.effect;
+//             }
 
-            let effectData;
+//             let effectData;
 
-            // Before applying effect, ensure texture is preserved by setting material color to white
-            if (object.mesh.material && object.mesh.material.map) {
-                // Store original color if not already stored
-                if (!object.mesh.userData.originalColor) {
-                    object.mesh.userData.originalColor = object.mesh.material.color.clone();
-                }
-                // Set to white to prevent texture tinting
-                object.mesh.material.color.set(0xffffff);
-            }
+//             // Before applying effect, ensure texture is preserved by setting material color to white
+//             if (object.mesh.material && object.mesh.material.map) {
+//                 // Store original color if not already stored
+//                 if (!object.mesh.userData.originalColor) {
+//                     object.mesh.userData.originalColor = object.mesh.material.color.clone();
+//                 }
+//                 // Set to white to prevent texture tinting
+//                 object.mesh.material.color.set(0xffffff);
+//             }
 
-            // Try to get the effect from ShaderEffectsManager
-            if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
-                const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
+//             // let effectOptions = {
+//             //     color: parameters?.color || 0x66ccff,
+//             //     intensity: parameters?.intensity || 1.0,
+//             //     scale: parameters?.scale || 1.0  // Add default scale
+//             // };
+            
+//             // // Make sure this gets passed to the shader effect manager's create method
+//             // if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
+//             //     const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
+//             //     if (effectDefinition && typeof effectDefinition.create === 'function') {
+//             //         // Create comprehensive parameters object including scale
+//             //         const params = {
+//             //             ...effectDefinition,
+//             //             color: effectOptions.color,
+//             //             intensity: effectOptions.intensity,
+//             //             scale: effectOptions.scale  // Make sure scale is included
+//             //         };
+                    
+//             //         effectData = effectDefinition.create(object.mesh, params, this.shaderEffects.qualityLevel || 'medium');
+//             //     }
+//             // }
 
-                if (effectDefinition && typeof effectDefinition.create === 'function') {
-                    console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
+//             // // Try to get the effect from ShaderEffectsManager
+//             // if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
+//             //     const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
 
-                    // Use ShaderEffectsManager's create method
-                    effectData = effectDefinition.create(object.mesh, effectDefinition, this.shaderEffects.qualityLevel || 'medium');
-                } else {
-                    console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
-                }
-            } else {
-                console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
-            }
+//             //     if (effectDefinition && typeof effectDefinition.create === 'function') {
+//             //         console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
 
-            // If no effect data yet, use fallbacks
-            if (!effectData) {
-                console.log(`Using fallback for effect type: ${effectType}`);
-                // Use appropriate fallback based on effect type
-                switch (effectType) {
-                    case 'glow':
-                        effectData = this.createPropGlowEffect(object.mesh, { color: 0x66ccff, intensity: 0.5 });
-                        break;
-                    case 'fire':
-                        effectData = this.createSimpleFireEffect(object.mesh, { color: 0xff6600, intensity: 1.2 });
-                        break;
-                    case 'burning':
-                        // Non-colorizing version
-                        effectData = this.createSimpleBurningEffect(object.mesh, { color: 0xff6600, intensity: 1.2 });
-                        break;
-                    case 'magic':
-                        effectData = this.createSimpleMagicEffect(object.mesh, { color: 0x8800ff, intensity: 0.8 });
-                        break;
-                    case 'lava':
-                        effectData = this.createSimpleFireEffect(object.mesh, { color: 0xff3300, intensity: 1.3 });
-                        break;
-                    case 'holy':
-                        effectData = this.createPropGlowEffect(object.mesh, { color: 0xffe599, intensity: 1.0 });
-                        break;
-                    case 'coldMagic':
-                        effectData = this.createSimpleMagicEffect(object.mesh, { color: 0x88ccff, intensity: 0.6 });
-                        break;
-                    case 'portalEffect':
-                        effectData = this.createSimplePortalEffect(object.mesh, { color: 0x66ccff, intensity: 1.2 });
-                        break;
-                    default:
-                        // Default fallback for unknown types
-                        console.log(`Using fallback glow effect for unknown type: ${effectType}`);
-                        effectData = this.createPropGlowEffect(object.mesh, { color: 0x66ccff, intensity: 0.5 });
-                }
-            }
+//             //         // Use ShaderEffectsManager's create method
+//             //         effectData = effectDefinition.create(object.mesh, effectDefinition, this.shaderEffects.qualityLevel || 'medium');
+//             //     } else {
+//             //         console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
+//             //     }
+//             // } else {
+//             //     console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
+//             // }
 
-            // Check if object has a texture - if so, we need special handling
-            if (object.mesh.material && object.mesh.material.userData && object.mesh.material.userData.hasTexture) {
-                // Store the texture reference
-                const textureMap = object.mesh.material.map;
+//             // integrated version:
 
-                // If we're about to apply an effect that manipulates the material,
-                // create a special note for the update method
-                object.mesh.material.userData.preserveTexture = true;
+// // Initialize effect options with parameters including scale
+// let effectOptions = {
+//     color: 0x66ccff,
+//     intensity: 1.0,
+//     scale: 1.0
+// };
 
-                // If we're creating a new material for the effect, make sure 
-                // we transfer the texture to it
-                if (effectData && effectData.transferTexture) {
-                    effectData.transferTexture(textureMap);
-                }
-            }
+// // Then apply parameters if they exist:
+// if (effectParams) { // Use whatever variable name your method actually has
+//     if (effectParams.color !== undefined) effectOptions.color = effectParams.color;
+//     if (effectParams.intensity !== undefined) effectOptions.intensity = effectParams.intensity;
+//     if (effectParams.scale !== undefined) effectOptions.scale = effectParams.scale;
+// }
 
-            if (effectData && effectData.container) {
-                // Remove container from scene if it was added there
-                if (effectData.container.parent === this.scene) {
-                    this.scene.remove(effectData.container);
-                }
+// // Try to get the effect from ShaderEffectsManager
+// if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
+//     const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
+    
+//     if (effectDefinition && typeof effectDefinition.create === 'function') {
+//         console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
+        
+//         // Create comprehensive parameters object including scale
+//         const params = {
+//             ...effectDefinition,
+//             color: effectOptions.color,
+//             intensity: effectOptions.intensity,
+//             scale: effectOptions.scale  // Make sure scale is included
+//         };
+        
+//         // Use ShaderEffectsManager's create method with our parameters
+//         effectData = effectDefinition.create(object.mesh, params, this.shaderEffects.qualityLevel || 'medium');
+//     } else {
+//         console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
+//     }
+// } else {
+//     console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
+// }
 
-                // Reset container position to origin relative to parent
-                effectData.container.position.set(0, 0, 0);
 
-                // Copy rotation from the object to the effect container
-                effectData.container.rotation.copy(object.mesh.rotation);
 
-                // Add container as a child of the object mesh
-                object.mesh.add(effectData.container);
+//             // If no effect data yet, use fallbacks
+//             if (!effectData) {
+//                 console.log(`Using fallback for effect type: ${effectType}`);
+//                 // Use appropriate fallback based on effect type
+//                 switch (effectType) {
+//                     // case 'glow':
+//                     //     effectData = this.createPropGlowEffect(object.mesh, { color: 0x66ccff, intensity: 0.5 });
+//                     //     break;
+//                     // case 'fire':
+//                     //     effectData = this.createSimpleFireEffect(object.mesh, { color: 0xff6600, intensity: 1.2 });
+//                     //     break;
+//                     // case 'burning':
+//                     //     // Non-colorizing version
+//                     //     effectData = this.createSimpleBurningEffect(object.mesh, { color: 0xff6600, intensity: 1.2 });
+//                     //     break;
+//                     // case 'magic':
+//                     //     effectData = this.createSimpleMagicEffect(object.mesh, { color: 0x8800ff, intensity: 0.8 });
+//                     //     break;
+//                     // case 'lava':
+//                     //     effectData = this.createSimpleFireEffect(object.mesh, { color: 0xff3300, intensity: 1.3 });
+//                     //     break;
+//                     // case 'holy':
+//                     //     effectData = this.createPropGlowEffect(object.mesh, { color: 0xffe599, intensity: 1.0 });
+//                     //     break;
+//                     // case 'coldMagic':
+//                     //     effectData = this.createSimpleMagicEffect(object.mesh, { color: 0x88ccff, intensity: 0.6 });
+//                     //     break;
+//                     // case 'portalEffect':
+//                     //     effectData = this.createSimplePortalEffect(object.mesh, { color: 0x66ccff, intensity: 1.2 });
+//                     //     break;
+//                     case 'glow':
+//     effectData = this.createPropGlowEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'fire':
+//     effectData = this.createSimpleFireEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'burning':
+//     // Non-colorizing version
+//     effectData = this.createSimpleBurningEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'magic':
+//     effectData = this.createSimpleMagicEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'lava':
+//     effectData = this.createSimpleFireEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'holy':
+//     effectData = this.createPropGlowEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'coldMagic':
+//     effectData = this.createSimpleMagicEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+// case 'portalEffect':
+//     effectData = this.createSimplePortalEffect(object.mesh, {
+//         color: effectOptions.color, 
+//         intensity: effectOptions.intensity,
+//         scale: effectOptions.scale  // Add scale parameter
+//     });
+//     break;
+//                     default:
+//                         // Default fallback for unknown types
+//                         console.log(`Using fallback glow effect for unknown type: ${effectType}`);
+//                         effectData = this.createPropGlowEffect(object.mesh, { color: 0x66ccff, intensity: 0.5 });
+//                 }
+//             }
 
-                console.log(`Attached effect container to object ${object.name}`);
-            }
+//             // Check if object has a texture - if so, we need special handling
+//             if (object.mesh.material && object.mesh.material.userData && object.mesh.material.userData.hasTexture) {
+//                 // Store the texture reference
+//                 const textureMap = object.mesh.material.map;
 
-            // Store effect data with object
-            if (effectData) {
-                object.effect = {
-                    type: effectType,
-                    data: effectData
-                };
+//                 // If we're about to apply an effect that manipulates the material,
+//                 // create a special note for the update method
+//                 object.mesh.material.userData.preserveTexture = true;
 
-                console.log(`Applied ${effectType} effect to ${object.name}`);
-            }
-        } catch (error) {
-            console.error(`Error applying ${effectType} effect:`, error);
-        }
+//                 // If we're creating a new material for the effect, make sure 
+//                 // we transfer the texture to it
+//                 if (effectData && effectData.transferTexture) {
+//                     effectData.transferTexture(textureMap);
+//                 }
+//             }
+
+//             if (effectData && effectData.container) {
+//                 // Remove container from scene if it was added there
+//                 if (effectData.container.parent === this.scene) {
+//                     this.scene.remove(effectData.container);
+//                 }
+
+//                 // Reset container position to origin relative to parent
+//                 effectData.container.position.set(0, 0, 0);
+
+//                 // Copy rotation from the object to the effect container
+//                 effectData.container.rotation.copy(object.mesh.rotation);
+
+//                 // Add container as a child of the object mesh
+//                 object.mesh.add(effectData.container);
+
+//                 console.log(`Attached effect container to object ${object.name}`);
+//             }
+
+//             // Store effect data with object
+//             if (effectData) {
+//                 object.effect = {
+//                     type: effectType,
+//                     data: effectData
+//                 };
+
+//                 console.log(`Applied ${effectType} effect to ${object.name}`);
+//             }
+//         } catch (error) {
+//             console.error(`Error applying ${effectType} effect:`, error);
+//         }
+
+// new store for archive resons...
+// if (effectData) {
+//     object.effect = {
+//         type: effectType,
+//         parameters: {
+//             color: effectOptions.color,
+//             intensity: effectOptions.intensity,
+//             scale: effectOptions.scale,
+//             // Include any other parameters that were passed
+//             ...(effectParams || {})
+//         },
+//         data: effectData
+//     };
+
+//     console.log(`Applied ${effectType} effect to ${object.name}`);
+// }
+//     }
+
+/**
+ * Apply shader effect to the selected object
+ * @param {string} effectType - Type of effect to apply
+ * @param {Object} effectParams - Optional effect parameters
+ */
+applyShaderEffect(effectType, effectParams) {
+    if (this.selectedObject === null) {
+        console.warn('No object selected, cannot apply shader effect');
+        return;
     }
+
+    // Handle 'none' case - remove current effect
+    if (effectType === 'none') {
+        const object = this.objects[this.selectedObject];
+        if (object.effect) {
+            console.log('Removing shader effect from object');
+            // Remove existing effect if any
+            if (object.effect.data.container && object.effect.data.container.parent) {
+                this.scene.remove(object.effect.data.container);
+            }
+
+            if (object.effect.data.light && object.effect.data.light.parent) {
+                this.scene.remove(object.effect.data.light);
+            }
+
+            if (object.effect.data.particles && object.effect.data.particles.parent) {
+                this.scene.remove(object.effect.data.particles);
+            }
+
+            // Reset emissive if it was changed
+            if (object.mesh.material && object.mesh.material.emissive !== undefined &&
+                object.mesh.userData.originalEmissive) {
+                object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+                if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+                    object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+                }
+            }
+
+            // Clear effect data
+            delete object.effect;
+        }
+        return;
+    }
+
+    const object = this.objects[this.selectedObject];
+
+    try {
+        // Remove existing effect if any
+        if (object.effect) {
+            // Remove from scene first
+            if (object.effect.data.container && object.effect.data.container.parent) {
+                this.scene.remove(object.effect.data.container);
+            }
+
+            if (object.effect.data.light && object.effect.data.light.parent) {
+                this.scene.remove(object.effect.data.light);
+            }
+
+            if (object.effect.data.particles && object.effect.data.particles.parent) {
+                this.scene.remove(object.effect.data.particles);
+            }
+
+            // Reset emissive if it was changed
+            if (object.mesh.material && object.mesh.material.emissive !== undefined &&
+                object.mesh.userData.originalEmissive) {
+                object.mesh.material.emissive.copy(object.mesh.userData.originalEmissive);
+                if (object.mesh.userData.originalEmissiveIntensity !== undefined) {
+                    object.mesh.material.emissiveIntensity = object.mesh.userData.originalEmissiveIntensity;
+                }
+            }
+
+            delete object.effect;
+        }
+
+        let effectData;
+
+        // Before applying effect, ensure texture is preserved by setting material color to white
+        if (object.mesh.material && object.mesh.material.map) {
+            // Store original color if not already stored
+            if (!object.mesh.userData.originalColor) {
+                object.mesh.userData.originalColor = object.mesh.material.color.clone();
+            }
+            // Set to white to prevent texture tinting
+            object.mesh.material.color.set(0xffffff);
+        }
+
+        // Initialize default effect options
+        let effectOptions = {
+            color: 0x66ccff,
+            intensity: 1.0,
+            scale: 1.0  // Default scale
+        };
+
+        // Apply any provided parameters
+        if (effectParams) {
+            if (effectParams.color !== undefined) effectOptions.color = effectParams.color;
+            if (effectParams.intensity !== undefined) effectOptions.intensity = effectParams.intensity;
+            if (effectParams.scale !== undefined) effectOptions.scale = effectParams.scale;
+        }
+
+        // Try to get the effect from ShaderEffectsManager
+        if (this.shaderEffects && this.shaderEffects.effectDefinitions) {
+            const effectDefinition = this.shaderEffects.effectDefinitions.get(effectType);
+            
+            if (effectDefinition && typeof effectDefinition.create === 'function') {
+                console.log(`Using ShaderEffectsManager to create ${effectType} effect`);
+                
+                // Create comprehensive parameters object including scale
+                const params = {
+                    ...effectDefinition,
+                    color: effectOptions.color,
+                    intensity: effectOptions.intensity,
+                    scale: effectOptions.scale  // Make sure scale is included
+                };
+                
+                // Use ShaderEffectsManager's create method with our parameters
+                effectData = effectDefinition.create(object.mesh, params, this.shaderEffects.qualityLevel || 'medium');
+            } else {
+                console.log(`Effect type ${effectType} not found in ShaderEffectsManager or has no create method`);
+            }
+        } else {
+            console.log(`ShaderEffectsManager not available for effect: ${effectType}`);
+        }
+
+        // If no effect data yet, use fallbacks
+        if (!effectData) {
+            console.log(`Using fallback for effect type: ${effectType}`);
+            // Use appropriate fallback based on effect type
+            switch (effectType) {
+                case 'glow':
+                    effectData = this.createPropGlowEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'fire':
+                    effectData = this.createSimpleFireEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'burning':
+                    // Non-colorizing version
+                    effectData = this.createSimpleBurningEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'magic':
+                    effectData = this.createSimpleMagicEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'lava':
+                    effectData = this.createSimpleFireEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'holy':
+                    effectData = this.createPropGlowEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'coldMagic':
+                    effectData = this.createSimpleMagicEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                case 'portalEffect':
+                    effectData = this.createSimplePortalEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+                    break;
+                default:
+                    // Default fallback for unknown types
+                    console.log(`Using fallback glow effect for unknown type: ${effectType}`);
+                    effectData = this.createPropGlowEffect(object.mesh, {
+                        color: effectOptions.color,
+                        intensity: effectOptions.intensity,
+                        scale: effectOptions.scale
+                    });
+            }
+        }
+
+        // Check if object has a texture - if so, we need special handling
+        if (object.mesh.material && object.mesh.material.userData && object.mesh.material.userData.hasTexture) {
+            // Store the texture reference
+            const textureMap = object.mesh.material.map;
+
+            // If we're about to apply an effect that manipulates the material,
+            // create a special note for the update method
+            object.mesh.material.userData.preserveTexture = true;
+
+            // If we're creating a new material for the effect, make sure 
+            // we transfer the texture to it
+            if (effectData && effectData.transferTexture) {
+                effectData.transferTexture(textureMap);
+            }
+        }
+
+        if (effectData && effectData.container) {
+            // Remove container from scene if it was added there
+            if (effectData.container.parent === this.scene) {
+                this.scene.remove(effectData.container);
+            }
+
+            // Reset container position to origin relative to parent
+            effectData.container.position.set(0, 0, 0);
+
+            // Copy rotation from the object to the effect container
+            effectData.container.rotation.copy(object.mesh.rotation);
+
+            // Add container as a child of the object mesh
+            object.mesh.add(effectData.container);
+
+            console.log(`Attached effect container to object ${object.name}`);
+        }
+
+        // Store effect data with object
+        if (effectData) {
+            object.effect = {
+                type: effectType,
+                parameters: {
+                    color: effectOptions.color,
+                    intensity: effectOptions.intensity,
+                    scale: effectOptions.scale,
+                    // Include any other parameters that were passed
+                    ...(effectParams || {})
+                },
+                data: effectData
+            };
+
+            console.log(`Applied ${effectType} effect to ${object.name}`);
+        }
+    } catch (error) {
+        console.error(`Error applying ${effectType} effect:`, error);
+    }
+}
 
 
 
@@ -1008,256 +1517,521 @@ class ShapeForgeParser {
      * Simple glow effect that doesn't depend on ShaderEffectsManager
      */
 
-    createPropGlowEffect(prop, options) {
-        const defaults = {
-            color: options.color || 0x66ccff,
-            intensity: options.intensity || 0.5
-        };
+    // createPropGlowEffect(prop, options) {
+    //     const defaults = {
+    //         color: options.color || 0x66ccff,
+    //         intensity: options.intensity || 0.5
+    //     };
 
-        // Create container for glow effect
-        const container = new THREE.Group();
-        container.position.copy(prop.position);
-        this.scene.add(container);
+    //     // Create container for glow effect
+    //     const container = new THREE.Group();
+    //     container.position.copy(prop.position);
+    //     this.scene.add(container);
 
-        // Create a point light for the glow
-        const light = new THREE.PointLight(defaults.color, defaults.intensity, 2);
-        container.add(light);
+    //     // Create a point light for the glow
+    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 2);
+    //     container.add(light);
 
-        // Store original material properties
-        if (prop.material && prop.material.emissive !== undefined && !prop.userData.originalEmissive) {
-            prop.userData.originalEmissive = prop.material.emissive.clone();
-            prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
+    //     // Store original material properties
+    //     if (prop.material && prop.material.emissive !== undefined && !prop.userData.originalEmissive) {
+    //         prop.userData.originalEmissive = prop.material.emissive.clone();
+    //         prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
 
-            // IMPORTANT: We no longer modify the emissive property here
-            // That was the line causing the texture to be overwhelmed by the effect color
-        }
+    //         // IMPORTANT: We no longer modify the emissive property here
+    //         // prop.material.emissive.set(defaults.color);
+    //     }
 
-        return {
-            container: container,
-            light: light,
-            particles: null,
-            originalObject: prop
-        };
-    }
+    //     return {
+    //         container: container,
+    //         light: light,
+    //         particles: null,
+    //         originalObject: prop
+    //     };
+    // }
 
     /**
  * Simple fire effect that works without complex ShaderEffectsManager
  * Modified to not override the object's material emissive property
  */
-    createSimpleFireEffect(prop, options) {
-        const defaults = {
-            color: options.color || 0xff6600,
-            intensity: options.intensity || 1.2
-        };
+    // createSimpleFireEffect(prop, options) {
+    //     const defaults = {
+    //         color: options.color || 0xff6600,
+    //         intensity: options.intensity || 1.2
+    //     };
 
-        // Create container for fire effect
-        const container = new THREE.Group();
-        container.position.copy(prop.position);
-        this.scene.add(container);
+    //     // Create container for fire effect
+    //     const container = new THREE.Group();
+    //     container.position.copy(prop.position);
+    //     this.scene.add(container);
 
-        // Add fire light
-        const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-        light.position.y += 0.5; // Position above object
-        container.add(light);
+    //     // Add fire light
+    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+    //     light.position.y += 0.5; // Position above object
+    //     container.add(light);
 
-        // Create simple particle system for fire
-        const particleCount = 30; // Increased from 15 for better effect
-        const particleGeometry = new THREE.BufferGeometry();
-        const particlePositions = new Float32Array(particleCount * 3);
-        const particleColors = new Float32Array(particleCount * 3);
+    //     // Create simple particle system for fire
+    //     const particleCount = 30; // Increased from 15 for better effect
+    //     const particleGeometry = new THREE.BufferGeometry();
+    //     const particlePositions = new Float32Array(particleCount * 3);
+    //     const particleColors = new Float32Array(particleCount * 3);
 
-        // Fire color
-        const fireColor = new THREE.Color(defaults.color);
+    //     // Fire color
+    //     const fireColor = new THREE.Color(defaults.color);
 
-        // Create random particles in cone shape
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
-            const angle = Math.random() * Math.PI * 2;
-            const radius = Math.random() * 0.3; // Increased radius for better visibility
-            const height = Math.random() * 0.8; // More varied height
+    //     // Create random particles in cone shape
+    //     for (let i = 0; i < particleCount; i++) {
+    //         const i3 = i * 3;
+    //         const angle = Math.random() * Math.PI * 2;
+    //         const radius = Math.random() * 0.3; // Increased radius for better visibility
+    //         const height = Math.random() * 0.8; // More varied height
 
-            particlePositions[i3] = Math.cos(angle) * radius * (1 - height / 0.8);
-            particlePositions[i3 + 1] = height;
-            particlePositions[i3 + 2] = Math.sin(angle) * radius * (1 - height / 0.8);
+    //         particlePositions[i3] = Math.cos(angle) * radius * (1 - height / 0.8);
+    //         particlePositions[i3 + 1] = height;
+    //         particlePositions[i3 + 2] = Math.sin(angle) * radius * (1 - height / 0.8);
 
-            // Colors: start yellow-orange, fade to red
-            const mixFactor = Math.random();
-            particleColors[i3] = fireColor.r;
-            particleColors[i3 + 1] = fireColor.g * mixFactor;
-            particleColors[i3 + 2] = 0;
-        }
+    //         // Colors: start yellow-orange, fade to red
+    //         const mixFactor = Math.random();
+    //         particleColors[i3] = fireColor.r;
+    //         particleColors[i3 + 1] = fireColor.g * mixFactor;
+    //         particleColors[i3 + 2] = 0;
+    //     }
 
-        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    //     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    //     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-        const particleMaterial = new THREE.PointsMaterial({
-            size: 0.1,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending
-        });
+    //     const particleMaterial = new THREE.PointsMaterial({
+    //         size: 0.1,
+    //         vertexColors: true,
+    //         transparent: true,
+    //         opacity: 0.8,
+    //         blending: THREE.AdditiveBlending
+    //     });
 
-        const particles = new THREE.Points(particleGeometry, particleMaterial);
-        container.add(particles);
+    //     const particles = new THREE.Points(particleGeometry, particleMaterial);
+    //     container.add(particles);
 
-        // Store original positions for animation
-        particles.userData = {
-            positions: [...particlePositions],
-            time: 0
-        };
+    //     // Store original positions for animation
+    //     particles.userData = {
+    //         positions: [...particlePositions],
+    //         time: 0
+    //     };
 
-        return {
-            container: container,
-            light: light,
-            particles: particles,
-            originalObject: prop,
-            animationData: {
-                time: 0,
-                speed: 1.0
-            },
-            update: function (deltaTime) {
-                // Animate particles
-                this.animationData.time += deltaTime;
-                const time = this.animationData.time;
+    //     return {
+    //         container: container,
+    //         light: light,
+    //         particles: particles,
+    //         originalObject: prop,
+    //         animationData: {
+    //             time: 0,
+    //             speed: 1.0
+    //         },
+    //         update: function (deltaTime) {
+    //             // Animate particles
+    //             this.animationData.time += deltaTime;
+    //             const time = this.animationData.time;
 
-                // Get position data
-                const positions = particles.geometry.attributes.position.array;
+    //             // Get position data
+    //             const positions = particles.geometry.attributes.position.array;
 
-                // Animate each particle
-                for (let i = 0; i < particleCount; i++) {
-                    const i3 = i * 3;
+    //             // Animate each particle
+    //             for (let i = 0; i < particleCount; i++) {
+    //                 const i3 = i * 3;
 
-                    // Move up with varying speed
-                    positions[i3 + 1] += 0.01 + Math.random() * 0.01;
+    //                 // Move up with varying speed
+    //                 positions[i3 + 1] += 0.01 + Math.random() * 0.01;
 
-                    // Reset if too high
-                    if (positions[i3 + 1] > 0.8) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const radius = Math.random() * 0.3;
+    //                 // Reset if too high
+    //                 if (positions[i3 + 1] > 0.8) {
+    //                     const angle = Math.random() * Math.PI * 2;
+    //                     const radius = Math.random() * 0.3;
 
-                        positions[i3] = Math.cos(angle) * radius;
-                        positions[i3 + 1] = 0;
-                        positions[i3 + 2] = Math.sin(angle) * radius;
-                    }
+    //                     positions[i3] = Math.cos(angle) * radius;
+    //                     positions[i3 + 1] = 0;
+    //                     positions[i3 + 2] = Math.sin(angle) * radius;
+    //                 }
 
-                    // Add some "flickering"
-                    positions[i3] += (Math.random() - 0.5) * 0.02;
-                    positions[i3 + 2] += (Math.random() - 0.5) * 0.02;
-                }
+    //                 // Add some "flickering"
+    //                 positions[i3] += (Math.random() - 0.5) * 0.02;
+    //                 positions[i3 + 2] += (Math.random() - 0.5) * 0.02;
+    //             }
 
-                // Update geometry
-                particles.geometry.attributes.position.needsUpdate = true;
+    //             // Update geometry
+    //             particles.geometry.attributes.position.needsUpdate = true;
 
-                // Flicker the light
-                light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
-            }
-        };
-    }
+    //             // Flicker the light
+    //             light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+    //         }
+    //     };
+    // }
 
 
     /**
  * Simple magic effect that works without complex ShaderEffectsManager
  * Modified to not alter the object's original texture
  */
-    createSimpleMagicEffect(prop, options) {
-        const defaults = {
-            color: options.color || 0x8800ff,
-            intensity: options.intensity || 0.8
-        };
+    // createSimpleMagicEffect(prop, options) {
+    //     const defaults = {
+    //         color: options.color || 0x8800ff,
+    //         intensity: options.intensity || 0.8
+    //     };
 
-        // Create container for magic effect
-        const container = new THREE.Group();
-        container.position.copy(prop.position);
-        this.scene.add(container);
+    //     // Create container for magic effect
+    //     const container = new THREE.Group();
+    //     container.position.copy(prop.position);
+    //     this.scene.add(container);
 
-        // Add magic light
-        const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-        light.position.y += 0.3; // Position above object
-        container.add(light);
+    //     // Add magic light
+    //     const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+    //     light.position.y += 0.3; // Position above object
+    //     container.add(light);
 
-        // Create simple particle system for magic
-        const particleCount = 20;
-        const particleGeometry = new THREE.BufferGeometry();
-        const particlePositions = new Float32Array(particleCount * 3);
-        const particleColors = new Float32Array(particleCount * 3);
+    //     // Create simple particle system for magic
+    //     const particleCount = 20;
+    //     const particleGeometry = new THREE.BufferGeometry();
+    //     const particlePositions = new Float32Array(particleCount * 3);
+    //     const particleColors = new Float32Array(particleCount * 3);
 
-        // Magic color
-        const magicColor = new THREE.Color(defaults.color);
+    //     // Magic color
+    //     const magicColor = new THREE.Color(defaults.color);
 
-        // Create random particles in sphere shape
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
-            const angle1 = Math.random() * Math.PI * 2;
-            const angle2 = Math.random() * Math.PI * 2;
-            const radius = Math.random() * 0.3 + 0.1;
+    //     // Create random particles in sphere shape
+    //     for (let i = 0; i < particleCount; i++) {
+    //         const i3 = i * 3;
+    //         const angle1 = Math.random() * Math.PI * 2;
+    //         const angle2 = Math.random() * Math.PI * 2;
+    //         const radius = Math.random() * 0.3 + 0.1;
 
-            particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
-            particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
-            particlePositions[i3 + 2] = Math.cos(angle2) * radius;
+    //         particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
+    //         particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+    //         particlePositions[i3 + 2] = Math.cos(angle2) * radius;
 
-            // Colors
-            particleColors[i3] = magicColor.r;
-            particleColors[i3 + 1] = magicColor.g;
-            particleColors[i3 + 2] = magicColor.b;
-        }
+    //         // Colors
+    //         particleColors[i3] = magicColor.r;
+    //         particleColors[i3 + 1] = magicColor.g;
+    //         particleColors[i3 + 2] = magicColor.b;
+    //     }
 
-        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    //     particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    //     particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-        const particleMaterial = new THREE.PointsMaterial({
-            size: 0.05,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.7,
-            blending: THREE.AdditiveBlending
-        });
+    //     const particleMaterial = new THREE.PointsMaterial({
+    //         size: 0.05,
+    //         vertexColors: true,
+    //         transparent: true,
+    //         opacity: 0.7,
+    //         blending: THREE.AdditiveBlending
+    //     });
 
-        const particles = new THREE.Points(particleGeometry, particleMaterial);
-        container.add(particles);
+    //     const particles = new THREE.Points(particleGeometry, particleMaterial);
+    //     container.add(particles);
 
-        // Store original positions for animation
-        particles.userData = {
-            positions: [...particlePositions],
-            time: 0
-        };
+    //     // Store original positions for animation
+    //     particles.userData = {
+    //         positions: [...particlePositions],
+    //         time: 0
+    //     };
 
-        return {
-            container: container,
-            light: light,
-            particles: particles,
-            originalObject: prop,
-            animationData: {
-                time: 0,
-                speed: 0.7
-            },
-            update: function (deltaTime) {
-                // Animate particles
-                this.animationData.time += deltaTime;
-                const time = this.animationData.time;
+    //     return {
+    //         container: container,
+    //         light: light,
+    //         particles: particles,
+    //         originalObject: prop,
+    //         animationData: {
+    //             time: 0,
+    //             speed: 0.7
+    //         },
+    //         update: function (deltaTime) {
+    //             // Animate particles
+    //             this.animationData.time += deltaTime;
+    //             const time = this.animationData.time;
 
-                // Get position data
-                const positions = particles.geometry.attributes.position.array;
-                const origPositions = particles.userData.positions;
+    //             // Get position data
+    //             const positions = particles.geometry.attributes.position.array;
+    //             const origPositions = particles.userData.positions;
 
-                // Animate each particle in orbital pattern
-                for (let i = 0; i < particleCount; i++) {
-                    const i3 = i * 3;
-                    const angle = time + i * 0.2;
+    //             // Animate each particle in orbital pattern
+    //             for (let i = 0; i < particleCount; i++) {
+    //                 const i3 = i * 3;
+    //                 const angle = time + i * 0.2;
 
-                    positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
-                    positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
-                    positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
+    //                 positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
+    //                 positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
+    //                 positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
+    //             }
+
+    //             // Update geometry
+    //             particles.geometry.attributes.position.needsUpdate = true;
+
+    //             // Pulse the light
+    //             light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+    //         }
+    //     };
+    // }
+
+    // Update the createPropGlowEffect method to use scale:
+createPropGlowEffect(prop, options) {
+    const defaults = {
+        color: options.color || 0x66ccff,
+        intensity: options.intensity || 0.5,
+        scale: options.scale || 1.0  // Add scale parameter with default
+    };
+
+    // Get object size and calculate effect scale
+    const objectSize = this.getObjectSize(prop);
+    const effectScale = objectSize * defaults.scale;
+
+    // Create container for glow effect
+    const container = new THREE.Group();
+    container.position.copy(prop.position);
+    this.scene.add(container);
+
+    // Create a point light with range based on effect scale
+    const light = new THREE.PointLight(defaults.color, defaults.intensity, effectScale * 2);
+    container.add(light);
+
+    // Store original material properties
+    if (prop.material && prop.material.emissive !== undefined && !prop.userData.originalEmissive) {
+        prop.userData.originalEmissive = prop.material.emissive.clone();
+        prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
+
+        // IMPORTANT: We no longer modify the emissive property here
+    }
+
+    return {
+        container: container,
+        light: light,
+        particles: null,
+        originalObject: prop,
+        scale: defaults.scale,  // Store scale for reference
+        objectSize: objectSize  // Store original object size
+    };
+}
+
+// Update the createSimpleFireEffect method to use scale:
+createSimpleFireEffect(prop, options) {
+    const defaults = {
+        color: options.color || 0xff6600,
+        intensity: options.intensity || 1.2,
+        scale: options.scale || 1.0  // Add scale parameter with default
+    };
+
+    // Get object size and calculate effect scale
+    const objectSize = this.getObjectSize(prop);
+    const effectScale = objectSize * defaults.scale;
+
+    // Create container for fire effect
+    const container = new THREE.Group();
+    container.position.copy(prop.position);
+    this.scene.add(container);
+
+    // Add fire light with range based on effect scale
+    const light = new THREE.PointLight(defaults.color, defaults.intensity, effectScale * 3);
+    light.position.y += 0.5 * effectScale; // Position above object, scaled appropriately
+    container.add(light);
+
+    // Create simple particle system for fire with count based on scale
+    const particleCount = Math.max(15, Math.floor(30 * defaults.scale));
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+
+    // Fire color
+    const fireColor = new THREE.Color(defaults.color);
+
+    // Create random particles in cone shape scaled to effect size
+    for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * 0.3 * effectScale;
+        const height = Math.random() * 0.8 * effectScale;
+
+        particlePositions[i3] = Math.cos(angle) * radius * (1 - height/(0.8 * effectScale));
+        particlePositions[i3 + 1] = height;
+        particlePositions[i3 + 2] = Math.sin(angle) * radius * (1 - height/(0.8 * effectScale));
+
+        // Colors: start yellow-orange, fade to red
+        const mixFactor = Math.random();
+        particleColors[i3] = fireColor.r;
+        particleColors[i3 + 1] = fireColor.g * mixFactor;
+        particleColors[i3 + 2] = 0;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 0.1 * defaults.scale,  // Scale particle size with effect scale
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    container.add(particles);
+
+    // Store original positions for animation
+    particles.userData = {
+        positions: [...particlePositions],
+        time: 0
+    };
+
+    return {
+        container: container,
+        light: light,
+        particles: particles,
+        originalObject: prop,
+        scale: defaults.scale,  // Store scale for reference
+        objectSize: objectSize, // Store original object size
+        animationData: {
+            time: 0,
+            speed: 1.0
+        },
+        update: function (deltaTime) {
+            // Animate particles
+            this.animationData.time += deltaTime;
+            const time = this.animationData.time;
+
+            // Get position data
+            const positions = particles.geometry.attributes.position.array;
+
+            // Animate each particle with movement scaled to effect size
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+
+                // Move up with varying speed, scaled appropriately
+                positions[i3 + 1] += (0.01 + Math.random() * 0.01) * effectScale;
+
+                // Reset if too high, scale height with effect size
+                if (positions[i3 + 1] > 0.8 * effectScale) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * 0.3 * effectScale;
+
+                    positions[i3] = Math.cos(angle) * radius;
+                    positions[i3 + 1] = 0;
+                    positions[i3 + 2] = Math.sin(angle) * radius;
                 }
 
-                // Update geometry
-                particles.geometry.attributes.position.needsUpdate = true;
-
-                // Pulse the light
-                light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+                // Add some "flickering" scaled to effect size
+                positions[i3] += (Math.random() - 0.5) * 0.02 * effectScale;
+                positions[i3 + 2] += (Math.random() - 0.5) * 0.02 * effectScale;
             }
-        };
+
+            // Update geometry
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Flicker the light
+            light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+        }
+    };
+}
+
+// Update the createSimpleMagicEffect method to use scale:
+createSimpleMagicEffect(prop, options) {
+    const defaults = {
+        color: options.color || 0x8800ff,
+        intensity: options.intensity || 0.8,
+        scale: options.scale || 1.0  // Add scale parameter with default
+    };
+
+    // Get object size and calculate effect scale
+    const objectSize = this.getObjectSize(prop);
+    const effectScale = objectSize * defaults.scale;
+
+    // Create container for magic effect
+    const container = new THREE.Group();
+    container.position.copy(prop.position);
+    this.scene.add(container);
+
+    // Add magic light with range based on effect scale
+    const light = new THREE.PointLight(defaults.color, defaults.intensity, effectScale * 3);
+    light.position.y += 0.3 * effectScale;  // Scale position offset
+    container.add(light);
+
+    // Create particle system with count based on effect scale
+    const particleCount = Math.max(20, Math.floor(40 * defaults.scale));
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+
+    // Magic color
+    const magicColor = new THREE.Color(defaults.color);
+
+    // Create random particles in sphere shape scaled to effect size
+    for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle1 = Math.random() * Math.PI * 2;
+        const angle2 = Math.random() * Math.PI * 2;
+        const radius = (Math.random() * 0.3 + 0.1) * effectScale;
+
+        particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
+        particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+        particlePositions[i3 + 2] = Math.cos(angle2) * radius;
+
+        // Colors
+        particleColors[i3] = magicColor.r;
+        particleColors[i3 + 1] = magicColor.g;
+        particleColors[i3 + 2] = magicColor.b;
     }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 0.05 * defaults.scale,  // Scale particle size with effect scale
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    container.add(particles);
+
+    // Store original positions for animation
+    particles.userData = {
+        positions: [...particlePositions],
+        time: 0
+    };
+
+    return {
+        container: container,
+        light: light,
+        particles: particles,
+        originalObject: prop,
+        scale: defaults.scale,  // Store scale for reference
+        objectSize: objectSize, // Store original object size
+        animationData: {
+            time: 0,
+            speed: 0.7
+        },
+        update: function (deltaTime) {
+            // Animate particles
+            this.animationData.time += deltaTime;
+            const time = this.animationData.time;
+
+            // Get position data
+            const positions = particles.geometry.attributes.position.array;
+            const origPositions = particles.userData.positions;
+
+            // Animate each particle in orbital pattern
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const angle = time + i * 0.2;
+
+                positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
+                positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
+                positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
+            }
+
+            // Update geometry
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // Pulse the light
+            light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+        }
+    };
+}
 
     /**
      * Update all effects in the scene
