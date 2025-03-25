@@ -27,185 +27,349 @@ if (!window.ShaderEffectsManager) {
     /**
      * Register all available effect definitions
      */
-    registerEffectDefinitions() {
-      // Light sources with particles
-      this.registerEffectType('fire', {
-        keywords: ['fire', 'candle', 'lantern'],
-        color: 0xff6600,
-        intensity: 1.5,
-        distance: 8,
-        decay: 2,
-        particleCount: 20,
-        particleSize: 0.05,
-        particleColor: 0xff8844,
-        animationSpeed: 1.0,
-        // Use different creation method based on quality
-        create: (object, definition, qualityLevel) => {
-          // Use enhanced effects for medium and high quality
-          if (qualityLevel === 'high' || qualityLevel === 'ultra' || qualityLevel === 'medium') {
-            return this.createEnhancedFireEffect(object, definition, qualityLevel);
-          } else {
-            // Use basic effect for low quality
-            return this.createFireEffect(object, definition, qualityLevel);
-          }
-        }
-      });
+    // registerEffectDefinitions() {
+    //   // Light sources with particles
+    //   this.registerEffectType('fire', {
+    //     keywords: ['fire', 'candle', 'lantern'],
+    //     color: 0xff6600,
+    //     intensity: 1.5,
+    //     distance: 8,
+    //     decay: 2,
+    //     particleCount: 20,
+    //     particleSize: 0.05,
+    //     particleColor: 0xff8844,
+    //     animationSpeed: 1.0,
+    //     // Use different creation method based on quality
+    //     create: (object, definition, qualityLevel) => {
+    //       // Use enhanced effects for medium and high quality
+    //       if (qualityLevel === 'high' || qualityLevel === 'ultra' || qualityLevel === 'medium') {
+    //         return this.createEnhancedFireEffect(object, definition, qualityLevel);
+    //       } else {
+    //         // Use basic effect for low quality
+    //         return this.createFireEffect(object, definition, qualityLevel);
+    //       }
+    //     }
+    //   });
 
-      // Add this to the registerEffectDefinitions method in ShaderEffectsManager
-      this.registerEffectType('burning', {
-        keywords: ['burning', 'campfire', 'torch', 'flame', 'ember'],
-        color: 0xff6600,
-        intensity: 1.4,
-        distance: 8,
-        decay: 2,
-        particleCount: 20,
-        particleSize: 0.05,
-        particleColor: 0xff8844,
-        animationSpeed: 1.0,
-        preserveMaterial: true, // Important: flag to not modify original material
-        // Use enhanced effects for medium and high quality
-        create: (object, definition, qualityLevel) => {
-          return this.createBurningEffect(object, definition, qualityLevel);
-        }
-      });
+    //   // Add this to the registerEffectDefinitions method in ShaderEffectsManager
+    //   this.registerEffectType('burning', {
+    //     keywords: ['burning', 'campfire', 'torch', 'flame', 'ember'],
+    //     color: 0xff6600,
+    //     intensity: 1.4,
+    //     distance: 8,
+    //     decay: 2,
+    //     particleCount: 20,
+    //     particleSize: 0.05,
+    //     particleColor: 0xff8844,
+    //     animationSpeed: 1.0,
+    //     preserveMaterial: true, // Important: flag to not modify original material
+    //     // Use enhanced effects for medium and high quality
+    //     create: (object, definition, qualityLevel) => {
+    //       return this.createBurningEffect(object, definition, qualityLevel);
+    //     }
+    //   });
 
-      this.registerEffectType('coldMagic', {
-        keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
-        color: 0x66ccff,
-        intensity: 1.2,
-        distance: 6,
-        decay: 1.5,
-        particleCount: 15,
-        particleSize: 0.03,
-        particleColor: 0x88ccff,
-        animationSpeed: 0.7,
-        create: this.createMagicEffect.bind(this)
-      });
+    //   this.registerEffectType('coldMagic', {
+    //     keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
+    //     color: 0x66ccff,
+    //     intensity: 1.2,
+    //     distance: 6,
+    //     decay: 1.5,
+    //     particleCount: 15,
+    //     particleSize: 0.03,
+    //     particleColor: 0x88ccff,
+    //     animationSpeed: 0.7,
+    //     create: this.createMagicEffect.bind(this)
+    //   });
 
-      // possilbly newer cold magic effect
-      // this.registerEffectType('coldMagic', {
-      //   keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
-      //   color: 0x88ccff, // Ice blue color
-      //   intensity: 0.6, 
-      //   distance: 4,
-      //   decay: 1.5,
-      //   particleCount: 12,
-      //   particleSize: 0.03,
-      //   particleColor: 0xaaddff,
-      //   animationSpeed: 0.5,
-      //   create: this.createPropGlowEffect.bind(this)
-      // });
+    //   // possilbly newer cold magic effect
+    //   // this.registerEffectType('coldMagic', {
+    //   //   keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
+    //   //   color: 0x88ccff, // Ice blue color
+    //   //   intensity: 0.6, 
+    //   //   distance: 4,
+    //   //   decay: 1.5,
+    //   //   particleCount: 12,
+    //   //   particleSize: 0.03,
+    //   //   particleColor: 0xaaddff,
+    //   //   animationSpeed: 0.5,
+    //   //   create: this.createPropGlowEffect.bind(this)
+    //   // });
 
-      this.registerEffectType('lava', {
-        keywords: ['lava', 'magma', 'ember'],
-        color: 0xff3300,
-        intensity: 1.3,
-        distance: 7,
-        decay: 2,
-        particleCount: 25,
-        particleSize: 0.04,
-        particleColor: 0xff5500,
-        animationSpeed: 0.8,
-        create: this.createLavaEffect.bind(this)
-      });
+    //   this.registerEffectType('lava', {
+    //     keywords: ['lava', 'magma', 'ember'],
+    //     color: 0xff3300,
+    //     intensity: 1.3,
+    //     distance: 7,
+    //     decay: 2,
+    //     particleCount: 25,
+    //     particleSize: 0.04,
+    //     particleColor: 0xff5500,
+    //     animationSpeed: 0.8,
+    //     create: this.createLavaEffect.bind(this)
+    //   });
 
-      this.registerEffectType('holy', {
-        keywords: ['radiant', 'holy', 'divine', 'sacred', 'blessed'],
-        color: 0xffe599,
-        intensity: 1.2,
-        distance: 6,
-        decay: 1.5,
-        particleCount: 15,
-        particleSize: 0.04,
-        particleColor: 0xffffaa,
-        animationSpeed: 0.5,
-        create: this.createHolyEffect.bind(this)
-      });
+    //   this.registerEffectType('holy', {
+    //     keywords: ['radiant', 'holy', 'divine', 'sacred', 'blessed'],
+    //     color: 0xffe599,
+    //     intensity: 1.2,
+    //     distance: 6,
+    //     decay: 1.5,
+    //     particleCount: 15,
+    //     particleSize: 0.04,
+    //     particleColor: 0xffffaa,
+    //     animationSpeed: 0.5,
+    //     create: this.createHolyEffect.bind(this)
+    //   });
 
-      // Add new enhanced magic effect
-      this.registerEffectType('magic', {
-        keywords: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
-        color: 0x8800ff, // Purple
-        intensity: 1.0,
-        distance: 6,
-        decay: 1.5,
-        particleCount: 60,
-        particleSize: 0.04,
-        particleColor: 0xaa66ff,
-        animationSpeed: 0.7,
-        colorCycle: 1.0, // Enable color cycling
-        create: this.createEnhancedMagicEffect.bind(this)
-      });
+    //   // Add new enhanced magic effect
+    //   this.registerEffectType('magic', {
+    //     keywords: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
+    //     color: 0x8800ff, // Purple
+    //     intensity: 1.0,
+    //     distance: 6,
+    //     decay: 1.5,
+    //     particleCount: 60,
+    //     particleSize: 0.04,
+    //     particleColor: 0xaa66ff,
+    //     animationSpeed: 0.7,
+    //     colorCycle: 1.0, // Enable color cycling
+    //     create: this.createEnhancedMagicEffect.bind(this)
+    //   });
 
-      this.registerEffectType('waterProp', {
-        keywords: ['waterProp'],
-        color: 0x4488aa,
-        intensity: 0.8,
-        distance: 4,
-        forceShowOnLow: true,
-        particleCount: 12,
-        particleSize: 0.03,
-        isAreaEffect: false,
-        create: this.createWaterPropEffect.bind(this),
-        // Settings for different quality levels
-        low: {
-          maxIterations: 2,
-          waveSpeed: 0.5,
-          useParticles: false,
-          useShader: true
-        },
-        medium: {
-          maxIterations: 5,
-          waveSpeed: 1.0,
-          useParticles: true
-        },
-        high: {
-          maxIterations: 7,
-          waveSpeed: 1.2,
-          useParticles: true
-        }
-      });
+    //   this.registerEffectType('waterProp', {
+    //     keywords: ['waterProp'],
+    //     color: 0x4488aa,
+    //     intensity: 0.8,
+    //     distance: 4,
+    //     forceShowOnLow: true,
+    //     particleCount: 12,
+    //     particleSize: 0.03,
+    //     isAreaEffect: false,
+    //     create: this.createWaterPropEffect.bind(this),
+    //     // Settings for different quality levels
+    //     low: {
+    //       maxIterations: 2,
+    //       waveSpeed: 0.5,
+    //       useParticles: false,
+    //       useShader: true
+    //     },
+    //     medium: {
+    //       maxIterations: 5,
+    //       waveSpeed: 1.0,
+    //       useParticles: true
+    //     },
+    //     high: {
+    //       maxIterations: 7,
+    //       waveSpeed: 1.2,
+    //       useParticles: true
+    //     }
+    //   });
 
-      this.registerEffectType('fog', {
-        keywords: ['fog', 'mist', 'haze', 'smoke'],
-        create: this.createFogEffect.bind(this),
-        isAreaEffect: true,
-        color: 0xcccccc,
-        density: 0.03,
-        low: { particleCount: 50 },
-        medium: { particleCount: 100 },
-        high: { particleCount: 200 }
-      });
+    //   this.registerEffectType('fog', {
+    //     keywords: ['fog', 'mist', 'haze', 'smoke'],
+    //     create: this.createFogEffect.bind(this),
+    //     isAreaEffect: true,
+    //     color: 0xcccccc,
+    //     density: 0.03,
+    //     low: { particleCount: 50 },
+    //     medium: { particleCount: 100 },
+    //     high: { particleCount: 200 }
+    //   });
 
-      this.registerEffectType('coldMagic', {
-        keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
-        color: 0x88ccff, // Ice blue color
-        intensity: 0.6,
-        distance: 4,
-        decay: 1.5,
-        particleCount: 12,
-        particleSize: 0.03,
-        particleColor: 0xaaddff,
-        animationSpeed: 0.5,
-        create: this.createPropGlowEffect.bind(this)
-      });
+    //   this.registerEffectType('coldMagic', {
+    //     keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
+    //     color: 0x88ccff, // Ice blue color
+    //     intensity: 0.6,
+    //     distance: 4,
+    //     decay: 1.5,
+    //     particleCount: 12,
+    //     particleSize: 0.03,
+    //     particleColor: 0xaaddff,
+    //     animationSpeed: 0.5,
+    //     create: this.createPropGlowEffect.bind(this)
+    //   });
 
-      // Add dungeon portal effect
-      // this.registerEffectType('portalEffect', {
-      //   keywords: ['portal', 'dungeon', 'entrance', 'gate', 'doorway', 'vortex'],
-      //   color: 0x66ccff, // Default blue portal
-      //   intensity: 1.2,
-      //   distance: 6,
-      //   decay: 1.5,
-      //   particleCount: 50,
-      //   particleSize: 0.05,
-      //   animationSpeed: 1.0,
-      //   forceShowOnLow: true, // Important effect, show even on low quality
-      //   create: this.createPortalEffect.bind(this)
-      // });
+    //   // Add dungeon portal effect
+    //   // this.registerEffectType('portalEffect', {
+    //   //   keywords: ['portal', 'dungeon', 'entrance', 'gate', 'doorway', 'vortex'],
+    //   //   color: 0x66ccff, // Default blue portal
+    //   //   intensity: 1.2,
+    //   //   distance: 6,
+    //   //   decay: 1.5,
+    //   //   particleCount: 50,
+    //   //   particleSize: 0.05,
+    //   //   animationSpeed: 1.0,
+    //   //   forceShowOnLow: true, // Important effect, show even on low quality
+    //   //   create: this.createPortalEffect.bind(this)
+    //   // });
 
-      // Add more effect types as needed
+    //   // Add more effect types as needed
+    // }
+
+    /**
+ * Register all available effect definitions
+ */
+registerEffectDefinitions() {
+  // Light sources with particles
+  this.registerEffectType('fire', {
+    keywords: ['fire', 'candle', 'lantern'],
+    color: 0xff6600,
+    intensity: 1.5,
+    distance: 8,
+    decay: 2,
+    particleCount: 20,
+    particleSize: 0.05,
+    particleColor: 0xff8844,
+    animationSpeed: 1.0,
+    scale: 1.0,  // Add default scale
+    // Use different creation method based on quality
+    create: (object, definition, qualityLevel) => {
+      // Use enhanced effects for medium and high quality
+      if (qualityLevel === 'high' || qualityLevel === 'ultra' || qualityLevel === 'medium') {
+        return this.createEnhancedFireEffect(object, definition, qualityLevel);
+      } else {
+        // Use basic effect for low quality
+        return this.createFireEffect(object, definition, qualityLevel);
+      }
     }
+  });
+
+  // Add this to the registerEffectDefinitions method in ShaderEffectsManager
+  this.registerEffectType('burning', {
+    keywords: ['burning', 'campfire', 'torch', 'flame', 'ember'],
+    color: 0xff6600,
+    intensity: 1.4,
+    distance: 8,
+    decay: 2,
+    particleCount: 20,
+    particleSize: 0.05,
+    particleColor: 0xff8844,
+    animationSpeed: 1.0,
+    scale: 1.0,  // Add default scale
+    preserveMaterial: true, // Important: flag to not modify original material
+    // Use enhanced effects for medium and high quality
+    create: (object, definition, qualityLevel) => {
+      return this.createBurningEffect(object, definition, qualityLevel);
+    }
+  });
+
+  this.registerEffectType('coldMagic', {
+    keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
+    color: 0x66ccff,
+    intensity: 1.2,
+    distance: 6,
+    decay: 1.5,
+    particleCount: 15,
+    particleSize: 0.03,
+    particleColor: 0x88ccff,
+    animationSpeed: 0.7,
+    scale: 1.0,  // Add default scale
+    create: this.createMagicEffect.bind(this)
+  });
+
+  this.registerEffectType('lava', {
+    keywords: ['lava', 'magma', 'ember'],
+    color: 0xff3300,
+    intensity: 1.3,
+    distance: 7,
+    decay: 2,
+    particleCount: 25,
+    particleSize: 0.04,
+    particleColor: 0xff5500,
+    animationSpeed: 0.8,
+    scale: 1.0,  // Add default scale
+    create: this.createLavaEffect.bind(this)
+  });
+
+  this.registerEffectType('holy', {
+    keywords: ['radiant', 'holy', 'divine', 'sacred', 'blessed'],
+    color: 0xffe599,
+    intensity: 1.2,
+    distance: 6,
+    decay: 1.5,
+    particleCount: 15,
+    particleSize: 0.04,
+    particleColor: 0xffffaa,
+    animationSpeed: 0.5,
+    scale: 1.0,  // Add default scale
+    create: this.createHolyEffect.bind(this)
+  });
+
+  // Add new enhanced magic effect
+  this.registerEffectType('magic', {
+    keywords: ['crystal', 'gem', 'magic', 'arcane', 'rune', 'glow'],
+    color: 0x8800ff, // Purple
+    intensity: 1.0,
+    distance: 6,
+    decay: 1.5,
+    particleCount: 60,
+    particleSize: 0.04,
+    particleColor: 0xaa66ff,
+    animationSpeed: 0.7,
+    colorCycle: 1.0, // Enable color cycling
+    scale: 1.0,  // Add default scale
+    create: this.createEnhancedMagicEffect.bind(this)
+  });
+
+  this.registerEffectType('waterProp', {
+    keywords: ['waterProp'],
+    color: 0x4488aa,
+    intensity: 0.8,
+    distance: 4,
+    forceShowOnLow: true,
+    particleCount: 12,
+    particleSize: 0.03,
+    isAreaEffect: false,
+    scale: 1.0,  // Add default scale
+    create: this.createWaterPropEffect.bind(this),
+    // Settings for different quality levels
+    low: {
+      maxIterations: 2,
+      waveSpeed: 0.5,
+      useParticles: false,
+      useShader: true
+    },
+    medium: {
+      maxIterations: 5,
+      waveSpeed: 1.0,
+      useParticles: true
+    },
+    high: {
+      maxIterations: 7,
+      waveSpeed: 1.2,
+      useParticles: true
+    }
+  });
+
+  this.registerEffectType('fog', {
+    keywords: ['fog', 'mist', 'haze', 'smoke'],
+    create: this.createFogEffect.bind(this),
+    isAreaEffect: true,
+    color: 0xcccccc,
+    density: 0.03,
+    scale: 1.0,  // Add default scale
+    low: { particleCount: 50 },
+    medium: { particleCount: 100 },
+    high: { particleCount: 200 }
+  });
+
+  this.registerEffectType('coldMagic', {
+    keywords: ['ice', 'frost', 'chill', 'freeze', 'snow', 'winter'],
+    color: 0x88ccff, // Ice blue color
+    intensity: 0.6,
+    distance: 4,
+    decay: 1.5,
+    particleCount: 12,
+    particleSize: 0.03,
+    particleColor: 0xaaddff,
+    animationSpeed: 0.5,
+    scale: 1.0,  // Add default scale
+    create: this.createPropGlowEffect.bind(this)
+  });
+
+  // Add more effect types as needed
+}
 
     /**
      * Register a new effect type
@@ -333,6 +497,76 @@ if (!window.ShaderEffectsManager) {
       // Create and apply the effect
       return this.applyEffect(object, effectType);
     }
+
+    /**
+ * Get the approximate size of an object for scaling effects
+ * @param {THREE.Object3D} object - The object to measure
+ * @returns {number} Approximate radius/size of the object
+ */
+getObjectSize(object) {
+  // Default size if we can't determine
+  const defaultSize = 1;
+  
+  if (!object) return defaultSize;
+  
+  try {
+    // Use geometry bounding box/sphere if available
+    if (object.geometry) {
+      // Compute bounding box if not already computed
+      if (!object.geometry.boundingBox) {
+        object.geometry.computeBoundingBox();
+      }
+      
+      // Get size from bounding box
+      if (object.geometry.boundingBox) {
+        const boundingBox = object.geometry.boundingBox;
+        const size = new THREE.Vector3();
+        boundingBox.getSize(size);
+        
+        // Factor in the object's scale
+        if (object.scale) {
+          size.multiply(object.scale);
+        }
+        
+        // Return average dimension as approximation of size
+        return (size.x + size.y + size.z) / 3;
+      }
+      
+      // Alternative: Use bounding sphere
+      if (!object.geometry.boundingSphere) {
+        object.geometry.computeBoundingSphere();
+      }
+      
+      if (object.geometry.boundingSphere) {
+        // Factor in the object's scale (using max scale as approximation)
+        const maxScale = object.scale ? 
+          Math.max(object.scale.x, object.scale.y, object.scale.z) : 1.0;
+        return object.geometry.boundingSphere.radius * maxScale;
+      }
+    }
+    
+    // If we couldn't determine from geometry, try to approximate from object scale
+    if (object.scale) {
+      return Math.max(
+        Math.abs(object.scale.x), 
+        Math.abs(object.scale.y), 
+        Math.abs(object.scale.z)
+      );
+    }
+    
+    // Try to estimate from object dimensions
+    if (object.userData) {
+      if (object.userData.width && object.userData.height) {
+        return Math.max(object.userData.width, object.userData.height) / 2;
+      }
+    }
+  } catch (error) {
+    console.warn("Error determining object size:", error);
+  }
+  
+  // Default fallback
+  return defaultSize;
+}
 
     /**
      * Find what effect type applies to a given name
@@ -496,24 +730,6 @@ if (!window.ShaderEffectsManager) {
      */
     createWaterEffect(object, definition, qualityLevel = 'medium') {
       const settings = definition[qualityLevel] || definition.medium;
-
-      // original code...
-      // void main() {
-      //   vUv = uv;
-
-      //   // Create wave effect
-      //   float wave = sin(position.x * 2.0 + time * waveSpeed) * 
-      //               cos(position.z * 2.0 + time * waveSpeed * 0.8);
-
-      //   // Apply wave only near edges for shoreline effect
-      //   float edgeFactor = 1.0 - smoothstep(0.0, 0.4, abs(uv.y - 0.5) * 2.0);
-
-      //   // Move vertices up/down based on wave
-      //   vec3 newPosition = position;
-      //   newPosition.y += wave * waveHeight * edgeFactor;
-
-      //   gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-      // }
 
       // Create water shader material
       const waterMaterial = new THREE.ShaderMaterial({
@@ -1497,11 +1713,294 @@ if (!window.ShaderEffectsManager) {
  * @returns {Object} Effect data
  */
  // 'new' magic effect
+// createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
+//   // Create container for magic effect
+//   const container = new THREE.Group();
+//   container.position.copy(object.position);
+  
+//   this.scene3D.scene.add(container);
+  
+//   // Add magic light
+//   const light = new THREE.PointLight(
+//     definition.color,
+//     definition.intensity,
+//     definition.distance || 6,
+//     definition.decay || 1.5
+//   );
+  
+//   // Position light slightly above object
+//   light.position.y += 0.3;
+//   container.add(light);
+  
+//   // Create magic aura plane
+//   const magicPlaneSize = 1.0;
+//   const planeGeometry = new THREE.PlaneGeometry(magicPlaneSize, magicPlaneSize);
+  
+//   // Create the magic shader material based on the shadertoy code
+//   const magicMaterial = new THREE.ShaderMaterial({
+//     uniforms: {
+//       time: { value: 0 },
+//       resolution: { value: new THREE.Vector2(512, 512) },
+//       startColor: { value: new THREE.Color(0x00A233) },  // Green
+//       endColor: { value: new THREE.Color(0x0F59D9) },    // Blue
+//       colorCycle: { value: definition.colorCycle || 0.0 }, // Parameter for color cycling
+//       particleCount: { value: qualityLevel === 'high' ? 100 : 
+//                              qualityLevel === 'medium' ? 60 :
+//                             qualityLevel === 'low' ? 20 : 10} 
+//     },
+//     vertexShader: `
+//       varying vec2 vUv;
+      
+//       void main() {
+//         vUv = uv;
+//         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+//       }
+//     `,
+//     fragmentShader: `
+//       uniform float time;
+//       uniform vec2 resolution;
+//       uniform vec3 startColor;
+//       uniform vec3 endColor;
+//       uniform float colorCycle;
+//       uniform int particleCount;
+      
+//       varying vec2 vUv;
+      
+//       // Function to create a color cycling effect
+//       vec3 cycleColor(vec3 baseColor, float cycle) {
+//         // Rotate the color in HSV space
+//         float h = atan(baseColor.g - 0.5, baseColor.r - 0.5) / 6.2831853 + 0.5 + cycle;
+//         h = fract(h);
+        
+//         // Simple approximation of HSV to RGB conversion
+//         vec3 rgb;
+//         float hueSection = h * 6.0;
+//         float X = 1.0 - abs(mod(hueSection, 2.0) - 1.0);
+        
+//         if(hueSection < 1.0) rgb = vec3(1.0, X, 0.0);
+//         else if(hueSection < 2.0) rgb = vec3(X, 1.0, 0.0);
+//         else if(hueSection < 3.0) rgb = vec3(0.0, 1.0, X);
+//         else if(hueSection < 4.0) rgb = vec3(0.0, X, 1.0);
+//         else if(hueSection < 5.0) rgb = vec3(X, 0.0, 1.0);
+//         else rgb = vec3(1.0, 0.0, X);
+        
+//         // Apply original color's saturation and value
+//         float maxComp = max(max(baseColor.r, baseColor.g), baseColor.b);
+//         float minComp = min(min(baseColor.r, baseColor.g), baseColor.b);
+//         float value = maxComp;
+//         float saturation = (maxComp - minComp) / maxComp;
+        
+//         return rgb * value * saturation + vec3(value - value * saturation);
+//       }
+      
+//       void main() {
+//         float t = time + 5.0;
+//         float z = 6.0;
+        
+//         // Use parameter for particle count
+//         int n = particleCount;
+        
+//         // Convert uv coordinates to centered coordinates
+//         vec2 uv = vUv * 2.0 - 1.0;
+        
+//         // Apply color cycling to both start and end colors
+//         vec3 actualStartColor = colorCycle > 0.01 ? 
+//           cycleColor(startColor, colorCycle + time * 0.1) : startColor;
+//         vec3 actualEndColor = colorCycle > 0.01 ? 
+//           cycleColor(endColor, colorCycle + time * 0.05) : endColor;
+        
+//         float startRadius = 0.84;
+//         float endRadius = 1.6;
+        
+//         float power = 0.51;
+//         float duration = 4.0;
+        
+//         vec2 v = uv * 2.0;
+        
+//         vec3 col = vec3(0.0);
+        
+//         vec2 pm = v.yx * 2.8;
+        
+//         float dMax = duration;
+        
+//         float evo = (sin(time * 0.1 + 400.0) * 0.5 + 0.5) * 99.0 + 1.0;
+        
+//         float mb = 0.0;
+//         float mbRadius = 0.0;
+//         float sum = 0.0;
+        
+//         // Particle loop - limited to prevent excessive iterations
+//         for(int i = 0; i < 100; i++) {
+//           if(i >= n) break; // Respect particle count parameter
+          
+//           float fi = float(i);
+//           float d = fract(t * power + 48934.4238 * sin(float(i / int(evo)) * 692.7398));
+          
+//           float a = 6.28 * fi / float(n);
+//           float x = d * cos(a) * duration;
+//           float y = d * sin(a) * duration;
+          
+//           float distRatio = d / dMax;
+          
+//           mbRadius = mix(startRadius, endRadius, distRatio);
+          
+//           vec2 p = v - vec2(x, y);
+          
+//           mb = mbRadius / dot(p, p);
+          
+//           sum += mb;
+          
+//           col = mix(col, mix(actualStartColor, actualEndColor, distRatio), mb / sum);
+//         }
+        
+//         sum /= float(n);
+        
+//         col = normalize(col) * sum;
+        
+//         sum = clamp(sum, 0.0, 0.4);
+        
+//         vec3 tex = vec3(1.0);
+        
+//         col *= smoothstep(tex, vec3(0.0), vec3(sum));
+        
+//         // Add fading at edges for a smooth blend
+//         float edge = 1.0 - smoothstep(0.4, 0.5, length(uv));
+//         col *= edge;
+        
+//         gl_FragColor = vec4(col, edge * sum * 3.0); // Add transparency for edges
+//       }
+//     `,
+//     transparent: true,
+//     blending: THREE.AdditiveBlending,
+//     depthWrite: false,
+//     side: THREE.DoubleSide
+//   });
+  
+//   // Create a quad for the magic effect
+//   const magicPlane = new THREE.Mesh(planeGeometry, magicMaterial);
+//   container.add(magicPlane);
+  
+//   // Create a back plane for additional glow
+//   const backPlane = new THREE.Mesh(
+//     planeGeometry,
+//     magicMaterial.clone()
+//   );
+//   backPlane.rotation.y = Math.PI;
+//   container.add(backPlane);
+  
+//   // Add some particle effects for 3D presence
+//   const particleCount = qualityLevel === 'high' ? 30 : 
+//                        qualityLevel === 'medium' ? 20 :
+//                         qualityLevel === 'low' ? 10 : 5;
+//   const particleGeometry = new THREE.BufferGeometry();
+//   const particlePositions = new Float32Array(particleCount * 3);
+  
+//   // Create particles in a sphere shape
+//   for (let i = 0; i < particleCount; i++) {
+//     const angle1 = Math.random() * Math.PI * 2;
+//     const angle2 = Math.random() * Math.PI * 2;
+//     const radius = Math.random() * 0.3;
+    
+//     particlePositions[i * 3] = Math.sin(angle1) * Math.cos(angle2) * radius;
+//     particlePositions[i * 3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+//     particlePositions[i * 3 + 2] = Math.cos(angle1) * radius;
+//   }
+  
+//   particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  
+//   const particleMaterial = new THREE.PointsMaterial({
+//     color: definition.color || 0x8800ff,
+//     size: definition.particleSize || 0.04,
+//     transparent: true,
+//     opacity: 0.7,
+//     blending: THREE.AdditiveBlending
+//   });
+  
+//   const particles = new THREE.Points(particleGeometry, particleMaterial);
+//   container.add(particles);
+  
+//   // Store original positions for animation
+//   particles.userData = {
+//     positions: [...particlePositions],
+//     time: 0
+//   };
+  
+//   // Return effect data
+//   return {
+//     container: container,
+//     light: light,
+//     magicPlane: magicPlane,
+//     backPlane: backPlane,
+//     particles: particles,
+//     originalObject: object,
+//     definition,
+//     animationData: {
+//       time: 0,
+//       colorCycle: definition.colorCycle || 0.0,
+//       speed: definition.animationSpeed || 0.7
+//     },
+//     update: function(deltaTime) {
+//       // Update animation time
+//       this.animationData.time += deltaTime * this.animationData.speed;
+//       const time = this.animationData.time;
+      
+//       // Update magic shader time
+//       magicPlane.material.uniforms.time.value = time;
+//       backPlane.material.uniforms.time.value = time;
+      
+//       // Pulse the light
+//       if (light) {
+//         light.intensity = definition.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+//       }
+      
+//       // Rotate planes to face camera if possible
+//       if (window.scene3D && window.scene3D.camera) {
+//         magicPlane.lookAt(window.scene3D.camera.position);
+//         backPlane.lookAt(window.scene3D.camera.position);
+//       }
+      
+//       // Animate particles
+//       if (particles && particles.geometry && particles.geometry.attributes.position) {
+//         const positions = particles.geometry.attributes.position.array;
+//         const originalPositions = particles.userData.positions;
+//         const count = positions.length / 3;
+        
+//         for (let i = 0; i < count; i++) {
+//           const i3 = i * 3;
+//           const angle = time + i * 0.2;
+          
+//           // Simple orbiting animation
+//           positions[i3] = originalPositions[i3] * Math.cos(angle * 0.5);
+//           positions[i3 + 1] = originalPositions[i3 + 1] * Math.sin(angle * 0.5);
+//           positions[i3 + 2] = originalPositions[i3 + 2] * Math.cos(angle * 0.3);
+//         }
+        
+//         particles.geometry.attributes.position.needsUpdate = true;
+//       }
+//     }
+//   };
+// }
+
+/**
+ * Create an enhanced magic effect based on shadertoy code
+ * @param {Object3D} object - The object to apply the effect to
+ * @param {Object} definition - Effect definition
+ * @param {string} qualityLevel - Quality level setting
+ * @returns {Object} Effect data
+ */
 createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
+  // Get object size for scaling
+  const objectSize = this.getObjectSize(object);
+  
+  // Get scale from definition or default to 1.0
+  const effectScale = definition.scale || 1.0;
+  
+  // Calculate effective scale based on object size and scale parameter
+  const finalScale = objectSize * effectScale;
+  
   // Create container for magic effect
   const container = new THREE.Group();
   container.position.copy(object.position);
-  
   this.scene3D.scene.add(container);
   
   // Add magic light
@@ -1512,12 +2011,12 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
     definition.decay || 1.5
   );
   
-  // Position light slightly above object
-  light.position.y += 0.3;
+  // Position light slightly above object, scaled by effect size
+  light.position.y += 0.3 * finalScale;
   container.add(light);
   
-  // Create magic aura plane
-  const magicPlaneSize = 1.0;
+  // Create magic aura plane - scale with effect size
+  const magicPlaneSize = 1.0 * finalScale;
   const planeGeometry = new THREE.PlaneGeometry(magicPlaneSize, magicPlaneSize);
   
   // Create the magic shader material based on the shadertoy code
@@ -1529,7 +2028,8 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
       endColor: { value: new THREE.Color(0x0F59D9) },    // Blue
       colorCycle: { value: definition.colorCycle || 0.0 }, // Parameter for color cycling
       particleCount: { value: qualityLevel === 'high' ? 100 : 
-                             qualityLevel === 'medium' ? 60 : 30 }
+                             qualityLevel === 'medium' ? 60 :
+                            qualityLevel === 'low' ? 20 : 10} 
     },
     vertexShader: `
       varying vec2 vUv;
@@ -1671,17 +2171,18 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
   backPlane.rotation.y = Math.PI;
   container.add(backPlane);
   
-  // Add some particle effects for 3D presence
-  const particleCount = qualityLevel === 'high' ? 30 : 
-                       qualityLevel === 'medium' ? 20 : 10;
+  // Add some particle effects for 3D presence - scale particle count with effect size
+  const particleCount = qualityLevel === 'high' ? Math.floor(30 * finalScale) : 
+                       qualityLevel === 'medium' ? Math.floor(20 * finalScale) :
+                        qualityLevel === 'low' ? Math.floor(10 * finalScale) : 5;
   const particleGeometry = new THREE.BufferGeometry();
   const particlePositions = new Float32Array(particleCount * 3);
   
-  // Create particles in a sphere shape
+  // Create particles in a sphere shape - scale with effect size
   for (let i = 0; i < particleCount; i++) {
     const angle1 = Math.random() * Math.PI * 2;
     const angle2 = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 0.3;
+    const radius = Math.random() * 0.3 * finalScale;
     
     particlePositions[i * 3] = Math.sin(angle1) * Math.cos(angle2) * radius;
     particlePositions[i * 3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
@@ -1692,7 +2193,7 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
   
   const particleMaterial = new THREE.PointsMaterial({
     color: definition.color || 0x8800ff,
-    size: definition.particleSize || 0.04,
+    size: (definition.particleSize || 0.04) * finalScale,  // Scale particle size
     transparent: true,
     opacity: 0.7,
     blending: THREE.AdditiveBlending
@@ -1715,11 +2216,15 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
     backPlane: backPlane,
     particles: particles,
     originalObject: object,
-    definition,
+    definition: {
+      ...definition,  // Preserve all definition properties
+      objectSize: objectSize  // Add object size reference
+    },
     animationData: {
       time: 0,
       colorCycle: definition.colorCycle || 0.0,
-      speed: definition.animationSpeed || 0.7
+      speed: definition.animationSpeed || 0.7,
+      scale: effectScale  // Store scale for updates
     },
     update: function(deltaTime) {
       // Update animation time
@@ -1868,76 +2373,254 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
      * @param {Object} options - Configuration options
      * @returns {Object} Effect data for tracking
      */
-    createPropGlowEffect(prop, options = {}) {
-      // Default options
-      const defaults = {
-        color: options.color || 0xff6600,
-        intensity: options.intensity || 0.5,
-        particleCount: options.particleCount || 15,
-        particleSize: options.particleSize || 0.1,
-        position: prop.position.clone(),
-        height: options.height || 0.2,
-        radius: options.radius || 0.3,
-        blending: THREE.AdditiveBlending
-      };
+    // createPropGlowEffect(prop, options = {}) {
+    //   // Default options
+    //   const defaults = {
+    //     color: options.color || 0xff6600,
+    //     intensity: options.intensity || 0.5,
+    //     particleCount: options.particleCount || 15,
+    //     particleSize: options.particleSize || 0.1,
+    //     position: prop.position.clone(),
+    //     height: options.height || 0.2,
+    //     radius: options.radius || 0.3,
+    //     blending: THREE.AdditiveBlending
+    //   };
 
-      // Skip if disabled
-      if (!this.enabled) return null;
+    //   // Skip if disabled
+    //   if (!this.enabled) return null;
 
-      // Create container for effects
-      const container = new THREE.Group();
-      container.position.copy(defaults.position);
+    //   // Create container for effects
+    //   const container = new THREE.Group();
+    //   container.position.copy(defaults.position);
 
-      // Add to scene
-      this.scene3D.scene.add(container);
+    //   // Add to scene
+    //   this.scene3D.scene.add(container);
 
-      // Create glowing particle effect
-      const particleCount = this.getQualityAdjustedValue(defaults.particleCount, this.qualityLevel);
-      const positions = new Float32Array(particleCount * 3);
-      const particleColors = new Float32Array(particleCount * 3);
-      const sizes = new Float32Array(particleCount);
+    //   // Create glowing particle effect
+    //   const particleCount = this.getQualityAdjustedValue(defaults.particleCount, this.qualityLevel);
+    //   const positions = new Float32Array(particleCount * 3);
+    //   const particleColors = new Float32Array(particleCount * 3);
+    //   const sizes = new Float32Array(particleCount);
 
-      // Convert color to RGB components
-      const colorObj = new THREE.Color(defaults.color);
-      const r = colorObj.r;
-      const g = colorObj.g;
-      const b = colorObj.b;
+    //   // Convert color to RGB components
+    //   const colorObj = new THREE.Color(defaults.color);
+    //   const r = colorObj.r;
+    //   const g = colorObj.g;
+    //   const b = colorObj.b;
 
-      // Create random particles around the prop
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
+    //   // Create random particles around the prop
+    //   for (let i = 0; i < particleCount; i++) {
+    //     const i3 = i * 3;
 
-        // Position particles in small sphere around the prop's upper part
-        const radius = defaults.radius;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.random() * Math.PI;
+    //     // Position particles in small sphere around the prop's upper part
+    //     const radius = defaults.radius;
+    //     const theta = Math.random() * Math.PI * 2;
+    //     const phi = Math.random() * Math.PI;
 
-        positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
-        positions[i3 + 1] = defaults.height + Math.random() * 0.2; // Slightly above
-        positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    //     positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+    //     positions[i3 + 1] = defaults.height + Math.random() * 0.2; // Slightly above
+    //     positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
 
-        // Colors - base color with some variation
-        particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
-        particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
-        particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
+    //     // Colors - base color with some variation
+    //     particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
+    //     particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
+    //     particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
 
-        // Random sizes
-        sizes[i] = defaults.particleSize * (0.5 + Math.random() * 1.0);
-      }
+    //     // Random sizes
+    //     sizes[i] = defaults.particleSize * (0.5 + Math.random() * 1.0);
+    //   }
 
-      // Create geometry and set attributes
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3));
-      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    //   // Create geometry and set attributes
+    //   const geometry = new THREE.BufferGeometry();
+    //   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    //   geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3));
+    //   geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-      // Create shader material for better looking particles
-      const material = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          baseColor: { value: new THREE.Color(defaults.color) }
-        },
-        vertexShader: `
+    //   // Create shader material for better looking particles
+    //   const material = new THREE.ShaderMaterial({
+    //     uniforms: {
+    //       time: { value: 0 },
+    //       baseColor: { value: new THREE.Color(defaults.color) }
+    //     },
+    //     vertexShader: `
+    //   attribute float size;
+    //   attribute vec3 particleColor;
+    //   varying vec3 vColor;
+    //   uniform float time;
+      
+    //   void main() {
+    //     vColor = particleColor;
+        
+    //     // Animate position
+    //     vec3 pos = position;
+    //     pos.y += sin(time * 2.0 + position.x * 10.0) * 0.05;
+    //     pos.x += sin(time * 3.0 + position.z * 10.0) * 0.05;
+    //     pos.z += cos(time * 2.5 + position.x * 10.0) * 0.05;
+        
+    //     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    //     gl_PointSize = size * (300.0 / -mvPosition.z);
+    //     gl_Position = projectionMatrix * mvPosition;
+    //   }
+    // `,
+    //     fragmentShader: `
+    //   varying vec3 vColor;
+      
+    //   void main() {
+    //     // Create circular particle
+    //     float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+    //     if (r > 0.5) discard;
+        
+    //     // Smooth edge and fade center for glow effect
+    //     float alpha = 0.9 * (1.0 - r * 1.9);
+    //     gl_FragColor = vec4(vColor, alpha);
+    //   }
+    // `,
+    //     blending: defaults.blending,
+    //     depthTest: true,
+    //     depthWrite: false,
+    //     transparent: true,
+    //     vertexColors: true
+    //   });
+
+    //   // Create particle system
+    //   const particles = new THREE.Points(geometry, material);
+
+    //   // Add to container
+    //   container.add(particles);
+
+    //   // Try to modify original prop material if available
+    //   if (prop.material && prop.material.isMeshStandardMaterial) {
+    //     // Store original material properties if they don't exist yet
+    //     if (!prop.userData.originalEmissive) {
+    //       prop.userData.originalEmissive = prop.material.emissive.clone();
+    //       prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
+    //     }
+
+    //     // Make the prop itself glow
+    //     prop.material.emissive = new THREE.Color(defaults.color);
+    //     prop.material.emissiveIntensity = defaults.intensity;
+
+    //     // Create reference to emissive mesh
+    //     const emissiveMesh = prop;
+
+    //     // Return effect data including the emissive mesh
+    //     return {
+    //       container,
+    //       particles,
+    //       emissiveMesh,
+    //       originalObject: prop,
+    //       definition: {
+    //         color: defaults.color,
+    //         emissiveIntensity: defaults.intensity
+    //       },
+    //       animationData: {
+    //         time: 0,
+    //         speed: 1.0,
+    //         pattern: 'glow'
+    //       }
+    //     };
+    //   }
+
+    //   // Return effect data without emissive mesh
+    //   return {
+    //     container,
+    //     particles,
+    //     originalObject: prop,
+    //     definition: {
+    //       color: defaults.color,
+    //       emissiveIntensity: defaults.intensity
+    //     },
+    //     animationData: {
+    //       time: 0,
+    //       speed: 1.0,
+    //       pattern: 'glow'
+    //     }
+    //   };
+    // }
+
+    /**
+ * Create a glow effect for props (like torches, lanterns, magic items)
+ * @param {Object3D} prop - The prop object to add effect to
+ * @param {Object} options - Configuration options
+ * @returns {Object} Effect data for tracking
+ */
+createPropGlowEffect(prop, options = {}) {
+  // Default options
+  const defaults = {
+    color: options.color || 0xff6600,
+    intensity: options.intensity || 0.5,
+    particleCount: options.particleCount || 15,
+    particleSize: options.particleSize || 0.1,
+    position: prop.position.clone(),
+    height: options.height || 0.2,
+    radius: options.radius || 0.3,
+    scale: options.scale || 1.0,  // Add scale parameter
+    blending: THREE.AdditiveBlending
+  };
+
+  // Get object size for automatic scaling
+  const objectSize = this.getObjectSize(prop);
+  
+  // Calculate effective scale based on object size and scale parameter
+  const effectiveScale = objectSize * defaults.scale;
+
+  // Skip if disabled
+  if (!this.enabled) return null;
+
+  // Create container for effects
+  const container = new THREE.Group();
+  container.position.copy(defaults.position);
+
+  // Add to scene
+  this.scene3D.scene.add(container);
+
+  // Create glowing particle effect
+  const particleCount = this.getQualityAdjustedValue(defaults.particleCount, this.qualityLevel);
+  const positions = new Float32Array(particleCount * 3);
+  const particleColors = new Float32Array(particleCount * 3);
+  const sizes = new Float32Array(particleCount);
+
+  // Convert color to RGB components
+  const colorObj = new THREE.Color(defaults.color);
+  const r = colorObj.r;
+  const g = colorObj.g;
+  const b = colorObj.b;
+
+  // Create random particles around the prop
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+
+    // Position particles in small sphere around the prop's upper part
+    const radius = defaults.radius * effectiveScale;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.random() * Math.PI;
+
+    positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+    positions[i3 + 1] = defaults.height * effectiveScale + Math.random() * 0.2 * effectiveScale; // Slightly above
+    positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+
+    // Colors - base color with some variation
+    particleColors[i3] = r * (0.8 + Math.random() * 0.4); // Red with variation
+    particleColors[i3 + 1] = g * (0.8 + Math.random() * 0.4); // Green with variation
+    particleColors[i3 + 2] = b * (0.8 + Math.random() * 0.4); // Blue with variation
+
+    // Random sizes, scaled with effect scale
+    sizes[i] = defaults.particleSize * (0.5 + Math.random() * 1.0) * effectiveScale;
+  }
+
+  // Create geometry and set attributes
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('particleColor', new THREE.BufferAttribute(particleColors, 3));
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+  // Create shader material for better looking particles
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      baseColor: { value: new THREE.Color(defaults.color) }
+    },
+    vertexShader: `
       attribute float size;
       attribute vec3 particleColor;
       varying vec3 vColor;
@@ -1957,7 +2640,7 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
-        fragmentShader: `
+    fragmentShader: `
       varying vec3 vColor;
       
       void main() {
@@ -1970,76 +2653,74 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
         gl_FragColor = vec4(vColor, alpha);
       }
     `,
-        blending: defaults.blending,
-        depthTest: true,
-        depthWrite: false,
-        transparent: true,
-        vertexColors: true
-      });
+    blending: defaults.blending,
+    depthTest: true,
+    depthWrite: false,
+    transparent: true,
+    vertexColors: true
+  });
 
-      // Create particle system
-      const particles = new THREE.Points(geometry, material);
+  // Create particle system
+  const particles = new THREE.Points(geometry, material);
 
-      // Add to container
-      container.add(particles);
+  // Add to container
+  container.add(particles);
 
-      // Try to modify original prop material if available
-      if (prop.material && prop.material.isMeshStandardMaterial) {
-        // Store original material properties if they don't exist yet
-        if (!prop.userData.originalEmissive) {
-          prop.userData.originalEmissive = prop.material.emissive.clone();
-          prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
-        }
-
-        // Make the prop itself glow
-        prop.material.emissive = new THREE.Color(defaults.color);
-        prop.material.emissiveIntensity = defaults.intensity;
-
-        // Create reference to emissive mesh
-        const emissiveMesh = prop;
-
-        // Return effect data including the emissive mesh
-        return {
-          container,
-          particles,
-          emissiveMesh,
-          originalObject: prop,
-          definition: {
-            color: defaults.color,
-            emissiveIntensity: defaults.intensity
-          },
-          animationData: {
-            time: 0,
-            speed: 1.0,
-            pattern: 'glow'
-          }
-        };
-      }
-
-      // Return effect data without emissive mesh
-      return {
-        container,
-        particles,
-        originalObject: prop,
-        definition: {
-          color: defaults.color,
-          emissiveIntensity: defaults.intensity
-        },
-        animationData: {
-          time: 0,
-          speed: 1.0,
-          pattern: 'glow'
-        }
-      };
+  // Try to modify original prop material if available
+  if (prop.material && prop.material.isMeshStandardMaterial) {
+    // Store original material properties if they don't exist yet
+    if (!prop.userData.originalEmissive) {
+      prop.userData.originalEmissive = prop.material.emissive.clone();
+      prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 0;
     }
 
-    /**
-     * Create a portal effect with animated shader and particles
-     * @param {Object3D} object - The object to add effect to
-     * @param {Object} definition - Effect definition
-     * @param {string} qualityLevel - Quality setting
-     * @returns {Object} Effect data
-     */
+    // Make the prop itself glow
+    prop.material.emissive = new THREE.Color(defaults.color);
+    prop.material.emissiveIntensity = defaults.intensity;
+
+    // Create reference to emissive mesh
+    const emissiveMesh = prop;
+
+    // Return effect data including the emissive mesh
+    return {
+      container,
+      particles,
+      emissiveMesh,
+      originalObject: prop,
+      definition: {
+        color: defaults.color,
+        emissiveIntensity: defaults.intensity,
+        scale: defaults.scale  // Include scale in definition
+      },
+      animationData: {
+        time: 0,
+        speed: 1.0,
+        pattern: 'glow',
+        objectSize: objectSize  // Store object size for updates
+      }
+    };
+  }
+
+  // Return effect data without emissive mesh
+  return {
+    container,
+    particles,
+    originalObject: prop,
+    definition: {
+      color: defaults.color,
+      emissiveIntensity: defaults.intensity,
+      scale: defaults.scale  // Include scale in definition
+    },
+    animationData: {
+      time: 0,
+      speed: 1.0,
+      pattern: 'glow',
+      objectSize: objectSize  // Store object size for updates
+    }
+  };
+}
+
+
     /**
      * Create a portal effect with animated shader and particles
      * @param {Object3D} object - The object to add effect to
@@ -3058,7 +3739,9 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
       const particleCount = Math.min(
         this.qualityLevel === 'ultra' ? 75 :
           this.qualityLevel === 'high' ? 50 :
-            30,
+            this.qualityLevel === 'medium' ? 40 :
+            this.qualityLevel === 'low' ? 20:
+            10,
         Math.floor(20 + intensity * 20)
       );
 
@@ -3350,6 +4033,9 @@ createEnhancedMagicEffect(object, definition, qualityLevel = 'medium') {
         case 'high':
           return Math.ceil(baseValue * 1.5);
         case 'medium':
+          return baseValue;
+        case 'ultra':
+          return Math.ceil(baseValue * 2.0);
         default:
           return baseValue;
       }

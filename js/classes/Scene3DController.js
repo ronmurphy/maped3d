@@ -575,88 +575,6 @@ async loadShapeForgeParser() {
 }
 
 
-
-
-// async processShapeForgeMarkers(markers) {
-//   if (!markers || markers.length === 0) return;
-  
-//   try {
-//     // Load ShapeForgeParser if needed
-//     const parser = await this.loadShapeForgeParser();
-    
-//     // Create an array of loading promises to handle all markers in parallel
-//     const loadingPromises = markers.map(async (marker) => {
-//       const modelId = marker.data?.modelId;
-      
-//       if (!modelId) {
-//         console.warn('Marker missing modelId:', marker);
-//         return null;
-//       }
-      
-//       // Get position from marker
-//       const x = marker.x / 50 - this.boxWidth / 2;
-//       const z = marker.y / 50 - this.boxDepth / 2;
-      
-//       // Get elevation at marker position
-//       const { elevation } = this.getElevationAtPoint(x, z);
-      
-//       // Create a group specifically for this model
-//       const modelGroup = new THREE.Group();
-//       modelGroup.position.set(x, elevation, z); // + 0.5, z); // Add 0.5 height offset
-//       this.scene.add(modelGroup);
-      
-//       try {
-//         // Create a new parser instance for each model to avoid state conflicts
-//         const modelParser = new ShapeForgeParser(
-//           modelGroup, // Use the group as the "scene" for this model
-//           window.resourceManager,
-//           this.shaderEffects
-//         );
-        
-//         // Load the model
-//         const objects = await modelParser.loadModelFromIndexedDB(modelId);
-        
-//         if (!objects || objects.length === 0) {
-//           console.warn(`No objects created for model ${modelId}`);
-//           return null;
-//         }
-        
-//         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
-        
-//         // Store model data reference
-//         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
-//         this.shapeForgeModels.set(marker.id, {
-//           group: modelGroup,
-//           objects,
-//           parser: modelParser
-//         });
-        
-//         // Apply rotation if specified
-//         if (marker.data.rotation) {
-//           modelGroup.rotation.y = (marker.data.rotation.y || 0);
-//         }
-        
-//         // Apply scale if specified
-//         if (marker.data.scale) {
-//           const scale = marker.data.scale;
-//           modelGroup.scale.set(scale, scale, scale);
-//         }
-        
-//         return { marker, model: modelGroup };
-//       } catch (error) {
-//         console.error(`Error loading ShapeForge model ${modelId}:`, error);
-//         return null;
-//       }
-//     });
-    
-//     // Wait for all models to load
-//     await Promise.all(loadingPromises);
-    
-//   } catch (error) {
-//     console.error('Error processing ShapeForge markers:', error);
-//   }
-// }
-
 /**
  * Process ShapeForge markers in the scene
  * @param {Array} markers - Array of ShapeForge markers
@@ -3793,26 +3711,6 @@ break;
     });
 
 
-    // old floor code
-// // Simple scaled floor that doesn't stretch the texture
-// const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
-// const floorMaterial = new THREE.MeshStandardMaterial({
-//   map: texture,
-//   side: THREE.DoubleSide
-// });
-
-// // Make sure texture isn't repeating
-// texture.wrapS = THREE.ClampToEdgeWrapping;
-// texture.wrapT = THREE.ClampToEdgeWrapping;
-// texture.repeat.set(1, 1);
-
-// const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-// floor.rotation.x = -Math.PI / 2;
-// floor.position.y = 0.01;
-// floor.frustumCulled = false;
-// this.floorMesh = floor;
-// this.scene.add(floor);
-
 // Simple scaled floor that doesn't stretch the texture
 const floorGeometry = new THREE.PlaneGeometry(this.boxWidth, this.boxDepth);
 
@@ -5636,12 +5534,6 @@ if (nearestDungeon) {
       this.updateAutoLightSources(this.deltaTime || 0.016);
     }
 
-    // Update ShapeForgeParser effects if available
-// if (this.shapeForgeParser && typeof this.shapeForgeParser.updateEffects === 'function') {
-//   this.shapeForgeParser.updateEffects(this.deltaTime || 0.016);
-// }
-
-// In your animate method
 // Update ShapeForgeParser effects for all models
 if (this.shapeForgeModels && this.shapeForgeModels.size > 0) {
   this.shapeForgeModels.forEach(modelData => {
@@ -5657,13 +5549,6 @@ if (this.shapeForgeModels && this.shapeForgeModels.size > 0) {
     // Optimize particle systems
     this.optimizeParticleSystems();
 
-    // if (this.visualEffects) {
-    //   const time = performance.now() * 0.001;
-    //   const deltaTime = time - (this.lastTime || time);
-    //   this.lastTime = time;
-
-    //   this.visualEffects.update(deltaTime);
-    // }
 
     if (this.dayNightCycle) {
       this.dayNightCycle.update();

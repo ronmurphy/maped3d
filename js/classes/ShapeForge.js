@@ -149,25 +149,13 @@ class ShapeForge {
       }
     }, 500); // Wait 500ms for the drawer to render
 
-    // // Initialize new features if they haven't been already
-    // if (!this.featuresInitialized) {
-    //   // Wait a moment for UI to be ready, then initialize features
-    //   setTimeout(async () => {
-    //     try {
-    //       await this.initializeNewFeatures();
-    //       this.featuresInitialized = true;
-    //       console.log('All ShapeForge features initialized');
-    //     } catch (error) {
-    //       console.error('Error during ShapeForge feature initialization:', error);
-    //     }
-    //   }, 1000);
-    // }
 
     if (!this.featuresInitialized) {
       // Wait a moment for UI to be ready, then initialize features
       setTimeout(async () => {
         try {
           await this.initializeNewFeatures();
+          // this.addAlignmentTools();
           this.featuresInitialized = true;
           console.log('All ShapeForge features initialized');
         } catch (error) {
@@ -5128,346 +5116,6 @@ hideLoadingIndicator() {
   }
 }
 
-/**
- * Center and scale an imported object to fit in view
- * @param {Object} objectData - Object data to center and scale
- */
-centerAndScaleImportedObject(objectData) {
-  if (!objectData || !objectData.geometry || !objectData.mesh) return;
-  
-  // Calculate bounding box
-  objectData.geometry.computeBoundingBox();
-  const boundingBox = objectData.geometry.boundingBox;
-  
-  // Calculate center
-  const center = new THREE.Vector3();
-  boundingBox.getCenter(center);
-  
-  // Move geometry to center
-  objectData.geometry.translate(-center.x, -center.y, -center.z);
-  
-  // Calculate size
-  const size = new THREE.Vector3();
-  boundingBox.getSize(size);
-  const maxDimension = Math.max(size.x, size.y, size.z);
-  
-  // Scale to reasonable size if too large or too small
-  let scaleFactor = 1;
-  if (maxDimension > 10) {
-    scaleFactor = 10 / maxDimension;
-  } else if (maxDimension < 0.1) {
-    scaleFactor = 0.1 / maxDimension;
-  }
-  
-  if (scaleFactor !== 1) {
-    objectData.geometry.scale(scaleFactor, scaleFactor, scaleFactor);
-  }
-  
-  // Update object parameters
-  objectData.position = { x: 0, y: 0, z: 0 };
-  objectData.scale = { x: 1, y: 1, z: 1 };
-  
-  // Update mesh
-  objectData.mesh.position.set(0, 0, 0);
-}
-
-/**
- * Add alignment tools to the UI
- */
-/**
- * Add alignment tools to the UI
- */
-addAlignmentTools() {
-  // Find transform container - more reliable method
-  const transformContainer = this.drawer.querySelector('.transform-group');
-  if (!transformContainer) {
-    console.warn('Transform container not found for alignment tools');
-    return;
-  }
-  
-  // Check if we already have alignment tools to prevent duplicates
-  if (this.drawer.querySelector('.panel-section:has(#align-left)')) {
-    console.log('Alignment tools already exist, skipping');
-    return;
-  }
-  
-  console.log('Adding alignment tools to UI');
-  
-  // Create alignment tools section
-  const alignmentSection = document.createElement('div');
-  alignmentSection.className = 'panel-section';
-  alignmentSection.style.marginTop = '20px';
-  alignmentSection.innerHTML = `
-    <h3>Alignment Tools</h3>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px;">
-      <!-- Horizontal alignment -->
-      <sl-button size="small" id="align-left">
-        <sl-icon name="align-start"></sl-icon>
-      </sl-button>
-      <sl-button size="small" id="align-center-h">
-        <sl-icon name="align-center"></sl-icon>
-      </sl-button>
-      <sl-button size="small" id="align-right">
-        <sl-icon name="align-end"></sl-icon>
-      </sl-button>
-      
-      <!-- Vertical alignment -->
-      <sl-button size="small" id="align-bottom">
-        <sl-icon name="align-bottom"></sl-icon>
-      </sl-button>
-      <sl-button size="small" id="align-center-v">
-        <sl-icon name="align-middle"></sl-icon>
-      </sl-button>
-      <sl-button size="small" id="align-top">
-        <sl-icon name="align-top"></sl-icon>
-      </sl-button>
-      
-      <!-- Depth alignment -->
-      <sl-button size="small" id="align-back">Back</sl-button>
-      <sl-button size="small" id="align-center-d">Center Z</sl-button>
-      <sl-button size="small" id="align-front">Front</sl-button>
-      
-      <!-- Distribution -->
-      <sl-button size="small" id="distribute-x">Distribute X</sl-button>
-      <sl-button size="small" id="distribute-y">Distribute Y</sl-button>
-      <sl-button size="small" id="distribute-z">Distribute Z</sl-button>
-    </div>
-  `;
-  
-  // Insert after transform container - find a good place
-  const propertiesContainer = this.drawer.querySelector('#properties-container');
-  if (propertiesContainer) {
-    // Insert before properties
-    propertiesContainer.parentNode.insertBefore(alignmentSection, propertiesContainer);
-  } else {
-    // Fallback - append to transform container's parent
-    transformContainer.parentNode.appendChild(alignmentSection);
-  }
-  
-  console.log('Alignment tools added to DOM');
-  
-  // Set up event listeners for alignment buttons
-  
-  // Horizontal alignment (X axis)
-  this.drawer.querySelector('#align-left')?.addEventListener('click', () => {
-    this.alignObjects('x', 'min');
-  });
-  
-  this.drawer.querySelector('#align-center-h')?.addEventListener('click', () => {
-    this.alignObjects('x', 'center');
-  });
-  
-  this.drawer.querySelector('#align-right')?.addEventListener('click', () => {
-    this.alignObjects('x', 'max');
-  });
-  
-  // Vertical alignment (Y axis)
-  this.drawer.querySelector('#align-bottom')?.addEventListener('click', () => {
-    this.alignObjects('y', 'min');
-  });
-  
-  this.drawer.querySelector('#align-center-v')?.addEventListener('click', () => {
-    this.alignObjects('y', 'center');
-  });
-  
-  this.drawer.querySelector('#align-top')?.addEventListener('click', () => {
-    this.alignObjects('y', 'max');
-  });
-  
-  // Depth alignment (Z axis)
-  this.drawer.querySelector('#align-back')?.addEventListener('click', () => {
-    this.alignObjects('z', 'min');
-  });
-  
-  this.drawer.querySelector('#align-center-d')?.addEventListener('click', () => {
-    this.alignObjects('z', 'center');
-  });
-  
-  this.drawer.querySelector('#align-front')?.addEventListener('click', () => {
-    this.alignObjects('z', 'max');
-  });
-  
-  // Distribution
-  this.drawer.querySelector('#distribute-x')?.addEventListener('click', () => {
-    this.distributeObjects('x');
-  });
-  
-  this.drawer.querySelector('#distribute-y')?.addEventListener('click', () => {
-    this.distributeObjects('y');
-  });
-  
-  this.drawer.querySelector('#distribute-z')?.addEventListener('click', () => {
-    this.distributeObjects('z');
-  });
-  
-  console.log('Alignment tools event listeners attached');
-}
-
-/**
- * Align selected objects along an axis
- * @param {string} axis - Axis to align along ('x', 'y', or 'z')
- * @param {string} alignment - Type of alignment ('min', 'center', or 'max')
- */
-alignObjects(axis, alignment) {
-  // Need multiple selection to align
-  if (!this.multiSelectEnabled || !this.selectedObjects || this.selectedObjects.length < 2) {
-    alert('Please select at least 2 objects in multi-select mode to align them');
-    return;
-  }
-  
-  // Calculate min, max, and center values along the axis for all selected objects
-  let min = Infinity;
-  let max = -Infinity;
-  let center = 0;
-  let sum = 0;
-  
-  // Find the bounds
-  this.selectedObjects.forEach(index => {
-    const object = this.objects[index];
-    const position = object.position[axis];
-    
-    // Calculate min/max
-    min = Math.min(min, position);
-    max = Math.max(max, position);
-    sum += position;
-  });
-  
-  // Calculate center
-  center = sum / this.selectedObjects.length;
-  
-  // Determine target position based on alignment type
-  let targetPosition;
-  
-  switch (alignment) {
-    case 'min':
-      targetPosition = min;
-      break;
-    case 'max':
-      targetPosition = max;
-      break;
-    case 'center':
-    default:
-      targetPosition = center;
-      break;
-  }
-  
-  // Store old positions for history
-  const oldPositions = {};
-  const newPositions = {};
-  
-  // Apply alignment
-  this.selectedObjects.forEach(index => {
-    const object = this.objects[index];
-    
-    // Store old position
-    oldPositions[index] = { ...object.position };
-    
-    // Set new position
-    object.position[axis] = targetPosition;
-    object.mesh.position[axis] = targetPosition;
-    
-    // Store new position
-    newPositions[index] = { ...object.position };
-  });
-  
-  // Add to history
-  this.addHistoryStep('multiAlign', {
-    objectIndices: [...this.selectedObjects],
-    axis,
-    alignment,
-    oldPositions,
-    newPositions
-  });
-  
-  // Update UI
-  this.updateObjectsList();
-  
-  // Update transform controls if a single object is also selected
-  if (this.selectedObject !== null) {
-    this.updateTransformControls(this.objects[this.selectedObject]);
-  }
-}
-
-/**
- * Distribute selected objects evenly along an axis
- * @param {string} axis - Axis to distribute along ('x', 'y', or 'z')
- */
-distributeObjects(axis) {
-  // Need at least 3 objects to distribute
-  if (!this.multiSelectEnabled || !this.selectedObjects || this.selectedObjects.length < 3) {
-    alert('Please select at least 3 objects in multi-select mode to distribute them');
-    return;
-  }
-  
-  // Find min and max positions
-  let min = Infinity;
-  let max = -Infinity;
-  let minIndex = -1;
-  let maxIndex = -1;
-  
-  // Find objects at extremes
-  this.selectedObjects.forEach(index => {
-    const object = this.objects[index];
-    const position = object.position[axis];
-    
-    if (position < min) {
-      min = position;
-      minIndex = index;
-    }
-    
-    if (position > max) {
-      max = position;
-      maxIndex = index;
-    }
-  });
-  
-  // Calculate total distance and step size
-  const totalDistance = max - min;
-  const stepSize = totalDistance / (this.selectedObjects.length - 1);
-  
-  // Sort objects by current position
-  const sortedIndices = [...this.selectedObjects].sort((a, b) => {
-    return this.objects[a].position[axis] - this.objects[b].position[axis];
-  });
-  
-  // Store old positions for history
-  const oldPositions = {};
-  const newPositions = {};
-  
-  // Distribute objects evenly
-  sortedIndices.forEach((index, i) => {
-    const object = this.objects[index];
-    
-    // Store old position
-    oldPositions[index] = { ...object.position };
-    
-    // Set new position - objects at extremes stay in place
-    if (index !== minIndex && index !== maxIndex) {
-      object.position[axis] = min + stepSize * i;
-      object.mesh.position[axis] = min + stepSize * i;
-    }
-    
-    // Store new position
-    newPositions[index] = { ...object.position };
-  });
-  
-  // Add to history
-  this.addHistoryStep('multiDistribute', {
-    objectIndices: [...this.selectedObjects],
-    axis,
-    oldPositions,
-    newPositions
-  });
-  
-  // Update UI
-  this.updateObjectsList();
-  
-  // Update transform controls if a single object is also selected
-  if (this.selectedObject !== null) {
-    this.updateTransformControls(this.objects[this.selectedObject]);
-  }
-}
-
 initializeNewFeatures() {
   try {
     // Add alignment tools
@@ -5504,7 +5152,406 @@ initializeNewFeatures() {
   }
 }
 
+/**
+ * Create a glow effect without modifying the original object's materials
+ * @param {Object} prop - Object to apply effect to
+ * @param {Object} options - Effect options
+ * @returns {Object} Effect data
+ */
+createPropGlowEffect(prop, options) {
+  const defaults = {
+    color: options.color || 0x66ccff,
+    intensity: options.intensity || 0.5,
+    scale: options.scale || 1.0   // Add scale parameter with default 1.0
+  };
 
+  // Get object size to scale effect appropriately
+  const objectSize = this.getObjectSize(prop);
+  const effectRadius = objectSize * defaults.scale;
+
+  // Create container for glow effect
+  const container = new THREE.Group();
+  container.position.copy(prop.position);
+  this.previewScene.add(container);
+
+  // Create a point light for the glow
+  const light = new THREE.PointLight(defaults.color, defaults.intensity, effectRadius * 2);
+  container.add(light);
+
+  // Create particles for better visual effect
+  const particleCount = Math.max(10, Math.floor(20 * defaults.scale));
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+
+  // Create particles around the object
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const angle1 = Math.random() * Math.PI * 2;
+    const angle2 = Math.random() * Math.PI * 2;
+    const radius = (0.2 + Math.random() * 0.3) * effectRadius;
+
+    particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
+    particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+    particlePositions[i3 + 2] = Math.cos(angle2) * radius;
+  }
+
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+  const particleMaterial = new THREE.PointsMaterial({
+    color: defaults.color,
+    size: 0.08 * defaults.scale,  // Scale particle size too
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    opacity: 0.6
+  });
+
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  container.add(particles);
+
+  return {
+    container: container,
+    light: light,
+    particles: particles,
+    originalObject: prop,
+    animationData: {
+      time: 0,
+      scale: defaults.scale,  // Store scale for updates
+      objectSize: objectSize
+    },
+    update: function(deltaTime) {
+      // Update animation time
+      this.animationData.time += deltaTime;
+      const time = this.animationData.time;
+      
+      // Pulse the light
+      light.intensity = defaults.intensity * (0.8 + Math.sin(time * 2) * 0.2);
+      
+      // Animate particles if needed
+      const positions = particles.geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle = time * 0.5 + i * 0.2;
+        
+        // Add subtle motion to particles
+        positions[i3] += Math.sin(angle) * 0.001 * defaults.scale;
+        positions[i3 + 1] += Math.cos(angle) * 0.001 * defaults.scale;
+        positions[i3 + 2] += Math.sin(angle * 0.7) * 0.001 * defaults.scale;
+        
+        // Limit particle drift
+        const maxDist = 0.5 * effectRadius;
+        const dist = Math.sqrt(
+          positions[i3] * positions[i3] + 
+          positions[i3 + 1] * positions[i3 + 1] + 
+          positions[i3 + 2] * positions[i3 + 2]
+        );
+        
+        if (dist > maxDist) {
+          const scale = maxDist / dist;
+          positions[i3] *= scale;
+          positions[i3 + 1] *= scale;
+          positions[i3 + 2] *= scale;
+        }
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+    }
+  };
+}
+
+/**
+ * Simple fire effect that works without complex ShaderEffectsManager
+ * @param {Object} prop - Object to apply effect to
+ * @param {Object} options - Effect options
+ * @returns {Object} Effect data
+ */
+createSimpleFireEffect(prop, options) {
+  const defaults = {
+    color: options.color || 0xff6600,
+    intensity: options.intensity || 1.2,
+    scale: options.scale || 1.0   // Add scale parameter with default 1.0
+  };
+
+  // Get object size to scale effect appropriately
+  const objectSize = this.getObjectSize(prop);
+  const effectScale = objectSize * defaults.scale;
+
+  // Create container for fire effect
+  const container = new THREE.Group();
+  container.position.copy(prop.position);
+  this.previewScene.add(container);
+
+  // Add fire light
+  const light = new THREE.PointLight(defaults.color, defaults.intensity, effectScale * 3);
+  light.position.y += 0.5 * effectScale; // Position above object
+  container.add(light);
+
+  // Create simple particle system for fire
+  const particleCount = Math.max(15, Math.floor(30 * defaults.scale));
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  const particleColors = new Float32Array(particleCount * 3);
+
+  // Fire color
+  const fireColor = new THREE.Color(defaults.color);
+
+  // Create random particles in cone shape
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.random() * 0.2 * effectScale;
+    const height = Math.random() * 0.5 * effectScale + 0.2 * effectScale;
+
+    particlePositions[i3] = Math.cos(angle) * radius;
+    particlePositions[i3 + 1] = height; // Height
+    particlePositions[i3 + 2] = Math.sin(angle) * radius;
+
+    // Colors: start yellow-orange, fade to red
+    const mixFactor = Math.random();
+    particleColors[i3] = fireColor.r;
+    particleColors[i3 + 1] = fireColor.g * mixFactor;
+    particleColors[i3 + 2] = 0;
+  }
+
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.1 * defaults.scale,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.7,
+    blending: THREE.AdditiveBlending
+  });
+
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  container.add(particles);
+
+  // Store original positions for animation
+  particles.userData = {
+    positions: [...particlePositions],
+    time: 0
+  };
+
+  return {
+    container: container,
+    light: light,
+    particles: particles,
+    originalObject: prop,
+    animationData: {
+      time: 0,
+      speed: 1.0,
+      scale: defaults.scale,
+      objectSize: objectSize
+    },
+    update: function (deltaTime) {
+      // Animate particles
+      this.animationData.time += deltaTime;
+      const time = this.animationData.time;
+
+      // Get position data
+      const positions = particles.geometry.attributes.position.array;
+
+      // Animate each particle
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+
+        // Move up with varying speed based on scale
+        positions[i3 + 1] += (0.01 + Math.random() * 0.01) * defaults.scale;
+
+        // Reset if too high
+        if (positions[i3 + 1] > 0.8 * effectScale) {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = Math.random() * 0.2 * effectScale;
+          
+          positions[i3] = Math.cos(angle) * radius;
+          positions[i3 + 1] = 0;
+          positions[i3 + 2] = Math.sin(angle) * radius;
+        }
+
+        // Add some "flickering"
+        positions[i3] += (Math.random() - 0.5) * 0.02 * defaults.scale;
+        positions[i3 + 2] += (Math.random() - 0.5) * 0.02 * defaults.scale;
+      }
+
+      // Update geometry
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Flicker the light
+      light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+    }
+  };
+}
+
+/**
+ * Simple magic effect that works without complex ShaderEffectsManager
+ * @param {Object} prop - Object to apply effect to
+ * @param {Object} options - Effect options
+ * @returns {Object} Effect data
+ */
+createSimpleMagicEffect(prop, options) {
+  const defaults = {
+    color: options.color || 0x8800ff,
+    intensity: options.intensity || 0.8,
+    scale: options.scale || 1.0   // Add scale parameter with default 1.0
+  };
+
+  // Get object size to scale effect appropriately
+  const objectSize = this.getObjectSize(prop);
+  const effectScale = objectSize * defaults.scale;
+
+  // Create container for magic effect
+  const container = new THREE.Group();
+  container.position.copy(prop.position);
+  this.previewScene.add(container);
+
+  // Add magic light
+  const light = new THREE.PointLight(defaults.color, defaults.intensity, effectScale * 3);
+  light.position.y += 0.3 * effectScale; // Position above object
+  container.add(light);
+
+  // Create simple particle system for magic
+  const particleCount = Math.max(20, Math.floor(40 * defaults.scale));
+  const particleGeometry = new THREE.BufferGeometry();
+  const particlePositions = new Float32Array(particleCount * 3);
+  const particleColors = new Float32Array(particleCount * 3);
+
+  // Magic color
+  const magicColor = new THREE.Color(defaults.color);
+
+  // Create random particles in sphere shape
+  for (let i = 0; i < particleCount; i++) {
+    const i3 = i * 3;
+    const angle1 = Math.random() * Math.PI * 2;
+    const angle2 = Math.random() * Math.PI * 2;
+    const radius = (Math.random() * 0.3 + 0.1) * effectScale;
+
+    particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
+    particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+    particlePositions[i3 + 2] = Math.cos(angle2) * radius;
+
+    // Colors
+    particleColors[i3] = magicColor.r;
+    particleColors[i3 + 1] = magicColor.g;
+    particleColors[i3 + 2] = magicColor.b;
+  }
+
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+  const particleMaterial = new THREE.PointsMaterial({
+    size: 0.05 * defaults.scale,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.7,
+    blending: THREE.AdditiveBlending
+  });
+
+  const particles = new THREE.Points(particleGeometry, particleMaterial);
+  container.add(particles);
+
+  // Store original positions for animation
+  particles.userData = {
+    positions: [...particlePositions],
+    time: 0
+  };
+
+  return {
+    container: container,
+    light: light,
+    particles: particles,
+    originalObject: prop,
+    animationData: {
+      time: 0,
+      speed: 0.7,
+      scale: defaults.scale,
+      objectSize: objectSize
+    },
+    update: function (deltaTime) {
+      // Animate particles
+      this.animationData.time += deltaTime;
+      const time = this.animationData.time;
+
+      // Get position data
+      const positions = particles.geometry.attributes.position.array;
+      const origPositions = particles.userData.positions;
+
+      // Animate each particle in orbital pattern
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        const angle = time + i * 0.2;
+
+        positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
+        positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
+        positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
+      }
+
+      // Update geometry
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Pulse the light
+      light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+    }
+  };
+}
+
+/**
+ * Get the approximate size of an object for scaling effects
+ * @param {THREE.Object3D} object - The object to measure
+ * @returns {number} Approximate radius/size of the object
+ */
+getObjectSize(object) {
+  // Default size if we can't determine
+  const defaultSize = 1;
+  
+  if (!object) return defaultSize;
+  
+  try {
+    // Use geometry bounding box/sphere if available
+    if (object.geometry) {
+      // Compute bounding box if not already computed
+      if (!object.geometry.boundingBox) {
+        object.geometry.computeBoundingBox();
+      }
+      
+      // Get size from bounding box
+      if (object.geometry.boundingBox) {
+        const boundingBox = object.geometry.boundingBox;
+        const size = new THREE.Vector3();
+        boundingBox.getSize(size);
+        
+        // Factor in the object's scale
+        size.multiply(object.scale);
+        
+        // Return average dimension as an approximation of size
+        return (size.x + size.y + size.z) / 3;
+      }
+      
+      // Alternative: Use bounding sphere
+      if (!object.geometry.boundingSphere) {
+        object.geometry.computeBoundingSphere();
+      }
+      
+      if (object.geometry.boundingSphere) {
+        // Factor in the object's scale (using max scale as approximation)
+        const maxScale = Math.max(object.scale.x, object.scale.y, object.scale.z);
+        return object.geometry.boundingSphere.radius * maxScale;
+      }
+    }
+    
+    // If we couldn't determine from geometry, try to approximate from object scale
+    if (object.scale) {
+      return Math.max(
+        Math.abs(object.scale.x), 
+        Math.abs(object.scale.y), 
+        Math.abs(object.scale.z)
+      );
+    }
+  } catch (error) {
+    console.warn("Error determining object size:", error);
+  }
+  
+  // Default fallback
+  return defaultSize;
+}
 
 
 }
@@ -6318,6 +6365,24 @@ ShapeForge.prototype.populateEffectProperties = function (effectType, container)
     container.appendChild(intensityRange);
   }
 
+  // Effect scale slider 
+if (definition.intensity !== undefined) {  // We're using the same check as intensity
+  const scaleRange = document.createElement('sl-range');
+  scaleRange.id = 'effect-scale';
+  scaleRange.label = 'Effect Scale';
+  scaleRange.min = 0.2;
+  scaleRange.max = 5;
+  scaleRange.step = 0.1;
+  scaleRange.value = definition.scale !== undefined ? definition.scale : 1.0;
+  scaleRange.style.marginBottom = '10px';
+
+  scaleRange.addEventListener('sl-change', (e) => {
+    this.updateEffectProperty('scale', parseFloat(e.target.value));
+  });
+
+  container.appendChild(scaleRange);
+}
+
   // Particle count slider
   if (definition.particleCount !== undefined) {
     const particleRange = document.createElement('sl-range');
@@ -6444,15 +6509,33 @@ ShapeForge.prototype.applyShaderEffect = function (effectType) {
     }
 
     // Get effect options from ShaderEffectsManager if available
+    // let effectOptions = {
+    //   color: 0x66ccff,
+    //   intensity: 1.0
+    // };
+
+    // if (this.shaderEffectsManager && this.shaderEffectsManager.effectDefinitions) {
+    //   const definition = this.shaderEffectsManager.effectDefinitions.get(effectType);
+    //   if (definition) {
+    //     effectOptions = { ...effectOptions, ...definition };
+    //   }
+    // }
+
     let effectOptions = {
       color: 0x66ccff,
-      intensity: 1.0
+      intensity: 1.0,
+      scale: 1.0  // Add default scale value
     };
-
+    
     if (this.shaderEffectsManager && this.shaderEffectsManager.effectDefinitions) {
       const definition = this.shaderEffectsManager.effectDefinitions.get(effectType);
       if (definition) {
         effectOptions = { ...effectOptions, ...definition };
+        
+        // If the definition doesn't have a scale property, add it
+        if (effectOptions.scale === undefined) {
+          effectOptions.scale = 1.0;
+        }
       }
     }
 
@@ -6511,247 +6594,247 @@ ShapeForge.prototype.applyShaderEffect = function (effectType) {
 /**
  * Simple glow effect that doesn't depend on ShaderEffectsManager
  */
-ShapeForge.prototype.createPropGlowEffect = function (prop, options) {
-  const defaults = {
-    color: options.color || 0x66ccff,
-    intensity: options.intensity || 0.5
-  };
+// ShapeForge.prototype.createPropGlowEffect = function (prop, options) {
+//   const defaults = {
+//     color: options.color || 0x66ccff,
+//     intensity: options.intensity || 0.5
+//   };
 
-  // Make prop material emit light
-  if (prop.material && prop.material.emissive !== undefined) {
-    // Store original emissive color
-    if (!prop.userData.originalEmissive) {
-      prop.userData.originalEmissive = prop.material.emissive.clone();
-      prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
-    }
+//   // Make prop material emit light
+//   if (prop.material && prop.material.emissive !== undefined) {
+//     // Store original emissive color
+//     if (!prop.userData.originalEmissive) {
+//       prop.userData.originalEmissive = prop.material.emissive.clone();
+//       prop.userData.originalEmissiveIntensity = prop.material.emissiveIntensity || 1.0;
+//     }
 
-    // Apply glow effect
-    prop.material.emissive = new THREE.Color(defaults.color);
-    prop.material.emissiveIntensity = defaults.intensity;
-  }
+//     // Apply glow effect
+//     prop.material.emissive = new THREE.Color(defaults.color);
+//     prop.material.emissiveIntensity = defaults.intensity;
+//   }
 
-  // Create a point light
-  const light = new THREE.PointLight(defaults.color, defaults.intensity, 2);
-  light.position.copy(prop.position);
-  this.previewScene.add(light);
+//   // Create a point light
+//   const light = new THREE.PointLight(defaults.color, defaults.intensity, 2);
+//   light.position.copy(prop.position);
+//   this.previewScene.add(light);
 
-  return {
-    light: light,
-    container: null,
-    particles: null,
-    originalObject: prop
-  };
-};
+//   return {
+//     light: light,
+//     container: null,
+//     particles: null,
+//     originalObject: prop
+//   };
+// };
 
 /**
  * Simple fire effect that works without complex ShaderEffectsManager
  */
-ShapeForge.prototype.createSimpleFireEffect = function (prop, options) {
-  const defaults = {
-    color: options.color || 0xff6600,
-    intensity: options.intensity || 1.2
-  };
+// ShapeForge.prototype.createSimpleFireEffect = function (prop, options) {
+//   const defaults = {
+//     color: options.color || 0xff6600,
+//     intensity: options.intensity || 1.2
+//   };
 
-  // Create container for fire effect
-  const container = new THREE.Group();
-  container.position.copy(prop.position);
-  this.previewScene.add(container);
+//   // Create container for fire effect
+//   const container = new THREE.Group();
+//   container.position.copy(prop.position);
+//   this.previewScene.add(container);
 
-  // Add fire light
-  const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-  light.position.y += 0.5; // Position above object
-  container.add(light);
+//   // Add fire light
+//   const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+//   light.position.y += 0.5; // Position above object
+//   container.add(light);
 
-  // Create simple particle system for fire
-  const particleCount = 15;
-  const particleGeometry = new THREE.BufferGeometry();
-  const particlePositions = new Float32Array(particleCount * 3);
-  const particleColors = new Float32Array(particleCount * 3);
+//   // Create simple particle system for fire
+//   const particleCount = 15;
+//   const particleGeometry = new THREE.BufferGeometry();
+//   const particlePositions = new Float32Array(particleCount * 3);
+//   const particleColors = new Float32Array(particleCount * 3);
 
-  // Fire color
-  const fireColor = new THREE.Color(defaults.color);
+//   // Fire color
+//   const fireColor = new THREE.Color(defaults.color);
 
-  // Create random particles in cone shape
-  for (let i = 0; i < particleCount; i++) {
-    const i3 = i * 3;
-    const angle = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 0.2;
+//   // Create random particles in cone shape
+//   for (let i = 0; i < particleCount; i++) {
+//     const i3 = i * 3;
+//     const angle = Math.random() * Math.PI * 2;
+//     const radius = Math.random() * 0.2;
 
-    particlePositions[i3] = Math.cos(angle) * radius;
-    particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
-    particlePositions[i3 + 2] = Math.sin(angle) * radius;
+//     particlePositions[i3] = Math.cos(angle) * radius;
+//     particlePositions[i3 + 1] = Math.random() * 0.5 + 0.2; // Height
+//     particlePositions[i3 + 2] = Math.sin(angle) * radius;
 
-    // Colors: start yellow-orange, fade to red
-    const mixFactor = Math.random();
-    particleColors[i3] = fireColor.r;
-    particleColors[i3 + 1] = fireColor.g * mixFactor;
-    particleColors[i3 + 2] = 0;
-  }
+//     // Colors: start yellow-orange, fade to red
+//     const mixFactor = Math.random();
+//     particleColors[i3] = fireColor.r;
+//     particleColors[i3 + 1] = fireColor.g * mixFactor;
+//     particleColors[i3 + 2] = 0;
+//   }
 
-  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-  particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+//   particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+//   particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-  const particleMaterial = new THREE.PointsMaterial({
-    size: 0.1,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.7,
-    blending: THREE.AdditiveBlending
-  });
+//   const particleMaterial = new THREE.PointsMaterial({
+//     size: 0.1,
+//     vertexColors: true,
+//     transparent: true,
+//     opacity: 0.7,
+//     blending: THREE.AdditiveBlending
+//   });
 
-  const particles = new THREE.Points(particleGeometry, particleMaterial);
-  container.add(particles);
+//   const particles = new THREE.Points(particleGeometry, particleMaterial);
+//   container.add(particles);
 
-  // Store original positions for animation
-  particles.userData = {
-    positions: [...particlePositions],
-    time: 0
-  };
+//   // Store original positions for animation
+//   particles.userData = {
+//     positions: [...particlePositions],
+//     time: 0
+//   };
 
-  return {
-    container: container,
-    light: light,
-    particles: particles,
-    originalObject: prop,
-    animationData: {
-      time: 0,
-      speed: 1.0
-    },
-    update: function (deltaTime) {
-      // Animate particles
-      this.animationData.time += deltaTime;
-      const time = this.animationData.time;
+//   return {
+//     container: container,
+//     light: light,
+//     particles: particles,
+//     originalObject: prop,
+//     animationData: {
+//       time: 0,
+//       speed: 1.0
+//     },
+//     update: function (deltaTime) {
+//       // Animate particles
+//       this.animationData.time += deltaTime;
+//       const time = this.animationData.time;
 
-      // Get position data
-      const positions = particles.geometry.attributes.position.array;
+//       // Get position data
+//       const positions = particles.geometry.attributes.position.array;
 
-      // Animate each particle
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
+//       // Animate each particle
+//       for (let i = 0; i < particleCount; i++) {
+//         const i3 = i * 3;
 
-        // Move up slowly
-        positions[i3 + 1] += 0.01;
+//         // Move up slowly
+//         positions[i3 + 1] += 0.01;
 
-        // Reset if too high
-        if (positions[i3 + 1] > 0.8) {
-          positions[i3 + 1] = 0.2;
-        }
+//         // Reset if too high
+//         if (positions[i3 + 1] > 0.8) {
+//           positions[i3 + 1] = 0.2;
+//         }
 
-        // Add some "flickering"
-        positions[i3] += (Math.random() - 0.5) * 0.01;
-        positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
-      }
+//         // Add some "flickering"
+//         positions[i3] += (Math.random() - 0.5) * 0.01;
+//         positions[i3 + 2] += (Math.random() - 0.5) * 0.01;
+//       }
 
-      // Update geometry
-      particles.geometry.attributes.position.needsUpdate = true;
+//       // Update geometry
+//       particles.geometry.attributes.position.needsUpdate = true;
 
-      // Flicker the light
-      light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
-    }
-  };
-};
+//       // Flicker the light
+//       light.intensity = defaults.intensity * (0.8 + Math.sin(time * 10) * 0.1 + Math.random() * 0.1);
+//     }
+//   };
+// };
 
 /**
  * Simple magic effect that works without complex ShaderEffectsManager
  */
-ShapeForge.prototype.createSimpleMagicEffect = function (prop, options) {
-  const defaults = {
-    color: options.color || 0x8800ff,
-    intensity: options.intensity || 0.8
-  };
+// ShapeForge.prototype.createSimpleMagicEffect = function (prop, options) {
+//   const defaults = {
+//     color: options.color || 0x8800ff,
+//     intensity: options.intensity || 0.8
+//   };
 
-  // Create container for magic effect
-  const container = new THREE.Group();
-  container.position.copy(prop.position);
-  this.previewScene.add(container);
+//   // Create container for magic effect
+//   const container = new THREE.Group();
+//   container.position.copy(prop.position);
+//   this.previewScene.add(container);
 
-  // Add magic light
-  const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
-  light.position.y += 0.3; // Position above object
-  container.add(light);
+//   // Add magic light
+//   const light = new THREE.PointLight(defaults.color, defaults.intensity, 3);
+//   light.position.y += 0.3; // Position above object
+//   container.add(light);
 
-  // Create simple particle system for magic
-  const particleCount = 20;
-  const particleGeometry = new THREE.BufferGeometry();
-  const particlePositions = new Float32Array(particleCount * 3);
-  const particleColors = new Float32Array(particleCount * 3);
+//   // Create simple particle system for magic
+//   const particleCount = 20;
+//   const particleGeometry = new THREE.BufferGeometry();
+//   const particlePositions = new Float32Array(particleCount * 3);
+//   const particleColors = new Float32Array(particleCount * 3);
 
-  // Magic color
-  const magicColor = new THREE.Color(defaults.color);
+//   // Magic color
+//   const magicColor = new THREE.Color(defaults.color);
 
-  // Create random particles in sphere shape
-  for (let i = 0; i < particleCount; i++) {
-    const i3 = i * 3;
-    const angle1 = Math.random() * Math.PI * 2;
-    const angle2 = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 0.3 + 0.1;
+//   // Create random particles in sphere shape
+//   for (let i = 0; i < particleCount; i++) {
+//     const i3 = i * 3;
+//     const angle1 = Math.random() * Math.PI * 2;
+//     const angle2 = Math.random() * Math.PI * 2;
+//     const radius = Math.random() * 0.3 + 0.1;
 
-    particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
-    particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
-    particlePositions[i3 + 2] = Math.cos(angle2) * radius;
+//     particlePositions[i3] = Math.cos(angle1) * Math.sin(angle2) * radius;
+//     particlePositions[i3 + 1] = Math.sin(angle1) * Math.sin(angle2) * radius;
+//     particlePositions[i3 + 2] = Math.cos(angle2) * radius;
 
-    // Colors
-    particleColors[i3] = magicColor.r;
-    particleColors[i3 + 1] = magicColor.g;
-    particleColors[i3 + 2] = magicColor.b;
-  }
+//     // Colors
+//     particleColors[i3] = magicColor.r;
+//     particleColors[i3 + 1] = magicColor.g;
+//     particleColors[i3 + 2] = magicColor.b;
+//   }
 
-  particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-  particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+//   particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+//   particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
 
-  const particleMaterial = new THREE.PointsMaterial({
-    size: 0.05,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.7,
-    blending: THREE.AdditiveBlending
-  });
+//   const particleMaterial = new THREE.PointsMaterial({
+//     size: 0.05,
+//     vertexColors: true,
+//     transparent: true,
+//     opacity: 0.7,
+//     blending: THREE.AdditiveBlending
+//   });
 
-  const particles = new THREE.Points(particleGeometry, particleMaterial);
-  container.add(particles);
+//   const particles = new THREE.Points(particleGeometry, particleMaterial);
+//   container.add(particles);
 
-  // Store original positions for animation
-  particles.userData = {
-    positions: [...particlePositions],
-    time: 0
-  };
+//   // Store original positions for animation
+//   particles.userData = {
+//     positions: [...particlePositions],
+//     time: 0
+//   };
 
-  return {
-    container: container,
-    light: light,
-    particles: particles,
-    originalObject: prop,
-    animationData: {
-      time: 0,
-      speed: 0.7
-    },
-    update: function (deltaTime) {
-      // Animate particles
-      this.animationData.time += deltaTime;
-      const time = this.animationData.time;
+//   return {
+//     container: container,
+//     light: light,
+//     particles: particles,
+//     originalObject: prop,
+//     animationData: {
+//       time: 0,
+//       speed: 0.7
+//     },
+//     update: function (deltaTime) {
+//       // Animate particles
+//       this.animationData.time += deltaTime;
+//       const time = this.animationData.time;
 
-      // Get position data
-      const positions = particles.geometry.attributes.position.array;
-      const origPositions = particles.userData.positions;
+//       // Get position data
+//       const positions = particles.geometry.attributes.position.array;
+//       const origPositions = particles.userData.positions;
 
-      // Animate each particle in orbital pattern
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        const angle = time + i * 0.2;
+//       // Animate each particle in orbital pattern
+//       for (let i = 0; i < particleCount; i++) {
+//         const i3 = i * 3;
+//         const angle = time + i * 0.2;
 
-        positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
-        positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
-        positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
-      }
+//         positions[i3] = origPositions[i3] * Math.cos(angle * 0.5);
+//         positions[i3 + 1] = origPositions[i3 + 1] * Math.sin(angle * 0.5);
+//         positions[i3 + 2] = origPositions[i3 + 2] * Math.cos(angle * 0.3);
+//       }
 
-      // Update geometry
-      particles.geometry.attributes.position.needsUpdate = true;
+//       // Update geometry
+//       particles.geometry.attributes.position.needsUpdate = true;
 
-      // Pulse the light
-      light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
-    }
-  };
-};
+//       // Pulse the light
+//       light.intensity = defaults.intensity * (0.7 + Math.sin(time * 2) * 0.3);
+//     }
+//   };
+// };
 
 /**
  * Update all effects in the scene
@@ -8133,39 +8216,6 @@ ShapeForge.prototype.loadProjectFromJson = function (jsonData) {
     });
   }, 500);
 
-  // setTimeout(() => {
-  //   // Only process effects if drawer is still open
-  //   if (!this.drawer || !this.drawer.open) {
-  //     console.log("Drawer closed, skipping effect application");
-  //     return;
-  //   }
-
-  //   // Find objects that need effects
-  //   const objectsWithEffects = this.objects.filter(obj => obj && obj.pendingEffect);
-  //   console.log(`Applying effects to ${objectsWithEffects.length} objects`);
-
-  //   // Apply effects with error handling
-  //   objectsWithEffects.forEach((obj, index) => {
-  //     try {
-  //       // Save current selection to restore later
-  //       const previousSelection = this.selectedObject;
-
-  //       // Apply the effect
-  //       this.selectObject(this.objects.indexOf(obj));
-  //       this.applyShaderEffect(obj.pendingEffect);
-  //       delete obj.pendingEffect;
-
-  //       // Restore previous selection
-  //       if (previousSelection !== null && previousSelection !== this.selectedObject) {
-  //         this.selectObject(previousSelection);
-  //       }
-  //     } catch (error) {
-  //       console.warn(`Error applying effect to object:`, error);
-  //     }
-  //   });
-  // }, 500);
-
-  // Return success
   return true;
 };
 
