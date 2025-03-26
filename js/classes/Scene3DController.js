@@ -52,6 +52,7 @@ class Scene3DController {
     this.gameStarted = false;
     this.firstRunOfferComplete = false;
     this.hasProcessedMarkers = false;
+    this.processedShapeForgeIds = new Set();
 
     window.scene3D = this;
     console.log('Set window.scene3D reference in constructor');
@@ -180,6 +181,13 @@ class Scene3DController {
     [100, 500, 1000].forEach(delay => {
       setTimeout(() => this.updateTexturesColorSpace(), delay);
     });
+
+    // this.loadShapeForgeParser().then(parser => {
+    //   console.log(`[${new Date().toISOString()}] Early initialization of ShapeForgeParser complete`);
+    //   this.shapeForgeParser = parser;
+    // }).catch(err => {
+    //   console.error(`[${new Date().toISOString()}] Failed to initialize ShapeForgeParser:`, err);
+    // });
 
     return true;
   }
@@ -520,72 +528,265 @@ if (this.shapeForgeParser) {
  * Load ShapeForgeParser
  * @returns {Promise<ShapeForgeParser>} - The ShapeForgeParser instance
  */
+// async loadShapeForgeParser() {
+//   // Return existing instance if already loaded
+//   if (this.shapeForgeParser) {
+//     console.log('Reusing existing ShapeForgeParser instance');
+//     return this.shapeForgeParser;
+//   }
+  
+//   return new Promise((resolve, reject) => {
+//     // Check if script is already loaded
+//     if (window.ShapeForgeParser) {
+//       this.shapeForgeParser = new ShapeForgeParser(
+//         this.scene, 
+//         window.resourceManager,
+//         this.shaderEffects
+//       );
+      
+//       // Make globally accessible for fallbacks
+//       window.shapeForgeParser = this.shapeForgeParser;
+      
+//       console.log('ShapeForgeParser initialized');
+//       resolve(this.shapeForgeParser);
+//       return;
+//     }
+    
+//     // Load script dynamically
+//     const script = document.createElement('script');
+//     script.src = 'js/classes/ShapeForgeParser.js';
+    
+//     script.onload = () => {
+//       try {
+//         this.shapeForgeParser = new ShapeForgeParser(
+//           this.scene,
+//           window.resourceManager,
+//           this.shaderEffects
+//         );
+        
+//         // Make globally accessible for fallbacks
+//         window.shapeForgeParser = this.shapeForgeParser;
+        
+//         console.log('ShapeForgeParser dynamically initialized');
+//         resolve(this.shapeForgeParser);
+//       } catch (error) {
+//         console.error('Error initializing ShapeForgeParser:', error);
+//         reject(error);
+//       }
+//     };
+    
+//     script.onerror = (e) => {
+//       console.error('ShapeForgeParser script load failed:', e);
+//       reject(new Error('Failed to load ShapeForgeParser script'));
+//     };
+    
+//     document.head.appendChild(script);
+//   });
+// }
+
+/**
+ * Load ShapeForgeParser with global script loading protection
+ * @returns {Promise<ShapeForgeParser>} - The ShapeForgeParser instance
+ */
 async loadShapeForgeParser() {
-  // Return existing instance if already loaded
+  // If we already have an instance, return it
   if (this.shapeForgeParser) {
+    console.log('Reusing existing ShapeForgeParser instance');
     return this.shapeForgeParser;
   }
   
-  return new Promise((resolve, reject) => {
-    // Check if script is already loaded
-    if (window.ShapeForgeParser) {
-      this.shapeForgeParser = new ShapeForgeParser(
-        this.scene, 
+  // Create a shared loading promise if one doesn't exist
+  if (!window._shapeForgeParserLoadPromise) {
+    console.log('Creating new ShapeForgeParser load promise');
+    
+    window._shapeForgeParserLoadPromise = new Promise((resolve, reject) => {
+      // Check if class is already available
+      if (window.ShapeForgeParser) {
+        console.log('ShapeForgeParser class already available');
+        resolve(window.ShapeForgeParser);
+        return;
+      }
+      
+      // Check if script tag already exists
+      const existingScript = document.querySelector('script[src*="ShapeForgeParser.js"]');
+      if (existingScript) {
+        console.log('ShapeForgeParser script tag already exists, waiting for load');
+        
+        // Wait for existing script to finish loading
+        const checkInterval = setInterval(() => {
+          if (window.ShapeForgeParser) {
+            clearInterval(checkInterval);
+            resolve(window.ShapeForgeParser);
+          }
+        }, 50);
+        
+        // Set a timeout to prevent infinite waiting
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          reject(new Error('Timeout waiting for ShapeForgeParser script'));
+        }, 5000);
+        
+        return;
+      }
+      
+      // Load the script if it's not already loading
+      console.log('Creating new ShapeForgeParser script tag');
+      const script = document.createElement('script');
+      script.src = 'js/classes/ShapeForgeParser.js';
+      
+      script.onload = () => {
+        if (window.ShapeForgeParser) {
+          console.log('ShapeForgeParser script loaded successfully');
+          resolve(window.ShapeForgeParser);
+        } else {
+          reject(new Error('ShapeForgeParser not found after script load'));
+        }
+      };
+      
+      script.onerror = (e) => {
+        console.error('ShapeForgeParser script load failed:', e);
+        reject(new Error('Failed to load ShapeForgeParser script'));
+      };
+      
+      document.head.appendChild(script);
+    });
+  }
+  
+  try {
+    // Wait for the shared loading promise
+    const ShapeForgeParserClass = await window._shapeForgeParserLoadPromise;
+    
+    // Create our instance if we don't have one yet
+    if (!this.shapeForgeParser) {
+      // this.shapeForgeParser = new ShapeForgeParserClass(
+      //   this.scene,
+      //   window.resourceManager,
+      //   this.shaderEffects
+      // );
+      this.shapeForgeParser = new window.ShapeForgeParser(
+        this.scene,
         window.resourceManager,
         this.shaderEffects
       );
       
-      // Make globally accessible for fallbacks
+      // Store globally as well
+      // window.shapeForgeParser = this.shapeForgeParser;
       window.shapeForgeParser = this.shapeForgeParser;
-      
-      console.log('ShapeForgeParser initialized');
-      resolve(this.shapeForgeParser);
-      return;
     }
     
-    // Load script dynamically
-    const script = document.createElement('script');
-    script.src = 'js/classes/ShapeForgeParser.js';
+    return this.shapeForgeParser;
+  } catch (error) {
+    console.error('Error creating ShapeForgeParser:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load ShapeForgeParser -- newer version
+ * @returns {Promise<ShapeForgeParser>} - The ShapeForgeParser instance
+ */
+// async loadShapeForgeParser() {
+
+//   // console.log(`loadShapeForgeParser called from:`, new Error().stack);
+
+//   // Return existing instance if already loaded
+//   if (this.shapeForgeParser) {
+//     return this.shapeForgeParser;
+//   }
+  
+//   return new Promise((resolve, reject) => {
+//     // Check if script is already loaded
+//     if (window.ShapeForgeParser) {
+//       this.shapeForgeParser = new ShapeForgeParser(
+//         this.scene, 
+//         window.resourceManager,
+//         this.shaderEffects
+//       );
+      
+//       // Make globally accessible for fallbacks
+//       window.shapeForgeParser = this.shapeForgeParser;
+      
+//       console.log('ShapeForgeParser initialized');
+//       resolve(this.shapeForgeParser);
+//       return;
+//     }
     
-    script.onload = () => {
-      try {
-        this.shapeForgeParser = new ShapeForgeParser(
-          this.scene,
-          window.resourceManager,
-          this.shaderEffects
-        );
+//     // Load script dynamically
+//     const script = document.createElement('script');
+//     script.src = 'js/classes/ShapeForgeParser.js';
+    
+//     script.onload = () => {
+//       try {
+//         this.shapeForgeParser = new ShapeForgeParser(
+//           this.scene,
+//           window.resourceManager,
+//           this.shaderEffects
+//         );
         
-        // Make globally accessible for fallbacks
-        window.shapeForgeParser = this.shapeForgeParser;
+//         // Make globally accessible for fallbacks
+//         window.shapeForgeParser = this.shapeForgeParser;
         
-        console.log('ShapeForgeParser dynamically initialized');
-        resolve(this.shapeForgeParser);
-      } catch (error) {
-        console.error('Error initializing ShapeForgeParser:', error);
-        reject(error);
-      }
-    };
+//         console.log('ShapeForgeParser dynamically initialized');
+//         resolve(this.shapeForgeParser);
+//       } catch (error) {
+//         console.error('Error initializing ShapeForgeParser:', error);
+//         reject(error);
+//       }
+//     };
     
-    script.onerror = (e) => {
-      console.error('ShapeForgeParser script load failed:', e);
-      reject(new Error('Failed to load ShapeForgeParser script'));
-    };
+//     script.onerror = (e) => {
+//       console.error('ShapeForgeParser script load failed:', e);
+//       reject(new Error('Failed to load ShapeForgeParser script'));
+//     };
     
-    document.head.appendChild(script);
+//     document.head.appendChild(script);
+//   });
+// }
+
+
+
+// Add this helper method
+checkForDuplicateShapeForgeModels() {
+  // Track models by ID
+  const modelCounts = {};
+  
+  this.scene.traverse(obj => {
+    if (obj.userData && obj.userData.modelId) {
+      const id = obj.userData.modelId;
+      modelCounts[id] = (modelCounts[id] || 0) + 1;
+    }
+  });
+  
+  // Log any duplicates
+  Object.entries(modelCounts).forEach(([id, count]) => {
+    if (count > 1) {
+      console.warn(`Found ${count} instances of model ${id} in the scene!`);
+    }
   });
 }
 
 
-// /**
-//  * Process ShapeForge markers in the scene
-//  * @param {Array} markers - Array of ShapeForge markers
-//  */
+
+/**
+ * Process ShapeForge markers in the scene
+ * @param {Array} markers - Array of ShapeForge markers
+ */
 // async processShapeForgeMarkers(markers) {
 //   if (!markers || markers.length === 0) return;
+
+//     // Create a Set of unique IDs to process
+//     const uniqueMarkerIds = new Set();
+//     markers.forEach(marker => {
+//       if (marker.data?.modelId) {
+//         uniqueMarkerIds.add(marker.data.modelId);
+//       }
+//     });
+    
+//     console.log(`Processing ${uniqueMarkerIds.size} unique ShapeForge markers`);
   
 //   try {
 //     // Load ShapeForgeParser if needed
-//     const parser = await this.loadShapeForgeParser();
+//    const parser = await this.loadShapeForgeParser();
     
 //     // Create an array of loading promises to handle all markers in parallel
 //     const loadingPromises = markers.map(async (marker) => {
@@ -635,6 +836,11 @@ async loadShapeForgeParser() {
 //           window.resourceManager,
 //           this.shaderEffects
 //         );
+
+//         if (this.processedShapeForgeIds.has(modelId)) {
+//           console.log(`Skipping already processed ShapeForge model: ${modelId}`);
+//           return null;
+//         }
         
 //         // Load the model - position at origin (0,0,0) since the group handles positioning
 //         const objects = await modelParser.loadModelFromIndexedDB(modelId);
@@ -644,7 +850,119 @@ async loadShapeForgeParser() {
 //           return null;
 //         }
         
+//         this.processedShapeForgeIds.add(modelId);
+
 //         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
+
+// // Extract physics properties from the loaded objects
+// let hasPhysicsProperties = false;
+// let isRegularWall = false;
+// let isRaisedBlock = false;
+// let blockHeight = 0;
+
+// // Check each object for physics properties
+// objects.forEach(obj => {
+//   if (obj.physics || (obj.mesh && obj.mesh.userData)) {
+//     // Get physics data from either the object or mesh userData
+//     const physics = obj.physics || {};
+//     const userData = obj.mesh ? obj.mesh.userData : {};
+    
+//     // If any object has these properties, apply to the whole model
+//     if (physics.isRegularWall || userData.isRegularWall) {
+//       isRegularWall = true;
+//       hasPhysicsProperties = true;
+//     }
+    
+//     if (physics.isRaisedBlock || userData.isRaisedBlock) {
+//       isRaisedBlock = true;
+//       hasPhysicsProperties = true;
+//     }
+    
+//     // Only set blockHeight if not already set or if higher
+//     const objBlockHeight = physics.blockHeight !== undefined ? physics.blockHeight : 
+//                            (userData.blockHeight !== undefined ? userData.blockHeight : 0);
+    
+//     if (objBlockHeight > blockHeight) {
+//       blockHeight = objBlockHeight;
+//     }
+//   }
+// });
+
+// // Enforce mutual exclusivity of properties based on Scene3DController's logic
+// if (isRegularWall && isRaisedBlock) {
+//   // If both are true, prioritize regular wall
+//   console.log(`Model has both wall and block properties - prioritizing regular wall`);
+//   isRegularWall = true;
+//   isRaisedBlock = false;
+//   blockHeight = 0;
+// } else if (isRegularWall) {
+//   // Regular walls have blockHeight = 0
+//   blockHeight = 0;
+// } else if (isRaisedBlock && blockHeight <= 0) {
+//   // Raised blocks must have positive height
+//   blockHeight = 1.0; // Default to 1.0 if no valid height
+// }
+
+// // Store the physics properties in the modelGroup userData
+// modelGroup.userData = {
+//   isShapeForgeModel: true,
+//   markerId: marker.id,
+//   modelId: modelId,
+//   isRegularWall: isRegularWall,
+//   // isRaisedBlock: isRaisedBlock,
+//   blockHeight: blockHeight
+// };
+
+// // Add the model to collision system if it has physics properties
+// if (hasPhysicsProperties) {
+//   // Calculate bounds for collision
+//   const box = new THREE.Box3().setFromObject(modelGroup);
+//   const size = box.getSize(new THREE.Vector3());
+//   const min = box.min;
+
+//   // Convert from THREE.js world coordinates to bounds coordinates
+//   const boundsX = (min.x + this.boxWidth/2) * 50;
+//   const boundsY = (min.z + this.boxDepth/2) * 50;
+//   const boundsWidth = size.x * 50;
+//   const boundsHeight = size.z * 50;
+  
+//   // Create a room-like object for collision detection
+//   const wallRoom = {
+//     type: 'shapeforge-wall',
+//     position: box.getCenter(new THREE.Vector3()),
+//     width: size.x,
+//     length: size.z,
+//     height: isRegularWall ? this.boxHeight : blockHeight,
+//     isRegularWall: isRegularWall,
+//     isRaisedBlock: isRaisedBlock,
+//     blockHeight: blockHeight,
+//     markerId: marker.id,
+//     threeObject: modelGroup,
+//     bounds: {
+//       x: boundsX,
+//       y: boundsY,
+//       width: boundsWidth,
+//       height: boundsHeight
+//     },
+//     isShapeForgeRoom: true,
+//     // This new flag tells getElevationAtPoint not to add blockHeight again
+//     isPrePositioned: true  
+//   };
+
+//   // Check if we need to add this marker to be skipped in later processing
+//   marker.processedByShapeForge = true;
+  
+//   // Check if this marker ID already exists in rooms array
+//   const existingRoomIndex = this.rooms.findIndex(r => r.markerId === marker.id);
+//   if (existingRoomIndex >= 0) {
+//     console.log(`Replacing existing ShapeForge model in rooms array at index ${existingRoomIndex}`);
+//     this.rooms[existingRoomIndex] = wallRoom;
+//   } else {
+//     this.rooms.push(wallRoom);
+//     console.log(`Added ShapeForge model ${marker.id} as wall/block to rooms collection`, wallRoom);
+//   }
+// }
+
         
 //         // Store model data reference for later use
 //         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
@@ -683,19 +1001,58 @@ async loadShapeForgeParser() {
  * @param {Array} markers - Array of ShapeForge markers
  */
 async processShapeForgeMarkers(markers) {
+  console.log(`[${new Date().toISOString()}] Starting processShapeForgeMarkers with ${markers?.length || 0} markers`);
+  
   if (!markers || markers.length === 0) return;
+  
+  // Create tracking map for models we've already processed
+  if (!this._processedShapeForgeModels) {
+    this._processedShapeForgeModels = new Map();
+  }
   
   try {
     // Load ShapeForgeParser if needed
-    const parser = await this.loadShapeForgeParser();
+//    const parser = await this.loadShapeForgeParser();
+const parser = await this.loadShapeForgeParser();
     
-    // Create an array of loading promises to handle all markers in parallel
-    const loadingPromises = markers.map(async (marker) => {
+    // Process markers sequentially to avoid race conditions
+    for (const marker of markers) {
       const modelId = marker.data?.modelId;
       
       if (!modelId) {
         console.warn('Marker missing modelId:', marker);
-        return null;
+        continue;
+      }
+      
+      // Skip if this exact marker has been processed before
+      const markerKey = `${marker.id}-${modelId}`;
+      if (this._processedShapeForgeModels.has(markerKey)) {
+        console.log(`Skipping already processed marker: ${markerKey}`);
+        continue;
+      }
+      
+      // Check for existing models with this ID in the scene
+      let existingModel = null;
+      this.scene.traverse(obj => {
+        if (obj.userData && 
+            obj.userData.isShapeForgeModel && 
+            obj.userData.markerId === marker.id &&
+            obj.userData.modelId === modelId) {
+          existingModel = obj;
+        }
+      });
+      
+      if (existingModel) {
+        console.log(`Found existing model for marker ${marker.id}, not creating duplicate`);
+        
+        // Update tracking
+        this._processedShapeForgeModels.set(markerKey, {
+          marker,
+          model: existingModel,
+          time: Date.now()
+        });
+        
+        continue;
       }
       
       // Get position from marker
@@ -743,120 +1100,123 @@ async processShapeForgeMarkers(markers) {
         
         if (!objects || objects.length === 0) {
           console.warn(`No objects created for model ${modelId}`);
-          return null;
+          this.scene.remove(modelGroup);
+          continue;
         }
         
         console.log(`Loaded ${objects.length} objects for model ${modelId}`);
-
-// Extract physics properties from the loaded objects
-let hasPhysicsProperties = false;
-let isRegularWall = false;
-let isRaisedBlock = false;
-let blockHeight = 0;
-
-// Check each object for physics properties
-objects.forEach(obj => {
-  if (obj.physics || (obj.mesh && obj.mesh.userData)) {
-    // Get physics data from either the object or mesh userData
-    const physics = obj.physics || {};
-    const userData = obj.mesh ? obj.mesh.userData : {};
-    
-    // If any object has these properties, apply to the whole model
-    if (physics.isRegularWall || userData.isRegularWall) {
-      isRegularWall = true;
-      hasPhysicsProperties = true;
-    }
-    
-    if (physics.isRaisedBlock || userData.isRaisedBlock) {
-      isRaisedBlock = true;
-      hasPhysicsProperties = true;
-    }
-    
-    // Only set blockHeight if not already set or if higher
-    const objBlockHeight = physics.blockHeight !== undefined ? physics.blockHeight : 
-                           (userData.blockHeight !== undefined ? userData.blockHeight : 0);
-    
-    if (objBlockHeight > blockHeight) {
-      blockHeight = objBlockHeight;
-    }
-  }
-});
-
-// Enforce mutual exclusivity of properties based on Scene3DController's logic
-if (isRegularWall && isRaisedBlock) {
-  // If both are true, prioritize regular wall
-  console.log(`Model has both wall and block properties - prioritizing regular wall`);
-  isRegularWall = true;
-  isRaisedBlock = false;
-  blockHeight = 0;
-} else if (isRegularWall) {
-  // Regular walls have blockHeight = 0
-  blockHeight = 0;
-} else if (isRaisedBlock && blockHeight <= 0) {
-  // Raised blocks must have positive height
-  blockHeight = 1.0; // Default to 1.0 if no valid height
-}
-
-// Store the physics properties in the modelGroup userData
-modelGroup.userData = {
-  isShapeForgeModel: true,
-  markerId: marker.id,
-  modelId: modelId,
-  isRegularWall: isRegularWall,
-  // isRaisedBlock: isRaisedBlock,
-  blockHeight: blockHeight
-};
-
-// Add the model to collision system if it has physics properties
-if (hasPhysicsProperties) {
-  // Calculate bounds for collision
-  const box = new THREE.Box3().setFromObject(modelGroup);
-  const size = box.getSize(new THREE.Vector3());
-  const min = box.min;
-
-  // Convert from THREE.js world coordinates to bounds coordinates
-  const boundsX = (min.x + this.boxWidth/2) * 50;
-  const boundsY = (min.z + this.boxDepth/2) * 50;
-  const boundsWidth = size.x * 50;
-  const boundsHeight = size.z * 50;
-  
-  // Create a room-like object for collision detection
-  const wallRoom = {
-    type: 'shapeforge-wall',
-    position: box.getCenter(new THREE.Vector3()),
-    width: size.x,
-    length: size.z,
-    height: isRegularWall ? this.boxHeight : blockHeight,
-    isRegularWall: isRegularWall,
-    isRaisedBlock: isRaisedBlock,
-    blockHeight: blockHeight,
-    markerId: marker.id,
-    threeObject: modelGroup,
-    bounds: {
-      x: boundsX,
-      y: boundsY,
-      width: boundsWidth,
-      height: boundsHeight
-    },
-    isShapeForgeRoom: true,
-    // This new flag tells getElevationAtPoint not to add blockHeight again
-    isPrePositioned: true  
-  };
-
-  // Check if we need to add this marker to be skipped in later processing
-  marker.processedByShapeForge = true;
-  
-  // Check if this marker ID already exists in rooms array
-  const existingRoomIndex = this.rooms.findIndex(r => r.markerId === marker.id);
-  if (existingRoomIndex >= 0) {
-    console.log(`Replacing existing ShapeForge model in rooms array at index ${existingRoomIndex}`);
-    this.rooms[existingRoomIndex] = wallRoom;
-  } else {
-    this.rooms.push(wallRoom);
-    console.log(`Added ShapeForge model ${marker.id} as wall/block to rooms collection`, wallRoom);
-  }
-}
-
+        
+        // Extract physics properties from the loaded objects
+        let hasPhysicsProperties = false;
+        let isRegularWall = false;
+        let isRaisedBlock = false;
+        let blockHeight = 0;
+        
+        // Check each object for physics properties
+        objects.forEach(obj => {
+          if (obj.physics || (obj.mesh && obj.mesh.userData)) {
+            // Get physics data from either the object or mesh userData
+            const physics = obj.physics || {};
+            const userData = obj.mesh ? obj.mesh.userData : {};
+            
+            // If any object has these properties, apply to the whole model
+            if (physics.isRegularWall || userData.isRegularWall) {
+              isRegularWall = true;
+              hasPhysicsProperties = true;
+            }
+            
+            if (physics.isRaisedBlock || userData.isRaisedBlock) {
+              isRaisedBlock = true;
+              hasPhysicsProperties = true;
+            }
+            
+            // Only set blockHeight if not already set or if higher
+            const objBlockHeight = physics.blockHeight !== undefined ? physics.blockHeight : 
+                                  (userData.blockHeight !== undefined ? userData.blockHeight : 0);
+            
+            if (objBlockHeight > blockHeight) {
+              blockHeight = objBlockHeight;
+            }
+          }
+        });
+        
+        // Enforce mutual exclusivity of properties based on Scene3DController's logic
+        if (isRegularWall && isRaisedBlock) {
+          // If both are true, prioritize regular wall
+          console.log(`Model has both wall and block properties - prioritizing regular wall`);
+          isRegularWall = true;
+          isRaisedBlock = false;
+          blockHeight = 0;
+        } else if (isRegularWall) {
+          // Regular walls have blockHeight = 0
+          blockHeight = 0;
+        } else if (isRaisedBlock && blockHeight <= 0) {
+          // Raised blocks must have positive height
+          blockHeight = 1.0; // Default to 1.0 if no valid height
+        }
+        
+        // Store the physics properties in the modelGroup userData
+        modelGroup.userData = {
+          isShapeForgeModel: true,
+          markerId: marker.id,
+          modelId: modelId,
+          isRegularWall: isRegularWall,
+          isRaisedBlock: isRaisedBlock,
+          blockHeight: blockHeight
+        };
+        
+        // Add the model to collision system if it has physics properties
+        if (hasPhysicsProperties) {
+          // Calculate bounds for collision
+          const box = new THREE.Box3().setFromObject(modelGroup);
+          const size = box.getSize(new THREE.Vector3());
+          const min = box.min;
+        
+          // Convert from THREE.js world coordinates to bounds coordinates
+          const boundsX = (min.x + this.boxWidth/2) * 50;
+          const boundsY = (min.z + this.boxDepth/2) * 50;
+          const boundsWidth = size.x * 50;
+          const boundsHeight = size.z * 50;
+          
+          // Create a room-like object for collision detection
+          const wallRoom = {
+            type: 'shapeforge-wall',
+            position: box.getCenter(new THREE.Vector3()),
+            width: size.x,
+            length: size.z,
+            height: isRegularWall ? this.boxHeight : blockHeight,
+            isRegularWall: isRegularWall,
+            isRaisedBlock: isRaisedBlock,
+            blockHeight: blockHeight,
+            markerId: marker.id,
+            threeObject: modelGroup,
+            bounds: {
+              x: boundsX,
+              y: boundsY,
+              width: boundsWidth,
+              height: boundsHeight
+            },
+            isShapeForgeRoom: true,
+            isPrePositioned: true
+          };
+        
+          console.log("ShapeForge physics creation:", {
+            modelId: modelId,
+            markerId: marker.id,
+            existingRooms: this.rooms.filter(r => r.markerId === marker.id).length,
+            isNew: !this.rooms.some(r => r.markerId === marker.id)
+          });
+          
+          // Check if this marker ID already exists in rooms array
+          const existingRoomIndex = this.rooms.findIndex(r => r.markerId === marker.id);
+          if (existingRoomIndex >= 0) {
+            console.log(`Replacing existing ShapeForge model in rooms array at index ${existingRoomIndex}`);
+            this.rooms[existingRoomIndex] = wallRoom;
+          } else {
+            this.rooms.push(wallRoom);
+            console.log(`Added ShapeForge model ${marker.id} as wall/block to rooms collection`, wallRoom);
+          }
+        }
         
         // Store model data reference for later use
         if (!this.shapeForgeModels) this.shapeForgeModels = new Map();
@@ -867,23 +1227,20 @@ if (hasPhysicsProperties) {
           markerId: marker.id
         });
         
-        // Set userData on the group for identification
-        modelGroup.userData = {
-          isShapeForgeModel: true,
-          markerId: marker.id,
-          modelId: modelId
-        };
+        // Add to tracking
+        this._processedShapeForgeModels.set(markerKey, {
+          marker,
+          model: modelGroup,
+          time: Date.now()
+        });
         
-        return { marker, model: modelGroup };
       } catch (error) {
         console.error(`Error loading ShapeForge model ${modelId}:`, error);
         this.scene.remove(modelGroup); // Clean up on error
-        return null;
       }
-    });
+    }
     
-    // Wait for all models to load
-    await Promise.all(loadingPromises);
+    console.log(`[${new Date().toISOString()}] Finished processing ShapeForge markers`);
     
   } catch (error) {
     console.error('Error processing ShapeForge markers:', error);
@@ -1694,6 +2051,7 @@ updateFloorMaterial(floorMesh, backgroundColor) {
     }
 
     //  this.loadShapeForgeBridge();
+    this.loadShapeForgeParser();
 
     // Find ShapeForge markers
     const shapeForgeMarkers = this.markers.filter(m => m.type === 'shapeforge' && m.data?.modelId);
@@ -3261,6 +3619,7 @@ break;
     this.rooms.forEach(room => {
       // Skip non-wall and non-raised blocks
       if (!room.isRaisedBlock && room.type !== 'wall') return;
+      if (room.isPrePositioned) return; // Skip pre-positioned models
 
       // Check if point is within bounds
       const roomX = room.bounds.x / 50 - this.boxWidth / 2;
@@ -3854,6 +4213,7 @@ if (marker.type === 'shapeforge' && marker.processedByShapeForge) {
 
     // Process all markers (encounter tokens, props, teleporters, doors, etc.)
     await this.processAllMarkers();
+    this.checkForDuplicateShapeForgeModels();
 
     this.autoDetectLightSources();
 
@@ -6064,21 +6424,6 @@ this.gameState = 'initializing';
     }
   }
 
-  // async processRooms(scene, mainBox, updateStatus) {
-  //   let result = mainBox;
-  //   const totalRooms = this.rooms.length;
-
-  //   for (let i = 0; i < totalRooms; i++) {
-
-
-  //     const room = this.rooms[i];
-
-  //     if (marker.type === 'shapeforge' && marker.processedByShapeForge) {
-  //       console.log(`Skipping already processed ShapeForge marker: ${marker.id}`);
-  //       continue; // Skip this marker as it was already processed by processShapeForgeMarkers
-  //     }
-
-  //     const roomMesh = this.createRoomShape(room);
 
   async processRooms(scene, mainBox, updateStatus) {
     let result = mainBox;

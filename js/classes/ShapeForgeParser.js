@@ -27,6 +27,11 @@ class ShapeForgeParser {
             hasResourceManager: !!resourceManager,
             hasShaderEffects: !!this.shaderEffects
         });
+
+        // if (window.shapeForgeParser) {
+        //     console.log('Returning existing ShapeForgeParser instance');
+        //     return window.shapeForgeParser;
+        //   }
     }
 
     /**
@@ -2225,3 +2230,4 @@ createSimpleMagicEffect(prop, options) {
 
 // Make parser globally available
 window.ShapeForgeParser = ShapeForgeParser;
+// window.shapeForgeParser = this;
