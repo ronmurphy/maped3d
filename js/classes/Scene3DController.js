@@ -1704,6 +1704,8 @@ updateFloorMaterial(floorMesh, backgroundColor) {
        this.processShapeForgeMarkers(shapeForgeMarkers);
     }
 
+    this.processShapeForgeMarkers(shapeForgeMarkers);
+
     return true;
   }
 

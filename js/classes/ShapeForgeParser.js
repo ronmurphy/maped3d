@@ -2224,4 +2224,6 @@ createSimpleMagicEffect(prop, options) {
 }
 
 // Make parser globally available
+// At the end of ShapeForgeParser.js
 window.ShapeForgeParser = ShapeForgeParser;
+console.log('ShapeForgeParser attached to window object', window.ShapeForgeParser ? 'SUCCESS' : 'FAILED');
